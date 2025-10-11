@@ -7,28 +7,28 @@ export default async function PromotionsStatistics({ wsId }: { wsId: string }) {
   const supabase = await createClient();
   const t = await getTranslations();
 
-  const enabled = true;
-
-  const { count: promotions } = enabled
-    ? await supabase
-        .from('workspace_promotions')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('ws_id', wsId)
-    : { count: 0 };
-
-  const { permissions } = await getPermissions({
+  const { withoutPermission } = await getPermissions({
     wsId,
   });
 
-  if (!enabled || !permissions.includes('manage_inventory')) return null;
+  if (withoutPermission('view_inventory')) return null;
+  const { count: promotions, error } = await supabase
+    .from('workspace_promotions')
+    .select('id', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
+
+  if (error) {
+    console.error('Error fetching workspace promotions:', error);
+    return null;
+  }
 
   return (
     <StatisticCard
       title={t('workspace-inventory-tabs.promotions')}
-      value={promotions}
+      value={promotions ?? 0}
       href={`/${wsId}/inventory/promotions`}
     />
   );

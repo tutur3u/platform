@@ -4,7 +4,6 @@ import type { Row } from '@tanstack/react-table';
 import { Ellipsis, Eye } from '@tuturuuu/icons';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import { Button } from '@tuturuuu/ui/button';
-import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,24 +11,33 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 
 interface InvoiceRowActionsProps {
   row: Row<Invoice>;
   href?: string;
+  canDeleteInvoices?: boolean;
 }
 
-export function InvoiceRowActions({ row, href }: InvoiceRowActionsProps) {
+export function InvoiceRowActions({
+  row,
+  href,
+  canDeleteInvoices = false,
+}: InvoiceRowActionsProps) {
   const t = useTranslations();
 
   const router = useRouter();
   const data = row.original;
 
   const deleteInvoice = async () => {
+    if (!canDeleteInvoices) {
+      toast.error(t('common.insufficient_permissions'));
+      return;
+    }
+
     const res = await fetch(
       `/api/workspaces/${data.ws_id}/invoices/${data.id}`,
       {
@@ -41,14 +49,9 @@ export function InvoiceRowActions({ row, href }: InvoiceRowActionsProps) {
       router.refresh();
     } else {
       const data = await res.json();
-      toast({
-        title: 'Failed to delete workspace wallet',
-        description: data.message,
-      });
+      toast.error(data.message || t('ws-invoices.failed_delete_invoice'));
     }
   };
-
-  const [showEditDialog, setShowEditDialog] = useState(false);
 
   if (!data.id || !data.ws_id) return null;
 
@@ -74,24 +77,15 @@ export function InvoiceRowActions({ row, href }: InvoiceRowActionsProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={() => setShowEditDialog(true)} disabled>
-            {t('common.edit')}
-          </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteInvoice} disabled>
+          <DropdownMenuItem
+            onClick={deleteInvoice}
+            disabled={!canDeleteInvoices}
+          >
             {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-
-      <ModifiableDialogTrigger
-        data={data}
-        open={showEditDialog}
-        title={t('ws-invoices.edit')}
-        editDescription={t('ws-invoices.edit_description')}
-        setOpen={setShowEditDialog}
-        // form={<InvoiceForm wsId={data.ws_id} data={data} />}
-      />
     </div>
   );
 }

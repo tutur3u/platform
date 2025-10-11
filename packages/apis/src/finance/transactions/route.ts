@@ -1,7 +1,37 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { z } from 'zod';
 
-export async function GET(req: Request) {
+interface Params {
+  params: Promise<{
+    wsId: string;
+  }>;
+}
+
+const TransactionSchema = z.object({
+  description: z.string().min(1),
+  amount: z.number(),
+  origin_wallet_id: z.string().uuid(),
+  category_id: z.string().uuid().optional(),
+  taken_at: z.union([z.string(), z.date()]),
+  report_opt_in: z.boolean().optional(),
+  tag_ids: z.array(z.string().uuid()).optional(),
+});
+export async function GET(req: Request, { params }: Params) {
+  const { wsId } = await params;
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('view_transactions')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
+
   // Parse the request URL
   const url = new URL(req.url);
 
@@ -13,10 +43,11 @@ export async function GET(req: Request) {
 
   const { data, error } = await supabase
     .from('wallet_transactions')
-    .select('*')
+    .select('*, workspace_wallets!inner(ws_id)')
+    .eq('workspace_wallets.ws_id', wsId)
     .range(
       (Number(activePage) - 1) * Number(itemsPerPage),
-      Number(itemsPerPage)
+      Number(activePage) * Number(itemsPerPage) - 1
     )
     .order('taken_at', { ascending: false });
 
@@ -31,31 +62,84 @@ export async function GET(req: Request) {
   return NextResponse.json(data);
 }
 
-export async function POST(req: Request) {
+export async function POST(req: Request, { params }: Params) {
+  const { wsId } = await params;
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('create_transactions')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
+
   const supabase = await createClient();
 
-  const data =
-    // : Transaction & {
-    //   origin_wallet_id?: string;
-    //   destination_wallet_id?: string;
-    //   tag_ids?: string[];
-    // }
-    await req.json();
+  // Get authenticated user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const newData = {
-    ...data,
-    wallet_id: data.origin_wallet_id,
-  };
+  if (!user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
 
-  delete newData.origin_wallet_id;
-  delete newData.destination_wallet_id;
-  const tagIds = newData.tag_ids;
-  delete newData.tag_ids;
+  // Get the virtual_user_id for this workspace
+  const { data: wsUser } = await supabase
+    .from('workspace_user_linked_users')
+    .select('virtual_user_id')
+    .eq('platform_user_id', user.id)
+    .eq('ws_id', wsId)
+    .single();
+
+  if (!wsUser?.virtual_user_id) {
+    return NextResponse.json(
+      { message: 'User not found in workspace' },
+      { status: 403 }
+    );
+  }
+
+  const parsed = TransactionSchema.safeParse(await req.json());
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: 'Invalid request data', errors: parsed.error.issues },
+      { status: 400 }
+    );
+  }
+  const data = parsed.data;
+  const tagIds = data.tag_ids;
+  delete data.tag_ids;
+
+  // Ensure wallet is in this workspace
+  const { data: walletCheck, error: walletErr } = await supabase
+    .from('workspace_wallets')
+    .select('id')
+    .eq('id', data.origin_wallet_id)
+    .eq('ws_id', wsId)
+    .single();
+
+  if (walletErr || !walletCheck) {
+    return NextResponse.json({ message: 'Invalid wallet' }, { status: 400 });
+  }
 
   const { data: transaction, error } = await supabase
     .from('wallet_transactions')
-    .upsert(newData)
-    .eq('id', data.id)
+    .insert({
+      amount: data.amount,
+      description: data.description,
+      wallet_id: data.origin_wallet_id,
+      category_id: data.category_id || null,
+      taken_at:
+        typeof data.taken_at === 'string'
+          ? new Date(data.taken_at).toISOString()
+          : data.taken_at.toISOString(),
+      report_opt_in: data.report_opt_in || false,
+      creator_id: wsUser.virtual_user_id,
+    })
     .select('id')
     .single();
 

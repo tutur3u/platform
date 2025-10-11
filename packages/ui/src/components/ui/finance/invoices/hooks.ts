@@ -27,6 +27,30 @@ export const useUsers = (wsId: string) => {
   });
 };
 
+// Users with selectable groups (groups where they have STUDENT role)
+export const useUsersWithSelectableGroups = (wsId: string) => {
+  return useQuery({
+    queryKey: ['users-with-selectable-groups', wsId],
+    queryFn: async () => {
+      const supabase = createClient();
+
+      // Single query using join to get users with STUDENT role groups
+      const { data, error } = await supabase
+        .from('workspace_users')
+        .select(`
+          *,
+          workspace_user_groups_users!inner(role)
+        `)
+        .eq('ws_id', wsId)
+        .eq('workspace_user_groups_users.role', 'STUDENT')
+        .order('full_name', { ascending: true });
+
+      if (error) throw error;
+      return data as WorkspaceUser[];
+    },
+  });
+};
+
 export const useProducts = (wsId: string) => {
   return useQuery({
     queryKey: ['products', wsId],

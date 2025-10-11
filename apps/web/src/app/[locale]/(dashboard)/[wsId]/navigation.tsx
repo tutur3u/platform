@@ -256,7 +256,9 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/finance/settings`,
       ],
       icon: <Banknote className="h-5 w-5" />,
-      href: `/${personalOrWsId}/finance`,
+      href: withoutPermission('manage_finance')
+        ? undefined
+        : `/${personalOrWsId}/finance`,
       children: [
         {
           title: t('workspace-finance-tabs.overview'),
@@ -270,7 +272,7 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/finance/transactions`,
           matchExact: true,
           icon: <Banknote className="h-5 w-5" />,
-          disabled: withoutPermission('manage_finance'),
+          disabled: withoutPermission('view_transactions'),
         },
         {
           title: t('workspace-finance-tabs.recurring'),
@@ -783,13 +785,18 @@ export async function WorkspaceNavigationLinks({
                   title: t('workspace-users-tabs.attendance'),
                   href: `/${personalOrWsId}/users/attendance`,
                   icon: <UserCheck className="h-5 w-5" />,
-                  disabled: withoutPermission('manage_users'),
+                  disabled:
+                    withoutPermission('manage_users') ||
+                    withoutPermission('check_user_attendance'),
                 },
                 {
                   title: t('workspace-users-tabs.database'),
                   href: `/${personalOrWsId}/users/database`,
                   icon: <BookUser className="h-5 w-5" />,
-                  disabled: withoutPermission('manage_users'),
+                  disabled:
+                    withoutPermission('manage_users') ||
+                    (withoutPermission('view_users_private_info') &&
+                      withoutPermission('view_users_public_info')),
                 },
                 {
                   title: t('workspace-users-tabs.groups'),
@@ -853,49 +860,49 @@ export async function WorkspaceNavigationLinks({
                   href: `/${personalOrWsId}/inventory`,
                   icon: <LayoutDashboard className="h-5 w-5" />,
                   matchExact: true,
-                  disabled: withoutPermission('manage_inventory'),
+                  disabled: withoutPermission('view_inventory'),
                 },
                 {
                   title: t('workspace-inventory-tabs.products'),
                   href: `/${personalOrWsId}/inventory/products`,
                   icon: <Package className="h-5 w-5" />,
-                  disabled: withoutPermission('manage_inventory'),
+                  disabled: withoutPermission('view_inventory'),
                 },
                 {
                   title: t('workspace-inventory-tabs.categories'),
                   href: `/${personalOrWsId}/inventory/categories`,
                   icon: <Tags className="h-5 w-5" />,
-                  disabled: withoutPermission('manage_inventory'),
+                  disabled: withoutPermission('view_inventory'),
                 },
                 {
                   title: t('workspace-inventory-tabs.units'),
                   href: `/${personalOrWsId}/inventory/units`,
                   icon: <RulerDimensionLine className="h-5 w-5" />,
-                  disabled: withoutPermission('manage_inventory'),
+                  disabled: withoutPermission('view_inventory'),
                 },
                 {
                   title: t('workspace-inventory-tabs.suppliers'),
                   href: `/${personalOrWsId}/inventory/suppliers`,
                   icon: <Truck className="h-5 w-5" />,
-                  disabled: withoutPermission('manage_inventory'),
+                  disabled: withoutPermission('view_inventory'),
                 },
                 {
                   title: t('workspace-inventory-tabs.warehouses'),
                   href: `/${personalOrWsId}/inventory/warehouses`,
                   icon: <Warehouse className="h-5 w-5" />,
-                  disabled: withoutPermission('manage_inventory'),
+                  disabled: withoutPermission('view_inventory'),
                 },
                 {
                   title: t('workspace-inventory-tabs.batches'),
                   href: `/${personalOrWsId}/inventory/batches`,
                   icon: <Boxes className="h-5 w-5" />,
-                  disabled: withoutPermission('manage_inventory'),
+                  disabled: withoutPermission('view_inventory'),
                 },
                 {
                   title: t('workspace-inventory-tabs.promotions'),
                   href: `/${personalOrWsId}/inventory/promotions`,
                   icon: <TicketPercent className="h-5 w-5" />,
-                  disabled: withoutPermission('manage_inventory'),
+                  disabled: withoutPermission('view_inventory'),
                 },
               ],
               disabled:
@@ -906,7 +913,7 @@ export async function WorkspaceNavigationLinks({
                   name: 'ENABLE_INVENTORY',
                   value: 'true',
                 })) ||
-                withoutPermission('manage_inventory'),
+                withoutPermission('view_inventory'),
             },
           ],
         },

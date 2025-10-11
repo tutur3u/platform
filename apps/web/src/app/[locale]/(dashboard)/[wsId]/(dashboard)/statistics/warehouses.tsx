@@ -7,23 +7,19 @@ export default async function WarehousesStatistics({ wsId }: { wsId: string }) {
   const supabase = await createClient();
   const t = await getTranslations();
 
-  const enabled = true;
-
-  const { count: warehouses } = enabled
-    ? await supabase
-        .from('inventory_warehouses')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('ws_id', wsId)
-    : { count: 0 };
-
-  const { permissions } = await getPermissions({
+  const { withoutPermission } = await getPermissions({
     wsId,
   });
 
-  if (!enabled || !permissions.includes('manage_inventory')) return null;
+  if (withoutPermission('view_inventory')) return null;
+
+  const { count: warehouses } = await supabase
+    .from('inventory_warehouses')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
   return (
     <StatisticCard

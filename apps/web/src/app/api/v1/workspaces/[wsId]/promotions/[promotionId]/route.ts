@@ -1,16 +1,28 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
+    wsId: string;
     promotionId: string;
   }>;
 }
 
 export async function PUT(req: Request, { params }: Params) {
+  const { wsId, promotionId } = await params;
+
+  // Check permissions
+  const { containsPermission } = await getPermissions({ wsId });
+  if (!containsPermission('update_inventory')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to update promotions' },
+      { status: 403 }
+    );
+  }
+
   const supabase = await createClient();
   const data = await req.json();
-  const { promotionId } = await params;
 
   const { error } = await supabase
     .from('workspace_promotions')
@@ -35,8 +47,18 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 export async function DELETE(_: Request, { params }: Params) {
+  const { wsId, promotionId } = await params;
+
+  // Check permissions
+  const { containsPermission } = await getPermissions({ wsId });
+  if (!containsPermission('delete_inventory')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to delete promotions' },
+      { status: 403 }
+    );
+  }
+
   const supabase = await createClient();
-  const { promotionId } = await params;
 
   const { error } = await supabase
     .from('workspace_promotions')

@@ -22,7 +22,7 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
@@ -41,6 +41,8 @@ interface Props {
   wsId: string;
   data?: Transaction;
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
+  canCreateTransactions?: boolean;
+  canUpdateTransactions?: boolean;
 }
 
 const FormSchema = z.object({
@@ -55,12 +57,16 @@ const FormSchema = z.object({
   tag_ids: z.array(z.string()).optional(),
 });
 
-export function TransactionForm({ wsId, data, onFinish }: Props) {
+export function TransactionForm({
+  wsId,
+  data,
+  onFinish,
+  canCreateTransactions,
+  canUpdateTransactions,
+}: Props) {
   const t = useTranslations();
   const locale = useLocale();
   const queryClient = useQueryClient();
-
-  // const [mode, setMode] = useState<'standard' | 'transfer'>('standard');
 
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -106,7 +112,18 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
     },
   });
 
+  // Check permissions for form interaction
+  const hasCreatePermission = canCreateTransactions && !data?.id;
+  const hasUpdatePermission = canUpdateTransactions && data?.id;
+  const hasFormPermission = hasCreatePermission || hasUpdatePermission;
+
   async function onSubmit(data: z.infer<typeof FormSchema>) {
+    // Check permissions before submitting
+    if (!hasFormPermission) {
+      toast.error(t('common.insufficient_permissions'));
+      return;
+    }
+
     setLoading(true);
 
     const res = await fetch(
@@ -131,17 +148,17 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
 
     if (res.ok) {
       // Invalidate transaction-related queries to refresh any transaction lists
+      // queryClient.invalidateQueries({
+      //   queryKey: [`/api/workspaces/${wsId}/transactions`],
+      // });
       queryClient.invalidateQueries({
-        queryKey: [`/api/workspaces/${wsId}/transactions`],
+        queryKey: [`/api/workspaces/${wsId}/transactions/infinite`],
       });
       onFinish?.(data);
       router.refresh();
     } else {
       setLoading(false);
-      toast({
-        title: 'Error creating category',
-        description: 'An error occurred while creating the category',
-      });
+      toast.error(t('transaction-data-table.error_creating_transaction'));
     }
   }
 
@@ -221,7 +238,7 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
                         name,
                       });
                     }}
-                    disabled={loading || walletsLoading}
+                    disabled={loading || walletsLoading || !hasFormPermission}
                     useFirstValueAsDefault
                   />
                   <FormMessage />
@@ -247,7 +264,7 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
                           }))
                         : []
                     }
-                    label={walletsLoading ? 'Loading...' : undefined}
+                    label={categoriesLoading ? 'Loading...' : undefined}
                     placeholder={t('transaction-data-table.select_category')}
                     selected={field.value}
                     onChange={field.onChange}
@@ -257,7 +274,9 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
                         name,
                       });
                     }}
-                    disabled={loading || categoriesLoading}
+                    disabled={
+                      loading || categoriesLoading || !hasFormPermission
+                    }
                   />
                   <FormMessage />
                 </FormItem>
@@ -271,7 +290,7 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
           <FormField
             control={form.control}
             name="amount"
-            disabled={loading}
+            disabled={loading || !hasFormPermission}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>{t('transaction-data-table.amount')}</FormLabel>
@@ -308,7 +327,7 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
           <FormField
             control={form.control}
             name="description"
-            disabled={loading}
+            disabled={loading || !hasFormPermission}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>{t('transaction-data-table.description')}</FormLabel>
@@ -345,7 +364,7 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
                   placeholder={t('transaction-data-table.select_tags')}
                   selected={field.value || []}
                   onChange={field.onChange}
-                  disabled={loading || tagsLoading}
+                  disabled={loading || tagsLoading || !hasFormPermission}
                 />
                 <FormDescription>
                   {t('transaction-data-table.tags_description')}
@@ -372,6 +391,7 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
                           'pl-3 text-left font-normal',
                           !field.value && 'text-muted-foreground'
                         )}
+                        disabled={!hasFormPermission}
                       >
                         {field.value ? (
                           format(
@@ -415,6 +435,7 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
                     <Checkbox
                       checked={field.value}
                       onCheckedChange={field.onChange}
+                      disabled={!hasFormPermission}
                     />
                   </FormControl>
                   <FormLabel>
@@ -432,7 +453,11 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
           <div className="h-0" />
           <Separator />
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={loading || !hasFormPermission}
+          >
             {loading
               ? t('common.processing')
               : data?.id

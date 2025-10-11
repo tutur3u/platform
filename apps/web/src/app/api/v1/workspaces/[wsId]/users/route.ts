@@ -2,14 +2,31 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
 interface Params {
   params: Promise<{
     wsId: string;
   }>;
 }
+
+const CreateUserSchema = z.object({
+  full_name: z.string().optional(),
+  display_name: z.string().optional(),
+  email: z.email().optional(),
+  phone: z.string().optional(),
+  gender: z.string().optional(),
+  birthday: z.string().optional(), // ISO string format expected
+  ethnicity: z.string().optional(),
+  guardian: z.string().optional(),
+  national_id: z.string().optional(),
+  address: z.string().optional(),
+  note: z.string().optional(),
+  is_guest: z.boolean().optional(),
+});
 
 export async function GET(req: NextRequest, { params }: Params) {
   const { wsId } = await params;
@@ -117,10 +134,36 @@ async function getDataFromSession(
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
-  const data = await req.json();
   const { wsId } = await params;
+  // Check permissions
+  const { containsPermission } = await getPermissions({ wsId });
+  if (!containsPermission('create_users')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to create users' },
+      { status: 403 }
+    );
+  }
 
+  // Validate request body
+  const rawData = await req.json();
+  const validationResult = CreateUserSchema.safeParse(rawData);
+
+  if (!validationResult.success) {
+    return NextResponse.json(
+      {
+        message: 'Invalid request body',
+        errors: validationResult.error.issues.map((issue) => ({
+          field: issue.path.join('.'),
+          message: issue.message,
+        })),
+      },
+      { status: 400 }
+    );
+  }
+
+  const data = validationResult.data;
+
+  const supabase = await createClient();
   // Separate control flag from user payload
   const { is_guest, ...userPayload } = data ?? {};
 

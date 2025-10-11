@@ -1,7 +1,24 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { Product2 } from '@tuturuuu/types/primitives/Product';
-import type { ProductInventory } from '@tuturuuu/types/primitives/ProductInventory';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const InventoryItemSchema = z.object({
+  unit_id: z.string().uuid(),
+  warehouse_id: z.string().uuid(),
+  amount: z.number().nonnegative(),
+  min_amount: z.number().nonnegative(),
+  price: z.number().nonnegative(),
+});
+
+export const ProductCreateSchema = z.object({
+  name: z.string().min(1).max(255),
+  manufacturer: z.string().optional(),
+  description: z.string().optional(),
+  usage: z.string().optional(),
+  category_id: z.string().uuid(),
+  inventory: z.array(InventoryItemSchema).default([]),
+});
 
 interface Params {
   params: Promise<{
@@ -10,11 +27,28 @@ interface Params {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
-  const { inventory, ...data } = (await req.json()) as Product2 & {
-    inventory: ProductInventory[];
-  };
   const { wsId } = await params;
+
+  // Validate request body
+  const parsed = ProductCreateSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: 'Invalid request body', errors: parsed.error.issues },
+      { status: 400 }
+    );
+  }
+
+  // Check permissions
+  const { withoutPermission } = await getPermissions({ wsId });
+  if (withoutPermission('create_inventory')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to create products' },
+      { status: 403 }
+    );
+  }
+
+  const supabase = await createClient();
+  const { inventory, ...data } = parsed.data;
 
   const product = await supabase
     .from('workspace_products')
@@ -34,19 +68,22 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { error } = await supabase.from('inventory_products').insert(
-    inventory.map((inventory) => ({
-      ...inventory,
-      product_id: product.data.id,
-    }))
-  );
-
-  if (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: 'Error creating inventory' },
-      { status: 500 }
+  // Only insert inventory if it exists and is an array
+  if (inventory && Array.isArray(inventory) && inventory.length > 0) {
+    const { error } = await supabase.from('inventory_products').insert(
+      inventory.map((item) => ({
+        ...item,
+        product_id: product.data.id,
+      }))
     );
+
+    if (error) {
+      console.log(error);
+      return NextResponse.json(
+        { message: 'Error creating inventory' },
+        { status: 500 }
+      );
+    }
   }
 
   return NextResponse.json({ message: 'success' });

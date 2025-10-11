@@ -71,6 +71,8 @@ interface Props {
   warehouses: ProductWarehouse[];
   units: ProductUnit[];
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
+  canCreateInventory?: boolean;
+  canUpdateInventory?: boolean;
 }
 
 export function ProductForm({
@@ -80,9 +82,10 @@ export function ProductForm({
   warehouses,
   units,
   onFinish,
+  canCreateInventory = false,
+  canUpdateInventory = false,
 }: Props) {
   const t = useTranslations();
-  console.log('Form data:', data);
 
   const [loading, setLoading] = useState(false);
   const [showCategoryDialog, setCategoryDialog] = useState(false);
@@ -154,6 +157,19 @@ export function ProductForm({
 
   async function onSubmit(formData: z.infer<typeof FormSchema>) {
     setLoading(true);
+
+    // Check permissions before proceeding
+    if (!data?.id && !canCreateInventory) {
+      toast.error(t('common.insufficient_permissions'));
+      setLoading(false);
+      return;
+    }
+
+    if (data?.id && !canUpdateInventory) {
+      toast.error(t('common.insufficient_permissions'));
+      setLoading(false);
+      return;
+    }
 
     try {
       // For new products, send all data
@@ -229,14 +245,18 @@ export function ProductForm({
 
         // If no fields have changed, don't make any API calls
         if (!hasProductChanges && !hasInventoryChanges) {
-          console.log('No changes detected, skipping API calls');
           setLoading(false);
-          toast('No changes detected');
+          toast.info(t('ws-inventory-products.no_changes_detected'));
           return;
         }
 
-        // Update product details if there are changes
-        if (hasProductChanges) {
+        // Update product and inventory in one request if there are any changes
+        if (hasProductChanges || hasInventoryChanges) {
+          const updatePayload = {
+            ...productPayload,
+            ...(hasInventoryChanges && { inventory: inventoryPayload }),
+          };
+
           const productRes = await fetch(
             `/api/v1/workspaces/${wsId}/products/${data.id}`,
             {
@@ -244,80 +264,67 @@ export function ProductForm({
               headers: {
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify(productPayload),
+              body: JSON.stringify(updatePayload),
             }
           );
 
           if (!productRes.ok) {
-            throw new Error('Failed to update product details');
-          }
-        }
-
-        // Update inventory if there are changes
-        if (hasInventoryChanges) {
-          const inventoryRes = await fetch(
-            `/api/v1/workspaces/${wsId}/products/${data.id}/inventory`,
-            {
-              method: 'PATCH',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ inventory: inventoryPayload }),
-            }
-          );
-
-          if (!inventoryRes.ok) {
-            throw new Error('Failed to update product inventory');
+            throw new Error('Failed to update product');
           }
         }
       } else {
-        // For new products, create product first, then add inventory
+        // For new products, create product and inventory in one request
+        const createPayload = {
+          ...productPayload,
+          ...(inventoryPayload.length > 0 && { inventory: inventoryPayload }),
+        };
+
         const productRes = await fetch(`/api/v1/workspaces/${wsId}/products`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(productPayload),
+          body: JSON.stringify(createPayload),
         });
 
         if (!productRes.ok) {
           throw new Error('Failed to create product');
-        }
-
-        const newProduct = await productRes.json();
-        const productId = newProduct.id || newProduct.data?.id;
-
-        // Add inventory if not unlimited stock
-        if (inventoryPayload.length > 0) {
-          const inventoryRes = await fetch(
-            `/api/v1/workspaces/${wsId}/products/${productId}/inventory`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ inventory: inventoryPayload }),
-            }
-          );
-
-          if (!inventoryRes.ok) {
-            throw new Error('Failed to create product inventory');
-          }
         }
       }
 
       // Success - redirect to products list
       onFinish?.(formData);
       setLoading(false);
-      toast('Product saved successfully');
+      toast.success(t('ws-inventory-products.product_saved_successfully'));
+
+      // Clear form fields only for new products
+      if (!data?.id) {
+        form.reset({
+          name: '',
+          manufacturer: '',
+          description: '',
+          usage: '',
+          category_id: '',
+          inventory: hasUnlimitedStock
+            ? []
+            : [
+                {
+                  unit_id: '',
+                  warehouse_id: '',
+                  min_amount: 0,
+                  amount: 0,
+                  price: 0,
+                },
+              ],
+        });
+        // Also reset the unlimited stock toggle for new products
+        setHasUnlimitedStock(true);
+      }
       // router.push('../products');
     } catch (error) {
       setLoading(false);
       console.error('Error saving product:', error);
-      toast(
-        'Error saving product: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      );
+      toast.error(t('ws-inventory-products.failed_save_product'));
     }
   }
 
@@ -790,7 +797,13 @@ export function ProductForm({
         title={t('ws-product-categories.create')}
         editDescription={t('ws-product-categories.create_description')}
         setOpen={setCategoryDialog}
-        form={<ProductCategoryForm wsId={wsId} />}
+        form={
+          <ProductCategoryForm
+            wsId={wsId}
+            canCreateInventory={canCreateInventory}
+            canUpdateInventory={canUpdateInventory}
+          />
+        }
       />
 
       <ModifiableDialogTrigger
@@ -799,7 +812,13 @@ export function ProductForm({
         title={t('ws-product-warehouses.create')}
         editDescription={t('ws-product-warehouses.create_description')}
         setOpen={setWarehouseDialog}
-        form={<ProductWarehouseForm wsId={wsId} />}
+        form={
+          <ProductWarehouseForm
+            wsId={wsId}
+            canCreateInventory={canCreateInventory}
+            canUpdateInventory={canUpdateInventory}
+          />
+        }
       />
     </>
   );

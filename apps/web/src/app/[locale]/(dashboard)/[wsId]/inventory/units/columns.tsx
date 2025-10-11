@@ -8,7 +8,12 @@ import { ProductUnitRowActions } from './row-actions';
 
 export const productUnitColumns = (
   t: any,
-  namespace: string | undefined
+  namespace: string | undefined,
+  extraColumns?: any[],
+  extraData?: {
+    canDeleteInventory?: boolean;
+    canUpdateInventory?: boolean;
+  }
 ): ColumnDef<ProductUnit>[] => [
   // {
   //   id: 'select',
@@ -72,6 +77,12 @@ export const productUnitColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => <ProductUnitRowActions row={row} />,
+    cell: ({ row }) => (
+      <ProductUnitRowActions
+        row={row}
+        canDeleteInventory={extraData?.canDeleteInventory}
+        canUpdateInventory={extraData?.canUpdateInventory}
+      />
+    ),
   },
 ];
