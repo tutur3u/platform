@@ -13,8 +13,12 @@ import type { QueryClient, UseMutationResult } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
-import type { MutableRefObject } from 'react';
-import { MAX_SAFE_INTEGER_SORT } from './kanban-constants';
+import type { RefObject } from 'react';
+import {
+  DEFAULT_TASK_HEIGHT,
+  MAX_SAFE_INTEGER_SORT,
+  STATUS_ORDER,
+} from './kanban-constants';
 
 interface DragPreviewPosition {
   listId: string;
@@ -43,8 +47,8 @@ interface DragHandlersConfig {
   clearSelection: () => void;
 
   // Refs
-  pickedUpTaskColumn: MutableRefObject<string | null>;
-  taskHeightsRef: MutableRefObject<Map<string, number>>;
+  pickedUpTaskColumn: RefObject<string | null>;
+  taskHeightsRef: RefObject<Map<string, number>>;
 
   // Query & mutations
   queryClient: QueryClient;
@@ -158,8 +162,9 @@ export function createDragHandlers(config: DragHandlersConfig) {
       let targetListId: string;
       const overType = over.data?.current?.type;
 
-      // Get cached height for the dragged task, fallback to 96px
-      const cachedHeight = taskHeightsRef.current.get(activeTask.id) || 96;
+      // Get cached height for the dragged task, fallback to DEFAULT_TASK_HEIGHT
+      const cachedHeight =
+        taskHeightsRef.current.get(activeTask.id) || DEFAULT_TASK_HEIGHT;
 
       if (overType === 'Column') {
         targetListId = String(over.id);
@@ -240,16 +245,12 @@ export function createDragHandlers(config: DragHandlersConfig) {
       overId: overColumn.id,
     });
 
-    // Find the positions in the sorted array
-    const sortedColumns = columns.sort((a, b) => {
-      const statusOrder = {
-        not_started: 0,
-        active: 1,
-        done: 2,
-        closed: 3,
-      };
-      const statusA = statusOrder[a.status as keyof typeof statusOrder] ?? 999;
-      const statusB = statusOrder[b.status as keyof typeof statusOrder] ?? 999;
+    // Find the positions in the sorted array (create shallow copy to avoid mutating props)
+    const sortedColumns = [...columns].sort((a, b) => {
+      const statusA =
+        STATUS_ORDER[a.status as keyof typeof STATUS_ORDER] ?? 999;
+      const statusB =
+        STATUS_ORDER[b.status as keyof typeof STATUS_ORDER] ?? 999;
       if (statusA !== statusB) return statusA - statusB;
       return a.position - b.position;
     });
@@ -328,11 +329,16 @@ export function createDragHandlers(config: DragHandlersConfig) {
       newSortKey
     );
 
-    reorderTaskMutation.mutate({
-      taskId: activeTask.id,
-      newListId: targetListId,
-      newSortKey,
-    });
+    try {
+      await reorderTaskMutation.mutateAsync({
+        taskId: activeTask.id,
+        newListId: targetListId,
+        newSortKey,
+      });
+    } catch (error) {
+      console.error('Failed to reorder task:', error);
+      // Optimistic update has already been rolled back by React Query's onError
+    }
   }
 
   /**
@@ -586,9 +592,17 @@ export function createDragHandlers(config: DragHandlersConfig) {
       const isSameList = originalListId === targetListId;
 
       if (isSameList && activeIndex !== -1) {
-        // Same list reorder - use arrayMove
-        reorderedTasks = arrayMove(targetListTasks, activeIndex, overIndex);
-        console.log('📍 Same-list reorder using arrayMove');
+        // Guard: Skip reordering if dropping on same position
+        if (activeIndex === overIndex) {
+          console.log(
+            '📍 Same-list same-index drop detected, skipping reorder'
+          );
+          reorderedTasks = targetListTasks;
+        } else {
+          // Same list reorder - use arrayMove
+          reorderedTasks = arrayMove(targetListTasks, activeIndex, overIndex);
+          console.log('📍 Same-list reorder using arrayMove');
+        }
       } else {
         // Cross-list move - simulate arrayMove behavior for visual consistency
         // @dnd-kit shows the task at the overIndex position when dragging

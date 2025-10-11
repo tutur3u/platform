@@ -8,13 +8,7 @@ import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
-
-interface WorkspaceLabel {
-  id: string;
-  name: string;
-  color: string;
-  created_at: string;
-}
+import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
 
 interface WorkspaceProject {
   id: string;
@@ -36,6 +30,24 @@ interface BulkOperationsConfig {
 }
 
 /**
+ * Public API returned by createBulkOperations factory
+ */
+export interface BulkOps {
+  bulkUpdatePriority: (priority: Task['priority'] | null) => Promise<void>;
+  bulkUpdateEstimation: (points: number | null) => Promise<void>;
+  bulkUpdateDueDate: (
+    preset: 'today' | 'tomorrow' | 'week' | 'clear'
+  ) => Promise<void>;
+  bulkMoveToStatus: (status: 'done' | 'closed') => Promise<void>;
+  bulkAddLabel: (labelId: string) => Promise<void>;
+  bulkRemoveLabel: (labelId: string) => Promise<void>;
+  bulkAddProject: (projectId: string) => Promise<void>;
+  bulkRemoveProject: (projectId: string) => Promise<void>;
+  bulkDeleteTasks: () => Promise<void>;
+  getListIdByStatus: (status: 'done' | 'closed') => string | null;
+}
+
+/**
  * Creates bulk operation functions with necessary dependencies
  * All functions follow the same pattern:
  * 1. Validate selected tasks
@@ -44,7 +56,7 @@ interface BulkOperationsConfig {
  * 4. Invalidate queries
  * 5. Rollback on error
  */
-export function createBulkOperations(config: BulkOperationsConfig) {
+export function createBulkOperations(config: BulkOperationsConfig): BulkOps {
   const {
     queryClient,
     supabase,
@@ -389,7 +401,7 @@ export function createBulkOperations(config: BulkOperationsConfig) {
   }
 
   /**
-   * Delete all selected tasks permanently
+   * Soft-delete all selected tasks (sets deleted flag)
    */
   async function bulkDeleteTasks() {
     if (selectedTasks.size === 0) return;
@@ -407,7 +419,10 @@ export function createBulkOperations(config: BulkOperationsConfig) {
           prev.filter((t) => !ids.includes(t.id))
         );
       }
-      const { error } = await supabase.from('tasks').delete().in('id', ids);
+      const { error } = await supabase
+        .from('tasks')
+        .update({ deleted: true })
+        .in('id', ids);
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
       clearSelection();

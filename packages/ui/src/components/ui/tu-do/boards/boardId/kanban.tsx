@@ -460,7 +460,7 @@ export function KanbanBoard({
       const supabase = createClient();
       const { data, error } = await supabase
         .from('workspace_task_labels')
-        .select('id, name, color, created_at')
+        .select('id, name, color, created_at, ws_id')
         .eq('ws_id', workspace.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -469,6 +469,7 @@ export function KanbanBoard({
         name: string;
         color: string;
         created_at: string;
+        ws_id: string;
       }[];
     },
     staleTime: 30000,
