@@ -43,7 +43,6 @@ const TransactionUpdateSchema = z.object({
   taken_at: z.string().or(z.date()).optional(),
   report_opt_in: z.boolean().optional(),
   tag_ids: z.array(z.uuid()).optional(),
-  id: z.uuid().optional(),
 });
 
 export async function GET(_: Request, { params }: Params) {
@@ -105,7 +104,6 @@ export async function PUT(req: Request, { params }: Params) {
   const parsed = TransactionUpdateSchema.safeParse(await req.json());
  
 
-  const normalizedId = transactionId;
 
   if (!parsed.success) {
     return NextResponse.json(
@@ -189,11 +187,11 @@ export async function PUT(req: Request, { params }: Params) {
   const { error } = await supabase
     .from('wallet_transactions')
     .update(updatePayload)
-    .eq('id', normalizedId);
+    .eq('id', transactionId);
 
   if (error) {
     console.error('Error updating transaction:', {
-      transactionId: normalizedId,
+      transactionId: transactionId,
       error: error.message,
       updatePayload
     });

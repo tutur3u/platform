@@ -14,7 +14,7 @@ export default async function SuppliersStatistics({ wsId }: { wsId: string }) {
 
   const { count: suppliers, error } = await supabase
         .from('inventory_suppliers')
-        .select('*', {
+        .select('id', {
           count: 'exact',
           head: true,
         })
@@ -28,7 +28,7 @@ export default async function SuppliersStatistics({ wsId }: { wsId: string }) {
   return (
     <StatisticCard
       title={t('workspace-inventory-tabs.suppliers')}
-      value={suppliers}
+      value={suppliers ?? 0}
       href={`/${wsId}/inventory/suppliers`}
     />
   );

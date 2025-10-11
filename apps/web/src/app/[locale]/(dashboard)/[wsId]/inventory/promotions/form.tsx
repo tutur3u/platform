@@ -187,8 +187,12 @@ export function PromotionForm({
                 <FormControl>
                   <Input
                     type="number"
-                    {...field}
                     placeholder={t('ws-inventory-promotions.form.value')}
+                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                    onBlur={field.onBlur}
+                    value={field.value as number | undefined ?? ''}
+                    name={field.name}
+                    ref={field.ref}
                   />
                 </FormControl>
                 <FormMessage />

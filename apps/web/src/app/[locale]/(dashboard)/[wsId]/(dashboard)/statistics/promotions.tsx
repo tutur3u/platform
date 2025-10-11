@@ -14,7 +14,7 @@ export default async function PromotionsStatistics({ wsId }: { wsId: string }) {
   if (withoutPermission('view_inventory')) return null;
   const { count: promotions, error } = await supabase
         .from('workspace_promotions')
-        .select('*', {
+        .select('id', {
           count: 'exact',
           head: true,
         })
@@ -29,7 +29,7 @@ export default async function PromotionsStatistics({ wsId }: { wsId: string }) {
   return (
     <StatisticCard
       title={t('workspace-inventory-tabs.promotions')}
-      value={promotions}
+      value={promotions ?? 0}
       href={`/${wsId}/inventory/promotions`}
     />
   );

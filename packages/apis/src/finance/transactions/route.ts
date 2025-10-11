@@ -14,7 +14,7 @@ interface Params {
     amount: z.number(),
     origin_wallet_id: z.string().uuid(),
     category_id: z.string().uuid().optional(),
-    taken_at: z.string().or(z.date()),
+    taken_at: z.union([z.string(), z.date()]),
     report_opt_in: z.boolean().optional(),
     tag_ids: z.array(z.string().uuid()).optional(),
   });
@@ -139,9 +139,7 @@ export async function POST(req: Request, { params }: Params) {
       taken_at:
         typeof data.taken_at === 'string'
           ? new Date(data.taken_at).toISOString()
-          : (data.taken_at instanceof Date
-              ? data.taken_at.toISOString()
-              : data.taken_at),
+          : data.taken_at.toISOString(),
       report_opt_in: data.report_opt_in || false,
       creator_id: wsUser.virtual_user_id,
     })
