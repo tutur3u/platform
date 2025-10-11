@@ -1,5 +1,6 @@
 'use client';
 
+import './collaboration-carets.css';
 import {
   type Editor,
   EditorContent,
