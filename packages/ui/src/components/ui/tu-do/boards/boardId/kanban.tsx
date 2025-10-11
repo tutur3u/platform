@@ -61,6 +61,8 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
 import {
   calculateSortKey,
+  normalizeListSortKeys,
+  SortKeyGapExhaustedError,
   useBoardConfig,
   useMoveTaskToBoard,
   useReorderTask,
@@ -965,6 +967,55 @@ export function KanbanBoard({
     [activeColumn, tasks, boardId, workspace.personal, handleUpdate]
   );
 
+  /**
+   * Helper function to calculate sort key with automatic retry on gap exhaustion
+   * If SortKeyGapExhaustedError is thrown, normalizes the list and retries once
+   */
+  const calculateSortKeyWithRetry = useCallback(
+    async (
+      prevSortKey: number | null | undefined,
+      nextSortKey: number | null | undefined,
+      listId: string
+    ): Promise<number> => {
+      try {
+        return calculateSortKey(prevSortKey, nextSortKey);
+      } catch (error) {
+        if (error instanceof SortKeyGapExhaustedError) {
+          console.warn(
+            '⚠️ Sort key gap exhausted, normalizing list and retrying...',
+            {
+              listId,
+              prevSortKey,
+              nextSortKey,
+              error: error.message,
+            }
+          );
+
+          try {
+            // Normalize the list sort keys
+            await normalizeListSortKeys(supabase, listId);
+            console.log('✅ List sort keys normalized, retrying calculation...');
+
+            // Retry the calculation after normalization
+            return calculateSortKey(prevSortKey, nextSortKey);
+          } catch (retryError) {
+            console.error(
+              '❌ Failed to calculate sort key after normalization:',
+              retryError
+            );
+            toast.error(
+              'Failed to reorder task. Please try again or refresh the page.'
+            );
+            throw retryError;
+          }
+        }
+        // Re-throw non-SortKeyGapExhaustedError errors
+        throw error;
+      }
+    },
+    [supabase]
+  );
+
   async function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
@@ -1317,41 +1368,84 @@ export function KanbanBoard({
         );
 
         // Calculate sort_key based on neighbors in the reordered array
-        if (reorderedTasks.length === 1) {
-          // Only task in the list - use default from calculateSortKey
-          newSortKey = calculateSortKey(null, null);
-        } else if (newIndex === 0) {
-          // At beginning - next task is at index 1
-          const nextTask = reorderedTasks[1];
-          newSortKey = calculateSortKey(null, nextTask?.sort_key ?? null);
-        } else if (newIndex === reorderedTasks.length - 1) {
-          // At end - prev task is at index length-2
-          const prevTask = reorderedTasks[reorderedTasks.length - 2];
-          newSortKey = calculateSortKey(prevTask?.sort_key ?? null, null);
-        } else {
-          // In middle - use the actual prev and next tasks
-          const prevTask = reorderedTasks[newIndex - 1];
-          const nextTask = reorderedTasks[newIndex + 1];
-          newSortKey = calculateSortKey(
-            prevTask?.sort_key ?? null,
-            nextTask?.sort_key ?? null
-          );
+        try {
+          if (reorderedTasks.length === 1) {
+            // Only task in the list - use default from calculateSortKey
+            newSortKey = await calculateSortKeyWithRetry(null, null, targetListId);
+          } else if (newIndex === 0) {
+            // At beginning - next task is at index 1
+            const nextTask = reorderedTasks[1];
+            newSortKey = await calculateSortKeyWithRetry(
+              null,
+              nextTask?.sort_key ?? null,
+              targetListId
+            );
+          } else if (newIndex === reorderedTasks.length - 1) {
+            // At end - prev task is at index length-2
+            const prevTask = reorderedTasks[reorderedTasks.length - 2];
+            newSortKey = await calculateSortKeyWithRetry(
+              prevTask?.sort_key ?? null,
+              null,
+              targetListId
+            );
+          } else {
+            // In middle - use the actual prev and next tasks
+            const prevTask = reorderedTasks[newIndex - 1];
+            const nextTask = reorderedTasks[newIndex + 1];
+            newSortKey = await calculateSortKeyWithRetry(
+              prevTask?.sort_key ?? null,
+              nextTask?.sort_key ?? null,
+              targetListId
+            );
+          }
+        } catch (error) {
+          console.error('Failed to calculate sort key:', error);
+          // Reset drag state on error
+          setActiveColumn(null);
+          setActiveTask(null);
+          setHoverTargetListId(null);
+          setDragPreviewPosition(null);
+          pickedUpTaskColumn.current = null;
+          (processDragOver as any).lastTargetListId = null;
+          setOptimisticUpdateInProgress(new Set());
+          return;
         }
       } else {
         // Dropped on column or column surface
         // When dropping on Column (the column header), insert at the BEGINNING
         // When dropping on ColumnSurface (empty space in column), insert at the END
 
-        if (targetListTasks.length === 0) {
-          newSortKey = calculateSortKey(null, null);
-        } else if (overType === 'Column') {
-          // Dropping on column header - insert at the BEGINNING
-          const firstTask = targetListTasks[0];
-          newSortKey = calculateSortKey(null, firstTask?.sort_key ?? null);
-        } else {
-          // Dropping on ColumnSurface - add to the END
-          const lastTask = targetListTasks[targetListTasks.length - 1];
-          newSortKey = calculateSortKey(lastTask?.sort_key ?? null, null);
+        try {
+          if (targetListTasks.length === 0) {
+            newSortKey = await calculateSortKeyWithRetry(null, null, targetListId);
+          } else if (overType === 'Column') {
+            // Dropping on column header - insert at the BEGINNING
+            const firstTask = targetListTasks[0];
+            newSortKey = await calculateSortKeyWithRetry(
+              null,
+              firstTask?.sort_key ?? null,
+              targetListId
+            );
+          } else {
+            // Dropping on ColumnSurface - add to the END
+            const lastTask = targetListTasks[targetListTasks.length - 1];
+            newSortKey = await calculateSortKeyWithRetry(
+              lastTask?.sort_key ?? null,
+              null,
+              targetListId
+            );
+          }
+        } catch (error) {
+          console.error('Failed to calculate sort key:', error);
+          // Reset drag state on error
+          setActiveColumn(null);
+          setActiveTask(null);
+          setHoverTargetListId(null);
+          setDragPreviewPosition(null);
+          pickedUpTaskColumn.current = null;
+          (processDragOver as any).lastTargetListId = null;
+          setOptimisticUpdateInProgress(new Set());
+          return;
         }
       }
 
@@ -1450,117 +1544,147 @@ export function KanbanBoard({
             simulatedTargetList.map((t, i) => `${i}: ${t.name}`)
           );
 
-          sortedTasksToMove.forEach((task) => {
-            let batchSortKey: number;
+          // Process batch move with proper error handling
+          try {
+            for (const task of sortedTasksToMove) {
+              let batchSortKey: number;
 
-            // Find the task's position in the simulated list
-            const positionInSimulated = simulatedTargetList.findIndex(
-              (t) => t.id === task.id
-            );
+              // Find the task's position in the simulated list
+              const positionInSimulated = simulatedTargetList.findIndex(
+                (t) => t.id === task.id
+              );
 
-            if (simulatedTargetList.length === 1) {
-              // Only task in list - use default from calculateSortKey
-              batchSortKey = calculateSortKey(null, null);
-            } else if (positionInSimulated === 0) {
-              // At beginning - calculate based on next task
-              const nextTask = simulatedTargetList[1];
-              batchSortKey = calculateSortKey(null, nextTask?.sort_key ?? null);
-            } else if (positionInSimulated === simulatedTargetList.length - 1) {
-              // At end - calculate based on prev task
-              const prevTask = simulatedTargetList[positionInSimulated - 1];
-              batchSortKey = calculateSortKey(prevTask?.sort_key ?? null, null);
-            } else {
-              // In middle - use actual neighbors
-              const prevTask = simulatedTargetList[positionInSimulated - 1];
-              const nextTask = simulatedTargetList[positionInSimulated + 1];
-
-              // Calculate based on neighbors
-              const prevIsMoving = prevTask
-                ? selectedTasks.has(prevTask.id)
-                : false;
-              const nextIsMoving = nextTask
-                ? selectedTasks.has(nextTask.id)
-                : false;
-
-              if (!prevIsMoving && !nextIsMoving) {
-                // Both neighbors are stationary - use their sort keys
-                batchSortKey = calculateSortKey(
-                  prevTask?.sort_key ?? null,
-                  nextTask?.sort_key ?? null
+              if (simulatedTargetList.length === 1) {
+                // Only task in list - use default from calculateSortKey
+                batchSortKey = await calculateSortKeyWithRetry(
+                  null,
+                  null,
+                  targetListId
                 );
-              } else if (prevIsMoving && !nextIsMoving) {
-                // Prev is moving, next is stationary
-                // Find the first non-moving task before this position
-                let stationaryPrev: Task | undefined;
-                for (let i = positionInSimulated - 1; i >= 0; i--) {
-                  const currentTask = simulatedTargetList[i];
-                  if (currentTask && !selectedTasks.has(currentTask.id)) {
-                    stationaryPrev = currentTask;
-                    break;
-                  }
-                }
-                batchSortKey = calculateSortKey(
-                  stationaryPrev?.sort_key ?? null,
-                  nextTask?.sort_key ?? null
+              } else if (positionInSimulated === 0) {
+                // At beginning - calculate based on next task
+                const nextTask = simulatedTargetList[1];
+                batchSortKey = await calculateSortKeyWithRetry(
+                  null,
+                  nextTask?.sort_key ?? null,
+                  targetListId
                 );
-              } else if (!prevIsMoving && nextIsMoving) {
-                // Prev is stationary, next is moving
-                // Find the first non-moving task after this position
-                let stationaryNext: Task | undefined;
-                for (
-                  let i = positionInSimulated + 1;
-                  i < simulatedTargetList.length;
-                  i++
-                ) {
-                  const currentTask = simulatedTargetList[i];
-                  if (currentTask && !selectedTasks.has(currentTask.id)) {
-                    stationaryNext = currentTask;
-                    break;
-                  }
-                }
-                batchSortKey = calculateSortKey(
+              } else if (positionInSimulated === simulatedTargetList.length - 1) {
+                // At end - calculate based on prev task
+                const prevTask = simulatedTargetList[positionInSimulated - 1];
+                batchSortKey = await calculateSortKeyWithRetry(
                   prevTask?.sort_key ?? null,
-                  stationaryNext?.sort_key ?? null
+                  null,
+                  targetListId
                 );
               } else {
-                // Both neighbors are moving - find boundary tasks
-                let boundaryPrev: Task | undefined;
-                let boundaryNext: Task | undefined;
+                // In middle - use actual neighbors
+                const prevTask = simulatedTargetList[positionInSimulated - 1];
+                const nextTask = simulatedTargetList[positionInSimulated + 1];
 
-                for (let i = positionInSimulated - 1; i >= 0; i--) {
-                  const currentTask = simulatedTargetList[i];
-                  if (currentTask && !selectedTasks.has(currentTask.id)) {
-                    boundaryPrev = currentTask;
-                    break;
+                // Calculate based on neighbors
+                const prevIsMoving = prevTask
+                  ? selectedTasks.has(prevTask.id)
+                  : false;
+                const nextIsMoving = nextTask
+                  ? selectedTasks.has(nextTask.id)
+                  : false;
+
+                if (!prevIsMoving && !nextIsMoving) {
+                  // Both neighbors are stationary - use their sort keys
+                  batchSortKey = await calculateSortKeyWithRetry(
+                    prevTask?.sort_key ?? null,
+                    nextTask?.sort_key ?? null,
+                    targetListId
+                  );
+                } else if (prevIsMoving && !nextIsMoving) {
+                  // Prev is moving, next is stationary
+                  // Find the first non-moving task before this position
+                  let stationaryPrev: Task | undefined;
+                  for (let i = positionInSimulated - 1; i >= 0; i--) {
+                    const currentTask = simulatedTargetList[i];
+                    if (currentTask && !selectedTasks.has(currentTask.id)) {
+                      stationaryPrev = currentTask;
+                      break;
+                    }
                   }
-                }
-
-                for (
-                  let i = positionInSimulated + 1;
-                  i < simulatedTargetList.length;
-                  i++
-                ) {
-                  const currentTask = simulatedTargetList[i];
-                  if (currentTask && !selectedTasks.has(currentTask.id)) {
-                    boundaryNext = currentTask;
-                    break;
+                  batchSortKey = await calculateSortKeyWithRetry(
+                    stationaryPrev?.sort_key ?? null,
+                    nextTask?.sort_key ?? null,
+                    targetListId
+                  );
+                } else if (!prevIsMoving && nextIsMoving) {
+                  // Prev is stationary, next is moving
+                  // Find the first non-moving task after this position
+                  let stationaryNext: Task | undefined;
+                  for (
+                    let i = positionInSimulated + 1;
+                    i < simulatedTargetList.length;
+                    i++
+                  ) {
+                    const currentTask = simulatedTargetList[i];
+                    if (currentTask && !selectedTasks.has(currentTask.id)) {
+                      stationaryNext = currentTask;
+                      break;
+                    }
                   }
-                }
+                  batchSortKey = await calculateSortKeyWithRetry(
+                    prevTask?.sort_key ?? null,
+                    stationaryNext?.sort_key ?? null,
+                    targetListId
+                  );
+                } else {
+                  // Both neighbors are moving - find boundary tasks
+                  let boundaryPrev: Task | undefined;
+                  let boundaryNext: Task | undefined;
 
-                // Use calculateSortKey with boundaries
-                batchSortKey = calculateSortKey(
-                  boundaryPrev?.sort_key ?? null,
-                  boundaryNext?.sort_key ?? null
-                );
+                  for (let i = positionInSimulated - 1; i >= 0; i--) {
+                    const currentTask = simulatedTargetList[i];
+                    if (currentTask && !selectedTasks.has(currentTask.id)) {
+                      boundaryPrev = currentTask;
+                      break;
+                    }
+                  }
+
+                  for (
+                    let i = positionInSimulated + 1;
+                    i < simulatedTargetList.length;
+                    i++
+                  ) {
+                    const currentTask = simulatedTargetList[i];
+                    if (currentTask && !selectedTasks.has(currentTask.id)) {
+                      boundaryNext = currentTask;
+                      break;
+                    }
+                  }
+
+                  // Use calculateSortKey with boundaries
+                  batchSortKey = await calculateSortKeyWithRetry(
+                    boundaryPrev?.sort_key ?? null,
+                    boundaryNext?.sort_key ?? null,
+                    targetListId
+                  );
+                }
               }
-            }
 
-            reorderTaskMutation.mutate({
-              taskId: task.id,
-              newListId: targetListId,
-              newSortKey: batchSortKey,
-            });
-          });
+              reorderTaskMutation.mutate({
+                taskId: task.id,
+                newListId: targetListId,
+                newSortKey: batchSortKey,
+              });
+            }
+          } catch (error) {
+            console.error('Failed to calculate sort keys for batch move:', error);
+            // Reset drag state on error
+            setActiveColumn(null);
+            setActiveTask(null);
+            setHoverTargetListId(null);
+            setDragPreviewPosition(null);
+            pickedUpTaskColumn.current = null;
+            (processDragOver as any).lastTargetListId = null;
+            setOptimisticUpdateInProgress(new Set());
+            return;
+          }
 
           // Clear selection after batch move
           clearSelection();

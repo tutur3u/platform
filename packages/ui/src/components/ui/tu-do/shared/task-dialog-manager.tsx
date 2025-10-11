@@ -1,13 +1,17 @@
 'use client';
 
-import { lazy, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
 
 // Lazy load the heavy TaskEditDialog component
-const TaskEditDialog = lazy(() =>
-  import('./task-edit-dialog.js').then((mod) => ({
-    default: mod.TaskEditDialog,
-  }))
+const TaskEditDialog = dynamic(
+  () =>
+    import('./task-edit-dialog.js').then((mod) => ({
+      default: mod.TaskEditDialog,
+    })),
+  {
+    ssr: false,
+  }
 );
 
 /**
@@ -24,17 +28,15 @@ export function TaskDialogManager() {
   }
 
   return (
-    <Suspense fallback={null}>
-      <TaskEditDialog
-        task={state.task}
-        boardId={state.boardId || ''}
-        isOpen={state.isOpen}
-        onClose={closeDialog}
-        onUpdate={triggerUpdate}
-        availableLists={state.availableLists}
-        mode={state.mode}
-        showUserPresence={state.showUserPresence}
-      />
-    </Suspense>
+    <TaskEditDialog
+      task={state.task}
+      boardId={state.boardId || ''}
+      isOpen={state.isOpen}
+      onClose={closeDialog}
+      onUpdate={triggerUpdate}
+      availableLists={state.availableLists}
+      mode={state.mode}
+      showUserPresence={state.showUserPresence}
+    />
   );
 }

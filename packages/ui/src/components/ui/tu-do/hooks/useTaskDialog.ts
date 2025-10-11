@@ -1,3 +1,5 @@
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
 
 /**
@@ -19,7 +21,16 @@ import { useTaskDialogContext } from '../providers/task-dialog-provider';
  * });
  * ```
  */
-export function useTaskDialog() {
+export function useTaskDialog(): {
+  openTask: (task: Task, boardId: string, availableLists?: TaskList[]) => void;
+  createTask: (
+    boardId: string,
+    listId: string,
+    availableLists?: TaskList[]
+  ) => void;
+  closeDialog: () => void;
+  onUpdate: (callback: () => void) => void;
+} {
   const { openTask, createTask, closeDialog, onUpdate } =
     useTaskDialogContext();
 
