@@ -49,7 +49,7 @@ let syncGoogleCalendarEventsForWorkspaceBatched: any;
 let syncWorkspaceBatched: any;
 
 beforeAll(async () => {
-  const mod = await import('../google-calendar-sync.js');
+  const mod = await import('../src/google-calendar-sync.js');
   syncGoogleCalendarEventsForWorkspaceBatched =
     mod.syncGoogleCalendarEventsForWorkspaceBatched;
   syncWorkspaceBatched = mod.syncWorkspaceBatched;

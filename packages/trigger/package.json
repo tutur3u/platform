@@ -2,12 +2,12 @@
   "name": "@tuturuuu/trigger",
   "version": "0.1.0",
   "private": true,
-  "main": "./index.ts",
+  "main": "./src/index.ts",
   "exports": {
-    ".": "./index.ts",
-    "./google-calendar-sync": "./google-calendar-sync.ts",
-    "./google-calendar-full-sync": "./google-calendar-full-sync.ts",
-    "./google-calendar-incremental-sync": "./google-calendar-incremental-sync.ts"
+    ".": "./src/index.ts",
+    "./google-calendar-sync": "./src/google-calendar-sync.ts",
+    "./google-calendar-full-sync": "./src/google-calendar-full-sync.ts",
+    "./google-calendar-incremental-sync": "./src/google-calendar-incremental-sync.ts"
   },
   "scripts": {
     "trigger:dev": "bunx trigger.dev@latest dev",
@@ -16,6 +16,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.75.0",
     "@trigger.dev/sdk": "^4.0.4",
+    "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/google": "workspace:*",

@@ -665,6 +665,7 @@
         "@tuturuuu/google": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "dayjs": "^1.11.18",
       },

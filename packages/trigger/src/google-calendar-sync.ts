@@ -254,7 +254,7 @@ export const getWorkspaceTokensByWsId = async (ws_id: string) => {
   try {
     const sbAdmin = await createAdminClient({ noCookie: true });
     const { data: tokens, error } = await sbAdmin
-      .from('workspaces')
+      .from('calendar_auth_tokens')
       .select('ws_id, access_token, refresh_token')
       .eq('ws_id', ws_id);
 
