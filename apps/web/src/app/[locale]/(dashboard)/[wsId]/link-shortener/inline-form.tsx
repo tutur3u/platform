@@ -1,12 +1,12 @@
 'use client';
 
 import {
-    Check,
-    Copy,
-    ExternalLink,
-    Link as LinkIcon,
-    Loader2,
-    Sparkles,
+  Check,
+  Copy,
+  ExternalLink,
+  Link as LinkIcon,
+  Loader2,
+  Sparkles,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';

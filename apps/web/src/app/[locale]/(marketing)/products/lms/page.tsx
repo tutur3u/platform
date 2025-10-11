@@ -1,18 +1,18 @@
 'use client';
 
 import {
-    Award,
-    BookOpen,
-    Brain,
-    FileText,
-    GraduationCap,
-    LayoutDashboard,
-    LineChart,
-    Medal,
-    MessageSquare,
-    ShieldCheck,
-    Users,
-    Video,
+  Award,
+  BookOpen,
+  Brain,
+  FileText,
+  GraduationCap,
+  LayoutDashboard,
+  LineChart,
+  Medal,
+  MessageSquare,
+  ShieldCheck,
+  Users,
+  Video,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

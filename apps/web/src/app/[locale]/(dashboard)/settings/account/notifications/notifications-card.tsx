@@ -1,10 +1,10 @@
 import { Bell } from '@tuturuuu/icons';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@tuturuuu/ui/card';
 import { Switch } from '@tuturuuu/ui/switch';
 import { getTranslations } from 'next-intl/server';

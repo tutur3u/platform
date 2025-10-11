@@ -1,7 +1,7 @@
 import { Activity, ArrowLeft, Clock } from '@tuturuuu/icons';
 import {
-    createAdminClient,
-    createClient,
+  createAdminClient,
+  createClient,
 } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';

@@ -1,10 +1,10 @@
 import { Node } from '@tiptap/react';
 import {
-    Box,
-    BriefcaseBusiness,
-    Calendar,
-    CircleCheck,
-    User,
+  Box,
+  BriefcaseBusiness,
+  Calendar,
+  CircleCheck,
+  User,
 } from '@tuturuuu/icons';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 // @ts-expect-error - Bun types issue with react-dom/server subpath

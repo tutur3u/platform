@@ -2,13 +2,13 @@
 
 import { useQuery } from '@tanstack/react-query';
 import {
-    AlertCircle,
-    Calendar,
-    CheckCircle2,
-    ChevronDown,
-    ChevronUp,
-    Clock,
-    Flag,
+  AlertCircle,
+  Calendar,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Flag,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';

@@ -1,44 +1,44 @@
 'use client';
 
 import {
-    canUnlinkIdentity,
-    getProviderDisplayName,
-    getUserIdentities,
-    type Identity,
-    linkIdentity,
-    unlinkIdentity,
+  canUnlinkIdentity,
+  getProviderDisplayName,
+  getUserIdentities,
+  type Identity,
+  linkIdentity,
+  unlinkIdentity,
 } from '@tuturuuu/auth/identity-linking';
 import {
-    AlertTriangle,
-    CheckCircle2,
-    ExternalLink,
-    Github,
-    Globe,
-    Link as LinkIcon,
-    Shield,
-    Trash2,
-    Zap,
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  Github,
+  Globe,
+  Link as LinkIcon,
+  Shield,
+  Trash2,
+  Zap,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@tuturuuu/ui/alert-dialog';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Skeleton } from '@tuturuuu/ui/skeleton';

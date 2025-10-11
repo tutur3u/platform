@@ -1,36 +1,36 @@
 import {
-    BookPlus,
-    Clock,
-    Eye,
-    Pencil,
-    Settings,
-    Trash2,
+  BookPlus,
+  Clock,
+  Eye,
+  Pencil,
+  Settings,
+  Trash2,
 } from '@tuturuuu/icons';
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import {
-    DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
@@ -152,7 +152,7 @@ export default function UserGroupPosts({
 
   return (
     <>
-      <div className='flex flex-row items-center justify-between gap-2'>
+      <div className="flex flex-row items-center justify-between gap-2">
         <div className="font-semibold text-xl">
           {t('ws-user-groups.posts')}
           {!!count && ` (${count})`}
@@ -299,7 +299,7 @@ export default function UserGroupPosts({
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <div className='text-left font-semibold text-sm'>
+                  <div className="text-left font-semibold text-sm">
                     {post.title}
                   </div>
                   <div className="flex flex-wrap items-center gap-2 font-semibold">

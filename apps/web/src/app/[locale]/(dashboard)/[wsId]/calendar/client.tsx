@@ -4,8 +4,8 @@ import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sparkles } from '@tuturuuu/icons';
 import type {
-    Workspace,
-    WorkspaceCalendarGoogleToken,
+  Workspace,
+  WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';

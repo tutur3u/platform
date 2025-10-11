@@ -4,9 +4,9 @@ import { ChevronDown } from '@tuturuuu/icons';
 import type { GanttTask } from '@tuturuuu/types/primitives/Task';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
 import { cn } from '@tuturuuu/utils/format';
 

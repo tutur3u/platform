@@ -1,12 +1,12 @@
 'use client';
 
 import {
-    ArrowRight,
-    CheckCircle,
-    Rocket,
-    Settings,
-    Users,
-    Zap,
+  ArrowRight,
+  CheckCircle,
+  Rocket,
+  Settings,
+  Users,
+  Zap,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';

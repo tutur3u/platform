@@ -2,21 +2,21 @@
 
 import type { Event, Task } from '@tuturuuu/ai/scheduling/types';
 import {
-    AlertTriangleIcon,
-    CalendarIcon,
-    ClockIcon,
-    LockIcon,
-    SparklesIcon,
-    TrendingUpIcon,
+  AlertTriangleIcon,
+  CalendarIcon,
+  ClockIcon,
+  LockIcon,
+  SparklesIcon,
+  TrendingUpIcon,
 } from '@tuturuuu/icons';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@tuturuuu/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import dayjs from 'dayjs';

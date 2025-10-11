@@ -1,18 +1,18 @@
 'use client';
 
 import {
-    BarChart3,
-    Box,
-    Boxes,
-    Building2,
-    History,
-    PackageSearch,
-    QrCode,
-    RefreshCw,
-    Settings,
-    ShieldCheck,
-    Truck,
-    Warehouse,
+  BarChart3,
+  Box,
+  Boxes,
+  Building2,
+  History,
+  PackageSearch,
+  QrCode,
+  RefreshCw,
+  Settings,
+  ShieldCheck,
+  Truck,
+  Warehouse,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

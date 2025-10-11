@@ -1,28 +1,28 @@
 'use client';
 
 import {
-    BarChart3,
-    Bell,
-    Box,
-    CreditCard,
-    DollarSign,
-    Gift,
-    LineChart,
-    PackageSearch,
-    QrCode,
-    Receipt,
-    Settings,
-    ShoppingBag,
-    ShoppingCart,
-    Star,
-    Store,
-    Tag,
+  BarChart3,
+  Bell,
+  Box,
+  CreditCard,
+  DollarSign,
+  Gift,
+  LineChart,
+  PackageSearch,
+  QrCode,
+  Receipt,
+  Settings,
+  ShoppingBag,
+  ShoppingCart,
+  Star,
+  Store,
+  Tag,
 } from '@tuturuuu/icons';
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

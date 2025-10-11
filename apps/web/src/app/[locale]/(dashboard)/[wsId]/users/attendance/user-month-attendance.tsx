@@ -4,16 +4,16 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
-    WorkspaceUser,
-    WorkspaceUserAttendance,
+  WorkspaceUser,
+  WorkspaceUserAttendance,
 } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { format, isAfter, parse, startOfDay } from 'date-fns';

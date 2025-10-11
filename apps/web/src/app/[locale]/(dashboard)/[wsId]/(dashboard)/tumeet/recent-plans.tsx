@@ -1,7 +1,7 @@
 import { Calendar, SquaresIntersect, Users } from '@tuturuuu/icons';
 import {
-    createAdminClient,
-    createClient,
+  createAdminClient,
+  createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';

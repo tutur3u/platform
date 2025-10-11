@@ -2,11 +2,11 @@ import { ArrowLeft, Calendar, Clock, Users } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@tuturuuu/ui/card';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { format } from 'date-fns';

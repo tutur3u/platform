@@ -6,12 +6,12 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
 import {
-    ArrowDownCircle,
-    ArrowUpCircle,
-    Edit,
-    FolderOpen,
-    TrendingDown,
-    TrendingUp,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Edit,
+  FolderOpen,
+  TrendingDown,
+  TrendingUp,
 } from 'lucide-react';
 import moment from 'moment';
 import { useLocale, useTranslations } from 'next-intl';

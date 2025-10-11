@@ -1,28 +1,28 @@
 'use client';
 
 import {
-    BarChart3,
-    Bed,
-    Bell,
-    Building,
-    Calendar,
-    Clock,
-    Coffee,
-    DollarSign,
-    Gift,
-    HeartHandshake,
-    Hotel,
-    Key,
-    MessageSquare,
-    Settings,
-    Star,
-    Users,
+  BarChart3,
+  Bed,
+  Bell,
+  Building,
+  Calendar,
+  Clock,
+  Coffee,
+  DollarSign,
+  Gift,
+  HeartHandshake,
+  Hotel,
+  Key,
+  MessageSquare,
+  Settings,
+  Star,
+  Users,
 } from '@tuturuuu/icons';
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

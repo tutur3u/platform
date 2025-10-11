@@ -4,14 +4,14 @@ import { File, FileText, ImageIcon, X } from '@tuturuuu/icons';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    FileUploader,
-    type StatedFile,
+  FileUploader,
+  type StatedFile,
 } from '@tuturuuu/ui/custom/file-uploader';
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { useState } from 'react';
 

@@ -1,10 +1,10 @@
 'use client';
 
 import {
-    Bot,
-    LayoutDashboard,
-    PanelLeftClose,
-    PanelRightClose,
+  Bot,
+  LayoutDashboard,
+  PanelLeftClose,
+  PanelRightClose,
 } from '@tuturuuu/icons';
 import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';

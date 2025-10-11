@@ -1,11 +1,11 @@
 'use client';
 
 import {
-    ArrowLeft,
-    CheckCircle,
-    Clock,
-    CreditCard,
-    Download,
+  ArrowLeft,
+  CheckCircle,
+  Clock,
+  CreditCard,
+  Download,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';

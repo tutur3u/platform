@@ -1,18 +1,18 @@
 'use client';
 
 import {
-    Check,
-    ChevronDown,
-    Copy,
-    ExternalLink,
-    LinkIcon,
+  Check,
+  ChevronDown,
+  Copy,
+  ExternalLink,
+  LinkIcon,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';

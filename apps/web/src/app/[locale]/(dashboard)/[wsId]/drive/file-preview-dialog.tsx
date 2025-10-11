@@ -2,23 +2,23 @@
 
 import { formatBytes } from '@/utils/file-helper';
 import {
-    Download,
-    ExternalLink,
-    FileText,
-    Image as ImageIcon,
-    Loader2,
-    Music,
-    Video,
+  Download,
+  ExternalLink,
+  FileText,
+  Image as ImageIcon,
+  Loader2,
+  Music,
+  Video,
 } from '@tuturuuu/icons';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Separator } from '@tuturuuu/ui/separator';

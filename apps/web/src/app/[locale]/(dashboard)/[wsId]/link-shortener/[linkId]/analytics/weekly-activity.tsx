@@ -3,10 +3,10 @@
 import { Calendar } from '@tuturuuu/icons';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
-    type ChartConfig,
-    ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent,
+  type ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
 } from '@tuturuuu/ui/chart';
 import { useTranslations } from 'next-intl';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';

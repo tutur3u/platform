@@ -6,20 +6,20 @@ import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
@@ -33,8 +33,8 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import {
-    useCreateBoardWithTemplate,
-    useStatusTemplates,
+  useCreateBoardWithTemplate,
+  useStatusTemplates,
 } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

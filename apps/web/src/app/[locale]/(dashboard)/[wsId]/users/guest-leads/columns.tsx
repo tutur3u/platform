@@ -67,7 +67,7 @@ export const getGuestLeadColumns = (
     ),
     cell: ({ row }) => (
       <div className="text-center">
-        <span className='inline-flex items-center rounded-full bg-dynamic-green/10 px-2 py-1 font-medium text-dynamic-green text-xs'>
+        <span className="inline-flex items-center rounded-full bg-dynamic-green/10 px-2 py-1 font-medium text-dynamic-green text-xs">
           {row.getValue('attendance_count')}
         </span>
       </div>
@@ -147,7 +147,7 @@ export const getGuestLeadColumns = (
             asChild
           >
             <Link href={`./${user.id}/follow-up`}>
-              <Mail className='mr-1 h-4 w-4' />
+              <Mail className="mr-1 h-4 w-4" />
               {hasLead ? t('common.view_email') : t('common.send_email')}
             </Link>
           </Button>

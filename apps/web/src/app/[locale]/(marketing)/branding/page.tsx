@@ -340,7 +340,7 @@ const BrandingPage = () => {
                   >
                     {font.name}
                   </h3>
-                  <p className='text-base text-foreground/60 sm:text-lg'>
+                  <p className="text-base text-foreground/60 sm:text-lg">
                     {font.usage}
                   </p>
                 </div>

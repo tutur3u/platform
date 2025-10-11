@@ -1,23 +1,23 @@
 import { CustomDataTable } from '@/components/custom-data-table';
 import {
-    BarChart3,
-    Clock,
-    LinkIcon,
-    MousePointerClick,
-    TrendingUp,
-    Users,
+  BarChart3,
+  Clock,
+  LinkIcon,
+  MousePointerClick,
+  TrendingUp,
+  Users,
 } from '@tuturuuu/icons';
 import {
-    createAdminClient,
-    createClient,
+  createAdminClient,
+  createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { Tables } from '@tuturuuu/types/supabase';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@tuturuuu/ui/card';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { Metadata } from 'next';

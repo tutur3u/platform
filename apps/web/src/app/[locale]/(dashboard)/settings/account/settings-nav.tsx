@@ -1,13 +1,13 @@
 'use client';
 
 import {
-    Bell,
-    ChevronRight,
-    CreditCard,
-    Settings,
-    Shield,
-    Smartphone,
-    User,
+  Bell,
+  ChevronRight,
+  CreditCard,
+  Settings,
+  Shield,
+  Smartphone,
+  User,
 } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';

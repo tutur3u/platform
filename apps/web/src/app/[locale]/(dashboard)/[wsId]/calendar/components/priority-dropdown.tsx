@@ -2,10 +2,10 @@
 
 import { Flag } from '@tuturuuu/icons';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import type { TASK_PRIORITIES } from './priority-view';
 

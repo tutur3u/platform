@@ -1,9 +1,9 @@
 import { ShieldCheck } from '@tuturuuu/icons';
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { FormField, FormItem } from '@tuturuuu/ui/form';
 import { Separator } from '@tuturuuu/ui/separator';

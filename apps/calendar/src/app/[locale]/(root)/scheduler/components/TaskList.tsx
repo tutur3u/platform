@@ -2,33 +2,33 @@
 
 import type { Event, Task } from '@tuturuuu/ai/scheduling/types';
 import {
-    CalendarIcon,
-    CheckCircleIcon,
-    ClockIcon,
-    PlusIcon,
-    SplitIcon,
-    Trash2Icon,
-    ZapIcon,
+  CalendarIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  PlusIcon,
+  SplitIcon,
+  Trash2Icon,
+  ZapIcon,
 } from '@tuturuuu/icons';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Progress } from '@tuturuuu/ui/progress';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@tuturuuu/ui/select';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';

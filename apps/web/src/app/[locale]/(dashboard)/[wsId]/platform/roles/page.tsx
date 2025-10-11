@@ -1,17 +1,17 @@
 import { CustomDataTable } from '@/components/custom-data-table';
 import {
-    Building,
-    Crown,
-    Globe,
-    Shield,
-    UserCheck,
-    Users,
+  Building,
+  Crown,
+  Globe,
+  Shield,
+  UserCheck,
+  Users,
 } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
-    PlatformUser,
-    User,
-    UserPrivateDetails,
+  PlatformUser,
+  User,
+  UserPrivateDetails,
 } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';

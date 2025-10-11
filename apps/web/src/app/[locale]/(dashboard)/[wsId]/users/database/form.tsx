@@ -9,12 +9,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { SelectField } from '@tuturuuu/ui/custom/select-field';
 import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
@@ -75,7 +75,7 @@ function LabelWithTooltip({
       <span>{label}</span>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Info className='h-3 w-3 cursor-help text-muted-foreground' />
+          <Info className="h-3 w-3 cursor-help text-muted-foreground" />
         </TooltipTrigger>
         <TooltipContent>
           <p>{tooltip}</p>
@@ -379,7 +379,7 @@ export default function UserForm({
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-          <div className='grid grid-cols-1 gap-3 border-b p-1 md:grid-cols-2'>
+          <div className="grid grid-cols-1 gap-3 border-b p-1 md:grid-cols-2">
             {/* User ID - Full width when editing */}
             {data?.id && showUserID && (
               <div className="col-span-2">
@@ -713,7 +713,7 @@ export default function UserForm({
                           checked={!!field.value}
                           onCheckedChange={field.onChange}
                         />
-                        <span className='text-muted-foreground text-sm'>
+                        <span className="text-muted-foreground text-sm">
                           {t('ws-users.mark_as_guest')}
                         </span>
                       </div>

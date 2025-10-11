@@ -16,8 +16,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import {
-    permissionGroups,
-    totalPermissions,
+  permissionGroups,
+  totalPermissions,
 } from '@tuturuuu/utils/permissions';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

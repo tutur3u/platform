@@ -5,10 +5,10 @@ import { Ellipsis, Eye } from '@tuturuuu/icons';
 import type { WorkspaceUserReport } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

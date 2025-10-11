@@ -1,33 +1,33 @@
 'use client';
 
 import {
-    ArrowDown,
-    ArrowUp,
-    Calculator,
-    ChevronLeft,
-    ChevronRight,
-    CreditCard,
-    FileText,
-    Loader2,
+  ArrowDown,
+  ArrowUp,
+  Calculator,
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  FileText,
+  Loader2,
 } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@tuturuuu/ui/card';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { AttendanceCalendar } from '@tuturuuu/ui/finance/invoices/attendance-calendar';
 import { Label } from '@tuturuuu/ui/label';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -37,24 +37,24 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AvailablePromotion } from './hooks';
 import {
-    useAvailablePromotions,
-    useCategories,
-    useProducts,
-    useUserAttendance,
-    useUserGroupProducts,
-    useUserGroups,
-    useUserLatestSubscriptionInvoice,
-    useUserLinkedPromotions,
-    useUserReferralDiscounts,
-    useUsers,
-    useWallets,
+  useAvailablePromotions,
+  useCategories,
+  useProducts,
+  useUserAttendance,
+  useUserGroupProducts,
+  useUserGroups,
+  useUserLatestSubscriptionInvoice,
+  useUserLinkedPromotions,
+  useUserReferralDiscounts,
+  useUsers,
+  useWallets,
 } from './hooks';
 import { ProductSelection } from './product-selection';
 import type {
-    Product,
-    ProductInventory,
-    SelectedProductItem,
-    UserGroupProducts,
+  Product,
+  ProductInventory,
+  SelectedProductItem,
+  UserGroupProducts,
 } from './types';
 
 interface Props {

@@ -2,15 +2,15 @@
 
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import {
-    Cake,
-    ChevronDown,
-    Ellipsis,
-    Filter,
-    Mail,
-    Phone,
-    User,
-    UserCheck,
-    VenusAndMars,
+  Cake,
+  ChevronDown,
+  Ellipsis,
+  Filter,
+  Mail,
+  Phone,
+  User,
+  UserCheck,
+  VenusAndMars,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -19,24 +19,24 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import {
-    DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import {
-    HoverCard,
-    HoverCardContent,
-    HoverCardTrigger,
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
 } from '@tuturuuu/ui/hover-card';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
@@ -310,9 +310,9 @@ export default function GroupMembers({
         </div>
       </div>
 
-      <div className='grid grid-cols-1 gap-2 md:grid-cols-2'>
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
         {filteredList.length === 0 ? (
-          <div className='py-8 text-center text-muted-foreground'>
+          <div className="py-8 text-center text-muted-foreground">
             {t('ws-user-group-details.no_members')}
           </div>
         ) : (
@@ -324,9 +324,9 @@ export default function GroupMembers({
               <HoverCard key={person.id}>
                 <HoverCardTrigger asChild>
                   <Link href={`/${wsId}/users/database/${person.id}`}>
-                    <Card className='relative flex h-full w-full items-center p-3 transition duration-200 hover:border-foreground hover:bg-foreground/5'>
+                    <Card className="relative flex h-full w-full items-center p-3 transition duration-200 hover:border-foreground hover:bg-foreground/5">
                       <CardContent className="p-0">
-                        <div className='flex flex-row items-center justify-between pr-12'>
+                        <div className="flex flex-row items-center justify-between pr-12">
                           <div className="flex items-center gap-3">
                             {hasAvatar ? (
                               <Avatar className="h-8 w-8">
@@ -364,7 +364,7 @@ export default function GroupMembers({
                                 {isManager && (
                                   <Badge
                                     variant="default"
-                                    className='border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green'
+                                    className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green"
                                   >
                                     {t('ws-user-group-details.managers')}
                                   </Badge>
@@ -372,7 +372,7 @@ export default function GroupMembers({
                                 {isGuest && (
                                   <Badge
                                     variant="secondary"
-                                    className='border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange'
+                                    className="border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange"
                                   >
                                     {t('meet-together.guests')}
                                   </Badge>
@@ -384,7 +384,7 @@ export default function GroupMembers({
                         </div>
                       </CardContent>
                       {/* Ellipsis button pinned to the right side of the card */}
-                      <div className='-translate-y-1/2 absolute top-1/2 right-2 z-10'>
+                      <div className="-translate-y-1/2 absolute top-1/2 right-2 z-10">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -418,7 +418,7 @@ export default function GroupMembers({
                   <div className="space-y-2">
                     {canViewPersonalInfo && (
                       <>
-                        <div className='flex items-center gap-2 text-sm'>
+                        <div className="flex items-center gap-2 text-sm">
                           <Phone className="h-4 w-4" />
                           <span className="sr-only">
                             {t('settings-account.phone-number')}
@@ -428,7 +428,7 @@ export default function GroupMembers({
                               t('ws-user-group-attendance.phone_fallback')}
                           </span>
                         </div>
-                        <div className='flex items-center gap-2 text-sm'>
+                        <div className="flex items-center gap-2 text-sm">
                           <Mail className="h-4 w-4" />
                           <span className="sr-only">
                             {t('ws-emails.singular')}
@@ -437,12 +437,12 @@ export default function GroupMembers({
                         </div>
                       </>
                     )}
-                    <div className='flex items-center gap-2 text-sm'>
+                    <div className="flex items-center gap-2 text-sm">
                       <VenusAndMars className="h-4 w-4" />
                       <span className="sr-only">{t('common.gender')}</span>
                       <span>{person.gender || t('common.unknown')}</span>
                     </div>
-                    <div className='flex items-center gap-2 text-sm'>
+                    <div className="flex items-center gap-2 text-sm">
                       <Cake className="h-4 w-4" />
                       <span className="sr-only">{t('common.birthday')}</span>
                       <span>

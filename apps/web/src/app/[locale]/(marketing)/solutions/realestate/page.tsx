@@ -1,27 +1,27 @@
 'use client';
 
 import {
-    BarChart3,
-    Building,
-    Calendar,
-    Camera,
-    FileText,
-    Globe,
-    Home,
-    Key,
-    MapPin,
-    MessageSquare,
-    Phone,
-    Search,
-    Star,
-    Users,
-    Wallet,
+  BarChart3,
+  Building,
+  Calendar,
+  Camera,
+  FileText,
+  Globe,
+  Home,
+  Key,
+  MapPin,
+  MessageSquare,
+  Phone,
+  Search,
+  Star,
+  Users,
+  Wallet,
 } from '@tuturuuu/icons';
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

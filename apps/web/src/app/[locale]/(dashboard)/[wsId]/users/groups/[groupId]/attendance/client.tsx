@@ -1,20 +1,20 @@
 'use client';
 
 import {
-    keepPreviousData,
-    useMutation,
-    useQuery,
-    useQueryClient,
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
 } from '@tanstack/react-query';
 import {
-    CalendarIcon,
-    CalendarX2,
-    Check,
-    ChevronLeft,
-    ChevronRight,
-    Clock,
-    RotateCcw,
-    UserX,
+  CalendarIcon,
+  CalendarX2,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  RotateCcw,
+  UserX,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';

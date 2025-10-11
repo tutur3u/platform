@@ -1,9 +1,9 @@
 'use client';
 
 import {
-    useIsFetching,
-    useMutation,
-    useQueryClient,
+  useIsFetching,
+  useMutation,
+  useQueryClient,
 } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Loader2 } from '@tuturuuu/icons';

@@ -1,27 +1,27 @@
 'use client';
 
 import {
-    BarChart3,
-    Bell,
-    Bot,
-    Cog,
-    Factory,
-    Gauge,
-    LineChart,
-    PackageSearch,
-    Scan,
-    Settings,
-    Shield,
-    Star,
-    Truck,
-    Warehouse,
-    Wrench,
+  BarChart3,
+  Bell,
+  Bot,
+  Cog,
+  Factory,
+  Gauge,
+  LineChart,
+  PackageSearch,
+  Scan,
+  Settings,
+  Shield,
+  Star,
+  Truck,
+  Warehouse,
+  Wrench,
 } from '@tuturuuu/icons';
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

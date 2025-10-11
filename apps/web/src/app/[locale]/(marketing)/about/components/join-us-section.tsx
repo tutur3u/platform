@@ -2,16 +2,16 @@
 
 import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import {
-    ArrowRight,
-    Brain,
-    CheckCircle,
-    Github,
-    Globe2,
-    Mail,
-    Rocket,
-    Star,
-    Target,
-    Users,
+  ArrowRight,
+  Brain,
+  CheckCircle,
+  Github,
+  Globe2,
+  Mail,
+  Rocket,
+  Star,
+  Target,
+  Users,
 } from '@tuturuuu/icons';
 import { Card } from '@tuturuuu/ui/card';
 import { motion } from 'framer-motion';

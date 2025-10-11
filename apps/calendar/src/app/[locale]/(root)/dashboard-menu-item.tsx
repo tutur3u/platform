@@ -3,9 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { ActivitySquare, Database } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import {
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

@@ -5,10 +5,10 @@ import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
 import {
-    Sheet,
-    SheetContent,
-    SheetTitle,
-    SheetTrigger,
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
 } from '@tuturuuu/ui/sheet';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';

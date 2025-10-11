@@ -1,9 +1,9 @@
 import {
-    Calendar,
-    CalendarPlus,
-    ChartColumn,
-    FileUser,
-    UserCheck,
+  Calendar,
+  CalendarPlus,
+  ChartColumn,
+  FileUser,
+  UserCheck,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';

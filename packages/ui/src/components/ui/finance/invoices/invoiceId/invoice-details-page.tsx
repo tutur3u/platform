@@ -1,10 +1,10 @@
 import {
-    Box,
-    Calendar,
-    DollarSign,
-    FileText,
-    Percent,
-    ShoppingCart,
+  Box,
+  Calendar,
+  DollarSign,
+  FileText,
+  Percent,
+  ShoppingCart,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';

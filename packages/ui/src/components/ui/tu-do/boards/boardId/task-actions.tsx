@@ -1,13 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import {
-    AlertCircle,
-    CalendarIcon,
-    Clock,
-    Loader2,
-    MoreHorizontal,
-    Pencil,
-    Trash2,
-    Undo2,
+  AlertCircle,
+  CalendarIcon,
+  Clock,
+  Loader2,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Undo2,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
@@ -15,19 +15,19 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';

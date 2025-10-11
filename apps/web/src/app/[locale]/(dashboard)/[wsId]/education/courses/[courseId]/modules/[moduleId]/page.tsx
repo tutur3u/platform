@@ -1,15 +1,15 @@
 import { extractYoutubeId } from '@/utils/url-helper';
 import {
-    BookText,
-    Goal,
-    ListTodo,
-    Paperclip,
-    SwatchBook,
-    Youtube,
+  BookText,
+  Goal,
+  ListTodo,
+  Paperclip,
+  SwatchBook,
+  Youtube,
 } from '@tuturuuu/icons';
 import {
-    createClient,
-    createDynamicClient,
+  createClient,
+  createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import { Accordion } from '@tuturuuu/ui/accordion';

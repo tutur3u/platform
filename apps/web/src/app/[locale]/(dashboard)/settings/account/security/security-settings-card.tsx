@@ -1,24 +1,24 @@
 import {
-    AlertTriangle,
-    Calendar,
-    CheckCircle2,
-    Eye,
-    KeyRound,
-    Lock,
-    Mail,
-    Shield,
-    Smartphone,
-    UserCheck,
+  AlertTriangle,
+  Calendar,
+  CheckCircle2,
+  Eye,
+  KeyRound,
+  Lock,
+  Mail,
+  Shield,
+  Smartphone,
+  UserCheck,
 } from '@tuturuuu/icons';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@tuturuuu/ui/card';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { Separator } from '@tuturuuu/ui/separator';

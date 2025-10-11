@@ -7,10 +7,10 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
@@ -68,7 +68,7 @@ export default function NewInvoicePage({ wsId }: Props) {
           </TabsList>
           <div className="flex items-center justify-center gap-4">
             <div className="flex items-center gap-2">
-              <div className='flex items-center gap-2 space-y-1'>
+              <div className="flex items-center gap-2 space-y-1">
                 <Label htmlFor="multiple-invoices">
                   {t('ws-invoices.create_multiple_invoices')}
                 </Label>
@@ -93,7 +93,7 @@ export default function NewInvoicePage({ wsId }: Props) {
               />
             </div>
             <div className="flex items-center gap-2">
-              <div className='flex items-center gap-2 space-y-1'>
+              <div className="flex items-center gap-2 space-y-1">
                 <Label htmlFor="print-after-create">
                   {t('ws-invoices.print_after_create')}
                 </Label>

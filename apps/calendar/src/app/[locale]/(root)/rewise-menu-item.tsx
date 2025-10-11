@@ -1,9 +1,9 @@
 import { DEV_MODE } from '@/constants/common';
 import { Sparkles } from '@tuturuuu/icons';
 import {
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
 } from '@tuturuuu/ui/dropdown-menu';
 import Link from 'next/link';
 

@@ -1,18 +1,18 @@
 'use client';
 
 import {
-    Bot,
-    FileSearch,
-    FileText,
-    KeyRound,
-    Languages,
-    Lock,
-    Share2,
-    ShieldCheck,
-    Sparkles,
-    UserPlus,
-    Users,
-    Wand2,
+  Bot,
+  FileSearch,
+  FileText,
+  KeyRound,
+  Languages,
+  Lock,
+  Share2,
+  ShieldCheck,
+  Sparkles,
+  UserPlus,
+  Users,
+  Wand2,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

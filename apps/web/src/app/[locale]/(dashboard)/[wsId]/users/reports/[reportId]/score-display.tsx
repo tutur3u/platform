@@ -111,7 +111,7 @@ export default function ScoreDisplay({
   // Loading state
   if (isNew && healthcareVitalsLoading) {
     return (
-      <div className='text-muted-foreground text-sm'>
+      <div className="text-muted-foreground text-sm">
         {t('common.loading')}...
       </div>
     );
@@ -158,7 +158,7 @@ export default function ScoreDisplay({
         <div className="flex flex-wrap gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className='flex h-8 min-w-8 cursor-help items-center justify-center rounded bg-foreground px-2 font-semibold text-background'>
+              <div className="flex h-8 min-w-8 cursor-help items-center justify-center rounded bg-foreground px-2 font-semibold text-background">
                 {averageScore?.toFixed(1) || '-'}
               </div>
             </TooltipTrigger>
@@ -167,7 +167,7 @@ export default function ScoreDisplay({
                 <div className="font-semibold">
                   {t('ws-reports.average_score')}
                 </div>
-                <div className='text-muted-foreground text-xs'>
+                <div className="text-muted-foreground text-xs">
                   {individualScoresWithMetadata.length} {t('ws-reports.scores')}
                 </div>
                 {isNew && healthcareVitals.length > 0 ? (
@@ -191,7 +191,7 @@ export default function ScoreDisplay({
           {individualScoresWithMetadata.map((scoreData, idx) => (
             <Tooltip key={`report-${reportId}-score-${idx}`}>
               <TooltipTrigger asChild>
-                <div className='flex h-8 min-w-8 cursor-help items-center justify-center rounded bg-foreground px-2 font-semibold text-background'>
+                <div className="flex h-8 min-w-8 cursor-help items-center justify-center rounded bg-foreground px-2 font-semibold text-background">
                   {scoreData.score}
                 </div>
               </TooltipTrigger>
@@ -199,7 +199,7 @@ export default function ScoreDisplay({
                 {scoreData.isFromVital && scoreData.vital ? (
                   <div className="space-y-1">
                     <div className="font-semibold">{scoreData.vital.name}</div>
-                    <div className='text-muted-foreground text-xs'>
+                    <div className="text-muted-foreground text-xs">
                       Unit: {scoreData.vital.unit}
                     </div>
                     <div className="text-xs">
