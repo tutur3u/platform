@@ -1,14 +1,13 @@
 import { EventEmitter } from 'node:events';
 import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { RealtimeChannel } from '@tuturuuu/supabase/next/realtime';
-import type { Database } from '@tuturuuu/types/supabase';
 import debug from 'debug';
 import * as awarenessProtocol from 'y-protocols/awareness';
 import * as Y from 'yjs';
 
 export interface SupabaseProviderConfig {
   channel: string;
-  tableName: keyof Database['public']['Tables'];
+  tableName: string;
   columnName: string;
   idName?: string;
   id: string | number;
@@ -66,7 +65,7 @@ export default class SupabaseProvider extends EventEmitter {
     const content = Array.from(Y.encodeStateAsUpdate(this.doc));
 
     const { error } = await this.supabase
-      .from(this.config.tableName)
+      .from(this.config.tableName as any)
       .update({ [this.config.columnName]: content })
       .eq(this.config.idName || 'id', this.config.id);
 
@@ -81,7 +80,7 @@ export default class SupabaseProvider extends EventEmitter {
     this.logger('connected');
 
     const { data, status } = await this.supabase
-      .from(this.config.tableName)
+      .from(this.config.tableName as any)
       .select<string, { [key: string]: number[] }>(`${this.config.columnName}`)
       .eq(this.config.idName || 'id', this.config.id)
       .single();
