@@ -68,7 +68,6 @@ export default async function WorkspacePromotionsPage({
         const { data, count } = await getData(wsId, await searchParams);
 
         const user = await getCurrentUser(true);
-        const wsUser = await getWorkspaceUser(wsId, user?.id!);
 
         const promotions = data.map(({ value, use_ratio, ...rest }) => ({
           ...rest,
