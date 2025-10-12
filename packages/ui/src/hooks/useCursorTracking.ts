@@ -26,6 +26,9 @@ export function useCursorTracking(
   const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastBroadcastTimeRef = useRef<number>(0);
   const errorCountRef = useRef<number>(0);
+  // Store currentUserId in ref to avoid dependency cycle in useEffect
+  // (setting currentUserId inside the effect would cause infinite re-runs)
+  const currentUserIdRef = useRef<string | undefined>(undefined);
   const THROTTLE_MS = 50; // Broadcast cursor position every 50ms max
   const CURSOR_TIMEOUT = 5000; // Remove cursor if no update for 5 seconds
   const MAX_ERROR_COUNT = 3; // Disable after 3 consecutive errors
@@ -152,6 +155,7 @@ export function useCursorTracking(
         }
 
         setCurrentUserId(user.id);
+        currentUserIdRef.current = user.id;
 
         // Clean up existing channel before creating a new one
         if (channelRef.current) {
@@ -270,12 +274,16 @@ export function useCursorTracking(
 
       // Broadcast cursor removal before unsubscribing (best effort)
       // This helps other users see the cursor disappear immediately
-      if (channelRef.current) {
+      if (channelRef.current && currentUserIdRef.current) {
         try {
           channelRef.current.send({
             type: 'broadcast',
             event: 'cursor-move',
-            payload: { x: -1000, y: -1000, user: { id: currentUserId } },
+            payload: {
+              x: -1000,
+              y: -1000,
+              user: { id: currentUserIdRef.current },
+            },
           });
         } catch (err) {
           // Ignore errors during cleanup
@@ -308,7 +316,11 @@ export function useCursorTracking(
       setError(false);
       errorCountRef.current = 0;
     };
-  }, [channelName, containerRef, broadcastCursor, currentUserId]);
+  }, [
+    channelName,
+    containerRef, // Broadcast cursor position outside the container to hide it
+    broadcastCursor,
+  ]);
 
   return {
     cursors,
