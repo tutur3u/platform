@@ -71,10 +71,7 @@ export function CursorOverlayWrapper({
     width: number;
     height: number;
   }>({ width: 0, height: 0 });
-  const { cursors, error } = useCursorTracking(
-    channelName,
-    containerRef
-  );
+  const { cursors, error } = useCursorTracking(channelName, containerRef);
 
   useEffect(() => {
     if (!containerRef.current) return;
