@@ -17,7 +17,6 @@ interface CursorOverlayProps {
 
 export default function CursorOverlay({
   cursors,
-  currentUserId,
   width,
   height,
 }: CursorOverlayProps) {
@@ -30,9 +29,6 @@ export default function CursorOverlay({
       }}
     >
       {Array.from(cursors.entries()).map(([userId, cursor]) => {
-        // Don't render the current user's cursor
-        if (userId === currentUserId) return null;
-
         const { x, y, user } = cursor;
 
         // Don't render if cursor is outside the visible area
@@ -75,19 +71,10 @@ export function CursorOverlayWrapper({
     width: number;
     height: number;
   }>({ width: 0, height: 0 });
-  const [hasError, setHasError] = useState(false);
-
-  const { cursors, currentUserId, error } = useCursorTracking(
+  const { cursors, error } = useCursorTracking(
     channelName,
     containerRef
   );
-
-  // Disable overlay if persistent errors detected
-  useEffect(() => {
-    if (error) {
-      setHasError(true);
-    }
-  }, [error]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -118,20 +105,18 @@ export function CursorOverlayWrapper({
     } catch (err) {
       // Catch any setup errors
       console.warn('Cursor overlay setup error:', err);
-      setHasError(true);
       return;
     }
   }, [containerRef]);
 
   // Don't render if errors detected
-  if (hasError) {
+  if (error) {
     return null;
   }
 
   return (
     <CursorOverlay
       cursors={cursors}
-      currentUserId={currentUserId}
       width={overlaySize.width}
       height={overlaySize.height}
     />
