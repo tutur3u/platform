@@ -1188,7 +1188,7 @@ function TaskEditDialogComponent({
 
     // In edit mode, when dialog opens or task ID changes, reload task data to ensure we have the latest
     // This handles the case where task was edited previously and we're reopening the dialog
-    if (isOpen && !isCreateMode && taskIdChanged) {
+    if (isOpen && !isCreateMode && (task?.id || taskIdChanged)) {
       setName(task?.name || '');
       setDescription(parseDescription(task?.description));
       setPriority(task?.priority || null);

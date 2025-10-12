@@ -1,17 +1,7 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
-
-const TaskEditDialog = dynamic(
-  () =>
-    import('./task-edit-dialog').then((mod) => ({
-      default: mod.TaskEditDialog,
-    })),
-  {
-    ssr: false,
-  }
-);
+import { TaskEditDialog } from './task-edit-dialog';
 
 /**
  * Manager component that renders the centralized task dialog
@@ -20,11 +10,6 @@ const TaskEditDialog = dynamic(
  */
 export function TaskDialogManager() {
   const { state, closeDialog, triggerUpdate } = useTaskDialogContext();
-
-  // Don't render anything if dialog has never been opened
-  if (!state.isOpen && !state.task) {
-    return null;
-  }
 
   return (
     <TaskEditDialog
