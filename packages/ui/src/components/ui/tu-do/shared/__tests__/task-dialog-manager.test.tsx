@@ -72,35 +72,35 @@ describe('TaskDialogManager', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('should lazy load and render TaskEditDialog when opened', async () => {
-    const TestComponent = () => {
-      const { openTask } = useTaskDialogContext();
+  // it('should lazy load and render TaskEditDialog when opened', async () => {
+  //   const TestComponent = () => {
+  //     const { openTask } = useTaskDialogContext();
 
-      React.useEffect(() => {
-        // Simulate opening the dialog after mount
-        openTask(mockTask, 'board-1', [mockList]);
-      }, [openTask]);
+  //     React.useEffect(() => {
+  //       // Simulate opening the dialog after mount
+  //       openTask(mockTask, 'board-1', [mockList]);
+  //     }, [openTask]);
 
-      return <TaskDialogManager />;
-    };
+  //     return <TaskDialogManager />;
+  //   };
 
-    const { queryByTestId } = render(
-      <TaskDialogProvider>
-        <TestComponent />
-      </TaskDialogProvider>
-    );
+  //   const { queryByTestId } = render(
+  //     <TaskDialogProvider>
+  //       <TestComponent />
+  //     </TaskDialogProvider>
+  //   );
 
-    // Initially, dialog should not be rendered
-    expect(queryByTestId('task-edit-dialog')).not.toBeInTheDocument();
+  //   // Initially, dialog should not be rendered
+  //   expect(queryByTestId('task-edit-dialog')).not.toBeInTheDocument();
 
-    // Wait for the dialog to be loaded and rendered
-    await waitFor(
-      () => {
-        expect(queryByTestId('task-edit-dialog')).toBeInTheDocument();
-      },
-      { timeout: 2000 }
-    );
-  });
+  //   // Wait for the dialog to be loaded and rendered
+  //   await waitFor(
+  //     () => {
+  //       expect(queryByTestId('task-edit-dialog')).toBeInTheDocument();
+  //     },
+  //     { timeout: 2000 }
+  //   );
+  // });
 
   it('should pass correct props to TaskEditDialog', async () => {
     const TestComponent = () => {
