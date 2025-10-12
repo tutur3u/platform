@@ -1,7 +1,17 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
-import { TaskEditDialog } from './task-edit-dialog';
+
+const TaskEditDialog = dynamic(
+  () =>
+    import('./task-edit-dialog').then((mod) => ({
+      default: mod.TaskEditDialog,
+    })),
+  {
+    ssr: false,
+  }
+);
 
 /**
  * Manager component that renders the centralized task dialog
