@@ -1,6 +1,5 @@
 'use client';
 
-import './collaboration-carets.css';
 import {
   type Editor,
   EditorContent,
@@ -122,7 +121,7 @@ export function RichTextEditor({
   const getEditorClasses = useMemo(() => {
     const baseClasses = [
       'border border-dynamic-border rounded-md bg-transparent',
-      'max-w-none overflow-y-auto',
+      'max-w-none overflow-y-auto pt-4',
       // Typography base
       'text-foreground leading-relaxed',
       // First child margin reset
