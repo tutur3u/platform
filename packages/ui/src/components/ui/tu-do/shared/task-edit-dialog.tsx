@@ -89,6 +89,8 @@ import {
 } from './slash-commands/definitions';
 import { SlashCommandMenu } from './slash-commands/slash-command-menu';
 import { UserPresenceAvatarsComponent } from './user-presence-avatars';
+import { convertJsonContentToYjsState } from '@tuturuuu/utils/yjs-helper';
+import * as Y from 'yjs';
 
 interface TaskEditDialogProps {
   task?: Task;
@@ -333,6 +335,44 @@ function TaskEditDialogComponent({
       : null,
     enabled: isOpen && !isCreateMode && showUserPresence && !!task?.id,
   });
+
+  // If the task has no Yjs state, initialize it
+  useEffect(() => {
+    if (!task?.id || !editorInstance?.schema || !description || !doc) return;
+  
+    const initializeYjsState = async () => {
+      try {
+        const supabase = createClient();
+    
+        const { data: existingState, error: existingStateError } = await supabase
+          .from('tasks')
+          .select('description_yjs_state')
+          .eq('id', task.id)
+          .single();
+
+        if (existingStateError) throw existingStateError;
+    
+        if (!existingState?.description_yjs_state) {
+          const yjsState = convertJsonContentToYjsState(
+            description,
+            editorInstance.schema
+          );
+    
+          const { error: updateError } = await supabase
+            .from('tasks')
+            .update({ description_yjs_state: Array.from(yjsState) })
+            .eq('id', task.id);
+
+          if (updateError) throw updateError;
+
+          Y.applyUpdate(doc, yjsState);
+        }
+      } catch (error) {
+        console.error('Error initializing Yjs state:', error);
+      }
+  }
+    initializeYjsState();
+  }, [description, editorInstance, task?.id]);
 
   const closeSlashMenu = useCallback(() => {
     setSlashState((prev) =>
