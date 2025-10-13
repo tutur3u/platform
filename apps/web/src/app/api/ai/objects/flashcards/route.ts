@@ -1,8 +1,12 @@
 import {
-  maxDuration,
   POST,
-  preferredRegion,
-  runtime,
+  maxDuration as routeMaxDuration,
+  preferredRegion as routePreferredRegion,
+  runtime as routeRuntime,
 } from '@tuturuuu/ai/object/flashcards/route';
 
-export { maxDuration, POST, preferredRegion, runtime };
+export const preferredRegion = routePreferredRegion;
+export const maxDuration = routeMaxDuration;
+export const runtime = routeRuntime;
+
+export { POST };
