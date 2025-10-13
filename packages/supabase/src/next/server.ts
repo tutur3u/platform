@@ -1,10 +1,15 @@
 import { createBrowserClient, createServerClient } from '@supabase/ssr';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@tuturuuu/types/supabase';
+import type { RequestCookie } from 'next/dist/compiled/@edge-runtime/cookies';
 import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
 import { cookies } from 'next/headers';
 import { checkEnvVariables, type SupabaseCookie } from './common';
 
-function createCookieHandler(cookieStore: ReadonlyRequestCookies) {
+function createCookieHandler(cookieStore: ReadonlyRequestCookies): {
+  getAll(): RequestCookie[];
+  setAll(cookiesToSet: SupabaseCookie[]): void;
+} {
   return {
     getAll() {
       return cookieStore.getAll();
@@ -23,7 +28,9 @@ function createCookieHandler(cookieStore: ReadonlyRequestCookies) {
   };
 }
 
-async function createGenericClient(isAdmin: boolean) {
+async function createGenericClient(
+  isAdmin: boolean
+): Promise<SupabaseClient<Database>> {
   const { url, key } = checkEnvVariables({ useSecretKey: isAdmin });
   const cookieStore = await cookies();
   return createServerClient<Database>(url, key, {
@@ -43,7 +50,7 @@ export function createAdminClient({
   noCookie = false,
 }: {
   noCookie?: boolean;
-} = {}) {
+} = {}): SupabaseClient<Database> | Promise<SupabaseClient<Database>> {
   if (noCookie) {
     const { url, key } = checkEnvVariables({ useSecretKey: true });
     return createBrowserClient<Database>(url, key);
@@ -52,11 +59,11 @@ export function createAdminClient({
   return createGenericClient(true);
 }
 
-export function createClient() {
+export function createClient(): Promise<SupabaseClient<Database>> {
   return createGenericClient(false);
 }
 
-export async function createDynamicClient() {
+export async function createDynamicClient(): Promise<SupabaseClient<any>> {
   const { url, key } = checkEnvVariables({ useSecretKey: false });
   const cookieStore = await cookies();
   return createServerClient(url, key, {

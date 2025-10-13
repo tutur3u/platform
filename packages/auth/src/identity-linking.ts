@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 
 export interface Identity {
   id: string;
@@ -23,7 +23,7 @@ export interface UserIdentitiesResponse {
  * @returns Promise containing the result data or error
  */
 export async function linkIdentity(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   provider:
     | 'google'
     | 'github'
@@ -73,7 +73,7 @@ export async function linkIdentity(
  * @returns Promise containing the result data or error
  */
 export async function unlinkIdentity(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   identity: Identity
 ) {
   try {
@@ -91,7 +91,7 @@ export async function unlinkIdentity(
  * @returns Promise containing the identities data or error
  */
 export async function getUserIdentities(
-  supabase: SupabaseClient
+  supabase: TypedSupabaseClient
 ): Promise<{ data: UserIdentitiesResponse | null; error: any }> {
   try {
     const { data, error } = await supabase.auth.getUserIdentities();
@@ -108,7 +108,7 @@ export async function getUserIdentities(
  * @returns Promise<boolean> indicating if unlinking is allowed
  */
 export async function canUnlinkIdentity(
-  supabase: SupabaseClient
+  supabase: TypedSupabaseClient
 ): Promise<boolean> {
   try {
     const { data, error } = await getUserIdentities(supabase);
