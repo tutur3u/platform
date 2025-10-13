@@ -93,7 +93,7 @@ export const projects: Project[] = [
     manager: 'Huynh Trong Khiem',
     members: [
       {
-        name: 'Nguyen Gia Khang',
+        name: 'Huynh Trong Khiem',
         role: 'Leader, Developer',
       },
       {
