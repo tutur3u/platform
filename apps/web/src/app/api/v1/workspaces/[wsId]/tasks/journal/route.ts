@@ -1,5 +1,6 @@
 import { google } from '@ai-sdk/google';
 import { quickJournalTaskSchema } from '@tuturuuu/ai/object/types';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   isTaskPriority,
@@ -164,9 +165,7 @@ type CandidateTask = {
 export const maxDuration = 45;
 
 // Helper: authenticate and restrict to Tuturuuu email
-async function getAuthorizedUser(
-  supabase: Awaited<ReturnType<typeof createClient>>
-) {
+async function getAuthorizedUser(supabase: TypedSupabaseClient) {
   const {
     data: { user },
     error: authError,
@@ -206,7 +205,7 @@ function parseRequestBody(rawBody: unknown) {
 
 // Helper: ensure workspace membership
 async function ensureWorkspaceAccess(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: TypedSupabaseClient,
   wsId: string,
   userId: string
 ) {
@@ -229,7 +228,7 @@ async function ensureWorkspaceAccess(
 
 // Helper: verify list access (optional if preview-only)
 async function getListIfProvided(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: TypedSupabaseClient,
   listId: string | undefined,
   wsId: string
 ) {
@@ -428,10 +427,7 @@ function buildPreviewPayload(candidateTasks: CandidateTask[]) {
 }
 
 // Helper: load existing labels map
-async function loadLabelNameMap(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  wsId: string
-) {
+async function loadLabelNameMap(supabase: TypedSupabaseClient, wsId: string) {
   const labelNameMap = new Map<
     string,
     { id: string; name: string; color: string }

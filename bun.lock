@@ -189,6 +189,7 @@
       "name": "@tuturuuu/playground",
       "version": "0.1.0",
       "dependencies": {
+        "@ai-sdk/google": "^2.0.20",
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
@@ -198,6 +199,7 @@
         "next": "^16.0.0-canary.1",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
+        "zod": "^4.1.12",
       },
       "devDependencies": {
         "@tailwindcss/postcss": "^4.1.14",
@@ -658,7 +660,7 @@
     },
     "packages/supabase": {
       "name": "@tuturuuu/supabase",
-      "version": "0.0.7",
+      "version": "0.1.0",
       "dependencies": {
         "@supabase/ssr": "^0.7.0",
         "@supabase/supabase-js": "^2.75.0",

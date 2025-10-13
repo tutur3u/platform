@@ -4,7 +4,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
@@ -17,7 +17,10 @@ import type {
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { User } from '@tuturuuu/types/primitives/User';
 
-export async function getTaskBoard(supabase: SupabaseClient, boardId: string) {
+export async function getTaskBoard(
+  supabase: TypedSupabaseClient,
+  boardId: string
+) {
   const { data, error } = await supabase
     .from('workspace_boards')
     .select('*')
@@ -28,7 +31,10 @@ export async function getTaskBoard(supabase: SupabaseClient, boardId: string) {
   return data as TaskBoard | null;
 }
 
-export async function getTaskLists(supabase: SupabaseClient, boardId: string) {
+export async function getTaskLists(
+  supabase: TypedSupabaseClient,
+  boardId: string
+) {
   const { data, error } = await supabase
     .from('task_lists')
     .select('*')
@@ -41,7 +47,7 @@ export async function getTaskLists(supabase: SupabaseClient, boardId: string) {
   return data as TaskList[];
 }
 
-export async function getTasks(supabase: SupabaseClient, boardId: string) {
+export async function getTasks(supabase: TypedSupabaseClient, boardId: string) {
   try {
     const { data: lists } = await supabase
       .from('task_lists')
@@ -101,7 +107,7 @@ export async function getTasks(supabase: SupabaseClient, boardId: string) {
 }
 
 export async function getTaskAssignees(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   taskId: string
 ) {
   const { data, error } = await supabase
@@ -114,7 +120,7 @@ export async function getTaskAssignees(
 }
 
 export async function createTaskList(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   boardId: string,
   name: string
 ) {
@@ -129,7 +135,7 @@ export async function createTaskList(
 }
 
 export async function createTask(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   listId: string,
   task: Partial<Task>
 ) {
@@ -259,7 +265,7 @@ export async function createTask(
 }
 
 export async function updateTask(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   taskId: string,
   task: Partial<Task>
 ) {
@@ -371,7 +377,7 @@ export async function invalidateTaskCaches(
 
 // Utility function to sync task archived status with list status
 export async function syncTaskArchivedStatus(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   taskId: string,
   listId: string
 ) {
@@ -416,7 +422,7 @@ export async function syncTaskArchivedStatus(
 }
 
 export async function moveTask(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   taskId: string,
   newListId: string
 ) {
@@ -546,7 +552,7 @@ export async function moveTask(
 }
 
 export async function moveTaskToBoard(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   taskId: string,
   newListId: string,
   targetBoardId?: string
@@ -691,7 +697,7 @@ export async function moveTaskToBoard(
 }
 
 export async function assignTask(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   taskId: string,
   userId: string
 ) {
@@ -703,7 +709,7 @@ export async function assignTask(
 }
 
 export async function unassignTask(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   taskId: string,
   userId: string
 ) {
@@ -716,7 +722,10 @@ export async function unassignTask(
   if (error) throw error;
 }
 
-export async function deleteTask(supabase: SupabaseClient, taskId: string) {
+export async function deleteTask(
+  supabase: TypedSupabaseClient,
+  taskId: string
+) {
   const { data, error } = await supabase
     .from('tasks')
     .update({ deleted: true })
@@ -728,7 +737,10 @@ export async function deleteTask(supabase: SupabaseClient, taskId: string) {
   return data as Task;
 }
 
-export async function deleteTaskList(supabase: SupabaseClient, listId: string) {
+export async function deleteTaskList(
+  supabase: TypedSupabaseClient,
+  listId: string
+) {
   const { data, error } = await supabase
     .from('task_lists')
     .update({ deleted: true })
@@ -1258,7 +1270,7 @@ export function useMoveTaskToBoard(currentBoardId: string) {
 }
 
 // Status Template Functions
-export async function getStatusTemplates(supabase: SupabaseClient) {
+export async function getStatusTemplates(supabase: TypedSupabaseClient) {
   const { data, error } = await supabase
     .from('task_board_status_templates')
     .select('*')
@@ -1270,7 +1282,7 @@ export async function getStatusTemplates(supabase: SupabaseClient) {
 }
 
 export async function createBoardWithTemplate(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   wsId: string,
   name: string,
   templateId?: string
@@ -1290,7 +1302,7 @@ export async function createBoardWithTemplate(
 }
 
 export async function updateTaskListStatus(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   listId: string,
   status: TaskBoardStatus,
   color: SupportedColor
@@ -1334,7 +1346,7 @@ export async function updateTaskListStatus(
 }
 
 export async function reorderTaskLists(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   boardId: string,
   listIds: string[]
 ) {
@@ -1351,7 +1363,7 @@ export async function reorderTaskLists(
 }
 
 export async function getTaskListsByStatus(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   boardId: string
 ) {
   const { data, error } = await supabase
@@ -1465,7 +1477,7 @@ export function priorityCompare(
 
 // Bulk operations for moving all tasks from a list
 export async function moveAllTasksFromList(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   sourceListId: string,
   targetListId: string,
   targetBoardId?: string
@@ -1995,7 +2007,7 @@ export function normalizeSortKeys(tasks: Task[]): Task[] {
  * Uses BASE_UNIT (1,000,000) spacing between tasks
  */
 export async function normalizeListSortKeys(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   listId: string
 ): Promise<void> {
   console.log('🔧 Normalizing sort keys for list:', listId);
@@ -2058,7 +2070,7 @@ export async function normalizeListSortKeys(
 
 // Reorder task within the same list or move to a different list with specific position
 export async function reorderTask(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   taskId: string,
   newListId: string,
   newSortKey: number

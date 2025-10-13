@@ -1,7 +1,7 @@
 {
   "name": "@tuturuuu/supabase",
   "license": "MIT",
-  "version": "0.0.7",
+  "version": "0.1.1",
   "main": "./src/index.ts",
   "publishConfig": {
     "access": "public"

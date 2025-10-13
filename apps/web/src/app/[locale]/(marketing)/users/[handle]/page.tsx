@@ -1,5 +1,5 @@
 import { User } from '@tuturuuu/icons';
-import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { getInitials } from '@tuturuuu/utils/name-helper';
@@ -115,7 +115,7 @@ async function getUser({
   supabase,
   handle,
 }: {
-  supabase: SupabaseClient;
+  supabase: TypedSupabaseClient;
   handle: string;
 }) {
   const { data: user, error } = await supabase
