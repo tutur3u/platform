@@ -1,11 +1,12 @@
-import { createPOST } from '@tuturuuu/ai/chat/google/route';
-
-export const maxDuration = 90;
-export const preferredRegion = 'sin1';
-export const runtime = 'edge';
+import {
+  createPOST,
+  maxDuration,
+  preferredRegion,
+  runtime,
+} from '@tuturuuu/ai/chat/google/route';
 
 const POST = createPOST({
   serverAPIKeyFallback: true,
 });
 
-export { POST };
+export { maxDuration, POST, preferredRegion, runtime };
