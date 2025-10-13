@@ -10,8 +10,8 @@ export function createDynamicClient(): SupabaseClient<any> {
   return createBrowserClient(url, key);
 }
 
-export function createClient(): TypedSupabaseClient {
-  return createBrowserClient<Database>(url, key);
+export function createClient<T = Database>(): SupabaseClient<T> {
+  return createBrowserClient<T>(url, key);
 }
 
 export type { SupabaseClient, TypedSupabaseClient };
