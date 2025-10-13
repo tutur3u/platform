@@ -1,13 +1,7 @@
-import {
-  createPATCH,
-  maxDuration as routeMaxDuration,
-  preferredRegion as routePreferredRegion,
-  runtime as routeRuntime,
-} from '@tuturuuu/ai/chat/google/summary/route';
+import { createPATCH } from '@tuturuuu/ai/chat/google/summary/route';
 
-export const preferredRegion = routePreferredRegion;
-export const maxDuration = routeMaxDuration;
-export const runtime = routeRuntime;
+export const preferredRegion = 'sin1';
+export const runtime = 'edge';
 
 const PATCH = createPATCH({
   serverAPIKeyFallback: true,
