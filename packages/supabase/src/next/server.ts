@@ -63,7 +63,7 @@ export function createClient(): Promise<SupabaseClient<Database>> {
   return createGenericClient(false);
 }
 
-export async function createDynamicClient(): Promise<SupabaseClient<Database>> {
+export async function createDynamicClient(): Promise<SupabaseClient<any>> {
   const { url, key } = checkEnvVariables({ useSecretKey: false });
   const cookieStore = await cookies();
   return createServerClient(url, key, {
