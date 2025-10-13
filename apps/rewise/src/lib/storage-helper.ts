@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 
 export async function downloadPublicObject({
   supabase,
@@ -9,7 +9,7 @@ export async function downloadPublicObject({
   onSuccess,
   onError,
 }: {
-  supabase: SupabaseClient;
+  supabase: TypedSupabaseClient;
   bucket: string;
   path: string;
   beforeStart?: () => void;
@@ -43,7 +43,7 @@ export async function downloadPrivateObject({
   onSuccess,
   onError,
 }: {
-  supabase: SupabaseClient;
+  supabase: TypedSupabaseClient;
   bucket: string;
   path: string;
   beforeStart?: () => void;
@@ -80,7 +80,7 @@ export async function uploadObject({
   onSuccess,
   onError,
 }: {
-  supabase: SupabaseClient;
+  supabase: TypedSupabaseClient;
   bucket: string;
   path: string;
   file: File | null;

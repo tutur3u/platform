@@ -1,5 +1,5 @@
 import { google } from '@ai-sdk/google';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { embed } from 'ai';
 
 /**
@@ -63,7 +63,7 @@ interface GenerateTaskEmbeddingOptions {
   taskId: string;
   taskName: string;
   taskDescription?: string | null;
-  supabase: SupabaseClient;
+  supabase: TypedSupabaseClient;
 }
 
 /**
@@ -144,12 +144,14 @@ export async function generateTaskEmbedding({
 
     // 3. Priority context
     if (taskData.priority) {
-      const priorityLabels: Record<number, string> = {
-        1: 'lowest priority',
-        2: 'low priority',
-        3: 'medium priority normal',
-        4: 'high priority important urgent',
-        5: 'highest priority critical urgent',
+      const priorityLabels: Record<
+        'low' | 'normal' | 'high' | 'critical',
+        string
+      > = {
+        low: 'low priority',
+        normal: 'medium priority normal',
+        high: 'high priority important urgent',
+        critical: 'highest priority critical urgent',
       };
       const priorityContext = priorityLabels[taskData.priority] || '';
       if (priorityContext) {
