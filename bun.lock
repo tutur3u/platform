@@ -659,7 +659,7 @@
     },
     "packages/supabase": {
       "name": "@tuturuuu/supabase",
-      "version": "0.0.7",
+      "version": "0.1.0",
       "dependencies": {
         "@supabase/ssr": "^0.7.0",
         "@supabase/supabase-js": "^2.75.0",
