@@ -28,12 +28,12 @@ function createCookieHandler(cookieStore: ReadonlyRequestCookies): {
   };
 }
 
-async function createGenericClient(
+async function createGenericClient<T = Database>(
   isAdmin: boolean
-): Promise<SupabaseClient<Database>> {
+): Promise<SupabaseClient<T>> {
   const { url, key } = checkEnvVariables({ useSecretKey: isAdmin });
   const cookieStore = await cookies();
-  return createServerClient<Database>(url, key, {
+  return createServerClient<T>(url, key, {
     cookies: isAdmin
       ? {
           getAll() {
@@ -46,21 +46,21 @@ async function createGenericClient(
   });
 }
 
-export function createAdminClient({
+export function createAdminClient<T = Database>({
   noCookie = false,
 }: {
   noCookie?: boolean;
-} = {}): SupabaseClient<Database> | Promise<SupabaseClient<Database>> {
+} = {}): SupabaseClient<T> | Promise<SupabaseClient<T>> {
   if (noCookie) {
     const { url, key } = checkEnvVariables({ useSecretKey: true });
-    return createBrowserClient<Database>(url, key);
+    return createBrowserClient<T>(url, key);
   }
 
-  return createGenericClient(true);
+  return createGenericClient<T>(true);
 }
 
-export function createClient(): Promise<SupabaseClient<Database>> {
-  return createGenericClient(false);
+export function createClient<T = Database>(): Promise<SupabaseClient<T>> {
+  return createGenericClient<T>(false);
 }
 
 export async function createDynamicClient(): Promise<SupabaseClient<any>> {
