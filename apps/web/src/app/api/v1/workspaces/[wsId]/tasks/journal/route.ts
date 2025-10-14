@@ -22,6 +22,8 @@ const providedTaskSchema = z.object({
   description: z.string().nullable().optional(),
   priority: z.enum(['critical', 'high', 'normal', 'low']).nullable().optional(),
   dueDate: z.string().nullable().optional(),
+  estimationPoints: z.number().int().min(0).max(8).nullable().optional(),
+  projectIds: z.array(z.string()).optional(),
   labels: z
     .array(
       z.object({
@@ -160,6 +162,8 @@ type CandidateTask = {
   labelSuggestions: string[];
   labels: ProvidedLabel[];
   dueDate: string | null;
+  estimationPoints?: number | null;
+  projectIds?: string[];
 };
 
 export const maxDuration = 45;
@@ -322,6 +326,8 @@ function normalizeProvidedTasks(
       description: (task.description ?? '').trim(),
       priority: task.priority ?? undefined,
       dueDate: task.dueDate ?? null,
+      estimationPoints: task.estimationPoints ?? null,
+      projectIds: task.projectIds ?? [],
       labels: Array.isArray(task.labels)
         ? task.labels
             .map((label) => ({
@@ -400,6 +406,8 @@ function buildCandidateTasks(
       (task as any).dueDate ?? null,
       options.timezoneContext
     );
+    const estimationPoints = (task as any).estimationPoints ?? null;
+    const projectIds = (task as any).projectIds ?? [];
 
     candidateTasks.push({
       title: formattedTitle,
@@ -408,6 +416,8 @@ function buildCandidateTasks(
       labelSuggestions,
       labels: labelsPayload,
       dueDate: dueDateValue,
+      estimationPoints,
+      projectIds,
     });
   }
   return candidateTasks;
@@ -423,6 +433,8 @@ function buildPreviewPayload(candidateTasks: CandidateTask[]) {
     labelSuggestions: task.labelSuggestions,
     dueDate: task.dueDate,
     labels: task.labels,
+    estimationPoints: task.estimationPoints ?? null,
+    projectIds: task.projectIds ?? [],
   }));
 }
 
@@ -454,6 +466,31 @@ async function loadLabelNameMap(supabase: TypedSupabaseClient, wsId: string) {
   });
 
   return { kind: 'ok' as const, labelNameMap };
+}
+
+// Helper: load valid project IDs for workspace
+async function loadWorkspaceProjectIds(
+  supabase: TypedSupabaseClient,
+  wsId: string
+) {
+  const { data: projects, error: projectsError } = await supabase
+    .from('task_projects')
+    .select('id')
+    .eq('ws_id', wsId);
+
+  if (projectsError) {
+    console.error('Error fetching workspace projects:', projectsError);
+    return {
+      kind: 'error' as const,
+      status: 500 as const,
+      body: { error: 'Failed to load workspace projects' },
+    };
+  }
+
+  const validProjectIds = new Set(
+    (projects ?? []).map((project) => project.id)
+  );
+  return { kind: 'ok' as const, validProjectIds };
 }
 
 export async function POST(
@@ -604,6 +641,43 @@ export async function POST(
     }
     const labelNameMap = labelMapResult.labelNameMap;
 
+    // Load valid project IDs for the workspace and validate before insertion
+    const projectIdsResult = await loadWorkspaceProjectIds(supabase, wsId);
+    if (projectIdsResult.kind === 'error') {
+      return NextResponse.json(projectIdsResult.body, {
+        status: projectIdsResult.status,
+      });
+    }
+    const validProjectIds = projectIdsResult.validProjectIds;
+
+    // Collect all incoming project IDs and validate them
+    const incomingProjectIds = new Set<string>();
+    for (const taskDefinition of candidateTasks) {
+      if (taskDefinition.projectIds && taskDefinition.projectIds.length > 0) {
+        taskDefinition.projectIds.forEach((projectId) => {
+          incomingProjectIds.add(projectId);
+        });
+      }
+    }
+
+    // Check for invalid project IDs before any DB insertion
+    const invalidProjectIds = Array.from(incomingProjectIds).filter(
+      (projectId) => !validProjectIds.has(projectId)
+    );
+
+    if (invalidProjectIds.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'Invalid project IDs provided',
+          details: {
+            invalidProjectIds,
+            message: 'One or more project IDs do not belong to this workspace',
+          },
+        },
+        { status: 400 }
+      );
+    }
+
     const ensureLabelId = async (label: ProvidedLabel) => {
       if (label.id) {
         return label.id;
@@ -656,6 +730,7 @@ export async function POST(
       list_id: listCheck.id,
       priority: task.priority,
       end_date: task.dueDate,
+      estimation_points: task.estimationPoints ?? null,
       archived: false,
       deleted: false,
       completed: false,
@@ -744,6 +819,40 @@ export async function POST(
 
       if (labelInsertError) {
         console.error('Error assigning labels to tasks:', labelInsertError);
+      }
+    }
+
+    // Assign projects to tasks (validation already performed earlier)
+    const projectAssignments: { task_id: string; project_id: string }[] = [];
+
+    for (let index = 0; index < insertedTasks.length; index += 1) {
+      const insertedTask = insertedTasks[index];
+      const taskDefinition = candidateTasks[index];
+
+      if (!insertedTask || !taskDefinition) {
+        continue;
+      }
+
+      if (taskDefinition.projectIds && taskDefinition.projectIds.length > 0) {
+        taskDefinition.projectIds.forEach((projectId) => {
+          // Project ID validity already checked before insertion
+          if (validProjectIds.has(projectId)) {
+            projectAssignments.push({
+              task_id: insertedTask.id,
+              project_id: projectId,
+            });
+          }
+        });
+      }
+    }
+
+    if (projectAssignments.length) {
+      const { error: projectInsertError } = await supabase
+        .from('task_project_tasks')
+        .insert(projectAssignments);
+
+      if (projectInsertError) {
+        console.error('Error assigning projects to tasks:', projectInsertError);
       }
     }
 
