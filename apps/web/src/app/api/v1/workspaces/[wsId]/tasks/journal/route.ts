@@ -22,6 +22,8 @@ const providedTaskSchema = z.object({
   description: z.string().nullable().optional(),
   priority: z.enum(['critical', 'high', 'normal', 'low']).nullable().optional(),
   dueDate: z.string().nullable().optional(),
+  estimationPoints: z.number().int().min(0).max(8).nullable().optional(),
+  projectIds: z.array(z.string()).optional(),
   labels: z
     .array(
       z.object({
@@ -160,6 +162,8 @@ type CandidateTask = {
   labelSuggestions: string[];
   labels: ProvidedLabel[];
   dueDate: string | null;
+  estimationPoints?: number | null;
+  projectIds?: string[];
 };
 
 export const maxDuration = 45;
@@ -322,6 +326,8 @@ function normalizeProvidedTasks(
       description: (task.description ?? '').trim(),
       priority: task.priority ?? undefined,
       dueDate: task.dueDate ?? null,
+      estimationPoints: task.estimationPoints ?? null,
+      projectIds: task.projectIds ?? [],
       labels: Array.isArray(task.labels)
         ? task.labels
             .map((label) => ({
@@ -400,6 +406,8 @@ function buildCandidateTasks(
       (task as any).dueDate ?? null,
       options.timezoneContext
     );
+    const estimationPoints = (task as any).estimationPoints ?? null;
+    const projectIds = (task as any).projectIds ?? [];
 
     candidateTasks.push({
       title: formattedTitle,
@@ -408,6 +416,8 @@ function buildCandidateTasks(
       labelSuggestions,
       labels: labelsPayload,
       dueDate: dueDateValue,
+      estimationPoints,
+      projectIds,
     });
   }
   return candidateTasks;
@@ -423,6 +433,8 @@ function buildPreviewPayload(candidateTasks: CandidateTask[]) {
     labelSuggestions: task.labelSuggestions,
     dueDate: task.dueDate,
     labels: task.labels,
+    estimationPoints: task.estimationPoints ?? null,
+    projectIds: task.projectIds ?? [],
   }));
 }
 
@@ -656,6 +668,7 @@ export async function POST(
       list_id: listCheck.id,
       priority: task.priority,
       end_date: task.dueDate,
+      estimation_points: task.estimationPoints ?? null,
       archived: false,
       deleted: false,
       completed: false,
@@ -744,6 +757,37 @@ export async function POST(
 
       if (labelInsertError) {
         console.error('Error assigning labels to tasks:', labelInsertError);
+      }
+    }
+
+    // Assign projects to tasks
+    const projectAssignments: { task_id: string; project_id: string }[] = [];
+
+    for (let index = 0; index < insertedTasks.length; index += 1) {
+      const insertedTask = insertedTasks[index];
+      const taskDefinition = candidateTasks[index];
+
+      if (!insertedTask || !taskDefinition) {
+        continue;
+      }
+
+      if (taskDefinition.projectIds && taskDefinition.projectIds.length > 0) {
+        taskDefinition.projectIds.forEach((projectId) => {
+          projectAssignments.push({
+            task_id: insertedTask.id,
+            project_id: projectId,
+          });
+        });
+      }
+    }
+
+    if (projectAssignments.length) {
+      const { error: projectInsertError } = await supabase
+        .from('task_project_tasks')
+        .insert(projectAssignments);
+
+      if (projectInsertError) {
+        console.error('Error assigning projects to tasks:', projectInsertError);
       }
     }
 

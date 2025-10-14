@@ -49,7 +49,7 @@ export function TaskProjectsMenu({
           </div>
         )}
         {!isLoading && availableProjects.length > 0 && (
-          <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
+          <ScrollArea className="max-h-[min(300px,calc(100vh-200px))]">
             <div className="p-1">
               {availableProjects.map((project) => {
                 const active = taskProjects.some((p) => p.id === project.id);
@@ -73,7 +73,7 @@ export function TaskProjectsMenu({
                       ) : (
                         <Box className="h-4 w-4 text-dynamic-sky" />
                       )}
-                      <span className="truncate">{project.name}</span>
+                      <span className="line-clamp-1">{project.name}</span>
                     </div>
                     {active && <Check className="h-4 w-4" />}
                   </DropdownMenuItem>

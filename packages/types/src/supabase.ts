@@ -8,6 +8,11 @@ export type Json =
   | number
   | string;
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: '13.0.5';
+  };
   public: {
     CompositeTypes: {
       [_ in never]: never;
@@ -12114,36 +12119,7 @@ export type Database = {
           ts?: null | string;
           ws_id?: never;
         };
-        Relationships: [
-          {
-            columns: ['auth_uid'];
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            isOneToOne: false;
-            referencedColumns: ['user_id'];
-            referencedRelation: 'nova_user_challenge_leaderboard';
-          },
-          {
-            columns: ['auth_uid'];
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            isOneToOne: false;
-            referencedColumns: ['user_id'];
-            referencedRelation: 'nova_user_leaderboard';
-          },
-          {
-            columns: ['auth_uid'];
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'shortened_links_creator_stats';
-          },
-          {
-            columns: ['auth_uid'];
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'users';
-          },
-        ];
+        Relationships: [];
         Row: {
           auth_role: null | string;
           auth_uid: null | string;
