@@ -379,7 +379,8 @@ function TaskEditDialogComponent({
           color: userColor || '',
         }
       : null,
-    enabled: DEV_MODE && isOpen && !isCreateMode && showUserPresence && !!task?.id,
+    enabled:
+      DEV_MODE && isOpen && !isCreateMode && showUserPresence && !!task?.id,
   });
 
   // If the task has no Yjs state, initialize it
