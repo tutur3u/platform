@@ -1,6 +1,28 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useQuery } from '@tanstack/react-query';
+import {
+  AlertCircle,
+  Box,
+  Calendar,
+  Check,
+  CheckCircle2,
+  CircleSlash,
+  Clock,
+  FileText,
+  Flag,
+  Image as ImageIcon,
+  Link2,
+  ListTodo,
+  MoreHorizontal,
+  Move,
+  Play,
+  Timer,
+  Trash2,
+  UserMinus,
+  UserStar,
+  X,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -21,27 +43,6 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useTaskActions } from '@tuturuuu/ui/hooks/use-task-actions';
-import {
-  AlertCircle,
-  Box,
-  Calendar,
-  Check,
-  CheckCircle2,
-  CircleSlash,
-  Clock,
-  FileText,
-  Flag,
-  Image as ImageIcon,
-  Link2,
-  MoreHorizontal,
-  Move,
-  Play,
-  Timer,
-  Trash2,
-  UserMinus,
-  UserStar,
-  X,
-} from '@tuturuuu/icons';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
 import {
@@ -700,6 +701,24 @@ function TaskCardInner({
                 <div className="flex-none overflow-hidden">
                   {getPriorityIndicator(task.priority)}
                 </div>
+              )}
+              {/* Sub-tasks counter - prominent placement */}
+              {!task.archived && descriptionMeta.totalCheckboxes > 0 && (
+                <Badge
+                  variant="secondary"
+                  className={cn(
+                    'border font-medium text-[10px]',
+                    descriptionMeta.checkedCheckboxes ===
+                      descriptionMeta.totalCheckboxes
+                      ? 'border-dynamic-green/30 bg-dynamic-green/15 text-dynamic-green'
+                      : 'border-dynamic-gray/30 bg-dynamic-gray/10 text-dynamic-gray'
+                  )}
+                  title={`${descriptionMeta.checkedCheckboxes} of ${descriptionMeta.totalCheckboxes} sub-tasks completed`}
+                >
+                  <ListTodo className="h-3 w-3" />
+                  {descriptionMeta.checkedCheckboxes}/
+                  {descriptionMeta.totalCheckboxes}
+                </Badge>
               )}
               {/* Project indicator */}
               {!task.archived && task.projects && task.projects.length > 0 && (
