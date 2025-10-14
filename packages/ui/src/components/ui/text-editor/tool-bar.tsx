@@ -440,7 +440,8 @@ export function ToolBar({
     if (currentNode.type.name === 'paragraph') {
       if (depth < 2) {
         toast.error('Not in a list item', {
-          description: 'Move your cursor to a list item to convert it to a task',
+          description:
+            'Move your cursor to a list item to convert it to a task',
         });
         return;
       }
