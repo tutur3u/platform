@@ -384,7 +384,9 @@
     "no_changes_to_save": "Không có thay đổi để lưu",
     "confirm_delete": "Xóa bản báo cáo?",
     "filter": "Lọc",
-    "insufficient_permissions": "Bạn không có đủ quyền để thực hiện hành động này"
+    "insufficient_permissions": "Bạn không có đủ quyền để thực hiện hành động này",
+    "partners": "Đối tác",
+    "partners-description": "Khám phá cơ hội hợp tác với Tuturuuu."
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
