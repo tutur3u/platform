@@ -8,6 +8,11 @@ export type Json =
   | number
   | string;
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: '13.0.5';
+  };
   public: {
     CompositeTypes: {
       [_ in never]: never;
@@ -69,15 +74,6 @@ export type Database = {
       workspace_role_permission:
         | 'ai_chat'
         | 'ai_lab'
-        | 'check_user_attendance'
-        | 'create_inventory'
-        | 'create_invoices'
-        | 'create_transactions'
-        | 'create_users'
-        | 'delete_inventory'
-        | 'delete_invoices'
-        | 'delete_transactions'
-        | 'delete_users'
         | 'export_finance_data'
         | 'export_users_data'
         | 'manage_calendar'
@@ -98,17 +94,7 @@ export type Database = {
         | 'manage_workspace_security'
         | 'manage_workspace_settings'
         | 'send_user_group_post_emails'
-        | 'update_inventory'
-        | 'update_invoices'
-        | 'update_transactions'
-        | 'update_users'
-        | 'view_finance_stats'
-        | 'view_infrastructure'
-        | 'view_inventory'
-        | 'view_invoices'
-        | 'view_transactions'
-        | 'view_users_private_info'
-        | 'view_users_public_info';
+        | 'view_infrastructure';
     };
     Functions: {
       atomic_sync_token_operation: {
@@ -4788,7 +4774,7 @@ export type Database = {
       notes: {
         Insert: {
           archived?: boolean | null;
-          content: Json;
+          content: string;
           created_at?: null | string;
           creator_id?: string;
           deleted?: boolean | null;
@@ -4842,7 +4828,7 @@ export type Database = {
         ];
         Row: {
           archived: boolean | null;
-          content: Json;
+          content: string;
           created_at: null | string;
           creator_id: string;
           deleted: boolean | null;
@@ -4852,7 +4838,7 @@ export type Database = {
         };
         Update: {
           archived?: boolean | null;
-          content?: Json;
+          content?: string;
           created_at?: null | string;
           creator_id?: string;
           deleted?: boolean | null;
@@ -7241,6 +7227,7 @@ export type Database = {
           creator_id?: null | string;
           deleted?: boolean | null;
           description?: null | string;
+          description_yjs_state?: null | number[];
           embedding?: null | string;
           end_date?: null | string;
           estimation_points?: null | number;
@@ -7301,6 +7288,7 @@ export type Database = {
           creator_id: null | string;
           deleted: boolean | null;
           description: null | string;
+          description_yjs_state: null | number[];
           embedding: null | string;
           end_date: null | string;
           estimation_points: null | number;
@@ -7324,6 +7312,7 @@ export type Database = {
           creator_id?: null | string;
           deleted?: boolean | null;
           description?: null | string;
+          description_yjs_state?: null | number[];
           embedding?: null | string;
           end_date?: null | string;
           estimation_points?: null | number;
@@ -12114,36 +12103,7 @@ export type Database = {
           ts?: null | string;
           ws_id?: never;
         };
-        Relationships: [
-          {
-            columns: ['auth_uid'];
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            isOneToOne: false;
-            referencedColumns: ['user_id'];
-            referencedRelation: 'nova_user_challenge_leaderboard';
-          },
-          {
-            columns: ['auth_uid'];
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            isOneToOne: false;
-            referencedColumns: ['user_id'];
-            referencedRelation: 'nova_user_leaderboard';
-          },
-          {
-            columns: ['auth_uid'];
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'shortened_links_creator_stats';
-          },
-          {
-            columns: ['auth_uid'];
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'users';
-          },
-        ];
+        Relationships: [];
         Row: {
           auth_role: null | string;
           auth_uid: null | string;
@@ -13276,15 +13236,6 @@ export const Constants = {
       workspace_role_permission: [
         'ai_chat',
         'ai_lab',
-        'check_user_attendance',
-        'create_inventory',
-        'create_invoices',
-        'create_transactions',
-        'create_users',
-        'delete_inventory',
-        'delete_invoices',
-        'delete_transactions',
-        'delete_users',
         'export_finance_data',
         'export_users_data',
         'manage_calendar',
@@ -13305,17 +13256,7 @@ export const Constants = {
         'manage_workspace_security',
         'manage_workspace_settings',
         'send_user_group_post_emails',
-        'update_inventory',
-        'update_invoices',
-        'update_transactions',
-        'update_users',
-        'view_finance_stats',
         'view_infrastructure',
-        'view_inventory',
-        'view_invoices',
-        'view_transactions',
-        'view_users_private_info',
-        'view_users_public_info',
       ],
     },
   },

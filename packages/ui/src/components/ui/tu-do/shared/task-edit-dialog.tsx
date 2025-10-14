@@ -344,16 +344,15 @@ function TaskEditDialogComponent({
       try {
         const supabase = createClient();
 
-        const { data: existingState, error: existingStateError } =
-          await supabase
-            .from('tasks')
-            .select('description_yjs_state')
-            .eq('id', task.id)
-            .single();
+        const { data: taskData, error: taskDataError } = await supabase
+          .from('tasks')
+          .select('description_yjs_state')
+          .eq('id', task.id)
+          .single();
 
-        if (existingStateError) throw existingStateError;
+        if (taskDataError) throw taskDataError;
 
-        if (!existingState?.description_yjs_state) {
+        if (!taskData?.description_yjs_state) {
           const yjsState = convertJsonContentToYjsState(
             description,
             editorInstance.schema
