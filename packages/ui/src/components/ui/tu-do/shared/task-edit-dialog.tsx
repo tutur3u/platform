@@ -2025,7 +2025,11 @@ function TaskEditDialogComponent({
       setSelectedAssignees(task?.assignees || []);
       setSelectedProjects(task?.projects || []);
       if (task?.id) previousTaskIdRef.current = task.id;
-    } else if (isOpen && (isCreateMode || task?.id === 'new') && taskIdChanged) {
+    } else if (
+      isOpen &&
+      (isCreateMode || task?.id === 'new') &&
+      taskIdChanged
+    ) {
       setName(task?.name || '');
       setDescription(getDescriptionContent(task?.description) || null);
       setPriority(task?.priority || null);
