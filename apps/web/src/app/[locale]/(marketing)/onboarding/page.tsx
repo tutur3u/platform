@@ -33,8 +33,6 @@ export default async function OnboardingPage() {
     }
   }
 
-  // Get current onboarding progress
   const progress = await getUserOnboardingProgress(user.id);
-
   return <OnboardingFlow user={user} initialProgress={progress} />;
 }

@@ -115,7 +115,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     resolver: zodResolver(passwordFormSchema),
     defaultValues: {
       email: DEV_MODE ? 'local@tuturuuu.com' : '',
-      password: '',
+      password: DEV_MODE ? 'password123' : '',
     },
   });
 
@@ -127,7 +127,8 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   });
 
   // State Management
-  const passwordless = searchParams.get('passwordless') !== 'false';
+  const passwordless =
+    searchParams.get('passwordless') !== 'false' && !DEV_MODE;
   const [initialized, setInitialized] = useState(false);
   const [readyForAuth, setReadyForAuth] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
@@ -393,7 +394,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       return true;
 
     return false;
-  }, [supabase.auth.mfa.getAuthenticatorAssuranceLevel]);
+  }, [supabase.auth.mfa]);
 
   const verifyTOtp = async (data: { totp: string }) => {
     if (!data.totp) return;
@@ -661,7 +662,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     }
 
     checkUser();
-  }, [supabase.auth.getUser, needsMFA]);
+  }, [needsMFA, supabase.auth]);
 
   useEffect(() => {
     const processUrl = async () => {
@@ -685,7 +686,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         passwordForm.setFocus('email');
       }
     }
-  }, [loginMethod, otpForm.setFocus, passwordForm.setFocus]);
+  }, [loginMethod, otpForm, passwordForm]);
 
   useEffect(() => {
     if (resendCooldown > 0) {
