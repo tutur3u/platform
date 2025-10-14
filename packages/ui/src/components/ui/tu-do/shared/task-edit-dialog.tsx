@@ -1607,7 +1607,7 @@ function TaskEditDialogComponent({
         },
         {
           onSuccess: async () => {
-            console.log('âœ… Task update successful, refreshing data...');
+            console.log('Task update successful, refreshing data...');
 
             await invalidateTaskCaches(queryClient, boardId);
 
