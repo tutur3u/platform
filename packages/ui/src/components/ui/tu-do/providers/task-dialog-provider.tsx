@@ -143,8 +143,12 @@ export function TaskDialogProvider({
           display_name: a.users?.display_name,
           avatar_url: a.users?.avatar_url,
         })),
-        labels: task.labels?.map((l: any) => l.workspace_task_labels).filter(Boolean),
-        projects: task.projects?.map((p: any) => p.task_projects).filter(Boolean),
+        labels: task.labels
+          ?.map((l: any) => l.workspace_task_labels)
+          .filter(Boolean),
+        projects: task.projects
+          ?.map((p: any) => p.task_projects)
+          .filter(Boolean),
       };
 
       // Open the task in edit mode
@@ -215,7 +219,15 @@ export function TaskDialogProvider({
       onUpdate,
       triggerUpdate,
     }),
-    [state, openTask, openTaskById, createTask, closeDialog, onUpdate, triggerUpdate]
+    [
+      state,
+      openTask,
+      openTaskById,
+      createTask,
+      closeDialog,
+      onUpdate,
+      triggerUpdate,
+    ]
   );
 
   return (

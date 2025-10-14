@@ -479,7 +479,8 @@ export function RichTextEditor({
     if (!editor || readOnly) return;
 
     const currentContent = editor.getJSON();
-    const contentChanged = JSON.stringify(currentContent) !== JSON.stringify(content);
+    const contentChanged =
+      JSON.stringify(currentContent) !== JSON.stringify(content);
 
     if (contentChanged) {
       // Update editor content without triggering onChange
