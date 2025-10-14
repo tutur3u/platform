@@ -44,6 +44,7 @@
   "exports": {
     "./timezones": "./src/timezones.json",
     "./*": "./src/*.ts",
+    "./common/scan": "./src/common/scan.tsx",
     "./common/nextjs": "./src/common/nextjs.tsx",
     "./permissions": "./src/permissions.tsx",
     "./editor": "./src/editor/index.ts"

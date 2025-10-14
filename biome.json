@@ -24,7 +24,8 @@
         "noLabelWithoutControl": "off"
       },
       "style": {
-        "noNonNullAssertion": "off"
+        "noNonNullAssertion": "off",
+        "noHeadElement": "off"
       },
       "nursery": {
         "useSortedClasses": {
