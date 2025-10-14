@@ -419,6 +419,55 @@ export function ToolBar({
   const handleConvertToTask = useCallback(async () => {
     if (!editor || !boardId || !availableLists || !queryClient) return;
 
+    const { state } = editor;
+    const { selection } = state;
+    const { $from } = selection;
+
+    // Get the current node (could be listItem, taskItem, or paragraph inside them)
+    let currentNode = $from.parent;
+    const depth = $from.depth;
+
+    // Safety check: depth must be at least 1 to have a valid position
+    if (depth < 1) {
+      toast.error('Not in a list item', {
+        description: 'Move your cursor to a list item to convert it to a task',
+      });
+      return;
+    }
+
+    let nodePos = $from.before(depth);
+
+    // If we're inside a paragraph, get the parent list item
+    if (currentNode.type.name === 'paragraph') {
+      if (depth < 2) {
+        toast.error('Not in a list item', {
+          description:
+            'Move your cursor to a list item to convert it to a task',
+        });
+        return;
+      }
+      currentNode = $from.node(depth - 1);
+      nodePos = $from.before(depth - 1);
+    }
+
+    // Check if we're in a list item or task item
+    const validNodeTypes = ['listItem', 'taskItem'];
+    if (!validNodeTypes.includes(currentNode.type.name)) {
+      toast.error('Not in a list item', {
+        description: 'Move your cursor to a list item to convert it to a task',
+      });
+      return;
+    }
+
+    // Extract text content from the node
+    const textContent = currentNode.textContent.trim();
+    if (!textContent) {
+      toast.error('Empty list item', {
+        description: 'Add some text before converting to a task',
+      });
+      return;
+    }
+
     // Get the first available list
     const firstList = availableLists[0];
     if (!firstList) {

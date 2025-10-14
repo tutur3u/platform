@@ -1,5 +1,4 @@
 import type { Editor } from '@tiptap/core';
-import type { Transaction } from 'prosemirror-state';
 
 export interface ConvertToTaskOptions {
   editor: Editor;
