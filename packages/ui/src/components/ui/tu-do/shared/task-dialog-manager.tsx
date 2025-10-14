@@ -19,13 +19,15 @@ const TaskEditDialog = dynamic(
  * It lazy-loads the actual dialog component only when first opened
  */
 export function TaskDialogManager() {
-  const { state, closeDialog, triggerUpdate } = useTaskDialogContext();
+  const { state, closeDialog, triggerUpdate, openTaskById } =
+    useTaskDialogContext();
 
   // Don't render anything if dialog has never been opened
   if (!state.isOpen && !state.task) {
     return null;
   }
 
+  // No key prop to allow smooth transitions between tasks without remounting
   return (
     <TaskEditDialog
       task={state.task}
@@ -36,6 +38,7 @@ export function TaskDialogManager() {
       availableLists={state.availableLists}
       mode={state.mode}
       showUserPresence={state.showUserPresence}
+      onOpenTask={openTaskById}
     />
   );
 }

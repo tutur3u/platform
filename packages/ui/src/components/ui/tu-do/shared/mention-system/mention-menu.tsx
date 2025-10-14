@@ -9,7 +9,6 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
-// @ts-expect-error - Bun types issue with react-dom subpath
 import { createPortal } from 'react-dom';
 import type { MentionOption } from './types';
 import { mentionGroupOrder, mentionTypeStyles } from './types';
@@ -56,8 +55,6 @@ export function MentionMenu({
         top: position.top,
         left: position.left,
       }}
-      onPointerDownCapture={(event) => event.stopPropagation()}
-      onMouseDown={(event) => event.stopPropagation()}
     >
       <div className="flex-shrink-0 border-dynamic-border/60 border-b px-3 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">
         Mention people, workspaces, projects, dates, or tasks
@@ -72,6 +69,20 @@ export function MentionMenu({
         ref={listRef}
         className="scrollbar-thin max-h-80 flex-1 overflow-y-auto overscroll-contain py-1"
         style={{ maxHeight: 320 }}
+        onWheel={(e) => {
+          // Allow wheel events for scrolling
+          e.stopPropagation();
+        }}
+        onTouchMove={(e) => {
+          // Allow touch move for mobile scrolling
+          e.stopPropagation();
+        }}
+        onMouseDown={(e) => {
+          // Prevent editor from taking focus when clicking to scroll
+          if (e.target === e.currentTarget) {
+            e.stopPropagation();
+          }
+        }}
       >
         {options.length === 0 ? (
           <div className="px-3 py-3 text-muted-foreground text-sm">

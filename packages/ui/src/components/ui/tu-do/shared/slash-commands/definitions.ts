@@ -1,5 +1,12 @@
 import type { LucideIcon } from '@tuturuuu/icons';
-import { Calendar, Flag, Settings, Trash, Users } from '@tuturuuu/icons';
+import {
+  Calendar,
+  CirclePlus,
+  Flag,
+  Settings,
+  Trash,
+  Users,
+} from '@tuturuuu/icons';
 
 export interface SlashCommandDefinition {
   id:
@@ -13,7 +20,8 @@ export interface SlashCommandDefinition {
     | 'priority-normal'
     | 'priority-low'
     | 'priority-clear'
-    | 'toggle-advanced';
+    | 'toggle-advanced'
+    | 'convert-to-task';
   label: string;
   description?: string;
   icon: LucideIcon;
@@ -109,6 +117,13 @@ export function getSlashCommands(options: {
       description: 'Toggle the advanced settings panel',
       icon: Settings,
       keywords: ['advanced', 'options', 'settings'],
+    },
+    {
+      id: 'convert-to-task',
+      label: 'Convert to task',
+      description: 'Convert this item into a new task and mention it',
+      icon: CirclePlus,
+      keywords: ['convert', 'task', 'create', 'new', 'mention'],
     },
   ];
 }

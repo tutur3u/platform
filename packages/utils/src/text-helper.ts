@@ -62,6 +62,8 @@ export interface DescriptionMetadata {
   imageCount: number;
   videoCount: number;
   linkCount: number;
+  totalCheckboxes: number;
+  checkedCheckboxes: number;
 }
 
 export const getDescriptionMetadata = (
@@ -75,6 +77,8 @@ export const getDescriptionMetadata = (
     imageCount: 0,
     videoCount: 0,
     linkCount: 0,
+    totalCheckboxes: 0,
+    checkedCheckboxes: 0,
   };
 
   if (!description) return metadata;
@@ -113,6 +117,14 @@ export const getDescriptionMetadata = (
       if (content.marks?.some((mark) => mark.type === 'link')) {
         metadata.hasLinks = true;
         metadata.linkCount++;
+      }
+
+      // Check for task items (checkboxes)
+      if (content.type === 'taskItem') {
+        metadata.totalCheckboxes++;
+        if (content.attrs?.checked === true) {
+          metadata.checkedCheckboxes++;
+        }
       }
 
       // Recursively check child content
