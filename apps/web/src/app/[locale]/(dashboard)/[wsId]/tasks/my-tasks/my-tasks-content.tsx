@@ -38,7 +38,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Label } from '@tuturuuu/ui/label';
 import {
@@ -893,25 +893,6 @@ export default function MyTasksContent({
     }));
   };
 
-  const handlePreviewTaskNameChange = (index: number, name: string) => {
-    if (createTasksMutation.isPending) return;
-    setPreviewTaskNames((prev) => ({
-      ...prev,
-      [index]: name,
-    }));
-  };
-
-  const handlePreviewTaskDescriptionChange = (
-    index: number,
-    description: string | null
-  ) => {
-    if (createTasksMutation.isPending) return;
-    setPreviewTaskDescriptions((prev) => ({
-      ...prev,
-      [index]: description,
-    }));
-  };
-
   const handlePreviewTaskLabelToggle = (index: number, labelId: string) => {
     if (createTasksMutation.isPending) return;
 
@@ -1060,10 +1041,6 @@ export default function MyTasksContent({
         if (removedTaskIndices.has(index)) {
           return null;
         }
-        if (tasksPayload.length === 0) {
-          toast.error('No tasks selected to create');
-          return null;
-        }
 
         const selections = aiGenerateLabels
           ? (taskLabelSelections[index]?.suggestions.filter(
@@ -1105,6 +1082,10 @@ export default function MyTasksContent({
         };
       })
       .filter((task) => task !== null);
+    if (tasksPayload.length === 0) {
+      toast.error('No tasks selected to create');
+      return;
+    }
 
     let timestampMoment = dayjs().tz(clientTimezone);
     if (!timestampMoment.isValid()) {
@@ -2495,11 +2476,18 @@ export default function MyTasksContent({
                                         id: projectId,
                                         name:
                                           project?.name || 'Unknown Project',
+                                        status: null,
                                       };
                                     })}
-                                    availableProjects={workspaceProjects}
+                                    availableProjects={workspaceProjects.map(
+                                      (p) => ({
+                                        id: p.id,
+                                        name: p.name,
+                                        status: null,
+                                      })
+                                    )}
                                     isLoading={false}
-                                    projectsSaving={isCreating}
+                                    projectsSaving={null}
                                     onToggleProject={(projectId) =>
                                       handlePreviewTaskProjectToggle(
                                         originalIndex,

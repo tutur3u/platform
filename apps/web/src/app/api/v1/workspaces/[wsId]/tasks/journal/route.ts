@@ -641,6 +641,43 @@ export async function POST(
     }
     const labelNameMap = labelMapResult.labelNameMap;
 
+    // Load valid project IDs for the workspace and validate before insertion
+    const projectIdsResult = await loadWorkspaceProjectIds(supabase, wsId);
+    if (projectIdsResult.kind === 'error') {
+      return NextResponse.json(projectIdsResult.body, {
+        status: projectIdsResult.status,
+      });
+    }
+    const validProjectIds = projectIdsResult.validProjectIds;
+
+    // Collect all incoming project IDs and validate them
+    const incomingProjectIds = new Set<string>();
+    for (const taskDefinition of candidateTasks) {
+      if (taskDefinition.projectIds && taskDefinition.projectIds.length > 0) {
+        taskDefinition.projectIds.forEach((projectId) => {
+          incomingProjectIds.add(projectId);
+        });
+      }
+    }
+
+    // Check for invalid project IDs before any DB insertion
+    const invalidProjectIds = Array.from(incomingProjectIds).filter(
+      (projectId) => !validProjectIds.has(projectId)
+    );
+
+    if (invalidProjectIds.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'Invalid project IDs provided',
+          details: {
+            invalidProjectIds,
+            message: 'One or more project IDs do not belong to this workspace',
+          },
+        },
+        { status: 400 }
+      );
+    }
+
     const ensureLabelId = async (label: ProvidedLabel) => {
       if (label.id) {
         return label.id;
@@ -785,44 +822,7 @@ export async function POST(
       }
     }
 
-    // Load valid project IDs for the workspace
-    const projectIdsResult = await loadWorkspaceProjectIds(supabase, wsId);
-    if (projectIdsResult.kind === 'error') {
-      return NextResponse.json(projectIdsResult.body, {
-        status: projectIdsResult.status,
-      });
-    }
-    const validProjectIds = projectIdsResult.validProjectIds;
-
-    // Collect all incoming project IDs and validate them
-    const incomingProjectIds = new Set<string>();
-    for (const taskDefinition of candidateTasks) {
-      if (taskDefinition.projectIds && taskDefinition.projectIds.length > 0) {
-        taskDefinition.projectIds.forEach((projectId) => {
-          incomingProjectIds.add(projectId);
-        });
-      }
-    }
-
-    // Check for invalid project IDs
-    const invalidProjectIds = Array.from(incomingProjectIds).filter(
-      (projectId) => !validProjectIds.has(projectId)
-    );
-
-    if (invalidProjectIds.length > 0) {
-      return NextResponse.json(
-        {
-          error: 'Invalid project IDs provided',
-          details: {
-            invalidProjectIds,
-            message: 'One or more project IDs do not belong to this workspace',
-          },
-        },
-        { status: 400 }
-      );
-    }
-
-    // Assign projects to tasks (only validated IDs)
+    // Assign projects to tasks (validation already performed earlier)
     const projectAssignments: { task_id: string; project_id: string }[] = [];
 
     for (let index = 0; index < insertedTasks.length; index += 1) {
@@ -835,7 +835,7 @@ export async function POST(
 
       if (taskDefinition.projectIds && taskDefinition.projectIds.length > 0) {
         taskDefinition.projectIds.forEach((projectId) => {
-          // Double-check validation (defensive programming)
+          // Project ID validity already checked before insertion
           if (validProjectIds.has(projectId)) {
             projectAssignments.push({
               task_id: insertedTask.id,
