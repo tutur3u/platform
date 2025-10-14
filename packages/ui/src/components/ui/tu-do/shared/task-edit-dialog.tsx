@@ -50,6 +50,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import { cn } from '@tuturuuu/utils/format';
 import {
   invalidateTaskCaches,
@@ -1114,64 +1115,7 @@ function TaskEditDialogComponent({
 
   // Handle converting list items to tasks
   const handleConvertToTask = useCallback(async () => {
-    if (!editorInstance || !boardId) return;
-
-    const { state } = editorInstance;
-    const { selection } = state;
-    const { $from } = selection;
-
-    // Get the current node (could be listItem, taskItem, or paragraph inside them)
-    let currentNode = $from.parent;
-    const depth = $from.depth;
-
-    // Safety check: depth must be at least 1 to have a valid position
-    if (depth < 1) {
-      toast({
-        title: 'Not in a list item',
-        description: 'Move your cursor to a list item to convert it to a task',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    let nodePos = $from.before(depth);
-
-    // If we're inside a paragraph, get the parent list item
-    if (currentNode.type.name === 'paragraph') {
-      if (depth < 2) {
-        toast({
-          title: 'Not in a list item',
-          description:
-            'Move your cursor to a list item to convert it to a task',
-          variant: 'destructive',
-        });
-        return;
-      }
-      currentNode = $from.node(depth - 1);
-      nodePos = $from.before(depth - 1);
-    }
-
-    // Check if we're in a list item or task item
-    const validNodeTypes = ['listItem', 'taskItem'];
-    if (!validNodeTypes.includes(currentNode.type.name)) {
-      toast({
-        title: 'Not in a list item',
-        description: 'Move your cursor to a list item to convert it to a task',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Extract text content from the node
-    const textContent = currentNode.textContent.trim();
-    if (!textContent) {
-      toast({
-        title: 'Empty list item',
-        description: 'Add some text before converting to a task',
-        variant: 'destructive',
-      });
-      return;
-    }
+    if (!editorInstance || !boardId || !availableLists) return;
 
     // Get the first available list
     const firstList = availableLists[0];
@@ -1184,61 +1128,51 @@ function TaskEditDialogComponent({
       return;
     }
 
-    try {
-      // Create new task
-      const supabase = createClient();
-      const { data: newTask, error } = await supabase
-        .from('tasks')
-        .insert({
-          name: textContent,
-          list_id: firstList.id,
-        })
-        .select('id, name')
-        .single();
+    // Use shared conversion helper
+    const result = await convertListItemToTask({
+      editor: editorInstance,
+      listId: firstList.id,
+      listName: firstList.name,
+      wrapInParagraph: false,
+      createTask: async ({
+        name,
+        listId,
+      }: {
+        name: string;
+        listId: string;
+      }) => {
+        const supabase = createClient();
+        const { data: newTask, error } = await supabase
+          .from('tasks')
+          .insert({
+            name,
+            list_id: listId,
+          })
+          .select('id, name')
+          .single();
 
-      if (error || !newTask) throw error;
+        if (error || !newTask) throw error;
+        return newTask;
+      },
+    });
 
-      // Replace the list item with a mention to the new task
-      const tr = state.tr;
-
-      // Delete the list item node
-      tr.delete(nodePos, nodePos + currentNode.nodeSize);
-
-      // Insert a mention node followed by a space
-      const mentionNode = state.schema.nodes.mention?.create({
-        entityId: newTask.id,
-        entityType: 'task',
-        displayName: newTask.name,
-        avatarUrl: null,
-        subtitle: firstList.name,
-      });
-
-      // const paragraphNode = state.schema.nodes.paragraph.create(
-      //   null,
-      //   [mentionNode, state.schema.text(' ')]
-      // );
-
-      if (mentionNode) tr.insert(nodePos, mentionNode);
-
-      // Apply transaction
-      editorInstance.view.dispatch(tr);
-
-      // Invalidate task caches
-      invalidateTaskCaches(queryClient, boardId);
-
+    if (!result.success) {
       toast({
-        title: 'Task created',
-        description: `Created task "${newTask.name}" and added mention`,
-      });
-    } catch (error) {
-      console.error('Failed to convert item to task:', error);
-      toast({
-        title: 'Failed to create task',
-        description: 'An error occurred while creating the task',
+        title: result.error!.message,
+        description: result.error!.description,
         variant: 'destructive',
       });
+      return;
     }
-  }, [editorInstance, boardId, availableLists, toast, queryClient]);
+
+    // Invalidate task caches
+    await invalidateTaskCaches(queryClient, boardId);
+
+    toast({
+      title: 'Task created',
+      description: `Created task "${result.taskName}" and added mention`,
+    });
+  }, [editorInstance, boardId, availableLists, queryClient, toast]);
 
   // Helper function to convert description to JSONContent
   const parseDescription = useCallback((desc?: string): JSONContent | null => {
@@ -1631,13 +1565,25 @@ function TaskEditDialogComponent({
           let currentDescription = description;
           if (flushEditorPendingRef.current) {
             const flushedContent = flushEditorPendingRef.current();
-            currentDescription = flushedContent;
+            if (flushedContent) {
+              currentDescription = flushedContent;
+            }
           }
 
-          // Convert JSONContent to string for storage
-          const descriptionString: string | null = currentDescription
-            ? JSON.stringify(currentDescription)
-            : null;
+          // Convert JSONContent to string for storage with error handling
+          let descriptionString: string | null = null;
+          if (currentDescription) {
+            try {
+              descriptionString = JSON.stringify(currentDescription);
+            } catch (serializationError) {
+              console.error(
+                'Failed to serialize description:',
+                serializationError
+              );
+              // Continue with null description to allow save to proceed
+              descriptionString = null;
+            }
+          }
 
           // Prepare task updates
           const taskUpdates: any = {
@@ -2206,8 +2152,10 @@ function TaskEditDialogComponent({
     let currentDescription = description;
     if (flushEditorPendingRef.current) {
       const flushedContent = flushEditorPendingRef.current();
-      // Use the flushed content directly
-      currentDescription = flushedContent;
+      // Use the flushed content only if it's defined
+      if (flushedContent) {
+        currentDescription = flushedContent;
+      }
     }
 
     setIsSaving(true);
@@ -2221,11 +2169,18 @@ function TaskEditDialogComponent({
       setHasDraft(false);
     } catch {}
 
-    // Convert JSONContent to string for storage
+    // Convert JSONContent to string for storage with error handling
     // Important: Use null explicitly instead of undefined to ensure DB field is cleared
-    const descriptionString: string | null = currentDescription
-      ? JSON.stringify(currentDescription)
-      : null;
+    let descriptionString: string | null = null;
+    if (currentDescription) {
+      try {
+        descriptionString = JSON.stringify(currentDescription);
+      } catch (serializationError) {
+        console.error('Failed to serialize description:', serializationError);
+        // Continue with null description to allow save to proceed
+        descriptionString = null;
+      }
+    }
 
     if (isCreateMode) {
       try {

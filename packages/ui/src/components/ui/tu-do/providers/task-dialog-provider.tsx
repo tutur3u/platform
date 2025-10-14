@@ -13,6 +13,36 @@ import {
   useState,
 } from 'react';
 
+// Type definitions for Supabase join row responses
+// Note: Supabase uses null for optional fields, not undefined
+interface TaskAssigneeJoinRow {
+  user_id: string;
+  users?: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null;
+}
+
+interface TaskLabelJoinRow {
+  label_id: string;
+  workspace_task_labels?: {
+    id: string;
+    name: string;
+    color: string | null;
+    created_at: string | null;
+  } | null;
+}
+
+interface TaskProjectJoinRow {
+  project_id: string;
+  task_projects?: {
+    id: string;
+    name: string;
+    status: string | null;
+  } | null;
+}
+
 interface TaskDialogState {
   isOpen: boolean;
   task?: Task;
@@ -135,19 +165,20 @@ export function TaskDialogProvider({
         .order('created_at');
 
       // Transform the data to match expected structure
+      // Type narrowing: Supabase returns join rows; extract nested data
       const transformedTask = {
         ...task,
-        assignees: task.assignees?.map((a: any) => ({
+        assignees: task.assignees?.map((a: TaskAssigneeJoinRow) => ({
           id: a.users?.id || a.user_id,
           user_id: a.user_id,
           display_name: a.users?.display_name,
           avatar_url: a.users?.avatar_url,
         })),
         labels: task.labels
-          ?.map((l: any) => l.workspace_task_labels)
+          ?.map((l: TaskLabelJoinRow) => l.workspace_task_labels)
           .filter(Boolean),
         projects: task.projects
-          ?.map((p: any) => p.task_projects)
+          ?.map((p: TaskProjectJoinRow) => p.task_projects)
           .filter(Boolean),
       };
 

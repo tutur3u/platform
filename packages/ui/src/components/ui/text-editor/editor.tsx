@@ -476,7 +476,7 @@ export function RichTextEditor({
 
   // Update editor content when the content prop changes externally
   useEffect(() => {
-    if (!editor || readOnly) return;
+    if (!editor) return;
 
     const currentContent = editor.getJSON();
     const contentChanged =
@@ -488,7 +488,7 @@ export function RichTextEditor({
         emitUpdate: false,
       });
     }
-  }, [editor, content, readOnly]);
+  }, [editor, content]);
 
   // Handle initial cursor positioning when focusing from title
   useEffect(() => {
