@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
     turbopackFileSystemCacheForDev: true,
   },
 
+  reactCompiler: true,
   reactStrictMode: true,
   poweredByHeader: false,
   transpilePackages: ['@tuturuuu/ui'],

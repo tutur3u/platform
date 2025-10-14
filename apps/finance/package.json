@@ -33,6 +33,7 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
+    "babel-plugin-react-compiler": "^1.0.0",
     "dayjs": "^1.11.18",
     "nanoid": "^5.1.6",
     "negotiator": "^1.0.0",
