@@ -187,8 +187,18 @@ export function useMentionSuggestions({
       );
     });
 
-    // If no matches found and query is not empty, add external user option
-    if (filtered.length === 0 && rawQuery) {
+    // Check if there are any non-task matches (users, workspaces, projects, dates)
+    const hasNonTaskMatches = filtered.some(
+      (option) =>
+        option.type === 'user' ||
+        option.type === 'workspace' ||
+        option.type === 'project' ||
+        option.type === 'date'
+    );
+
+    // If no non-task matches and query is not empty, add external user option
+    // This allows adding custom guests even when tasks match the query
+    if (!hasNonTaskMatches && rawQuery) {
       return [
         {
           id: `external-${rawQuery}`,
@@ -198,6 +208,7 @@ export function useMentionSuggestions({
           type: 'external-user' as const,
           payload: { displayName: rawQuery, isExternal: true },
         },
+        ...filtered.filter((option) => option.type === 'task'),
       ];
     }
 

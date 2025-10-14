@@ -40,18 +40,10 @@ export function CustomDatePickerDialog({
   onInsert,
 }: CustomDatePickerDialogProps) {
   return (
-    <button
-      type="button"
-      className="border-dynamic-border/60 border-t p-3"
+    <div
+      className="pointer-events-auto w-80 rounded-lg border border-border bg-popover p-4 shadow-lg"
       onMouseDown={(e) => {
-        if (!(e.target as HTMLElement).matches('input')) {
-          e.stopPropagation();
-        }
-      }}
-      onClick={(e) => {
-        if (!(e.target as HTMLElement).matches('input')) {
-          e.stopPropagation();
-        }
+        e.stopPropagation();
       }}
     >
       <div className="mb-2 font-medium text-foreground text-sm">
@@ -60,7 +52,9 @@ export function CustomDatePickerDialog({
       <CalendarComponent
         mode="single"
         selected={selectedDate}
-        onSelect={onDateSelect}
+        onSelect={(date) => {
+          onDateSelect(date);
+        }}
         className="rounded-md border p-0"
       />
       <div className="mt-3 flex items-center gap-2 rounded-md border p-2">
@@ -154,6 +148,6 @@ export function CustomDatePickerDialog({
           Insert
         </Button>
       </div>
-    </button>
+    </div>
   );
 }

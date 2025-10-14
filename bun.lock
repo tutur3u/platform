@@ -2558,7 +2558,7 @@
 
     "devlop": ["devlop@1.1.0", "", { "dependencies": { "dequal": "^2.0.0" } }, "sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA=="],
 
-    "dodopayments": ["dodopayments@2.1.1", "", { "bin": { "dodopayments": "bin/cli" } }, "sha512-H2x7HUHagAlfMxRyWMXTCOF8W7n0+uzQyImZGYvFocNAdtc63i7WHU89gNVZ+rxOmvUBsxWyadvuTSlBk0S4wQ=="],
+    "dodopayments": ["dodopayments@2.1.2", "", { "bin": { "dodopayments": "bin/cli" } }, "sha512-+4zEOkpmFGrUybORzqZmoKB+sEMLc0ueONpPqRDEtQkzLworRnW/qo9AvHWNTH1bPwQy/SDiVVkaXXGRUArX+w=="],
 
     "dodopayments-checkout": ["dodopayments-checkout@1.3.1", "", {}, "sha512-PHnhIf2QW1mnL5RSU++8rw94nd9jvYOUHK9h6nOu+V9eEjQr33xFNyGPR2I3N4bK+fKB10aQx3X4MgwvR3RfCg=="],
 

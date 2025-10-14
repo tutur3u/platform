@@ -316,6 +316,24 @@ export const Mention = Node.create({
       dom.appendChild(avatarWrapper);
       dom.appendChild(label);
 
+      // Make task mentions clickable
+      if (currentEntityType === 'task') {
+        dom.style.cursor = 'pointer';
+        dom.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          // Emit custom event that can be listened to by parent components
+          const event = new CustomEvent('taskMentionClick', {
+            detail: {
+              taskId: currentEntityId,
+              taskName: currentDisplayName,
+            },
+            bubbles: true,
+          });
+          dom.dispatchEvent(event);
+        });
+      }
+
       return {
         dom,
         update(updatedNode) {

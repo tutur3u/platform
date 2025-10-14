@@ -1,3 +1,4 @@
+import type { QueryClient } from '@tanstack/react-query';
 import type { Editor } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import {
@@ -5,6 +6,7 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  CirclePlus,
   Columns2,
   Combine,
   FileVideo,
@@ -27,10 +29,13 @@ import {
   Workflow,
   YoutubeIcon,
 } from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Toggle } from '@tuturuuu/ui/toggle';
+import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 type LinkEditorContext = 'bubble' | 'popover' | null;
@@ -43,9 +48,19 @@ interface ToolBarProps {
   savedButtonLabel?: string;
   workspaceId?: string;
   onImageUpload?: (file: File) => Promise<string>;
+  boardId?: string;
+  availableLists?: TaskList[];
+  queryClient?: QueryClient;
 }
 
-export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
+export function ToolBar({
+  editor,
+  workspaceId,
+  onImageUpload,
+  boardId,
+  availableLists,
+  queryClient,
+}: ToolBarProps) {
   const [linkEditorContext, setLinkEditorContext] =
     useState<LinkEditorContext>(null);
   const [linkHref, setLinkHref] = useState('');
@@ -400,6 +415,122 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
     toast.success('YouTube video added');
   }, [editor, youtubeUrl]);
 
+  const handleConvertToTask = useCallback(async () => {
+    if (!editor || !boardId || !availableLists || !queryClient) return;
+
+    const { state } = editor;
+    const { selection } = state;
+    const { $from } = selection;
+
+    // Get the current node (could be listItem, taskItem, or paragraph inside them)
+    let currentNode = $from.parent;
+    const depth = $from.depth;
+
+    // Safety check: depth must be at least 1 to have a valid position
+    if (depth < 1) {
+      toast.error('Not in a list item', {
+        description: 'Move your cursor to a list item to convert it to a task',
+      });
+      return;
+    }
+
+    let nodePos = $from.before(depth);
+
+    // If we're inside a paragraph, get the parent list item
+    if (currentNode.type.name === 'paragraph') {
+      if (depth < 2) {
+        toast.error('Not in a list item', {
+          description: 'Move your cursor to a list item to convert it to a task',
+        });
+        return;
+      }
+      currentNode = $from.node(depth - 1);
+      nodePos = $from.before(depth - 1);
+    }
+
+    // Check if we're in a list item or task item
+    const validNodeTypes = ['listItem', 'taskItem'];
+    if (!validNodeTypes.includes(currentNode.type.name)) {
+      toast.error('Not in a list item', {
+        description: 'Move your cursor to a list item to convert it to a task',
+      });
+      return;
+    }
+
+    // Extract text content from the node
+    const textContent = currentNode.textContent.trim();
+    if (!textContent) {
+      toast.error('Empty list item', {
+        description: 'Add some text before converting to a task',
+      });
+      return;
+    }
+
+    // Get the first available list
+    const firstList = availableLists[0];
+    if (!firstList) {
+      toast.error('No lists available', {
+        description: 'Create a list first before converting items to tasks',
+      });
+      return;
+    }
+
+    try {
+      // Create new task
+      const supabase = createClient();
+      const { data: newTask, error } = await supabase
+        .from('tasks')
+        .insert({
+          name: textContent,
+          list_id: firstList.id,
+        })
+        .select('id, name')
+        .single();
+
+      if (error || !newTask) throw error;
+
+      // Replace the list item with a mention to the new task
+      const tr = state.tr;
+
+      // Delete the list item node
+      tr.delete(nodePos, nodePos + currentNode.nodeSize);
+
+      // Check if mention and paragraph nodes exist in schema
+      if (state.schema.nodes.mention && state.schema.nodes.paragraph) {
+        // Insert a mention node followed by a space
+        const mentionNode = state.schema.nodes.mention.create({
+          entityId: newTask.id,
+          entityType: 'task',
+          displayName: newTask.name,
+          avatarUrl: null,
+          subtitle: firstList.name,
+        });
+
+        const paragraphNode = state.schema.nodes.paragraph.create(null, [
+          mentionNode,
+          state.schema.text(' '),
+        ]);
+
+        tr.insert(nodePos, paragraphNode);
+      }
+
+      // Apply transaction
+      editor.view.dispatch(tr);
+
+      // Invalidate task caches
+      invalidateTaskCaches(queryClient, boardId);
+
+      toast.success('Task created', {
+        description: `Created task "${newTask.name}" and added mention`,
+      });
+    } catch (error) {
+      console.error('Failed to convert item to task:', error);
+      toast.error('Failed to create task', {
+        description: 'An error occurred while creating the task',
+      });
+    }
+  }, [editor, boardId, availableLists, queryClient]);
+
   const renderFormattingOptions = useCallback(
     (source: 'bubble' | 'popover') => (
       <div className="flex flex-wrap gap-2">
@@ -484,6 +615,22 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
         >
           <YoutubeIcon className="size-4" />
         </Toggle>
+        {boardId && availableLists && queryClient && (
+          <Toggle
+            key={`convert-to-task-${source}`}
+            pressed={false}
+            onPressedChange={() => {
+              handleConvertToTask();
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+            }}
+            className="h-8 w-8 rounded-md border border-transparent transition-colors data-[state=on]:border-foreground/10 data-[state=on]:bg-dynamic-surface/80 data-[state=on]:text-foreground"
+            title="Convert to task"
+          >
+            <CirclePlus className="size-4" />
+          </Toggle>
+        )}
       </div>
     ),
     [
@@ -498,6 +645,10 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
       triggerVideoUpload,
       isUploadingVideo,
       showYoutubeInput,
+      boardId,
+      availableLists,
+      queryClient,
+      handleConvertToTask,
     ]
   );
 

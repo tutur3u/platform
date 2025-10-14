@@ -1,11 +1,13 @@
 'use client';
 
+import type { QueryClient } from '@tanstack/react-query';
 import {
   type Editor,
   EditorContent,
   type JSONContent,
   useEditor,
 } from '@tiptap/react';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
 import { debounce } from 'lodash';
 import { TextSelection } from 'prosemirror-state';
@@ -55,6 +57,9 @@ interface RichTextEditorProps {
   editorRef?: React.MutableRefObject<any>;
   initialCursorOffset?: number | null;
   onEditorReady?: (editor: Editor) => void;
+  boardId?: string;
+  availableLists?: TaskList[];
+  queryClient?: QueryClient;
 }
 
 export function RichTextEditor({
@@ -74,6 +79,9 @@ export function RichTextEditor({
   editorRef: externalEditorRef,
   initialCursorOffset,
   onEditorReady,
+  boardId,
+  availableLists,
+  queryClient,
 }: RichTextEditorProps) {
   const [hasChanges, setHasChanges] = useState(false);
   const [isUploadingPastedImage, setIsUploadingPastedImage] = useState(false);
@@ -466,6 +474,21 @@ export function RichTextEditor({
     if (editor) editor.setEditable(!readOnly);
   }, [editor, readOnly]);
 
+  // Update editor content when the content prop changes externally
+  useEffect(() => {
+    if (!editor || readOnly) return;
+
+    const currentContent = editor.getJSON();
+    const contentChanged = JSON.stringify(currentContent) !== JSON.stringify(content);
+
+    if (contentChanged) {
+      // Update editor content without triggering onChange
+      editor.commands.setContent(content || { type: 'doc', content: [] }, {
+        emitUpdate: false,
+      });
+    }
+  }, [editor, content, readOnly]);
+
   // Handle initial cursor positioning when focusing from title
   useEffect(() => {
     if (
@@ -541,6 +564,9 @@ export function RichTextEditor({
           savedButtonLabel={savedButtonLabel}
           workspaceId={workspaceId}
           onImageUpload={onImageUpload}
+          boardId={boardId}
+          availableLists={availableLists}
+          queryClient={queryClient}
         />
       )}
       <EditorContent editor={editor} className="h-full" />

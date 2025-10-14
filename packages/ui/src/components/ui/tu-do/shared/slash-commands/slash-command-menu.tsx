@@ -34,8 +34,6 @@ export function SlashCommandMenu({
         top: position.top,
         left: position.left,
       }}
-      onPointerDownCapture={(event) => event.stopPropagation()}
-      onMouseDown={(event) => event.stopPropagation()}
     >
       <div className="border-dynamic-border/60 border-b px-3 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">
         Slash commands
@@ -44,6 +42,20 @@ export function SlashCommandMenu({
         ref={listRef}
         className="scrollbar-thin max-h-72 overflow-y-auto overscroll-contain py-1"
         style={{ maxHeight: 288 }}
+        onWheel={(e) => {
+          // Allow wheel events for scrolling
+          e.stopPropagation();
+        }}
+        onTouchMove={(e) => {
+          // Allow touch move for mobile scrolling
+          e.stopPropagation();
+        }}
+        onMouseDown={(e) => {
+          // Prevent editor from taking focus when clicking to scroll
+          if (e.target === e.currentTarget) {
+            e.stopPropagation();
+          }
+        }}
       >
         {commands.length === 0 ? (
           <div className="px-3 py-2 text-muted-foreground text-sm">
