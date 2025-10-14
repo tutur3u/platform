@@ -93,6 +93,7 @@ import {
 } from './slash-commands/definitions';
 import { SlashCommandMenu } from './slash-commands/slash-command-menu';
 import { UserPresenceAvatarsComponent } from './user-presence-avatars';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 
 interface TaskEditDialogProps {
   task?: Task;
@@ -378,7 +379,8 @@ function TaskEditDialogComponent({
           color: userColor || '',
         }
       : null,
-    enabled: isOpen && !isCreateMode && showUserPresence && !!task?.id,
+    enabled:
+      DEV_MODE && isOpen && !isCreateMode && showUserPresence && !!task?.id,
   });
 
   // If the task has no Yjs state, initialize it
