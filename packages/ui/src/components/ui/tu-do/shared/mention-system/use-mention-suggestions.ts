@@ -188,12 +188,9 @@ export function useMentionSuggestions({
     });
 
     // Check if there are any non-task matches (users, workspaces, projects, dates)
-    const hasNonTaskMatches = filtered.some(
-      (option) =>
-        option.type === 'user' ||
-        option.type === 'workspace' ||
-        option.type === 'project' ||
-        option.type === 'date'
+    const NON_TASK_TYPES = new Set(['user', 'workspace', 'project', 'date']);
+    const hasNonTaskMatches = filtered.some((option) =>
+      NON_TASK_TYPES.has(option.type)
     );
 
     // If no non-task matches and query is not empty, add external user option

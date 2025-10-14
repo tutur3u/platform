@@ -52,9 +52,7 @@ export function CustomDatePickerDialog({
       <CalendarComponent
         mode="single"
         selected={selectedDate}
-        onSelect={(date) => {
-          onDateSelect(date);
-        }}
+        onSelect={onDateSelect}
         className="rounded-md border p-0"
       />
       <div className="mt-3 flex items-center gap-2 rounded-md border p-2">

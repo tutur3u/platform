@@ -9,7 +9,6 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
-// @ts-expect-error - Bun types issue with react-dom subpath
 import { createPortal } from 'react-dom';
 import type { MentionOption } from './types';
 import { mentionGroupOrder, mentionTypeStyles } from './types';
