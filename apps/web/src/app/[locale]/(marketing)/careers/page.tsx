@@ -1,210 +1,274 @@
 'use client';
 
-import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import {
+  ArrowRight,
+  Bot,
+  Brain,
   Building2,
-  Clock,
+  CheckCircle2,
   Code2,
-  Compass,
-  Github,
-  Globe2,
+  Cpu,
+  Database,
+  GithubIcon,
+  Globe,
   GraduationCap,
   Heart,
   Laptop,
-  LayoutGrid,
+  Layers,
+  Lightbulb,
   Mail,
   MapPin,
-  MessageCircle,
+  MessageSquare,
   Rocket,
   Shield,
   Sparkles,
   Star,
-  Sun,
-  Timer,
-  Users2,
+  Target,
+  TrendingUp,
+  Users,
+  Zap,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { type ReactNode, useRef } from 'react';
-
-interface ValueProps {
-  icon: ReactNode;
-  title: string;
-  description: string;
-}
-
-const values: ValueProps[] = [
-  {
-    icon: <Globe2 className="h-8 w-8 text-primary" />,
-    title: 'Think Big',
-    description:
-      'We believe in bold visions and transformative ideas that can reshape how technology serves humanity.',
-  },
-  {
-    icon: <Laptop className="h-8 w-8 text-primary" />,
-    title: 'Build Better',
-    description:
-      'We are obsessed with quality and craftsmanship, creating technology that is both powerful and beautiful.',
-  },
-  {
-    icon: <Sun className="h-8 w-8 text-primary" />,
-    title: 'Grow Together',
-    description:
-      'We foster an environment where creativity thrives and every team member can reach their full potential.',
-  },
-  {
-    icon: <Rocket className="h-8 w-8 text-primary" />,
-    title: 'Dream Bigger',
-    description:
-      'We are not just building products; we are creating a future where technology empowers everyone.',
-  },
-];
-
-const benefits: ValueProps[] = [
-  {
-    icon: <Clock className="h-8 w-8 text-primary" />,
-    title: 'Flexible Hours',
-    description:
-      'Work when you are most productive. We trust our team to manage their time effectively.',
-  },
-  {
-    icon: <GraduationCap className="h-8 w-8 text-primary" />,
-    title: 'Learning & Growth',
-    description:
-      'Industry-leading learning budget and resources for courses, conferences, and professional development.',
-  },
-  {
-    icon: <Users2 className="h-8 w-8 text-primary" />,
-    title: 'Team Events',
-    description:
-      'Regular team activities and gatherings to build strong connections, with plans for global expansion.',
-  },
-  {
-    icon: <Heart className="h-8 w-8 text-primary" />,
-    title: 'Premium Benefits',
-    description:
-      'Top-tier health coverage, wellness programs, and comprehensive benefits package to keep you at your best.',
-  },
-];
-
-const culturalPillars: ValueProps[] = [
-  {
-    icon: <Sparkles className="h-8 w-8 text-primary" />,
-    title: 'Innovation DNA',
-    description:
-      'We see possibilities where others see limitations, constantly pushing boundaries to create breakthrough solutions.',
-  },
-  {
-    icon: <MessageCircle className="h-8 w-8 text-primary" />,
-    title: 'Radical Transparency',
-    description:
-      'We believe in open, honest communication and sharing both our successes and learnings openly.',
-  },
-  {
-    icon: <Star className="h-8 w-8 text-primary" />,
-    title: 'Craftsman Spirit',
-    description:
-      'We take pride in our work, paying attention to every detail and striving for excellence in everything we create.',
-  },
-  {
-    icon: <Compass className="h-8 w-8 text-primary" />,
-    title: 'Visionary Focus',
-    description:
-      'We are guided by our mission to democratize technology and make powerful tools accessible to everyone.',
-  },
-];
-
-const teamHighlights: ValueProps[] = [
-  {
-    icon: <MapPin className="h-8 w-8 text-primary" />,
-    title: 'Global Vision',
-    description:
-      'Currently based in Vietnam, we are building a foundation to expand globally and serve users worldwide.',
-  },
-  {
-    icon: <Code2 className="h-8 w-8 text-primary" />,
-    title: 'Tech Excellence',
-    description:
-      'We use and contribute to cutting-edge technologies, striving to be at the forefront of technological innovation.',
-  },
-  {
-    icon: <LayoutGrid className="h-8 w-8 text-primary" />,
-    title: 'Best-in-Class',
-    description:
-      'We aim to provide the best compensation, benefits, and work environment in the industry.',
-  },
-  {
-    icon: <Building2 className="h-8 w-8 text-primary" />,
-    title: 'Startup Spirit',
-    description:
-      'Experience the energy and impact of a fast-growing startup that dreams big and executes with precision.',
-  },
-];
-
-interface BadgeProps {
-  icon: ReactNode;
-  text: string;
-}
-
-const badges: BadgeProps[] = [
-  {
-    icon: <Star className="h-5 w-5 animate-pulse" />,
-    text: 'Visionary Mindset',
-  },
-  {
-    icon: (
-      <Sparkles className="h-5 w-5 animate-[pulse_2s_ease-in-out_infinite]" />
-    ),
-    text: 'Creative Excellence',
-  },
-  {
-    icon: (
-      <Globe2 className="h-5 w-5 animate-[pulse_3s_ease-in-out_infinite]" />
-    ),
-    text: 'Global Impact',
-  },
-];
+import { cn } from '@tuturuuu/utils/format';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
 
 export default function CareersPage() {
-  const containerRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ['start start', 'end end'],
-  });
 
-  const y = useTransform(scrollYProgress, [0, 1], ['0%', '100%']);
-  const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [1, 0.5, 0]);
+  const values = [
+    {
+      icon: Zap,
+      title: 'Focus is the New Superpower',
+      description:
+        'In a world engineered for distraction, we build technology that protects and amplifies deep work.',
+      color: 'yellow',
+    },
+    {
+      icon: Heart,
+      title: 'Technology Serves Humanity',
+      description:
+        'We create software as an extension of human will, not a cage for attention.',
+      color: 'red',
+    },
+    {
+      icon: Shield,
+      title: 'Radical Transparency',
+      description:
+        'Open-source at our core. Foundational technology should never be a black box.',
+      color: 'blue',
+    },
+    {
+      icon: Target,
+      title: 'Impact Over Activity',
+      description:
+        'Productivity is about creating value, not just doing more. We free minds for breakthroughs.',
+      color: 'green',
+    },
+    {
+      icon: Globe,
+      title: 'Potential Has No Postcode',
+      description:
+        'World-class tools should be accessible from any street, village, or classroom.',
+      color: 'purple',
+    },
+    {
+      icon: Lightbulb,
+      title: 'Building the Third Era',
+      description:
+        'Moving from passive tools and attention platforms to proactive AI partners.',
+      color: 'orange',
+    },
+  ];
+
+  const culture = [
+    {
+      icon: Building2,
+      title: 'Builders, Not Employees',
+      description: 'Each teammate acts like a founder within their domain.',
+      color: 'blue',
+    },
+    {
+      icon: TrendingUp,
+      title: 'Pragmatic Optimism',
+      description: 'We pair bold ambition with rigorous execution.',
+      color: 'green',
+    },
+    {
+      icon: Shield,
+      title: 'Relentless Ownership',
+      description: 'Decisions come with accountability for outcomes.',
+      color: 'purple',
+    },
+    {
+      icon: Sparkles,
+      title: 'Transparency by Default',
+      description: 'Internal operations mirror our open-source ethos.',
+      color: 'cyan',
+    },
+    {
+      icon: MapPin,
+      title: 'Vietnam-Rooted, Globally Ambitious',
+      description: 'Building from Southeast Asia with world-class conviction.',
+      color: 'pink',
+    },
+    {
+      icon: Rocket,
+      title: 'Innovation DNA',
+      description: 'We see possibilities where others see limitations.',
+      color: 'orange',
+    },
+  ];
+
+  const roles = [
+    {
+      icon: Code2,
+      area: 'Engineering',
+      description:
+        'Build the intelligent OS for modern work. Shape Aurora, Mira, and our entire application suite.',
+      positions: [
+        'Full-Stack Engineers',
+        'AI/ML Engineers',
+        'Frontend Engineers',
+        'Backend Engineers',
+        'DevOps Engineers',
+      ],
+      color: 'blue',
+    },
+    {
+      icon: Brain,
+      area: 'AI & Research',
+      description:
+        'Pioneer the Third Era. Work on Mira (our JARVIS), Aurora context graphs, and Nova alignment.',
+      positions: [
+        'AI Researchers',
+        'Prompt Engineers',
+        'ML Platform Engineers',
+        'NLP Specialists',
+      ],
+      color: 'purple',
+    },
+    {
+      icon: Sparkles,
+      area: 'Product & Design',
+      description:
+        'Craft experiences that eliminate friction. Design the future of human-AI collaboration.',
+      positions: [
+        'Product Managers',
+        'UX/UI Designers',
+        'Design Engineers',
+        'User Researchers',
+      ],
+      color: 'pink',
+    },
+    {
+      icon: Users,
+      area: 'Growth & Operations',
+      description:
+        'Scale our impact. Build the community flywheel and operational excellence.',
+      positions: [
+        'Growth Marketers',
+        'Community Managers',
+        'Operations Specialists',
+        'Business Development',
+      ],
+      color: 'green',
+    },
+  ];
+
+  const benefits = [
+    {
+      icon: Laptop,
+      title: 'Flexible Work',
+      description:
+        'Work when you are most productive. Remote-friendly with Vietnam hub.',
+    },
+    {
+      icon: GraduationCap,
+      title: 'Learning Budget',
+      description:
+        'Industry-leading resources for courses, conferences, and growth.',
+    },
+    {
+      icon: Heart,
+      title: 'Premium Benefits',
+      description:
+        'Top-tier health coverage, wellness programs, and comprehensive package.',
+    },
+    {
+      icon: Users,
+      title: 'Team Events',
+      description:
+        'Regular activities to build connections, with plans for global expansion.',
+    },
+    {
+      icon: Rocket,
+      title: 'Equity & Impact',
+      description:
+        'Share in our success with meaningful equity and shape technology history.',
+    },
+    {
+      icon: Globe,
+      title: 'Global Opportunities',
+      description: 'Work with world-class talent from Vietnam to the world.',
+    },
+  ];
+
+  const techStack = [
+    {
+      category: 'Frontend',
+      icon: Code2,
+      technologies: ['Next.js', 'React', 'TypeScript', 'Tailwind CSS'],
+      color: 'cyan',
+    },
+    {
+      category: 'Backend',
+      icon: Database,
+      technologies: ['Supabase', 'PostgreSQL', 'tRPC', 'Vercel AI SDK'],
+      color: 'green',
+    },
+    {
+      category: 'AI/ML',
+      icon: Brain,
+      technologies: ['OpenAI', 'Anthropic', 'Google Gemini', 'LangChain'],
+      color: 'purple',
+    },
+    {
+      category: 'Infrastructure',
+      icon: Layers,
+      technologies: ['Vercel', 'Turborepo', 'Bun', 'Docker'],
+      color: 'blue',
+    },
+  ];
 
   return (
-    <main ref={containerRef} className="relative mx-auto overflow-x-clip pb-12">
-      {/* Enhanced Floating Orbs - Adjusted for mobile */}
+    <main className="relative mx-auto w-full overflow-x-hidden text-balance">
+      {/* Dynamic Floating Orbs */}
       <div className="-z-10 pointer-events-none fixed inset-0">
         <motion.div
           animate={{
             scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
+            opacity: [0.2, 0.3, 0.2],
           }}
           transition={{
             duration: 8,
             repeat: Infinity,
-            ease: 'linear',
+            ease: 'easeInOut',
           }}
-          style={{ y }}
-          className="-left-32 sm:-left-64 absolute top-0 h-80 w-[20rem] rounded-full bg-linear-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:h-160 sm:w-160"
+          className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl sm:h-[40rem] sm:w-[40rem]"
         />
         <motion.div
           animate={{
-            scale: [1, 1.1, 1],
-            opacity: [0.2, 0.4, 0.2],
+            scale: [1, 1.15, 1],
+            opacity: [0.15, 0.25, 0.15],
           }}
           transition={{
             duration: 10,
             repeat: Infinity,
-            ease: 'linear',
+            ease: 'easeInOut',
           }}
-          style={{ y: opacity }}
-          className="-right-32 sm:-right-64 absolute top-[30%] h-70 w-70 rounded-full bg-linear-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:h-140 sm:w-140"
+          className="-right-32 sm:-right-64 absolute top-[40%] h-80 w-80 rounded-full bg-gradient-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl sm:h-[35rem] sm:w-[35rem]"
         />
         <motion.div
           animate={{
@@ -214,1097 +278,783 @@ export default function CareersPage() {
           transition={{
             duration: 12,
             repeat: Infinity,
-            ease: 'linear',
+            ease: 'easeInOut',
           }}
-          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-90 w-90 rounded-full bg-linear-to-br from-green-500/20 via-emerald-500/15 to-transparent blur-3xl sm:h-180 sm:w-180"
+          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-green/30 via-dynamic-emerald/20 to-transparent blur-3xl sm:h-[45rem] sm:w-[45rem]"
         />
       </div>
 
-      <div className="container space-y-16 px-4 pt-12 sm:space-y-24 sm:pt-16">
-        {/* Enhanced Background Patterns */}
-        <div className="-z-10 pointer-events-none fixed inset-0">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[24px_24px]" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[120px] opacity-20" />
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0.1, 0.15, 0.1] }}
-            transition={{
-              duration: 5,
-              repeat: Infinity,
-              ease: 'linear',
-            }}
-            className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]"
-          />
-        </div>
+      {/* Grid Pattern Overlay */}
+      <div className="-z-10 pointer-events-none fixed inset-0 opacity-30">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.08)_1px,transparent_1px)] bg-[size:32px_32px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.04)_1px,transparent_1px)] bg-[size:120px]" />
+      </div>
 
-        {/* Hero Section */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="relative text-center"
-        >
-          {/* Enhanced background effects */}
-          <div className="-z-10 pointer-events-none absolute inset-0">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_700px_at_30%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_600px_at_70%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[40px] opacity-20" />
-            <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[40px] opacity-20" />
-          </div>
-
+      {/* Hero Section */}
+      <section className="relative px-4 pt-24 pb-16 sm:px-6 sm:pt-32 sm:pb-20 lg:px-8 lg:pt-40 lg:pb-24">
+        <div className="mx-auto max-w-7xl">
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="relative"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="text-center"
           >
-            <Badge
-              variant="secondary"
-              className="relative mb-6 cursor-default transition-colors hover:bg-primary/20"
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1, duration: 0.5 }}
             >
-              <span className="relative bg-linear-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent">
-                Join Our Vision
-              </span>
-            </Badge>
-          </motion.div>
-
-          <motion.h1
-            className="mb-6 text-balance font-bold text-4xl text-foreground tracking-tight md:text-7xl"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-          >
-            Shape{' '}
-            <span className="inline-block">
-              <span className="bg-linear-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                Tomorrow's
-              </span>
-            </span>{' '}
-            <br />
-            <span className="bg-linear-to-r from-primary via-blue-500 to-cyan-500 bg-clip-text text-transparent">
-              Technology
-            </span>
-          </motion.h1>
-
-          <motion.p
-            className="mx-auto mb-12 max-w-2xl text-balance text-foreground/80 text-lg leading-relaxed md:text-xl"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
-          >
-            At Tuturuuu, we're building a world-class team starting from
-            Vietnam, with a vision to expand globally. We're looking for
-            visionaries who share our passion for{' '}
-            <strong className="bg-linear-to-r from-primary to-primary/60 bg-clip-text font-bold text-transparent">
-              creating beautiful, impactful technology
-            </strong>{' '}
-            that makes a difference in people's lives.
-          </motion.p>
-
-          <div className="flex flex-wrap justify-center gap-4">
-            {badges.map((badge, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 + index * 0.1 }}
-                whileHover={{ scale: 1.05 }}
-                className="flex cursor-default items-center gap-2 rounded-full bg-linear-to-r from-foreground/5 to-foreground/10 px-4 py-2 transition-colors hover:from-primary/10 hover:to-primary/5"
+              <Badge
+                variant="secondary"
+                className="mb-6 border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple transition-all hover:scale-105 hover:bg-dynamic-purple/20 hover:shadow-dynamic-purple/20 hover:shadow-lg"
               >
-                <span className="text-primary">{badge.icon}</span>
-                <span className="font-medium text-foreground/80 text-sm">
-                  {badge.text}
-                </span>
-              </motion.div>
-            ))}
-          </div>
-        </motion.section>
+                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                Building the Third Era of Technology
+              </Badge>
+            </motion.div>
 
-        {/* Get in Touch Section */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="relative"
-        >
-          <div className="-z-10 absolute inset-0">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]" />
-            <div className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]" />
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px] opacity-20" />
-          </div>
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.8 }}
+              className="mb-6 text-balance font-bold text-4xl tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl"
+            >
+              Build the{' '}
+              <span className="animate-gradient bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+                Future
+              </span>
+              <br />
+              of Human Potential
+            </motion.h1>
 
-          <div className="relative mx-auto max-w-6xl">
-            <Card className="group relative overflow-hidden">
-              <div className="absolute inset-0">
-                <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-purple-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[20px_20px]" />
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px] opacity-20" />
-                <div className="-top-32 -left-32 absolute h-64 w-64 rounded-full bg-linear-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl" />
-                <div className="-right-32 -bottom-32 absolute h-64 w-64 rounded-full bg-linear-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl" />
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
+              className="mx-auto mb-8 max-w-3xl text-balance text-base text-foreground/70 leading-relaxed sm:text-lg md:text-xl lg:text-2xl"
+            >
+              Join us in creating{' '}
+              <strong className="text-foreground">Mira</strong>—our JARVIS for
+              modern life. We're not just building productivity tools; we're
+              pioneering intelligent AI partners that amplify human creativity
+              and eliminate digital friction.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.8 }}
+              className="mb-12 flex flex-col flex-wrap items-center justify-center gap-3 sm:flex-row sm:gap-4"
+            >
+              <Button
+                size="lg"
+                className="group w-full shadow-lg transition-all hover:scale-105 hover:shadow-xl sm:w-auto"
+                asChild
+              >
+                <Link href="#roles">
+                  View Open Roles
+                  <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full transition-all hover:scale-105 sm:w-auto"
+                asChild
+              >
+                <Link href="mailto:contact@tuturuuu.com">
+                  <Mail className="mr-2 h-5 w-5" />
+                  Get in Touch
+                </Link>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full transition-all hover:scale-105 sm:w-auto"
+                asChild
+              >
+                <Link
+                  href="https://github.com/tutur3u/platform"
+                  target="_blank"
+                >
+                  <GithubIcon className="mr-2 h-5 w-5" />
+                  View Our Work
+                </Link>
+              </Button>
+            </motion.div>
+
+            {/* Trust Indicators */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.8 }}
+              className="flex flex-col flex-wrap items-center justify-center gap-4 text-foreground/60 text-sm sm:flex-row sm:gap-6"
+            >
+              <div className="flex items-center gap-2 transition-colors hover:text-foreground/80">
+                <Shield className="h-4 w-4 text-dynamic-green" />
+                100% Open Source
               </div>
+              <div className="flex items-center gap-2 transition-colors hover:text-foreground/80">
+                <MapPin className="h-4 w-4 text-dynamic-green" />
+                Vietnam-Based, Global Vision
+              </div>
+              <div className="flex items-center gap-2 transition-colors hover:text-foreground/80">
+                <Star className="h-4 w-4 text-dynamic-green" />
+                Building JARVIS for Everyone
+              </div>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
 
-              <div className="relative grid gap-12 p-4 md:grid-cols-2 md:p-12">
-                <div className="relative space-y-8">
-                  <motion.div
-                    initial={{ scale: 0.95 }}
-                    whileHover={{ scale: 1 }}
-                    className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 transition-colors duration-300 group-hover:bg-primary/20 md:mx-0"
-                  >
-                    <div className="-inset-1 absolute animate-spin-slow rounded-2xl bg-linear-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20" />
-                    <div className="absolute inset-[2px] rounded-xl bg-background/80 backdrop-blur-sm" />
-                    <Mail className="relative h-10 w-10 text-primary" />
-                  </motion.div>
-
-                  <div className="space-y-4 text-center md:text-left">
-                    <h2 className="font-bold text-4xl text-foreground">
-                      <span className="bg-linear-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                        Shape the Future with Us
-                      </span>
-                    </h2>
-                    <p className="mx-auto max-w-2xl text-foreground/80 text-lg">
-                      While we don't have any open positions at the moment,
-                      we're always excited to connect with talented individuals
-                      who share our vision.
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap justify-center gap-4 md:justify-start">
-                    <motion.a
-                      href="mailto:contact@tuturuuu.com"
-                      className="group relative inline-flex items-center gap-2 overflow-hidden rounded-lg bg-foreground px-8 py-4 font-semibold text-background transition-all duration-300 hover:bg-foreground/90"
-                      whileHover={{ scale: 1.05 }}
-                    >
-                      <div className="absolute inset-0 bg-linear-to-r from-primary/20 to-primary/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                      <Mail className="relative h-5 w-5" />
-                      <span className="relative">Get in Touch</span>
-                    </motion.a>
-
-                    <motion.a
-                      href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group relative inline-flex items-center gap-2 overflow-hidden rounded-lg bg-foreground/10 px-8 py-4 font-semibold transition-all duration-300 hover:bg-foreground/20"
-                      whileHover={{ scale: 1.05 }}
-                    >
-                      <div className="absolute inset-0 bg-linear-to-r from-primary/10 to-primary/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                      <Github className="relative h-5 w-5" />
-                      <span className="relative">View Our Work</span>
-                    </motion.a>
-                  </div>
-
-                  <div className="flex flex-wrap justify-center gap-6 md:justify-start">
-                    <div className="flex items-center gap-2">
-                      <Timer className="h-5 w-5 text-primary" />
-                      <span className="text-foreground/60 text-sm">
-                        Quick Response
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Shield className="h-5 w-5 text-primary" />
-                      <span className="text-foreground/60 text-sm">
-                        Secure Communication
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Globe2 className="h-5 w-5 text-primary" />
-                      <span className="text-foreground/60 text-sm">
-                        Global Opportunities
-                      </span>
-                    </div>
-                  </div>
+      {/* Mission Statement */}
+      <section className="relative px-4 py-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <Card className="overflow-hidden border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-8 md:p-12">
+              <div className="grid gap-8 lg:grid-cols-2">
+                <div>
+                  <h2 className="mb-4 font-bold text-3xl sm:text-4xl">
+                    <span className="bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+                      Our Mission
+                    </span>
+                  </h2>
+                  <p className="mb-6 text-foreground/70 text-lg leading-relaxed">
+                    Wage war on digital noise by building an intelligent,
+                    unified, and open platform that automates administrative
+                    work and eliminates context-switching friction.
+                  </p>
+                  <h2 className="mb-4 font-bold text-3xl sm:text-4xl">
+                    <span className="bg-gradient-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
+                      Our Vision
+                    </span>
+                  </h2>
+                  <p className="text-foreground/70 text-lg leading-relaxed">
+                    Create a future where technology unlocks humanity's
+                    potential—liberating our collective focus so we can solve
+                    the world's most important challenges.
+                  </p>
                 </div>
-
-                <div className="relative">
-                  <div className="group relative overflow-hidden rounded-2xl bg-foreground/5 p-4 backdrop-blur-sm md:p-8">
-                    <div className="absolute inset-0 bg-linear-to-br from-purple-500/10 via-pink-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                    <div className="relative space-y-6">
-                      <h3 className="text-balance text-center font-bold text-2xl text-foreground">
-                        What We're Looking For
-                      </h3>
-                      <div className="space-y-4">
-                        <div className="flex flex-col items-center gap-3 rounded-lg border border-primary/10 bg-background/50 p-4 text-center backdrop-blur-sm md:flex-row">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                            <Code2 className="h-5 w-5 text-primary" />
-                          </div>
-                          <div className="flex flex-col items-start">
-                            <h4 className="font-semibold">
-                              Technical Excellence
-                            </h4>
-                            <p className="text-foreground/60 text-sm">
-                              Strong problem-solving abilities
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col items-center gap-3 rounded-lg border border-primary/10 bg-background/50 p-4 text-center backdrop-blur-sm md:flex-row">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                            <Users2 className="h-5 w-5 text-primary" />
-                          </div>
-                          <div className="flex flex-col items-start">
-                            <h4 className="font-semibold">Team Player</h4>
-                            <p className="text-foreground/60 text-sm">
-                              Collaborative mindset
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col items-center gap-3 rounded-lg border border-primary/10 bg-background/50 p-4 text-center backdrop-blur-sm md:flex-row">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                            <Rocket className="h-5 w-5 text-primary" />
-                          </div>
-                          <div className="flex flex-col items-start">
-                            <h4 className="font-semibold">Growth Mindset</h4>
-                            <p className="text-foreground/60 text-sm">
-                              Eager to learn and grow
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col items-center gap-3 rounded-lg border border-primary/10 bg-background/50 p-4 text-center backdrop-blur-sm md:flex-row">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                            <Globe2 className="h-5 w-5 text-primary" />
-                          </div>
-                          <div className="flex flex-col items-start">
-                            <h4 className="font-semibold">Global Vision</h4>
-                            <p className="text-foreground/60 text-sm">
-                              International mindset
-                            </p>
-                          </div>
-                        </div>
+                <div className="flex items-center justify-center">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Card className="border-dynamic-purple/30 bg-dynamic-purple/5 p-4 text-center">
+                      <Rocket className="mx-auto mb-2 h-8 w-8 text-dynamic-purple" />
+                      <div className="font-bold text-2xl text-dynamic-purple">
+                        7+
                       </div>
-
-                      <div className="mt-6 text-center text-foreground/60 text-sm">
-                        Email us at{' '}
-                        <span className="font-semibold text-primary">
-                          contact@tuturuuu.com
-                        </span>
-                        <br />
-                        with your story and future role in mind
+                      <div className="text-foreground/60 text-xs">Products</div>
+                    </Card>
+                    <Card className="border-dynamic-blue/30 bg-dynamic-blue/5 p-4 text-center">
+                      <Bot className="mx-auto mb-2 h-8 w-8 text-dynamic-blue" />
+                      <div className="font-bold text-2xl text-dynamic-blue">
+                        5
                       </div>
-                    </div>
+                      <div className="text-foreground/60 text-xs">
+                        AI Agents
+                      </div>
+                    </Card>
+                    <Card className="border-dynamic-green/30 bg-dynamic-green/5 p-4 text-center">
+                      <Globe className="mx-auto mb-2 h-8 w-8 text-dynamic-green" />
+                      <div className="font-bold text-2xl text-dynamic-green">
+                        Global
+                      </div>
+                      <div className="text-foreground/60 text-xs">Ambition</div>
+                    </Card>
+                    <Card className="border-dynamic-orange/30 bg-dynamic-orange/5 p-4 text-center">
+                      <Shield className="mx-auto mb-2 h-8 w-8 text-dynamic-orange" />
+                      <div className="font-bold text-2xl text-dynamic-orange">
+                        100%
+                      </div>
+                      <div className="text-foreground/60 text-xs">
+                        Open Source
+                      </div>
+                    </Card>
                   </div>
                 </div>
               </div>
             </Card>
-          </div>
-        </motion.section>
+          </motion.div>
+        </div>
+      </section>
 
-        {/* Values Section - Enhanced with Creative UI */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="relative"
-        >
-          <div className="-z-10 absolute inset-0">
-            <motion.div
-              animate={{
-                opacity: [0.1, 0.15, 0.1],
-                scale: [1, 1.1, 1],
-              }}
-              transition={{
-                duration: 8,
-                repeat: Infinity,
-                ease: 'linear',
-              }}
-              className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]"
-            />
-            <motion.div
-              animate={{
-                rotate: [0, 360],
-              }}
-              transition={{
-                duration: 60,
-                repeat: Infinity,
-                ease: 'linear',
-              }}
-              className="absolute inset-0 bg-[conic-gradient(from_270deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]"
-            />
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px] opacity-20" />
-          </div>
+      {/* Core Values */}
+      <section className="relative px-4 py-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-16 text-center"
+          >
+            <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
+              Core{' '}
+              <span className="bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+                Beliefs
+              </span>
+            </h2>
+            <p className="mx-auto max-w-2xl text-foreground/60 text-lg">
+              These principles guide everything we build and how we work
+              together
+            </p>
+          </motion.div>
 
-          <div className="relative text-center">
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              whileInView={{ scale: 1, opacity: 1 }}
-              viewport={{ once: true }}
-              className="mb-16"
-            >
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {values.map((value, index) => (
               <motion.div
-                whileHover={{
-                  scale: 1.1,
-                  rotate: [0, 10, -10, 0],
-                }}
-                transition={{
-                  rotate: {
-                    duration: 0.5,
-                    ease: 'easeInOut',
-                  },
-                }}
-                className="group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
+                key={value.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
               >
-                <Star className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
-              </motion.div>
-              <motion.h2
-                className="mb-4 font-bold text-4xl text-foreground"
-                whileHover={{
-                  scale: 1.02,
-                }}
-              >
-                <motion.span
-                  animate={{
-                    backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-                  }}
-                  transition={{
-                    duration: 5,
-                    repeat: Infinity,
-                    ease: 'linear',
-                  }}
-                  className="relative bg-linear-to-r bg-size-[200%_auto] from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent"
+                <Card
+                  className={cn(
+                    'group h-full p-6 transition-all hover:shadow-lg',
+                    `border-dynamic-${value.color}/30 bg-gradient-to-br from-dynamic-${value.color}/5 via-background to-background hover:border-dynamic-${value.color}/50 hover:shadow-dynamic-${value.color}/10`
+                  )}
                 >
-                  Our Values
-                </motion.span>
-              </motion.h2>
-              <motion.p
-                className="mx-auto max-w-2xl text-foreground/60 text-lg"
-                whileHover={{
-                  scale: 1.01,
-                }}
-              >
-                We're building a company culture that celebrates diversity,
-                encourages innovation, and empowers every team member to do
-                their best work
-              </motion.p>
-            </motion.div>
-
-            <div className="grid gap-8 md:grid-cols-4">
-              {values.map((item, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ y: 20, opacity: 0 }}
-                  whileInView={{ y: 0, opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{
-                    y: -5,
-                    transition: {
-                      duration: 0.2,
-                      ease: 'easeOut',
-                    },
-                  }}
-                  className="group relative"
-                >
-                  <div className="relative h-full overflow-hidden rounded-2xl bg-foreground/5 backdrop-blur-sm">
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      whileHover={{ opacity: 1 }}
-                      className="absolute inset-0 bg-linear-to-br from-purple-500/10 via-pink-500/5 to-transparent transition-opacity duration-300"
-                    />
-                    <motion.div
-                      animate={{
-                        rotate: [0, 360],
-                        scale: [1, 1.1, 1],
-                      }}
-                      transition={{
-                        duration: 20,
-                        repeat: Infinity,
-                        ease: 'linear',
-                      }}
-                      className="-top-8 -right-8 absolute h-24 w-24 rounded-xl bg-linear-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
-                    />
-                    <div className="pointer-events-none relative p-8">
-                      <motion.div
-                        whileHover={{
-                          rotate: [0, 10, -10, 0],
-                          scale: 1.1,
-                        }}
-                        transition={{
-                          duration: 0.3,
-                        }}
-                        className="relative mb-6"
-                      >
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
-                          <motion.div
-                            animate={{
-                              scale: [1, 1.1, 1],
-                            }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              ease: 'easeInOut',
-                            }}
-                          >
-                            {item.icon}
-                          </motion.div>
-                        </div>
-                      </motion.div>
-                      <motion.h3
-                        className="relative mb-4 font-bold text-foreground text-xl"
-                        whileHover={{
-                          scale: 1.05,
-                          color: 'hsl(var(--primary))',
-                        }}
-                      >
-                        {item.title}
-                      </motion.h3>
-                      <motion.p
-                        className="relative text-foreground/60"
-                        whileHover={{
-                          scale: 1.02,
-                        }}
-                      >
-                        {item.description}
-                      </motion.p>
-                    </div>
-                    <motion.div
-                      initial={{ scaleX: 0 }}
-                      whileHover={{ scaleX: 1 }}
-                      transition={{ duration: 0.3 }}
-                      className="absolute right-0 bottom-0 left-0 h-1 origin-left bg-linear-to-r from-primary/20 to-primary/5"
+                  <div
+                    className={cn(
+                      'mb-4 flex h-12 w-12 items-center justify-center rounded-xl transition-transform group-hover:rotate-12 group-hover:scale-110',
+                      `bg-dynamic-${value.color}/10`
+                    )}
+                  >
+                    <value.icon
+                      className={cn('h-6 w-6', `text-dynamic-${value.color}`)}
                     />
                   </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </motion.section>
-
-        {/* Benefits Section - Enhanced with Creative UI */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="relative"
-        >
-          <div className="-z-10 absolute inset-0">
-            <motion.div
-              animate={{
-                opacity: [0.1, 0.15, 0.1],
-                scale: [1, 1.1, 1],
-              }}
-              transition={{
-                duration: 8,
-                repeat: Infinity,
-                ease: 'linear',
-              }}
-              className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]"
-            />
-            <motion.div
-              animate={{
-                rotate: [0, 360],
-              }}
-              transition={{
-                duration: 60,
-                repeat: Infinity,
-                ease: 'linear',
-              }}
-              className="absolute inset-0 bg-[conic-gradient(from_90deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]"
-            />
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px] opacity-20" />
-          </div>
-
-          <div className="relative text-center">
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              whileInView={{ scale: 1, opacity: 1 }}
-              viewport={{ once: true }}
-              className="mb-16"
-            >
-              <motion.div
-                whileHover={{
-                  scale: 1.1,
-                  rotate: [0, 10, -10, 0],
-                }}
-                transition={{
-                  rotate: {
-                    duration: 0.5,
-                    ease: 'easeInOut',
-                  },
-                }}
-                className="group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
-              >
-                <Heart className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
+                  <h3 className="mb-2 font-semibold text-lg">{value.title}</h3>
+                  <p className="text-foreground/60 text-sm leading-relaxed">
+                    {value.description}
+                  </p>
+                </Card>
               </motion.div>
-              <motion.h2
-                className="mb-4 font-bold text-4xl text-foreground"
-                whileHover={{
-                  scale: 1.02,
-                }}
-              >
-                <motion.span
-                  animate={{
-                    backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-                  }}
-                  transition={{
-                    duration: 5,
-                    repeat: Infinity,
-                    ease: 'linear',
-                  }}
-                  className="relative bg-linear-to-r bg-size-[200%_auto] from-primary via-blue-500 to-cyan-500 bg-clip-text text-transparent"
-                >
-                  Benefits & Perks
-                </motion.span>
-              </motion.h2>
-              <motion.p
-                className="mx-auto max-w-2xl text-foreground/60 text-lg"
-                whileHover={{
-                  scale: 1.01,
-                }}
-              >
-                We believe in taking care of our team with comprehensive
-                benefits that support both professional growth and personal
-                well-being
-              </motion.p>
-            </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-            <div className="grid gap-8 md:grid-cols-4">
-              {benefits.map((item, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ y: 20, opacity: 0 }}
-                  whileInView={{ y: 0, opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{
-                    y: -5,
-                    transition: {
-                      duration: 0.2,
-                      ease: 'easeOut',
-                    },
-                  }}
-                  className="group relative"
+      {/* What We're Building */}
+      <section className="relative px-4 py-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-16 text-center"
+          >
+            <Badge
+              variant="secondary"
+              className="mb-4 border-dynamic-cyan/30 bg-dynamic-cyan/10 text-dynamic-cyan"
+            >
+              <Bot className="mr-1.5 h-3.5 w-3.5" />
+              The AI Ecosystem
+            </Badge>
+            <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
+              Building{' '}
+              <span className="bg-gradient-to-r from-dynamic-cyan via-dynamic-blue to-dynamic-purple bg-clip-text text-transparent">
+                Mira & Aurora
+              </span>
+            </h2>
+            <p className="mx-auto max-w-2xl text-foreground/60 text-lg">
+              Our AI-powered ecosystem that transforms how humans work and
+              create
+            </p>
+          </motion.div>
+
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                name: 'Mira',
+                subtitle: 'Your JARVIS Companion',
+                description:
+                  'Proactive AI assistant that plans, reasons, and acts on your behalf—the life operating system we envisioned.',
+                icon: Bot,
+                color: 'pink',
+                features: [
+                  'Natural Conversations',
+                  'Proactive Planning',
+                  'Cross-App Integration',
+                ],
+              },
+              {
+                name: 'Aurora',
+                subtitle: 'Context Graph Engine',
+                description:
+                  'The nervous system linking emails, tasks, files, and events into a unified knowledge graph.',
+                icon: Cpu,
+                color: 'blue',
+                features: [
+                  'Contextual Intelligence',
+                  'Smart Connections',
+                  'Data Moat',
+                ],
+              },
+              {
+                name: 'Nova',
+                subtitle: 'Alignment Platform',
+                description:
+                  'Our prompt-engineering forge ensuring Mira reasons safely and effectively.',
+                icon: Sparkles,
+                color: 'orange',
+                features: [
+                  'Prompt Engineering',
+                  'Safety Guardrails',
+                  'Continuous Learning',
+                ],
+              },
+              {
+                name: 'Rewise',
+                subtitle: 'Knowledge Federation',
+                description:
+                  'Aggregates leading AI models (OpenAI, Gemini, Anthropic) for best-in-class intelligence.',
+                icon: Database,
+                color: 'purple',
+                features: [
+                  'Multi-Model Access',
+                  'Knowledge Synthesis',
+                  'Smart Routing',
+                ],
+              },
+              {
+                name: 'Crystal',
+                subtitle: 'Multi-Modal Interface',
+                description:
+                  'Real-time collaboration via voice, video, and screen sharing—Mira embodied.',
+                icon: Layers,
+                color: 'cyan',
+                features: [
+                  'Voice & Video',
+                  'Screen Sharing',
+                  'Real-Time Collab',
+                ],
+              },
+              {
+                name: 'TuApps Suite',
+                subtitle: '7 Integrated Products',
+                description:
+                  'TuPlan, TuDo, TuMeet, TuMail, TuChat, TuDrive, TuTrack—unified by Mira.',
+                icon: Layers,
+                color: 'green',
+                features: [
+                  'Smart Calendar',
+                  'Task Management',
+                  'Unified Inbox',
+                ],
+              },
+            ].map((product, index) => (
+              <motion.div
+                key={product.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card
+                  className={cn(
+                    'group h-full p-6 transition-all hover:shadow-lg',
+                    `border-dynamic-${product.color}/30 bg-gradient-to-br from-dynamic-${product.color}/5 via-background to-background hover:border-dynamic-${product.color}/50 hover:shadow-dynamic-${product.color}/10`
+                  )}
                 >
-                  <div className="relative h-full overflow-hidden rounded-2xl bg-foreground/5 backdrop-blur-sm">
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      whileHover={{ opacity: 1 }}
-                      className="absolute inset-0 bg-linear-to-br from-blue-500/10 via-cyan-500/5 to-transparent transition-opacity duration-300"
-                    />
-                    <motion.div
-                      animate={{
-                        rotate: [0, 360],
-                        scale: [1, 1.1, 1],
-                      }}
-                      transition={{
-                        duration: 20,
-                        repeat: Infinity,
-                        ease: 'linear',
-                      }}
-                      className="-top-8 -right-8 absolute h-24 w-24 rounded-xl bg-linear-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
-                    />
-                    <div className="pointer-events-none relative p-8">
-                      <motion.div
-                        whileHover={{
-                          rotate: [0, 10, -10, 0],
-                          scale: 1.1,
-                        }}
-                        transition={{
-                          duration: 0.3,
-                        }}
-                        className="relative mb-6"
-                      >
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
-                          <motion.div
-                            animate={{
-                              scale: [1, 1.1, 1],
-                            }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              ease: 'easeInOut',
-                            }}
-                          >
-                            {item.icon}
-                          </motion.div>
-                        </div>
-                      </motion.div>
-                      <motion.h3
-                        className="relative mb-4 font-bold text-foreground text-xl"
-                        whileHover={{
-                          scale: 1.05,
-                          color: 'hsl(var(--primary))',
-                        }}
-                      >
-                        {item.title}
-                      </motion.h3>
-                      <motion.p
-                        className="relative text-foreground/60"
-                        whileHover={{
-                          scale: 1.02,
-                        }}
-                      >
-                        {item.description}
-                      </motion.p>
-                    </div>
-                    <motion.div
-                      initial={{ scaleX: 0 }}
-                      whileHover={{ scaleX: 1 }}
-                      transition={{ duration: 0.3 }}
-                      className="absolute right-0 bottom-0 left-0 h-1 origin-left bg-linear-to-r from-primary/20 to-primary/5"
+                  <div
+                    className={cn(
+                      'mb-4 flex h-12 w-12 items-center justify-center rounded-xl transition-transform group-hover:scale-110',
+                      `bg-dynamic-${product.color}/10`
+                    )}
+                  >
+                    <product.icon
+                      className={cn('h-6 w-6', `text-dynamic-${product.color}`)}
                     />
                   </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </motion.section>
-
-        {/* Cultural Pillars Section - Enhanced with Creative UI */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="relative"
-        >
-          <div className="-z-10 absolute inset-0">
-            <motion.div
-              animate={{
-                opacity: [0.1, 0.15, 0.1],
-                scale: [1, 1.1, 1],
-              }}
-              transition={{
-                duration: 8,
-                repeat: Infinity,
-                ease: 'linear',
-              }}
-              className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]"
-            />
-            <motion.div
-              animate={{
-                rotate: [0, 360],
-              }}
-              transition={{
-                duration: 60,
-                repeat: Infinity,
-                ease: 'linear',
-              }}
-              className="absolute inset-0 bg-[conic-gradient(from_180deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]"
-            />
-            <motion.div
-              animate={{
-                opacity: [0.1, 0.2, 0.1],
-              }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              }}
-              className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px]"
-            />
-          </div>
-
-          <div className="relative text-center">
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              whileInView={{ scale: 1, opacity: 1 }}
-              viewport={{ once: true }}
-              className="mb-16"
-            >
-              <motion.div
-                whileHover={{
-                  scale: 1.1,
-                  rotate: [0, 10, -10, 0],
-                }}
-                transition={{
-                  rotate: {
-                    duration: 0.5,
-                    ease: 'easeInOut',
-                  },
-                }}
-                className="group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
-              >
-                <Building2 className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
+                  <h3 className="mb-1 font-bold text-xl">{product.name}</h3>
+                  <div className="mb-3 text-foreground/60 text-sm">
+                    {product.subtitle}
+                  </div>
+                  <p className="mb-4 text-foreground/70 text-sm leading-relaxed">
+                    {product.description}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {product.features.map((feature) => (
+                      <Badge
+                        key={feature}
+                        variant="secondary"
+                        className={cn(
+                          'text-xs',
+                          `border-dynamic-${product.color}/30 bg-dynamic-${product.color}/10 text-dynamic-${product.color}`
+                        )}
+                      >
+                        {feature}
+                      </Badge>
+                    ))}
+                  </div>
+                </Card>
               </motion.div>
-              <motion.h2
-                className="mb-4 font-bold text-4xl text-foreground"
-                whileHover={{
-                  scale: 1.02,
-                }}
-              >
-                <motion.span
-                  animate={{
-                    backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-                  }}
-                  transition={{
-                    duration: 5,
-                    repeat: Infinity,
-                    ease: 'linear',
-                  }}
-                  className="relative bg-linear-to-r bg-size-[200%_auto] from-primary via-orange-500 to-red-500 bg-clip-text text-transparent"
-                >
-                  Cultural Pillars
-                </motion.span>
-              </motion.h2>
-              <motion.p
-                className="mx-auto max-w-2xl text-foreground/60 text-lg"
-                whileHover={{
-                  scale: 1.01,
-                }}
-              >
-                Our culture is built on strong foundations that guide how we
-                work, collaborate, and grow together
-              </motion.p>
-            </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-            <div className="grid gap-8 md:grid-cols-4">
-              {culturalPillars.map((item, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ y: 20, opacity: 0 }}
-                  whileInView={{ y: 0, opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{
-                    y: -5,
-                    transition: {
-                      duration: 0.2,
-                      ease: 'easeOut',
-                    },
-                  }}
-                  className="group relative"
+      {/* Open Roles */}
+      <section
+        id="roles"
+        className="relative scroll-mt-20 px-4 py-24 sm:px-6 lg:px-8"
+      >
+        <div className="mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-16 text-center"
+          >
+            <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
+              Open{' '}
+              <span className="bg-gradient-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
+                Opportunities
+              </span>
+            </h2>
+            <p className="mx-auto max-w-2xl text-foreground/60 text-lg">
+              Join world-class builders shaping the future of human-AI
+              collaboration
+            </p>
+          </motion.div>
+
+          <div className="grid gap-8 lg:grid-cols-2">
+            {roles.map((role, index) => (
+              <motion.div
+                key={role.area}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card
+                  className={cn(
+                    'group h-full p-8 transition-all hover:shadow-lg',
+                    `border-dynamic-${role.color}/30 bg-gradient-to-br from-dynamic-${role.color}/5 via-background to-background hover:border-dynamic-${role.color}/50 hover:shadow-dynamic-${role.color}/10`
+                  )}
                 >
-                  <div className="relative h-full overflow-hidden rounded-2xl bg-foreground/5 backdrop-blur-sm">
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      whileHover={{ opacity: 1 }}
-                      className="absolute inset-0 bg-linear-to-br from-orange-500/10 via-red-500/5 to-transparent transition-opacity duration-300"
-                    />
-                    <motion.div
-                      animate={{
-                        rotate: [0, 360],
-                        scale: [1, 1.1, 1],
-                      }}
-                      transition={{
-                        duration: 20,
-                        repeat: Infinity,
-                        ease: 'linear',
-                      }}
-                      className="-top-8 -right-8 absolute h-24 w-24 rounded-xl bg-linear-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
-                    />
-                    <div className="pointer-events-none relative p-8">
-                      <motion.div
-                        whileHover={{
-                          rotate: [0, 10, -10, 0],
-                          scale: 1.1,
-                        }}
-                        transition={{
-                          duration: 0.3,
-                        }}
-                        className="relative mb-6"
-                      >
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
-                          <motion.div
-                            animate={{
-                              scale: [1, 1.1, 1],
-                            }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              ease: 'easeInOut',
-                            }}
-                          >
-                            {item.icon}
-                          </motion.div>
-                        </div>
-                      </motion.div>
-                      <motion.h3
-                        className="relative mb-4 font-bold text-foreground text-xl"
-                        whileHover={{
-                          scale: 1.05,
-                          color: 'hsl(var(--primary))',
-                        }}
-                      >
-                        {item.title}
-                      </motion.h3>
-                      <motion.p
-                        className="relative text-foreground/60"
-                        whileHover={{
-                          scale: 1.02,
-                        }}
-                      >
-                        {item.description}
-                      </motion.p>
+                  <div className="mb-6 flex items-start gap-4">
+                    <div
+                      className={cn(
+                        'flex h-14 w-14 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-110',
+                        `bg-dynamic-${role.color}/10`
+                      )}
+                    >
+                      <role.icon
+                        className={cn('h-7 w-7', `text-dynamic-${role.color}`)}
+                      />
                     </div>
-                    <motion.div
-                      initial={{ scaleX: 0 }}
-                      whileHover={{ scaleX: 1 }}
-                      transition={{ duration: 0.3 }}
-                      className="absolute right-0 bottom-0 left-0 h-1 origin-left bg-linear-to-r from-primary/20 to-primary/5"
+                    <div className="flex-1">
+                      <h3 className="mb-2 font-bold text-2xl">{role.area}</h3>
+                      <p className="text-foreground/70 leading-relaxed">
+                        {role.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mb-6 space-y-2">
+                    {role.positions.map((position) => (
+                      <div
+                        key={position}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <CheckCircle2
+                          className={cn(
+                            'h-4 w-4',
+                            `text-dynamic-${role.color}`
+                          )}
+                        />
+                        <span>{position}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Button className="w-full" variant="outline" asChild>
+                    <Link href="mailto:contact@tuturuuu.com">
+                      <Mail className="mr-2 h-4 w-4" />
+                      Apply Now
+                    </Link>
+                  </Button>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mt-12 text-center"
+          >
+            <Card className="border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/5 via-background to-background p-8">
+              <MessageSquare className="mx-auto mb-4 h-12 w-12 text-dynamic-purple" />
+              <h3 className="mb-3 font-bold text-2xl">Don't See Your Role?</h3>
+              <p className="mx-auto mb-6 max-w-2xl text-foreground/70 leading-relaxed">
+                We're always looking for exceptional talent. If you're
+                passionate about building the future of human potential, reach
+                out with your story.
+              </p>
+              <Button size="lg" asChild>
+                <Link href="mailto:contact@tuturuuu.com">
+                  <Mail className="mr-2 h-5 w-5" />
+                  Get in Touch
+                </Link>
+              </Button>
+            </Card>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Culture & Values */}
+      <section className="relative px-4 py-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-16 text-center"
+          >
+            <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
+              Our{' '}
+              <span className="bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
+                Culture
+              </span>
+            </h2>
+            <p className="mx-auto max-w-2xl text-foreground/60 text-lg">
+              How we work, collaborate, and grow together
+            </p>
+          </motion.div>
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {culture.map((item, index) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card
+                  className={cn(
+                    'group h-full p-6 transition-all hover:shadow-lg',
+                    `border-dynamic-${item.color}/30 bg-gradient-to-br from-dynamic-${item.color}/5 via-background to-background hover:border-dynamic-${item.color}/50 hover:shadow-dynamic-${item.color}/10`
+                  )}
+                >
+                  <div
+                    className={cn(
+                      'mb-4 flex h-12 w-12 items-center justify-center rounded-xl transition-transform group-hover:rotate-12 group-hover:scale-110',
+                      `bg-dynamic-${item.color}/10`
+                    )}
+                  >
+                    <item.icon
+                      className={cn('h-6 w-6', `text-dynamic-${item.color}`)}
                     />
                   </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </motion.section>
-
-        {/* Team Highlights Section - Enhanced with Creative UI */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="relative"
-        >
-          <div className="-z-10 absolute inset-0">
-            <motion.div
-              animate={{
-                opacity: [0.1, 0.15, 0.1],
-                scale: [1, 1.1, 1],
-              }}
-              transition={{
-                duration: 8,
-                repeat: Infinity,
-                ease: 'linear',
-              }}
-              className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]"
-            />
-            <motion.div
-              animate={{
-                rotate: [0, 360],
-              }}
-              transition={{
-                duration: 60,
-                repeat: Infinity,
-                ease: 'linear',
-              }}
-              className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]"
-            />
-            <motion.div
-              animate={{
-                opacity: [0.1, 0.2, 0.1],
-                y: [0, -10, 0],
-              }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              }}
-              className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px]"
-            />
-          </div>
-
-          <div className="relative text-center">
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              whileInView={{ scale: 1, opacity: 1 }}
-              viewport={{ once: true }}
-              className="mb-16"
-            >
-              <motion.div
-                whileHover={{
-                  scale: 1.1,
-                  rotate: [0, 10, -10, 0],
-                }}
-                transition={{
-                  rotate: {
-                    duration: 0.5,
-                    ease: 'easeInOut',
-                  },
-                }}
-                className="group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
-              >
-                <Users2 className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
+                  <h3 className="mb-2 font-semibold text-lg">{item.title}</h3>
+                  <p className="text-foreground/60 text-sm leading-relaxed">
+                    {item.description}
+                  </p>
+                </Card>
               </motion.div>
-              <motion.h2
-                className="mb-4 font-bold text-4xl text-foreground"
-                whileHover={{
-                  scale: 1.02,
-                }}
-              >
-                <motion.span
-                  animate={{
-                    backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-                  }}
-                  transition={{
-                    duration: 5,
-                    repeat: Infinity,
-                    ease: 'linear',
-                  }}
-                  className="relative bg-linear-to-r bg-size-[200%_auto] from-primary via-green-500 to-emerald-500 bg-clip-text text-transparent"
-                >
-                  Team Highlights
-                </motion.span>
-              </motion.h2>
-              <motion.p
-                className="mx-auto max-w-2xl text-foreground/60 text-lg"
-                whileHover={{
-                  scale: 1.01,
-                }}
-              >
-                Join a diverse, global team working together to build something
-                extraordinary
-              </motion.p>
-            </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-            <div className="grid gap-8 md:grid-cols-4">
-              {teamHighlights.map((item, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ y: 20, opacity: 0 }}
-                  whileInView={{ y: 0, opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{
-                    y: -5,
-                    transition: {
-                      duration: 0.2,
-                      ease: 'easeOut',
-                    },
-                  }}
-                  className="group relative"
+      {/* Benefits & Perks */}
+      <section className="relative px-4 py-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-16 text-center"
+          >
+            <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
+              Benefits &{' '}
+              <span className="bg-gradient-to-r from-dynamic-green via-dynamic-emerald to-dynamic-cyan bg-clip-text text-transparent">
+                Perks
+              </span>
+            </h2>
+            <p className="mx-auto max-w-2xl text-foreground/60 text-lg">
+              We invest in our team's growth, health, and happiness
+            </p>
+          </motion.div>
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {benefits.map((benefit, index) => (
+              <motion.div
+                key={benefit.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className="group h-full border-foreground/10 bg-foreground/5 p-6 transition-all hover:border-primary/30 hover:bg-primary/5 hover:shadow-lg">
+                  <benefit.icon className="mb-4 h-8 w-8 text-primary transition-transform group-hover:scale-110" />
+                  <h3 className="mb-2 font-semibold text-lg">
+                    {benefit.title}
+                  </h3>
+                  <p className="text-foreground/60 text-sm leading-relaxed">
+                    {benefit.description}
+                  </p>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Tech Stack */}
+      <section className="relative px-4 py-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-16 text-center"
+          >
+            <Badge
+              variant="secondary"
+              className="mb-4 border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue"
+            >
+              <Code2 className="mr-1.5 h-3.5 w-3.5" />
+              Modern Stack
+            </Badge>
+            <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
+              World-Class{' '}
+              <span className="bg-gradient-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
+                Technology
+              </span>
+            </h2>
+            <p className="mx-auto max-w-2xl text-foreground/60 text-lg">
+              Work with cutting-edge tools and contribute to open-source
+              innovation
+            </p>
+          </motion.div>
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {techStack.map((stack, index) => (
+              <motion.div
+                key={stack.category}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card
+                  className={cn(
+                    'group h-full p-6 transition-all hover:shadow-lg',
+                    `border-dynamic-${stack.color}/30 bg-gradient-to-br from-dynamic-${stack.color}/5 via-background to-background hover:border-dynamic-${stack.color}/50 hover:shadow-dynamic-${stack.color}/10`
+                  )}
                 >
-                  <div className="relative h-full overflow-hidden rounded-2xl bg-foreground/5 backdrop-blur-sm">
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      whileHover={{ opacity: 1 }}
-                      className="absolute inset-0 bg-linear-to-br from-green-500/10 via-emerald-500/5 to-transparent transition-opacity duration-300"
-                    />
-                    <motion.div
-                      animate={{
-                        rotate: [0, 360],
-                        scale: [1, 1.1, 1],
-                      }}
-                      transition={{
-                        duration: 20,
-                        repeat: Infinity,
-                        ease: 'linear',
-                      }}
-                      className="-top-8 -right-8 absolute h-24 w-24 rounded-xl bg-linear-to-br from-green-500/20 via-emerald-500/10 to-transparent blur-2xl"
-                    />
-                    <div className="pointer-events-none relative p-8">
-                      <motion.div
-                        whileHover={{
-                          rotate: [0, 10, -10, 0],
-                          scale: 1.1,
-                        }}
-                        transition={{
-                          duration: 0.3,
-                        }}
-                        className="relative mb-6"
-                      >
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
-                          <motion.div
-                            animate={{
-                              scale: [1, 1.1, 1],
-                            }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              ease: 'easeInOut',
-                            }}
-                          >
-                            {item.icon}
-                          </motion.div>
-                        </div>
-                      </motion.div>
-                      <motion.h3
-                        className="relative mb-4 font-bold text-foreground text-xl"
-                        whileHover={{
-                          scale: 1.05,
-                          color: 'hsl(var(--primary))',
-                        }}
-                      >
-                        {item.title}
-                      </motion.h3>
-                      <motion.p
-                        className="relative text-foreground/60"
-                        whileHover={{
-                          scale: 1.02,
-                        }}
-                      >
-                        {item.description}
-                      </motion.p>
-                    </div>
-                    <motion.div
-                      initial={{ scaleX: 0 }}
-                      whileHover={{ scaleX: 1 }}
-                      transition={{ duration: 0.3 }}
-                      className="absolute right-0 bottom-0 left-0 h-1 origin-left bg-linear-to-r from-primary/20 to-primary/5"
+                  <div
+                    className={cn(
+                      'mb-4 flex h-12 w-12 items-center justify-center rounded-xl transition-transform group-hover:scale-110',
+                      `bg-dynamic-${stack.color}/10`
+                    )}
+                  >
+                    <stack.icon
+                      className={cn('h-6 w-6', `text-dynamic-${stack.color}`)}
                     />
                   </div>
-                </motion.div>
-              ))}
-            </div>
+                  <h3 className="mb-3 font-bold text-lg">{stack.category}</h3>
+                  <ul className="space-y-1.5">
+                    {stack.technologies.map((tech) => (
+                      <li
+                        key={tech}
+                        className="flex items-center gap-2 text-foreground/60 text-sm"
+                      >
+                        <div
+                          className={cn(
+                            'h-1.5 w-1.5 rounded-full',
+                            `bg-dynamic-${stack.color}`
+                          )}
+                        />
+                        {tech}
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+              </motion.div>
+            ))}
           </div>
-        </motion.section>
+        </div>
+      </section>
 
-        {/* ... Rest of the sections with similar enhancements ... */}
+      {/* CTA Section */}
+      <section className="relative px-4 py-24 pb-32 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <Card className="relative overflow-hidden border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-12">
+              {/* Decorative Elements */}
+              <div className="absolute inset-0 overflow-hidden opacity-10">
+                <div className="absolute top-10 left-10 h-40 w-40 rounded-full bg-dynamic-purple blur-3xl" />
+                <div className="absolute right-20 bottom-20 h-40 w-40 rounded-full bg-dynamic-pink blur-3xl" />
+              </div>
 
-        {/* Enhanced Animation Styles */}
-        <style jsx global>{`
-          @keyframes float {
-            0%,
-            100% {
-              transform: translateY(0px) rotate(0deg);
-            }
-            50% {
-              transform: translateY(-10px) rotate(2deg);
-            }
-          }
-          .animate-float {
-            animation: float 4s ease-in-out infinite;
-          }
-          @keyframes spin-slow {
-            from {
-              transform: rotate(0deg);
-            }
-            to {
-              transform: rotate(360deg);
-            }
-          }
-          .animate-spin-slow {
-            animation: spin-slow 12s linear infinite;
-          }
-          @keyframes pulse-glow {
-            0%,
-            100% {
-              opacity: 0.5;
-              transform: scale(1);
-            }
-            50% {
-              opacity: 1;
-              transform: scale(1.05);
-            }
-          }
-          .animate-pulse-glow {
-            animation: pulse-glow 4s ease-in-out infinite;
-          }
-          @keyframes gradient-shift {
-            0% {
-              background-position: 0% 50%;
-            }
-            50% {
-              background-position: 100% 50%;
-            }
-            100% {
-              background-position: 0% 50%;
-            }
-          }
-          .animate-gradient {
-            animation: gradient-shift 8s ease infinite;
-            background-size: 200% 200%;
-          }
-          @keyframes shimmer {
-            0% {
-              background-position: -200% 0;
-            }
-            100% {
-              background-position: 200% 0;
-            }
-          }
-          .animate-shimmer {
-            animation: shimmer 3s linear infinite;
-            background: linear-gradient(
-              90deg,
-              rgba(var(--primary-rgb), 0.1) 25%,
-              rgba(var(--primary-rgb), 0.2) 50%,
-              rgba(var(--primary-rgb), 0.1) 75%
-            );
-            background-size: 200% 100%;
-          }
-        `}</style>
-      </div>
+              <div className="relative text-center">
+                <Rocket className="mx-auto mb-6 h-16 w-16 text-dynamic-purple" />
+                <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
+                  Ready to Build the Future?
+                </h2>
+                <p className="mx-auto mb-8 max-w-2xl text-foreground/70 text-lg leading-relaxed">
+                  Join us in creating technology that unlocks human potential.
+                  Whether you're building Mira, shaping Aurora, or crafting
+                  experiences—let's change the world together.
+                </p>
+
+                <div className="mb-8 flex flex-wrap items-center justify-center gap-4">
+                  <Button size="lg" asChild>
+                    <Link href="mailto:contact@tuturuuu.com">
+                      <Mail className="mr-2 h-5 w-5" />
+                      Apply Now
+                    </Link>
+                  </Button>
+                  <Button size="lg" variant="outline" asChild>
+                    <Link href="/about">
+                      <Heart className="mr-2 h-5 w-5" />
+                      Learn Our Story
+                    </Link>
+                  </Button>
+                  <Button size="lg" variant="outline" asChild>
+                    <Link
+                      href="https://github.com/tutur3u/platform"
+                      target="_blank"
+                    >
+                      <GithubIcon className="mr-2 h-5 w-5" />
+                      View GitHub
+                    </Link>
+                  </Button>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-6 text-foreground/60 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-dynamic-green" />
+                    Open Source First
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-dynamic-blue" />
+                    Ho Chi Minh City
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-dynamic-purple" />
+                    Global Impact
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        </div>
+      </section>
     </main>
   );
 }

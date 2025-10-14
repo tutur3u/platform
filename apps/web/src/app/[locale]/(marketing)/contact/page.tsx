@@ -122,7 +122,7 @@ export default function ContactPage() {
     };
 
     getUser();
-  }, [form.setValue, supabase.from, supabase.auth.getUser]);
+  }, [form.setValue, supabase, form]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!user) {
@@ -213,7 +213,7 @@ export default function ContactPage() {
   ];
 
   return (
-    <main className="relative mx-auto overflow-x-clip text-balance">
+    <main className="relative mx-auto w-full overflow-x-hidden text-balance">
       {/* Dynamic Floating Orbs */}
       <div className="-z-10 pointer-events-none fixed inset-0">
         <motion.div
@@ -262,7 +262,7 @@ export default function ContactPage() {
 
       {/* Hero Section */}
       <section className="relative px-4 pt-24 pb-16 sm:px-6 sm:pt-32 sm:pb-20 lg:px-8 lg:pt-40 lg:pb-24">
-        <div className="container mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -309,7 +309,7 @@ export default function ContactPage() {
 
       {/* Contact Methods Section */}
       <section className="relative px-4 py-16 sm:px-6 lg:px-8">
-        <div className="container mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -377,7 +377,7 @@ export default function ContactPage() {
 
       {/* Main Content Grid */}
       <section className="relative px-4 py-16 sm:px-6 lg:px-8">
-        <div className="container mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl">
           <div className="grid gap-12 lg:grid-cols-2">
             {/* Contact Form */}
             <motion.div
@@ -778,7 +778,7 @@ export default function ContactPage() {
 
       {/* Response Time Banner */}
       <section className="relative px-4 py-16 pb-32 sm:px-6 lg:px-8">
-        <div className="container mx-auto max-w-5xl">
+        <div className="mx-auto max-w-5xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
