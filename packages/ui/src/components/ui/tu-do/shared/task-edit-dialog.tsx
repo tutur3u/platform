@@ -102,6 +102,37 @@ interface WorkspaceTaskLabel {
   created_at: string;
 }
 
+/**
+ * Helper function to parse task description from various formats
+ * Handles both JSONContent objects and string formats
+ * @param desc - Description in object, string, or null format
+ * @returns Parsed JSONContent or null
+ */
+function getDescriptionContent(desc: any): JSONContent | null {
+  if (!desc) return null;
+
+  // If it's already an object (from Supabase), use it directly
+  if (typeof desc === 'object') {
+    return desc as JSONContent;
+  }
+
+  // If it's a string, try to parse it
+  try {
+    return JSON.parse(desc);
+  } catch {
+    // If it's not valid JSON, treat it as plain text and wrap in doc structure
+    return {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: desc }],
+        },
+      ],
+    };
+  }
+}
+
 function TaskEditDialogComponent({
   task,
   boardId,
@@ -1198,30 +1229,6 @@ function TaskEditDialogComponent({
     // This prevents resetting while user is actively typing
     const taskIdChanged = previousTaskIdRef.current !== task?.id;
 
-    // Helper to parse description - handles both object and string types
-    const getDescriptionContent = (desc: any): JSONContent | null => {
-      if (!desc) return null;
-      // If it's already an object (from Supabase), use it directly
-      if (typeof desc === 'object') {
-        return desc as JSONContent;
-      }
-      // If it's a string, try to parse it
-      try {
-        return JSON.parse(desc);
-      } catch {
-        // If it's not valid JSON, treat it as plain text
-        return {
-          type: 'doc',
-          content: [
-            {
-              type: 'paragraph',
-              content: [{ type: 'text', text: desc }],
-            },
-          ],
-        };
-      }
-    };
-
     // In edit mode, when dialog opens or task ID changes, reload task data to ensure we have the latest
     // This handles the case where task was edited previously and we're reopening the dialog
     if (isOpen && !isCreateMode && taskIdChanged) {
@@ -1270,22 +1277,6 @@ function TaskEditDialogComponent({
   // Reset transient edits when closing without saving in edit mode
   useEffect(() => {
     if (!isOpen && previousTaskIdRef.current && !isCreateMode) {
-      // Helper to parse description - handles both object and string types
-      const getDescriptionContent = (desc: any): JSONContent | null => {
-        if (!desc) return null;
-        if (typeof desc === 'object') return desc as JSONContent;
-        try {
-          return JSON.parse(desc);
-        } catch {
-          return {
-            type: 'doc',
-            content: [
-              { type: 'paragraph', content: [{ type: 'text', text: desc }] },
-            ],
-          };
-        }
-      };
-
       setName(task?.name || '');
       setDescription(getDescriptionContent(task?.description));
       setPriority(task?.priority || null);
