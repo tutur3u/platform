@@ -61,7 +61,6 @@ describe('formatEmailAddresses', () => {
   });
 
   it('returns an empty array for falsy input', () => {
-    // @ts-expect-error testing runtime guard against undefined
     expect(formatEmailAddresses(undefined)).toEqual([]);
   });
 });

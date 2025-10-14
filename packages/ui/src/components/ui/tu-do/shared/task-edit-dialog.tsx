@@ -27,6 +27,7 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import type { User } from '@tuturuuu/types/primitives/User';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -45,11 +46,13 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import { cn } from '@tuturuuu/utils/format';
 import {
   invalidateTaskCaches,
@@ -57,9 +60,18 @@ import {
   useUpdateTask,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
+import { convertJsonContentToYjsState } from '@tuturuuu/utils/yjs-helper';
 import dayjs from 'dayjs';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { createPortal } from 'react-dom';
+import * as Y from 'yjs';
 import { CursorOverlayWrapper } from './cursor-overlay';
 import { CustomDatePickerDialog } from './custom-date-picker/custom-date-picker-dialog';
 import {
@@ -89,6 +101,7 @@ interface TaskEditDialogProps {
   onClose: () => void;
   onUpdate: () => void;
   availableLists?: TaskList[];
+  onOpenTask?: (taskId: string) => void;
 }
 
 // Helper types
@@ -99,6 +112,37 @@ interface WorkspaceTaskLabel {
   created_at: string;
 }
 
+/**
+ * Helper function to parse task description from various formats
+ * Handles both JSONContent objects and string formats
+ * @param desc - Description in object, string, or null format
+ * @returns Parsed JSONContent or null
+ */
+function getDescriptionContent(desc: any): JSONContent | null {
+  if (!desc) return null;
+
+  // If it's already an object (from Supabase), use it directly
+  if (typeof desc === 'object') {
+    return desc as JSONContent;
+  }
+
+  // If it's a string, try to parse it
+  try {
+    return JSON.parse(desc);
+  } catch {
+    // If it's not valid JSON, treat it as plain text and wrap in doc structure
+    return {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: desc }],
+        },
+      ],
+    };
+  }
+}
+
 function TaskEditDialogComponent({
   task,
   boardId,
@@ -106,6 +150,7 @@ function TaskEditDialogComponent({
   onClose,
   onUpdate,
   availableLists: propAvailableLists,
+  onOpenTask,
   mode = 'edit',
   showUserPresence = false,
 }: TaskEditDialogProps & {
@@ -119,8 +164,13 @@ function TaskEditDialogComponent({
   const [isLoading, setIsLoading] = useState(false);
   const [name, setName] = useState(task?.name || '');
   const [description, setDescription] = useState<JSONContent | null>(() => {
-    // Try to parse existing description as JSON, fallback to creating simple text content
+    // Handle description which could be a string or already parsed object
     if (task?.description) {
+      // If it's already an object (from Supabase), use it directly
+      if (typeof task.description === 'object') {
+        return task.description as JSONContent;
+      }
+      // If it's a string, try to parse it
       try {
         return JSON.parse(task.description);
       } catch {
@@ -156,6 +206,62 @@ function TaskEditDialogComponent({
   const [selectedLabels, setSelectedLabels] = useState<WorkspaceTaskLabel[]>(
     task?.labels || []
   );
+
+  // State for current user
+  const [user, setUser] = useState<User | null>(null);
+
+  // Fetch current user on mount
+  useEffect(() => {
+    const getUser = async () => {
+      const supabase = createClient();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('id, display_name')
+          .eq('id', user.id)
+          .single();
+
+        if (userData) {
+          setUser(userData);
+        }
+      }
+    };
+
+    getUser();
+  }, []);
+
+  // Generate consistent user color from user ID
+  const userColor: string | undefined = useMemo(() => {
+    // Generate color from user ID hash
+    const hashCode = (str: string) => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return hash;
+    };
+
+    const colors = [
+      '#3b82f6', // blue
+      '#8b5cf6', // purple
+      '#ec4899', // pink
+      '#f97316', // orange
+      '#10b981', // green
+      '#06b6d4', // cyan
+      '#f59e0b', // amber
+      '#6366f1', // indigo
+    ];
+
+    // Use user ID if available, otherwise use a default
+    const userId = user?.id || 'anonymous';
+    const index = Math.abs(hashCode(userId)) % colors.length;
+    return colors[index] || colors[0];
+  }, [user?.id]);
 
   // Use React Query hooks for shared data (cached across all components)
   const { data: boardConfig } = useBoardConfig(boardId);
@@ -213,6 +319,8 @@ function TaskEditDialogComponent({
   const [allWorkspacesLoading, setAllWorkspacesLoading] = useState(false);
   const [workspaceTasks, setWorkspaceTasks] = useState<any[]>([]);
   const [workspaceTasksLoading, setWorkspaceTasksLoading] = useState(false);
+  const [taskSearchQuery, setTaskSearchQuery] = useState<string>('');
+  const taskSearchDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [slashState, setSlashState] = useState<SuggestionState>(
     createInitialSuggestionState
@@ -227,6 +335,8 @@ function TaskEditDialogComponent({
   const suggestionMenuWidth = 360;
   const previousMentionHighlightRef = useRef(0);
   const previousSlashHighlightRef = useRef(0);
+  const previousSlashQueryRef = useRef('');
+  const previousMentionQueryRef = useRef('');
   const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
   const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
   const [includeTime, setIncludeTime] = useState(false);
@@ -241,6 +351,7 @@ function TaskEditDialogComponent({
   const hasUnsavedChangesRef = useRef<boolean>(false);
   const quickDueRef = useRef<(days: number | null) => void>(() => {});
   const updateEstimationRef = useRef<(points: number | null) => void>(() => {});
+  const handleConvertToTaskRef = useRef<(() => Promise<void>) | null>(null);
   const flushEditorPendingRef = useRef<(() => JSONContent | null) | undefined>(
     undefined
   );
@@ -253,6 +364,60 @@ function TaskEditDialogComponent({
 
   // Use the React Query mutation hook for updating tasks
   const updateTaskMutation = useUpdateTask(boardId);
+
+  // Set up Yjs collaboration (only in edit mode, not create mode)
+  const { doc, provider } = useYjsCollaboration({
+    channel: `task-editor-${task?.id || 'new'}`,
+    tableName: 'tasks',
+    columnName: 'description_yjs_state',
+    id: task?.id || '',
+    user: user
+      ? {
+          id: user.id || '',
+          name: user.display_name || '',
+          color: userColor || '',
+        }
+      : null,
+    enabled: isOpen && !isCreateMode && showUserPresence && !!task?.id,
+  });
+
+  // If the task has no Yjs state, initialize it
+  useEffect(() => {
+    if (!task?.id || !editorInstance?.schema || !description || !doc) return;
+
+    const initializeYjsState = async () => {
+      try {
+        const supabase = createClient();
+
+        const { data: taskData, error: taskDataError } = await supabase
+          .from('tasks')
+          .select('description_yjs_state')
+          .eq('id', task.id)
+          .single();
+
+        if (taskDataError) throw taskDataError;
+
+        if (!taskData?.description_yjs_state) {
+          const yjsState = convertJsonContentToYjsState(
+            description,
+            editorInstance.schema
+          );
+
+          const { error: updateError } = await supabase
+            .from('tasks')
+            .update({ description_yjs_state: Array.from(yjsState) })
+            .eq('id', task.id);
+
+          if (updateError) throw updateError;
+
+          Y.applyUpdate(doc, yjsState);
+        }
+      } catch (error) {
+        console.error('Error initializing Yjs state:', error);
+      }
+    };
+    initializeYjsState();
+  }, [doc, description, editorInstance, task?.id]);
 
   const closeSlashMenu = useCallback(() => {
     setSlashState((prev) =>
@@ -368,20 +533,23 @@ function TaskEditDialogComponent({
   useEffect(() => {
     if (!slashState.open) {
       setSlashHighlightIndex(0);
+      previousSlashQueryRef.current = '';
       return;
     }
 
+    // Reset to 0 only when query changes (user typed something)
+    if (previousSlashQueryRef.current !== slashState.query) {
+      previousSlashQueryRef.current = slashState.query;
+      setSlashHighlightIndex(0);
+      return;
+    }
+
+    // When commands change (but query hasn't), clamp the highlight index to valid range
     setSlashHighlightIndex((prev) => {
       if (filteredSlashCommands.length === 0) return 0;
       return Math.min(prev, filteredSlashCommands.length - 1);
     });
-  }, [slashState.open, filteredSlashCommands.length]);
-
-  useEffect(() => {
-    if (slashState.open) {
-      setSlashHighlightIndex(0);
-    }
-  }, [slashState.open]);
+  }, [slashState.open, slashState.query, filteredSlashCommands.length]);
 
   // Only scroll into view when using keyboard navigation (arrow keys)
   useEffect(() => {
@@ -421,20 +589,23 @@ function TaskEditDialogComponent({
   useEffect(() => {
     if (!mentionState.open) {
       setMentionHighlightIndex(0);
+      previousMentionQueryRef.current = '';
       return;
     }
 
+    // Reset to 0 only when query changes (user typed something)
+    if (previousMentionQueryRef.current !== mentionState.query) {
+      previousMentionQueryRef.current = mentionState.query;
+      setMentionHighlightIndex(0);
+      return;
+    }
+
+    // When options change (but query hasn't), clamp the highlight index to valid range
     setMentionHighlightIndex((prev) => {
       if (filteredMentionOptions.length === 0) return 0;
       return Math.min(prev, filteredMentionOptions.length - 1);
     });
-  }, [mentionState.open, filteredMentionOptions.length]);
-
-  useEffect(() => {
-    if (mentionState.open) {
-      setMentionHighlightIndex(0);
-    }
-  }, [mentionState.open]);
+  }, [mentionState.open, mentionState.query, filteredMentionOptions.length]);
 
   // Only scroll into view when using keyboard navigation (arrow keys)
   useEffect(() => {
@@ -708,6 +879,12 @@ function TaskEditDialogComponent({
         case 'toggle-advanced':
           setShowAdvancedOptions((prev) => !prev);
           return;
+        case 'convert-to-task':
+          // Store reference to call later
+          setTimeout(() => {
+            handleConvertToTaskRef.current?.();
+          }, 0);
+          return;
         default:
           return;
       }
@@ -902,43 +1079,48 @@ function TaskEditDialogComponent({
         onHighlightChange={setMentionHighlightIndex}
         listRef={mentionListRef}
       />
-      {/* Custom date picker - conditionally render */}
-      {showCustomDatePicker && mentionState.position && (
-        <div
-          style={{
-            position: 'fixed',
-            top: mentionState.position.top,
-            left: mentionState.position.left,
-            zIndex: 200,
-          }}
-        >
-          <CustomDatePickerDialog
-            selectedDate={customDate}
-            includeTime={includeTime}
-            selectedHour={selectedHour}
-            selectedMinute={selectedMinute}
-            selectedPeriod={selectedPeriod}
-            onDateSelect={setCustomDate}
-            onIncludeTimeChange={setIncludeTime}
-            onHourChange={setSelectedHour}
-            onMinuteChange={setSelectedMinute}
-            onPeriodChange={setSelectedPeriod}
-            onCancel={() => {
-              setShowCustomDatePicker(false);
-              setCustomDate(undefined);
-              setIncludeTime(false);
-              setSelectedHour('12');
-              setSelectedMinute('00');
-              setSelectedPeriod('PM');
+      {/* Custom date picker - conditionally render using portal */}
+      {showCustomDatePicker &&
+        mentionState.position &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="pointer-events-auto"
+            style={{
+              position: 'fixed',
+              top: mentionState.position.top,
+              left: mentionState.position.left,
+              zIndex: 9999,
             }}
-            onInsert={() => {
-              if (customDate) {
-                handleCustomDateSelect(customDate);
-              }
-            }}
-          />
-        </div>
-      )}
+          >
+            <CustomDatePickerDialog
+              selectedDate={customDate}
+              includeTime={includeTime}
+              selectedHour={selectedHour}
+              selectedMinute={selectedMinute}
+              selectedPeriod={selectedPeriod}
+              onDateSelect={setCustomDate}
+              onIncludeTimeChange={setIncludeTime}
+              onHourChange={setSelectedHour}
+              onMinuteChange={setSelectedMinute}
+              onPeriodChange={setSelectedPeriod}
+              onCancel={() => {
+                setShowCustomDatePicker(false);
+                setCustomDate(undefined);
+                setIncludeTime(false);
+                setSelectedHour('12');
+                setSelectedMinute('00');
+                setSelectedPeriod('PM');
+              }}
+              onInsert={() => {
+                if (customDate) {
+                  handleCustomDateSelect(customDate);
+                }
+              }}
+            />
+          </div>,
+          document.body
+        )}
     </>
   );
   useEffect(() => {
@@ -1082,6 +1264,67 @@ function TaskEditDialogComponent({
     initialData: propAvailableLists,
   });
 
+  // Handle converting list items to tasks
+  const handleConvertToTask = useCallback(async () => {
+    if (!editorInstance || !boardId || !availableLists) return;
+
+    // Get the first available list
+    const firstList = availableLists[0];
+    if (!firstList) {
+      toast({
+        title: 'No lists available',
+        description: 'Create a list first before converting items to tasks',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Use shared conversion helper
+    const result = await convertListItemToTask({
+      editor: editorInstance,
+      listId: firstList.id,
+      listName: firstList.name,
+      wrapInParagraph: false,
+      createTask: async ({
+        name,
+        listId,
+      }: {
+        name: string;
+        listId: string;
+      }) => {
+        const supabase = createClient();
+        const { data: newTask, error } = await supabase
+          .from('tasks')
+          .insert({
+            name,
+            list_id: listId,
+          })
+          .select('id, name')
+          .single();
+
+        if (error || !newTask) throw error;
+        return newTask;
+      },
+    });
+
+    if (!result.success) {
+      toast({
+        title: result.error!.message,
+        description: result.error!.description,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Invalidate task caches
+    await invalidateTaskCaches(queryClient, boardId);
+
+    toast({
+      title: 'Task created',
+      description: `Created task "${result.taskName}" and added mention`,
+    });
+  }, [editorInstance, boardId, availableLists, queryClient, toast]);
+
   // Helper function to convert description to JSONContent
   const parseDescription = useCallback((desc?: string): JSONContent | null => {
     if (!desc) return null;
@@ -1108,9 +1351,9 @@ function TaskEditDialogComponent({
 
     // In edit mode, when dialog opens or task ID changes, reload task data to ensure we have the latest
     // This handles the case where task was edited previously and we're reopening the dialog
-    if (isOpen && !isCreateMode && taskIdChanged) {
+    if (isOpen && !isCreateMode && (task?.id || taskIdChanged)) {
       setName(task?.name || '');
-      setDescription(parseDescription(task?.description));
+      setDescription(getDescriptionContent(task?.description));
       setPriority(task?.priority || null);
       setStartDate(task?.start_date ? new Date(task?.start_date) : undefined);
       setEndDate(task?.end_date ? new Date(task?.end_date) : undefined);
@@ -1124,7 +1367,7 @@ function TaskEditDialogComponent({
     // For create mode, only load when task ID changes or dialog opens with 'new' ID
     else if (isOpen && (isCreateMode || task?.id === 'new') && taskIdChanged) {
       setName(task?.name || '');
-      setDescription(parseDescription(task?.description) || null);
+      setDescription(getDescriptionContent(task?.description) || null);
       setPriority(task?.priority || null);
       setStartDate(task?.start_date ? new Date(task?.start_date) : undefined);
       setEndDate(task?.end_date ? new Date(task?.end_date) : undefined);
@@ -1137,7 +1380,6 @@ function TaskEditDialogComponent({
     }
   }, [
     task?.id,
-    parseDescription,
     isOpen,
     isCreateMode,
     task?.assignees,
@@ -1156,7 +1398,7 @@ function TaskEditDialogComponent({
   useEffect(() => {
     if (!isOpen && previousTaskIdRef.current && !isCreateMode) {
       setName(task?.name || '');
-      setDescription(parseDescription(task?.description));
+      setDescription(getDescriptionContent(task?.description));
       setPriority(task?.priority || null);
       setStartDate(task?.start_date ? new Date(task?.start_date) : undefined);
       setEndDate(task?.end_date ? new Date(task?.end_date) : undefined);
@@ -1166,7 +1408,7 @@ function TaskEditDialogComponent({
       setSelectedAssignees(task?.assignees || []);
       setSelectedProjects(task?.projects || []);
     }
-  }, [isOpen, isCreateMode, task, parseDescription]);
+  }, [isOpen, isCreateMode, task]);
 
   const fetchWorkspaceMembers = useCallback(async (wsId: string) => {
     try {
@@ -1288,49 +1530,61 @@ function TaskEditDialogComponent({
     }
   }, []);
 
-  const fetchWorkspaceTasks = useCallback(async (wsId: string) => {
-    if (!wsId) return;
-    try {
-      setWorkspaceTasksLoading(true);
-      const supabase = createClient();
+  const fetchWorkspaceTasks = useCallback(
+    async (wsId: string, searchQuery?: string) => {
+      if (!wsId) return;
+      try {
+        setWorkspaceTasksLoading(true);
+        const supabase = createClient();
 
-      // Tasks are related to workspaces through: tasks -> task_lists -> workspace_boards
-      // We need to join through the relationship chain
-      const { data: boards, error: boardsError } = await supabase
-        .from('workspace_boards')
-        .select('id')
-        .eq('ws_id', wsId);
+        // Tasks are related to workspaces through: tasks -> task_lists -> workspace_boards
+        // We need to join through the relationship chain
+        const { data: boards, error: boardsError } = await supabase
+          .from('workspace_boards')
+          .select('id')
+          .eq('ws_id', wsId);
 
-      if (boardsError) throw boardsError;
+        if (boardsError) throw boardsError;
 
-      const boardIds = (boards || []).map((b) => b.id);
-      if (boardIds.length === 0) {
-        setWorkspaceTasks([]);
-        return;
-      }
+        const boardIds = (boards || []).map((b) => b.id);
+        if (boardIds.length === 0) {
+          setWorkspaceTasks([]);
+          return;
+        }
 
-      const { data, error } = await supabase
-        .from('tasks')
-        .select(`
+        let query = supabase
+          .from('tasks')
+          .select(
+            `
           id,
           name,
           priority,
           created_at,
           list:task_lists!inner(id, name, board_id)
-        `)
-        .in('task_lists.board_id', boardIds)
-        .eq('deleted', false)
-        .order('created_at', { ascending: false })
-        .limit(25);
+        `
+          )
+          .in('task_lists.board_id', boardIds)
+          .eq('deleted', false);
 
-      if (error) throw error;
-      setWorkspaceTasks(data || []);
-    } catch (error) {
-      console.error('Failed fetching workspace tasks', error);
-    } finally {
-      setWorkspaceTasksLoading(false);
-    }
-  }, []);
+        // Add search filtering if query provided
+        if (searchQuery?.trim()) {
+          query = query.ilike('name', `%${searchQuery.trim()}%`);
+        }
+
+        const { data, error } = await query
+          .order('created_at', { ascending: false })
+          .limit(searchQuery ? 50 : 25);
+
+        if (error) throw error;
+        setWorkspaceTasks(data || []);
+      } catch (error) {
+        console.error('Failed fetching workspace tasks', error);
+      } finally {
+        setWorkspaceTasksLoading(false);
+      }
+    },
+    []
+  );
 
   // Fetch workspace members and projects when workspace ID is available
   useEffect(() => {
@@ -1349,12 +1603,155 @@ function TaskEditDialogComponent({
     fetchWorkspaceTasks,
   ]);
 
+  // Debounced task search when typing in mention menu
+  useEffect(() => {
+    if (!isOpen || !workspaceId || !mentionState.open) {
+      // Clear search when mention menu closes
+      if (taskSearchQuery) {
+        setTaskSearchQuery('');
+      }
+      return;
+    }
+
+    const query = mentionState.query.trim();
+
+    // Clear existing timeout
+    if (taskSearchDebounceRef.current) {
+      clearTimeout(taskSearchDebounceRef.current);
+    }
+
+    // Only search when user is typing (debounce 300ms)
+    taskSearchDebounceRef.current = setTimeout(() => {
+      if (query !== taskSearchQuery) {
+        setTaskSearchQuery(query);
+        fetchWorkspaceTasks(workspaceId, query || undefined);
+      }
+    }, 300);
+
+    return () => {
+      if (taskSearchDebounceRef.current) {
+        clearTimeout(taskSearchDebounceRef.current);
+      }
+    };
+  }, [
+    isOpen,
+    workspaceId,
+    mentionState.open,
+    mentionState.query,
+    taskSearchQuery,
+    fetchWorkspaceTasks,
+  ]);
+
   // Fetch all accessible workspaces when dialog opens for mention functionality
   useEffect(() => {
     if (isOpen) {
       fetchAllWorkspaces();
     }
   }, [isOpen, fetchAllWorkspaces]);
+
+  // Listen for task mention clicks to open the clicked task
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleTaskMentionClick = async (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        taskId: string;
+        taskName: string;
+      }>;
+      const { taskId } = customEvent.detail;
+
+      if (!taskId || !onOpenTask) return;
+
+      // Save current task if there are unsaved changes before navigating
+      // Only save in edit mode, and only if we have a valid task name
+      if (
+        hasUnsavedChangesRef.current &&
+        !isCreateMode &&
+        name?.trim() &&
+        !isLoading &&
+        task?.id
+      ) {
+        try {
+          // Flush any pending editor changes before saving
+          let currentDescription = description;
+          if (flushEditorPendingRef.current) {
+            const flushedContent = flushEditorPendingRef.current();
+            if (flushedContent) {
+              currentDescription = flushedContent;
+            }
+          }
+
+          // Convert JSONContent to string for storage with error handling
+          let descriptionString: string | null = null;
+          if (currentDescription) {
+            try {
+              descriptionString = JSON.stringify(currentDescription);
+            } catch (serializationError) {
+              console.error(
+                'Failed to serialize description:',
+                serializationError
+              );
+              // Continue with null description to allow save to proceed
+              descriptionString = null;
+            }
+          }
+
+          // Prepare task updates
+          const taskUpdates: any = {
+            name: name.trim(),
+            description: descriptionString,
+            priority: priority,
+            start_date: startDate ? startDate.toISOString() : null,
+            end_date: endDate ? endDate.toISOString() : null,
+            list_id: selectedListId,
+            estimation_points: estimationPoints ?? null,
+          };
+
+          // Save without closing the dialog
+          await updateTaskMutation.mutateAsync({
+            taskId: task.id,
+            updates: taskUpdates,
+          });
+
+          // Invalidate caches
+          await invalidateTaskCaches(queryClient, boardId);
+          onUpdate();
+
+          console.log('✅ Task saved before navigation');
+        } catch (error) {
+          console.error('Failed to save before navigation:', error);
+          // Continue with navigation even if save fails
+        }
+      }
+
+      // Open the clicked task
+      onOpenTask(taskId);
+    };
+
+    // Listen on document level since the event bubbles
+    document.addEventListener('taskMentionClick', handleTaskMentionClick);
+
+    return () => {
+      document.removeEventListener('taskMentionClick', handleTaskMentionClick);
+    };
+  }, [
+    isOpen,
+    onOpenTask,
+    isCreateMode,
+    name,
+    isLoading,
+    task?.id,
+    description,
+    priority,
+    startDate,
+    endDate,
+    selectedListId,
+    estimationPoints,
+    updateTaskMutation,
+    queryClient,
+    boardId,
+    onUpdate,
+  ]);
 
   // ------- Draft persistence (create mode) -------------------------------------
   const draftStorageKey = useMemo(
@@ -1866,8 +2263,10 @@ function TaskEditDialogComponent({
     let currentDescription = description;
     if (flushEditorPendingRef.current) {
       const flushedContent = flushEditorPendingRef.current();
-      // Use the flushed content directly
-      currentDescription = flushedContent;
+      // Use the flushed content only if it's defined
+      if (flushedContent) {
+        currentDescription = flushedContent;
+      }
     }
 
     setIsSaving(true);
@@ -1881,11 +2280,18 @@ function TaskEditDialogComponent({
       setHasDraft(false);
     } catch {}
 
-    // Convert JSONContent to string for storage
+    // Convert JSONContent to string for storage with error handling
     // Important: Use null explicitly instead of undefined to ensure DB field is cleared
-    const descriptionString: string | null = currentDescription
-      ? JSON.stringify(currentDescription)
-      : null;
+    let descriptionString: string | null = null;
+    if (currentDescription) {
+      try {
+        descriptionString = JSON.stringify(currentDescription);
+      } catch (serializationError) {
+        console.error('Failed to serialize description:', serializationError);
+        // Continue with null description to allow save to proceed
+        descriptionString = null;
+      }
+    }
 
     if (isCreateMode) {
       try {
@@ -2041,6 +2447,7 @@ function TaskEditDialogComponent({
   hasUnsavedChangesRef.current = hasUnsavedChanges;
   quickDueRef.current = handleQuickDueDate;
   updateEstimationRef.current = updateEstimation;
+  handleConvertToTaskRef.current = handleConvertToTask;
 
   // Handle escape key - disabled to let Radix handle it
   // useEffect(() => {
@@ -2290,7 +2697,15 @@ function TaskEditDialogComponent({
   ]);
 
   const handleDialogOpenChange = (open: boolean) => {
-    if (!open) handleClose();
+    // Don't close dialog if menus or custom date picker are open
+    if (
+      !open &&
+      !showCustomDatePicker &&
+      !slashState.open &&
+      !mentionState.open
+    ) {
+      handleClose();
+    }
   };
 
   const editorContainerRef = useRef<HTMLDivElement>(null);
@@ -2311,6 +2726,18 @@ function TaskEditDialogComponent({
           onContextMenu={(e) => {
             e.preventDefault();
             e.stopPropagation();
+          }}
+          onPointerDownOutside={(e) => {
+            // Prevent dialog from closing when clicking on menus or custom date picker
+            if (showCustomDatePicker || slashState.open || mentionState.open) {
+              e.preventDefault();
+            }
+          }}
+          onInteractOutside={(e) => {
+            // Prevent dialog from closing when interacting with menus or custom date picker
+            if (showCustomDatePicker || slashState.open || mentionState.open) {
+              e.preventDefault();
+            }
           }}
         >
           {/* Main content area - Task title and description */}
@@ -2549,7 +2976,7 @@ function TaskEditDialogComponent({
                 </div>
 
                 {/* Task Description - Full editor experience with subtle border */}
-                <div ref={editorRef} className="flex-1 pb-8">
+                <div ref={editorRef} className="relative flex-1 pb-8">
                   <RichTextEditor
                     content={description}
                     onChange={setDescription}
@@ -2561,6 +2988,17 @@ function TaskEditDialogComponent({
                     flushPendingRef={flushEditorPendingRef}
                     initialCursorOffset={targetEditorCursorRef.current}
                     onEditorReady={handleEditorReady}
+                    yjsDoc={
+                      isOpen && !isCreateMode && showUserPresence ? doc : null
+                    }
+                    yjsProvider={
+                      isOpen && !isCreateMode && showUserPresence
+                        ? provider
+                        : null
+                    }
+                    boardId={boardId}
+                    availableLists={availableLists}
+                    queryClient={queryClient}
                     onArrowUp={(cursorOffset) => {
                       // Focus the title input when pressing arrow up at the start
                       if (titleInputRef.current) {
@@ -2594,7 +3032,7 @@ function TaskEditDialogComponent({
                   />
                 </div>
               </div>
-              {isOpen && !isCreateMode && (
+              {isOpen && !isCreateMode && showUserPresence && (
                 <CursorOverlayWrapper
                   channelName={`editor-cursor-${task?.id}`}
                   containerRef={editorContainerRef}
@@ -3517,11 +3955,4 @@ function TaskEditDialogComponent({
   );
 }
 
-export function TaskEditDialog(
-  props: TaskEditDialogProps & {
-    mode?: 'edit' | 'create';
-    showUserPresence?: boolean;
-  }
-) {
-  return <TaskEditDialogComponent {...props} />;
-}
+export const TaskEditDialog = React.memo(TaskEditDialogComponent);

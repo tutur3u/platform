@@ -1,0 +1,1 @@
+alter table tasks add column description_yjs_state int2[];

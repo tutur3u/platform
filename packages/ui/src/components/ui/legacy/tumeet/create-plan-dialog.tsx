@@ -76,7 +76,7 @@ const convertToTimetz = (
   const minutes = Math.round((Math.abs(utcOffset) - hours) * 60);
 
   // Format time as HH:MM
-  const timeStr = time.toString().padStart(2, '0') + ':00';
+  const timeStr = `${time.toString().padStart(2, '0')}:00`;
 
   // Format offset as +/-HH:MM
   const offsetStr = `${utcOffset < 0 ? '-' : '+'}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
@@ -84,14 +84,9 @@ const convertToTimetz = (
   return `${timeStr}${offsetStr}`;
 };
 
-export default function CreatePlanDialog({ plan, user }: Props) {
+export default function CreatePlanDialog({ plan }: Props) {
   const t = useTranslations('meet-together');
   const router = useRouter();
-
-  // TODO: Use this for future authentication checks
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  // @ts-expect-error - TODO: Use this for future authentication checks
-  const isUserLoggedIn = user?.id;
 
   const [isOpened, setIsOpened] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -150,8 +145,7 @@ export default function CreatePlanDialog({ plan, user }: Props) {
       return;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { agenda_enabled, ...rest } = data;
+    const { agenda_enabled: _, ...rest } = data;
 
     const res = await fetch('/api/meet-together/plans', {
       method: 'POST',
@@ -255,7 +249,8 @@ export default function CreatePlanDialog({ plan, user }: Props) {
                 name="where_to_meet"
                 render={({ field }) => (
                   <FormItem>
-                    <div
+                    <button
+                      type="button"
                       className={cn(
                         'cursor-pointer rounded-lg border p-4 transition-all duration-200',
                         field.value
@@ -268,7 +263,6 @@ export default function CreatePlanDialog({ plan, user }: Props) {
                         <FormControl>
                           <input
                             type="checkbox"
-                            id="where_to_meet"
                             checked={field.value}
                             onChange={field.onChange}
                             className="mt-1 h-4 w-4 rounded border-gray-300 text-dynamic-blue focus:ring-dynamic-blue/50"
@@ -304,7 +298,7 @@ export default function CreatePlanDialog({ plan, user }: Props) {
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </button>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -316,7 +310,8 @@ export default function CreatePlanDialog({ plan, user }: Props) {
                 name="agenda_enabled"
                 render={({ field }) => (
                   <FormItem>
-                    <div
+                    <button
+                      type="button"
                       className={cn(
                         'cursor-pointer rounded-lg border p-4 transition-all duration-200',
                         field.value
@@ -329,7 +324,6 @@ export default function CreatePlanDialog({ plan, user }: Props) {
                         <FormControl>
                           <input
                             type="checkbox"
-                            id="agenda_enabled"
                             checked={field.value}
                             onChange={field.onChange}
                             className="mt-1 h-4 w-4 rounded border-gray-300 text-dynamic-green focus:ring-dynamic-green/50"
@@ -364,7 +358,7 @@ export default function CreatePlanDialog({ plan, user }: Props) {
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </button>
                     <FormMessage />
                   </FormItem>
                 )}

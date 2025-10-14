@@ -26,9 +26,7 @@ export function useCursorTracking(
   const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastBroadcastTimeRef = useRef<number>(0);
   const errorCountRef = useRef<number>(0);
-  // Store currentUserId in ref to avoid dependency cycle in useEffect
-  // (setting currentUserId inside the effect would cause infinite re-runs)
-  const currentUserIdRef = useRef<string | undefined>(undefined);
+
   const THROTTLE_MS = 50; // Broadcast cursor position every 50ms max
   const CURSOR_TIMEOUT = 5000; // Remove cursor if no update for 5 seconds
   const MAX_ERROR_COUNT = 3; // Disable after 3 consecutive errors
@@ -58,13 +56,7 @@ export function useCursorTracking(
                 // Reset error count on successful broadcast
                 errorCountRef.current = 0;
               } catch (err) {
-                errorCountRef.current++;
-                if (errorCountRef.current >= MAX_ERROR_COUNT) {
-                  setError(true);
-                }
-                if (DEV_MODE) {
-                  console.warn('Cursor broadcast error (throttled):', err);
-                }
+                handleError(err);
               }
             }, THROTTLE_MS - timeSinceLastBroadcast);
           }
@@ -81,17 +73,21 @@ export function useCursorTracking(
           errorCountRef.current = 0;
         }
       } catch (err) {
-        errorCountRef.current++;
-        if (errorCountRef.current >= MAX_ERROR_COUNT) {
-          setError(true);
-        }
-        if (DEV_MODE) {
-          console.warn('Cursor broadcast error:', err);
-        }
+        handleError(err);
       }
     },
     [] // No dependencies - uses only refs
   );
+
+  const handleError = useCallback((err: any) => {
+    errorCountRef.current++;
+    if (errorCountRef.current >= MAX_ERROR_COUNT) {
+      setError(true);
+    }
+    if (DEV_MODE) {
+      console.warn('Error in cursor tracking:', err);
+    }
+  }, []);
 
   // Clean up stale cursors
   useEffect(() => {
@@ -144,18 +140,11 @@ export function useCursorTracking(
           .single();
 
         if (userDataError) {
-          if (DEV_MODE) {
-            console.error('Error fetching user data:', userDataError);
-          }
-          errorCountRef.current++;
-          if (errorCountRef.current >= MAX_ERROR_COUNT) {
-            setError(true);
-          }
+          handleError(userDataError);
           return;
         }
 
         setCurrentUserId(user.id);
-        currentUserIdRef.current = user.id;
 
         // Clean up existing channel before creating a new one
         if (channelRef.current) {
@@ -192,35 +181,25 @@ export function useCursorTracking(
                 });
               }
             } catch (err) {
-              errorCountRef.current++;
-              if (errorCountRef.current >= MAX_ERROR_COUNT) {
-                setError(true);
-              }
-              if (DEV_MODE) {
-                console.warn('Cursor receive error:', err);
-              }
+              handleError(err);
             }
           })
           .subscribe((status) => {
             if (DEV_MODE) {
               console.log('📡 Cursor tracking channel status:', status);
-
-              if (status === 'SUBSCRIBED') {
-                console.log('✅ Cursor tracking active');
-              } else if (status === 'CHANNEL_ERROR') {
-                console.error('❌ Cursor tracking channel error');
-              }
             }
 
-            // Handle channel errors
-            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-              errorCountRef.current++;
-              if (errorCountRef.current >= MAX_ERROR_COUNT) {
-                setError(true);
-              }
-            } else if (status === 'SUBSCRIBED') {
-              // Reset error count on successful subscription
-              errorCountRef.current = 0;
+            switch (status) {
+              case 'CHANNEL_ERROR':
+                handleError('❌ Cursor tracking channel error');
+                break;
+              case 'TIMED_OUT':
+                handleError('❌ Cursor tracking timed out');
+                break;
+              case 'SUBSCRIBED':
+                // Reset error count on successful subscription
+                errorCountRef.current = 0;
+                break;
             }
           });
 
@@ -251,13 +230,7 @@ export function useCursorTracking(
           container.addEventListener('mouseleave', handleMouseLeave);
         }
       } catch (err) {
-        errorCountRef.current++;
-        if (errorCountRef.current >= MAX_ERROR_COUNT) {
-          setError(true);
-        }
-        if (DEV_MODE) {
-          console.error('Error setting up cursor tracking:', err);
-        }
+        handleError(err);
       }
     };
 
@@ -274,7 +247,7 @@ export function useCursorTracking(
 
       // Broadcast cursor removal before unsubscribing (best effort)
       // This helps other users see the cursor disappear immediately
-      if (channelRef.current && currentUserIdRef.current) {
+      if (channelRef.current && currentUserId) {
         try {
           channelRef.current.send({
             type: 'broadcast',
@@ -282,7 +255,7 @@ export function useCursorTracking(
             payload: {
               x: -1000,
               y: -1000,
-              user: { id: currentUserIdRef.current },
+              user: { id: currentUserId },
             },
           });
         } catch (err) {
@@ -295,12 +268,7 @@ export function useCursorTracking(
 
       // Remove channel subscription
       if (channelRef.current) {
-        supabase.removeChannel(channelRef.current).catch((err) => {
-          // Ignore errors during cleanup
-          if (DEV_MODE) {
-            console.warn('Channel removal error:', err);
-          }
-        });
+        supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
 

@@ -1,15 +1,19 @@
 'use client';
 
+import type { QueryClient } from '@tanstack/react-query';
 import {
   type Editor,
   EditorContent,
   type JSONContent,
   useEditor,
 } from '@tiptap/react';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import type SupabaseProvider from '@tuturuuu/ui/hooks/supabase-provider';
 import { toast } from '@tuturuuu/ui/sonner';
 import { debounce } from 'lodash';
 import { TextSelection } from 'prosemirror-state';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type * as Y from 'yjs';
 import { getEditorExtensions } from './extensions';
 import { ToolBar } from './tool-bar';
 
@@ -55,6 +59,11 @@ interface RichTextEditorProps {
   editorRef?: React.MutableRefObject<any>;
   initialCursorOffset?: number | null;
   onEditorReady?: (editor: Editor) => void;
+  yjsDoc?: Y.Doc | null;
+  yjsProvider?: SupabaseProvider | null;
+  boardId?: string;
+  availableLists?: TaskList[];
+  queryClient?: QueryClient;
 }
 
 export function RichTextEditor({
@@ -74,8 +83,12 @@ export function RichTextEditor({
   editorRef: externalEditorRef,
   initialCursorOffset,
   onEditorReady,
+  yjsDoc = null,
+  yjsProvider = null,
+  boardId,
+  availableLists,
+  queryClient,
 }: RichTextEditorProps) {
-  const [hasChanges, setHasChanges] = useState(false);
   const [isUploadingPastedImage, setIsUploadingPastedImage] = useState(false);
 
   // Use refs to ensure we have stable references for handlers
@@ -98,7 +111,6 @@ export function RichTextEditor({
     () =>
       debounce((newContent: JSONContent) => {
         onChangeRef.current?.(hasContent(newContent) ? newContent : null);
-        setHasChanges(false);
       }, 500),
     []
   );
@@ -117,7 +129,7 @@ export function RichTextEditor({
   const getEditorClasses = useMemo(() => {
     const baseClasses = [
       'border border-dynamic-border rounded-md bg-transparent',
-      'max-w-none overflow-y-auto',
+      'max-w-none overflow-y-auto pt-4',
       // Typography base
       'text-foreground leading-relaxed',
       // First child margin reset
@@ -213,17 +225,13 @@ export function RichTextEditor({
   }, [className]);
 
   const editor = useEditor({
-    onCreate: ({ editor }) => {
-      if (externalEditorRef) {
-        externalEditorRef.current = editor;
-      }
-      onEditorReady?.(editor);
-    },
     extensions: getEditorExtensions({
       titlePlaceholder,
       writePlaceholder,
+      doc: yjsDoc,
+      provider: yjsProvider,
     }),
-    content,
+    content: yjsDoc ? undefined : content,
     editable: !readOnly,
     immediatelyRender: false,
     editorProps: {
@@ -453,9 +461,14 @@ export function RichTextEditor({
         return false;
       },
     },
+    onCreate: ({ editor }) => {
+      if (externalEditorRef) {
+        externalEditorRef.current = editor;
+      }
+      onEditorReady?.(editor);
+    },
     onUpdate: ({ editor }) => {
       if (!readOnly) {
-        setHasChanges(true);
         debouncedOnChange(editor.getJSON());
       }
     },
@@ -465,6 +478,22 @@ export function RichTextEditor({
   useEffect(() => {
     if (editor) editor.setEditable(!readOnly);
   }, [editor, readOnly]);
+
+  // Update editor content when the content prop changes externally
+  useEffect(() => {
+    if (!editor) return;
+
+    const currentContent = editor.getJSON();
+    const contentChanged =
+      JSON.stringify(currentContent) !== JSON.stringify(content);
+
+    if (contentChanged) {
+      // Update editor content without triggering onChange
+      editor.commands.setContent(content || { type: 'doc', content: [] }, {
+        emitUpdate: false,
+      });
+    }
+  }, [editor, content]);
 
   // Handle initial cursor positioning when focusing from title
   useEffect(() => {
@@ -502,13 +531,6 @@ export function RichTextEditor({
     }
   }, [editor, initialCursorOffset]);
 
-  const handleSave = useCallback(() => {
-    if (editor && !readOnly) {
-      setHasChanges(true);
-      debouncedOnChange(editor.getJSON());
-    }
-  }, [editor, readOnly, debouncedOnChange]);
-
   // Expose flush method via ref - returns current content
   useEffect(() => {
     if (!flushPendingRef || !editor) return;
@@ -535,12 +557,13 @@ export function RichTextEditor({
       {!readOnly && (
         <ToolBar
           editor={editor}
-          hasChanges={hasChanges}
-          onSave={handleSave}
           saveButtonLabel={saveButtonLabel}
           savedButtonLabel={savedButtonLabel}
           workspaceId={workspaceId}
           onImageUpload={onImageUpload}
+          boardId={boardId}
+          availableLists={availableLists}
+          queryClient={queryClient}
         />
       )}
       <EditorContent editor={editor} className="h-full" />
