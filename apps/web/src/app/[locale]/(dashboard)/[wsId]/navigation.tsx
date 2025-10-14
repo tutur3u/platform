@@ -242,6 +242,70 @@ export async function WorkspaceNavigationLinks({
       experimental: 'beta',
     },
     {
+      title: t('sidebar_tabs.chat'),
+      href: `/${personalOrWsId}/chat`,
+      icon: <MessageCircleIcon className="h-5 w-5" />,
+      experimental: 'beta',
+      requireRootMember: true,
+      requireRootWorkspace: true,
+    },
+    {
+      title: t('sidebar_tabs.drive'),
+      href: `/${personalOrWsId}/drive`,
+      icon: <HardDrive className="h-5 w-5" />,
+      disabled: withoutPermission('manage_drive'),
+      experimental: 'beta',
+    },
+    {
+      title: t('sidebar_tabs.track'),
+      href: `/${personalOrWsId}/time-tracker`,
+      children: [
+        {
+          title: t('sidebar_tabs.overview'),
+          href: `/${personalOrWsId}/time-tracker`,
+          icon: <LayoutDashboard className="h-5 w-5" />,
+          matchExact: true,
+        },
+        {
+          title: t('sidebar_tabs.timer'),
+          href: `/${personalOrWsId}/time-tracker/timer`,
+          icon: <Timer className="h-5 w-5" />,
+        },
+        {
+          title: t('sidebar_tabs.history'),
+          href: `/${personalOrWsId}/time-tracker/history`,
+          icon: <ClipboardClock className="h-5 w-5" />,
+        },
+        {
+          title: t('sidebar_tabs.categories'),
+          href: `/${personalOrWsId}/time-tracker/categories`,
+          icon: <Tags className="h-5 w-5" />,
+        },
+        {
+          title: t('sidebar_tabs.goals'),
+          href: `/${personalOrWsId}/time-tracker/goals`,
+          icon: <Goal className="h-5 w-5" />,
+        },
+        {
+          title: t('sidebar_tabs.time_tracker_management'),
+          href: `/${personalOrWsId}/time-tracker/management`,
+          icon: <ChartGantt className="h-5 w-5" />,
+          requireRootWorkspace: true,
+          requireRootMember: true,
+        },
+        {
+          title: t('sidebar_tabs.settings'),
+          href: `/${personalOrWsId}/time-tracker/settings`,
+          icon: <Settings className="h-5 w-5" />,
+        },
+      ],
+      icon: <ClockFading className="h-5 w-5" />,
+      disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
+      experimental: 'beta',
+    },
+    null,
+
+    {
       title: t('sidebar_tabs.finance'),
       aliases: [
         `/${personalOrWsId}/finance`,
@@ -326,66 +390,158 @@ export async function WorkspaceNavigationLinks({
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_finance'),
     },
     {
-      title: t('sidebar_tabs.chat'),
-      href: `/${personalOrWsId}/chat`,
-      icon: <MessageCircleIcon className="h-5 w-5" />,
-      experimental: 'beta',
-      requireRootMember: true,
-      requireRootWorkspace: true,
-    },
-    {
-      title: t('sidebar_tabs.drive'),
-      href: `/${personalOrWsId}/drive`,
-      icon: <HardDrive className="h-5 w-5" />,
-      disabled: withoutPermission('manage_drive'),
-      experimental: 'beta',
-    },
-    {
-      title: t('sidebar_tabs.track'),
-      href: `/${personalOrWsId}/time-tracker`,
+      title: t('sidebar_tabs.users'),
+      aliases: [
+        `/${personalOrWsId}/users`,
+        `/${personalOrWsId}/users/attendance`,
+        `/${personalOrWsId}/users/database`,
+        `/${personalOrWsId}/users/groups`,
+        `/${personalOrWsId}/users/group-tags`,
+        `/${personalOrWsId}/users/reports`,
+        `/${personalOrWsId}/users/structure`,
+      ],
+      icon: <Users className="h-5 w-5" />,
       children: [
         {
-          title: t('sidebar_tabs.overview'),
-          href: `/${personalOrWsId}/time-tracker`,
+          title: t('workspace-users-tabs.overview'),
+          href: `/${personalOrWsId}/users`,
           icon: <LayoutDashboard className="h-5 w-5" />,
           matchExact: true,
+          disabled: withoutPermission('manage_users'),
         },
         {
-          title: t('sidebar_tabs.timer'),
-          href: `/${personalOrWsId}/time-tracker/timer`,
-          icon: <Timer className="h-5 w-5" />,
+          title: t('workspace-users-tabs.attendance'),
+          href: `/${personalOrWsId}/users/attendance`,
+          icon: <UserCheck className="h-5 w-5" />,
+          disabled:
+            withoutPermission('manage_users') ||
+            withoutPermission('check_user_attendance'),
         },
         {
-          title: t('sidebar_tabs.history'),
-          href: `/${personalOrWsId}/time-tracker/history`,
-          icon: <ClipboardClock className="h-5 w-5" />,
+          title: t('workspace-users-tabs.database'),
+          href: `/${personalOrWsId}/users/database`,
+          icon: <BookUser className="h-5 w-5" />,
+          disabled:
+            withoutPermission('manage_users') ||
+            (withoutPermission('view_users_private_info') &&
+              withoutPermission('view_users_public_info')),
         },
         {
-          title: t('sidebar_tabs.categories'),
-          href: `/${personalOrWsId}/time-tracker/categories`,
+          title: t('workspace-users-tabs.groups'),
+          href: `/${personalOrWsId}/users/groups`,
+          icon: <Users className="h-5 w-5" />,
+          disabled: withoutPermission('manage_users'),
+        },
+        {
+          title: t('workspace-users-tabs.group_tags'),
+          href: `/${personalOrWsId}/users/group-tags`,
           icon: <Tags className="h-5 w-5" />,
+          disabled: withoutPermission('manage_users'),
         },
         {
-          title: t('sidebar_tabs.goals'),
-          href: `/${personalOrWsId}/time-tracker/goals`,
-          icon: <Goal className="h-5 w-5" />,
+          title: t('workspace-users-tabs.reports'),
+          href: `/${personalOrWsId}/users/reports`,
+          icon: <ClipboardList className="h-5 w-5" />,
+          disabled: withoutPermission('manage_users'),
         },
         {
-          title: t('sidebar_tabs.time_tracker_management'),
-          href: `/${personalOrWsId}/time-tracker/management`,
-          icon: <ChartGantt className="h-5 w-5" />,
+          title: t('workspace-users-tabs.guest_leads'),
+          href: `/${personalOrWsId}/users/guest-leads`,
+          icon: <Mails className="h-5 w-5" />,
+          disabled: withoutPermission('manage_users'),
+        },
+        {
+          title: t('sidebar_tabs.structure'),
+          aliases: [`/${personalOrWsId}/users/structure`],
+          href: `/${personalOrWsId}/users/structure`,
+          icon: <IdCardLanyard className="h-5 w-5" />,
           requireRootWorkspace: true,
           requireRootMember: true,
-        },
-        {
-          title: t('sidebar_tabs.settings'),
-          href: `/${personalOrWsId}/time-tracker/settings`,
-          icon: <Settings className="h-5 w-5" />,
+          disabled:
+            !DEV_MODE ||
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId: resolvedWorkspaceId,
+              name: 'ENABLE_USERS',
+              value: 'true',
+            })) ||
+            withoutPermission('manage_users'),
         },
       ],
-      icon: <ClockFading className="h-5 w-5" />,
-      disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
-      experimental: 'beta',
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId: resolvedWorkspaceId,
+          name: 'ENABLE_USERS',
+          value: 'true',
+        })) ||
+        withoutPermission('manage_users'),
+    },
+    {
+      title: t('sidebar_tabs.inventory'),
+      icon: <Archive className="h-5 w-5" />,
+      children: [
+        {
+          title: t('workspace-inventory-tabs.overview'),
+          href: `/${personalOrWsId}/inventory`,
+          icon: <LayoutDashboard className="h-5 w-5" />,
+          matchExact: true,
+          disabled: withoutPermission('view_inventory'),
+        },
+        {
+          title: t('workspace-inventory-tabs.products'),
+          href: `/${personalOrWsId}/inventory/products`,
+          icon: <Package className="h-5 w-5" />,
+          disabled: withoutPermission('view_inventory'),
+        },
+        {
+          title: t('workspace-inventory-tabs.categories'),
+          href: `/${personalOrWsId}/inventory/categories`,
+          icon: <Tags className="h-5 w-5" />,
+          disabled: withoutPermission('view_inventory'),
+        },
+        {
+          title: t('workspace-inventory-tabs.units'),
+          href: `/${personalOrWsId}/inventory/units`,
+          icon: <RulerDimensionLine className="h-5 w-5" />,
+          disabled: withoutPermission('view_inventory'),
+        },
+        {
+          title: t('workspace-inventory-tabs.suppliers'),
+          href: `/${personalOrWsId}/inventory/suppliers`,
+          icon: <Truck className="h-5 w-5" />,
+          disabled: withoutPermission('view_inventory'),
+        },
+        {
+          title: t('workspace-inventory-tabs.warehouses'),
+          href: `/${personalOrWsId}/inventory/warehouses`,
+          icon: <Warehouse className="h-5 w-5" />,
+          disabled: withoutPermission('view_inventory'),
+        },
+        {
+          title: t('workspace-inventory-tabs.batches'),
+          href: `/${personalOrWsId}/inventory/batches`,
+          icon: <Boxes className="h-5 w-5" />,
+          disabled: withoutPermission('view_inventory'),
+        },
+        {
+          title: t('workspace-inventory-tabs.promotions'),
+          href: `/${personalOrWsId}/inventory/promotions`,
+          icon: <TicketPercent className="h-5 w-5" />,
+          disabled: withoutPermission('view_inventory'),
+        },
+      ],
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId: resolvedWorkspaceId,
+          name: 'ENABLE_INVENTORY',
+          value: 'true',
+        })) ||
+        withoutPermission('view_inventory'),
     },
     null,
     {
@@ -754,166 +910,6 @@ export async function WorkspaceNavigationLinks({
                   name: 'ENABLE_LINK_SHORTENER',
                   value: 'true',
                 })),
-            },
-          ],
-        },
-        {
-          title: t('sidebar_tabs.management'),
-          icon: <Users className="h-5 w-5" />,
-          children: [
-            {
-              title: t('sidebar_tabs.users'),
-              aliases: [
-                `/${personalOrWsId}/users`,
-                `/${personalOrWsId}/users/attendance`,
-                `/${personalOrWsId}/users/database`,
-                `/${personalOrWsId}/users/groups`,
-                `/${personalOrWsId}/users/group-tags`,
-                `/${personalOrWsId}/users/reports`,
-                `/${personalOrWsId}/users/structure`,
-              ],
-              icon: <Users className="h-5 w-5" />,
-              children: [
-                {
-                  title: t('workspace-users-tabs.overview'),
-                  href: `/${personalOrWsId}/users`,
-                  icon: <LayoutDashboard className="h-5 w-5" />,
-                  matchExact: true,
-                  disabled: withoutPermission('manage_users'),
-                },
-                {
-                  title: t('workspace-users-tabs.attendance'),
-                  href: `/${personalOrWsId}/users/attendance`,
-                  icon: <UserCheck className="h-5 w-5" />,
-                  disabled:
-                    withoutPermission('manage_users') ||
-                    withoutPermission('check_user_attendance'),
-                },
-                {
-                  title: t('workspace-users-tabs.database'),
-                  href: `/${personalOrWsId}/users/database`,
-                  icon: <BookUser className="h-5 w-5" />,
-                  disabled:
-                    withoutPermission('manage_users') ||
-                    (withoutPermission('view_users_private_info') &&
-                      withoutPermission('view_users_public_info')),
-                },
-                {
-                  title: t('workspace-users-tabs.groups'),
-                  href: `/${personalOrWsId}/users/groups`,
-                  icon: <Users className="h-5 w-5" />,
-                  disabled: withoutPermission('manage_users'),
-                },
-                {
-                  title: t('workspace-users-tabs.group_tags'),
-                  href: `/${personalOrWsId}/users/group-tags`,
-                  icon: <Tags className="h-5 w-5" />,
-                  disabled: withoutPermission('manage_users'),
-                },
-                {
-                  title: t('workspace-users-tabs.reports'),
-                  href: `/${personalOrWsId}/users/reports`,
-                  icon: <ClipboardList className="h-5 w-5" />,
-                  disabled: withoutPermission('manage_users'),
-                },
-                {
-                  title: t('workspace-users-tabs.guest_leads'),
-                  href: `/${personalOrWsId}/users/guest-leads`,
-                  icon: <Mails className="h-5 w-5" />,
-                  disabled: withoutPermission('manage_users'),
-                },
-                {
-                  title: t('sidebar_tabs.structure'),
-                  aliases: [`/${personalOrWsId}/users/structure`],
-                  href: `/${personalOrWsId}/users/structure`,
-                  icon: <IdCardLanyard className="h-5 w-5" />,
-                  requireRootWorkspace: true,
-                  requireRootMember: true,
-                  disabled:
-                    !DEV_MODE ||
-                    ENABLE_AI_ONLY ||
-                    !(await verifySecret({
-                      forceAdmin: true,
-                      wsId: resolvedWorkspaceId,
-                      name: 'ENABLE_USERS',
-                      value: 'true',
-                    })) ||
-                    withoutPermission('manage_users'),
-                },
-              ],
-              disabled:
-                ENABLE_AI_ONLY ||
-                !(await verifySecret({
-                  forceAdmin: true,
-                  wsId: resolvedWorkspaceId,
-                  name: 'ENABLE_USERS',
-                  value: 'true',
-                })) ||
-                withoutPermission('manage_users'),
-            },
-            {
-              title: t('sidebar_tabs.inventory'),
-              icon: <Archive className="h-5 w-5" />,
-              children: [
-                {
-                  title: t('workspace-inventory-tabs.overview'),
-                  href: `/${personalOrWsId}/inventory`,
-                  icon: <LayoutDashboard className="h-5 w-5" />,
-                  matchExact: true,
-                  disabled: withoutPermission('view_inventory'),
-                },
-                {
-                  title: t('workspace-inventory-tabs.products'),
-                  href: `/${personalOrWsId}/inventory/products`,
-                  icon: <Package className="h-5 w-5" />,
-                  disabled: withoutPermission('view_inventory'),
-                },
-                {
-                  title: t('workspace-inventory-tabs.categories'),
-                  href: `/${personalOrWsId}/inventory/categories`,
-                  icon: <Tags className="h-5 w-5" />,
-                  disabled: withoutPermission('view_inventory'),
-                },
-                {
-                  title: t('workspace-inventory-tabs.units'),
-                  href: `/${personalOrWsId}/inventory/units`,
-                  icon: <RulerDimensionLine className="h-5 w-5" />,
-                  disabled: withoutPermission('view_inventory'),
-                },
-                {
-                  title: t('workspace-inventory-tabs.suppliers'),
-                  href: `/${personalOrWsId}/inventory/suppliers`,
-                  icon: <Truck className="h-5 w-5" />,
-                  disabled: withoutPermission('view_inventory'),
-                },
-                {
-                  title: t('workspace-inventory-tabs.warehouses'),
-                  href: `/${personalOrWsId}/inventory/warehouses`,
-                  icon: <Warehouse className="h-5 w-5" />,
-                  disabled: withoutPermission('view_inventory'),
-                },
-                {
-                  title: t('workspace-inventory-tabs.batches'),
-                  href: `/${personalOrWsId}/inventory/batches`,
-                  icon: <Boxes className="h-5 w-5" />,
-                  disabled: withoutPermission('view_inventory'),
-                },
-                {
-                  title: t('workspace-inventory-tabs.promotions'),
-                  href: `/${personalOrWsId}/inventory/promotions`,
-                  icon: <TicketPercent className="h-5 w-5" />,
-                  disabled: withoutPermission('view_inventory'),
-                },
-              ],
-              disabled:
-                ENABLE_AI_ONLY ||
-                !(await verifySecret({
-                  forceAdmin: true,
-                  wsId: resolvedWorkspaceId,
-                  name: 'ENABLE_INVENTORY',
-                  value: 'true',
-                })) ||
-                withoutPermission('view_inventory'),
             },
           ],
         },
