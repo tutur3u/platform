@@ -268,9 +268,7 @@ describe('round-trip conversion', () => {
     const resultJson = convertYjsStateToJsonContent(yjsState, testSchema);
 
     expect(resultJson.type).toBe(originalJson.type);
-    expect(resultJson.content?.[0].type).toBe(
-      originalJson.content?.[0].type
-    );
+    expect(resultJson.content?.[0].type).toBe(originalJson.content?.[0].type);
     expect(resultJson.content?.[0].content?.[0].text).toBe(
       originalJson.content?.[0].content?.[0].text
     );
@@ -390,14 +388,12 @@ describe('round-trip conversion', () => {
 
     // Check that marks are preserved
     const boldNode = content?.find(
-      (node) =>
-        node.marks?.length === 1 && node.marks[0].type === 'strong'
+      (node) => node.marks?.length === 1 && node.marks[0].type === 'strong'
     );
     expect(boldNode).toBeDefined();
 
     const italicNode = content?.find(
-      (node) =>
-        node.marks?.length === 1 && node.marks[0].type === 'em'
+      (node) => node.marks?.length === 1 && node.marks[0].type === 'em'
     );
     expect(italicNode).toBeDefined();
 
