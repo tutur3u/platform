@@ -1,19 +1,15 @@
+'use client';
+
 import { DEV_MODE, PORT } from '@/constants/common';
 import { XIcon } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
-import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Suspense } from 'react';
+import { Suspense, use } from 'react';
 import LoginForm from './form';
 import './login.css';
-
-export const metadata: Metadata = {
-  title: 'Sign In to Tuturuuu',
-  description:
-    'Access your Tuturuuu workspace and continue where you left off.',
-};
 
 const DOMAINS = {
   TUTURUUU: {
@@ -46,9 +42,10 @@ const getReturnUrlDomain = (url: string | undefined) => {
   }
 };
 
-export default async function Login({ searchParams }: LoginProps) {
-  const t = await getTranslations();
-  const returnUrl = (await searchParams).returnUrl as string | undefined;
+export default function Login({ searchParams }: LoginProps) {
+  const t = useTranslations();
+  const params = use(searchParams);
+  const returnUrl = params.returnUrl as string | undefined;
 
   const returnUrlDomain = getReturnUrlDomain(returnUrl);
 
@@ -78,76 +75,169 @@ export default async function Login({ searchParams }: LoginProps) {
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
       {/* Animated Background */}
-      <div className="fixed inset-0 bg-gradient-to-br from-background via-calendar-bg-indigo to-calendar-bg-purple" />
+      <div className="fixed inset-0 bg-gradient-to-br from-background via-dynamic-indigo/5 to-dynamic-purple/10" />
 
-      {/* Animated Grid Pattern */}
-      <div className="fixed inset-0 animate-pulse bg-[linear-gradient(to_right,#8080801a_1px,transparent_1px),linear-gradient(to_bottom,#8080801a_1px,transparent_1px)] bg-[size:24px_24px] opacity-60" />
+      {/* Grid Pattern Overlay */}
+      <div className="fixed inset-0 bg-[linear-gradient(rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.05)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_80%)]" />
 
-      {/* Floating Orbs */}
-      <div className="fixed top-1/4 left-1/4 h-64 w-64 animate-float rounded-full bg-gradient-to-r from-blue-400/30 to-purple-400/30 blur-3xl" />
-      <div className="fixed right-1/4 bottom-1/4 h-48 w-48 animate-float-delayed rounded-full bg-gradient-to-r from-purple-400/30 to-pink-400/30 blur-3xl" />
+      {/* Floating Orbs with Framer Motion */}
+      <motion.div
+        animate={{
+          scale: [1, 1.2, 1],
+          opacity: [0.3, 0.4, 0.3],
+        }}
+        transition={{
+          duration: 8,
+          repeat: Number.POSITIVE_INFINITY,
+          ease: 'easeInOut',
+        }}
+        className="-left-32 fixed top-0 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl"
+      />
+      <motion.div
+        animate={{
+          scale: [1, 1.3, 1],
+          opacity: [0.2, 0.35, 0.2],
+        }}
+        transition={{
+          duration: 10,
+          repeat: Number.POSITIVE_INFINITY,
+          ease: 'easeInOut',
+          delay: 1,
+        }}
+        className="-right-32 fixed top-1/4 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl"
+      />
+      <motion.div
+        animate={{
+          scale: [1, 1.25, 1],
+          opacity: [0.25, 0.35, 0.25],
+        }}
+        transition={{
+          duration: 9,
+          repeat: Number.POSITIVE_INFINITY,
+          ease: 'easeInOut',
+          delay: 2,
+        }}
+        className="-translate-x-1/2 fixed bottom-0 left-1/2 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-pink/30 via-dynamic-purple/30 to-transparent blur-3xl"
+      />
 
       {/* Main Content */}
       <div className="relative z-10 flex min-h-screen items-center justify-center p-6 py-16 sm:p-8">
-        <div className="w-full max-w-md">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="w-full max-w-md"
+        >
           {/* Logo Section */}
-          <div className="mb-8 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mb-8 text-center"
+          >
             {currentDomain && currentDomain !== DOMAINS.TUTURUUU ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-center gap-4">
-                  <div className="relative">{renderLogo(DOMAINS.TUTURUUU)}</div>
-                  <div className="flex items-center justify-center">
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="relative"
+                  >
+                    {renderLogo(DOMAINS.TUTURUUU)}
+                  </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5, delay: 0.4 }}
+                    className="flex items-center justify-center"
+                  >
                     <XIcon className="size-8 text-muted-foreground/60" />
-                  </div>
-                  <div className="relative">{renderLogo(currentDomain)}</div>
+                  </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="relative"
+                  >
+                    {renderLogo(currentDomain)}
+                  </motion.div>
                 </div>
-                <Badge
-                  variant="secondary"
-                  className="text-balance border border-foreground/20 bg-gradient-to-br from-foreground/5 via-calendar-bg-blue to-calendar-bg-pink px-4 py-2 font-medium text-sm leading-relaxed shadow-lg backdrop-blur-sm"
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
                 >
-                  <span className="whitespace-normal">
-                    {t('login.powered-by', { domain: currentDomain.name })}
-                  </span>
-                </Badge>
+                  <Badge
+                    variant="secondary"
+                    className="text-balance border border-foreground/20 bg-gradient-to-br from-foreground/5 via-dynamic-blue/20 to-dynamic-pink/20 px-4 py-2 font-medium text-sm leading-relaxed shadow-lg backdrop-blur-sm"
+                  >
+                    <span className="whitespace-normal">
+                      {t('login.powered-by', { domain: currentDomain.name })}
+                    </span>
+                  </Badge>
+                </motion.div>
               </div>
             ) : (
               <div className="space-y-4">
-                {renderLogo(DOMAINS.TUTURUUU)}
-                <div className="space-y-2">
-                  <h1 className="bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text font-bold text-3xl text-transparent dark:from-white dark:to-gray-300">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                >
+                  {renderLogo(DOMAINS.TUTURUUU)}
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="space-y-2"
+                >
+                  <h1 className="bg-gradient-to-r from-foreground via-foreground to-foreground/60 bg-clip-text font-bold text-3xl text-transparent">
                     {t('login.welcome')}
                   </h1>
                   <p className="text-muted-foreground text-sm">
                     {t('login.sign_in_to_your_account')}
                   </p>
-                </div>
+                </motion.div>
               </div>
             )}
-          </div>
+          </motion.div>
 
           {/* Login Form */}
-          <Suspense
-            fallback={
-              <div className="animate-pulse rounded-2xl border bg-foreground/80 p-8 shadow-2xl backdrop-blur-xl dark:border-gray-800/50 dark:bg-gray-900/80">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="h-8 w-32 rounded-lg bg-muted" />
-                  <div className="h-10 w-full rounded-lg bg-muted" />
-                  <div className="h-10 w-full rounded-lg bg-muted" />
-                  <div className="flex items-center gap-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    <span className="text-muted-foreground text-sm">
-                      {t('common.loading')}...
-                    </span>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            <Suspense
+              fallback={
+                <div className="animate-pulse rounded-2xl border border-border/50 bg-card/80 p-8 shadow-2xl backdrop-blur-xl">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="h-8 w-32 rounded-lg bg-muted" />
+                    <div className="h-10 w-full rounded-lg bg-muted" />
+                    <div className="h-10 w-full rounded-lg bg-muted" />
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      <span className="text-muted-foreground text-sm">
+                        {t('common.loading')}...
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            }
-          >
-            <LoginForm isExternal={currentDomain !== DOMAINS.TUTURUUU} />
-          </Suspense>
+              }
+            >
+              <LoginForm isExternal={currentDomain !== DOMAINS.TUTURUUU} />
+            </Suspense>
+          </motion.div>
 
           {/* Footer */}
-          <div className="mt-8 text-center">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="mt-8 text-center"
+          >
             <div className="text-balance text-muted-foreground text-xs leading-relaxed">
               <span>{t('auth.notice-p1')} </span>
               <Link
@@ -165,8 +255,8 @@ export default async function Login({ searchParams }: LoginProps) {
               </Link>
               <span> {t('auth.notice-p2')}.</span>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
     </div>
   );
