@@ -38,10 +38,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
+  DropdownMenuTrigger
 } from '@tuturuuu/ui/dropdown-menu';
 import { Label } from '@tuturuuu/ui/label';
 import {
