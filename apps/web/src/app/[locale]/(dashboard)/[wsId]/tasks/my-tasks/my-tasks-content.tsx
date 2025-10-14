@@ -1063,6 +1063,10 @@ export default function MyTasksContent({
         if (removedTaskIndices.has(index)) {
           return null;
         }
+        if (tasksPayload.length === 0) {
+          toast.error('No tasks selected to create');
+          return null;
+        }
 
         const selections = aiGenerateLabels
           ? (taskLabelSelections[index]?.suggestions.filter(
@@ -1130,8 +1134,6 @@ export default function MyTasksContent({
   const generatedWithAI = Boolean(lastResult?.metadata?.generatedWithAI);
   const isCreating = createTasksMutation.isPending;
   const labelsLoading = false; // Labels are already loaded
-  const disableConfirm =
-    isCreating || !selectedListId || previewTasks.length === 0;
 
   // Compute visible tasks for navigation
   const visiblePreviewTasks = useMemo(() => {
@@ -1139,6 +1141,9 @@ export default function MyTasksContent({
       .map((task, originalIndex) => ({ task, originalIndex }))
       .filter(({ originalIndex }) => !removedTaskIndices.has(originalIndex));
   }, [previewTasks, removedTaskIndices]);
+
+  const disableConfirm =
+    isCreating || !selectedListId || visiblePreviewTasks.length === 0;
 
   const currentVisibleTask = useMemo(() => {
     if (

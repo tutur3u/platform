@@ -468,6 +468,31 @@ async function loadLabelNameMap(supabase: TypedSupabaseClient, wsId: string) {
   return { kind: 'ok' as const, labelNameMap };
 }
 
+// Helper: load valid project IDs for workspace
+async function loadWorkspaceProjectIds(
+  supabase: TypedSupabaseClient,
+  wsId: string
+) {
+  const { data: projects, error: projectsError } = await supabase
+    .from('task_projects')
+    .select('id')
+    .eq('ws_id', wsId);
+
+  if (projectsError) {
+    console.error('Error fetching workspace projects:', projectsError);
+    return {
+      kind: 'error' as const,
+      status: 500 as const,
+      body: { error: 'Failed to load workspace projects' },
+    };
+  }
+
+  const validProjectIds = new Set(
+    (projects ?? []).map((project) => project.id)
+  );
+  return { kind: 'ok' as const, validProjectIds };
+}
+
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ wsId: string }> }
@@ -760,7 +785,44 @@ export async function POST(
       }
     }
 
-    // Assign projects to tasks
+    // Load valid project IDs for the workspace
+    const projectIdsResult = await loadWorkspaceProjectIds(supabase, wsId);
+    if (projectIdsResult.kind === 'error') {
+      return NextResponse.json(projectIdsResult.body, {
+        status: projectIdsResult.status,
+      });
+    }
+    const validProjectIds = projectIdsResult.validProjectIds;
+
+    // Collect all incoming project IDs and validate them
+    const incomingProjectIds = new Set<string>();
+    for (const taskDefinition of candidateTasks) {
+      if (taskDefinition.projectIds && taskDefinition.projectIds.length > 0) {
+        taskDefinition.projectIds.forEach((projectId) => {
+          incomingProjectIds.add(projectId);
+        });
+      }
+    }
+
+    // Check for invalid project IDs
+    const invalidProjectIds = Array.from(incomingProjectIds).filter(
+      (projectId) => !validProjectIds.has(projectId)
+    );
+
+    if (invalidProjectIds.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'Invalid project IDs provided',
+          details: {
+            invalidProjectIds,
+            message: 'One or more project IDs do not belong to this workspace',
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    // Assign projects to tasks (only validated IDs)
     const projectAssignments: { task_id: string; project_id: string }[] = [];
 
     for (let index = 0; index < insertedTasks.length; index += 1) {
@@ -773,10 +835,13 @@ export async function POST(
 
       if (taskDefinition.projectIds && taskDefinition.projectIds.length > 0) {
         taskDefinition.projectIds.forEach((projectId) => {
-          projectAssignments.push({
-            task_id: insertedTask.id,
-            project_id: projectId,
-          });
+          // Double-check validation (defensive programming)
+          if (validProjectIds.has(projectId)) {
+            projectAssignments.push({
+              task_id: insertedTask.id,
+              project_id: projectId,
+            });
+          }
         });
       }
     }
