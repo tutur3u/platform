@@ -839,6 +839,7 @@
         "@types/lodash": "^4.17.20",
         "@types/node": "^24.7.2",
         "@types/react": "^19.2.2",
+        "@types/react-dom": "^19.2.2",
         "@types/react-resizable": "^3.0.8",
         "@types/react-syntax-highlighter": "^15.5.13",
         "@vitejs/plugin-react": "^5.0.4",

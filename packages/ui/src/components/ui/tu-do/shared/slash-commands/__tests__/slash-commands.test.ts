@@ -15,7 +15,7 @@ describe('Slash Commands', () => {
         showAdvanced: false,
       });
 
-      expect(commands.length).toBe(11);
+      expect(commands.length).toBe(12);
     });
 
     it('should disable assign command when no members', () => {
