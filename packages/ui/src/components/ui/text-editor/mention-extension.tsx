@@ -7,7 +7,6 @@ import {
   User,
 } from '@tuturuuu/icons';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-// @ts-expect-error - Bun types issue with react-dom/server subpath
 import { renderToString } from 'react-dom/server';
 
 interface MentionVisualMeta {
@@ -315,6 +314,24 @@ export const Mention = Node.create({
 
       dom.appendChild(avatarWrapper);
       dom.appendChild(label);
+
+      // Make task mentions clickable
+      if (currentEntityType === 'task') {
+        dom.style.cursor = 'pointer';
+        dom.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          // Emit custom event that can be listened to by parent components
+          const event = new CustomEvent('taskMentionClick', {
+            detail: {
+              taskId: currentEntityId,
+              taskName: currentDisplayName,
+            },
+            bubbles: true,
+          });
+          dom.dispatchEvent(event);
+        });
+      }
 
       return {
         dom,

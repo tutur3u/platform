@@ -1,5 +1,5 @@
 export function formatEmailAddresses(
-  addresses: string | string[]
+  addresses?: string | string[]
 ): { name: string; email: string; raw: string }[] {
   if (!addresses) return [];
   const arr = Array.isArray(addresses) ? addresses : [addresses];

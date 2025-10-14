@@ -41,7 +41,6 @@ const createWrapper = () => {
   });
 
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
-    //  @ts-expect-error - Bun types issue with children prop
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 
