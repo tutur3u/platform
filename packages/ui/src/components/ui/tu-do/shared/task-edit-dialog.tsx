@@ -27,6 +27,7 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import type { User } from '@tuturuuu/types/primitives/User';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -45,6 +46,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
@@ -58,10 +60,18 @@ import {
   useUpdateTask,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
+import { convertJsonContentToYjsState } from '@tuturuuu/utils/yjs-helper';
 import dayjs from 'dayjs';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
+import * as Y from 'yjs';
 import { CursorOverlayWrapper } from './cursor-overlay';
 import { CustomDatePickerDialog } from './custom-date-picker/custom-date-picker-dialog';
 import {
@@ -197,6 +207,62 @@ function TaskEditDialogComponent({
     task?.labels || []
   );
 
+  // State for current user
+  const [user, setUser] = useState<User | null>(null);
+
+  // Fetch current user on mount
+  useEffect(() => {
+    const getUser = async () => {
+      const supabase = createClient();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('id, display_name')
+          .eq('id', user.id)
+          .single();
+
+        if (userData) {
+          setUser(userData);
+        }
+      }
+    };
+
+    getUser();
+  }, []);
+
+  // Generate consistent user color from user ID
+  const userColor: string | undefined = useMemo(() => {
+    // Generate color from user ID hash
+    const hashCode = (str: string) => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return hash;
+    };
+
+    const colors = [
+      '#3b82f6', // blue
+      '#8b5cf6', // purple
+      '#ec4899', // pink
+      '#f97316', // orange
+      '#10b981', // green
+      '#06b6d4', // cyan
+      '#f59e0b', // amber
+      '#6366f1', // indigo
+    ];
+
+    // Use user ID if available, otherwise use a default
+    const userId = user?.id || 'anonymous';
+    const index = Math.abs(hashCode(userId)) % colors.length;
+    return colors[index] || colors[0];
+  }, [user?.id]);
+
   // Use React Query hooks for shared data (cached across all components)
   const { data: boardConfig } = useBoardConfig(boardId);
   const [workspaceId, setWorkspaceId] = useState<string | null>(
@@ -298,6 +364,60 @@ function TaskEditDialogComponent({
 
   // Use the React Query mutation hook for updating tasks
   const updateTaskMutation = useUpdateTask(boardId);
+
+  // Set up Yjs collaboration (only in edit mode, not create mode)
+  const { doc, provider } = useYjsCollaboration({
+    channel: `task-editor-${task?.id || 'new'}`,
+    tableName: 'tasks',
+    columnName: 'description_yjs_state',
+    id: task?.id || '',
+    user: user
+      ? {
+          id: user.id || '',
+          name: user.display_name || '',
+          color: userColor || '',
+        }
+      : null,
+    enabled: isOpen && !isCreateMode && showUserPresence && !!task?.id,
+  });
+
+  // If the task has no Yjs state, initialize it
+  useEffect(() => {
+    if (!task?.id || !editorInstance?.schema || !description || !doc) return;
+
+    const initializeYjsState = async () => {
+      try {
+        const supabase = createClient();
+
+        const { data: taskData, error: taskDataError } = await supabase
+          .from('tasks')
+          .select('description_yjs_state')
+          .eq('id', task.id)
+          .single();
+
+        if (taskDataError) throw taskDataError;
+
+        if (!taskData?.description_yjs_state) {
+          const yjsState = convertJsonContentToYjsState(
+            description,
+            editorInstance.schema
+          );
+
+          const { error: updateError } = await supabase
+            .from('tasks')
+            .update({ description_yjs_state: Array.from(yjsState) })
+            .eq('id', task.id);
+
+          if (updateError) throw updateError;
+
+          Y.applyUpdate(doc, yjsState);
+        }
+      } catch (error) {
+        console.error('Error initializing Yjs state:', error);
+      }
+    };
+    initializeYjsState();
+  }, [doc, description, editorInstance, task?.id]);
 
   const closeSlashMenu = useCallback(() => {
     setSlashState((prev) =>
@@ -1231,7 +1351,7 @@ function TaskEditDialogComponent({
 
     // In edit mode, when dialog opens or task ID changes, reload task data to ensure we have the latest
     // This handles the case where task was edited previously and we're reopening the dialog
-    if (isOpen && !isCreateMode && taskIdChanged) {
+    if (isOpen && !isCreateMode && (task?.id || taskIdChanged)) {
       setName(task?.name || '');
       setDescription(getDescriptionContent(task?.description));
       setPriority(task?.priority || null);
@@ -2856,7 +2976,7 @@ function TaskEditDialogComponent({
                 </div>
 
                 {/* Task Description - Full editor experience with subtle border */}
-                <div ref={editorRef} className="flex-1 pb-8">
+                <div ref={editorRef} className="relative flex-1 pb-8">
                   <RichTextEditor
                     content={description}
                     onChange={setDescription}
@@ -2868,6 +2988,14 @@ function TaskEditDialogComponent({
                     flushPendingRef={flushEditorPendingRef}
                     initialCursorOffset={targetEditorCursorRef.current}
                     onEditorReady={handleEditorReady}
+                    yjsDoc={
+                      isOpen && !isCreateMode && showUserPresence ? doc : null
+                    }
+                    yjsProvider={
+                      isOpen && !isCreateMode && showUserPresence
+                        ? provider
+                        : null
+                    }
                     boardId={boardId}
                     availableLists={availableLists}
                     queryClient={queryClient}
@@ -2904,7 +3032,7 @@ function TaskEditDialogComponent({
                   />
                 </div>
               </div>
-              {isOpen && !isCreateMode && (
+              {isOpen && !isCreateMode && showUserPresence && (
                 <CursorOverlayWrapper
                   channelName={`editor-cursor-${task?.id}`}
                   containerRef={editorContainerRef}
@@ -3827,11 +3955,4 @@ function TaskEditDialogComponent({
   );
 }
 
-export function TaskEditDialog(
-  props: TaskEditDialogProps & {
-    mode?: 'edit' | 'create';
-    showUserPresence?: boolean;
-  }
-) {
-  return <TaskEditDialogComponent {...props} />;
-}
+export const TaskEditDialog = React.memo(TaskEditDialogComponent);

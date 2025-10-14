@@ -22,12 +22,6 @@ export function TaskDialogManager() {
   const { state, closeDialog, triggerUpdate, openTaskById } =
     useTaskDialogContext();
 
-  // Don't render anything if dialog has never been opened
-  if (!state.isOpen && !state.task) {
-    return null;
-  }
-
-  // No key prop to allow smooth transitions between tasks without remounting
   return (
     <TaskEditDialog
       task={state.task}
