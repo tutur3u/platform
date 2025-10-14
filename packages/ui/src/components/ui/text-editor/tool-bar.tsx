@@ -1,3 +1,4 @@
+import type { QueryClient } from '@tanstack/react-query';
 import type { Editor } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import {
@@ -5,6 +6,7 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  CirclePlus,
   Columns2,
   Combine,
   FileVideo,
@@ -27,10 +29,14 @@ import {
   Workflow,
   YoutubeIcon,
 } from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Toggle } from '@tuturuuu/ui/toggle';
+import { convertListItemToTask } from '@tuturuuu/utils/editor';
+import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 type LinkEditorContext = 'bubble' | 'popover' | null;
@@ -41,9 +47,19 @@ interface ToolBarProps {
   savedButtonLabel?: string;
   workspaceId?: string;
   onImageUpload?: (file: File) => Promise<string>;
+  boardId?: string;
+  availableLists?: TaskList[];
+  queryClient?: QueryClient;
 }
 
-export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
+export function ToolBar({
+  editor,
+  workspaceId,
+  onImageUpload,
+  boardId,
+  availableLists,
+  queryClient,
+}: ToolBarProps) {
   const [linkEditorContext, setLinkEditorContext] =
     useState<LinkEditorContext>(null);
   const [linkHref, setLinkHref] = useState('');
@@ -396,6 +412,61 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
     toast.success('YouTube video added');
   }, [editor, youtubeUrl]);
 
+  const handleConvertToTask = useCallback(async () => {
+    if (!editor || !boardId || !availableLists || !queryClient) return;
+
+    // Get the first available list
+    const firstList = availableLists[0];
+    if (!firstList) {
+      toast.error('No lists available', {
+        description: 'Create a list first before converting items to tasks',
+      });
+      return;
+    }
+
+    // Use shared conversion helper
+    const result = await convertListItemToTask({
+      editor,
+      listId: firstList.id,
+      listName: firstList.name,
+      wrapInParagraph: true,
+      createTask: async ({
+        name,
+        listId,
+      }: {
+        name: string;
+        listId: string;
+      }) => {
+        const supabase = createClient();
+        const { data: newTask, error } = await supabase
+          .from('tasks')
+          .insert({
+            name,
+            list_id: listId,
+          })
+          .select('id, name')
+          .single();
+
+        if (error || !newTask) throw error;
+        return newTask;
+      },
+    });
+
+    if (!result.success) {
+      toast.error(result.error!.message, {
+        description: result.error!.description,
+      });
+      return;
+    }
+
+    // Invalidate task caches
+    await invalidateTaskCaches(queryClient, boardId);
+
+    toast.success('Task created', {
+      description: `Created task "${result.taskName}" and added mention`,
+    });
+  }, [editor, boardId, availableLists, queryClient]);
+
   const renderFormattingOptions = useCallback(
     (source: 'bubble' | 'popover') => (
       <div className="flex flex-wrap gap-2">
@@ -480,6 +551,22 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
         >
           <YoutubeIcon className="size-4" />
         </Toggle>
+        {boardId && availableLists && queryClient && (
+          <Toggle
+            key={`convert-to-task-${source}`}
+            pressed={false}
+            onPressedChange={() => {
+              handleConvertToTask();
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+            }}
+            className="h-8 w-8 rounded-md border border-transparent transition-colors data-[state=on]:border-foreground/10 data-[state=on]:bg-dynamic-surface/80 data-[state=on]:text-foreground"
+            title="Convert to task"
+          >
+            <CirclePlus className="size-4" />
+          </Toggle>
+        )}
       </div>
     ),
     [
@@ -494,6 +581,10 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
       triggerVideoUpload,
       isUploadingVideo,
       showYoutubeInput,
+      boardId,
+      availableLists,
+      queryClient,
+      handleConvertToTask,
     ]
   );
 

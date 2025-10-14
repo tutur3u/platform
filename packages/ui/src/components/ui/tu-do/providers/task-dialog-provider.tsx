@@ -1,5 +1,6 @@
 'use client';
 
+import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
@@ -11,6 +12,36 @@ import {
   useRef,
   useState,
 } from 'react';
+
+// Type definitions for Supabase join row responses
+// Note: Supabase uses null for optional fields, not undefined
+interface TaskAssigneeJoinRow {
+  user_id: string;
+  users?: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null;
+}
+
+interface TaskLabelJoinRow {
+  label_id: string;
+  workspace_task_labels?: {
+    id: string;
+    name: string;
+    color: string | null;
+    created_at: string | null;
+  } | null;
+}
+
+interface TaskProjectJoinRow {
+  project_id: string;
+  task_projects?: {
+    id: string;
+    name: string;
+    status: string | null;
+  } | null;
+}
 
 interface TaskDialogState {
   isOpen: boolean;
@@ -28,6 +59,9 @@ interface TaskDialogContextValue {
 
   // Open dialog for editing existing task
   openTask: (task: Task, boardId: string, availableLists?: TaskList[]) => void;
+
+  // Open task by ID (fetches task data first)
+  openTaskById: (taskId: string) => Promise<void>;
 
   // Open dialog for creating new task
   createTask: (
@@ -88,6 +122,80 @@ export function TaskDialogProvider({
     []
   );
 
+  const openTaskById = useCallback(async (taskId: string) => {
+    try {
+      const supabase = createClient();
+
+      // Fetch task with all related data
+      const { data: task, error } = await supabase
+        .from('tasks')
+        .select(
+          `
+          *,
+          list:task_lists!inner(id, name, board_id),
+          assignees:task_assignees(
+            user_id,
+            users(id, display_name, avatar_url)
+          ),
+          labels:task_labels(
+            label_id,
+            workspace_task_labels(id, name, color, created_at)
+          ),
+          projects:task_project_tasks(
+            project_id,
+            task_projects(id, name, status)
+          )
+        `
+        )
+        .eq('id', taskId)
+        .single();
+
+      if (error || !task) {
+        console.error('Failed to fetch task:', error);
+        return;
+      }
+
+      // Fetch available lists for this board
+      const { data: lists } = await supabase
+        .from('task_lists')
+        .select('*')
+        .eq('board_id', task.list?.board_id)
+        .eq('deleted', false)
+        .order('position')
+        .order('created_at');
+
+      // Transform the data to match expected structure
+      // Type narrowing: Supabase returns join rows; extract nested data
+      const transformedTask = {
+        ...task,
+        assignees: task.assignees?.map((a: TaskAssigneeJoinRow) => ({
+          id: a.users?.id || a.user_id,
+          user_id: a.user_id,
+          display_name: a.users?.display_name,
+          avatar_url: a.users?.avatar_url,
+        })),
+        labels: task.labels
+          ?.map((l: TaskLabelJoinRow) => l.workspace_task_labels)
+          .filter(Boolean),
+        projects: task.projects
+          ?.map((p: TaskProjectJoinRow) => p.task_projects)
+          .filter(Boolean),
+      };
+
+      // Open the task in edit mode
+      setState({
+        isOpen: true,
+        task: transformedTask as Task,
+        boardId: task.list?.board_id,
+        mode: 'edit',
+        availableLists: (lists as TaskList[]) || undefined,
+        showUserPresence: true,
+      });
+    } catch (error) {
+      console.error('Failed to open task:', error);
+    }
+  }, []);
+
   const createTask = useCallback(
     (boardId: string, listId: string, availableLists?: TaskList[]) => {
       setState({
@@ -136,12 +244,21 @@ export function TaskDialogProvider({
     () => ({
       state,
       openTask,
+      openTaskById,
       createTask,
       closeDialog,
       onUpdate,
       triggerUpdate,
     }),
-    [state, openTask, createTask, closeDialog, onUpdate, triggerUpdate]
+    [
+      state,
+      openTask,
+      openTaskById,
+      createTask,
+      closeDialog,
+      onUpdate,
+      triggerUpdate,
+    ]
   );
 
   return (

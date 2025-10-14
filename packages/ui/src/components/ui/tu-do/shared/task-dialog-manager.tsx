@@ -19,7 +19,8 @@ const TaskEditDialog = dynamic(
  * It lazy-loads the actual dialog component only when first opened
  */
 export function TaskDialogManager() {
-  const { state, closeDialog, triggerUpdate } = useTaskDialogContext();
+  const { state, closeDialog, triggerUpdate, openTaskById } =
+    useTaskDialogContext();
 
   return (
     <TaskEditDialog
@@ -31,6 +32,7 @@ export function TaskDialogManager() {
       availableLists={state.availableLists}
       mode={state.mode}
       showUserPresence={state.showUserPresence}
+      onOpenTask={openTaskById}
     />
   );
 }

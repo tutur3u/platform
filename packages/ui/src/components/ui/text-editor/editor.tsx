@@ -1,11 +1,13 @@
 'use client';
 
+import type { QueryClient } from '@tanstack/react-query';
 import {
   type Editor,
   EditorContent,
   type JSONContent,
   useEditor,
 } from '@tiptap/react';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type SupabaseProvider from '@tuturuuu/ui/hooks/supabase-provider';
 import { toast } from '@tuturuuu/ui/sonner';
 import { debounce } from 'lodash';
@@ -59,6 +61,9 @@ interface RichTextEditorProps {
   onEditorReady?: (editor: Editor) => void;
   yjsDoc?: Y.Doc | null;
   yjsProvider?: SupabaseProvider | null;
+  boardId?: string;
+  availableLists?: TaskList[];
+  queryClient?: QueryClient;
 }
 
 export function RichTextEditor({
@@ -80,6 +85,9 @@ export function RichTextEditor({
   onEditorReady,
   yjsDoc = null,
   yjsProvider = null,
+  boardId,
+  availableLists,
+  queryClient,
 }: RichTextEditorProps) {
   const [isUploadingPastedImage, setIsUploadingPastedImage] = useState(false);
 
@@ -471,6 +479,22 @@ export function RichTextEditor({
     if (editor) editor.setEditable(!readOnly);
   }, [editor, readOnly]);
 
+  // Update editor content when the content prop changes externally
+  useEffect(() => {
+    if (!editor) return;
+
+    const currentContent = editor.getJSON();
+    const contentChanged =
+      JSON.stringify(currentContent) !== JSON.stringify(content);
+
+    if (contentChanged) {
+      // Update editor content without triggering onChange
+      editor.commands.setContent(content || { type: 'doc', content: [] }, {
+        emitUpdate: false,
+      });
+    }
+  }, [editor, content]);
+
   // Handle initial cursor positioning when focusing from title
   useEffect(() => {
     if (
@@ -537,6 +561,9 @@ export function RichTextEditor({
           savedButtonLabel={savedButtonLabel}
           workspaceId={workspaceId}
           onImageUpload={onImageUpload}
+          boardId={boardId}
+          availableLists={availableLists}
+          queryClient={queryClient}
         />
       )}
       <EditorContent editor={editor} className="h-full" />

@@ -37,7 +37,7 @@
     "@tuturuuu/utils": "workspace:*",
     "ai": "^5.0.68",
     "dayjs": "^1.11.18",
-    "next": "^16.0.0-canary.3",
+    "next": "^16.0.0-canary.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "streamdown": "^1.4.0",
