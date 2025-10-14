@@ -37,7 +37,13 @@ export interface ConvertToTaskResult {
 export async function convertListItemToTask(
   options: ConvertToTaskOptions
 ): Promise<ConvertToTaskResult> {
-  const { editor, listId, listName, createTask, wrapInParagraph = false } = options;
+  const {
+    editor,
+    listId,
+    listName,
+    createTask,
+    wrapInParagraph = false,
+  } = options;
 
   const { state } = editor;
   const { selection } = state;
@@ -69,7 +75,8 @@ export async function convertListItemToTask(
         error: {
           type: 'not_in_list',
           message: 'Not in a list item',
-          description: 'Move your cursor to a list item to convert it to a task',
+          description:
+            'Move your cursor to a list item to convert it to a task',
         },
       };
     }
