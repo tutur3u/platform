@@ -8,12 +8,15 @@ export async function PUT(req: Request) {
 
   const { error } = await supabase
     .from('finance_invoice_products')
-    .upsert(json?.data || []);
+    .upsert(json?.data || [], {
+      onConflict: 'invoice_id,product_name,product_unit,warehouse',
+      ignoreDuplicates: false,
+    });
 
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error migrating workspace users' },
+      { message: 'Error migrating bill packages' },
       { status: 500 }
     );
   }

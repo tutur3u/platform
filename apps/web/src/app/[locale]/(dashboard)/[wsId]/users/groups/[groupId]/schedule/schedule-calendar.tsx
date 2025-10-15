@@ -19,6 +19,7 @@ interface ScheduleCalendarProps {
   initialSessions: string[];
   /** When true, hides days from previous and next months to reduce visual clutter */
   hideOutsideMonthDays?: boolean;
+  canUpdateSchedule?: boolean;
 }
 
 export default function ScheduleCalendar({
@@ -27,6 +28,7 @@ export default function ScheduleCalendar({
   groupId,
   initialSessions,
   hideOutsideMonthDays = true,
+  canUpdateSchedule = false,
 }: ScheduleCalendarProps) {
   const t = useTranslations();
   const [sessions, setSessions] = useState<Set<string>>(
@@ -44,6 +46,8 @@ export default function ScheduleCalendar({
   // Handle date click - add or remove from sessions
   const handleDateClick = useCallback(
     (date: Date) => {
+      if (!canUpdateSchedule) return;
+
       const dateStr = dayjs(date).format('YYYY-MM-DD');
 
       setSessions((prev) => {
@@ -86,6 +90,8 @@ export default function ScheduleCalendar({
   // Handle day header click - select/deselect all dates in that column for the month
   const handleDayHeaderClick = useCallback(
     (dayIndex: number, monthDate: Date) => {
+      if (!canUpdateSchedule) return;
+
       const year = monthDate.getFullYear();
       const month = monthDate.getMonth();
 

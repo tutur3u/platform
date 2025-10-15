@@ -11,7 +11,13 @@ import { UserGroupRowActions } from './row-actions';
 
 export const getUserGroupColumns = (
   t: any,
-  namespace: string | undefined
+  namespace: string | undefined,
+  extraColumns?: any[],
+  extraData?: {
+    canDeleteUserGroups?: boolean;
+    canUpdateUserGroups?: boolean;
+    canCreateUserGroups?: boolean;
+  }
 ): ColumnDef<UserGroup>[] => [
   // {
   //   id: 'select',
@@ -134,6 +140,13 @@ export const getUserGroupColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => <UserGroupRowActions row={row} />,
+    cell: ({ row }) => (
+      <UserGroupRowActions
+        row={row}
+        canUpdate={extraData?.canUpdateUserGroups}
+        canDelete={extraData?.canDeleteUserGroups}
+        canCreate={extraData?.canCreateUserGroups}
+      />
+    ),
   },
 ];

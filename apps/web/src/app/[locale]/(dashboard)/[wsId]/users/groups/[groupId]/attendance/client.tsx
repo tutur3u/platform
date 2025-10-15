@@ -47,6 +47,7 @@ export type InitialAttendanceProps = {
   initialMembers: Member[];
   initialDate?: string; // yyyy-MM-dd
   initialAttendance?: Record<string, AttendanceEntry>;
+  canUpdateAttendance: boolean;
 };
 
 type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE';
@@ -63,6 +64,7 @@ export default function GroupAttendanceClient({
   initialMembers,
   initialDate,
   initialAttendance = {},
+  canUpdateAttendance,
 }: InitialAttendanceProps) {
   const locale = useLocale();
   const queryClient = useQueryClient();
@@ -647,6 +649,7 @@ export default function GroupAttendanceClient({
                       <div className="flex items-center gap-1">
                         <Button
                           size="xs"
+                          disabled={!canUpdateAttendance}
                           aria-pressed={entry.status === 'PRESENT'}
                           variant={
                             entry.status === 'PRESENT' ? 'default' : 'secondary'
@@ -663,6 +666,7 @@ export default function GroupAttendanceClient({
                         </Button>
                         <Button
                           size="xs"
+                          disabled={!canUpdateAttendance}
                           aria-pressed={entry.status === 'ABSENT'}
                           variant={
                             entry.status === 'ABSENT' ? 'default' : 'secondary'
@@ -679,6 +683,7 @@ export default function GroupAttendanceClient({
                         </Button>
                         <Button
                           size="xs"
+                          disabled={!canUpdateAttendance}
                           aria-pressed={entry.status === 'LATE'}
                           variant={
                             entry.status === 'LATE' ? 'default' : 'secondary'
@@ -698,6 +703,7 @@ export default function GroupAttendanceClient({
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="notes">{tAtt('notes_placeholder')}</Label>
                       <Textarea
+                        disabled={!canUpdateAttendance}
                         id="notes"
                         name="notes"
                         value={entry.note || ''}

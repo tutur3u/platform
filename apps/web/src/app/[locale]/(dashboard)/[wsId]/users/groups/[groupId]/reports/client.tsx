@@ -36,6 +36,9 @@ interface Props {
   initialReportId?: string;
   groupNameFallback: string;
   canCheckUserAttendance: boolean;
+  canCreateReports: boolean;
+  canUpdateReports: boolean;
+  canDeleteReports: boolean;
 }
 
 export default function GroupReportsClient({
@@ -45,6 +48,9 @@ export default function GroupReportsClient({
   initialReportId,
   groupNameFallback,
   canCheckUserAttendance,
+  canCreateReports,
+  canUpdateReports,
+  canDeleteReports,
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
@@ -438,11 +444,12 @@ export default function GroupReportsClient({
             </div>
           )}
         </div>
-        {userId ? (
+        {userId && canCreateReports ? (
           <div className="flex flex-row gap-2 items-center">
             <Button
               type="button"
               onClick={() => updateSearchParams({ reportId: 'new' })}
+              disabled={!canCreateReports}
             >
               {t('common.new')}
             </Button>
@@ -466,6 +473,8 @@ export default function GroupReportsClient({
           }}
           configs={configsQuery.data}
           isNew={reportId === 'new'}
+          canUpdateReports={canUpdateReports}
+          canDeleteReports={canDeleteReports}
           groupId={groupId}
           healthcareVitals={healthcareVitalsQuery.data ?? []}
           healthcareVitalsLoading={healthcareVitalsQuery.isLoading}

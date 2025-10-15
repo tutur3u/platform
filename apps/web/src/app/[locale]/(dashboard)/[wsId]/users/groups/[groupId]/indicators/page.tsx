@@ -43,8 +43,23 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
         const { containsPermission } = await getPermissions({
           wsId,
         });
+        const canViewUserGroupsScores = containsPermission(
+          'view_user_groups_scores'
+        );
+        if (!canViewUserGroupsScores) {
+          notFound();
+        }
         const canCheckUserAttendance = containsPermission(
           'check_user_attendance'
+        );
+        const canCreateUserGroupsScores = containsPermission(
+          'create_user_groups_scores'
+        );
+        const canUpdateUserGroupsScores = containsPermission(
+          'update_user_groups_scores'
+        );
+        const canDeleteUserGroupsScores = containsPermission(
+          'delete_user_groups_scores'
         );
 
         const group = await getData(wsId, groupId);
@@ -148,6 +163,9 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
               users={users}
               initialGroupIndicators={groupIndicators}
               initialUserIndicators={indicators}
+              canCreateUserGroupsScores={canCreateUserGroupsScores}
+              canUpdateUserGroupsScores={canUpdateUserGroupsScores}
+              canDeleteUserGroupsScores={canDeleteUserGroupsScores}
             />
           </>
         );

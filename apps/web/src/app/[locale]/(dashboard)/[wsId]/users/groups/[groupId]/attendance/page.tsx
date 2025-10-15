@@ -52,6 +52,10 @@ export default async function UserGroupAttendancePage({
         if (!canCheckUserAttendance) {
           notFound();
         }
+        const canViewUserGroupsScores = containsPermission(
+          'view_user_groups_scores'
+        );
+        const canUpdateAttendance = containsPermission('update_user_groups');
         const sp = await searchParams;
 
         const requestedDateParam = sp?.date;
@@ -136,19 +140,23 @@ export default async function UserGroupAttendancePage({
                         {t('ws-user-group-details.reports')}
                       </Button>
                     </Link>
-                    <Link href={`/${wsId}/users/groups/${groupId}/indicators`}>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        className={cn(
-                          'border font-semibold max-sm:w-full',
-                          'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
-                        )}
+                    {canViewUserGroupsScores && (
+                      <Link
+                        href={`/${wsId}/users/groups/${groupId}/indicators`}
                       >
-                        <ChartColumn className="h-5 w-5" />
-                        {t('ws-user-group-details.metrics')}
-                      </Button>
-                    </Link>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          className={cn(
+                            'border font-semibold max-sm:w-full',
+                            'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
+                          )}
+                        >
+                          <ChartColumn className="h-5 w-5" />
+                          {t('ws-user-group-details.metrics')}
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 </>
               }
@@ -163,6 +171,7 @@ export default async function UserGroupAttendancePage({
               initialMembers={members}
               initialDate={effectiveDate}
               initialAttendance={attendanceMap}
+              canUpdateAttendance={canUpdateAttendance}
             />
           </>
         );

@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import { useMemo } from 'react';
 import { Button } from '../../button';
+import { cn } from '@tuturuuu/utils/format';
 
 export const YearView: React.FC<{
   locale: string;
@@ -47,7 +48,9 @@ export const YearView: React.FC<{
           <button
             key={`month-${idx}`}
             onClick={() => handleMonthClick(month.getMonth())}
-            className="flex flex-none cursor-pointer justify-center rounded bg-foreground/5 p-4 font-semibold transition duration-300 hover:bg-foreground/10"
+            className={cn(
+              'flex flex-none cursor-pointer justify-center rounded bg-foreground/5 p-4 font-semibold transition duration-300 hover:bg-foreground/10'
+            )}
           >
             {month.toLocaleString(locale, { month: 'long' })}
           </button>

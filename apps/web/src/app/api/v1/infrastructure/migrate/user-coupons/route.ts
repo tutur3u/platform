@@ -8,12 +8,15 @@ export async function PUT(req: Request) {
 
   const { error } = await supabase
     .from('user_linked_promotions')
-    .upsert(json?.data || []);
+    .upsert(json?.data || [], {
+      onConflict: 'user_id,promo_id',
+      ignoreDuplicates: false,
+    });
 
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error migrating workspace users' },
+      { message: 'Error migrating user coupons' },
       { status: 500 }
     );
   }

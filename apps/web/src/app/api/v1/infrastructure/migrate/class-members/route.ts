@@ -8,12 +8,15 @@ export async function PUT(req: Request) {
 
   const { error } = await supabase
     .from('workspace_user_groups_users')
-    .upsert(json?.data || []);
+    .upsert(json?.data || [], {
+      onConflict: 'user_id,group_id',
+      ignoreDuplicates: false,
+    });
 
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error migrating workspace users' },
+      { message: 'Error migrating class members' },
       { status: 500 }
     );
   }

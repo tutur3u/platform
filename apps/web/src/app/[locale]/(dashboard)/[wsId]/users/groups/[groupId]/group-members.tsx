@@ -60,6 +60,7 @@ interface GroupMembersProps {
   pageSize: number;
   canViewPersonalInfo: boolean;
   canViewPublicInfo: boolean;
+  canUpdateUserGroups: boolean;
 }
 
 export default function GroupMembers({
@@ -69,6 +70,7 @@ export default function GroupMembers({
   pageSize,
   canViewPersonalInfo,
   canViewPublicInfo,
+  canUpdateUserGroups,
 }: GroupMembersProps) {
   const t = useTranslations();
   const { dateTime } = useFormatter();
@@ -305,12 +307,15 @@ export default function GroupMembers({
               </DropdownMenuCheckboxItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <GroupMemberActions
-            wsId={wsId}
-            groupId={groupId}
-            memberIds={memberIds}
-            managerIds={managerIds}
-          />
+          {canUpdateUserGroups && (
+            <GroupMemberActions
+              wsId={wsId}
+              groupId={groupId}
+              memberIds={memberIds}
+              managerIds={managerIds}
+              canUpdateUserGroups={canUpdateUserGroups}
+            />
+          )}
         </div>
       </div>
 
@@ -403,15 +408,17 @@ export default function GroupMembers({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setRemoveTarget(person);
-                              }}
-                            >
-                              {t('common.remove')}
-                            </DropdownMenuItem>
+                            {canUpdateUserGroups && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setRemoveTarget(person);
+                                }}
+                              >
+                                {t('common.remove')}
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>

@@ -1,8 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
+    wsId: string;
     groupId: string;
   }>;
 }
@@ -10,7 +12,16 @@ interface Params {
 export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient();
   const data = await req.json();
-  const { groupId } = await params;
+  const { wsId, groupId } = await params;
+
+  // Check permissions
+  const { withoutPermission } = await getPermissions({ wsId });
+  if (withoutPermission('update_user_groups')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to update user groups' },
+      { status: 403 }
+    );
+  }
 
   const { error } = await supabase
     .from('workspace_user_groups')
@@ -30,7 +41,16 @@ export async function PUT(req: Request, { params }: Params) {
 
 export async function DELETE(_: Request, { params }: Params) {
   const supabase = await createClient();
-  const { groupId } = await params;
+  const { wsId, groupId } = await params;
+
+  // Check permissions
+  const { withoutPermission } = await getPermissions({ wsId });
+  if (withoutPermission('delete_user_groups')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to delete user groups' },
+      { status: 403 }
+    );
+  }
 
   const { error } = await supabase
     .from('workspace_user_groups')
