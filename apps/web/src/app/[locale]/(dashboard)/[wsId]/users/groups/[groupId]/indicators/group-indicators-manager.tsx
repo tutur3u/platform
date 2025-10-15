@@ -537,11 +537,21 @@ export default function GroupIndicatorsManager({
 
   const hasChanges = pendingValues.size > 0;
 
-  const canEditCell = useCallback((userId: string, indicatorId: string) => {
-    const existing = userIndicators.find(ui => ui.user_id === userId && ui.indicator_id === indicatorId);
-    if (!existing || existing.value == null) return canCreateUserGroupsScores;
-    return canUpdateUserGroupsScores || canDeleteUserGroupsScores; // allow edit if they can change or clear
-  }, [userIndicators, canCreateUserGroupsScores, canUpdateUserGroupsScores, canDeleteUserGroupsScores]);
+  const canEditCell = useCallback(
+    (userId: string, indicatorId: string) => {
+      const existing = userIndicators.find(
+        (ui) => ui.user_id === userId && ui.indicator_id === indicatorId
+      );
+      if (!existing || existing.value == null) return canCreateUserGroupsScores;
+      return canUpdateUserGroupsScores || canDeleteUserGroupsScores; // allow edit if they can change or clear
+    },
+    [
+      userIndicators,
+      canCreateUserGroupsScores,
+      canUpdateUserGroupsScores,
+      canDeleteUserGroupsScores,
+    ]
+  );
 
   return (
     <div>
@@ -683,7 +693,7 @@ export default function GroupIndicatorsManager({
               <DialogTitle>{tIndicators('edit_indicator')}</DialogTitle>
               <DialogDescription>
                 {tIndicators('edit_indicator_description')}
-            </DialogDescription>
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
