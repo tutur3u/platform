@@ -453,7 +453,7 @@ export const getTimeTrackingData = async (wsId: string, userId: string) => {
     .is('deleted_at', null)
     .is('closed_at', null)
     .in('list.status', ['not_started', 'active']) // Only include tasks from not_started and active lists
-    .is('list.deleted_at', null)
+    .eq('list.deleted', false)
     .order('created_at', { ascending: false })
     .limit(100);
 
