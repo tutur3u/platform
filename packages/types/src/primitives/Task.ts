@@ -9,9 +9,9 @@ export interface Task {
   start_date?: string;
   end_date?: string | null;
   created_at: string;
-  completed_at?: string | null;
-  closed_at?: string | null;
-  deleted_at?: string | null;
+  completed_at?: string;
+  closed_at?: string;
+  deleted_at?: string;
   estimation_points?: number | null;
   sort_key?: number | null;
   labels?: {
