@@ -55,9 +55,7 @@ export default async function UserGroupAttendancePage({
         const canViewUserGroupsScores = containsPermission(
           'view_user_groups_scores'
         );
-        const canUpdateAttendance = containsPermission(
-          'update_user_groups'
-        );
+        const canUpdateAttendance = containsPermission('update_user_groups');
         const sp = await searchParams;
 
         const requestedDateParam = sp?.date;
@@ -143,19 +141,21 @@ export default async function UserGroupAttendancePage({
                       </Button>
                     </Link>
                     {canViewUserGroupsScores && (
-                    <Link href={`/${wsId}/users/groups/${groupId}/indicators`}>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        className={cn(
-                          'border font-semibold max-sm:w-full',
-                          'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
-                        )}
+                      <Link
+                        href={`/${wsId}/users/groups/${groupId}/indicators`}
                       >
-                        <ChartColumn className="h-5 w-5" />
-                        {t('ws-user-group-details.metrics')}
-                      </Button>
-                    </Link>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          className={cn(
+                            'border font-semibold max-sm:w-full',
+                            'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
+                          )}
+                        >
+                          <ChartColumn className="h-5 w-5" />
+                          {t('ws-user-group-details.metrics')}
+                        </Button>
+                      </Link>
                     )}
                   </div>
                 </>

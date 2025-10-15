@@ -9,7 +9,6 @@ export async function PUT(req: Request) {
   // finance_invoice_promotions has partial unique index on (invoice_id, code) WHERE both NOT NULL
   const data = json?.data || [];
 
-
   // Use upsert to make this migration idempotent
   // The unique constraint is on (invoice_id, code), so we can safely upsert
   // This handles both initial migration and re-runs without duplicates
@@ -29,6 +28,6 @@ export async function PUT(req: Request) {
   }
 
   return NextResponse.json({
-    message: 'success'
+    message: 'success',
   });
 }

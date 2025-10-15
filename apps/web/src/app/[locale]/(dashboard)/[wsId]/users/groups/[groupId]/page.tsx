@@ -69,7 +69,7 @@ export default async function UserGroupDetailsPage({
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {
         const t = await getTranslations();
-        
+
         // Get permissions first to compute access flags
         const { containsPermission } = await getPermissions({ wsId });
 
@@ -84,14 +84,11 @@ export default async function UserGroupDetailsPage({
         const canViewPersonalInfo = containsPermission(
           'view_users_private_info'
         );
-        const canViewPublicInfo = containsPermission(
-          'view_users_public_info'
-        );
+        const canViewPublicInfo = containsPermission('view_users_public_info');
         const canCheckUserAttendance = containsPermission(
           'check_user_attendance'
         );
-        const canUpdateUserGroups =
-          containsPermission('update_user_groups');
+        const canUpdateUserGroups = containsPermission('update_user_groups');
         const canViewUserGroupsScores = containsPermission(
           'view_user_groups_scores'
         );
@@ -179,16 +176,16 @@ export default async function UserGroupDetailsPage({
                     </Button>
                   </Link>
                   {canViewUserGroupsScores && (
-                  <Link href={`/${wsId}/users/groups/${groupId}/indicators`}>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className={cn(
-                        'border font-semibold max-sm:w-full',
-                        'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
-                      )}
-                    >
-                      <ChartColumn className="h-5 w-5" />
+                    <Link href={`/${wsId}/users/groups/${groupId}/indicators`}>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className={cn(
+                          'border font-semibold max-sm:w-full',
+                          'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
+                        )}
+                      >
+                        <ChartColumn className="h-5 w-5" />
                         {t('ws-user-group-details.metrics')}
                       </Button>
                     </Link>
@@ -214,9 +211,9 @@ export default async function UserGroupDetailsPage({
                     {t('ws-user-group-details.schedule')}
                   </div>
                   {canUpdateUserGroups && (
-                  <Link href={`/${wsId}/users/groups/${groupId}/schedule`}>
-                    <Button variant="default">
-                      <CalendarPlus className="h-5 w-5" />
+                    <Link href={`/${wsId}/users/groups/${groupId}/schedule`}>
+                      <Button variant="default">
+                        <CalendarPlus className="h-5 w-5" />
                         {t('ws-user-group-details.modify_schedule')}
                       </Button>
                     </Link>

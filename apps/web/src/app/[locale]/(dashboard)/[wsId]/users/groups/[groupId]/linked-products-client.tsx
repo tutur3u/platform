@@ -75,7 +75,6 @@ interface LinkedProductsClientProps {
   initialLinkedProducts: LinkedProduct[];
   initialCount: number;
   canUpdateLinkedProducts: boolean;
-  
 }
 
 export const useProducts = (wsId: string) => {
@@ -136,7 +135,6 @@ export default function LinkedProductsClient({
   initialLinkedProducts,
   initialCount,
   canUpdateLinkedProducts,
-
 }: LinkedProductsClientProps) {
   const t = useTranslations();
   const [linkedProducts, setLinkedProducts] = useState(initialLinkedProducts);

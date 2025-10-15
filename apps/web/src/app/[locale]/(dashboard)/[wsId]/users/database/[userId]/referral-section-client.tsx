@@ -505,7 +505,10 @@ export default function ReferralSectionClient({
                                 title={t('unrefer_person')}
                                 aria-label={t('unrefer_person')}
                               >
-                                <UserMinus className="h-4 w-4" aria-hidden="true" />
+                                <UserMinus
+                                  className="h-4 w-4"
+                                  aria-hidden="true"
+                                />
                               </Button>
                             )}
                           </div>

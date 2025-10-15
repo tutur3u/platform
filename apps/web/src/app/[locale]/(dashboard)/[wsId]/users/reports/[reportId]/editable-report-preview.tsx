@@ -857,7 +857,11 @@ export default function EditableReportPreview({
             if (isNew) createMutation.mutate(values);
             else updateMutation.mutate(values);
           }}
-          onDelete={!isNew && canDeleteReports ? () => setShowDeleteDialog(true) : undefined}
+          onDelete={
+            !isNew && canDeleteReports
+              ? () => setShowDeleteDialog(true)
+              : undefined
+          }
           managerOptions={managerOptions}
           selectedManagerName={selectedManagerName ?? report.creator_name}
           onChangeManager={(name) => onChangeManagerAction?.(name)}

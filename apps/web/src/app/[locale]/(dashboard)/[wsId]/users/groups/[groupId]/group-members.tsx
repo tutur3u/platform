@@ -308,12 +308,12 @@ export default function GroupMembers({
             </DropdownMenuContent>
           </DropdownMenu>
           {canUpdateUserGroups && (
-          <GroupMemberActions
-            wsId={wsId}
-            groupId={groupId}
-            memberIds={memberIds}
-            managerIds={managerIds}
-            canUpdateUserGroups={canUpdateUserGroups}
+            <GroupMemberActions
+              wsId={wsId}
+              groupId={groupId}
+              memberIds={memberIds}
+              managerIds={managerIds}
+              canUpdateUserGroups={canUpdateUserGroups}
             />
           )}
         </div>
