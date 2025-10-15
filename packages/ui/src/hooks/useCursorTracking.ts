@@ -141,10 +141,11 @@ export function useCursorTracking(
     // If the distance between the target and actual position is greater than 0.5px, broadcast the cursor
     // This is to prevent the cursor from being broadcasted too often, allowing stale cursors to be removed
     if (distance > 0.5) {
-      broadcastCursor(currentPosition.current.x, currentPosition.current.y, {
-        id: currentUser.id,
-        display_name: currentUser.display_name,
-      });
+      broadcastCursor(
+        currentPosition.current.x,
+        currentPosition.current.y,
+        currentUser
+      );
     }
 
     animationFrameId.current = requestAnimationFrame(smoothAnimate);
@@ -178,10 +179,7 @@ export function useCursorTracking(
     if (!currentUser?.id) return;
 
     // Broadcast cursor position outside the container to hide it
-    broadcastCursor(-1000, -1000, {
-      id: currentUser.id,
-      display_name: currentUser.display_name,
-    });
+    broadcastCursor(-1000, -1000, currentUser);
   }, [currentUser, broadcastCursor]);
 
   // Clean up stale cursors
@@ -310,7 +308,7 @@ export function useCursorTracking(
             payload: {
               x: -1000,
               y: -1000,
-              user: { id: currentUser.id },
+              user: currentUser,
             },
           });
         } catch (err) {
@@ -335,11 +333,11 @@ export function useCursorTracking(
     };
   }, [
     channelName,
-    containerRef, // Broadcast cursor position outside the container to hide it
+    containerRef,
     currentUser,
     handleError,
-    handleMouseLeave,
     handleMouseMove,
+    handleMouseLeave,
   ]);
 
   return {
