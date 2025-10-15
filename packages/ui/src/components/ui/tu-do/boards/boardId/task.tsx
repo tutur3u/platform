@@ -375,7 +375,7 @@ function TaskCardInner({
         isOverlay &&
           'scale-105 shadow-2xl ring-2 ring-primary/50 backdrop-blur-sm',
         // Closed state (closed tasks)
-        !!task.closed_at && 'opacity-70 saturate-75',
+        (!!task.closed_at || !!task.completed_at) && 'opacity-70 saturate-75',
         // Overdue state
         isOverdue &&
           !task.closed_at &&
@@ -422,7 +422,7 @@ function TaskCardInner({
                 className={cn(
                   'w-full cursor-pointer text-left font-semibold text-xs leading-tight transition-colors duration-200',
                   'line-clamp-2',
-                  task.closed_at
+                  task.closed_at || task.completed_at
                     ? 'text-muted-foreground line-through'
                     : '-mx-1 -my-0.5 rounded-sm px-1 py-0.5 text-foreground active:bg-muted/50'
                 )}
@@ -791,7 +791,7 @@ function TaskCardInner({
                 </div>
               )}
               {/* Estimation Points */}
-              {!task.closed_at && task.estimation_points && (
+              {!task.closed_at && task.estimation_points != null && (
                 <div className="min-w-0 flex-shrink-0">
                   <TaskEstimationDisplay
                     points={task.estimation_points}

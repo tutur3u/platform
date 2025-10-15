@@ -189,9 +189,23 @@ export function BoardViews({
       });
     }
 
-    // Apply sorting
+    // Apply sorting - but NEVER sort done/closed tasks (they always sort by timestamps)
     if (filters.sortBy) {
-      const sorted = [...tasks];
+      // Create a map of list_id to status
+      const listStatusMap = new Map(lists.map((list) => [list.id, list.status]));
+
+      // Separate tasks into sortable and completion (done/closed) tasks
+      const sortableTasks = tasks.filter((task) => {
+        const status = listStatusMap.get(task.list_id);
+        return status !== 'done' && status !== 'closed';
+      });
+      const completionTasks = tasks.filter((task) => {
+        const status = listStatusMap.get(task.list_id);
+        return status === 'done' || status === 'closed';
+      });
+
+      // Sort only the sortable tasks
+      const sorted = [...sortableTasks];
       switch (filters.sortBy) {
         case 'name-asc':
           sorted.sort((a, b) => a.name.localeCompare(b.name));
@@ -274,11 +288,40 @@ export function BoardViews({
           });
           break;
       }
-      return sorted;
+
+      // Sort completion tasks by their respective timestamps
+      const sortedCompletionTasks = [...completionTasks].sort((a, b) => {
+        const statusA = listStatusMap.get(a.list_id);
+        const statusB = listStatusMap.get(b.list_id);
+
+        // For done tasks, sort by completed_at
+        if (statusA === 'done' && statusB === 'done') {
+          const completionA = a.completed_at
+            ? new Date(a.completed_at).getTime()
+            : 0;
+          const completionB = b.completed_at
+            ? new Date(b.completed_at).getTime()
+            : 0;
+          return completionB - completionA; // Most recent first
+        }
+
+        // For closed tasks, sort by closed_at
+        if (statusA === 'closed' && statusB === 'closed') {
+          const closedA = a.closed_at ? new Date(a.closed_at).getTime() : 0;
+          const closedB = b.closed_at ? new Date(b.closed_at).getTime() : 0;
+          return closedB - closedA; // Most recent first
+        }
+
+        // Mixed statuses - maintain original order
+        return 0;
+      });
+
+      // Combine sorted tasks with completion tasks (unsorted)
+      return [...sorted, ...sortedCompletionTasks];
     }
 
     return tasks;
-  }, [filteredTasks, taskOverrides, filters.sortBy]);
+  }, [filteredTasks, taskOverrides, filters.sortBy, lists]);
 
   const handleTaskPartialUpdate = (taskId: string, partial: Partial<Task>) => {
     setTaskOverrides((prev) => ({
