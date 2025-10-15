@@ -974,28 +974,28 @@ export function KanbanBoard({
       const isCompletionList =
         targetList?.status === 'done' || targetList?.status === 'closed';
 
-      // Only sort by sort_key if parent hasn't already sorted (match rendering behavior)
-      if (!disableSort) {
-        targetListTasks = targetListTasks.sort((a, b) => {
-          // For done lists, sort by completed_at (most recent first)
-          if (targetList?.status === 'done') {
-            const completionA = a.completed_at
-              ? new Date(a.completed_at).getTime()
-              : 0;
-            const completionB = b.completed_at
-              ? new Date(b.completed_at).getTime()
-              : 0;
-            if (completionA !== completionB) return completionB - completionA; // Descending order
-          }
+      // Sort tasks - done/closed lists ALWAYS sort by timestamps only, others respect disableSort
+      targetListTasks = targetListTasks.sort((a, b) => {
+        // For done lists, ONLY sort by completed_at (most recent first) - no fallback to sort_key
+        if (targetList?.status === 'done') {
+          const completionA = a.completed_at
+            ? new Date(a.completed_at).getTime()
+            : 0;
+          const completionB = b.completed_at
+            ? new Date(b.completed_at).getTime()
+            : 0;
+          return completionB - completionA; // Always return, never fall through
+        }
 
-          // For closed lists, sort by closed_at (most recent first)
-          if (targetList?.status === 'closed') {
-            const closedA = a.closed_at ? new Date(a.closed_at).getTime() : 0;
-            const closedB = b.closed_at ? new Date(b.closed_at).getTime() : 0;
-            if (closedA !== closedB) return closedB - closedA; // Descending order
-          }
+        // For closed lists, ONLY sort by closed_at (most recent first) - no fallback to sort_key
+        if (targetList?.status === 'closed') {
+          const closedA = a.closed_at ? new Date(a.closed_at).getTime() : 0;
+          const closedB = b.closed_at ? new Date(b.closed_at).getTime() : 0;
+          return closedB - closedA; // Always return, never fall through
+        }
 
-          // For all other lists, sort by sort_key first, then by created_at as fallback
+        // For all other lists, only sort by sort_key if parent hasn't already sorted
+        if (!disableSort) {
           const sortA = a.sort_key ?? MAX_SAFE_INTEGER_SORT;
           const sortB = b.sort_key ?? MAX_SAFE_INTEGER_SORT;
           if (sortA !== sortB) return sortA - sortB;
@@ -1003,8 +1003,10 @@ export function KanbanBoard({
           return (
             new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
           );
-        });
-      }
+        }
+
+        return 0;
+      });
 
       console.log('📋 Sorted tasks in target list:', targetListTasks.length);
       console.log(
@@ -1947,33 +1949,32 @@ export function KanbanBoard({
                       (task) => task.list_id === list.id
                     );
 
-                    // Only apply sort_key sorting if parent hasn't already sorted
-                    if (!disableSort) {
-                      listTasks = listTasks.sort((a, b) => {
-                        // For done lists, sort by completed_at (most recent first)
-                        if (list.status === 'done') {
-                          const completionA = a.completed_at
-                            ? new Date(a.completed_at).getTime()
-                            : 0;
-                          const completionB = b.completed_at
-                            ? new Date(b.completed_at).getTime()
-                            : 0;
-                          if (completionA !== completionB)
-                            return completionB - completionA; // Descending order
-                        }
+                    // Sort tasks - done/closed lists ALWAYS sort by timestamps only, others respect disableSort
+                    listTasks = listTasks.sort((a, b) => {
+                      // For done lists, ONLY sort by completed_at (most recent first) - no fallback to sort_key
+                      if (list.status === 'done') {
+                        const completionA = a.completed_at
+                          ? new Date(a.completed_at).getTime()
+                          : 0;
+                        const completionB = b.completed_at
+                          ? new Date(b.completed_at).getTime()
+                          : 0;
+                        return completionB - completionA; // Always return, never fall through
+                      }
 
-                        // For closed lists, sort by closed_at (most recent first)
-                        if (list.status === 'closed') {
-                          const closedA = a.closed_at
-                            ? new Date(a.closed_at).getTime()
-                            : 0;
-                          const closedB = b.closed_at
-                            ? new Date(b.closed_at).getTime()
-                            : 0;
-                          if (closedA !== closedB) return closedB - closedA; // Descending order
-                        }
+                      // For closed lists, ONLY sort by closed_at (most recent first) - no fallback to sort_key
+                      if (list.status === 'closed') {
+                        const closedA = a.closed_at
+                          ? new Date(a.closed_at).getTime()
+                          : 0;
+                        const closedB = b.closed_at
+                          ? new Date(b.closed_at).getTime()
+                          : 0;
+                        return closedB - closedA; // Always return, never fall through
+                      }
 
-                        // For all other lists, sort by sort_key first, then by created_at as fallback
+                      // For all other lists, only sort by sort_key if parent hasn't already sorted
+                      if (!disableSort) {
                         const sortA = a.sort_key ?? MAX_SAFE_INTEGER_SORT;
                         const sortB = b.sort_key ?? MAX_SAFE_INTEGER_SORT;
                         if (sortA !== sortB) return sortA - sortB;
@@ -1982,8 +1983,10 @@ export function KanbanBoard({
                           new Date(a.created_at).getTime() -
                           new Date(b.created_at).getTime()
                         );
-                      });
-                    }
+                      }
+
+                      return 0;
+                    });
 
                     return (
                       <BoardColumn
