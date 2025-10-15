@@ -391,7 +391,8 @@ export function TaskFilter({
                           ...filters,
                           includeMyTasks: !!checked,
                           // Replace all assignees with only current user when checked
-                          assignees: checked && currentUser ? [currentUser] : [],
+                          assignees:
+                            checked && currentUser ? [currentUser] : [],
                           // Auto-deselect "Unassigned" when selecting "Assigned to me"
                           includeUnassigned: checked
                             ? false
