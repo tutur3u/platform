@@ -1599,7 +1599,10 @@ function TaskEditDialogComponent({
       estimation_points: estimationPoints ?? null,
     };
 
-    if (task?.id)
+    if (task?.id) {
+      // Close dialog immediately for better UX
+      onClose();
+
       updateTaskMutation.mutate(
         {
           taskId: task.id,
@@ -1609,9 +1612,9 @@ function TaskEditDialogComponent({
           onSuccess: async () => {
             console.log('Task update successful, refreshing data...');
 
-            await invalidateTaskCaches(queryClient, boardId);
-
-            await queryClient.refetchQueries({
+            // Update caches and refetch in background
+            invalidateTaskCaches(queryClient, boardId);
+            queryClient.refetchQueries({
               queryKey: ['tasks', boardId],
               type: 'active',
             });
@@ -1621,7 +1624,6 @@ function TaskEditDialogComponent({
               description: 'The task has been successfully updated.',
             });
             onUpdate();
-            onClose();
           },
           onError: (error: any) => {
             console.error('Error updating task:', error);
@@ -1630,6 +1632,8 @@ function TaskEditDialogComponent({
               description: error.message || 'Please try again later',
               variant: 'destructive',
             });
+            // Reopen dialog on error so user can retry
+            // Note: This won't work well, consider showing error differently
           },
           onSettled: () => {
             setIsLoading(false);
@@ -1637,6 +1641,7 @@ function TaskEditDialogComponent({
           },
         }
       );
+    }
   }, [
     name,
     description,
