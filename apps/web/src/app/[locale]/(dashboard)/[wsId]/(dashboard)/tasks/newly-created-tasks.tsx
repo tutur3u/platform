@@ -55,7 +55,7 @@ export default async function NewlyCreatedTasks({
     `
     )
     .eq('list.board.ws_id', wsId)
-    .eq('deleted', false)
+    .is('deleted_at', null)
     .gte('created_at', sevenDaysAgo.toISOString())
     .order('created_at', { ascending: false })
     .limit(10);

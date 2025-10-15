@@ -81,6 +81,7 @@ import { TaskActions } from './task-actions';
 import { TaskCustomDateDialog } from './task-dialogs/TaskCustomDateDialog';
 import { TaskDeleteDialog } from './task-dialogs/TaskDeleteDialog';
 import { TaskNewLabelDialog } from './task-dialogs/TaskNewLabelDialog';
+import { TaskNewProjectDialog } from './task-dialogs/TaskNewProjectDialog';
 
 interface TaskCardProps {
   task: Task;
@@ -182,10 +183,18 @@ function TaskCardInner({
   );
 
   // Use extracted project management hook
-  const { toggleTaskProject, projectsSaving } = useTaskProjectManagement({
+  const {
+    toggleTaskProject,
+    projectsSaving,
+    newProjectName,
+    setNewProjectName,
+    creatingProject,
+    createNewProject,
+  } = useTaskProjectManagement({
     task,
     boardId,
     workspaceProjects,
+    workspaceId: boardConfig?.ws_id,
   });
 
   // Fetch available task lists using React Query (same key as other components)
@@ -247,6 +256,7 @@ function TaskCardInner({
     dialogState.deleteDialogOpen ||
     dialogState.customDateDialogOpen ||
     dialogState.newLabelDialogOpen ||
+    dialogState.newProjectDialogOpen ||
     menuOpen;
 
   const { setNodeRef, attributes, listeners, transform, isDragging } =
@@ -337,7 +347,8 @@ function TaskCardInner({
           !menuOpen &&
           !dialogState.deleteDialogOpen &&
           !dialogState.customDateDialogOpen &&
-          !dialogState.newLabelDialogOpen
+          !dialogState.newLabelDialogOpen &&
+          !dialogState.newProjectDialogOpen
         ) {
           openTask(task, boardId, availableLists);
         }
@@ -363,11 +374,11 @@ function TaskCardInner({
         (isDragging || optimisticUpdateInProgress?.has(task.id)) && 'opacity-0',
         isOverlay &&
           'scale-105 shadow-2xl ring-2 ring-primary/50 backdrop-blur-sm',
-        // Archive state (completed tasks)
-        task.archived && 'opacity-70 saturate-75',
+        // Closed state (closed tasks)
+        !!task.closed_at && 'opacity-70 saturate-75',
         // Overdue state
         isOverdue &&
-          !task.archived &&
+          !task.closed_at &&
           'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20',
         // Hover state (no transitions)
         !isDragging && !isSelected && 'hover:ring-1 hover:ring-primary/15',
@@ -379,7 +390,7 @@ function TaskCardInner({
       )}
     >
       {/* Overdue indicator */}
-      {isOverdue && !task.archived && (
+      {isOverdue && !task.closed_at && (
         <div className="absolute top-0 right-0 h-0 w-0 border-t-[20px] border-t-dynamic-red border-l-[20px] border-l-transparent">
           <AlertCircle className="-top-4 -right-[18px] absolute h-3 w-3" />
         </div>
@@ -411,7 +422,7 @@ function TaskCardInner({
                 className={cn(
                   'w-full cursor-pointer text-left font-semibold text-xs leading-tight transition-colors duration-200',
                   'line-clamp-2',
-                  task.archived
+                  task.closed_at
                     ? 'text-muted-foreground line-through'
                     : '-mx-1 -my-0.5 rounded-sm px-1 py-0.5 text-foreground active:bg-muted/50'
                 )}
@@ -552,6 +563,10 @@ function TaskCardInner({
                     isLoading={projectsLoading}
                     projectsSaving={projectsSaving}
                     onToggleProject={toggleTaskProject}
+                    onCreateNewProject={() => {
+                      dialogActions.openNewProjectDialog();
+                      setMenuOpen(false);
+                    }}
                     onMenuItemSelect={handleMenuItemSelect}
                   />
 
@@ -578,7 +593,11 @@ function TaskCardInner({
                           Assignees
                         </DropdownMenuSubTrigger>
                         <DropdownMenuSubContent className="max-h-[400px] w-56 overflow-hidden p-0">
-                          <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
+                          <ScrollArea
+                            style={{
+                              height: 'min(300px, calc(100vh - 200px))',
+                            }}
+                          >
                             <div className="p-1">
                               {task.assignees.map((assignee) => (
                                 <DropdownMenuItem
@@ -669,7 +688,7 @@ function TaskCardInner({
                 <div
                   className={cn(
                     'flex items-center gap-1',
-                    isOverdue && !task.archived
+                    isOverdue && !task.closed_at
                       ? 'font-medium text-dynamic-red'
                       : 'text-muted-foreground'
                   )}
@@ -678,7 +697,7 @@ function TaskCardInner({
                   <span className="truncate">
                     Due {formatSmartDate(endDate)}
                   </span>
-                  {isOverdue && !task.archived ? (
+                  {isOverdue && !task.closed_at ? (
                     <Badge className="ml-1 h-4 bg-dynamic-red px-1 font-semibold text-[9px] text-white tracking-wide">
                       OVERDUE
                     </Badge>
@@ -691,19 +710,53 @@ function TaskCardInner({
               )}
             </div>
           )}
+        {/* Completion and Closed Dates Section */}
+        {/* Show completed_at when in done list, closed_at when in closed list */}
+        {(taskList?.status === 'done' || taskList?.status === 'closed') && (
+          <div className="mb-1 space-y-0.5 text-[10px] leading-snug">
+            {taskList?.status === 'done' && task.completed_at && (
+              <div className="flex items-center gap-1 text-dynamic-green">
+                <CheckCircle2 className="h-2.5 w-2.5 shrink-0" />
+                <span className="truncate">
+                  Completed{' '}
+                  {formatDistanceToNow(new Date(task.completed_at), {
+                    addSuffix: true,
+                  })}
+                </span>
+                <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
+                  {format(new Date(task.completed_at), "MMM dd 'at' h:mm a")}
+                </span>
+              </div>
+            )}
+            {taskList?.status === 'closed' && task.closed_at && (
+              <div className="flex items-center gap-1 text-dynamic-purple">
+                <CircleSlash className="h-2.5 w-2.5 shrink-0" />
+                <span className="truncate">
+                  Closed{' '}
+                  {formatDistanceToNow(new Date(task.closed_at), {
+                    addSuffix: true,
+                  })}
+                </span>
+                <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
+                  {format(new Date(task.closed_at), "MMM dd 'at' h:mm a")}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
         {/* Bottom Row: Three-column layout for assignee, priority, and checkbox, with only one tag visible and +N tooltip for extras */}
         {/* Hide bottom row entirely when in done/closed list */}
         {taskList?.status !== 'done' && taskList?.status !== 'closed' && (
           <div className="flex items-center gap-2">
             <div className="scrollbar-hide flex w-full min-w-0 items-center gap-1 overflow-auto whitespace-nowrap rounded-lg">
               {/* Priority */}
-              {!task.archived && task.priority && (
+              {!task.closed_at && task.priority && (
                 <div className="flex-none overflow-hidden">
                   {getPriorityIndicator(task.priority)}
                 </div>
               )}
               {/* Sub-tasks counter - prominent placement */}
-              {!task.archived && descriptionMeta.totalCheckboxes > 0 && (
+              {!task.closed_at && descriptionMeta.totalCheckboxes > 0 && (
                 <Badge
                   variant="secondary"
                   className={cn(
@@ -721,7 +774,7 @@ function TaskCardInner({
                 </Badge>
               )}
               {/* Project indicator */}
-              {!task.archived && task.projects && task.projects.length > 0 && (
+              {!task.closed_at && task.projects && task.projects.length > 0 && (
                 <div className="min-w-0 flex-shrink-0">
                   <Badge
                     variant="secondary"
@@ -738,7 +791,7 @@ function TaskCardInner({
                 </div>
               )}
               {/* Estimation Points */}
-              {!task.archived && task.estimation_points && (
+              {!task.closed_at && task.estimation_points && (
                 <div className="min-w-0 flex-shrink-0">
                   <TaskEstimationDisplay
                     points={task.estimation_points}
@@ -749,7 +802,7 @@ function TaskCardInner({
                 </div>
               )}
               {/* Labels */}
-              {!task.archived && task.labels && task.labels.length > 0 && (
+              {!task.closed_at && task.labels && task.labels.length > 0 && (
                 <div className="flex min-w-0 flex-shrink-0 flex-wrap gap-1">
                   {/* Sort labels for deterministic display order */}
                   <TaskLabelsDisplay
@@ -761,7 +814,7 @@ function TaskCardInner({
                 </div>
               )}
               {/* Description indicators */}
-              {!task.archived &&
+              {!task.closed_at &&
                 (descriptionMeta.hasText ||
                   descriptionMeta.hasImages ||
                   descriptionMeta.hasVideos ||
@@ -819,14 +872,14 @@ function TaskCardInner({
             </div>
             {/* Checkbox: always at far right */}
             <Checkbox
-              checked={task.archived}
+              checked={!!task.closed_at}
               className={cn(
                 'h-4 w-4 flex-none transition-all duration-200',
                 'data-[state=checked]:border-dynamic-green/70 data-[state=checked]:bg-dynamic-green/70',
                 'hover:scale-110 hover:border-primary/50',
                 getListColorClasses(taskList?.color as SupportedColor),
                 isOverdue &&
-                  !task.archived &&
+                  !task.closed_at &&
                   'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
               )}
               disabled={isLoading}
@@ -860,6 +913,19 @@ function TaskCardInner({
             : dialogActions.closeNewLabelDialog()
         }
         onConfirm={createNewLabel}
+      />
+
+      <TaskNewProjectDialog
+        open={dialogState.newProjectDialogOpen}
+        newProjectName={newProjectName}
+        creatingProject={creatingProject}
+        onNameChange={setNewProjectName}
+        onOpenChange={(open) =>
+          open
+            ? dialogActions.openNewProjectDialog()
+            : dialogActions.closeNewProjectDialog()
+        }
+        onConfirm={createNewProject}
       />
 
       <TaskCustomDateDialog
@@ -902,9 +968,10 @@ export const TaskCard = React.memo(TaskCardInner, (prev, next) => {
     'name',
     'description',
     'priority',
-    'archived',
+    'closed_at',
     'end_date',
     'start_date',
+    'completed_at',
     'estimation_points',
     'list_id',
   ];

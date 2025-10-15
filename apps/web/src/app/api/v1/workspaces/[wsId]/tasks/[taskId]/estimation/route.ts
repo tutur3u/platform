@@ -76,7 +76,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       `)
       .eq('id', taskId)
       .eq('task_lists.workspace_boards.ws_id', wsId)
-      .eq('deleted', false)
+      .is('deleted_at', null)
       .single();
 
     if (!task) {

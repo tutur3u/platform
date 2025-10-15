@@ -9,14 +9,13 @@ import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSemanticTaskSearch } from '../../../../hooks/use-semantic-task-search';
 import { KanbanBoard } from '../boards/boardId/kanban';
-import { StatusGroupedBoard } from '../boards/boardId/status-grouped-board';
 import type { TaskFilters } from '../boards/boardId/task-filter';
 import { TimelineBoard } from '../boards/boardId/timeline-board';
+import { useTaskDialog } from '../hooks/useTaskDialog';
 import { BoardHeader, type ListStatusFilter } from '../shared/board-header';
 import { ListView } from '../shared/list-view';
-import { useTaskDialog } from '../hooks/useTaskDialog';
 
-export type ViewType = 'kanban' | 'status-grouped' | 'list' | 'timeline';
+export type ViewType = 'kanban' | 'list' | 'timeline';
 
 interface Props {
   workspace: Workspace;
@@ -296,13 +295,6 @@ export function BoardViews({
     ]);
   };
 
-  // Auto-set list status filter to 'all' when in status-grouped view
-  useEffect(() => {
-    if (currentView === 'status-grouped' && listStatusFilter !== 'all') {
-      setListStatusFilter('all');
-    }
-  }, [currentView, listStatusFilter]);
-
   // Global keyboard shortcuts for all views
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -337,17 +329,17 @@ export function BoardViews({
 
   const renderView = () => {
     switch (currentView) {
-      case 'status-grouped':
-        return (
-          <StatusGroupedBoard
-            lists={filteredLists}
-            tasks={effectiveTasks}
-            boardId={board.id}
-            onUpdate={handleUpdate}
-            hideTasksMode={true}
-            isPersonalWorkspace={workspace.personal}
-          />
-        );
+      // case 'status-grouped':
+      //   return (
+      //     <StatusGroupedBoard
+      //       lists={filteredLists}
+      //       tasks={effectiveTasks}
+      //       boardId={board.id}
+      //       onUpdate={handleUpdate}
+      //       hideTasksMode={true}
+      //       isPersonalWorkspace={workspace.personal}
+      //     />
+      //   );
       case 'kanban':
         return (
           <KanbanBoard
@@ -379,13 +371,13 @@ export function BoardViews({
         );
       default:
         return (
-          <StatusGroupedBoard
-            lists={filteredLists}
-            tasks={effectiveTasks}
+          <KanbanBoard
+            workspace={workspace}
             boardId={board.id}
-            onUpdate={handleUpdate}
-            hideTasksMode={true}
-            isPersonalWorkspace={workspace.personal}
+            tasks={effectiveTasks}
+            lists={filteredLists}
+            isLoading={false}
+            disableSort={!!filters.sortBy}
           />
         );
     }
@@ -404,6 +396,8 @@ export function BoardViews({
         onListStatusFilterChange={setListStatusFilter}
         isPersonalWorkspace={workspace.personal}
         isSearching={isSearchLoading || isSearchFetching}
+        lists={lists}
+        onUpdate={handleUpdate}
       />
       <div className="h-full overflow-hidden">{renderView()}</div>
     </div>

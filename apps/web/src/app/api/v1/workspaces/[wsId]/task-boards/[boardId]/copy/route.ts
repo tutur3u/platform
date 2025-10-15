@@ -89,8 +89,8 @@ export async function POST(req: NextRequest, { params }: Params) {
             id,
             name,
             description,
-            archived,
-            deleted,
+            closed_at,
+            deleted_at,
             completed,
             priority,
             start_date,
@@ -238,7 +238,9 @@ export async function POST(req: NextRequest, { params }: Params) {
           continue;
         }
 
-        const validTasks = originalList.tasks.filter((task) => !task.deleted);
+        const validTasks = originalList.tasks.filter(
+          (task) => !task.deleted_at
+        );
         console.log(
           `Processing ${validTasks.length} tasks from list ${originalList.name}`
         );
@@ -250,8 +252,8 @@ export async function POST(req: NextRequest, { params }: Params) {
           priority: task.priority || null,
           start_date: task.start_date || null,
           end_date: task.end_date || null,
-          archived: task.archived || false,
-          deleted: false,
+          closed_at: task.closed_at || null,
+          deleted_at: null,
           completed: task.completed || false,
           created_at: new Date().toISOString(),
           creator_id: user.id,

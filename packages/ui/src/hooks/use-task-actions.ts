@@ -47,10 +47,10 @@ export function useTaskActions({
     if (!onUpdate) return;
     setIsLoading(true);
 
-    const newArchivedState = !task.archived;
+    const newClosedState = !task.closed_at;
 
     if (
-      newArchivedState &&
+      newClosedState &&
       targetCompletionList &&
       targetCompletionList.id !== task.list_id
     ) {
@@ -74,7 +74,12 @@ export function useTaskActions({
       }
     } else {
       updateTaskMutation.mutate(
-        { taskId: task.id, updates: { archived: newArchivedState } },
+        {
+          taskId: task.id,
+          updates: {
+            closed_at: newClosedState ? new Date().toISOString() : undefined,
+          },
+        },
         {
           onSettled: () => {
             setIsLoading(false);

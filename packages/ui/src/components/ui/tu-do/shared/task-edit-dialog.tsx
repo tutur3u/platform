@@ -639,7 +639,11 @@ function TaskEditDialogComponent({
 
         if (boardsError) throw boardsError;
 
-        const boardIds = (boards || []).map((b) => b.id);
+        const boardIds = (
+          (boards || []) as {
+            id: string;
+          }[]
+        ).map((b: { id: string }) => b.id);
         if (boardIds.length === 0) {
           setWorkspaceTasks([]);
           return;
@@ -657,7 +661,7 @@ function TaskEditDialogComponent({
         `
           )
           .in('task_lists.board_id', boardIds)
-          .eq('deleted', false);
+          .is('deleted_at', null);
 
         if (searchQuery?.trim()) {
           query = query.ilike('name', `%${searchQuery.trim()}%`);
@@ -1159,15 +1163,17 @@ function TaskEditDialogComponent({
 
   const toggleAssignee = useCallback(
     async (member: any) => {
+      // selectedAssignees has 'id' property, workspaceMembers has 'user_id' property
+      const userId = member.user_id || member.id;
       const exists = selectedAssignees.some(
-        (a) => a.user_id === member.user_id
+        (a) => (a.id || a.user_id) === userId
       );
       const supabase = createClient();
       try {
         if (isCreateMode) {
           setSelectedAssignees((prev) =>
             exists
-              ? prev.filter((a) => a.user_id !== member.user_id)
+              ? prev.filter((a) => (a.id || a.user_id) !== userId)
               : [...prev, member]
           );
           return;
@@ -1178,16 +1184,16 @@ function TaskEditDialogComponent({
             .from('task_assignees')
             .delete()
             .eq('task_id', task.id)
-            .eq('user_id', member.user_id);
+            .eq('user_id', userId);
           if (error) throw error;
           setSelectedAssignees((prev) =>
-            prev.filter((a) => a.user_id !== member.user_id)
+            prev.filter((a) => (a.id || a.user_id) !== userId)
           );
         } else {
           if (!task?.id) return;
           const { error } = await supabase
             .from('task_assignees')
-            .insert({ task_id: task.id, user_id: member.user_id });
+            .insert({ task_id: task.id, user_id: userId });
           if (error) throw error;
           setSelectedAssignees((prev) => [...prev, member]);
         }
@@ -1615,7 +1621,10 @@ function TaskEditDialogComponent({
       estimation_points: estimationPoints ?? null,
     };
 
-    if (task?.id)
+    if (task?.id) {
+      // Close dialog immediately for better UX
+      onClose();
+
       updateTaskMutation.mutate(
         {
           taskId: task.id,
@@ -1625,9 +1634,9 @@ function TaskEditDialogComponent({
           onSuccess: async () => {
             console.log('Task update successful, refreshing data...');
 
-            await invalidateTaskCaches(queryClient, boardId);
-
-            await queryClient.refetchQueries({
+            // Update caches and refetch in background
+            invalidateTaskCaches(queryClient, boardId);
+            queryClient.refetchQueries({
               queryKey: ['tasks', boardId],
               type: 'active',
             });
@@ -1637,7 +1646,6 @@ function TaskEditDialogComponent({
               description: 'The task has been successfully updated.',
             });
             onUpdate();
-            onClose();
           },
           onError: (error: any) => {
             console.error('Error updating task:', error);
@@ -1646,6 +1654,8 @@ function TaskEditDialogComponent({
               description: error.message || 'Please try again later',
               variant: 'destructive',
             });
+            // Reopen dialog on error so user can retry
+            // Note: This won't work well, consider showing error differently
           },
           onSettled: () => {
             setIsLoading(false);
@@ -1653,6 +1663,7 @@ function TaskEditDialogComponent({
           },
         }
       );
+    }
   }, [
     name,
     description,
@@ -2934,7 +2945,7 @@ function TaskEditDialogComponent({
                       }
                     }}
                     placeholder="What needs to be done?"
-                    className="h-auto border-0 bg-transparent p-4 font-bold text-2xl text-foreground leading-tight tracking-tight transition-colors placeholder:text-muted-foreground/30 focus-visible:outline-0 focus-visible:ring-0 md:px-8 md:pt-10 md:pb-6 md:text-2xl"
+                    className="h-auto border-0 bg-transparent p-4 pb-0 font-bold text-2xl text-foreground leading-tight tracking-tight transition-colors placeholder:text-muted-foreground/30 focus-visible:outline-0 focus-visible:ring-0 md:px-8 md:pt-10 md:pb-6 md:text-2xl"
                     autoFocus
                   />
                 </div>
@@ -3056,7 +3067,6 @@ function TaskEditDialogComponent({
                         <Button
                           variant="outline"
                           className="h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm"
-                          title="Priority â€“ Alt+1 Urgent, Alt+2 High, Alt+3 Medium, Alt+4 Low, Alt+0 Clear"
                         >
                           <span className="truncate">
                             {availableLists.find(
@@ -3109,11 +3119,12 @@ function TaskEditDialogComponent({
                             priority === 'critical' &&
                               'border-dynamic-red bg-dynamic-red/10 font-semibold text-dynamic-red hover:bg-dynamic-red/20'
                           )}
+                          title="Priority — Alt+1 Urgent, Alt+2 High, Alt+3 Medium, Alt+4 Low, Alt+0 Clear"
                         >
                           <span className="truncate">
                             {priority
                               ? priority === 'critical'
-                                ? 'ðŸ”¥ Urgent'
+                                ? '🔥 Urgent'
                                 : priority === 'high'
                                   ? 'High'
                                   : priority === 'normal'
@@ -3128,7 +3139,7 @@ function TaskEditDialogComponent({
                         {[
                           {
                             value: 'critical',
-                            label: 'ðŸ”¥ Urgent',
+                            label: '🔥 Urgent',
                             dot: 'bg-dynamic-red',
                             className: 'font-semibold text-dynamic-red',
                           },
@@ -3718,7 +3729,7 @@ function TaskEditDialogComponent({
                                 <div className="flex flex-wrap gap-1.5">
                                   {selectedAssignees.map((assignee) => (
                                     <Button
-                                      key={`selected-assignee-${assignee.user_id}`}
+                                      key={`selected-assignee-${assignee.id || assignee.user_id}`}
                                       type="button"
                                       variant="default"
                                       size="xs"
@@ -3750,8 +3761,10 @@ function TaskEditDialogComponent({
                               {(() => {
                                 const filteredMembers = workspaceMembers.filter(
                                   (member) => {
+                                    const memberId =
+                                      member.user_id || member.id;
                                     const isSelected = selectedAssignees.some(
-                                      (a) => a.user_id === member.user_id
+                                      (a) => (a.id || a.user_id) === memberId
                                     );
                                     const matchesSearch =
                                       !assigneeSearchQuery ||

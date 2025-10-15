@@ -18,7 +18,7 @@ interface Task {
   boardName: string;
   listName: string;
   listStatus?: string;
-  archived?: boolean;
+  closed_at?: string;
 }
 
 interface TaskWorkflowAnalyticsProps {
@@ -44,7 +44,7 @@ export function TaskWorkflowAnalytics({
       (task) =>
         task.listStatus === 'done' ||
         task.listStatus === 'closed' ||
-        task.archived
+        task.closed_at
     );
 
     const activeTasks = filteredTasks.filter(
