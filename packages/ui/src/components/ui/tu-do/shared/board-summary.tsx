@@ -51,7 +51,7 @@ export function BoardSummary({
   const totalTasks = tasks.length;
 
   // Helper function to check if a task is completed
-  const isTaskCompleted = (task: typeof tasks[0]) => {
+  const isTaskCompleted = (task: (typeof tasks)[0]) => {
     const taskList = lists.find((list) => list.id === task.list_id);
     return (
       task.closed_at ||
@@ -79,16 +79,20 @@ export function BoardSummary({
   ).length;
 
   const unassignedTasks = tasks.filter(
-    (task) => !isTaskCompleted(task) && (!task.assignees || task.assignees.length === 0)
+    (task) =>
+      !isTaskCompleted(task) && (!task.assignees || task.assignees.length === 0)
   ).length;
 
   const priorityTasks = {
-    p1: tasks.filter((task) => !isTaskCompleted(task) && task.priority === 'critical')
-      .length,
-    p2: tasks.filter((task) => !isTaskCompleted(task) && task.priority === 'high')
-      .length,
-    p3: tasks.filter((task) => !isTaskCompleted(task) && task.priority === 'normal')
-      .length,
+    p1: tasks.filter(
+      (task) => !isTaskCompleted(task) && task.priority === 'critical'
+    ).length,
+    p2: tasks.filter(
+      (task) => !isTaskCompleted(task) && task.priority === 'high'
+    ).length,
+    p3: tasks.filter(
+      (task) => !isTaskCompleted(task) && task.priority === 'normal'
+    ).length,
   };
 
   const nextDueTask = tasks

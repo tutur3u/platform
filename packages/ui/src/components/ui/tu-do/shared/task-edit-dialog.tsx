@@ -3756,7 +3756,8 @@ function TaskEditDialogComponent({
                               {(() => {
                                 const filteredMembers = workspaceMembers.filter(
                                   (member) => {
-                                    const memberId = member.user_id || member.id;
+                                    const memberId =
+                                      member.user_id || member.id;
                                     const isSelected = selectedAssignees.some(
                                       (a) => (a.id || a.user_id) === memberId
                                     );
