@@ -10,10 +10,9 @@ import {
   BoardHeader,
   type ListStatusFilter,
 } from '@tuturuuu/ui/tu-do/shared/board-header';
+import type { ViewType } from '@tuturuuu/ui/tu-do/shared/board-views';
 import { ListView } from '@tuturuuu/ui/tu-do/shared/list-view';
 import { useMemo, useState } from 'react';
-
-export type ViewType = 'kanban' | 'list' | 'timeline';
 
 interface TaskProjectDetailProps {
   workspace: Workspace;
@@ -166,7 +165,7 @@ export function TaskProjectDetail({
         return (
           <KanbanBoard
             workspace={workspace}
-            boardId={null as any}
+            boardId={null}
             tasks={effectiveTasks}
             lists={filteredLists}
             isLoading={false}
@@ -193,7 +192,7 @@ export function TaskProjectDetail({
         return (
           <KanbanBoard
             workspace={workspace}
-            boardId={null as any}
+            boardId={null}
             tasks={effectiveTasks}
             lists={filteredLists}
             isLoading={false}

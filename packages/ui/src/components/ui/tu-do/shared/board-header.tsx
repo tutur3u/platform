@@ -103,32 +103,32 @@ function loadBoardConfig(boardId: string): BoardViewConfig | null {
       typeof parsed.filters.dueDateRange === 'object'
     ) {
       const { from, to } = parsed.filters.dueDateRange;
+      const newRange: { from?: Date; to?: Date } = {};
 
-      // Validate and convert 'from' date
+      // Validate and convert 'from' date independently
       if (typeof from === 'string') {
         const fromDate = new Date(from);
-        if (Number.isNaN(fromDate.getTime())) {
-          // Invalid date, remove dueDateRange
-          delete parsed.filters.dueDateRange;
-        } else {
-          parsed.filters.dueDateRange.from = fromDate;
+        if (!Number.isNaN(fromDate.getTime())) {
+          newRange.from = fromDate;
         }
-      } else if (!(from instanceof Date)) {
-        // Invalid type, remove dueDateRange
-        delete parsed.filters.dueDateRange;
+      } else if (from instanceof Date && !Number.isNaN(from.getTime())) {
+        newRange.from = from;
       }
 
-      // Validate and convert 'to' date
-      if (parsed.filters.dueDateRange && typeof to === 'string') {
+      // Validate and convert 'to' date independently
+      if (typeof to === 'string') {
         const toDate = new Date(to);
-        if (Number.isNaN(toDate.getTime())) {
-          // Invalid date, remove dueDateRange
-          delete parsed.filters.dueDateRange;
-        } else {
-          parsed.filters.dueDateRange.to = toDate;
+        if (!Number.isNaN(toDate.getTime())) {
+          newRange.to = toDate;
         }
-      } else if (parsed.filters.dueDateRange && !(to instanceof Date)) {
-        // Invalid type, remove dueDateRange
+      } else if (to instanceof Date && !Number.isNaN(to.getTime())) {
+        newRange.to = to;
+      }
+
+      // Only keep dueDateRange if at least one valid date exists
+      if (newRange.from || newRange.to) {
+        parsed.filters.dueDateRange = newRange;
+      } else {
         delete parsed.filters.dueDateRange;
       }
     }
@@ -196,6 +196,20 @@ export function BoardHeader({
   // Track which board we've loaded config for to prevent re-loading
   const loadedBoardRef = useRef<string | null>(null);
 
+  // Stable refs for callbacks and values to avoid effect re-runs
+  const onFiltersChangeRef = useRef(onFiltersChange);
+  const onListStatusFilterChangeRef = useRef(onListStatusFilterChange);
+  const onViewChangeRef = useRef(onViewChange);
+  const searchQueryRef = useRef(filters.searchQuery);
+
+  // Update refs on each render
+  useEffect(() => {
+    onFiltersChangeRef.current = onFiltersChange;
+    onListStatusFilterChangeRef.current = onListStatusFilterChange;
+    onViewChangeRef.current = onViewChange;
+    searchQueryRef.current = filters.searchQuery;
+  });
+
   // Load board configuration from localStorage on mount or board change
   useEffect(() => {
     // Only load if we haven't loaded for this board yet
@@ -204,23 +218,17 @@ export function BoardHeader({
     const savedConfig = loadBoardConfig(board.id);
     if (savedConfig) {
       // Restore saved config but preserve current search query
-      onViewChange(savedConfig.currentView);
-      onFiltersChange({
+      onViewChangeRef.current(savedConfig.currentView);
+      onFiltersChangeRef.current({
         ...savedConfig.filters,
-        searchQuery: filters.searchQuery,
+        searchQuery: searchQueryRef.current,
       });
-      onListStatusFilterChange(savedConfig.listStatusFilter);
+      onListStatusFilterChangeRef.current(savedConfig.listStatusFilter);
     }
 
     // Mark this board as loaded
     loadedBoardRef.current = board.id;
-  }, [
-    board.id,
-    filters.searchQuery,
-    onFiltersChange,
-    onListStatusFilterChange,
-    onViewChange,
-  ]);
+  }, [board.id]);
 
   // Save board configuration to localStorage when it changes (excluding search)
   useEffect(() => {
@@ -272,6 +280,11 @@ export function BoardHeader({
     } finally {
       setIsLoading(false);
     }
+  }
+
+  function handleSortChange(sortBy: TaskFilters['sortBy']) {
+    onFiltersChange({ ...filters, sortBy });
+    setSortMenuOpen(false);
   }
 
   const viewConfig = {
@@ -477,16 +490,11 @@ export function BoardHeader({
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
-                    onClick={() => {
-                      onFiltersChange({
-                        ...filters,
-                        sortBy:
-                          filters.sortBy === 'name-asc'
-                            ? undefined
-                            : 'name-asc',
-                      });
-                      setSortMenuOpen(false);
-                    }}
+                    onClick={() =>
+                      handleSortChange(
+                        filters.sortBy === 'name-asc' ? undefined : 'name-asc'
+                      )
+                    }
                     className="gap-2"
                   >
                     <ArrowUp className="h-3.5 w-3.5 text-dynamic-blue" />
@@ -496,16 +504,11 @@ export function BoardHeader({
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => {
-                      onFiltersChange({
-                        ...filters,
-                        sortBy:
-                          filters.sortBy === 'name-desc'
-                            ? undefined
-                            : 'name-desc',
-                      });
-                      setSortMenuOpen(false);
-                    }}
+                    onClick={() =>
+                      handleSortChange(
+                        filters.sortBy === 'name-desc' ? undefined : 'name-desc'
+                      )
+                    }
                     className="gap-2"
                   >
                     <ArrowDown className="h-3.5 w-3.5 text-dynamic-purple" />
@@ -529,16 +532,13 @@ export function BoardHeader({
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
-                    onClick={() => {
-                      onFiltersChange({
-                        ...filters,
-                        sortBy:
-                          filters.sortBy === 'priority-high'
-                            ? undefined
-                            : 'priority-high',
-                      });
-                      setSortMenuOpen(false);
-                    }}
+                    onClick={() =>
+                      handleSortChange(
+                        filters.sortBy === 'priority-high'
+                          ? undefined
+                          : 'priority-high'
+                      )
+                    }
                     className="gap-2"
                   >
                     <ArrowUp className="h-3.5 w-3.5 text-dynamic-red" />
@@ -548,16 +548,13 @@ export function BoardHeader({
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => {
-                      onFiltersChange({
-                        ...filters,
-                        sortBy:
-                          filters.sortBy === 'priority-low'
-                            ? undefined
-                            : 'priority-low',
-                      });
-                      setSortMenuOpen(false);
-                    }}
+                    onClick={() =>
+                      handleSortChange(
+                        filters.sortBy === 'priority-low'
+                          ? undefined
+                          : 'priority-low'
+                      )
+                    }
                     className="gap-2"
                   >
                     <ArrowDown className="h-3.5 w-3.5 text-dynamic-gray" />
@@ -581,16 +578,13 @@ export function BoardHeader({
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
-                    onClick={() => {
-                      onFiltersChange({
-                        ...filters,
-                        sortBy:
-                          filters.sortBy === 'due-date-asc'
-                            ? undefined
-                            : 'due-date-asc',
-                      });
-                      setSortMenuOpen(false);
-                    }}
+                    onClick={() =>
+                      handleSortChange(
+                        filters.sortBy === 'due-date-asc'
+                          ? undefined
+                          : 'due-date-asc'
+                      )
+                    }
                     className="gap-2"
                   >
                     <ArrowUp className="h-3.5 w-3.5 text-dynamic-orange" />
@@ -600,16 +594,13 @@ export function BoardHeader({
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => {
-                      onFiltersChange({
-                        ...filters,
-                        sortBy:
-                          filters.sortBy === 'due-date-desc'
-                            ? undefined
-                            : 'due-date-desc',
-                      });
-                      setSortMenuOpen(false);
-                    }}
+                    onClick={() =>
+                      handleSortChange(
+                        filters.sortBy === 'due-date-desc'
+                          ? undefined
+                          : 'due-date-desc'
+                      )
+                    }
                     className="gap-2"
                   >
                     <ArrowDown className="h-3.5 w-3.5 text-dynamic-blue" />
@@ -633,16 +624,13 @@ export function BoardHeader({
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
-                    onClick={() => {
-                      onFiltersChange({
-                        ...filters,
-                        sortBy:
-                          filters.sortBy === 'created-date-desc'
-                            ? undefined
-                            : 'created-date-desc',
-                      });
-                      setSortMenuOpen(false);
-                    }}
+                    onClick={() =>
+                      handleSortChange(
+                        filters.sortBy === 'created-date-desc'
+                          ? undefined
+                          : 'created-date-desc'
+                      )
+                    }
                     className="gap-2"
                   >
                     <ArrowDown className="h-3.5 w-3.5 text-dynamic-green" />
@@ -652,16 +640,13 @@ export function BoardHeader({
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => {
-                      onFiltersChange({
-                        ...filters,
-                        sortBy:
-                          filters.sortBy === 'created-date-asc'
-                            ? undefined
-                            : 'created-date-asc',
-                      });
-                      setSortMenuOpen(false);
-                    }}
+                    onClick={() =>
+                      handleSortChange(
+                        filters.sortBy === 'created-date-asc'
+                          ? undefined
+                          : 'created-date-asc'
+                      )
+                    }
                     className="gap-2"
                   >
                     <ArrowUp className="h-3.5 w-3.5 text-muted-foreground" />
@@ -685,16 +670,13 @@ export function BoardHeader({
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
-                    onClick={() => {
-                      onFiltersChange({
-                        ...filters,
-                        sortBy:
-                          filters.sortBy === 'estimation-high'
-                            ? undefined
-                            : 'estimation-high',
-                      });
-                      setSortMenuOpen(false);
-                    }}
+                    onClick={() =>
+                      handleSortChange(
+                        filters.sortBy === 'estimation-high'
+                          ? undefined
+                          : 'estimation-high'
+                      )
+                    }
                     className="gap-2"
                   >
                     <ArrowUp className="h-3.5 w-3.5 text-dynamic-purple" />
@@ -704,16 +686,13 @@ export function BoardHeader({
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => {
-                      onFiltersChange({
-                        ...filters,
-                        sortBy:
-                          filters.sortBy === 'estimation-low'
-                            ? undefined
-                            : 'estimation-low',
-                      });
-                      setSortMenuOpen(false);
-                    }}
+                    onClick={() =>
+                      handleSortChange(
+                        filters.sortBy === 'estimation-low'
+                          ? undefined
+                          : 'estimation-low'
+                      )
+                    }
                     className="gap-2"
                   >
                     <ArrowDown className="h-3.5 w-3.5 text-dynamic-cyan" />
@@ -729,10 +708,7 @@ export function BoardHeader({
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => {
-                      onFiltersChange({ ...filters, sortBy: undefined });
-                      setSortMenuOpen(false);
-                    }}
+                    onClick={() => handleSortChange(undefined)}
                     className="gap-2 text-dynamic-red/80 focus:text-dynamic-red"
                   >
                     <X className="h-4 w-4" />
