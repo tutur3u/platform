@@ -82,7 +82,7 @@ interface TaskProjectsClientProps {
 interface TaskOption {
   id: string;
   name: string;
-  completed: boolean | null;
+  completed_at: string | null;
   listName: string | null;
 }
 
@@ -151,8 +151,8 @@ export function TaskProjectsClient({
             typeof task.name === 'string' && task.name.trim().length > 0
               ? task.name
               : 'Untitled task',
-          completed:
-            typeof task.completed === 'boolean' ? task.completed : null,
+          completed_at:
+            typeof task.completed_at === 'string' ? task.completed_at : null,
           listName: typeof task.list_name === 'string' ? task.list_name : null,
         }))
         .filter((task: TaskOption) => Boolean(task.id));

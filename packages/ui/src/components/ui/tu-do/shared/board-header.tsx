@@ -218,10 +218,10 @@ export function BoardHeader({
   // Sync local search query with external filter changes
   useEffect(() => {
     const newQuery = filters.searchQuery || '';
-    if (newQuery !== localSearchQuery) {
-      setLocalSearchQuery(newQuery);
-    }
-  }, [filters.searchQuery, localSearchQuery]);
+    // Use functional updater to compare current state and only update if different
+    // This prevents overwriting in-progress typing
+    setLocalSearchQuery((current) => (current === newQuery ? current : newQuery));
+  }, [filters.searchQuery]);
 
   // Debounce search query updates
   useEffect(() => {
@@ -375,6 +375,7 @@ export function BoardHeader({
               type="button"
               onClick={() => setLocalSearchQuery('')}
               className="-translate-y-1/2 absolute top-1/2 right-2 text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="Clear search"
             >
               <X className="h-3.5 w-3.5" />
             </button>

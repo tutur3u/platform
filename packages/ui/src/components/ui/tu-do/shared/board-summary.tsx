@@ -11,11 +11,14 @@ import {
   Flag,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { getTaskLists, getTasks } from '@tuturuuu/utils/task-helper';
 import { format } from 'date-fns';
+import { useMemo, type JSX } from 'react';
 
 interface Props {
   board: TaskBoard;
@@ -27,10 +30,10 @@ export function BoardSummary({
   board,
   collapsed = false,
   onToggleCollapsed,
-}: Props) {
+}: Props): JSX.Element {
   const { id: boardId } = board;
 
-  const { data: tasks = [], isLoading } = useQuery({
+  const { data: tasks = [], isLoading } = useQuery<Task[]>({
     queryKey: ['tasks', boardId],
     queryFn: async () => {
       const supabase = createClient();
@@ -38,7 +41,7 @@ export function BoardSummary({
     },
   });
 
-  const { data: lists = [] } = useQuery({
+  const { data: lists = [] } = useQuery<TaskList[]>({
     queryKey: ['task_lists', boardId],
     queryFn: async () => {
       const supabase = createClient();
@@ -46,18 +49,25 @@ export function BoardSummary({
     },
   });
 
-  // Removed real-time subscriptions to prevent cache invalidation conflicts with drag-and-drop
+  // Create memoized map of list status by id for O(1) lookups
+  const listStatusMap = useMemo(() => {
+    const map = new Map<string, TaskList['status']>();
+    for (const list of lists) {
+      map.set(list.id, list.status);
+    }
+    return map;
+  }, [lists]);
 
   const totalTasks = tasks.length;
 
   // Helper function to check if a task is completed
-  const isTaskCompleted = (task: (typeof tasks)[0]) => {
-    const taskList = lists.find((list) => list.id === task.list_id);
-    return (
+  const isTaskCompleted = (task: Task): boolean => {
+    const listStatus = listStatusMap.get(task.list_id);
+    return !!(
       task.closed_at ||
       task.completed_at ||
-      taskList?.status === 'done' ||
-      taskList?.status === 'closed'
+      listStatus === 'done' ||
+      listStatus === 'closed'
     );
   };
 
