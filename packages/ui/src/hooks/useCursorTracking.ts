@@ -19,7 +19,7 @@ export function useCursorTracking(
   const [cursors, setCursors] = useState<Map<string, CursorPosition>>(
     new Map()
   );
-  const [currentUserId, setCurrentUserId] = useState<string>();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [error, setError] = useState<boolean>(false);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const isCleanedUpRef = useRef(false);
@@ -27,9 +27,55 @@ export function useCursorTracking(
   const lastBroadcastTimeRef = useRef<number>(0);
   const errorCountRef = useRef<number>(0);
 
+  const targetPosition = useRef({ x: -1000, y: -1000 });
+  const currentPosition = useRef({ x: -1000, y: -1000 });
+  const animationFrameId = useRef<number | null>(null);
+
+  const ANIMATION_FACTOR = 0.2;
   const THROTTLE_MS = 50; // Broadcast cursor position every 50ms max
   const CURSOR_TIMEOUT = 5000; // Remove cursor if no update for 5 seconds
   const MAX_ERROR_COUNT = 3; // Disable after 3 consecutive errors
+
+  const handleError = (err: any) => {
+    errorCountRef.current++;
+    if (errorCountRef.current >= MAX_ERROR_COUNT) {
+      setError(true);
+    }
+    if (DEV_MODE) {
+      console.warn('Error in cursor tracking:', err);
+    }
+  };
+
+  useEffect(() => {
+    const setupUser = async () => {
+      const supabase = createClient();
+
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user?.id) return;
+
+        const { data: userData, error: userDataError } = await supabase
+          .from('users')
+          .select('id, display_name')
+          .eq('id', user.id)
+          .single();
+
+        if (userDataError) {
+          handleError(userDataError);
+          return;
+        }
+
+        setCurrentUser(userData);
+      } catch (err) {
+        handleError(err);
+      }
+    };
+
+    setupUser();
+  }, []);
 
   const broadcastCursor = useCallback(
     async (x: number, y: number, user: User) => {
@@ -79,15 +125,61 @@ export function useCursorTracking(
     [] // No dependencies - uses only refs
   );
 
-  const handleError = useCallback((err: any) => {
-    errorCountRef.current++;
-    if (errorCountRef.current >= MAX_ERROR_COUNT) {
-      setError(true);
+  const smoothAnimate = useCallback(() => {
+    currentPosition.current.x +=
+      (targetPosition.current.x - currentPosition.current.x) * ANIMATION_FACTOR;
+    currentPosition.current.y +=
+      (targetPosition.current.y - currentPosition.current.y) * ANIMATION_FACTOR;
+
+    if (!currentUser?.id) return;
+
+    const distance = Math.hypot(
+      targetPosition.current.x - currentPosition.current.x,
+      targetPosition.current.y - currentPosition.current.y
+    );
+
+    // If the distance between the target and actual position is greater than 0.5px, broadcast the cursor
+    // This is to prevent the cursor from being broadcasted too often, allowing stale cursors to be removed
+    if (distance > 0.5) {
+      broadcastCursor(currentPosition.current.x, currentPosition.current.y, {
+        id: currentUser.id,
+        display_name: currentUser.display_name,
+      });
     }
-    if (DEV_MODE) {
-      console.warn('Error in cursor tracking:', err);
-    }
-  }, []);
+
+    animationFrameId.current = requestAnimationFrame(smoothAnimate);
+  }, [broadcastCursor, currentUser]);
+
+  useEffect(() => {
+    animationFrameId.current = requestAnimationFrame(smoothAnimate);
+    return () => {
+      if (animationFrameId.current) {
+        cancelAnimationFrame(animationFrameId.current);
+      }
+    };
+  }, [smoothAnimate]);
+
+  const handleMouseMove = (event: MouseEvent) => {
+    if (!currentUser?.id) return;
+
+    const rect = containerRef?.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    targetPosition.current = {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    };
+  };
+
+  const handleMouseLeave = () => {
+    if (!currentUser?.id) return;
+
+    // Broadcast cursor position outside the container to hide it
+    broadcastCursor(-1000, -1000, {
+      id: currentUser.id,
+      display_name: currentUser.display_name,
+    });
+  };
 
   // Clean up stale cursors
   useEffect(() => {
@@ -120,32 +212,11 @@ export function useCursorTracking(
 
     const supabase = createClient();
     let container: HTMLElement | null = null;
-    let handleMouseMove: ((event: MouseEvent) => void) | null = null;
-    let handleMouseLeave: (() => void) | null = null;
 
     const setupCursorTracking = async () => {
       if (isCleanedUpRef.current) return;
 
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user?.id) return;
-
-        const { data: userData, error: userDataError } = await supabase
-          .from('users')
-          .select('display_name')
-          .eq('id', user.id)
-          .single();
-
-        if (userDataError) {
-          handleError(userDataError);
-          return;
-        }
-
-        setCurrentUserId(user.id);
-
         // Clean up existing channel before creating a new one
         if (channelRef.current) {
           await supabase.removeChannel(channelRef.current);
@@ -168,7 +239,7 @@ export function useCursorTracking(
             try {
               const { x, y, user: broadcastUser } = payload.payload;
 
-              if (broadcastUser.id !== user.id) {
+              if (broadcastUser.id !== currentUser?.id) {
                 setCursors((prev) => {
                   const updated = new Map(prev);
                   updated.set(broadcastUser.id || '', {
@@ -207,25 +278,6 @@ export function useCursorTracking(
         if (containerRef?.current) {
           container = containerRef.current;
 
-          handleMouseMove = (event: MouseEvent) => {
-            const rect = container!.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-
-            broadcastCursor(x, y, {
-              id: user.id,
-              display_name: userData?.display_name,
-            });
-          };
-
-          handleMouseLeave = () => {
-            // Broadcast cursor position outside the container to hide it
-            broadcastCursor(-1000, -1000, {
-              id: user.id,
-              display_name: userData?.display_name,
-            });
-          };
-
           container.addEventListener('mousemove', handleMouseMove);
           container.addEventListener('mouseleave', handleMouseLeave);
         }
@@ -247,7 +299,7 @@ export function useCursorTracking(
 
       // Broadcast cursor removal before unsubscribing (best effort)
       // This helps other users see the cursor disappear immediately
-      if (channelRef.current && currentUserId) {
+      if (channelRef.current && currentUser?.id) {
         try {
           channelRef.current.send({
             type: 'broadcast',
@@ -255,7 +307,7 @@ export function useCursorTracking(
             payload: {
               x: -1000,
               y: -1000,
-              user: { id: currentUserId },
+              user: { id: currentUser.id },
             },
           });
         } catch (err) {
@@ -273,26 +325,20 @@ export function useCursorTracking(
       }
 
       // Clean up event listeners
-      if (container && handleMouseMove && handleMouseLeave) {
+      if (container) {
         container.removeEventListener('mousemove', handleMouseMove);
         container.removeEventListener('mouseleave', handleMouseLeave);
       }
-
-      // Clear state on unmount
-      setCursors(new Map());
-      setCurrentUserId(undefined);
-      setError(false);
-      errorCountRef.current = 0;
     };
   }, [
     channelName,
     containerRef, // Broadcast cursor position outside the container to hide it
-    broadcastCursor,
+    currentUser,
   ]);
 
   return {
     cursors,
-    currentUserId,
+    currentUser,
     error,
   };
 }
