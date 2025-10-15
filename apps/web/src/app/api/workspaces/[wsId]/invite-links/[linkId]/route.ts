@@ -246,7 +246,10 @@ export async function DELETE(_: Request, { params }: Params) {
       );
     }
 
-    return NextResponse.json({ message: 'Invite link deleted' }, { status: 200 });
+    return NextResponse.json(
+      { message: 'Invite link deleted' },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Unexpected error:', error);
     return NextResponse.json(
