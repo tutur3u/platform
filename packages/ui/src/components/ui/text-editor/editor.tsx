@@ -482,20 +482,20 @@ export function RichTextEditor({
   }, [editor, readOnly]);
 
   // Update editor content when the content prop changes externally
-  // useEffect(() => {
-  //   if (!editor) return;
+  useEffect(() => {
+    if (!editor || allowCollaboration) return;
 
-  //   const currentContent = editor.getJSON();
-  //   const contentChanged =
-  //     JSON.stringify(currentContent) !== JSON.stringify(content);
+    const currentContent = editor.getJSON();
+    const contentChanged =
+      JSON.stringify(currentContent) !== JSON.stringify(content);
 
-  //   if (contentChanged) {
-  //     // Update editor content without triggering onChange
-  //     editor.commands.setContent(content || { type: 'doc', content: [] }, {
-  //       emitUpdate: false,
-  //     });
-  //   }
-  // }, [editor, content]);
+    if (contentChanged) {
+      // Update editor content without triggering onChange
+      editor.commands.setContent(content || { type: 'doc', content: [] }, {
+        emitUpdate: false,
+      });
+    }
+  }, [editor, content, allowCollaboration]);
 
   // Handle initial cursor positioning when focusing from title
   useEffect(() => {
