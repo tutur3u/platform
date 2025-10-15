@@ -188,3 +188,90 @@ CREATE TRIGGER trg_update_workspace_invite_links_updated_at
 BEFORE UPDATE ON workspace_invite_links
 FOR EACH ROW
 EXECUTE FUNCTION update_workspace_invite_links_updated_at();
+
+-- Create function to set first workspace as default
+CREATE OR REPLACE FUNCTION public.set_first_workspace_as_default()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $function$
+BEGIN
+  -- Check if user already has a default workspace
+  IF NOT EXISTS (
+    SELECT 1
+    FROM user_private_details
+    WHERE user_id = NEW.user_id
+    AND default_workspace_id IS NOT NULL
+  ) THEN
+    -- Set this workspace as the user's default
+    UPDATE user_private_details
+    SET default_workspace_id = NEW.ws_id
+    WHERE user_id = NEW.user_id;
+  END IF;
+
+  RETURN NEW;
+END;
+$function$;
+
+-- Create trigger on workspace_members to set first workspace as default
+CREATE TRIGGER trg_set_first_workspace_as_default
+AFTER INSERT ON workspace_members
+FOR EACH ROW
+EXECUTE FUNCTION set_first_workspace_as_default();
+
+-- Create function to automatically create personal workspace for new users
+CREATE OR REPLACE FUNCTION public.create_personal_workspace_for_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $function$
+DECLARE
+  new_workspace_id uuid;
+BEGIN
+  -- Check if user already has a personal workspace
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.workspaces
+    WHERE creator_id = NEW.id
+    AND personal = true
+  ) THEN
+    -- Create a personal workspace for the new user
+    -- Note: Using SECURITY DEFINER allows bypassing RLS for initial workspace creation
+    INSERT INTO public.workspaces (
+      name,
+      creator_id,
+      personal
+    ) VALUES (
+      'Personal', -- Default name, can be customized by user later
+      NEW.id,
+      true
+    )
+    RETURNING id INTO new_workspace_id;
+
+    -- Add the user as a member of their personal workspace with OWNER role
+    INSERT INTO public.workspace_members (
+      ws_id,
+      user_id,
+      role
+    ) VALUES (
+      new_workspace_id,
+      NEW.id,
+      'OWNER'
+    );
+  END IF;
+
+  RETURN NEW;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- Log the error but don't fail user creation
+    RAISE WARNING 'Failed to create personal workspace for user %: %', NEW.id, SQLERRM;
+    RETURN NEW;
+END;
+$function$;
+
+-- Create trigger on users table to create personal workspace for new users
+CREATE TRIGGER trg_create_personal_workspace_for_new_user
+AFTER INSERT ON users
+FOR EACH ROW
+EXECUTE FUNCTION create_personal_workspace_for_new_user();
