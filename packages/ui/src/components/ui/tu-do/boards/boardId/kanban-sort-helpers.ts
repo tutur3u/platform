@@ -34,9 +34,7 @@ export async function calculateSortKeyWithRetry(
   // Check for inverted sort keys (e.g., in "done" lists sorted by completed_at)
   // This happens when visual order (by completion date) differs from sort_key order
   const hasInvertedKeys =
-    prevSortKey != null &&
-    nextSortKey != null &&
-    prevSortKey >= nextSortKey;
+    prevSortKey != null && nextSortKey != null && prevSortKey >= nextSortKey;
 
   if (hasInvertedKeys) {
     console.warn(

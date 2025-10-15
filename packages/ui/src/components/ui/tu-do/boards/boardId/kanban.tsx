@@ -985,8 +985,7 @@ export function KanbanBoard({
             const completionB = b.completed_at
               ? new Date(b.completed_at).getTime()
               : 0;
-            if (completionA !== completionB)
-              return completionB - completionA; // Descending order
+            if (completionA !== completionB) return completionB - completionA; // Descending order
           }
 
           // For closed lists, sort by closed_at (most recent first)
