@@ -1,14 +1,14 @@
 'use client';
 
-import { DEV_MODE, GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
+import { DEV_MODE } from '@/constants/common';
 import {
   BookText,
   Building,
   Factory,
   FileText,
-  Github,
   GraduationCap,
   HardHat,
+  HeartHandshake,
   Hotel,
   Info,
   Paintbrush,
@@ -37,7 +37,6 @@ export interface NavCategory {
   items: NavItem[];
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
 export const useNavigation = (t: any): { categories: NavCategory[] } => {
   const products: NavItem[] = [
     {
@@ -135,6 +134,13 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       icon: <Users className="h-4 w-4" />,
     },
     {
+      href: `/partners`,
+      label: t('common.partners'),
+      description: t('common.partners-description'),
+      icon: <HeartHandshake className="h-4 w-4" />,
+      external: true,
+    },
+    {
       href: '/contributors',
       label: t('common.contributors'),
       description: t('common.contributors-description'),
@@ -157,13 +163,6 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       label: t('common.documentation'),
       description: t('common.documentation-description'),
       icon: <FileText className="h-4 w-4" />,
-      external: true,
-    },
-    {
-      href: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`,
-      label: 'GitHub',
-      description: t('common.github-description'),
-      icon: <Github className="h-4 w-4" />,
       external: true,
     },
   ];

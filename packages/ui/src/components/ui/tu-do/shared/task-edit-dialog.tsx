@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
@@ -27,6 +27,7 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import type { User } from '@tuturuuu/types/primitives/User';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -45,11 +46,13 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import { cn } from '@tuturuuu/utils/format';
 import {
   invalidateTaskCaches,
@@ -57,9 +60,18 @@ import {
   useUpdateTask,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
+import { convertJsonContentToYjsState } from '@tuturuuu/utils/yjs-helper';
 import dayjs from 'dayjs';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { createPortal } from 'react-dom';
+import * as Y from 'yjs';
 import { CursorOverlayWrapper } from './cursor-overlay';
 import { CustomDatePickerDialog } from './custom-date-picker/custom-date-picker-dialog';
 import {
@@ -81,6 +93,7 @@ import {
 } from './slash-commands/definitions';
 import { SlashCommandMenu } from './slash-commands/slash-command-menu';
 import { UserPresenceAvatarsComponent } from './user-presence-avatars';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 
 interface TaskEditDialogProps {
   task?: Task;
@@ -89,6 +102,7 @@ interface TaskEditDialogProps {
   onClose: () => void;
   onUpdate: () => void;
   availableLists?: TaskList[];
+  onOpenTask?: (taskId: string) => void;
 }
 
 // Helper types
@@ -99,6 +113,37 @@ interface WorkspaceTaskLabel {
   created_at: string;
 }
 
+/**
+ * Helper function to parse task description from various formats
+ * Handles both JSONContent objects and string formats
+ * @param desc - Description in object, string, or null format
+ * @returns Parsed JSONContent or null
+ */
+function getDescriptionContent(desc: any): JSONContent | null {
+  if (!desc) return null;
+
+  // If it's already an object (from Supabase), use it directly
+  if (typeof desc === 'object') {
+    return desc as JSONContent;
+  }
+
+  // If it's a string, try to parse it
+  try {
+    return JSON.parse(desc);
+  } catch {
+    // If it's not valid JSON, treat it as plain text and wrap in doc structure
+    return {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: desc }],
+        },
+      ],
+    };
+  }
+}
+
 function TaskEditDialogComponent({
   task,
   boardId,
@@ -106,6 +151,7 @@ function TaskEditDialogComponent({
   onClose,
   onUpdate,
   availableLists: propAvailableLists,
+  onOpenTask,
   mode = 'edit',
   showUserPresence = false,
 }: TaskEditDialogProps & {
@@ -114,17 +160,23 @@ function TaskEditDialogComponent({
 }) {
   const isCreateMode = mode === 'create';
   const pathname = usePathname();
-
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // ============================================================================
+  // CORE TASK STATE - Basic task properties (name, description, dates, etc.)
+  // ============================================================================
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [name, setName] = useState(task?.name || '');
   const [description, setDescription] = useState<JSONContent | null>(() => {
-    // Try to parse existing description as JSON, fallback to creating simple text content
     if (task?.description) {
+      if (typeof task.description === 'object') {
+        return task.description as JSONContent;
+      }
       try {
         return JSON.parse(task.description);
       } catch {
-        // If it's not valid JSON, treat it as plain text and convert to JSONContent
         return {
           type: 'doc',
           content: [
@@ -153,66 +205,490 @@ function TaskEditDialogComponent({
   const [estimationPoints, setEstimationPoints] = useState<
     number | null | undefined
   >(task?.estimation_points ?? null);
-  const [selectedLabels, setSelectedLabels] = useState<WorkspaceTaskLabel[]>(
-    task?.labels || []
+  const [, setEstimationSaving] = useState(false);
+
+  const previousTaskIdRef = useRef<string | null>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const lastCursorPositionRef = useRef<number | null>(null);
+  const targetEditorCursorRef = useRef<number | null>(null);
+  const flushEditorPendingRef = useRef<(() => JSONContent | null) | undefined>(
+    undefined
   );
 
-  // Use React Query hooks for shared data (cached across all components)
-  const { data: boardConfig } = useBoardConfig(boardId);
-  const [workspaceId, setWorkspaceId] = useState<string | null>(
-    boardConfig?.ws_id || null
-  );
-  const { data: workspaceLabelsData = [], isLoading: labelsLoading } =
-    useWorkspaceLabels(workspaceId);
+  const updateTaskMutation = useUpdateTask(boardId);
 
-  // Keep local state for available labels to allow manipulation
-  const [availableLabels, setAvailableLabels] = useState<WorkspaceTaskLabel[]>(
-    []
-  );
+  // ============================================================================
+  // USER & COLLABORATION - User state and Yjs collaboration setup
+  // ============================================================================
+  const [user, setUser] = useState<User | null>(null);
 
-  // Sync workspace labels to local state
+  const userColor: string | undefined = useMemo(() => {
+    const hashCode = (str: string) => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return hash;
+    };
+
+    const colors = [
+      '#3b82f6', // blue
+      '#8b5cf6', // purple
+      '#ec4899', // pink
+      '#f97316', // orange
+      '#10b981', // green
+      '#06b6d4', // cyan
+      '#f59e0b', // amber
+      '#6366f1', // indigo
+    ];
+
+    const userId = user?.id || 'anonymous';
+    const index = Math.abs(hashCode(userId)) % colors.length;
+    return colors[index] || colors[0];
+  }, [user?.id]);
+
+  const { doc, provider } = useYjsCollaboration({
+    channel: `task-editor-${task?.id || 'new'}`,
+    tableName: 'tasks',
+    columnName: 'description_yjs_state',
+    id: task?.id || '',
+    user: user
+      ? {
+          id: user.id || '',
+          name: user.display_name || '',
+          color: userColor || '',
+        }
+      : null,
+    enabled:
+      DEV_MODE && isOpen && !isCreateMode && showUserPresence && !!task?.id,
+  });
+
   useEffect(() => {
-    if (workspaceLabelsData.length > 0) {
-      setAvailableLabels(workspaceLabelsData);
-    }
-  }, [workspaceLabelsData]);
+    const getUser = async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-  // Update workspace ID when board config loads
+      if (user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('id, display_name')
+          .eq('id', user.id)
+          .single();
+
+        if (userData) {
+          setUser(userData);
+        }
+      }
+    };
+
+    getUser();
+  }, []);
+
+  // ============================================================================
+  // BOARD & WORKSPACE DATA - Board config, workspace ID, and lists
+  // ============================================================================
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+
+  const { data: boardConfig } = useBoardConfig(boardId);
+  const { data: availableLists = [] } = useQuery({
+    queryKey: ['task_lists', boardId],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('task_lists')
+        .select('*')
+        .eq('board_id', boardId)
+        .eq('deleted', false)
+        .order('position')
+        .order('created_at');
+
+      if (error) throw error;
+      return data as TaskList[];
+    },
+    enabled: !!boardId && isOpen && !propAvailableLists,
+    initialData: propAvailableLists,
+  });
+
+  const estimationIndices: number[] = useMemo(() => {
+    return boardConfig?.estimation_type
+      ? buildEstimationIndices({
+          extended: boardConfig?.extended_estimation,
+          allowZero: boardConfig?.allow_zero_estimates,
+        })
+      : [];
+  }, [
+    boardConfig?.estimation_type,
+    boardConfig?.extended_estimation,
+    boardConfig?.allow_zero_estimates,
+  ]);
+
   useEffect(() => {
     if (boardConfig?.ws_id && workspaceId !== boardConfig.ws_id) {
       setWorkspaceId(boardConfig.ws_id);
     }
   }, [boardConfig, workspaceId]);
 
-  const [, setEstimationSaving] = useState(false);
+  // ============================================================================
+  // LABELS MANAGEMENT - Workspace labels, selected labels, and creation
+  // ============================================================================
+  const { data: workspaceLabelsData = [], isLoading: labelsLoading } =
+    useWorkspaceLabels(workspaceId);
+  const [availableLabels, setAvailableLabels] = useState<WorkspaceTaskLabel[]>(
+    []
+  );
+  const [selectedLabels, setSelectedLabels] = useState<WorkspaceTaskLabel[]>(
+    task?.labels || []
+  );
   const [newLabelName, setNewLabelName] = useState('');
   const [newLabelColor, setNewLabelColor] = useState('gray');
   const [creatingLabel, setCreatingLabel] = useState(false);
-  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [hasDraft, setHasDraft] = useState(false);
-  const [createMultiple, setCreateMultiple] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [showOptionsSidebar, setShowOptionsSidebar] = useState(isCreateMode);
+
+  // Label color utility functions
+  const normalizeHex = (input: string): string | null => {
+    if (!input) return null;
+    let c = input.trim();
+    if (c.startsWith('#')) c = c.slice(1);
+    if (c.length === 3) {
+      c = c
+        .split('')
+        .map((ch) => ch + ch)
+        .join('');
+    }
+    if (c.length !== 6) return null;
+    if (!/^[0-9a-fA-F]{6}$/.test(c)) return null;
+    return `#${c.toLowerCase()}`;
+  };
+
+  const hexToRgb = (hex: string) => {
+    const n = normalizeHex(hex);
+    if (!n) return null;
+    const r = parseInt(n.substring(1, 3), 16);
+    const g = parseInt(n.substring(3, 5), 16);
+    const b = parseInt(n.substring(5, 7), 16);
+    return { r, g, b };
+  };
+
+  const luminance = ({ r, g, b }: { r: number; g: number; b: number }) => {
+    const channel = (v: number) => {
+      const s = v / 255;
+      return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+    };
+    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+  };
+
+  const adjust = (hex: string, factor: number) => {
+    const rgb = hexToRgb(hex);
+    if (!rgb) return hex;
+    const rN = rgb.r / 255;
+    const gN = rgb.g / 255;
+    const bN = rgb.b / 255;
+    const max = Math.max(rN, gN, bN);
+    const min = Math.min(rN, gN, bN);
+    let h = 0;
+    const l = (max + min) / 2;
+    const d = max - min;
+    let s = 0;
+    if (d !== 0) {
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case rN:
+          h = (gN - bN) / d + (gN < bN ? 6 : 0);
+          break;
+        case gN:
+          h = (bN - rN) / d + 2;
+          break;
+        default:
+          h = (rN - gN) / d + 4;
+      }
+      h /= 6;
+    }
+    const targetL = Math.min(
+      1,
+      Math.max(0, l * (factor >= 1 ? 1 + (factor - 1) * 0.75 : factor))
+    );
+    const targetS = factor > 1 && targetL > 0.7 ? s * 0.85 : s;
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+    const q =
+      targetL < 0.5
+        ? targetL * (1 + targetS)
+        : targetL + targetS - targetL * targetS;
+    const p = 2 * targetL - q;
+    const r = Math.round(hue2rgb(p, q, h + 1 / 3) * 255);
+    const g = Math.round(hue2rgb(p, q, h) * 255);
+    const b = Math.round(hue2rgb(p, q, h - 1 / 3) * 255);
+    return `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+  };
+
+  const computeAccessibleLabelStyles = (raw: string) => {
+    const nameMap: Record<string, string> = {
+      red: '#ef4444',
+      orange: '#f97316',
+      amber: '#f59e0b',
+      yellow: '#eab308',
+      lime: '#84cc16',
+      green: '#22c55e',
+      emerald: '#10b981',
+      teal: '#14b8a6',
+      cyan: '#06b6d4',
+      sky: '#0ea5e9',
+      blue: '#3b82f6',
+      indigo: '#6366f1',
+      violet: '#8b5cf6',
+      purple: '#a855f7',
+      fuchsia: '#d946ef',
+      pink: '#ec4899',
+      rose: '#f43f5e',
+      gray: '#6b7280',
+      slate: '#64748b',
+      zinc: '#71717a',
+    };
+    const baseHex = normalizeHex(raw) || nameMap[raw.toLowerCase?.()] || null;
+    if (!baseHex) return null;
+    const rgb = hexToRgb(baseHex);
+    if (!rgb) return null;
+    const lum = luminance(rgb);
+    const bg = `${baseHex}1a`;
+    const border = `${baseHex}4d`;
+    let text = baseHex;
+    if (lum < 0.22) {
+      text = adjust(baseHex, 1.25);
+    } else if (lum > 0.82) {
+      text = adjust(baseHex, 0.65);
+    }
+    return { bg, border, text };
+  };
+
+  useEffect(() => {
+    if (workspaceLabelsData.length > 0) {
+      setAvailableLabels(workspaceLabelsData);
+    }
+  }, [workspaceLabelsData]);
+
+  // ============================================================================
+  // ASSIGNEES & MEMBERS - Workspace members and task assignees
+  // ============================================================================
   const [workspaceMembers, setWorkspaceMembers] = useState<any[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [selectedAssignees, setSelectedAssignees] = useState<any[]>(
     task?.assignees || []
   );
   const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
+
+  const fetchWorkspaceMembers = useCallback(async (wsId: string) => {
+    try {
+      setLoadingMembers(true);
+      const supabase = createClient();
+      const { data: members, error } = await supabase
+        .from('workspace_members')
+        .select(
+          `
+          user_id,
+          users!inner(
+            id,
+            display_name,
+            avatar_url
+          )
+        `
+        )
+        .eq('ws_id', wsId);
+
+      if (error) {
+        console.error('Error fetching workspace members:', error);
+        throw error;
+      }
+
+      if (members) {
+        const transformedMembers = members.map((m: any) => ({
+          user_id: m.user_id,
+          display_name: m.users?.display_name || 'Unknown User',
+          avatar_url: m.users?.avatar_url,
+        }));
+
+        const uniqueMembers = Array.from(
+          new Map(transformedMembers.map((m) => [m.user_id, m])).values()
+        );
+
+        const sortedMembers = uniqueMembers.sort((a, b) =>
+          (a.display_name || '').localeCompare(b.display_name || '')
+        );
+        setWorkspaceMembers(sortedMembers);
+      }
+    } catch (e) {
+      console.error('Failed fetching workspace members', e);
+    } finally {
+      setLoadingMembers(false);
+    }
+  }, []);
+
+  // ============================================================================
+  // PROJECTS - Task projects and selection
+  // ============================================================================
   const [taskProjects, setTaskProjects] = useState<any[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [selectedProjects, setSelectedProjects] = useState<any[]>(
     task?.projects || []
   );
   const [projectSearchQuery, setProjectSearchQuery] = useState('');
+
+  const fetchTaskProjects = useCallback(async (wsId: string) => {
+    try {
+      setLoadingProjects(true);
+      const supabase = createClient();
+      const { data: projects, error } = await supabase
+        .from('task_projects')
+        .select('id, name, status')
+        .eq('ws_id', wsId)
+        .eq('deleted', false)
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching task projects:', error);
+        throw error;
+      }
+
+      if (projects) {
+        setTaskProjects(projects);
+      }
+    } catch (e) {
+      console.error('Failed fetching task projects', e);
+    } finally {
+      setLoadingProjects(false);
+    }
+  }, []);
+
+  // ============================================================================
+  // WORKSPACE & TASKS DATA - All workspaces and workspace tasks for mentions
+  // ============================================================================
   const [, setWorkspaceDetails] = useState<any | null>(null);
   const [workspaceDetailsLoading, setWorkspaceDetailsLoading] = useState(false);
   const [allWorkspaces, setAllWorkspaces] = useState<any[]>([]);
   const [allWorkspacesLoading, setAllWorkspacesLoading] = useState(false);
   const [workspaceTasks, setWorkspaceTasks] = useState<any[]>([]);
   const [workspaceTasksLoading, setWorkspaceTasksLoading] = useState(false);
+  const [taskSearchQuery, setTaskSearchQuery] = useState<string>('');
+
+  const taskSearchDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  const fetchAllWorkspaces = useCallback(async () => {
+    try {
+      setAllWorkspacesLoading(true);
+      const supabase = createClient();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('workspaces')
+        .select('id, name, handle, personal, workspace_members!inner(role)')
+        .eq('workspace_members.user_id', user.id);
+
+      if (error) throw error;
+
+      setAllWorkspaces(data || []);
+    } catch (error) {
+      console.error('Failed fetching all workspaces', error);
+    } finally {
+      setAllWorkspacesLoading(false);
+    }
+  }, []);
+
+  const fetchWorkspaceDetails = useCallback(async (wsId: string) => {
+    if (!wsId) return;
+    try {
+      setWorkspaceDetailsLoading(true);
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('workspaces')
+        .select('id, name, handle')
+        .eq('id', wsId)
+        .single();
+
+      if (error) throw error;
+      setWorkspaceDetails(data || null);
+    } catch (error) {
+      console.error('Failed fetching workspace details', error);
+    } finally {
+      setWorkspaceDetailsLoading(false);
+    }
+  }, []);
+
+  const fetchWorkspaceTasks = useCallback(
+    async (wsId: string, searchQuery?: string) => {
+      if (!wsId) return;
+      try {
+        setWorkspaceTasksLoading(true);
+        const supabase = createClient();
+
+        const { data: boards, error: boardsError } = await supabase
+          .from('workspace_boards')
+          .select('id')
+          .eq('ws_id', wsId);
+
+        if (boardsError) throw boardsError;
+
+        const boardIds = (boards || []).map((b) => b.id);
+        if (boardIds.length === 0) {
+          setWorkspaceTasks([]);
+          return;
+        }
+
+        let query = supabase
+          .from('tasks')
+          .select(
+            `
+          id,
+          name,
+          priority,
+          created_at,
+          list:task_lists!inner(id, name, board_id)
+        `
+          )
+          .in('task_lists.board_id', boardIds)
+          .eq('deleted', false);
+
+        if (searchQuery?.trim()) {
+          query = query.ilike('name', `%${searchQuery.trim()}%`);
+        }
+
+        const { data, error } = await query
+          .order('created_at', { ascending: false })
+          .limit(searchQuery ? 50 : 25);
+
+        if (error) throw error;
+        setWorkspaceTasks(data || []);
+      } catch (error) {
+        console.error('Failed fetching workspace tasks', error);
+      } finally {
+        setWorkspaceTasksLoading(false);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!workspaceId) {
+      setWorkspaceDetails(null);
+      setWorkspaceTasks([]);
+      setAllWorkspaces([]);
+    }
+  }, [workspaceId]);
+
+  // ============================================================================
+  // EDITOR & SUGGESTIONS - Rich text editor and slash/mention menus
+  // ============================================================================
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [slashState, setSlashState] = useState<SuggestionState>(
     createInitialSuggestionState
@@ -222,37 +698,41 @@ function TaskEditDialogComponent({
   );
   const [slashHighlightIndex, setSlashHighlightIndex] = useState(0);
   const [mentionHighlightIndex, setMentionHighlightIndex] = useState(0);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+
   const slashListRef = useRef<HTMLDivElement>(null);
   const mentionListRef = useRef<HTMLDivElement>(null);
-  const suggestionMenuWidth = 360;
   const previousMentionHighlightRef = useRef(0);
   const previousSlashHighlightRef = useRef(0);
-  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
-  const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
-  const [includeTime, setIncludeTime] = useState(false);
-  const [selectedHour, setSelectedHour] = useState<string>('11');
-  const [selectedMinute, setSelectedMinute] = useState<string>('59');
-  const [selectedPeriod, setSelectedPeriod] = useState<'AM' | 'PM'>('PM');
+  const previousSlashQueryRef = useRef('');
+  const previousMentionQueryRef = useRef('');
+  const originalUrlRef = useRef<string | null>(null);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
 
-  const queryClient = useQueryClient();
-  const previousTaskIdRef = useRef<string | null>(null);
-  const handleSaveRef = useRef<() => void>(() => {});
-  const handleCloseRef = useRef<() => void>(() => {});
-  const hasUnsavedChangesRef = useRef<boolean>(false);
-  const quickDueRef = useRef<(days: number | null) => void>(() => {});
-  const updateEstimationRef = useRef<(points: number | null) => void>(() => {});
-  const flushEditorPendingRef = useRef<(() => JSONContent | null) | undefined>(
-    undefined
-  );
-  const titleInputRef = useRef<HTMLInputElement>(null);
-  const editorRef = useRef<HTMLDivElement>(null);
+  const suggestionMenuWidth = 360;
 
-  // Track cursor position for smart vertical navigation
-  const lastCursorPositionRef = useRef<number | null>(null);
-  const targetEditorCursorRef = useRef<number | null>(null);
+  const slashCommands = useMemo<SlashCommandDefinition[]>(() => {
+    return getSlashCommands({
+      hasMembers: workspaceMembers.length > 0,
+      hasEndDate: !!endDate,
+      hasPriority: !!priority,
+      showAdvanced: showAdvancedOptions,
+    });
+  }, [workspaceMembers.length, endDate, priority, showAdvancedOptions]);
 
-  // Use the React Query mutation hook for updating tasks
-  const updateTaskMutation = useUpdateTask(boardId);
+  const filteredSlashCommands = useMemo(() => {
+    if (!slashState.open) return [] as SlashCommandDefinition[];
+    return filterSlashCommands(slashCommands, slashState.query);
+  }, [slashCommands, slashState.open, slashState.query]);
+
+  const { filteredMentionOptions } = useMentionSuggestions({
+    workspaceMembers,
+    allWorkspaces,
+    taskProjects,
+    workspaceTasks,
+    currentTaskId: task?.id,
+    query: mentionState.query,
+  });
 
   const closeSlashMenu = useCallback(() => {
     setSlashState((prev) =>
@@ -276,337 +756,120 @@ function TaskEditDialogComponent({
     setEditorInstance(editor);
   }, []);
 
-  // Store the original URL when dialog opens
-  const originalUrlRef = useRef<string | null>(null);
+  // ============================================================================
+  // CUSTOM DATE PICKER - Date picker state for mention menu
+  // ============================================================================
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
+  const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
+  const [includeTime, setIncludeTime] = useState(false);
+  const [selectedHour, setSelectedHour] = useState<string>('11');
+  const [selectedMinute, setSelectedMinute] = useState<string>('59');
+  const [selectedPeriod, setSelectedPeriod] = useState<'AM' | 'PM'>('PM');
 
-  // Sync URL with task dialog state (edit mode only)
-  useEffect(() => {
-    if (!isOpen || isCreateMode || !task?.id || !workspaceId || !pathname)
-      return;
+  // ============================================================================
+  // UI STATE - Dialog and options visibility
+  // ============================================================================
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showOptionsSidebar, setShowOptionsSidebar] = useState(isCreateMode);
+  const [createMultiple, setCreateMultiple] = useState(false);
 
-    // Save the original URL on first open (only if not already on a task detail page)
-    if (!originalUrlRef.current && !pathname.match(/\/tasks\/[^/]+$/)) {
-      originalUrlRef.current = pathname;
+  // ============================================================================
+  // DRAFT PERSISTENCE - Auto-save drafts in create mode
+  // ============================================================================
+  const [hasDraft, setHasDraft] = useState(false);
+
+  const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const draftStorageKey = useMemo(
+    () => `tu-do:task-draft:${boardId}`,
+    [boardId]
+  );
+
+  // ============================================================================
+  // HANDLER REFS - Stable refs for callbacks used in effects
+  // ============================================================================
+  const handleSaveRef = useRef<() => void>(() => {});
+  const handleCloseRef = useRef<() => void>(() => {});
+  const hasUnsavedChangesRef = useRef<boolean>(false);
+  const quickDueRef = useRef<(days: number | null) => void>(() => {});
+  const updateEstimationRef = useRef<(points: number | null) => void>(() => {});
+  const handleConvertToTaskRef = useRef<(() => Promise<void>) | null>(null);
+
+  // ============================================================================
+  // CHANGE DETECTION - Track unsaved changes for save button state
+  // ============================================================================
+  const parseDescription = useCallback((desc?: string): JSONContent | null => {
+    if (!desc) return null;
+    try {
+      return JSON.parse(desc);
+    } catch {
+      return {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: desc }],
+          },
+        ],
+      };
     }
+  }, []);
 
-    // Update URL to include task ID without navigation
-    const newUrl = `/${workspaceId}/tasks/${task.id}`;
-    window.history.replaceState(null, '', newUrl);
+  const initialSnapshot = useMemo(() => {
+    return {
+      name: (task?.name || '').trim(),
+      description: JSON.stringify(parseDescription(task?.description) || null),
+      priority: task?.priority || null,
+      start: task?.start_date
+        ? new Date(task?.start_date).toISOString()
+        : undefined,
+      end: task?.end_date ? new Date(task?.end_date).toISOString() : undefined,
+      listId: task?.list_id,
+      estimationPoints: task?.estimation_points ?? null,
+    } as const;
+  }, [task, parseDescription]);
 
-    return () => {
-      // Restore to the original URL when dialog closes
-      if (originalUrlRef.current) {
-        window.history.replaceState(null, '', originalUrlRef.current);
-        originalUrlRef.current = null;
-      } else if (boardId) {
-        // No original URL (opened directly), restore to board view
-        window.history.replaceState(
-          null,
-          '',
-          `/${workspaceId}/tasks/boards/${boardId}`
-        );
-      }
-    };
-  }, [isOpen, task?.id, pathname, boardId, isCreateMode, workspaceId]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      setSlashState(createInitialSuggestionState());
-      setMentionState(createInitialSuggestionState());
-      setEditorInstance(null);
-      setSlashHighlightIndex(0);
-      setMentionHighlightIndex(0);
-      previousMentionHighlightRef.current = 0;
-      previousSlashHighlightRef.current = 0;
-      setShowCustomDatePicker(false);
-      setCustomDate(undefined);
-      setIncludeTime(false);
-      setSelectedHour('11');
-      setSelectedMinute('59');
-      setSelectedPeriod('PM');
-    } else {
-      // When opening in create mode, show options sidebar by default
-      if (isCreateMode) {
-        setShowOptionsSidebar(true);
-      }
-    }
-  }, [isOpen, isCreateMode]);
-
-  useEffect(() => {
-    if (!workspaceId) {
-      setWorkspaceDetails(null);
-      setWorkspaceTasks([]);
-      setAllWorkspaces([]);
-    }
-  }, [workspaceId]);
-
-  // Use the extracted slash commands functions
-  const slashCommands = useMemo<SlashCommandDefinition[]>(() => {
-    return getSlashCommands({
-      hasMembers: workspaceMembers.length > 0,
-      hasEndDate: !!endDate,
-      hasPriority: !!priority,
-      showAdvanced: showAdvancedOptions,
-    });
-  }, [workspaceMembers.length, endDate, priority, showAdvancedOptions]);
-
-  const filteredSlashCommands = useMemo(() => {
-    if (!slashState.open) return [] as SlashCommandDefinition[];
-    return filterSlashCommands(slashCommands, slashState.query);
-  }, [slashCommands, slashState.open, slashState.query]);
-
-  // Use the extracted mention suggestions hook
-  const { filteredMentionOptions } = useMentionSuggestions({
-    workspaceMembers,
-    allWorkspaces,
-    taskProjects,
-    workspaceTasks,
-    currentTaskId: task?.id,
-    query: mentionState.query,
-  });
-
-  useEffect(() => {
-    if (!slashState.open) {
-      setSlashHighlightIndex(0);
-      return;
-    }
-
-    setSlashHighlightIndex((prev) => {
-      if (filteredSlashCommands.length === 0) return 0;
-      return Math.min(prev, filteredSlashCommands.length - 1);
-    });
-  }, [slashState.open, filteredSlashCommands.length]);
-
-  useEffect(() => {
-    if (slashState.open) {
-      setSlashHighlightIndex(0);
-    }
-  }, [slashState.open]);
-
-  // Only scroll into view when using keyboard navigation (arrow keys)
-  useEffect(() => {
-    if (!slashState.open) return;
-
-    // Only scroll if the highlight actually changed (user pressed arrow key)
-    if (previousSlashHighlightRef.current === slashHighlightIndex) return;
-    previousSlashHighlightRef.current = slashHighlightIndex;
-
-    // Small delay to ensure DOM is ready
-    const timeoutId = setTimeout(() => {
-      const container = slashListRef.current;
-      if (!container) return;
-
-      const activeItem = container.querySelector<HTMLElement>(
-        `[data-slash-item="${slashHighlightIndex}"]`
-      );
-      if (!activeItem) return;
-
-      // Check if item is visible
-      const containerRect = container.getBoundingClientRect();
-      const itemRect = activeItem.getBoundingClientRect();
-
-      const isVisible =
-        itemRect.top >= containerRect.top &&
-        itemRect.bottom <= containerRect.bottom;
-
-      // Only scroll if not visible (user pressed arrow key)
-      if (!isVisible) {
-        activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      }
-    }, 10);
-
-    return () => clearTimeout(timeoutId);
-  }, [slashHighlightIndex, slashState.open]);
-
-  useEffect(() => {
-    if (!mentionState.open) {
-      setMentionHighlightIndex(0);
-      return;
-    }
-
-    setMentionHighlightIndex((prev) => {
-      if (filteredMentionOptions.length === 0) return 0;
-      return Math.min(prev, filteredMentionOptions.length - 1);
-    });
-  }, [mentionState.open, filteredMentionOptions.length]);
-
-  useEffect(() => {
-    if (mentionState.open) {
-      setMentionHighlightIndex(0);
-    }
-  }, [mentionState.open]);
-
-  // Only scroll into view when using keyboard navigation (arrow keys)
-  useEffect(() => {
-    if (!mentionState.open) return;
-
-    // Only scroll if the highlight actually changed (user pressed arrow key)
-    if (previousMentionHighlightRef.current === mentionHighlightIndex) return;
-    previousMentionHighlightRef.current = mentionHighlightIndex;
-
-    // Small delay to ensure DOM is ready
-    const timeoutId = setTimeout(() => {
-      const container = mentionListRef.current;
-      if (!container) return;
-
-      const activeItem = container.querySelector<HTMLElement>(
-        `[data-mention-item="${mentionHighlightIndex}"]`
-      );
-      if (!activeItem) return;
-
-      // Check if item is visible
-      const containerRect = container.getBoundingClientRect();
-      const itemRect = activeItem.getBoundingClientRect();
-
-      const isVisible =
-        itemRect.top >= containerRect.top &&
-        itemRect.bottom <= containerRect.bottom;
-
-      // Only scroll if not visible (user pressed arrow key)
-      if (!isVisible) {
-        activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      }
-    }, 10);
-
-    return () => clearTimeout(timeoutId);
-  }, [mentionHighlightIndex, mentionState.open]);
-
-  useEffect(() => {
-    if (!editorInstance || !isOpen) {
-      closeSlashMenu();
-      closeMentionMenu();
-      return;
-    }
-
-    const computePosition = (fromPos: number) => {
-      try {
-        const coords = editorInstance.view.coordsAtPos(fromPos);
-        if (!coords) return null;
-        const viewportWidth =
-          typeof window !== 'undefined' ? window.innerWidth : undefined;
-        const horizontalPadding = 16;
-        let left = coords.left;
-        if (viewportWidth) {
-          left = Math.min(
-            left,
-            viewportWidth - suggestionMenuWidth - horizontalPadding
-          );
-          left = Math.max(left, horizontalPadding);
-        }
-        return { left, top: coords.bottom + 8 } as SuggestionState['position'];
-      } catch {
-        return null;
-      }
-    };
-
-    const updateSuggestions = () => {
-      const { state } = editorInstance;
-      const { selection } = state;
-
-      if (!selection.empty) {
-        closeSlashMenu();
-        // Don't close mention menu if custom date picker is open
-        if (!showCustomDatePicker) {
-          closeMentionMenu();
-        }
-        return;
-      }
-
-      const { from } = selection;
-      const contextText = state.doc.textBetween(
-        Math.max(0, from - 200),
-        from,
-        '\n',
-        ' '
-      );
-
-      const slashMatch = contextText.match(/(?:^|\s)(\/([^\s]*))$/);
-      if (slashMatch) {
-        const matched = slashMatch[1] || '';
-        const query = slashMatch[2] || '';
-        const rangeFrom = from - matched.length;
-        const nextState: SuggestionState = {
-          open: true,
-          query,
-          range: { from: rangeFrom, to: from },
-          position: computePosition(rangeFrom),
-        };
-
-        setSlashState((prev) =>
-          isSameSuggestionState(prev, nextState) ? prev : nextState
-        );
-      } else {
-        closeSlashMenu();
-      }
-
-      // Support both @username and @"Name With Spaces"
-      const mentionMatch = contextText.match(
-        /(?:^|\s)(@(?:"([^"]*)"|([^\s]*)))$/
-      );
-      if (mentionMatch) {
-        const matched = mentionMatch[1] || '';
-        // Extract query from either quoted (group 2) or unquoted (group 3) match
-        const query =
-          mentionMatch[2] !== undefined
-            ? mentionMatch[2]
-            : mentionMatch[3] || '';
-        const rangeFrom = from - matched.length;
-        const nextState: SuggestionState = {
-          open: true,
-          query,
-          range: { from: rangeFrom, to: from },
-          position: computePosition(rangeFrom),
-        };
-
-        setMentionState((prev) =>
-          isSameSuggestionState(prev, nextState) ? prev : nextState
-        );
-        closeSlashMenu();
-      } else {
-        // Don't close mention menu if custom date picker is open
-        if (!showCustomDatePicker) {
-          closeMentionMenu();
-        }
-      }
-    };
-
-    const handleBlur = () => {
-      // Don't close mention menu if custom date picker is open
-      if (showCustomDatePicker) {
-        closeSlashMenu();
-        return;
-      }
-      closeSlashMenu();
-      closeMentionMenu();
-    };
-
-    editorInstance.on('transaction', updateSuggestions);
-    editorInstance.on('selectionUpdate', updateSuggestions);
-    editorInstance.on('blur', handleBlur);
-
-    updateSuggestions();
-
-    return () => {
-      editorInstance.off('transaction', updateSuggestions);
-      editorInstance.off('selectionUpdate', updateSuggestions);
-      editorInstance.off('blur', handleBlur);
-    };
+  const currentSnapshot = useMemo(() => {
+    return {
+      name: (name || '').trim(),
+      description: JSON.stringify(description || null),
+      priority: priority || null,
+      start: startDate?.toISOString(),
+      end: endDate?.toISOString(),
+      listId: selectedListId,
+      estimationPoints: estimationPoints ?? null,
+    } as const;
   }, [
-    editorInstance,
-    isOpen,
-    closeSlashMenu,
-    closeMentionMenu,
-    showCustomDatePicker,
+    name,
+    description,
+    priority,
+    startDate,
+    endDate,
+    selectedListId,
+    estimationPoints,
   ]);
 
-  // Blur editor when custom date picker opens to allow input focus
-  useEffect(() => {
-    if (showCustomDatePicker && editorInstance) {
-      editorInstance.commands.blur();
-    }
-  }, [showCustomDatePicker, editorInstance]);
+  const hasUnsavedChanges = useMemo(() => {
+    return (
+      initialSnapshot.name !== currentSnapshot.name ||
+      initialSnapshot.description !== currentSnapshot.description ||
+      initialSnapshot.priority !== currentSnapshot.priority ||
+      initialSnapshot.start !== currentSnapshot.start ||
+      initialSnapshot.end !== currentSnapshot.end ||
+      initialSnapshot.listId !== currentSnapshot.listId ||
+      initialSnapshot.estimationPoints !== currentSnapshot.estimationPoints
+    );
+  }, [initialSnapshot, currentSnapshot]);
 
-  // Quick due date setter (today, tomorrow, etc.)
+  const canSave = useMemo(() => {
+    const hasName = !!(name || '').trim();
+    if (isCreateMode) return hasName && !isLoading;
+    return hasName && hasUnsavedChanges && !isLoading;
+  }, [isCreateMode, name, hasUnsavedChanges, isLoading]);
+
+  // ============================================================================
+  // EVENT HANDLERS - Core event handlers (dates, estimation, labels, etc.)
+  // ============================================================================
   const handleQuickDueDate = useCallback(
     (days: number | null) => {
       let newDate: Date | undefined;
@@ -615,7 +878,6 @@ function TaskEditDialogComponent({
       }
       setEndDate(newDate);
       if (mode === 'create') {
-        // Defer persistence to save
         return;
       }
       setIsLoading(true);
@@ -630,7 +892,6 @@ function TaskEditDialogComponent({
             onSuccess: async () => {
               await invalidateTaskCaches(queryClient, boardId);
 
-              // Wait for the refetch to complete
               if (boardId) {
                 await queryClient.refetchQueries({
                   queryKey: ['tasks', boardId],
@@ -659,6 +920,345 @@ function TaskEditDialogComponent({
         );
     },
     [mode, onUpdate, queryClient, task, updateTaskMutation, boardId, toast]
+  );
+
+  const handleEndDateChange = useCallback((date: Date | undefined) => {
+    if (date) {
+      let selectedDate = dayjs(date);
+      if (
+        selectedDate.hour() === 0 &&
+        selectedDate.minute() === 0 &&
+        selectedDate.second() === 0 &&
+        selectedDate.millisecond() === 0
+      ) {
+        selectedDate = selectedDate.endOf('day');
+      }
+      setEndDate(selectedDate.toDate());
+    } else {
+      setEndDate(undefined);
+    }
+  }, []);
+
+  const updateEstimation = useCallback(
+    async (points: number | null) => {
+      if (points === estimationPoints) return;
+      setEstimationPoints(points);
+      if (isCreateMode || !task?.id || task?.id === 'new') {
+        return;
+      }
+      setEstimationSaving(true);
+      try {
+        const supabase = createClient();
+
+        const { error } = await supabase
+          .from('tasks')
+          .update({ estimation_points: points })
+          .eq('id', task.id);
+        if (error) throw error;
+        await invalidateTaskCaches(queryClient, boardId);
+      } catch (e: any) {
+        console.error('Failed updating estimation', e);
+        toast({
+          title: 'Failed to update estimation',
+          description: e.message || 'Please try again',
+          variant: 'destructive',
+        });
+      } finally {
+        setEstimationSaving(false);
+      }
+    },
+    [estimationPoints, isCreateMode, task?.id, queryClient, boardId, toast]
+  );
+
+  const handleImageUpload = useCallback(
+    async (file: File): Promise<string> => {
+      if (!workspaceId) {
+        throw new Error('Workspace ID not found');
+      }
+
+      const supabase = createClient();
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${workspaceId}/task-images/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('workspaces')
+        .upload(filePath, file, {
+          contentType: file.type,
+          upsert: false,
+        });
+
+      if (error) {
+        console.error('Upload error:', error);
+        throw new Error('Failed to upload image');
+      }
+
+      const { data: signedUrlData, error: signedUrlError } =
+        await supabase.storage
+          .from('workspaces')
+          .createSignedUrl(data.path, 31536000);
+
+      if (signedUrlError) {
+        console.error('Signed URL error:', signedUrlError);
+        throw new Error('Failed to generate signed URL');
+      }
+
+      return signedUrlData.signedUrl;
+    },
+    [workspaceId]
+  );
+
+  const toggleLabel = useCallback(
+    async (label: WorkspaceTaskLabel) => {
+      const exists = selectedLabels.some((l) => l.id === label.id);
+      const supabase = createClient();
+      try {
+        if (isCreateMode) {
+          setSelectedLabels((prev) =>
+            exists ? prev.filter((l) => l.id !== label.id) : [label, ...prev]
+          );
+          return;
+        }
+        if (exists) {
+          if (!task?.id) return;
+          const { error } = await supabase
+            .from('task_labels')
+            .delete()
+            .eq('task_id', task.id)
+            .eq('label_id', label.id);
+          if (error) throw error;
+          setSelectedLabels((prev) => prev.filter((l) => l.id !== label.id));
+        } else {
+          if (!task?.id) return;
+          const { error } = await supabase
+            .from('task_labels')
+            .insert({ task_id: task.id, label_id: label.id });
+          if (error) throw error;
+          setSelectedLabels((prev) =>
+            [label, ...prev].sort((a, b) => {
+              const aName = a?.name || '';
+              const bName = b?.name || '';
+              return aName.toLowerCase().localeCompare(bName.toLowerCase());
+            })
+          );
+        }
+        await invalidateTaskCaches(queryClient, boardId);
+      } catch (e: any) {
+        toast({
+          title: 'Label update failed',
+          description: e.message || 'Unable to update labels',
+          variant: 'destructive',
+        });
+      }
+    },
+    [selectedLabels, isCreateMode, task?.id, boardId, queryClient, toast]
+  );
+
+  const handleCreateLabel = useCallback(async () => {
+    if (!newLabelName.trim() || !boardConfig) return;
+    setCreatingLabel(true);
+    try {
+      const supabase = createClient();
+      let wsId: string | undefined = (boardConfig as any)?.ws_id;
+      if (!wsId) {
+        const { data: board } = await supabase
+          .from('workspace_boards')
+          .select('ws_id')
+          .eq('id', boardId)
+          .single();
+        wsId = (board as any)?.ws_id;
+      }
+      if (!wsId) throw new Error('Workspace id not found');
+      const { data, error } = await supabase
+        .from('workspace_task_labels')
+        .insert({
+          ws_id: wsId,
+          name: newLabelName.trim(),
+          color: newLabelColor,
+        })
+        .select('id,name,color,created_at')
+        .single();
+      if (error) throw error;
+      if (data) {
+        setAvailableLabels((prev) =>
+          [data as any, ...prev].sort((a, b) =>
+            (a?.name || '')
+              .toLowerCase()
+              .localeCompare((b?.name || '').toLowerCase())
+          )
+        );
+        setSelectedLabels((prev) =>
+          [data as any, ...prev].sort((a, b) =>
+            (a?.name || '')
+              .toLowerCase()
+              .localeCompare((b?.name || '').toLowerCase())
+          )
+        );
+
+        if (task?.id) {
+          const { error: linkErr } = await supabase
+            .from('task_labels')
+            .insert({ task_id: task?.id, label_id: (data as any).id });
+
+          if (linkErr) {
+            setSelectedLabels((prev) =>
+              prev.filter((l) => l.id !== (data as any).id)
+            );
+            toast({
+              title: 'Label created (not linked)',
+              description: 'Label saved but could not be attached to task.',
+              variant: 'destructive',
+            });
+          } else {
+            await invalidateTaskCaches(queryClient, boardId);
+            onUpdate();
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(
+                new CustomEvent('workspace-label-created', {
+                  detail: { wsId, label: data },
+                })
+              );
+            }
+            toast({
+              title: 'Label created & linked',
+              description: 'New label added and attached to this task.',
+            });
+          }
+        }
+
+        setNewLabelName('');
+      }
+    } catch (e: any) {
+      toast({
+        title: 'Label creation failed',
+        description: e.message || 'Unable to create label',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreatingLabel(false);
+    }
+  }, [
+    newLabelName,
+    boardConfig,
+    newLabelColor,
+    boardId,
+    task?.id,
+    queryClient,
+    onUpdate,
+    toast,
+  ]);
+
+  const toggleAssignee = useCallback(
+    async (member: any) => {
+      const exists = selectedAssignees.some(
+        (a) => a.user_id === member.user_id
+      );
+      const supabase = createClient();
+      try {
+        if (mode === 'create') {
+          setSelectedAssignees((prev) =>
+            exists
+              ? prev.filter((a) => a.user_id !== member.user_id)
+              : [...prev, member]
+          );
+          return;
+        }
+        if (exists) {
+          if (!task?.id) return;
+          const { error } = await supabase
+            .from('task_assignees')
+            .delete()
+            .eq('task_id', task.id)
+            .eq('user_id', member.user_id);
+          if (error) throw error;
+          setSelectedAssignees((prev) =>
+            prev.filter((a) => a.user_id !== member.user_id)
+          );
+        } else {
+          if (!task?.id) return;
+          const { error } = await supabase
+            .from('task_assignees')
+            .insert({ task_id: task.id, user_id: member.user_id });
+          if (error) throw error;
+          setSelectedAssignees((prev) => [...prev, member]);
+        }
+        await invalidateTaskCaches(queryClient, boardId);
+        onUpdate();
+      } catch (e: any) {
+        toast({
+          title: 'Assignee update failed',
+          description: e.message || 'Unable to update assignees',
+          variant: 'destructive',
+        });
+      }
+    },
+    [selectedAssignees, mode, task?.id, boardId, queryClient, onUpdate, toast]
+  );
+
+  const toggleProject = useCallback(
+    async (project: any) => {
+      const exists = selectedProjects.some((p) => p.id === project.id);
+      const supabase = createClient();
+      try {
+        if (isCreateMode) {
+          setSelectedProjects((prev) =>
+            exists
+              ? prev.filter((p) => p.id !== project.id)
+              : [...prev, project]
+          );
+          return;
+        }
+        if (exists) {
+          if (!task?.id) return;
+          const { error } = await supabase
+            .from('task_project_tasks')
+            .delete()
+            .eq('task_id', task.id)
+            .eq('project_id', project.id);
+          if (error) throw error;
+          setSelectedProjects((prev) =>
+            prev.filter((p) => p.id !== project.id)
+          );
+        } else {
+          if (!task?.id) return;
+          const { error } = await supabase
+            .from('task_project_tasks')
+            .insert({ task_id: task.id, project_id: project.id });
+
+          if (error) {
+            if (error.code === '23505') {
+              toast({
+                title: 'Already linked',
+                description: 'This project is already linked to the task',
+              });
+              await invalidateTaskCaches(queryClient, boardId);
+              onUpdate();
+              return;
+            }
+            throw error;
+          }
+          setSelectedProjects((prev) => [...prev, project]);
+        }
+        await invalidateTaskCaches(queryClient, boardId);
+        onUpdate();
+      } catch (e: any) {
+        toast({
+          title: 'Project update failed',
+          description: e.message || 'Unable to update projects',
+          variant: 'destructive',
+        });
+      }
+    },
+    [
+      selectedProjects,
+      isCreateMode,
+      task?.id,
+      queryClient,
+      boardId,
+      onUpdate,
+      toast,
+    ]
   );
 
   const executeSlashCommand = useCallback(
@@ -708,6 +1308,11 @@ function TaskEditDialogComponent({
         case 'toggle-advanced':
           setShowAdvancedOptions((prev) => !prev);
           return;
+        case 'convert-to-task':
+          setTimeout(() => {
+            handleConvertToTaskRef.current?.();
+          }, 0);
+          return;
         default:
           return;
       }
@@ -715,60 +1320,10 @@ function TaskEditDialogComponent({
     [editorInstance, slashState.range, closeSlashMenu, handleQuickDueDate]
   );
 
-  const toggleAssignee = useCallback(
-    async (member: any) => {
-      const exists = selectedAssignees.some(
-        (a) => a.user_id === member.user_id
-      );
-      const supabase = createClient();
-      try {
-        if (mode === 'create') {
-          // Local toggle only; persist on create
-          setSelectedAssignees((prev) =>
-            exists
-              ? prev.filter((a) => a.user_id !== member.user_id)
-              : [...prev, member]
-          );
-          return;
-        }
-        if (exists) {
-          if (!task?.id) return;
-          // remove
-          const { error } = await supabase
-            .from('task_assignees')
-            .delete()
-            .eq('task_id', task.id)
-            .eq('user_id', member.user_id);
-          if (error) throw error;
-          setSelectedAssignees((prev) =>
-            prev.filter((a) => a.user_id !== member.user_id)
-          );
-        } else {
-          if (!task?.id) return;
-          const { error } = await supabase
-            .from('task_assignees')
-            .insert({ task_id: task.id, user_id: member.user_id });
-          if (error) throw error;
-          setSelectedAssignees((prev) => [...prev, member]);
-        }
-        await invalidateTaskCaches(queryClient, boardId);
-        onUpdate();
-      } catch (e: any) {
-        toast({
-          title: 'Assignee update failed',
-          description: e.message || 'Unable to update assignees',
-          variant: 'destructive',
-        });
-      }
-    },
-    [selectedAssignees, mode, task?.id, boardId, queryClient, onUpdate, toast]
-  );
-
   const insertMentionOption = useCallback(
     (option: MentionOption) => {
       if (!editorInstance) return;
 
-      // Handle custom date picker
       if (option.id === 'custom-date') {
         setShowCustomDatePicker(true);
         return;
@@ -809,12 +1364,10 @@ function TaskEditDialogComponent({
       let formattedDate = finalDate.format('MMM D, YYYY');
 
       if (includeTime) {
-        // Parse and validate hour and minute
         const hourVal = parseInt(selectedHour || '12', 10);
         const minuteVal = parseInt(selectedMinute || '0', 10);
 
         let hour = hourVal;
-        // Convert to 24-hour format
         if (selectedPeriod === 'PM' && hour !== 12) {
           hour += 12;
         } else if (selectedPeriod === 'AM' && hour === 12) {
@@ -871,76 +1424,1049 @@ function TaskEditDialogComponent({
     ]
   );
 
-  // Use the extracted SlashCommandMenu component
-  const slashCommandMenu = (
-    <SlashCommandMenu
-      isOpen={slashState.open}
-      position={slashState.position}
-      commands={filteredSlashCommands}
-      highlightIndex={slashHighlightIndex}
-      onSelect={executeSlashCommand}
-      onHighlightChange={setSlashHighlightIndex}
-      listRef={slashListRef}
-    />
+  const handleConvertToTask = useCallback(async () => {
+    if (!editorInstance || !boardId || !availableLists) return;
+
+    const firstList = availableLists[0];
+    if (!firstList) {
+      toast({
+        title: 'No lists available',
+        description: 'Create a list first before converting items to tasks',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const result = await convertListItemToTask({
+      editor: editorInstance,
+      listId: firstList.id,
+      listName: firstList.name,
+      wrapInParagraph: false,
+      createTask: async ({
+        name,
+        listId,
+      }: {
+        name: string;
+        listId: string;
+      }) => {
+        const supabase = createClient();
+        const { data: newTask, error } = await supabase
+          .from('tasks')
+          .insert({
+            name,
+            list_id: listId,
+          })
+          .select('id, name')
+          .single();
+
+        if (error || !newTask) throw error;
+        return newTask;
+      },
+    });
+
+    if (!result.success) {
+      toast({
+        title: result.error!.message,
+        description: result.error!.description,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    await invalidateTaskCaches(queryClient, boardId);
+
+    toast({
+      title: 'Task created',
+      description: `Created task "${result.taskName}" and added mention`,
+    });
+  }, [editorInstance, boardId, availableLists, queryClient, toast]);
+
+  const handleSave = useCallback(async () => {
+    if (!name?.trim()) return;
+
+    let currentDescription = description;
+    if (flushEditorPendingRef.current) {
+      const flushedContent = flushEditorPendingRef.current();
+      if (flushedContent) {
+        currentDescription = flushedContent;
+      }
+    }
+
+    setIsSaving(true);
+    setIsLoading(true);
+
+    if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
+    try {
+      if (typeof window !== 'undefined')
+        localStorage.removeItem(draftStorageKey);
+      setHasDraft(false);
+    } catch {}
+
+    let descriptionString: string | null = null;
+    if (currentDescription) {
+      try {
+        descriptionString = JSON.stringify(currentDescription);
+      } catch (serializationError) {
+        console.error('Failed to serialize description:', serializationError);
+        descriptionString = null;
+      }
+    }
+
+    if (isCreateMode) {
+      try {
+        const supabase = createClient();
+        const { createTask } = await import('@tuturuuu/utils/task-helper');
+        const taskData: Partial<Task> = {
+          name: name.trim(),
+          description: descriptionString,
+          priority: priority,
+          start_date: startDate ? startDate.toISOString() : null,
+          end_date: endDate ? endDate.toISOString() : null,
+          estimation_points: estimationPoints ?? null,
+        } as any;
+        const newTask = await createTask(supabase, selectedListId, taskData);
+
+        if (selectedLabels.length > 0) {
+          await supabase.from('task_labels').insert(
+            selectedLabels.map((l) => ({
+              task_id: newTask.id,
+              label_id: l.id,
+            }))
+          );
+        }
+
+        if (selectedAssignees.length > 0) {
+          await supabase.from('task_assignees').insert(
+            selectedAssignees.map((a) => ({
+              task_id: newTask.id,
+              user_id: a.user_id,
+            }))
+          );
+        }
+
+        if (selectedProjects.length > 0) {
+          await supabase.from('task_project_tasks').insert(
+            selectedProjects.map((p) => ({
+              task_id: newTask.id,
+              project_id: p.id,
+            }))
+          );
+        }
+
+        await invalidateTaskCaches(queryClient, boardId);
+        toast({ title: 'Task created', description: 'New task added.' });
+        onUpdate();
+        if (createMultiple) {
+          setName('');
+          setDescription(null);
+          setTimeout(() => {
+            const input = document.querySelector<HTMLInputElement>(
+              'input[placeholder="What needs to be done?"]'
+            );
+            input?.focus();
+          }, 0);
+        } else {
+          setName('');
+          setDescription(null);
+          setPriority(null);
+          setStartDate(undefined);
+          setEndDate(undefined);
+          setEstimationPoints(null);
+          setSelectedLabels([]);
+          onClose();
+        }
+      } catch (error: any) {
+        console.error('Error creating task:', error);
+        toast({
+          title: 'Error creating task',
+          description: error.message || 'Please try again later',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+        setIsSaving(false);
+      }
+      return;
+    }
+
+    const taskUpdates: any = {
+      name: name.trim(),
+      description: descriptionString,
+      priority: priority,
+      start_date: startDate ? startDate.toISOString() : null,
+      end_date: endDate ? endDate.toISOString() : null,
+      list_id: selectedListId,
+      estimation_points: estimationPoints ?? null,
+    };
+
+    if (task?.id)
+      updateTaskMutation.mutate(
+        {
+          taskId: task.id,
+          updates: taskUpdates,
+        },
+        {
+          onSuccess: async () => {
+            console.log('Task update successful, refreshing data...');
+
+            await invalidateTaskCaches(queryClient, boardId);
+
+            await queryClient.refetchQueries({
+              queryKey: ['tasks', boardId],
+              type: 'active',
+            });
+
+            toast({
+              title: 'Task updated',
+              description: 'The task has been successfully updated.',
+            });
+            onUpdate();
+            onClose();
+          },
+          onError: (error: any) => {
+            console.error('Error updating task:', error);
+            toast({
+              title: 'Error updating task',
+              description: error.message || 'Please try again later',
+              variant: 'destructive',
+            });
+          },
+          onSettled: () => {
+            setIsLoading(false);
+            setIsSaving(false);
+          },
+        }
+      );
+  }, [
+    name,
+    description,
+    draftStorageKey,
+    isCreateMode,
+    priority,
+    startDate,
+    endDate,
+    estimationPoints,
+    selectedListId,
+    selectedLabels,
+    selectedAssignees,
+    selectedProjects,
+    queryClient,
+    boardId,
+    toast,
+    onUpdate,
+    createMultiple,
+    onClose,
+    task?.id,
+    updateTaskMutation,
+  ]);
+
+  const handleClose = useCallback(() => {
+    if (!isLoading) {
+      try {
+        if (!isCreateMode && typeof window !== 'undefined') {
+          localStorage.removeItem(draftStorageKey);
+        }
+      } catch {}
+      onClose();
+    }
+  }, [isLoading, isCreateMode, draftStorageKey, onClose]);
+
+  const handleDialogOpenChange = useCallback(
+    (open: boolean) => {
+      if (
+        !open &&
+        !showCustomDatePicker &&
+        !slashState.open &&
+        !mentionState.open
+      ) {
+        handleClose();
+      }
+    },
+    [showCustomDatePicker, slashState.open, mentionState.open, handleClose]
   );
 
-  // Use the extracted MentionMenu component
-  const mentionSuggestionMenu = (
-    <>
-      <MentionMenu
-        isOpen={mentionState.open}
-        position={mentionState.position}
-        options={filteredMentionOptions}
-        highlightIndex={mentionHighlightIndex}
-        isLoading={
-          workspaceDetailsLoading ||
-          workspaceTasksLoading ||
-          allWorkspacesLoading
+  // ============================================================================
+  // EFFECTS - Side effects for data fetching, state synchronization, etc.
+  // ============================================================================
+
+  // Initialize Yjs state for task description if not present
+  useEffect(() => {
+    if (!task?.id || !editorInstance?.schema || !description || !doc) return;
+
+    const initializeYjsState = async () => {
+      try {
+        const supabase = createClient();
+
+        const { data: taskData, error: taskDataError } = await supabase
+          .from('tasks')
+          .select('description_yjs_state')
+          .eq('id', task.id)
+          .single();
+
+        if (taskDataError) throw taskDataError;
+
+        if (!taskData?.description_yjs_state) {
+          const yjsState = convertJsonContentToYjsState(
+            description,
+            editorInstance.schema
+          );
+
+          const { error: updateError } = await supabase
+            .from('tasks')
+            .update({ description_yjs_state: Array.from(yjsState) })
+            .eq('id', task.id);
+
+          if (updateError) throw updateError;
+
+          Y.applyUpdate(doc, yjsState);
         }
-        query={mentionState.query}
-        onSelect={insertMentionOption}
-        onHighlightChange={setMentionHighlightIndex}
-        listRef={mentionListRef}
-      />
-      {/* Custom date picker - conditionally render */}
-      {showCustomDatePicker && mentionState.position && (
-        <div
-          style={{
-            position: 'fixed',
-            top: mentionState.position.top,
-            left: mentionState.position.left,
-            zIndex: 200,
-          }}
-        >
-          <CustomDatePickerDialog
-            selectedDate={customDate}
-            includeTime={includeTime}
-            selectedHour={selectedHour}
-            selectedMinute={selectedMinute}
-            selectedPeriod={selectedPeriod}
-            onDateSelect={setCustomDate}
-            onIncludeTimeChange={setIncludeTime}
-            onHourChange={setSelectedHour}
-            onMinuteChange={setSelectedMinute}
-            onPeriodChange={setSelectedPeriod}
-            onCancel={() => {
-              setShowCustomDatePicker(false);
-              setCustomDate(undefined);
-              setIncludeTime(false);
-              setSelectedHour('12');
-              setSelectedMinute('00');
-              setSelectedPeriod('PM');
-            }}
-            onInsert={() => {
-              if (customDate) {
-                handleCustomDateSelect(customDate);
-              }
-            }}
-          />
-        </div>
-      )}
-    </>
-  );
+      } catch (error) {
+        console.error('Error initializing Yjs state:', error);
+      }
+    };
+    initializeYjsState();
+  }, [doc, description, editorInstance, task?.id]);
+
+  // Sync URL with task dialog state (edit mode only)
+  useEffect(() => {
+    if (!isOpen || isCreateMode || !task?.id || !workspaceId || !pathname)
+      return;
+
+    if (!originalUrlRef.current && !pathname.match(/\/tasks\/[^/]+$/)) {
+      originalUrlRef.current = pathname;
+    }
+
+    const newUrl = `/${workspaceId}/tasks/${task.id}`;
+    window.history.replaceState(null, '', newUrl);
+
+    return () => {
+      if (originalUrlRef.current) {
+        window.history.replaceState(null, '', originalUrlRef.current);
+        originalUrlRef.current = null;
+      } else if (boardId) {
+        window.history.replaceState(
+          null,
+          '',
+          `/${workspaceId}/tasks/boards/${boardId}`
+        );
+      }
+    };
+  }, [isOpen, task?.id, pathname, boardId, isCreateMode, workspaceId]);
+
+  // Reset state when dialog closes or opens
+  useEffect(() => {
+    if (!isOpen) {
+      setSlashState(createInitialSuggestionState());
+      setMentionState(createInitialSuggestionState());
+      setEditorInstance(null);
+      setSlashHighlightIndex(0);
+      setMentionHighlightIndex(0);
+      previousMentionHighlightRef.current = 0;
+      previousSlashHighlightRef.current = 0;
+      setShowCustomDatePicker(false);
+      setCustomDate(undefined);
+      setIncludeTime(false);
+      setSelectedHour('11');
+      setSelectedMinute('59');
+      setSelectedPeriod('PM');
+    } else {
+      if (isCreateMode) {
+        setShowOptionsSidebar(true);
+      }
+    }
+  }, [isOpen, isCreateMode]);
+
+  // Manage slash command highlight index
+  useEffect(() => {
+    if (!slashState.open) {
+      setSlashHighlightIndex(0);
+      previousSlashQueryRef.current = '';
+      return;
+    }
+
+    if (previousSlashQueryRef.current !== slashState.query) {
+      previousSlashQueryRef.current = slashState.query;
+      setSlashHighlightIndex(0);
+      return;
+    }
+
+    setSlashHighlightIndex((prev) => {
+      if (filteredSlashCommands.length === 0) return 0;
+      return Math.min(prev, filteredSlashCommands.length - 1);
+    });
+  }, [slashState.open, slashState.query, filteredSlashCommands.length]);
+
+  // Scroll slash command menu item into view
+  useEffect(() => {
+    if (!slashState.open) return;
+
+    if (previousSlashHighlightRef.current === slashHighlightIndex) return;
+    previousSlashHighlightRef.current = slashHighlightIndex;
+
+    const timeoutId = setTimeout(() => {
+      const container = slashListRef.current;
+      if (!container) return;
+
+      const activeItem = container.querySelector<HTMLElement>(
+        `[data-slash-item="${slashHighlightIndex}"]`
+      );
+      if (!activeItem) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const itemRect = activeItem.getBoundingClientRect();
+
+      const isVisible =
+        itemRect.top >= containerRect.top &&
+        itemRect.bottom <= containerRect.bottom;
+
+      if (!isVisible) {
+        activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }, 10);
+
+    return () => clearTimeout(timeoutId);
+  }, [slashHighlightIndex, slashState.open]);
+
+  // Manage mention highlight index
+  useEffect(() => {
+    if (!mentionState.open) {
+      setMentionHighlightIndex(0);
+      previousMentionQueryRef.current = '';
+      return;
+    }
+
+    if (previousMentionQueryRef.current !== mentionState.query) {
+      previousMentionQueryRef.current = mentionState.query;
+      setMentionHighlightIndex(0);
+      return;
+    }
+
+    setMentionHighlightIndex((prev) => {
+      if (filteredMentionOptions.length === 0) return 0;
+      return Math.min(prev, filteredMentionOptions.length - 1);
+    });
+  }, [mentionState.open, mentionState.query, filteredMentionOptions.length]);
+
+  // Scroll mention menu item into view
+  useEffect(() => {
+    if (!mentionState.open) return;
+
+    if (previousMentionHighlightRef.current === mentionHighlightIndex) return;
+    previousMentionHighlightRef.current = mentionHighlightIndex;
+
+    const timeoutId = setTimeout(() => {
+      const container = mentionListRef.current;
+      if (!container) return;
+
+      const activeItem = container.querySelector<HTMLElement>(
+        `[data-mention-item="${mentionHighlightIndex}"]`
+      );
+      if (!activeItem) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const itemRect = activeItem.getBoundingClientRect();
+
+      const isVisible =
+        itemRect.top >= containerRect.top &&
+        itemRect.bottom <= containerRect.bottom;
+
+      if (!isVisible) {
+        activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }, 10);
+
+    return () => clearTimeout(timeoutId);
+  }, [mentionHighlightIndex, mentionState.open]);
+
+  // Update slash and mention suggestions based on editor state
+  useEffect(() => {
+    if (!editorInstance || !isOpen) {
+      closeSlashMenu();
+      closeMentionMenu();
+      return;
+    }
+
+    const computePosition = (fromPos: number) => {
+      try {
+        const coords = editorInstance.view.coordsAtPos(fromPos);
+        if (!coords) return null;
+        const viewportWidth =
+          typeof window !== 'undefined' ? window.innerWidth : undefined;
+        const horizontalPadding = 16;
+        let left = coords.left;
+        if (viewportWidth) {
+          left = Math.min(
+            left,
+            viewportWidth - suggestionMenuWidth - horizontalPadding
+          );
+          left = Math.max(left, horizontalPadding);
+        }
+        return { left, top: coords.bottom + 8 } as SuggestionState['position'];
+      } catch {
+        return null;
+      }
+    };
+
+    const updateSuggestions = () => {
+      const { state } = editorInstance;
+      const { selection } = state;
+
+      if (!selection.empty) {
+        closeSlashMenu();
+        if (!showCustomDatePicker) {
+          closeMentionMenu();
+        }
+        return;
+      }
+
+      const { from } = selection;
+      const contextText = state.doc.textBetween(
+        Math.max(0, from - 200),
+        from,
+        '\n',
+        ' '
+      );
+
+      const slashMatch = contextText.match(/(?:^|\s)(\/([^\s]*))$/);
+      if (slashMatch) {
+        const matched = slashMatch[1] || '';
+        const query = slashMatch[2] || '';
+        const rangeFrom = from - matched.length;
+        const nextState: SuggestionState = {
+          open: true,
+          query,
+          range: { from: rangeFrom, to: from },
+          position: computePosition(rangeFrom),
+        };
+
+        setSlashState((prev) =>
+          isSameSuggestionState(prev, nextState) ? prev : nextState
+        );
+      } else {
+        closeSlashMenu();
+      }
+
+      const mentionMatch = contextText.match(
+        /(?:^|\s)(@(?:"([^"]*)"|([^\s]*)))$/
+      );
+      if (mentionMatch) {
+        const matched = mentionMatch[1] || '';
+        const query =
+          mentionMatch[2] !== undefined
+            ? mentionMatch[2]
+            : mentionMatch[3] || '';
+        const rangeFrom = from - matched.length;
+        const nextState: SuggestionState = {
+          open: true,
+          query,
+          range: { from: rangeFrom, to: from },
+          position: computePosition(rangeFrom),
+        };
+
+        setMentionState((prev) =>
+          isSameSuggestionState(prev, nextState) ? prev : nextState
+        );
+        closeSlashMenu();
+      } else {
+        if (!showCustomDatePicker) {
+          closeMentionMenu();
+        }
+      }
+    };
+
+    const handleBlur = () => {
+      if (showCustomDatePicker) {
+        closeSlashMenu();
+        return;
+      }
+      closeSlashMenu();
+      closeMentionMenu();
+    };
+
+    editorInstance.on('transaction', updateSuggestions);
+    editorInstance.on('selectionUpdate', updateSuggestions);
+    editorInstance.on('blur', handleBlur);
+
+    updateSuggestions();
+
+    return () => {
+      editorInstance.off('transaction', updateSuggestions);
+      editorInstance.off('selectionUpdate', updateSuggestions);
+      editorInstance.off('blur', handleBlur);
+    };
+  }, [
+    editorInstance,
+    isOpen,
+    closeSlashMenu,
+    closeMentionMenu,
+    showCustomDatePicker,
+  ]);
+
+  // Blur editor when custom date picker opens
+  useEffect(() => {
+    if (showCustomDatePicker && editorInstance) {
+      editorInstance.commands.blur();
+    }
+  }, [showCustomDatePicker, editorInstance]);
+
+  // Reset form when task changes or dialog opens
+  useEffect(() => {
+    const taskIdChanged = previousTaskIdRef.current !== task?.id;
+
+    if (isOpen && !isCreateMode && (task?.id || taskIdChanged)) {
+      setName(task?.name || '');
+      setDescription(getDescriptionContent(task?.description));
+      setPriority(task?.priority || null);
+      setStartDate(task?.start_date ? new Date(task?.start_date) : undefined);
+      setEndDate(task?.end_date ? new Date(task?.end_date) : undefined);
+      setSelectedListId(task?.list_id || '');
+      setEstimationPoints(task?.estimation_points ?? null);
+      setSelectedLabels(task?.labels || []);
+      setSelectedAssignees(task?.assignees || []);
+      setSelectedProjects(task?.projects || []);
+      if (task?.id) previousTaskIdRef.current = task.id;
+    } else if (
+      isOpen &&
+      (isCreateMode || task?.id === 'new') &&
+      taskIdChanged
+    ) {
+      setName(task?.name || '');
+      setDescription(getDescriptionContent(task?.description) || null);
+      setPriority(task?.priority || null);
+      setStartDate(task?.start_date ? new Date(task?.start_date) : undefined);
+      setEndDate(task?.end_date ? new Date(task?.end_date) : undefined);
+      setSelectedListId(task?.list_id || '');
+      setEstimationPoints(task?.estimation_points ?? null);
+      setSelectedLabels(task?.labels || []);
+      setSelectedAssignees(task?.assignees || []);
+      setSelectedProjects(task?.projects || []);
+      if (task?.id) previousTaskIdRef.current = task.id;
+    }
+  }, [
+    task?.id,
+    isOpen,
+    isCreateMode,
+    task?.assignees,
+    task?.description,
+    task?.end_date,
+    task?.estimation_points,
+    task?.labels,
+    task?.list_id,
+    task?.name,
+    task?.priority,
+    task?.projects,
+    task?.start_date,
+  ]);
+
+  // Reset transient edits when closing without saving in edit mode
+  useEffect(() => {
+    if (!isOpen && previousTaskIdRef.current && !isCreateMode) {
+      setName(task?.name || '');
+      setDescription(getDescriptionContent(task?.description));
+      setPriority(task?.priority || null);
+      setStartDate(task?.start_date ? new Date(task?.start_date) : undefined);
+      setEndDate(task?.end_date ? new Date(task?.end_date) : undefined);
+      setSelectedListId(task?.list_id || '');
+      setEstimationPoints(task?.estimation_points ?? null);
+      setSelectedLabels(task?.labels || []);
+      setSelectedAssignees(task?.assignees || []);
+      setSelectedProjects(task?.projects || []);
+    }
+  }, [isOpen, isCreateMode, task]);
+
+  // Fetch workspace members when workspace ID is available
+  useEffect(() => {
+    if (isOpen && workspaceId) {
+      fetchWorkspaceMembers(workspaceId);
+      fetchTaskProjects(workspaceId);
+      fetchWorkspaceDetails(workspaceId);
+      fetchWorkspaceTasks(workspaceId);
+    }
+  }, [
+    isOpen,
+    workspaceId,
+    fetchWorkspaceMembers,
+    fetchTaskProjects,
+    fetchWorkspaceDetails,
+    fetchWorkspaceTasks,
+  ]);
+
+  // Debounced task search when typing in mention menu
+  useEffect(() => {
+    if (!isOpen || !workspaceId || !mentionState.open) {
+      if (taskSearchQuery) {
+        setTaskSearchQuery('');
+      }
+      return;
+    }
+
+    const query = mentionState.query.trim();
+
+    if (taskSearchDebounceRef.current) {
+      clearTimeout(taskSearchDebounceRef.current);
+    }
+
+    taskSearchDebounceRef.current = setTimeout(() => {
+      if (query !== taskSearchQuery) {
+        setTaskSearchQuery(query);
+        fetchWorkspaceTasks(workspaceId, query || undefined);
+      }
+    }, 300);
+
+    return () => {
+      if (taskSearchDebounceRef.current) {
+        clearTimeout(taskSearchDebounceRef.current);
+      }
+    };
+  }, [
+    isOpen,
+    workspaceId,
+    mentionState.open,
+    mentionState.query,
+    taskSearchQuery,
+    fetchWorkspaceTasks,
+  ]);
+
+  // Fetch all accessible workspaces when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchAllWorkspaces();
+    }
+  }, [isOpen, fetchAllWorkspaces]);
+
+  // Listen for task mention clicks
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleTaskMentionClick = async (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        taskId: string;
+        taskName: string;
+      }>;
+      const { taskId } = customEvent.detail;
+
+      if (!taskId || !onOpenTask) return;
+
+      if (
+        hasUnsavedChangesRef.current &&
+        !isCreateMode &&
+        name?.trim() &&
+        !isLoading &&
+        task?.id
+      ) {
+        try {
+          let currentDescription = description;
+          if (flushEditorPendingRef.current) {
+            const flushedContent = flushEditorPendingRef.current();
+            if (flushedContent) {
+              currentDescription = flushedContent;
+            }
+          }
+
+          let descriptionString: string | null = null;
+          if (currentDescription) {
+            try {
+              descriptionString = JSON.stringify(currentDescription);
+            } catch (serializationError) {
+              console.error(
+                'Failed to serialize description:',
+                serializationError
+              );
+              descriptionString = null;
+            }
+          }
+
+          const taskUpdates: any = {
+            name: name.trim(),
+            description: descriptionString,
+            priority: priority,
+            start_date: startDate ? startDate.toISOString() : null,
+            end_date: endDate ? endDate.toISOString() : null,
+            list_id: selectedListId,
+            estimation_points: estimationPoints ?? null,
+          };
+
+          await updateTaskMutation.mutateAsync({
+            taskId: task.id,
+            updates: taskUpdates,
+          });
+
+          await invalidateTaskCaches(queryClient, boardId);
+          onUpdate();
+
+          console.log('âœ… Task saved before navigation');
+        } catch (error) {
+          console.error('Failed to save before navigation:', error);
+        }
+      }
+
+      onOpenTask(taskId);
+    };
+
+    document.addEventListener('taskMentionClick', handleTaskMentionClick);
+
+    return () => {
+      document.removeEventListener('taskMentionClick', handleTaskMentionClick);
+    };
+  }, [
+    isOpen,
+    onOpenTask,
+    isCreateMode,
+    name,
+    isLoading,
+    task?.id,
+    description,
+    priority,
+    startDate,
+    endDate,
+    selectedListId,
+    estimationPoints,
+    updateTaskMutation,
+    queryClient,
+    boardId,
+    onUpdate,
+  ]);
+
+  // Load draft when opening in create mode
+  useEffect(() => {
+    if (!isOpen || !isCreateMode) return;
+    try {
+      const raw =
+        typeof window !== 'undefined'
+          ? localStorage.getItem(draftStorageKey)
+          : null;
+      if (!raw) return;
+      const draft = JSON.parse(raw || '{}');
+      if (draft && typeof draft === 'object') {
+        const hasContent =
+          (draft.name && draft.name.trim().length > 0) ||
+          draft.description != null ||
+          draft.priority ||
+          draft.startDate ||
+          draft.endDate ||
+          draft.estimationPoints != null ||
+          (Array.isArray(draft.selectedLabels) &&
+            draft.selectedLabels.length > 0);
+
+        if (!hasContent) {
+          if (typeof window !== 'undefined')
+            localStorage.removeItem(draftStorageKey);
+          return;
+        }
+
+        if (typeof draft.name === 'string') setName(draft.name);
+        if (draft.description != null) {
+          try {
+            const maybeString = draft.description as any;
+            const parsed =
+              typeof maybeString === 'string'
+                ? JSON.parse(maybeString)
+                : maybeString;
+            setDescription(parsed);
+          } catch {
+            setDescription(null);
+          }
+        }
+        if (draft.priority === null || typeof draft.priority === 'string')
+          setPriority(draft.priority as TaskPriority | null);
+        if (draft.startDate) setStartDate(new Date(draft.startDate));
+        if (draft.endDate) setEndDate(new Date(draft.endDate));
+        if (typeof draft.selectedListId === 'string')
+          setSelectedListId(draft.selectedListId);
+        if (
+          draft.estimationPoints === null ||
+          typeof draft.estimationPoints === 'number'
+        )
+          setEstimationPoints(draft.estimationPoints as number | null);
+        if (Array.isArray(draft.selectedLabels))
+          setSelectedLabels(draft.selectedLabels);
+        setHasDraft(true);
+      }
+    } catch {}
+  }, [isOpen, isCreateMode, draftStorageKey]);
+
+  // Ensure origin list from entry point is respected in create mode
+  useEffect(() => {
+    if (isOpen && isCreateMode && task?.list_id) {
+      setSelectedListId(task.list_id);
+    }
+  }, [isOpen, isCreateMode, task?.list_id]);
+
+  // Clear stale create draft when opening in edit mode
+  useEffect(() => {
+    if (isOpen && !isCreateMode) {
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(draftStorageKey);
+        }
+      } catch {}
+    }
+  }, [isOpen, isCreateMode, draftStorageKey]);
+
+  // Debounced save draft while editing in create mode
+  useEffect(() => {
+    if (!isOpen || !isCreateMode || isSaving) return;
+    const hasAny =
+      (name || '').trim().length > 0 ||
+      !!description ||
+      !!priority ||
+      !!startDate ||
+      !!endDate ||
+      !!estimationPoints ||
+      (selectedLabels && selectedLabels.length > 0);
+    if (!hasAny) {
+      try {
+        if (typeof window !== 'undefined')
+          localStorage.removeItem(draftStorageKey);
+      } catch {}
+      setHasDraft(false);
+      return;
+    }
+    if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
+    draftSaveTimerRef.current = setTimeout(() => {
+      try {
+        const toSave = {
+          name: (name || '').trim(),
+          description: description,
+          priority,
+          startDate: startDate?.toISOString() || null,
+          endDate: endDate?.toISOString() || null,
+          selectedListId,
+          estimationPoints: estimationPoints ?? null,
+          selectedLabels,
+        };
+        if (typeof window !== 'undefined')
+          localStorage.setItem(draftStorageKey, JSON.stringify(toSave));
+        setHasDraft(true);
+      } catch {}
+    }, 300);
+    return () => {
+      if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
+    };
+  }, [
+    isOpen,
+    isCreateMode,
+    isSaving,
+    draftStorageKey,
+    name,
+    description,
+    priority,
+    startDate,
+    endDate,
+    selectedListId,
+    estimationPoints,
+    selectedLabels,
+  ]);
+
+  // Global keyboard shortcut: Cmd/Ctrl + Enter to save
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (canSave) {
+          handleSaveRef.current();
+        } else if (!hasUnsavedChangesRef.current) {
+          handleCloseRef.current();
+        }
+        return;
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, canSave]);
+
+  // Keyboard shortcuts for options (Alt-based)
+  useEffect(() => {
+    if (!isOpen) return;
+    const isTypingTarget = (target: EventTarget | null): boolean => {
+      const el = target as HTMLElement | null;
+      if (!el) return false;
+      const tag = el.tagName?.toLowerCase();
+      const editable = (el as any).isContentEditable === true;
+      return (
+        editable || tag === 'input' || tag === 'textarea' || tag === 'select'
+      );
+    };
+
+    const handleOptionShortcuts = (e: KeyboardEvent) => {
+      if (!e.altKey) return;
+      if (isTypingTarget(e.target)) return;
+
+      if (e.key === '1') {
+        e.preventDefault();
+        setPriority('critical');
+        return;
+      }
+      if (e.key === '2') {
+        e.preventDefault();
+        setPriority('high');
+        return;
+      }
+      if (e.key === '3') {
+        e.preventDefault();
+        setPriority('normal');
+        return;
+      }
+      if (e.key === '4') {
+        e.preventDefault();
+        setPriority('low');
+        return;
+      }
+      if (e.key === '0') {
+        e.preventDefault();
+        setPriority(null);
+        return;
+      }
+
+      const lower = e.key.toLowerCase();
+      if (lower === 't') {
+        e.preventDefault();
+        quickDueRef.current(0);
+        return;
+      }
+      if (lower === 'm') {
+        e.preventDefault();
+        quickDueRef.current(1);
+        return;
+      }
+      if (lower === 'w') {
+        e.preventDefault();
+        quickDueRef.current(7);
+        return;
+      }
+      if (lower === 'd') {
+        e.preventDefault();
+        quickDueRef.current(null);
+        return;
+      }
+
+      if (lower === 'a') {
+        e.preventDefault();
+        setShowAdvancedOptions((prev) => !prev);
+        return;
+      }
+
+      if (e.shiftKey && boardConfig?.estimation_type) {
+        if (/^[0-7]$/.test(e.key)) {
+          e.preventDefault();
+          const idx = Number(e.key);
+          updateEstimationRef.current(idx);
+          return;
+        }
+        if (lower === 'x') {
+          e.preventDefault();
+          updateEstimationRef.current(null);
+          return;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleOptionShortcuts);
+    return () => window.removeEventListener('keydown', handleOptionShortcuts);
+  }, [isOpen, boardConfig?.estimation_type]);
+
+  // Editor keyboard navigation for slash and mention menus
   useEffect(() => {
     if (!editorInstance || !isOpen) return;
 
@@ -948,7 +2474,6 @@ function TaskEditDialogComponent({
     if (!editorDom) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      // If custom date picker is open, Escape closes it but keeps mention menu open
       if (showCustomDatePicker && event.key === 'Escape') {
         event.preventDefault();
         event.stopPropagation();
@@ -1062,1239 +2587,93 @@ function TaskEditDialogComponent({
     showCustomDatePicker,
   ]);
 
-  // Fetch available task lists for the board (only if not provided as prop)
-  const { data: availableLists = [] } = useQuery({
-    queryKey: ['task_lists', boardId],
-    queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('task_lists')
-        .select('*')
-        .eq('board_id', boardId)
-        .eq('deleted', false)
-        .order('position')
-        .order('created_at');
-
-      if (error) throw error;
-      return data as TaskList[];
-    },
-    enabled: !!boardId && isOpen && !propAvailableLists,
-    initialData: propAvailableLists,
-  });
-
-  // Helper function to convert description to JSONContent
-  const parseDescription = useCallback((desc?: string): JSONContent | null => {
-    if (!desc) return null;
-    try {
-      return JSON.parse(desc);
-    } catch {
-      return {
-        type: 'doc',
-        content: [
-          {
-            type: 'paragraph',
-            content: [{ type: 'text', text: desc }],
-          },
-        ],
-      };
-    }
-  }, []);
-
-  // Reset form when task changes or dialog opens
-  useEffect(() => {
-    // Only reset when switching to a different task (task ID changes) or dialog first opens
-    // This prevents resetting while user is actively typing
-    const taskIdChanged = previousTaskIdRef.current !== task?.id;
-
-    // In edit mode, when dialog opens or task ID changes, reload task data to ensure we have the latest
-    // This handles the case where task was edited previously and we're reopening the dialog
-    if (isOpen && !isCreateMode && taskIdChanged) {
-      setName(task?.name || '');
-      setDescription(parseDescription(task?.description));
-      setPriority(task?.priority || null);
-      setStartDate(task?.start_date ? new Date(task?.start_date) : undefined);
-      setEndDate(task?.end_date ? new Date(task?.end_date) : undefined);
-      setSelectedListId(task?.list_id || '');
-      setEstimationPoints(task?.estimation_points ?? null);
-      setSelectedLabels(task?.labels || []);
-      setSelectedAssignees(task?.assignees || []);
-      setSelectedProjects(task?.projects || []);
-      if (task?.id) previousTaskIdRef.current = task.id;
-    }
-    // For create mode, only load when task ID changes or dialog opens with 'new' ID
-    else if (isOpen && (isCreateMode || task?.id === 'new') && taskIdChanged) {
-      setName(task?.name || '');
-      setDescription(parseDescription(task?.description) || null);
-      setPriority(task?.priority || null);
-      setStartDate(task?.start_date ? new Date(task?.start_date) : undefined);
-      setEndDate(task?.end_date ? new Date(task?.end_date) : undefined);
-      setSelectedListId(task?.list_id || '');
-      setEstimationPoints(task?.estimation_points ?? null);
-      setSelectedLabels(task?.labels || []);
-      setSelectedAssignees(task?.assignees || []);
-      setSelectedProjects(task?.projects || []);
-      if (task?.id) previousTaskIdRef.current = task.id;
-    }
-  }, [
-    task?.id,
-    parseDescription,
-    isOpen,
-    isCreateMode,
-    task?.assignees,
-    task?.description,
-    task?.end_date,
-    task?.estimation_points,
-    task?.labels,
-    task?.list_id,
-    task?.name,
-    task?.priority,
-    task?.projects,
-    task?.start_date,
-  ]);
-
-  // Reset transient edits when closing without saving in edit mode
-  useEffect(() => {
-    if (!isOpen && previousTaskIdRef.current && !isCreateMode) {
-      setName(task?.name || '');
-      setDescription(parseDescription(task?.description));
-      setPriority(task?.priority || null);
-      setStartDate(task?.start_date ? new Date(task?.start_date) : undefined);
-      setEndDate(task?.end_date ? new Date(task?.end_date) : undefined);
-      setSelectedListId(task?.list_id || '');
-      setEstimationPoints(task?.estimation_points ?? null);
-      setSelectedLabels(task?.labels || []);
-      setSelectedAssignees(task?.assignees || []);
-      setSelectedProjects(task?.projects || []);
-    }
-  }, [isOpen, isCreateMode, task, parseDescription]);
-
-  const fetchWorkspaceMembers = useCallback(async (wsId: string) => {
-    try {
-      setLoadingMembers(true);
-      const supabase = createClient();
-      const { data: members, error } = await supabase
-        .from('workspace_members')
-        .select(
-          `
-          user_id,
-          users!inner(
-            id,
-            display_name,
-            avatar_url
-          )
-        `
-        )
-        .eq('ws_id', wsId);
-
-      if (error) {
-        console.error('Error fetching workspace members:', error);
-        throw error;
-      }
-
-      if (members) {
-        // Transform and sort by display_name
-        const transformedMembers = members.map((m: any) => ({
-          user_id: m.user_id,
-          display_name: m.users?.display_name || 'Unknown User',
-          avatar_url: m.users?.avatar_url,
-        }));
-
-        // Deduplicate by user_id to ensure unique keys
-        const uniqueMembers = Array.from(
-          new Map(transformedMembers.map((m) => [m.user_id, m])).values()
-        );
-
-        const sortedMembers = uniqueMembers.sort((a, b) =>
-          (a.display_name || '').localeCompare(b.display_name || '')
-        );
-        setWorkspaceMembers(sortedMembers);
-      }
-    } catch (e) {
-      console.error('Failed fetching workspace members', e);
-    } finally {
-      setLoadingMembers(false);
-    }
-  }, []);
-
-  const fetchTaskProjects = useCallback(async (wsId: string) => {
-    try {
-      setLoadingProjects(true);
-      const supabase = createClient();
-      const { data: projects, error } = await supabase
-        .from('task_projects')
-        .select('id, name, status')
-        .eq('ws_id', wsId)
-        .eq('deleted', false)
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching task projects:', error);
-        throw error;
-      }
-
-      if (projects) {
-        setTaskProjects(projects);
-      }
-    } catch (e) {
-      console.error('Failed fetching task projects', e);
-    } finally {
-      setLoadingProjects(false);
-    }
-  }, []);
-
-  const fetchAllWorkspaces = useCallback(async () => {
-    try {
-      setAllWorkspacesLoading(true);
-      const supabase = createClient();
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('workspaces')
-        .select('id, name, handle, personal, workspace_members!inner(role)')
-        .eq('workspace_members.user_id', user.id);
-
-      if (error) throw error;
-
-      setAllWorkspaces(data || []);
-    } catch (error) {
-      console.error('Failed fetching all workspaces', error);
-    } finally {
-      setAllWorkspacesLoading(false);
-    }
-  }, []);
-
-  const fetchWorkspaceDetails = useCallback(async (wsId: string) => {
-    if (!wsId) return;
-    try {
-      setWorkspaceDetailsLoading(true);
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspaces')
-        .select('id, name, handle')
-        .eq('id', wsId)
-        .single();
-
-      if (error) throw error;
-      setWorkspaceDetails(data || null);
-    } catch (error) {
-      console.error('Failed fetching workspace details', error);
-    } finally {
-      setWorkspaceDetailsLoading(false);
-    }
-  }, []);
-
-  const fetchWorkspaceTasks = useCallback(async (wsId: string) => {
-    if (!wsId) return;
-    try {
-      setWorkspaceTasksLoading(true);
-      const supabase = createClient();
-
-      // Tasks are related to workspaces through: tasks -> task_lists -> workspace_boards
-      // We need to join through the relationship chain
-      const { data: boards, error: boardsError } = await supabase
-        .from('workspace_boards')
-        .select('id')
-        .eq('ws_id', wsId);
-
-      if (boardsError) throw boardsError;
-
-      const boardIds = (boards || []).map((b) => b.id);
-      if (boardIds.length === 0) {
-        setWorkspaceTasks([]);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('tasks')
-        .select(`
-          id,
-          name,
-          priority,
-          created_at,
-          list:task_lists!inner(id, name, board_id)
-        `)
-        .in('task_lists.board_id', boardIds)
-        .eq('deleted', false)
-        .order('created_at', { ascending: false })
-        .limit(25);
-
-      if (error) throw error;
-      setWorkspaceTasks(data || []);
-    } catch (error) {
-      console.error('Failed fetching workspace tasks', error);
-    } finally {
-      setWorkspaceTasksLoading(false);
-    }
-  }, []);
-
-  // Fetch workspace members and projects when workspace ID is available
-  useEffect(() => {
-    if (isOpen && workspaceId) {
-      fetchWorkspaceMembers(workspaceId);
-      fetchTaskProjects(workspaceId);
-      fetchWorkspaceDetails(workspaceId);
-      fetchWorkspaceTasks(workspaceId);
-    }
-  }, [
-    isOpen,
-    workspaceId,
-    fetchWorkspaceMembers,
-    fetchTaskProjects,
-    fetchWorkspaceDetails,
-    fetchWorkspaceTasks,
-  ]);
-
-  // Fetch all accessible workspaces when dialog opens for mention functionality
-  useEffect(() => {
-    if (isOpen) {
-      fetchAllWorkspaces();
-    }
-  }, [isOpen, fetchAllWorkspaces]);
-
-  // ------- Draft persistence (create mode) -------------------------------------
-  const draftStorageKey = useMemo(
-    () => `tu-do:task-draft:${boardId}`,
-    [boardId]
-  );
-
-  // Load draft when opening in create mode (skip for edit mode)
-  useEffect(() => {
-    if (!isOpen || !isCreateMode) return;
-    try {
-      const raw =
-        typeof window !== 'undefined'
-          ? localStorage.getItem(draftStorageKey)
-          : null;
-      if (!raw) return;
-      const draft = JSON.parse(raw || '{}');
-      if (draft && typeof draft === 'object') {
-        // Only restore if draft has meaningful content
-        const hasContent =
-          (draft.name && draft.name.trim().length > 0) ||
-          draft.description != null ||
-          draft.priority ||
-          draft.startDate ||
-          draft.endDate ||
-          draft.estimationPoints != null ||
-          (Array.isArray(draft.selectedLabels) &&
-            draft.selectedLabels.length > 0);
-
-        if (!hasContent) {
-          // Clear empty draft
-          if (typeof window !== 'undefined')
-            localStorage.removeItem(draftStorageKey);
-          return;
-        }
-
-        if (typeof draft.name === 'string') setName(draft.name);
-        if (draft.description != null) {
-          try {
-            // Accept either JSONContent or serialized string
-            const maybeString = draft.description as any;
-            const parsed =
-              typeof maybeString === 'string'
-                ? JSON.parse(maybeString)
-                : maybeString;
-            setDescription(parsed);
-          } catch {
-            setDescription(null);
-          }
-        }
-        if (draft.priority === null || typeof draft.priority === 'string')
-          setPriority(draft.priority as TaskPriority | null);
-        if (draft.startDate) setStartDate(new Date(draft.startDate));
-        if (draft.endDate) setEndDate(new Date(draft.endDate));
-        if (typeof draft.selectedListId === 'string')
-          setSelectedListId(draft.selectedListId);
-        if (
-          draft.estimationPoints === null ||
-          typeof draft.estimationPoints === 'number'
-        )
-          setEstimationPoints(draft.estimationPoints as number | null);
-        if (Array.isArray(draft.selectedLabels))
-          setSelectedLabels(draft.selectedLabels);
-        setHasDraft(true);
-      }
-    } catch {
-      // ignore draft load errors
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, isCreateMode, draftStorageKey]);
-
-  // Ensure origin list from the entry point is respected in create mode
-  useEffect(() => {
-    if (isOpen && isCreateMode && task?.list_id) {
-      setSelectedListId(task.list_id);
-    }
-  }, [isOpen, isCreateMode, task?.list_id]);
-
-  // If opening in edit mode, proactively clear any stale create draft for this board
-  useEffect(() => {
-    if (isOpen && !isCreateMode) {
-      try {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem(draftStorageKey);
-        }
-      } catch {}
-    }
-  }, [isOpen, isCreateMode, draftStorageKey]);
-
-  // Debounced save draft while editing in create mode
-  useEffect(() => {
-    if (!isOpen || !isCreateMode || isSaving) return;
-    const hasAny =
-      (name || '').trim().length > 0 ||
-      !!description ||
-      !!priority ||
-      !!startDate ||
-      !!endDate ||
-      !!estimationPoints ||
-      (selectedLabels && selectedLabels.length > 0);
-    if (!hasAny) {
-      // Clear empty draft to avoid stale noise
-      try {
-        if (typeof window !== 'undefined')
-          localStorage.removeItem(draftStorageKey);
-      } catch {}
-      setHasDraft(false);
-      return;
-    }
-    if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
-    draftSaveTimerRef.current = setTimeout(() => {
-      try {
-        const toSave = {
-          name: (name || '').trim(),
-          description: description,
-          priority,
-          startDate: startDate?.toISOString() || null,
-          endDate: endDate?.toISOString() || null,
-          selectedListId,
-          estimationPoints: estimationPoints ?? null,
-          selectedLabels,
-        };
-        if (typeof window !== 'undefined')
-          localStorage.setItem(draftStorageKey, JSON.stringify(toSave));
-        setHasDraft(true);
-      } catch {
-        // ignore save errors
-      }
-    }, 300);
-    return () => {
-      if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
-    };
-  }, [
-    isOpen,
-    isCreateMode,
-    isSaving,
-    draftStorageKey,
-    name,
-    description,
-    priority,
-    startDate,
-    endDate,
-    selectedListId,
-    estimationPoints,
-    selectedLabels,
-  ]);
-
-  // Build initial and current snapshots for change detection
-  const initialSnapshot = useMemo(() => {
-    return {
-      name: (task?.name || '').trim(),
-      description: JSON.stringify(parseDescription(task?.description) || null),
-      priority: task?.priority || null,
-      start: task?.start_date
-        ? new Date(task?.start_date).toISOString()
-        : undefined,
-      end: task?.end_date ? new Date(task?.end_date).toISOString() : undefined,
-      listId: task?.list_id,
-      estimationPoints: task?.estimation_points ?? null,
-    } as const;
-  }, [task, parseDescription]);
-
-  const currentSnapshot = useMemo(() => {
-    return {
-      name: (name || '').trim(),
-      description: JSON.stringify(description || null),
-      priority: priority || null,
-      start: startDate?.toISOString(),
-      end: endDate?.toISOString(),
-      listId: selectedListId,
-      estimationPoints: estimationPoints ?? null,
-    } as const;
-  }, [
-    name,
-    description,
-    priority,
-    startDate,
-    endDate,
-    selectedListId,
-    estimationPoints,
-  ]);
-
-  const hasUnsavedChanges = useMemo(() => {
-    return (
-      initialSnapshot.name !== currentSnapshot.name ||
-      initialSnapshot.description !== currentSnapshot.description ||
-      initialSnapshot.priority !== currentSnapshot.priority ||
-      initialSnapshot.start !== currentSnapshot.start ||
-      initialSnapshot.end !== currentSnapshot.end ||
-      initialSnapshot.listId !== currentSnapshot.listId ||
-      initialSnapshot.estimationPoints !== currentSnapshot.estimationPoints
-    );
-  }, [initialSnapshot, currentSnapshot]);
-
-  const canSave = useMemo(() => {
-    const hasName = !!(name || '').trim();
-    if (isCreateMode) return hasName && !isLoading;
-    return hasName && hasUnsavedChanges && !isLoading;
-  }, [isCreateMode, name, hasUnsavedChanges, isLoading]);
-
-  // Global keyboard shortcuts: Cmd/Ctrl + Enter to save
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Save shortcut: Cmd/Ctrl + Enter
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        e.preventDefault();
-        if (canSave) {
-          handleSaveRef.current();
-        } else if (!hasUnsavedChangesRef.current) {
-          handleCloseRef.current();
-        }
-        return;
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, canSave]);
-
-  const handleCreateLabel = async () => {
-    if (!newLabelName.trim() || !boardConfig) return;
-    // Need workspace id from boardConfig; we re-fetch board already, store ws_id inside boardConfig? not persisted previously; fallback fetch if absent
-    setCreatingLabel(true);
-    try {
-      const supabase = createClient();
-      // Ensure we have ws_id
-      let wsId: string | undefined = (boardConfig as any)?.ws_id;
-      if (!wsId) {
-        const { data: board } = await supabase
-          .from('workspace_boards')
-          .select('ws_id')
-          .eq('id', boardId)
-          .single();
-        wsId = (board as any)?.ws_id;
-      }
-      if (!wsId) throw new Error('Workspace id not found');
-      const { data, error } = await supabase
-        .from('workspace_task_labels')
-        .insert({
-          ws_id: wsId,
-          name: newLabelName.trim(),
-          color: newLabelColor,
-        })
-        .select('id,name,color,created_at')
-        .single();
-      if (error) throw error;
-      if (data) {
-        setAvailableLabels((prev) =>
-          [data as any, ...prev].sort((a, b) =>
-            (a?.name || '')
-              .toLowerCase()
-              .localeCompare((b?.name || '').toLowerCase())
-          )
-        );
-        // auto-select new label (maintain alphabetical order in selection list too)
-        setSelectedLabels((prev) =>
-          [data as any, ...prev].sort((a, b) =>
-            (a?.name || '')
-              .toLowerCase()
-              .localeCompare((b?.name || '').toLowerCase())
-          )
-        );
-
-        if (task?.id) {
-          // Attempt to link label to this task in DB
-          const { error: linkErr } = await supabase
-            .from('task_labels')
-            .insert({ task_id: task?.id, label_id: (data as any).id });
-
-          if (linkErr) {
-            // Rollback local selection if link fails
-            setSelectedLabels((prev) =>
-              prev.filter((l) => l.id !== (data as any).id)
-            );
-            toast({
-              title: 'Label created (not linked)',
-              description: 'Label saved but could not be attached to task.',
-              variant: 'destructive',
-            });
-          } else {
-            // Invalidate caches so parent task list reflects new label
-            await invalidateTaskCaches(queryClient, boardId);
-            onUpdate();
-            // Dispatch global event so other open components can refresh
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(
-                new CustomEvent('workspace-label-created', {
-                  detail: { wsId, label: data },
-                })
-              );
-            }
-            toast({
-              title: 'Label created & linked',
-              description: 'New label added and attached to this task.',
-            });
-          }
-        }
-
-        setNewLabelName('');
-      }
-    } catch (e: any) {
-      toast({
-        title: 'Label creation failed',
-        description: e.message || 'Unable to create label',
-        variant: 'destructive',
-      });
-    } finally {
-      setCreatingLabel(false);
-    }
-  };
-
-  // End date change helper (preserve 23:59 default if only date picked)
-  const handleEndDateChange = (date: Date | undefined) => {
-    if (date) {
-      let selectedDate = dayjs(date);
-      if (
-        selectedDate.hour() === 0 &&
-        selectedDate.minute() === 0 &&
-        selectedDate.second() === 0 &&
-        selectedDate.millisecond() === 0
-      ) {
-        selectedDate = selectedDate.endOf('day');
-      }
-      setEndDate(selectedDate.toDate());
-    } else {
-      setEndDate(undefined);
-    }
-  };
-
-  // Handle estimation save (optimistic local update + API call)
-  const updateEstimation = async (points: number | null) => {
-    if (points === estimationPoints) return;
-    setEstimationPoints(points);
-    if (isCreateMode || !task?.id || task?.id === 'new') {
-      // Will be saved on create
-      return;
-    }
-    setEstimationSaving(true);
-    try {
-      const supabase = createClient();
-
-      const { error } = await supabase
-        .from('tasks')
-        .update({ estimation_points: points })
-        .eq('id', task.id);
-      if (error) throw error;
-      await invalidateTaskCaches(queryClient, boardId);
-    } catch (e: any) {
-      console.error('Failed updating estimation', e);
-      toast({
-        title: 'Failed to update estimation',
-        description: e.message || 'Please try again',
-        variant: 'destructive',
-      });
-    } finally {
-      setEstimationSaving(false);
-    }
-  };
-
-  // Label selection handlers
-  // Handle image upload to Supabase storage
-  const handleImageUpload = useCallback(
-    async (file: File): Promise<string> => {
-      if (!workspaceId) {
-        throw new Error('Workspace ID not found');
-      }
-
-      const supabase = createClient();
-
-      // Generate unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `${workspaceId}/task-images/${fileName}`;
-
-      // Upload to Supabase storage
-      const { data, error } = await supabase.storage
-        .from('workspaces')
-        .upload(filePath, file, {
-          contentType: file.type,
-          upsert: false,
-        });
-
-      if (error) {
-        console.error('Upload error:', error);
-        throw new Error('Failed to upload image');
-      }
-
-      // Get signed URL (valid for 1 year)
-      const { data: signedUrlData, error: signedUrlError } =
-        await supabase.storage
-          .from('workspaces')
-          .createSignedUrl(data.path, 31536000); // 365 days in seconds
-
-      if (signedUrlError) {
-        console.error('Signed URL error:', signedUrlError);
-        throw new Error('Failed to generate signed URL');
-      }
-
-      return signedUrlData.signedUrl;
-    },
-    [workspaceId]
-  );
-
-  const toggleLabel = async (label: WorkspaceTaskLabel) => {
-    const exists = selectedLabels.some((l) => l.id === label.id);
-    const supabase = createClient();
-    try {
-      if (isCreateMode) {
-        // Local toggle only; persist on create
-        setSelectedLabels((prev) =>
-          exists ? prev.filter((l) => l.id !== label.id) : [label, ...prev]
-        );
-        return;
-      }
-      if (exists) {
-        if (!task?.id) return;
-        // remove
-        const { error } = await supabase
-          .from('task_labels')
-          .delete()
-          .eq('task_id', task.id)
-          .eq('label_id', label.id);
-        if (error) throw error;
-        setSelectedLabels((prev) => prev.filter((l) => l.id !== label.id));
-      } else {
-        if (!task?.id) return;
-        const { error } = await supabase
-          .from('task_labels')
-          .insert({ task_id: task.id, label_id: label.id });
-        if (error) throw error;
-        setSelectedLabels((prev) =>
-          [label, ...prev].sort((a, b) => {
-            const aName = a?.name || '';
-            const bName = b?.name || '';
-            return aName.toLowerCase().localeCompare(bName.toLowerCase());
-          })
-        );
-      }
-      await invalidateTaskCaches(queryClient, boardId);
-    } catch (e: any) {
-      toast({
-        title: 'Label update failed',
-        description: e.message || 'Unable to update labels',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const toggleProject = async (project: any) => {
-    const exists = selectedProjects.some((p) => p.id === project.id);
-    const supabase = createClient();
-    try {
-      if (isCreateMode) {
-        // Local toggle only; persist on create
-        setSelectedProjects((prev) =>
-          exists ? prev.filter((p) => p.id !== project.id) : [...prev, project]
-        );
-        return;
-      }
-      if (exists) {
-        if (!task?.id) return;
-        // remove
-        const { error } = await supabase
-          .from('task_project_tasks')
-          .delete()
-          .eq('task_id', task.id)
-          .eq('project_id', project.id);
-        if (error) throw error;
-        setSelectedProjects((prev) => prev.filter((p) => p.id !== project.id));
-      } else {
-        if (!task?.id) return;
-        const { error } = await supabase
-          .from('task_project_tasks')
-          .insert({ task_id: task.id, project_id: project.id });
-
-        // Handle duplicate key error gracefully
-        if (error) {
-          // Error code 23505 is duplicate key violation in PostgreSQL
-          if (error.code === '23505') {
-            // Project is already linked - just update local state to reflect reality
-            toast({
-              title: 'Already linked',
-              description: 'This project is already linked to the task',
-            });
-            // Sync with server state
-            await invalidateTaskCaches(queryClient, boardId);
-            onUpdate();
-            return;
-          }
-          throw error;
-        }
-        setSelectedProjects((prev) => [...prev, project]);
-      }
-      await invalidateTaskCaches(queryClient, boardId);
-      onUpdate();
-    } catch (e: any) {
-      toast({
-        title: 'Project update failed',
-        description: e.message || 'Unable to update projects',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleSave = async () => {
-    if (!name?.trim()) return;
-
-    // Flush any pending editor changes before saving and get current content
-    let currentDescription = description;
-    if (flushEditorPendingRef.current) {
-      const flushedContent = flushEditorPendingRef.current();
-      // Use the flushed content directly
-      currentDescription = flushedContent;
-    }
-
-    setIsSaving(true);
-    setIsLoading(true);
-
-    // Immediately clear draft and cancel any pending saves
-    if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
-    try {
-      if (typeof window !== 'undefined')
-        localStorage.removeItem(draftStorageKey);
-      setHasDraft(false);
-    } catch {}
-
-    // Convert JSONContent to string for storage
-    // Important: Use null explicitly instead of undefined to ensure DB field is cleared
-    const descriptionString: string | null = currentDescription
-      ? JSON.stringify(currentDescription)
-      : null;
-
-    if (isCreateMode) {
-      try {
-        const supabase = createClient();
-        const { createTask } = await import('@tuturuuu/utils/task-helper');
-        const taskData: Partial<Task> = {
-          name: name.trim(),
-          description: descriptionString,
-          priority: priority,
-          start_date: startDate ? startDate.toISOString() : null,
-          end_date: endDate ? endDate.toISOString() : null,
-          estimation_points: estimationPoints ?? null,
-        } as any;
-        const newTask = await createTask(supabase, selectedListId, taskData);
-
-        if (selectedLabels.length > 0) {
-          await supabase.from('task_labels').insert(
-            selectedLabels.map((l) => ({
-              task_id: newTask.id,
-              label_id: l.id,
-            }))
-          );
-        }
-
-        if (selectedAssignees.length > 0) {
-          await supabase.from('task_assignees').insert(
-            selectedAssignees.map((a) => ({
-              task_id: newTask.id,
-              user_id: a.user_id,
-            }))
-          );
-        }
-
-        if (selectedProjects.length > 0) {
-          await supabase.from('task_project_tasks').insert(
-            selectedProjects.map((p) => ({
-              task_id: newTask.id,
-              project_id: p.id,
-            }))
-          );
-        }
-
-        await invalidateTaskCaches(queryClient, boardId);
-        toast({ title: 'Task created', description: 'New task added.' });
-        onUpdate();
-        if (createMultiple) {
-          // Reset for next task: only clear title and description; persist others
-          setName('');
-          setDescription(null);
-          // Focus name input on next tick for quick entry
-          setTimeout(() => {
-            const input = document.querySelector<HTMLInputElement>(
-              'input[placeholder="What needs to be done?"]'
-            );
-            input?.focus();
-          }, 0);
-        } else {
-          // Reset all form state before closing to prevent stale data on next open
-          setName('');
-          setDescription(null);
-          setPriority(null);
-          setStartDate(undefined);
-          setEndDate(undefined);
-          setEstimationPoints(null);
-          setSelectedLabels([]);
-          onClose();
-        }
-      } catch (error: any) {
-        console.error('Error creating task:', error);
-        toast({
-          title: 'Error creating task',
-          description: error.message || 'Please try again later',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
-        setIsSaving(false);
-      }
-      return;
-    }
-
-    // Prepare task updates (edit mode)
-    // Note: We need to include description, start_date, end_date, and estimation_points even if null to clear them in the database
-    const taskUpdates: any = {
-      name: name.trim(),
-      description: descriptionString, // Explicitly null when empty, not undefined
-      priority: priority,
-      start_date: startDate ? startDate.toISOString() : null, // Explicitly null when undefined
-      end_date: endDate ? endDate.toISOString() : null, // Explicitly null when undefined
-      list_id: selectedListId,
-      estimation_points: estimationPoints ?? null, // Include estimation points
-    };
-
-    if (task?.id)
-      updateTaskMutation.mutate(
-        {
-          taskId: task.id,
-          updates: taskUpdates,
-        },
-        {
-          onSuccess: async () => {
-            console.log('✅ Task update successful, refreshing data...');
-
-            // Invalidate all task-related caches
-            await invalidateTaskCaches(queryClient, boardId);
-
-            // Force refetch and wait for it to complete with fresh data
-            await queryClient.refetchQueries({
-              queryKey: ['tasks', boardId],
-              type: 'active',
-            });
-
-            toast({
-              title: 'Task updated',
-              description: 'The task has been successfully updated.',
-            });
-            onUpdate();
-            onClose();
-          },
-          onError: (error: any) => {
-            console.error('Error updating task:', error);
-            toast({
-              title: 'Error updating task',
-              description: error.message || 'Please try again later',
-              variant: 'destructive',
-            });
-          },
-          onSettled: () => {
-            setIsLoading(false);
-            setIsSaving(false);
-          },
-        }
-      );
-  };
-  // Keep the ref pointing to the latest handleSave on every render (no hook deps warnings)
-  handleSaveRef.current = handleSave;
-
-  const handleClose = () => {
-    if (!isLoading) {
-      // If closing from edit mode, clear any stale create draft to avoid unintended restoration
-      try {
-        if (!isCreateMode && typeof window !== 'undefined') {
-          localStorage.removeItem(draftStorageKey);
-        }
-      } catch {}
-      onClose();
-    }
-  };
-
-  // Keep stable refs for handlers and change state
+  // Update stable refs
   handleSaveRef.current = handleSave;
   handleCloseRef.current = handleClose;
   hasUnsavedChangesRef.current = hasUnsavedChanges;
   quickDueRef.current = handleQuickDueDate;
   updateEstimationRef.current = updateEstimation;
+  handleConvertToTaskRef.current = handleConvertToTask;
 
-  // Handle escape key - disabled to let Radix handle it
-  // useEffect(() => {
-  //   const handleEscape = (e: KeyboardEvent) => {
-  //     if (e.key === 'Escape' && !isLoading) {
-  //       handleClose();
-  //     }
-  //   };
+  // ============================================================================
+  // RENDER HELPERS - JSX fragments and menu components
+  // ============================================================================
+  const slashCommandMenu = (
+    <SlashCommandMenu
+      isOpen={slashState.open}
+      position={slashState.position}
+      commands={filteredSlashCommands}
+      highlightIndex={slashHighlightIndex}
+      onSelect={executeSlashCommand}
+      onHighlightChange={setSlashHighlightIndex}
+      listRef={slashListRef}
+    />
+  );
 
-  //   if (isOpen) {
-  //     window.addEventListener('keydown', handleEscape);
-  //     return () => window.removeEventListener('keydown', handleEscape);
-  //   }
-  // }, [isOpen, isLoading, handleClose]);
-
-  // Keyboard shortcuts for options (Alt-based). Skips when typing in inputs/contenteditable.
-  useEffect(() => {
-    if (!isOpen) return;
-    const isTypingTarget = (target: EventTarget | null): boolean => {
-      const el = target as HTMLElement | null;
-      if (!el) return false;
-      const tag = el.tagName?.toLowerCase();
-      const editable = (el as any).isContentEditable === true;
-      return (
-        editable || tag === 'input' || tag === 'textarea' || tag === 'select'
-      );
-    };
-
-    const handleOptionShortcuts = (e: KeyboardEvent) => {
-      if (!e.altKey) return;
-      if (isTypingTarget(e.target)) return;
-
-      // Priority: Alt+1/2/3/4, Alt+0 clear
-      if (e.key === '1') {
-        e.preventDefault();
-        setPriority('critical');
-        return;
-      }
-      if (e.key === '2') {
-        e.preventDefault();
-        setPriority('high');
-        return;
-      }
-      if (e.key === '3') {
-        e.preventDefault();
-        setPriority('normal');
-        return;
-      }
-      if (e.key === '4') {
-        e.preventDefault();
-        setPriority('low');
-        return;
-      }
-      if (e.key === '0') {
-        e.preventDefault();
-        setPriority(null);
-        return;
-      }
-
-      // Due date: Alt+T/M/W set, Alt+D clear
-      const lower = e.key.toLowerCase();
-      if (lower === 't') {
-        e.preventDefault();
-        quickDueRef.current(0);
-        return;
-      }
-      if (lower === 'm') {
-        e.preventDefault();
-        quickDueRef.current(1);
-        return;
-      }
-      if (lower === 'w') {
-        e.preventDefault();
-        quickDueRef.current(7);
-        return;
-      }
-      if (lower === 'd') {
-        e.preventDefault();
-        quickDueRef.current(null);
-        return;
-      }
-
-      // Advanced toggle: Alt+A
-      if (lower === 'a') {
-        e.preventDefault();
-        setShowAdvancedOptions((prev) => !prev);
-        return;
-      }
-
-      // Estimation: Alt+Shift+0..7 set index, Alt+Shift+X clear
-      if (e.shiftKey && boardConfig?.estimation_type) {
-        if (/^[0-7]$/.test(e.key)) {
-          e.preventDefault();
-          const idx = Number(e.key);
-          updateEstimationRef.current(idx);
-          return;
+  const mentionSuggestionMenu = (
+    <>
+      <MentionMenu
+        isOpen={mentionState.open}
+        position={mentionState.position}
+        options={filteredMentionOptions}
+        highlightIndex={mentionHighlightIndex}
+        isLoading={
+          workspaceDetailsLoading ||
+          workspaceTasksLoading ||
+          allWorkspacesLoading
         }
-        if (lower === 'x') {
-          e.preventDefault();
-          updateEstimationRef.current(null);
-          return;
-        }
-      }
-    };
+        query={mentionState.query}
+        onSelect={insertMentionOption}
+        onHighlightChange={setMentionHighlightIndex}
+        listRef={mentionListRef}
+      />
+      {showCustomDatePicker &&
+        mentionState.position &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="pointer-events-auto"
+            style={{
+              position: 'fixed',
+              top: mentionState.position.top,
+              left: mentionState.position.left,
+              zIndex: 9999,
+            }}
+          >
+            <CustomDatePickerDialog
+              selectedDate={customDate}
+              includeTime={includeTime}
+              selectedHour={selectedHour}
+              selectedMinute={selectedMinute}
+              selectedPeriod={selectedPeriod}
+              onDateSelect={setCustomDate}
+              onIncludeTimeChange={setIncludeTime}
+              onHourChange={setSelectedHour}
+              onMinuteChange={setSelectedMinute}
+              onPeriodChange={setSelectedPeriod}
+              onCancel={() => {
+                setShowCustomDatePicker(false);
+                setCustomDate(undefined);
+                setIncludeTime(false);
+                setSelectedHour('12');
+                setSelectedMinute('00');
+                setSelectedPeriod('PM');
+              }}
+              onInsert={() => {
+                if (customDate) {
+                  handleCustomDateSelect(customDate);
+                }
+              }}
+            />
+          </div>,
+          document.body
+        )}
+    </>
+  );
 
-    window.addEventListener('keydown', handleOptionShortcuts);
-    return () => window.removeEventListener('keydown', handleOptionShortcuts);
-    // Intentionally not depending on handleQuickDueDate/updateEstimation to avoid re-binding on every render.
-    // They are stable enough for user interactions and not critical for stale closure risks here.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, boardConfig?.estimation_type]);
-
-  // Label color utilities (matching task-labels-display.tsx approach)
-  const normalizeHex = (input: string): string | null => {
-    if (!input) return null;
-    let c = input.trim();
-    if (c.startsWith('#')) c = c.slice(1);
-    if (c.length === 3) {
-      c = c
-        .split('')
-        .map((ch) => ch + ch)
-        .join('');
-    }
-    if (c.length !== 6) return null;
-    if (!/^[0-9a-fA-F]{6}$/.test(c)) return null;
-    return `#${c.toLowerCase()}`;
-  };
-
-  const hexToRgb = (hex: string) => {
-    const n = normalizeHex(hex);
-    if (!n) return null;
-    const r = parseInt(n.substring(1, 3), 16);
-    const g = parseInt(n.substring(3, 5), 16);
-    const b = parseInt(n.substring(5, 7), 16);
-    return { r, g, b };
-  };
-
-  const luminance = ({ r, g, b }: { r: number; g: number; b: number }) => {
-    const channel = (v: number) => {
-      const s = v / 255;
-      return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-    };
-    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
-  };
-
-  const adjust = (hex: string, factor: number) => {
-    const rgb = hexToRgb(hex);
-    if (!rgb) return hex;
-    const rN = rgb.r / 255;
-    const gN = rgb.g / 255;
-    const bN = rgb.b / 255;
-    const max = Math.max(rN, gN, bN);
-    const min = Math.min(rN, gN, bN);
-    let h = 0;
-    const l = (max + min) / 2;
-    const d = max - min;
-    let s = 0;
-    if (d !== 0) {
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      switch (max) {
-        case rN:
-          h = (gN - bN) / d + (gN < bN ? 6 : 0);
-          break;
-        case gN:
-          h = (bN - rN) / d + 2;
-          break;
-        default:
-          h = (rN - gN) / d + 4;
-      }
-      h /= 6;
-    }
-    const targetL = Math.min(
-      1,
-      Math.max(0, l * (factor >= 1 ? 1 + (factor - 1) * 0.75 : factor))
-    );
-    const targetS = factor > 1 && targetL > 0.7 ? s * 0.85 : s;
-    const hue2rgb = (p: number, q: number, t: number) => {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1 / 6) return p + (q - p) * 6 * t;
-      if (t < 1 / 2) return q;
-      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-      return p;
-    };
-    const q =
-      targetL < 0.5
-        ? targetL * (1 + targetS)
-        : targetL + targetS - targetL * targetS;
-    const p = 2 * targetL - q;
-    const r = Math.round(hue2rgb(p, q, h + 1 / 3) * 255);
-    const g = Math.round(hue2rgb(p, q, h) * 255);
-    const b = Math.round(hue2rgb(p, q, h - 1 / 3) * 255);
-    return `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
-  };
-
-  const computeAccessibleLabelStyles = (raw: string) => {
-    const nameMap: Record<string, string> = {
-      red: '#ef4444',
-      orange: '#f97316',
-      amber: '#f59e0b',
-      yellow: '#eab308',
-      lime: '#84cc16',
-      green: '#22c55e',
-      emerald: '#10b981',
-      teal: '#14b8a6',
-      cyan: '#06b6d4',
-      sky: '#0ea5e9',
-      blue: '#3b82f6',
-      indigo: '#6366f1',
-      violet: '#8b5cf6',
-      purple: '#a855f7',
-      fuchsia: '#d946ef',
-      pink: '#ec4899',
-      rose: '#f43f5e',
-      gray: '#6b7280',
-      slate: '#64748b',
-      zinc: '#71717a',
-    };
-    const baseHex = normalizeHex(raw) || nameMap[raw.toLowerCase?.()] || null;
-    if (!baseHex) return null;
-    const rgb = hexToRgb(baseHex);
-    if (!rgb) return null;
-    const lum = luminance(rgb);
-    const bg = `${baseHex}1a`; // 10% opacity
-    const border = `${baseHex}4d`; // 30% opacity
-    let text = baseHex;
-    if (lum < 0.22) {
-      text = adjust(baseHex, 1.25);
-    } else if (lum > 0.82) {
-      text = adjust(baseHex, 0.65);
-    }
-    return { bg, border, text };
-  };
-
-  // Build estimation indices via shared util - memoize to prevent recalculation
-  const estimationIndices: number[] = useMemo(() => {
-    return boardConfig?.estimation_type
-      ? buildEstimationIndices({
-          extended: boardConfig?.extended_estimation,
-          allowZero: boardConfig?.allow_zero_estimates,
-        })
-      : [];
-  }, [
-    boardConfig?.estimation_type,
-    boardConfig?.extended_estimation,
-    boardConfig?.allow_zero_estimates,
-  ]);
-
-  const handleDialogOpenChange = (open: boolean) => {
-    if (!open) handleClose();
-  };
-
-  const editorContainerRef = useRef<HTMLDivElement>(null);
-
+  // ============================================================================
+  // JSX RENDER
+  // ============================================================================
   return (
     <>
       {slashCommandMenu}
@@ -2311,6 +2690,16 @@ function TaskEditDialogComponent({
           onContextMenu={(e) => {
             e.preventDefault();
             e.stopPropagation();
+          }}
+          onPointerDownOutside={(e) => {
+            if (showCustomDatePicker || slashState.open || mentionState.open) {
+              e.preventDefault();
+            }
+          }}
+          onInteractOutside={(e) => {
+            if (showCustomDatePicker || slashState.open || mentionState.open) {
+              e.preventDefault();
+            }
           }}
         >
           {/* Main content area - Task title and description */}
@@ -2549,7 +2938,7 @@ function TaskEditDialogComponent({
                 </div>
 
                 {/* Task Description - Full editor experience with subtle border */}
-                <div ref={editorRef} className="flex-1 pb-8">
+                <div ref={editorRef} className="relative flex-1 pb-8">
                   <RichTextEditor
                     content={description}
                     onChange={setDescription}
@@ -2561,6 +2950,17 @@ function TaskEditDialogComponent({
                     flushPendingRef={flushEditorPendingRef}
                     initialCursorOffset={targetEditorCursorRef.current}
                     onEditorReady={handleEditorReady}
+                    yjsDoc={
+                      isOpen && !isCreateMode && showUserPresence ? doc : null
+                    }
+                    yjsProvider={
+                      isOpen && !isCreateMode && showUserPresence
+                        ? provider
+                        : null
+                    }
+                    boardId={boardId}
+                    availableLists={availableLists}
+                    queryClient={queryClient}
                     onArrowUp={(cursorOffset) => {
                       // Focus the title input when pressing arrow up at the start
                       if (titleInputRef.current) {
@@ -2594,7 +2994,7 @@ function TaskEditDialogComponent({
                   />
                 </div>
               </div>
-              {isOpen && !isCreateMode && (
+              {isOpen && !isCreateMode && showUserPresence && (
                 <CursorOverlayWrapper
                   channelName={`editor-cursor-${task?.id}`}
                   containerRef={editorContainerRef}
@@ -2651,7 +3051,7 @@ function TaskEditDialogComponent({
                         <Button
                           variant="outline"
                           className="h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm"
-                          title="Priority – Alt+1 Urgent, Alt+2 High, Alt+3 Medium, Alt+4 Low, Alt+0 Clear"
+                          title="Priority â€“ Alt+1 Urgent, Alt+2 High, Alt+3 Medium, Alt+4 Low, Alt+0 Clear"
                         >
                           <span className="truncate">
                             {availableLists.find(
@@ -2708,7 +3108,7 @@ function TaskEditDialogComponent({
                           <span className="truncate">
                             {priority
                               ? priority === 'critical'
-                                ? '🔥 Urgent'
+                                ? 'ðŸ”¥ Urgent'
                                 : priority === 'high'
                                   ? 'High'
                                   : priority === 'normal'
@@ -2723,7 +3123,7 @@ function TaskEditDialogComponent({
                         {[
                           {
                             value: 'critical',
-                            label: '🔥 Urgent',
+                            label: 'ðŸ”¥ Urgent',
                             dot: 'bg-dynamic-red',
                             className: 'font-semibold text-dynamic-red',
                           },
@@ -2795,7 +3195,7 @@ function TaskEditDialogComponent({
                           <Button
                             variant="outline"
                             className="h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm"
-                            title="Estimation – Alt+Shift+0..7 set, Alt+Shift+X clear"
+                            title="Estimation â€“ Alt+Shift+0..7 set, Alt+Shift+X clear"
                           >
                             <span className="truncate">
                               {typeof estimationPoints === 'number'
@@ -2899,7 +3299,7 @@ function TaskEditDialogComponent({
                               onClick={() => handleQuickDueDate(0)}
                               disabled={isLoading}
                               className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                              title="Today – Alt+T"
+                              title="Today â€“ Alt+T"
                             >
                               Today
                             </Button>
@@ -2910,7 +3310,7 @@ function TaskEditDialogComponent({
                               onClick={() => handleQuickDueDate(1)}
                               disabled={isLoading}
                               className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                              title="Tomorrow – Alt+M"
+                              title="Tomorrow â€“ Alt+M"
                             >
                               Tomorrow
                             </Button>
@@ -2935,7 +3335,7 @@ function TaskEditDialogComponent({
                               onClick={() => handleQuickDueDate(7)}
                               disabled={isLoading}
                               className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                              title="Next week – Alt+W"
+                              title="Next week â€“ Alt+W"
                             >
                               Next week
                             </Button>
@@ -2952,7 +3352,7 @@ function TaskEditDialogComponent({
                     size="xs"
                     onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
                     className="h-8 w-full justify-between text-muted-foreground text-xs transition-all hover:bg-dynamic-orange/5 hover:text-dynamic-orange"
-                    title="Toggle advanced options – Alt+A"
+                    title="Toggle advanced options â€“ Alt+A"
                   >
                     <span className="flex items-center gap-2">
                       <Settings className="h-3 w-3" />
@@ -3517,11 +3917,4 @@ function TaskEditDialogComponent({
   );
 }
 
-export function TaskEditDialog(
-  props: TaskEditDialogProps & {
-    mode?: 'edit' | 'create';
-    showUserPresence?: boolean;
-  }
-) {
-  return <TaskEditDialogComponent {...props} />;
-}
+export const TaskEditDialog = React.memo(TaskEditDialogComponent);

@@ -47,7 +47,7 @@ export default function AboutPage() {
   const t = useTranslations('about');
 
   return (
-    <main className="relative mx-auto overflow-x-clip">
+    <main className="relative mx-auto w-full overflow-x-hidden text-balance">
       {/* Dynamic Floating Orbs with Theme Colors */}
       <div className="-z-10 pointer-events-none fixed inset-0">
         <motion.div
@@ -106,7 +106,7 @@ export default function AboutPage() {
 
       {/* Hero Section */}
       <section className="relative px-4 pt-24 pb-16 sm:px-6 sm:pt-32 sm:pb-20 lg:px-8 lg:pt-40 lg:pb-24">
-        <div className="container mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -187,7 +187,7 @@ export default function AboutPage() {
 
       {/* Vision & Mission Section */}
       <section id="vision" className="relative px-4 py-24 sm:px-6 lg:px-8">
-        <div className="container mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -247,7 +247,7 @@ export default function AboutPage() {
 
       {/* Core Beliefs Section */}
       <section className="relative px-4 py-24 sm:px-6 lg:px-8">
-        <div className="container mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -342,7 +342,7 @@ export default function AboutPage() {
 
       {/* The Problem Section */}
       <section className="relative px-4 py-24 sm:px-6 lg:px-8">
-        <div className="container mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -433,7 +433,7 @@ export default function AboutPage() {
 
       {/* Tuturuuu Ecosystem Section */}
       <section className="relative px-4 py-24 sm:px-6 lg:px-8">
-        <div className="container mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -593,7 +593,7 @@ export default function AboutPage() {
 
       {/* Technology Stack Section */}
       <section className="relative px-4 py-24 sm:px-6 lg:px-8">
-        <div className="container mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -697,7 +697,7 @@ export default function AboutPage() {
 
       {/* Application Features Section */}
       <section className="relative px-4 py-24 sm:px-6 lg:px-8">
-        <div className="container mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -824,7 +824,7 @@ export default function AboutPage() {
 
       {/* Innovation Timeline Section */}
       <section className="relative px-4 py-24 sm:px-6 lg:px-8">
-        <div className="container mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -990,7 +990,7 @@ export default function AboutPage() {
 
       {/* Community & Culture Section */}
       <section className="relative px-4 py-24 sm:px-6 lg:px-8">
-        <div className="container mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -1143,7 +1143,7 @@ export default function AboutPage() {
 
       {/* Company Info Section */}
       <section className="relative px-4 py-24 sm:px-6 lg:px-8">
-        <div className="container mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -1243,7 +1243,7 @@ export default function AboutPage() {
 
       {/* CTA Section */}
       <section className="relative px-4 py-24 pb-32 sm:px-6 lg:px-8">
-        <div className="container mx-auto max-w-4xl">
+        <div className="mx-auto max-w-4xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}

@@ -64,7 +64,7 @@ export function DateTimePicker({
 }: DateTimePickerProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(date);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [isManualTimeEntry, setIsManualTimeEntry] = useState(true);
+  const [isManualTimeEntry, setIsManualTimeEntry] = useState(false);
   const [manualTimeInput, setManualTimeInput] = useState(
     date ? format(date, 'HH:mm') : ''
   );

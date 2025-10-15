@@ -18,7 +18,6 @@ export interface NavCategory {
   items: NavItem[];
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: <translation type is not available yet>
 export const useNavigation = (t: any): { categories: NavCategory[] } => {
   const resources: NavItem[] = [
     {

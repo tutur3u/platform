@@ -2,7 +2,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Separator } from '../separator';
 
-// biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
 export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
   const TUTURUUU_URL = devMode
     ? 'http://localhost:7803'
@@ -169,6 +168,12 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
               className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.about')}
+            </Link>
+            <Link
+              href={`${TUTURUUU_URL}/partners`}
+              className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
+            >
+              {t('common.partners')}
             </Link>
             <Link
               href={`${TUTURUUU_URL}/contact`}

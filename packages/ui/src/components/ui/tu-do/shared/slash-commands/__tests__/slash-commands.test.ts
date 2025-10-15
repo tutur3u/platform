@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  getSlashCommands,
   filterSlashCommands,
+  getSlashCommands,
   normalizeForSearch,
 } from '../definitions';
 
@@ -15,7 +15,7 @@ describe('Slash Commands', () => {
         showAdvanced: false,
       });
 
-      expect(commands.length).toBe(11);
+      expect(commands.length).toBe(12);
     });
 
     it('should disable assign command when no members', () => {
@@ -236,6 +236,80 @@ describe('Slash Commands', () => {
       const assignCommand = commands.find((c) => c.id === 'assign');
       expect(assignCommand?.keywords).toContain('assign');
       expect(assignCommand?.keywords).toContain('member');
+    });
+  });
+
+  describe('convert-to-task command', () => {
+    const commands = getSlashCommands({
+      hasMembers: true,
+      hasEndDate: true,
+      hasPriority: true,
+      showAdvanced: false,
+    });
+
+    it('should exist with correct properties', () => {
+      const convertCommand = commands.find((c) => c.id === 'convert-to-task');
+
+      expect(convertCommand).toBeDefined();
+      expect(convertCommand?.id).toBe('convert-to-task');
+      expect(convertCommand?.label).toBe('Convert to task');
+      expect(convertCommand?.description).toBe(
+        'Convert this item into a new task and mention it'
+      );
+      expect(convertCommand?.icon).toBeDefined();
+      expect(convertCommand?.keywords).toEqual([
+        'convert',
+        'task',
+        'create',
+        'new',
+        'mention',
+      ]);
+    });
+
+    it('should not be disabled by default', () => {
+      const convertCommand = commands.find((c) => c.id === 'convert-to-task');
+      expect(convertCommand?.disabled).toBeUndefined();
+    });
+
+    it('should be searchable by keywords', () => {
+      // Test various keyword searches
+      const searchTests = [
+        { query: 'convert', shouldFind: true },
+        { query: 'task', shouldFind: true },
+        { query: 'create', shouldFind: true },
+        { query: 'new', shouldFind: true },
+        { query: 'mention', shouldFind: true },
+        { query: 'conv', shouldFind: true }, // Partial match
+        { query: 'create task', shouldFind: true }, // Multiple words
+        { query: 'unrelated', shouldFind: false }, // No match
+      ];
+
+      searchTests.forEach(({ query, shouldFind }) => {
+        const filtered = filterSlashCommands(commands, query);
+        const hasCommand = filtered.some((c) => c.id === 'convert-to-task');
+        expect(hasCommand).toBe(shouldFind);
+      });
+    });
+
+    it('should remain enabled regardless of context options', () => {
+      // Test various context combinations to ensure it's never disabled
+      const contextTests = [
+        { hasMembers: false, hasEndDate: false, hasPriority: false },
+        { hasMembers: true, hasEndDate: false, hasPriority: false },
+        { hasMembers: false, hasEndDate: true, hasPriority: false },
+        { hasMembers: false, hasEndDate: false, hasPriority: true },
+      ];
+
+      contextTests.forEach((options) => {
+        const testCommands = getSlashCommands({
+          ...options,
+          showAdvanced: false,
+        });
+        const convertCommand = testCommands.find(
+          (c) => c.id === 'convert-to-task'
+        );
+        expect(convertCommand?.disabled).toBeUndefined();
+      });
     });
   });
 });

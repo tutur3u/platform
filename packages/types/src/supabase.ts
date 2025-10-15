@@ -7241,6 +7241,7 @@ export type Database = {
           creator_id?: null | string;
           deleted?: boolean | null;
           description?: null | string;
+          description_yjs_state?: null | number[];
           embedding?: null | string;
           end_date?: null | string;
           estimation_points?: null | number;
@@ -7301,6 +7302,7 @@ export type Database = {
           creator_id: null | string;
           deleted: boolean | null;
           description: null | string;
+          description_yjs_state: null | number[];
           embedding: null | string;
           end_date: null | string;
           estimation_points: null | number;
@@ -7324,6 +7326,7 @@ export type Database = {
           creator_id?: null | string;
           deleted?: boolean | null;
           description?: null | string;
+          description_yjs_state?: null | number[];
           embedding?: null | string;
           end_date?: null | string;
           estimation_points?: null | number;

@@ -51,7 +51,7 @@ export function TaskLabelsMenu({
           </div>
         )}
         {!isLoading && availableLabels.length > 0 && (
-          <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
+          <ScrollArea style={{ maxHeight: 'min(300px, calc(100vh - 200px))' }}>
             <div className="p-1">
               {availableLabels.map((label) => {
                 const active = taskLabels.some((l) => l.id === label.id);

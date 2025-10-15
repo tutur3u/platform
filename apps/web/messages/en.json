@@ -322,6 +322,7 @@
     "changelog-description": "Stay up to date with our latest product updates and improvements.",
     "about-description": "Learn more about Tuturuuu and our mission.",
     "careers-description": "Join our team and help us build the future of Tuturuuu.",
+    "partners-description": "Explore partnership opportunities with Tuturuuu.",
     "contributors": "Contributors",
     "contributors-description": "Meet the people who make Tuturuuu possible.",
     "security": "Security",
@@ -386,7 +387,8 @@
     "no_changes_to_save": "No changes to save",
     "confirm_delete": "Delete Report?",
     "filter": "Filter",
-    "insufficient_permissions": "Insufficient Permissions"
+    "insufficient_permissions": "Insufficient Permissions",
+    "partners": "Partners"
   },
   "date_helper": {
     "time-unit": "Time unit",

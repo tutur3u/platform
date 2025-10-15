@@ -1,7 +1,7 @@
+import { createPolarClient } from '@/lib/polar';
 import { Webhooks } from '@tuturuuu/payment/polar/next';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { createPolarClient } from '@/lib/polar';
 
 export const POST = Webhooks({
   webhookSecret: process.env.POLAR_WEBHOOK_SECRET || '',
@@ -79,9 +79,7 @@ export const POST = Webhooks({
             process.env.NODE_ENV === 'development'
               ? true
               : // If the workspace is the root workspace and the sandbox is true, use sandbox
-                ws_id === ROOT_WORKSPACE_ID && sandbox
-                ? true // Enable sandbox for root workspace
-                : false, // Otherwise, use production
+                !!(ws_id === ROOT_WORKSPACE_ID && sandbox), // Otherwise, use production
         });
 
         await polarClient.events.ingest({

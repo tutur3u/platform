@@ -10,6 +10,7 @@ export const APP_PUBLIC_PATHS = [
   '/products',
   '/solutions',
   '/careers',
+  '/partners',
   '/security',
   '/security/bug-bounty',
   '/contributors',

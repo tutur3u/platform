@@ -5,11 +5,16 @@ import type { JSONContent } from '@tiptap/react';
 import {
   Calendar,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Flag,
   LayoutDashboard,
   ListTodo,
+  Loader2,
+  MoreHorizontal,
   Plus,
+  Trash2,
   Users,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -19,13 +24,22 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
+import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
@@ -35,13 +49,21 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import { TaskEstimationMenu } from '@tuturuuu/ui/tu-do/boards/boardId/menus/task-estimation-menu';
+import { TaskLabelsMenu } from '@tuturuuu/ui/tu-do/boards/boardId/menus/task-labels-menu';
+import { TaskPriorityMenu } from '@tuturuuu/ui/tu-do/boards/boardId/menus/task-priority-menu';
+import { TaskProjectsMenu } from '@tuturuuu/ui/tu-do/boards/boardId/menus/task-projects-menu';
 import { TaskBoardForm } from '@tuturuuu/ui/tu-do/boards/form';
 import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
+import { TaskEstimationDisplay } from '@tuturuuu/ui/tu-do/shared/task-estimation-display';
+import { cn } from '@tuturuuu/utils/format';
+import { useBoardConfig } from '@tuturuuu/utils/task-helper';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import TaskListWithCompletion from '../../(dashboard)/tasks/task-list-with-completion';
 import { CommandBar, type CommandMode, type TaskOptions } from './command-bar';
@@ -51,6 +73,8 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const MAX_LABEL_SUGGESTIONS = 6;
+const MAX_VISIBLE_PREVIEW_LABELS = 3;
+const MAX_VISIBLE_WORKSPACE_LABELS = 12;
 
 const normalizeLabel = (value: string) => value.trim().toLowerCase();
 
@@ -99,6 +123,50 @@ const parseDueDateToState = (value: string | null | undefined) => {
   return adjustDateToEndOfDay(parsed);
 };
 
+const formatDueDateForPayload = (value: Date | undefined) =>
+  value ? adjustDateToEndOfDay(value).toISOString() : null;
+
+const priorityBadgeClass = (priority: TaskPriority | null) => {
+  switch (priority) {
+    case 'critical':
+      return 'border-dynamic-red/60 bg-dynamic-red/15 text-dynamic-red';
+    case 'high':
+      return 'border-dynamic-orange/60 bg-dynamic-orange/15 text-dynamic-orange';
+    case 'normal':
+      return 'border-dynamic-yellow/60 bg-dynamic-yellow/15 text-dynamic-yellow';
+    case 'low':
+      return 'border-dynamic-blue/60 bg-dynamic-blue/15 text-dynamic-blue';
+    default:
+      return 'border-dynamic-muted/60 bg-dynamic-muted/15 text-muted-foreground';
+  }
+};
+
+const getPriorityCopy = (priority: TaskPriority | null) => {
+  switch (priority) {
+    case 'critical':
+      return 'Urgent';
+    case 'high':
+      return 'High';
+    case 'normal':
+      return 'Medium';
+    case 'low':
+      return 'Low';
+    default:
+      return 'No Priority';
+  }
+};
+
+const LABEL_COLOR_CLASSES: Record<string, string> = {
+  gray: 'border-dynamic-gray/60 bg-dynamic-gray/15 text-dynamic-gray',
+  red: 'border-dynamic-red/60 bg-dynamic-red/15 text-dynamic-red',
+  orange: 'border-dynamic-orange/60 bg-dynamic-orange/15 text-dynamic-orange',
+  yellow: 'border-dynamic-yellow/60 bg-dynamic-yellow/15 text-dynamic-yellow',
+  green: 'border-dynamic-green/60 bg-dynamic-green/15 text-dynamic-green',
+  blue: 'border-dynamic-blue/60 bg-dynamic-blue/15 text-dynamic-blue',
+  purple: 'border-dynamic-purple/60 bg-dynamic-purple/15 text-dynamic-purple',
+  pink: 'border-dynamic-pink/60 bg-dynamic-pink/15 text-dynamic-pink',
+};
+
 interface JournalTaskResponse {
   tasks?: Array<{
     id: string;
@@ -108,6 +176,8 @@ interface JournalTaskResponse {
     labelSuggestions?: string[];
     dueDate?: string | null;
     labels?: ProvidedTaskLabelPayload[];
+    estimationPoints?: number | null;
+    projectIds?: string[];
   }>;
   metadata?: {
     generatedWithAI?: boolean;
@@ -187,7 +257,7 @@ export default function MyTasksContent({
   const [aiGenerateLabels, setAiGenerateLabels] = useState(true);
 
   // Preview state
-  const [, setPreviewOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [previewEntry, setPreviewEntry] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<JournalTaskResponse | null>(
     null
@@ -203,6 +273,34 @@ export default function MyTasksContent({
   const [workspaceLabelsExpanded, setWorkspaceLabelsExpanded] = useState(false);
   const lastInitializedLabelsKey = useRef<string | null>(null);
   const lastInitializedDueDatesKey = useRef<string | null>(null);
+
+  // Inline editing state for preview tasks
+  const [previewTaskMenuOpen, setPreviewTaskMenuOpen] = useState<
+    Record<number, boolean>
+  >({});
+  const [previewTaskNames, setPreviewTaskNames] = useState<
+    Record<number, string>
+  >({});
+  const [previewTaskDescriptions, setPreviewTaskDescriptions] = useState<
+    Record<number, string | null>
+  >({});
+  const [previewTaskPriorities, setPreviewTaskPriorities] = useState<
+    Record<number, TaskPriority | null>
+  >({});
+  const [previewTaskProjects, setPreviewTaskProjects] = useState<
+    Record<number, string[]>
+  >({});
+  const [previewTaskEstimations, setPreviewTaskEstimations] = useState<
+    Record<number, number | null>
+  >({});
+  const [removedTaskIndices, setRemovedTaskIndices] = useState<Set<number>>(
+    new Set()
+  );
+  const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
+  const [editingTaskTitle, setEditingTaskTitle] = useState<number | null>(null);
+  const [editingTaskDescription, setEditingTaskDescription] = useState<
+    number | null
+  >(null);
 
   const clientTimezone = useMemo(() => {
     try {
@@ -337,6 +435,9 @@ export default function MyTasksContent({
       return data || [];
     },
   });
+
+  // Fetch board config for selected board (needed for estimation options in preview)
+  const { data: boardConfig } = useBoardConfig(selectedBoardId || undefined);
 
   const sortedLabels = useMemo(
     () =>
@@ -476,6 +577,7 @@ export default function MyTasksContent({
       setLastResult(payload ?? null);
       setPreviewEntry(variables.entry);
       setSelectedLabelIds([]);
+      setCurrentPreviewIndex(0);
       setPreviewOpen(true);
     },
     onError: (mutationError: Error) => {
@@ -512,6 +614,53 @@ export default function MyTasksContent({
       setCommandBarLoading(false);
     }
   };
+
+  // Create tasks from preview mutation
+  const createTasksMutation = useMutation({
+    mutationFn: async (payload: {
+      entry: string;
+      listId: string;
+      tasks: Array<{
+        title: string;
+        description: string | null;
+        priority: TaskPriority | null;
+        labels: Array<{ id?: string; name: string }>;
+        dueDate: string | null;
+        estimationPoints?: number | null;
+        projectIds?: string[];
+      }>;
+      labelIds: string[];
+      generatedWithAI: boolean;
+      generateDescriptions: boolean;
+      generatePriority: boolean;
+      generateLabels: boolean;
+      clientTimezone: string;
+      clientTimestamp: string;
+    }) => {
+      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks/journal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.error || 'Failed to create tasks');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast.success('Tasks created successfully!');
+      setPreviewOpen(false);
+      setLastResult(null);
+      setPreviewEntry(null);
+      setPendingTaskTitle('');
+      setTaskCreatorMode(null);
+      handleUpdate();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create tasks');
+    },
+  });
 
   const handleCreateTask = async (title: string, options?: TaskOptions) => {
     // If destination is not yet confirmed, open selector first
@@ -636,6 +785,359 @@ export default function MyTasksContent({
     setPendingTaskTitle('');
     setTaskCreatorMode(null);
   };
+
+  // Preview dialog handlers
+  const handleCancelPreview = () => {
+    if (createTasksMutation.isPending) return;
+    setPreviewOpen(false);
+    setLastResult(null);
+    setPreviewEntry(null);
+    setPendingTaskTitle('');
+    setTaskCreatorMode(null);
+    setCurrentPreviewIndex(0);
+    setEditingTaskTitle(null);
+    setEditingTaskDescription(null);
+  };
+
+  // Navigation handlers for preview dialog
+  const handleNextTask = () => {
+    if (createTasksMutation.isPending) return;
+    const visibleTasks = previewTasks.filter(
+      (_, index) => !removedTaskIndices.has(index)
+    );
+    if (currentPreviewIndex < visibleTasks.length - 1) {
+      setEditingTaskTitle(null);
+      setEditingTaskDescription(null);
+      setCurrentPreviewIndex((prev) => prev + 1);
+    }
+  };
+
+  const handlePreviousTask = () => {
+    if (createTasksMutation.isPending) return;
+    if (currentPreviewIndex > 0) {
+      setEditingTaskTitle(null);
+      setEditingTaskDescription(null);
+      setCurrentPreviewIndex((prev) => prev - 1);
+    }
+  };
+
+  const toggleLabel = (labelId: string) => {
+    if (createTasksMutation.isPending) return;
+    setSelectedLabelIds((prev) =>
+      prev.includes(labelId)
+        ? prev.filter((id) => id !== labelId)
+        : [...prev, labelId]
+    );
+  };
+
+  const toggleWorkspaceLabelsExpansion = () => {
+    if (createTasksMutation.isPending) return;
+    setWorkspaceLabelsExpanded((prev) => !prev);
+  };
+
+  const toggleTaskLabelSuggestion = (
+    taskIndex: number,
+    optionIndex: number
+  ) => {
+    if (!aiGenerateLabels || createTasksMutation.isPending) return;
+
+    setTaskLabelSelections((prev) => {
+      if (!prev[taskIndex]) return prev;
+
+      const next = prev.map((selection, index) => {
+        if (index !== taskIndex) return selection;
+
+        return {
+          suggestions: selection.suggestions.map((option, currentIndex) => {
+            if (currentIndex !== optionIndex) return option;
+
+            return {
+              ...option,
+              selected: !option.selected,
+            };
+          }),
+        };
+      });
+
+      return next;
+    });
+  };
+
+  const toggleLabelPreviewExpansion = (index: number) => {
+    if (createTasksMutation.isPending) return;
+    setExpandedLabelCards((prev) => ({
+      ...prev,
+      [index]: !prev[index],
+    }));
+  };
+
+  const handleDueDateChange = (index: number, date: Date | undefined) => {
+    if (createTasksMutation.isPending) return;
+    setTaskDueDates((prev) => {
+      const next = [...prev];
+      next[index] = date;
+      return next;
+    });
+  };
+
+  // Inline editing handlers for preview tasks
+  const handlePreviewTaskPriorityChange = (
+    index: number,
+    priority: TaskPriority | null
+  ) => {
+    if (createTasksMutation.isPending) return;
+    setPreviewTaskPriorities((prev) => ({
+      ...prev,
+      [index]: priority,
+    }));
+  };
+
+  const handlePreviewTaskLabelToggle = (index: number, labelId: string) => {
+    if (createTasksMutation.isPending) return;
+
+    // Find the option index for this label ID in the task's label selections
+    const selection = taskLabelSelections[index];
+    if (!selection) return;
+
+    const optionIndex = selection.suggestions.findIndex(
+      (opt) => opt.id === labelId
+    );
+
+    if (optionIndex === -1) {
+      // This is a workspace label not in suggestions - add it
+      setTaskLabelSelections((prev) => {
+        const next = [...prev];
+        if (!next[index]) return prev;
+
+        const workspaceLabel = workspaceLabels.find((l) => l.id === labelId);
+        if (!workspaceLabel) return prev;
+
+        // Add the workspace label to suggestions as selected
+        next[index] = {
+          suggestions: [
+            ...next[index].suggestions,
+            {
+              id: workspaceLabel.id,
+              name: workspaceLabel.name,
+              displayName: workspaceLabel.name,
+              isNew: false,
+              selected: true,
+            },
+          ],
+        };
+
+        return next;
+      });
+    } else {
+      // Toggle existing option
+      toggleTaskLabelSuggestion(index, optionIndex);
+    }
+  };
+
+  const handlePreviewTaskProjectToggle = (index: number, projectId: string) => {
+    if (createTasksMutation.isPending) return;
+    setPreviewTaskProjects((prev) => {
+      const currentProjects = prev[index] || [];
+      const hasProject = currentProjects.includes(projectId);
+
+      return {
+        ...prev,
+        [index]: hasProject
+          ? currentProjects.filter((id) => id !== projectId)
+          : [...currentProjects, projectId],
+      };
+    });
+  };
+
+  const handlePreviewTaskEstimationChange = (
+    index: number,
+    points: number | null
+  ) => {
+    if (createTasksMutation.isPending) return;
+    setPreviewTaskEstimations((prev) => ({
+      ...prev,
+      [index]: points,
+    }));
+  };
+
+  // Inline editing handlers
+  const handleStartEditTitle = (index: number) => {
+    if (createTasksMutation.isPending) return;
+    setEditingTaskTitle(index);
+  };
+
+  const handleStartEditDescription = (index: number) => {
+    if (createTasksMutation.isPending) return;
+    setEditingTaskDescription(index);
+  };
+
+  const handleSaveTitle = (index: number, value: string) => {
+    const trimmedValue = value.trim();
+    if (!trimmedValue) {
+      toast.error('Task title cannot be empty');
+      return;
+    }
+    setPreviewTaskNames((prev) => ({
+      ...prev,
+      [index]: trimmedValue,
+    }));
+    setEditingTaskTitle(null);
+  };
+
+  const handleSaveDescription = (index: number, value: string) => {
+    setPreviewTaskDescriptions((prev) => ({
+      ...prev,
+      [index]: value.trim() || null,
+    }));
+    setEditingTaskDescription(null);
+  };
+
+  const handleCancelEditTitle = () => {
+    setEditingTaskTitle(null);
+  };
+
+  const handleCancelEditDescription = () => {
+    setEditingTaskDescription(null);
+  };
+
+  const handleRemovePreviewTask = (index: number) => {
+    if (createTasksMutation.isPending) return;
+    setRemovedTaskIndices((prev) => new Set([...prev, index]));
+    setPreviewTaskMenuOpen((prev) => ({
+      ...prev,
+      [index]: false,
+    }));
+
+    // Adjust current preview index if necessary
+    const visibleTasks = previewTasks.filter(
+      (_, i) => !removedTaskIndices.has(i) && i !== index
+    );
+
+    if (visibleTasks.length === 0) {
+      // No tasks left - close the dialog
+      handleCancelPreview();
+    } else if (currentPreviewIndex >= visibleTasks.length) {
+      setCurrentPreviewIndex(visibleTasks.length - 1);
+    }
+  };
+
+  const handleMenuItemSelect = (e: Event, action: () => void) => {
+    e.preventDefault();
+    action();
+  };
+
+  const handleConfirmTasks = () => {
+    const createText = (previewEntry ?? pendingTaskTitle).trim();
+    if (!createText) {
+      toast.error(t('ws-tasks.errors.missing_task_description'));
+      return;
+    }
+
+    const previewTasks = lastResult?.tasks ?? [];
+    const tasksPayload = previewTasks
+      .map((task, index) => {
+        // Skip removed tasks
+        if (removedTaskIndices.has(index)) {
+          return null;
+        }
+
+        const selections = aiGenerateLabels
+          ? (taskLabelSelections[index]?.suggestions.filter(
+              (option) => option.selected
+            ) ?? [])
+          : [];
+
+        // Use edited values if available, otherwise fall back to original
+        const taskName = previewTaskNames[index] ?? task.name;
+        const taskDescription =
+          index in previewTaskDescriptions
+            ? previewTaskDescriptions[index]
+            : aiGenerateDescriptions
+              ? task.description
+              : null;
+        const taskPriority =
+          index in previewTaskPriorities
+            ? previewTaskPriorities[index]
+            : aiGeneratePriority
+              ? task.priority
+              : null;
+        const taskEstimation =
+          index in previewTaskEstimations
+            ? previewTaskEstimations[index]
+            : null;
+        const taskProjects = previewTaskProjects[index] || [];
+
+        return {
+          title: taskName,
+          description: taskDescription ?? null,
+          priority: taskPriority ?? null,
+          labels: selections.map((option) => ({
+            id: option.id ?? undefined,
+            name: option.name,
+          })),
+          dueDate: formatDueDateForPayload(taskDueDates[index]),
+          estimationPoints: taskEstimation,
+          projectIds: taskProjects,
+        };
+      })
+      .filter((task) => task !== null);
+    if (tasksPayload.length === 0) {
+      toast.error('No tasks selected to create');
+      return;
+    }
+
+    let timestampMoment = dayjs().tz(clientTimezone);
+    if (!timestampMoment.isValid()) {
+      timestampMoment = dayjs();
+    }
+    const clientTimestamp = timestampMoment.toISOString();
+
+    createTasksMutation.mutate({
+      entry: createText,
+      listId: selectedListId,
+      generatedWithAI: Boolean(lastResult?.metadata?.generatedWithAI),
+      tasks: tasksPayload,
+      labelIds: selectedLabelIds,
+      generateDescriptions: aiGenerateDescriptions,
+      generatePriority: aiGeneratePriority,
+      generateLabels: aiGenerateLabels,
+      clientTimezone,
+      clientTimestamp,
+    });
+  };
+
+  // Preview dialog computed values
+  const previewTasks = lastResult?.tasks ?? [];
+  const generatedWithAI = Boolean(lastResult?.metadata?.generatedWithAI);
+  const isCreating = createTasksMutation.isPending;
+  const labelsLoading = false; // Labels are already loaded
+
+  // Compute visible tasks for navigation
+  const visiblePreviewTasks = useMemo(() => {
+    return previewTasks
+      .map((task, originalIndex) => ({ task, originalIndex }))
+      .filter(({ originalIndex }) => !removedTaskIndices.has(originalIndex));
+  }, [previewTasks, removedTaskIndices]);
+
+  const disableConfirm =
+    isCreating || !selectedListId || visiblePreviewTasks.length === 0;
+
+  const currentVisibleTask = useMemo(() => {
+    if (
+      visiblePreviewTasks.length === 0 ||
+      currentPreviewIndex >= visiblePreviewTasks.length
+    ) {
+      return null;
+    }
+    return visiblePreviewTasks[currentPreviewIndex];
+  }, [visiblePreviewTasks, currentPreviewIndex]);
+
+  const displayedWorkspaceLabels = useMemo(() => {
+    if (!aiGenerateLabels) return [];
+    return workspaceLabelsExpanded
+      ? sortedLabels
+      : sortedLabels.slice(0, MAX_VISIBLE_WORKSPACE_LABELS);
+  }, [aiGenerateLabels, workspaceLabelsExpanded, sortedLabels]);
 
   // Group tasks by priority for better organization
   const groupTasksByPriority = (tasks: TaskWithRelations[] | undefined) => {
@@ -813,6 +1315,45 @@ export default function MyTasksContent({
     );
     lastInitializedDueDatesKey.current = previewKey;
   }, [lastResult, previewEntry, pendingTaskTitle, taskDueDates.length]);
+
+  // Initialize preview task inline editing state when preview opens
+  useEffect(() => {
+    if (!lastResult?.tasks?.length) {
+      setPreviewTaskMenuOpen({});
+      setPreviewTaskNames({});
+      setPreviewTaskDescriptions({});
+      setPreviewTaskPriorities({});
+      setPreviewTaskProjects({});
+      setPreviewTaskEstimations({});
+      setRemovedTaskIndices(new Set());
+      return;
+    }
+
+    const previewTasks = lastResult.tasks;
+
+    // Initialize with original values
+    const initialNames: Record<number, string> = {};
+    const initialDescriptions: Record<number, string | null> = {};
+    const initialPriorities: Record<number, TaskPriority | null> = {};
+    const initialProjects: Record<number, string[]> = {};
+    const initialEstimations: Record<number, number | null> = {};
+
+    previewTasks.forEach((task, index) => {
+      initialNames[index] = task.name;
+      initialDescriptions[index] = task.description || null;
+      initialPriorities[index] = task.priority || null;
+      initialProjects[index] = task.projectIds || [];
+      initialEstimations[index] = task.estimationPoints ?? null;
+    });
+
+    setPreviewTaskNames(initialNames);
+    setPreviewTaskDescriptions(initialDescriptions);
+    setPreviewTaskPriorities(initialPriorities);
+    setPreviewTaskProjects(initialProjects);
+    setPreviewTaskEstimations(initialEstimations);
+    setPreviewTaskMenuOpen({});
+    setRemovedTaskIndices(new Set());
+  }, [lastResult]);
 
   // Reset labels when aiGenerateLabels is disabled
   useEffect(() => {
@@ -1594,6 +2135,659 @@ export default function MyTasksContent({
               });
             }}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Preview Dialog */}
+      <Dialog
+        open={previewOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCancelPreview();
+          }
+        }}
+      >
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Review Generated {previewTasks.length} Task
+              {previewTasks.length !== 1 ? 's' : ''}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedListId
+                ? (() => {
+                    const board = boardsData.find((b: any) =>
+                      (b.task_lists as any[])?.some(
+                        (l: any) => l.id === selectedListId
+                      )
+                    );
+                    const lists = (board?.task_lists as any[]) || [];
+                    const list = lists.find(
+                      (l: any) => l.id === selectedListId
+                    );
+                    const listName = list?.name || 'Unknown List';
+                    return `Tasks will be created in "${listName}"`;
+                  })()
+                : 'Select a list to continue'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {/* Workspace Labels */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="font-medium text-sm">Workspace Labels</Label>
+                <span className="text-muted-foreground text-xs">
+                  Apply to all tasks
+                </span>
+              </div>
+
+              {!aiGenerateLabels ? (
+                <p className="rounded-lg border border-dynamic-muted/30 bg-dynamic-muted/10 p-3 text-muted-foreground text-xs">
+                  Label generation is disabled
+                </p>
+              ) : labelsLoading ? (
+                <div className="flex items-center gap-2 rounded-lg border border-dynamic-blue/30 bg-dynamic-blue/10 px-3 py-2 text-dynamic-blue text-xs">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Loading labels...</span>
+                </div>
+              ) : sortedLabels.length ? (
+                <>
+                  <div className="flex flex-wrap gap-2">
+                    {displayedWorkspaceLabels.map((label) => {
+                      const selected = selectedLabelIds.includes(label.id);
+                      const colorClass =
+                        LABEL_COLOR_CLASSES[label.color] ||
+                        LABEL_COLOR_CLASSES.gray;
+
+                      return (
+                        <button
+                          key={label.id}
+                          type="button"
+                          onClick={() => toggleLabel(label.id)}
+                          className={`rounded-full border px-3 py-1 font-medium text-xs transition ${colorClass} ${
+                            selected ? 'ring-2 ring-dynamic-blue' : ''
+                          }`}
+                        >
+                          {label.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {sortedLabels.length > MAX_VISIBLE_WORKSPACE_LABELS ? (
+                    <button
+                      type="button"
+                      onClick={toggleWorkspaceLabelsExpansion}
+                      className="mt-2 font-medium text-dynamic-blue text-xs hover:underline"
+                      disabled={isCreating}
+                    >
+                      {workspaceLabelsExpanded
+                        ? 'Show less'
+                        : `Show ${sortedLabels.length - MAX_VISIBLE_WORKSPACE_LABELS} more`}
+                    </button>
+                  ) : null}
+                </>
+              ) : (
+                <p className="rounded-lg border border-dynamic-muted/30 bg-dynamic-muted/10 p-3 text-muted-foreground text-xs">
+                  No workspace labels available
+                </p>
+              )}
+            </div>
+
+            {/* Preview Tasks */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="font-semibold text-foreground text-sm">
+                  {generatedWithAI
+                    ? `AI-Generated Tasks (${previewTasks.length})`
+                    : `Manual Tasks (${previewTasks.length})`}
+                </p>
+                <Badge
+                  variant="outline"
+                  className="border-dynamic-blue/40 bg-transparent text-foreground text-xs"
+                >
+                  {visiblePreviewTasks.length} task
+                  {visiblePreviewTasks.length !== 1 ? 's' : ''}
+                </Badge>
+              </div>
+
+              {/* Single Task Display */}
+              {currentVisibleTask ? (
+                <div className="space-y-3">
+                  {(() => {
+                    const { task, originalIndex } = currentVisibleTask;
+                    const displayIndex = currentPreviewIndex;
+                    const selection = taskLabelSelections[originalIndex];
+                    const suggestions = aiGenerateLabels
+                      ? (selection?.suggestions ?? [])
+                      : [];
+                    const hasNewSelections = suggestions.some(
+                      (option) => option.isNew && option.selected
+                    );
+                    const dueDateValue = taskDueDates[originalIndex];
+                    const menuOpen =
+                      previewTaskMenuOpen[originalIndex] || false;
+
+                    // Get current values (edited or original)
+                    const currentName =
+                      previewTaskNames[originalIndex] ?? task.name;
+                    const currentDescription =
+                      originalIndex in previewTaskDescriptions
+                        ? previewTaskDescriptions[originalIndex]
+                        : task.description;
+                    const currentPriority: TaskPriority | null =
+                      originalIndex in previewTaskPriorities
+                        ? (previewTaskPriorities[originalIndex] ?? null)
+                        : (task.priority ?? null);
+
+                    return (
+                      <div
+                        key={task.id ?? `${task.name}-${originalIndex}`}
+                        className="group rounded-md border border-dynamic-surface/30 bg-background/80 p-3"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 space-y-1">
+                            <div className="flex items-start gap-2">
+                              {/* Editable Title */}
+                              {editingTaskTitle === originalIndex ? (
+                                <div className="flex-1 space-y-2">
+                                  <Textarea
+                                    value={currentName}
+                                    onChange={(e) => {
+                                      setPreviewTaskNames((prev) => ({
+                                        ...prev,
+                                        [originalIndex]: e.target.value,
+                                      }));
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleSaveTitle(
+                                          originalIndex,
+                                          currentName
+                                        );
+                                      } else if (e.key === 'Escape') {
+                                        handleCancelEditTitle();
+                                      }
+                                    }}
+                                    className="min-h-[60px] w-full resize-none break-all font-medium text-sm"
+                                    autoFocus
+                                    disabled={isCreating}
+                                  />
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      onClick={() =>
+                                        handleSaveTitle(
+                                          originalIndex,
+                                          currentName
+                                        )
+                                      }
+                                      disabled={isCreating}
+                                    >
+                                      Save
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={handleCancelEditTitle}
+                                      disabled={isCreating}
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleStartEditTitle(originalIndex)
+                                  }
+                                  className="line-clamp-2 flex-1 cursor-text break-all rounded px-2 py-1 text-left font-medium text-foreground text-sm transition hover:bg-muted/50"
+                                  disabled={isCreating}
+                                >
+                                  {displayIndex + 1}. {currentName}
+                                </button>
+                              )}
+
+                              {/* Inline Actions Menu */}
+                              <DropdownMenu
+                                open={menuOpen}
+                                onOpenChange={(open) => {
+                                  setPreviewTaskMenuOpen((prev) => ({
+                                    ...prev,
+                                    [originalIndex]: open,
+                                  }));
+                                }}
+                              >
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="xs"
+                                    className={cn(
+                                      'h-7 w-7 shrink-0 p-0 transition-all duration-200',
+                                      'hover:scale-105 hover:bg-muted',
+                                      menuOpen
+                                        ? 'opacity-100'
+                                        : 'opacity-0 group-hover:opacity-100',
+                                      menuOpen && 'bg-muted ring-1 ring-border'
+                                    )}
+                                    disabled={isCreating}
+                                  >
+                                    <MoreHorizontal className="h-3 w-3" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                  align="end"
+                                  className="w-56"
+                                  sideOffset={5}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                  }}
+                                >
+                                  {/* Priority Menu */}
+                                  <TaskPriorityMenu
+                                    currentPriority={currentPriority}
+                                    isLoading={isCreating}
+                                    onPriorityChange={(priority) =>
+                                      handlePreviewTaskPriorityChange(
+                                        originalIndex,
+                                        priority
+                                      )
+                                    }
+                                    onMenuItemSelect={handleMenuItemSelect}
+                                    onClose={() =>
+                                      setPreviewTaskMenuOpen((prev) => ({
+                                        ...prev,
+                                        [originalIndex]: false,
+                                      }))
+                                    }
+                                  />
+
+                                  {/* Estimation Menu */}
+                                  {boardConfig?.estimation_type && (
+                                    <TaskEstimationMenu
+                                      currentPoints={
+                                        originalIndex in previewTaskEstimations
+                                          ? previewTaskEstimations[
+                                              originalIndex
+                                            ]
+                                          : null
+                                      }
+                                      estimationType={
+                                        boardConfig.estimation_type
+                                      }
+                                      extendedEstimation={
+                                        boardConfig.extended_estimation || false
+                                      }
+                                      allowZeroEstimates={
+                                        boardConfig.allow_zero_estimates ?? true
+                                      }
+                                      isLoading={isCreating}
+                                      onEstimationChange={(points) =>
+                                        handlePreviewTaskEstimationChange(
+                                          originalIndex,
+                                          points
+                                        )
+                                      }
+                                      onMenuItemSelect={handleMenuItemSelect}
+                                    />
+                                  )}
+
+                                  {/* Labels Menu */}
+                                  {aiGenerateLabels && (
+                                    <TaskLabelsMenu
+                                      taskLabels={suggestions
+                                        .filter((opt) => opt.selected)
+                                        .map((opt) => ({
+                                          id: opt.id || '',
+                                          name: opt.name,
+                                          color: 'gray' as const,
+                                        }))}
+                                      availableLabels={workspaceLabels}
+                                      isLoading={false}
+                                      labelsSaving={null}
+                                      onToggleLabel={(labelId) => {
+                                        handlePreviewTaskLabelToggle(
+                                          originalIndex,
+                                          labelId
+                                        );
+                                      }}
+                                      onCreateNewLabel={() => {
+                                        setPreviewTaskMenuOpen((prev) => ({
+                                          ...prev,
+                                          [originalIndex]: false,
+                                        }));
+                                      }}
+                                      onMenuItemSelect={handleMenuItemSelect}
+                                    />
+                                  )}
+
+                                  {/* Projects Menu */}
+                                  <TaskProjectsMenu
+                                    taskProjects={(
+                                      previewTaskProjects[originalIndex] || []
+                                    ).map((projectId) => {
+                                      const project = workspaceProjects.find(
+                                        (p) => p.id === projectId
+                                      );
+                                      return {
+                                        id: projectId,
+                                        name:
+                                          project?.name || 'Unknown Project',
+                                        status: null,
+                                      };
+                                    })}
+                                    availableProjects={workspaceProjects.map(
+                                      (p) => ({
+                                        id: p.id,
+                                        name: p.name,
+                                        status: null,
+                                      })
+                                    )}
+                                    isLoading={false}
+                                    projectsSaving={null}
+                                    onToggleProject={(projectId) =>
+                                      handlePreviewTaskProjectToggle(
+                                        originalIndex,
+                                        projectId
+                                      )
+                                    }
+                                    onMenuItemSelect={handleMenuItemSelect}
+                                  />
+
+                                  <DropdownMenuSeparator />
+
+                                  {/* Remove Task */}
+                                  <DropdownMenuItem
+                                    onSelect={(e) =>
+                                      handleMenuItemSelect(
+                                        e as unknown as Event,
+                                        () => {
+                                          handleRemovePreviewTask(
+                                            originalIndex
+                                          );
+                                        }
+                                      )
+                                    }
+                                    className="cursor-pointer text-dynamic-red hover:bg-dynamic-red/10 hover:text-dynamic-red/90"
+                                    disabled={isCreating}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    Remove task
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+
+                            <p className="font-medium text-muted-foreground text-xs">
+                              Description
+                            </p>
+                            {aiGenerateDescriptions ? (
+                              editingTaskDescription === originalIndex ? (
+                                <div className="space-y-2">
+                                  <Textarea
+                                    value={currentDescription || ''}
+                                    onChange={(e) => {
+                                      setPreviewTaskDescriptions((prev) => ({
+                                        ...prev,
+                                        [originalIndex]: e.target.value,
+                                      }));
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (
+                                        e.key === 'Enter' &&
+                                        e.metaKey &&
+                                        !e.shiftKey
+                                      ) {
+                                        e.preventDefault();
+                                        handleSaveDescription(
+                                          originalIndex,
+                                          currentDescription || ''
+                                        );
+                                      } else if (e.key === 'Escape') {
+                                        handleCancelEditDescription();
+                                      }
+                                    }}
+                                    className="min-h-[80px] w-full resize-none break-all text-sm"
+                                    placeholder="Add a description..."
+                                    autoFocus
+                                    disabled={isCreating}
+                                  />
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      onClick={() =>
+                                        handleSaveDescription(
+                                          originalIndex,
+                                          currentDescription || ''
+                                        )
+                                      }
+                                      disabled={isCreating}
+                                    >
+                                      Save
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={handleCancelEditDescription}
+                                      disabled={isCreating}
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleStartEditDescription(originalIndex)
+                                  }
+                                  className="line-clamp-3 w-full cursor-text break-all rounded px-2 py-1 text-left text-foreground text-sm leading-relaxed opacity-90 transition hover:bg-muted/50"
+                                  disabled={isCreating}
+                                >
+                                  {currentDescription || 'No description'}
+                                </button>
+                              )
+                            ) : (
+                              <p className="text-muted-foreground text-sm italic">
+                                Description generation disabled
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            {aiGeneratePriority ? (
+                              <Badge
+                                variant="outline"
+                                className={priorityBadgeClass(currentPriority)}
+                              >
+                                {getPriorityCopy(currentPriority)}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground text-xs italic">
+                                Priority disabled
+                              </span>
+                            )}
+                            {boardConfig?.estimation_type &&
+                              originalIndex in previewTaskEstimations &&
+                              previewTaskEstimations[originalIndex] !==
+                                null && (
+                                <TaskEstimationDisplay
+                                  points={
+                                    previewTaskEstimations[originalIndex] ?? 0
+                                  }
+                                  size="sm"
+                                  estimationType={boardConfig.estimation_type}
+                                  showIcon
+                                />
+                              )}
+                          </div>
+                        </div>
+
+                        <div className="mt-3 space-y-1">
+                          <p className="text-muted-foreground text-xs uppercase tracking-wide">
+                            Due Date
+                          </p>
+                          <DateTimePicker
+                            date={dueDateValue}
+                            setDate={(date) =>
+                              handleDueDateChange(originalIndex, date)
+                            }
+                            showTimeSelect
+                            disabled={isCreating}
+                          />
+                          {!dueDateValue ? (
+                            <p className="text-muted-foreground text-xs">
+                              No due date set
+                            </p>
+                          ) : null}
+                        </div>
+
+                        {aiGenerateLabels ? (
+                          <div className="mt-3 space-y-1">
+                            <p className="text-muted-foreground text-xs uppercase tracking-wide">
+                              Task Labels
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {suggestions.length ? (
+                                suggestions.map((option, optionIndex) => {
+                                  if (
+                                    !expandedLabelCards[originalIndex] &&
+                                    optionIndex >= MAX_VISIBLE_PREVIEW_LABELS
+                                  ) {
+                                    return null;
+                                  }
+                                  return (
+                                    <button
+                                      key={`${task.id ?? `${task.name}-${option.name}`}-${optionIndex}`}
+                                      type="button"
+                                      onClick={() =>
+                                        toggleTaskLabelSuggestion(
+                                          originalIndex,
+                                          optionIndex
+                                        )
+                                      }
+                                      className={cn(
+                                        'rounded-full border px-3 py-1 font-medium text-xs transition',
+                                        option.selected
+                                          ? 'border-dynamic-purple/60 bg-dynamic-purple/15 text-dynamic-purple'
+                                          : 'border-dynamic-muted/40 text-muted-foreground'
+                                      )}
+                                    >
+                                      {option.displayName}
+                                      {option.isNew ? (
+                                        <span className="ml-2 text-[0.625rem] text-dynamic-purple uppercase tracking-wide">
+                                          NEW
+                                        </span>
+                                      ) : null}
+                                    </button>
+                                  );
+                                })
+                              ) : (
+                                <span className="text-muted-foreground text-xs italic">
+                                  No label suggestions
+                                </span>
+                              )}
+                            </div>
+                            {suggestions.length > MAX_VISIBLE_PREVIEW_LABELS ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  toggleLabelPreviewExpansion(originalIndex)
+                                }
+                                className="font-medium text-dynamic-blue text-xs hover:underline"
+                                disabled={isCreating}
+                              >
+                                {expandedLabelCards[originalIndex]
+                                  ? 'Show less'
+                                  : `Show ${suggestions.length - MAX_VISIBLE_PREVIEW_LABELS} more`}
+                              </button>
+                            ) : null}
+                            {hasNewSelections ? (
+                              <p className="text-muted-foreground text-xs">
+                                New labels will be created automatically
+                              </p>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })()}
+                </div>
+              ) : (
+                <p className="rounded-lg border border-dynamic-muted/30 bg-dynamic-muted/10 p-3 text-center text-muted-foreground text-sm">
+                  No tasks to preview
+                </p>
+              )}
+            </div>
+
+            {/* Task Counter & Navigation */}
+            {visiblePreviewTasks.length > 0 && (
+              <div className="flex items-center justify-center gap-4 py-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handlePreviousTask}
+                  disabled={isCreating || currentPreviewIndex === 0}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-foreground text-sm">
+                    {currentPreviewIndex + 1}
+                  </span>
+                  <span className="text-muted-foreground text-sm">/</span>
+                  <span className="text-muted-foreground text-sm">
+                    {visiblePreviewTasks.length}
+                  </span>
+                </div>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleNextTask}
+                  disabled={
+                    isCreating ||
+                    currentPreviewIndex === visiblePreviewTasks.length - 1
+                  }
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleCancelPreview}
+              disabled={isCreating}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmTasks}
+              disabled={disableConfirm}
+            >
+              {isCreating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-dynamic-blue" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create {visiblePreviewTasks.length} Task
+                  {visiblePreviewTasks.length !== 1 ? 's' : ''}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
