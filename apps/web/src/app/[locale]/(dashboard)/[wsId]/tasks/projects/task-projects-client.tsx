@@ -54,7 +54,7 @@ import { useEffect, useMemo, useState } from 'react';
 interface LinkedTask {
   id: string;
   name: string;
-  completed: boolean | null;
+  completed_at: string | null;
   listName: string | null;
 }
 

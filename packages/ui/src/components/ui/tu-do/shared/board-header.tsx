@@ -204,6 +204,7 @@ export function BoardHeader({
   const onListStatusFilterChangeRef = useRef(onListStatusFilterChange);
   const onViewChangeRef = useRef(onViewChange);
   const searchQueryRef = useRef(filters.searchQuery);
+  const filtersRef = useRef(filters);
 
   // Update refs on each render
   useEffect(() => {
@@ -211,31 +212,36 @@ export function BoardHeader({
     onListStatusFilterChangeRef.current = onListStatusFilterChange;
     onViewChangeRef.current = onViewChange;
     searchQueryRef.current = filters.searchQuery;
+    filtersRef.current = filters;
   });
 
   // Sync local search query with external filter changes
   useEffect(() => {
-    setLocalSearchQuery(filters.searchQuery || '');
-  }, [filters.searchQuery]);
+    const newQuery = filters.searchQuery || '';
+    if (newQuery !== localSearchQuery) {
+      setLocalSearchQuery(newQuery);
+    }
+  }, [filters.searchQuery, localSearchQuery]);
 
   // Debounce search query updates
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (localSearchQuery !== (filters.searchQuery || '')) {
-        onFiltersChange({
-          ...filters,
+      const currentFilters = filtersRef.current;
+      if (localSearchQuery !== (currentFilters.searchQuery || '')) {
+        onFiltersChangeRef.current({
+          ...currentFilters,
           searchQuery: localSearchQuery || undefined,
         });
 
         // Auto-switch to List view when searching in Timeline view
         if (localSearchQuery && currentView === 'timeline') {
-          onViewChange('list');
+          onViewChangeRef.current('list');
         }
       }
     }, 300); // 300ms debounce delay
 
     return () => clearTimeout(timeoutId);
-  }, [localSearchQuery, currentView, filters, onFiltersChange, onViewChange]);
+  }, [localSearchQuery, currentView]);
 
   // Load board configuration from localStorage on mount or board change
   useEffect(() => {

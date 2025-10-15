@@ -49,44 +49,54 @@ export function BoardSummary({
   // Removed real-time subscriptions to prevent cache invalidation conflicts with drag-and-drop
 
   const totalTasks = tasks.length;
-  const completedTasks = tasks.filter((task) => {
+
+  // Helper function to check if a task is completed
+  const isTaskCompleted = (task: typeof tasks[0]) => {
     const taskList = lists.find((list) => list.id === task.list_id);
     return (
       task.closed_at ||
+      task.completed_at ||
       taskList?.status === 'done' ||
       taskList?.status === 'closed'
     );
-  }).length;
+  };
+
+  const completedTasks = tasks.filter(isTaskCompleted).length;
   const completionRate = totalTasks ? (completedTasks / totalTasks) * 100 : 0;
 
   const overdueTasks = tasks.filter(
     (task) =>
-      !task.closed_at && task.end_date && new Date(task.end_date) < new Date()
+      !isTaskCompleted(task) &&
+      task.end_date &&
+      new Date(task.end_date) < new Date()
   ).length;
 
   const upcomingTasks = tasks.filter(
     (task) =>
-      !task.closed_at && task.end_date && new Date(task.end_date) > new Date()
+      !isTaskCompleted(task) &&
+      task.end_date &&
+      new Date(task.end_date) > new Date()
   ).length;
 
   const unassignedTasks = tasks.filter(
-    (task) =>
-      !task.closed_at && (!task.assignees || task.assignees.length === 0)
+    (task) => !isTaskCompleted(task) && (!task.assignees || task.assignees.length === 0)
   ).length;
 
   const priorityTasks = {
-    p1: tasks.filter((task) => !task.closed_at && task.priority === 'critical')
+    p1: tasks.filter((task) => !isTaskCompleted(task) && task.priority === 'critical')
       .length,
-    p2: tasks.filter((task) => !task.closed_at && task.priority === 'high')
+    p2: tasks.filter((task) => !isTaskCompleted(task) && task.priority === 'high')
       .length,
-    p3: tasks.filter((task) => !task.closed_at && task.priority === 'normal')
+    p3: tasks.filter((task) => !isTaskCompleted(task) && task.priority === 'normal')
       .length,
   };
 
   const nextDueTask = tasks
     .filter(
       (task) =>
-        !task.closed_at && task.end_date && new Date(task.end_date) > new Date()
+        !isTaskCompleted(task) &&
+        task.end_date &&
+        new Date(task.end_date) > new Date()
     )
     .sort((a, b) => {
       // Since we filtered for tasks with end_date, we can safely assume they exist
@@ -259,7 +269,8 @@ export function BoardSummary({
               <div className="space-y-2">
                 <p
                   className={cn('line-clamp-2 font-medium text-sm', {
-                    'text-muted-foreground line-through': nextDueTask.closed_at,
+                    'text-muted-foreground line-through':
+                      nextDueTask.completed_at || nextDueTask.closed_at,
                   })}
                 >
                   {nextDueTask.name}

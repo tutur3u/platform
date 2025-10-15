@@ -965,8 +965,30 @@ export function KanbanBoard({
 
       // Only sort by sort_key if parent hasn't already sorted (match rendering behavior)
       if (!disableSort) {
+        // Find the target list to check its status
+        const targetList = columns.find((col) => String(col.id) === targetListId);
+
         targetListTasks = targetListTasks.sort((a, b) => {
-          // Use MAX_SAFE_INTEGER for null sort_key to match rendering behavior
+          // For done lists, sort by completed_at (most recent first)
+          if (targetList?.status === 'done') {
+            const completionA = a.completed_at
+              ? new Date(a.completed_at).getTime()
+              : 0;
+            const completionB = b.completed_at
+              ? new Date(b.completed_at).getTime()
+              : 0;
+            if (completionA !== completionB)
+              return completionB - completionA; // Descending order
+          }
+
+          // For closed lists, sort by closed_at (most recent first)
+          if (targetList?.status === 'closed') {
+            const closedA = a.closed_at ? new Date(a.closed_at).getTime() : 0;
+            const closedB = b.closed_at ? new Date(b.closed_at).getTime() : 0;
+            if (closedA !== closedB) return closedB - closedA; // Descending order
+          }
+
+          // For all other lists, sort by sort_key first, then by created_at as fallback
           const sortA = a.sort_key ?? MAX_SAFE_INTEGER_SORT;
           const sortB = b.sort_key ?? MAX_SAFE_INTEGER_SORT;
           if (sortA !== sortB) return sortA - sortB;

@@ -77,7 +77,7 @@ export function useTaskActions({
         {
           taskId: task.id,
           updates: {
-            closed_at: newClosedState ? new Date().toISOString() : null,
+            closed_at: newClosedState ? new Date().toISOString() : undefined,
           },
         },
         {

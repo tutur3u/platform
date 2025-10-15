@@ -38,7 +38,7 @@ export async function MyTasksDataLoader({
     end_date: task.task_end_date,
     priority: task.task_priority,
     completed_at: task.task_completed_at,
-    archived_at: task.task_closed_at,
+    closed_at: task.task_closed_at,
     deleted_at: task.task_deleted_at,
     estimation_points: task.task_estimation_points,
     created_at: task.task_created_at,
