@@ -57,12 +57,45 @@ import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { TaskFilter, type TaskFilters } from '../boards/boardId/task-filter';
 import type { ViewType } from './board-views';
 import { UserPresenceAvatarsComponent } from './user-presence-avatars';
 
 export type ListStatusFilter = 'all' | 'active' | 'not_started';
+
+interface BoardConfig {
+  currentView: ViewType;
+  filters: TaskFilters;
+  listStatusFilter: ListStatusFilter;
+}
+
+function getBoardConfigKey(boardId: string): string {
+  return `board_config_${boardId}`;
+}
+
+function loadBoardConfig(boardId: string): BoardConfig | null {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const stored = localStorage.getItem(getBoardConfigKey(boardId));
+    if (!stored) return null;
+    return JSON.parse(stored) as BoardConfig;
+  } catch (error) {
+    console.error('Failed to load board config from localStorage:', error);
+    return null;
+  }
+}
+
+function saveBoardConfig(boardId: string, config: BoardConfig): void {
+  if (typeof window === 'undefined') return;
+
+  try {
+    localStorage.setItem(getBoardConfigKey(boardId), JSON.stringify(config));
+  } catch (error) {
+    console.error('Failed to save board config to localStorage:', error);
+  }
+}
 
 interface Props {
   board: TaskBoard;
@@ -99,6 +132,45 @@ export function BoardHeader({
   const [boardMenuOpen, setBoardMenuOpen] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
+
+  // Track which board we've loaded config for to prevent re-loading
+  const loadedBoardRef = useRef<string | null>(null);
+
+  // Load board configuration from localStorage on mount or board change
+  useEffect(() => {
+    // Only load if we haven't loaded for this board yet
+    if (loadedBoardRef.current === board.id) return;
+
+    const savedConfig = loadBoardConfig(board.id);
+    if (savedConfig) {
+      // Restore saved config but preserve current search query
+      onViewChange(savedConfig.currentView);
+      onFiltersChange({
+        ...savedConfig.filters,
+        searchQuery: filters.searchQuery,
+      });
+      onListStatusFilterChange(savedConfig.listStatusFilter);
+    }
+
+    // Mark this board as loaded
+    loadedBoardRef.current = board.id;
+  }, [
+    board.id,
+    filters.searchQuery,
+    onFiltersChange,
+    onListStatusFilterChange,
+    onViewChange,
+  ]);
+
+  // Save board configuration to localStorage when it changes (excluding search)
+  useEffect(() => {
+    const { searchQuery: _, ...filtersToSave } = filters;
+    saveBoardConfig(board.id, {
+      currentView,
+      filters: filtersToSave,
+      listStatusFilter,
+    });
+  }, [board.id, currentView, filters, listStatusFilter]);
 
   async function handleEdit() {
     if (!editedName.trim() || editedName === board.name) {
