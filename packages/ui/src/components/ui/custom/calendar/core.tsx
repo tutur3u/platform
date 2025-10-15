@@ -17,7 +17,6 @@ interface CalendarProps {
   hideYear?: boolean;
   /** When true, hides days from previous and next months to reduce visual clutter */
   hideOutsideMonthDays?: boolean;
-  canUpdateSchedule?: boolean;
 }
 
 export const Calendar: React.FC<CalendarProps> = ({

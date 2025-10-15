@@ -16,7 +16,6 @@ interface YearCalendarProps {
   onDayHeaderClick?: (dayIndex: number, monthDate: Date) => void;
   /** When true, hides days from previous and next months to reduce visual clutter */
   hideOutsideMonthDays?: boolean;
-  canUpdateSchedule?: boolean;
 }
 
 export const YearCalendar: React.FC<YearCalendarProps> = ({
