@@ -2,11 +2,14 @@ name: Supabase Production Migration
 
 on:
   workflow_run:
-    workflows: ["Vercel Platform Production Deployment"]
+    workflows:
+      - "Vercel Platform Production Deployment"
+      - "Supabase Staging Migration"
     types:
       - completed
     branches:
       - production
+      - staging
   workflow_dispatch:
 
 jobs:
@@ -24,6 +27,54 @@ jobs:
       PRODUCTION_DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
     steps:
       - uses: actions/checkout@v5
+
+      - name: Check prerequisites
+        if: github.event_name != 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Checking prerequisites for production migration..."
+
+          # Check Vercel production deployment status
+          echo "Checking Vercel production deployment status..."
+          VERCEL_RUN=$(gh api \
+            repos/${{ github.repository }}/actions/workflows/vercel-production-platform.yaml/runs \
+            --jq '.workflow_runs[0] | {conclusion: .conclusion, status: .status, created_at: .created_at}')
+
+          VERCEL_CONCLUSION=$(echo "$VERCEL_RUN" | jq -r '.conclusion')
+          VERCEL_STATUS=$(echo "$VERCEL_RUN" | jq -r '.status')
+
+          echo "Vercel production deployment status: $VERCEL_STATUS"
+          echo "Vercel production deployment conclusion: $VERCEL_CONCLUSION"
+
+          if [ "$VERCEL_CONCLUSION" != "success" ]; then
+            echo "❌ Vercel production deployment has not completed successfully. Cannot proceed with production migration."
+            exit 1
+          fi
+
+          echo "✅ Vercel production deployment completed successfully."
+
+          # Check staging migration status
+          echo "Checking staging migration status..."
+          STAGING_RUN=$(gh api \
+            repos/${{ github.repository }}/actions/workflows/supabase-staging.yaml/runs \
+            --jq '.workflow_runs[0] | {conclusion: .conclusion, status: .status, created_at: .created_at}')
+
+          STAGING_CONCLUSION=$(echo "$STAGING_RUN" | jq -r '.conclusion')
+          STAGING_STATUS=$(echo "$STAGING_RUN" | jq -r '.status')
+
+          echo "Staging migration status: $STAGING_STATUS"
+          echo "Staging migration conclusion: $STAGING_CONCLUSION"
+
+          if [ "$STAGING_CONCLUSION" != "success" ]; then
+            echo "❌ Staging migration has not completed successfully. Cannot proceed with production migration."
+            echo "Please ensure staging migration completes successfully before deploying to production."
+            exit 1
+          fi
+
+          echo "✅ Staging migration completed successfully."
+          echo "✅ All prerequisites met. Proceeding with production migration."
+
       - uses: supabase/setup-cli@v1
         with:
           version: latest
