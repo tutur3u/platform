@@ -51,7 +51,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       `)
       .eq('id', taskId)
       .eq('task_lists.workspace_boards.ws_id', wsId)
-      .eq('deleted', false)
+      .is('deleted_at', null)
       .single();
 
     if (!task) {
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       `)
       .eq('id', taskId)
       .eq('task_lists.workspace_boards.ws_id', wsId)
-      .eq('deleted', false)
+      .is('deleted_at', null)
       .single();
 
     if (!task) {
@@ -260,7 +260,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       `)
       .eq('id', taskId)
       .eq('task_lists.workspace_boards.ws_id', wsId)
-      .eq('deleted', false)
+      .is('deleted_at', null)
       .single();
 
     if (!task) {

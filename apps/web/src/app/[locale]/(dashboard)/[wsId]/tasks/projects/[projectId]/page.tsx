@@ -1,10 +1,10 @@
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { TaskProjectDetail } from './task-project-detail';
 
 export const metadata: Metadata = {
@@ -123,7 +123,7 @@ export default async function TaskProjectPage({ params }: Props) {
           `
           )
           .eq('project_id', projectId)
-          .eq('task.deleted', false);
+          .is('task.deleted_at', null);
 
         if (tasksError) {
           console.error('Error fetching project tasks:', tasksError);
@@ -135,7 +135,7 @@ export default async function TaskProjectPage({ params }: Props) {
           .map((pt) => pt.task)
           .filter(
             (task): task is NonNullable<typeof task> =>
-              task !== null && task.deleted === false
+              task !== null && !task.deleted_at
           );
 
         // Get unique board IDs and list IDs

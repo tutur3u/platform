@@ -35,7 +35,7 @@ interface TaskItem {
   listName: string;
   list_id: string;
   boardHref: string;
-  archived: boolean;
+  closed_at?: string;
   listStatus: TaskBoardStatus;
   created_at: string;
   assignees?: {
@@ -240,7 +240,7 @@ export function TaskGroup({
                   {/* Overdue Warning */}
                   {task.end_date &&
                     new Date(task.end_date) < new Date() &&
-                    !task.archived &&
+                    !task.closed_at &&
                     task.listStatus !== 'done' &&
                     task.listStatus !== 'closed' && (
                       <div className="flex items-center gap-1 rounded-md bg-red-50 px-2 py-1 dark:bg-red-900/20">

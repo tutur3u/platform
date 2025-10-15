@@ -264,11 +264,18 @@ export function TaskFilter({
       ? filters.assignees.filter((a) => a.id !== assignee.id)
       : [...filters.assignees, assignee];
 
+    // Determine if "Assigned to me" should be checked:
+    // - If toggling current user: sync with their selection state
+    // - If adding a non-current-user: uncheck "Assigned to me"
+    // - If removing someone while current user remains: keep "Assigned to me" if only current user left
+    const shouldIncludeMyTasks = isCurrentUser
+      ? !isSelected
+      : newAssignees.length === 1 && newAssignees[0]?.id === currentUserId;
+
     onFiltersChange({
       ...filters,
       assignees: newAssignees,
-      // Sync "Assigned to me" with current user selection in assignees list
-      includeMyTasks: isCurrentUser ? !isSelected : filters.includeMyTasks,
+      includeMyTasks: shouldIncludeMyTasks,
       // Auto-deselect "Unassigned" when selecting any assignee
       includeUnassigned:
         newAssignees.length > 0 ? false : filters.includeUnassigned,
@@ -383,18 +390,9 @@ export function TaskFilter({
                         onFiltersChange({
                           ...filters,
                           includeMyTasks: !!checked,
-                          // Sync with current user in assignees list
+                          // Replace all assignees with only current user when checked
                           assignees:
-                            checked && currentUser
-                              ? [
-                                  ...filters.assignees.filter(
-                                    (a) => a.id !== currentUserId
-                                  ),
-                                  currentUser,
-                                ]
-                              : filters.assignees.filter(
-                                  (a) => a.id !== currentUserId
-                                ),
+                            checked && currentUser ? [currentUser] : [],
                           // Auto-deselect "Unassigned" when selecting "Assigned to me"
                           includeUnassigned: checked
                             ? false

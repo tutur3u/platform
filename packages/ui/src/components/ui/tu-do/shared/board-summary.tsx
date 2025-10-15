@@ -11,11 +11,14 @@ import {
   Flag,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { getTaskLists, getTasks } from '@tuturuuu/utils/task-helper';
 import { format } from 'date-fns';
+import { useMemo, type JSX } from 'react';
 
 interface Props {
   board: TaskBoard;
@@ -27,10 +30,10 @@ export function BoardSummary({
   board,
   collapsed = false,
   onToggleCollapsed,
-}: Props) {
+}: Props): JSX.Element {
   const { id: boardId } = board;
 
-  const { data: tasks = [], isLoading } = useQuery({
+  const { data: tasks = [], isLoading } = useQuery<Task[]>({
     queryKey: ['tasks', boardId],
     queryFn: async () => {
       const supabase = createClient();
@@ -38,7 +41,7 @@ export function BoardSummary({
     },
   });
 
-  const { data: lists = [] } = useQuery({
+  const { data: lists = [] } = useQuery<TaskList[]>({
     queryKey: ['task_lists', boardId],
     queryFn: async () => {
       const supabase = createClient();
@@ -46,46 +49,68 @@ export function BoardSummary({
     },
   });
 
-  // Removed real-time subscriptions to prevent cache invalidation conflicts with drag-and-drop
+  // Create memoized map of list status by id for O(1) lookups
+  const listStatusMap = useMemo(() => {
+    const map = new Map<string, TaskList['status']>();
+    for (const list of lists) {
+      map.set(list.id, list.status);
+    }
+    return map;
+  }, [lists]);
 
   const totalTasks = tasks.length;
-  const completedTasks = tasks.filter((task) => {
-    const taskList = lists.find((list) => list.id === task.list_id);
-    return (
-      task.archived ||
-      taskList?.status === 'done' ||
-      taskList?.status === 'closed'
+
+  // Helper function to check if a task is completed
+  const isTaskCompleted = (task: Task): boolean => {
+    const listStatus = listStatusMap.get(task.list_id);
+    return !!(
+      task.closed_at ||
+      task.completed_at ||
+      listStatus === 'done' ||
+      listStatus === 'closed'
     );
-  }).length;
+  };
+
+  const completedTasks = tasks.filter(isTaskCompleted).length;
   const completionRate = totalTasks ? (completedTasks / totalTasks) * 100 : 0;
 
   const overdueTasks = tasks.filter(
     (task) =>
-      !task.archived && task.end_date && new Date(task.end_date) < new Date()
+      !isTaskCompleted(task) &&
+      task.end_date &&
+      new Date(task.end_date) < new Date()
   ).length;
 
   const upcomingTasks = tasks.filter(
     (task) =>
-      !task.archived && task.end_date && new Date(task.end_date) > new Date()
+      !isTaskCompleted(task) &&
+      task.end_date &&
+      new Date(task.end_date) > new Date()
   ).length;
 
   const unassignedTasks = tasks.filter(
-    (task) => !task.archived && (!task.assignees || task.assignees.length === 0)
+    (task) =>
+      !isTaskCompleted(task) && (!task.assignees || task.assignees.length === 0)
   ).length;
 
   const priorityTasks = {
-    p1: tasks.filter((task) => !task.archived && task.priority === 'critical')
-      .length,
-    p2: tasks.filter((task) => !task.archived && task.priority === 'high')
-      .length,
-    p3: tasks.filter((task) => !task.archived && task.priority === 'normal')
-      .length,
+    p1: tasks.filter(
+      (task) => !isTaskCompleted(task) && task.priority === 'critical'
+    ).length,
+    p2: tasks.filter(
+      (task) => !isTaskCompleted(task) && task.priority === 'high'
+    ).length,
+    p3: tasks.filter(
+      (task) => !isTaskCompleted(task) && task.priority === 'normal'
+    ).length,
   };
 
   const nextDueTask = tasks
     .filter(
       (task) =>
-        !task.archived && task.end_date && new Date(task.end_date) > new Date()
+        !isTaskCompleted(task) &&
+        task.end_date &&
+        new Date(task.end_date) > new Date()
     )
     .sort((a, b) => {
       // Since we filtered for tasks with end_date, we can safely assume they exist
@@ -258,7 +283,8 @@ export function BoardSummary({
               <div className="space-y-2">
                 <p
                   className={cn('line-clamp-2 font-medium text-sm', {
-                    'text-muted-foreground line-through': nextDueTask.archived,
+                    'text-muted-foreground line-through':
+                      nextDueTask.completed_at || nextDueTask.closed_at,
                   })}
                 >
                   {nextDueTask.name}

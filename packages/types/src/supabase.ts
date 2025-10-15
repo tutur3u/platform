@@ -822,12 +822,12 @@ export type Database = {
           p_ws_id?: string;
         };
         Returns: {
-          task_archived: boolean;
           task_calendar_hours: Database['public']['Enums']['calendar_hours'];
-          task_completed: boolean;
+          task_closed_at: string;
+          task_completed_at: string;
           task_created_at: string;
           task_creator_id: string;
-          task_deleted: boolean;
+          task_deleted_at: string;
           task_description: string;
           task_end_date: string;
           task_estimation_points: number;
@@ -1174,8 +1174,8 @@ export type Database = {
           query_text: string;
         };
         Returns: {
-          archived: boolean;
-          completed: boolean;
+          closed_at: string;
+          completed_at: string;
           description: string;
           end_date: string;
           id: string;
@@ -7261,12 +7261,13 @@ export type Database = {
       };
       tasks: {
         Insert: {
-          archived?: boolean | null;
           calendar_hours?: Database['public']['Enums']['calendar_hours'] | null;
+          closed_at?: null | string;
           completed?: boolean | null;
+          completed_at?: null | string;
           created_at?: null | string;
           creator_id?: null | string;
-          deleted?: boolean | null;
+          deleted_at?: null | string;
           description?: null | string;
           description_yjs_state?: null | number[];
           embedding?: null | string;
@@ -7322,12 +7323,13 @@ export type Database = {
           },
         ];
         Row: {
-          archived: boolean | null;
           calendar_hours: Database['public']['Enums']['calendar_hours'] | null;
+          closed_at: null | string;
           completed: boolean | null;
+          completed_at: null | string;
           created_at: null | string;
           creator_id: null | string;
-          deleted: boolean | null;
+          deleted_at: null | string;
           description: null | string;
           description_yjs_state: null | number[];
           embedding: null | string;
@@ -7346,12 +7348,13 @@ export type Database = {
           total_duration: null | number;
         };
         Update: {
-          archived?: boolean | null;
           calendar_hours?: Database['public']['Enums']['calendar_hours'] | null;
+          closed_at?: null | string;
           completed?: boolean | null;
+          completed_at?: null | string;
           created_at?: null | string;
           creator_id?: null | string;
-          deleted?: boolean | null;
+          deleted_at?: null | string;
           description?: null | string;
           description_yjs_state?: null | number[];
           embedding?: null | string;

@@ -1,4 +1,4 @@
-import { Box, Check, Loader2 } from '@tuturuuu/icons';
+import { Box, Check, Loader2, Plus } from '@tuturuuu/icons';
 import {
   DropdownMenuItem,
   DropdownMenuSub,
@@ -20,6 +20,7 @@ interface TaskProjectsMenuProps {
   isLoading: boolean;
   projectsSaving: string | null;
   onToggleProject: (projectId: string) => void;
+  onCreateNewProject: () => void;
   onMenuItemSelect: (e: Event, action: () => void) => void;
 }
 
@@ -29,6 +30,7 @@ export function TaskProjectsMenu({
   isLoading,
   projectsSaving,
   onToggleProject,
+  onCreateNewProject,
   onMenuItemSelect,
 }: TaskProjectsMenuProps) {
   return (
@@ -49,7 +51,7 @@ export function TaskProjectsMenu({
           </div>
         )}
         {!isLoading && availableProjects.length > 0 && (
-          <ScrollArea className="max-h-[min(300px,calc(100vh-200px))]">
+          <ScrollArea style={{ height: 'min(300px, calc(100vh - 200px))' }}>
             <div className="p-1">
               {availableProjects.map((project) => {
                 const active = taskProjects.some((p) => p.id === project.id);
@@ -83,10 +85,25 @@ export function TaskProjectsMenu({
           </ScrollArea>
         )}
         {!isLoading && taskProjects.length > 0 && (
-          <div className="border-t bg-background">
+          <div className="relative z-10 border-t bg-background shadow-sm">
             <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
               {taskProjects.length} assigned
             </div>
+          </div>
+        )}
+        {!isLoading && (
+          <div className="relative z-10 border-t bg-background shadow-sm">
+            <DropdownMenuItem
+              onSelect={(e) =>
+                onMenuItemSelect(e as unknown as Event, () => {
+                  onCreateNewProject();
+                })
+              }
+              className="flex cursor-pointer items-center gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <Plus className="h-4 w-4" />
+              Add New Project
+            </DropdownMenuItem>
           </div>
         )}
       </DropdownMenuSubContent>

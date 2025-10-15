@@ -8,9 +8,10 @@ export interface Task {
   priority?: TaskPriority | null;
   start_date?: string;
   end_date?: string | null;
-  archived: boolean;
-  deleted?: boolean;
   created_at: string;
+  completed_at?: string;
+  closed_at?: string;
+  deleted_at?: string;
   estimation_points?: number | null;
   sort_key?: number | null;
   labels?: {

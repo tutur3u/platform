@@ -165,9 +165,9 @@ export function ListView({
 
     // Sort tasks
     sorted.sort((a, b) => {
-      // Primary sort: Always prioritize uncompleted tasks (non-archived) first
-      const aCompleted = a.archived || false;
-      const bCompleted = b.archived || false;
+      // Primary sort: Always prioritize uncompleted tasks (non-closed) first
+      const aCompleted = !!a.closed_at;
+      const bCompleted = !!b.closed_at;
 
       if (aCompleted !== bCompleted) {
         // Uncompleted (false) should come before completed (true)
@@ -220,9 +220,17 @@ export function ListView({
           break;
         }
         case 'status': {
-          const aStatus = a.archived ? 'completed' : 'active';
-          const bStatus = b.archived ? 'completed' : 'active';
-          comparison = aStatus.localeCompare(bStatus);
+          // Tri-state: closed > completed > active
+          const getStatus = (task: Task) => {
+            if (task.closed_at) return 'closed';
+            if (task.completed_at) return 'completed';
+            return 'active';
+          };
+
+          const statusOrder = { closed: 2, completed: 1, active: 0 };
+          const aStatus = getStatus(a);
+          const bStatus = getStatus(b);
+          comparison = statusOrder[aStatus] - statusOrder[bStatus];
           break;
         }
       }
@@ -315,7 +323,7 @@ export function ListView({
   }
 
   function renderTaskStatus(task: Task) {
-    if (task.archived) {
+    if (task.closed_at) {
       return (
         <div className="flex items-center justify-center">
           <CheckCircle2 className="h-4 w-4 text-dynamic-green/80" />
@@ -474,12 +482,13 @@ export function ListView({
                     className={cn(
                       'group h-11 cursor-pointer border-b transition-all duration-200',
                       'hover:bg-muted/50 hover:shadow-sm',
-                      task.archived && 'opacity-60 saturate-50',
+                      task.closed_at && 'opacity-60 saturate-50',
                       selectedTasks.has(task.id) &&
                         'bg-gradient-to-r from-primary/10 via-primary/5 to-transparent shadow-sm ring-1 ring-primary/20',
                       task.end_date &&
                         new Date(task.end_date) < new Date() &&
-                        !task.archived &&
+                        !task.closed_at &&
+                        !task.completed_at &&
                         'border-l-2 border-l-dynamic-red/70 bg-dynamic-red/5'
                     )}
                     onClick={(e) => {
@@ -514,7 +523,7 @@ export function ListView({
                           <span
                             className={cn(
                               'truncate text-sm',
-                              task.archived &&
+                              task.completed_at &&
                                 'text-muted-foreground line-through'
                             )}
                           >
@@ -590,7 +599,8 @@ export function ListView({
                               className={cn(
                                 'font-medium text-xs transition-colors',
                                 isPast(new Date(task.end_date)) &&
-                                  !task.archived
+                                  !task.closed_at &&
+                                  !task.completed_at
                                   ? 'text-dynamic-red'
                                   : 'text-muted-foreground'
                               )}
@@ -598,7 +608,8 @@ export function ListView({
                               {formatDate(task.end_date)}
                             </span>
                             {isPast(new Date(task.end_date)) &&
-                              !task.archived && (
+                              !task.closed_at &&
+                              !task.completed_at && (
                                 <Badge className="h-4 bg-dynamic-red px-1 text-[9px] text-white">
                                   Overdue
                                 </Badge>

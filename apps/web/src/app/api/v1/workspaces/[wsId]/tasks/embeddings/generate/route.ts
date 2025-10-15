@@ -59,7 +59,7 @@ export async function POST(_: Request, { params }: Params) {
       `
       )
       .is('embedding', null)
-      .eq('deleted', false)
+      .is('deleted_at', null)
       .eq('task_lists.workspace_boards.ws_id', wsId)
       .limit(200);
 

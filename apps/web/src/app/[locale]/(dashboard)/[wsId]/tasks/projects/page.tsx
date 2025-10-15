@@ -49,8 +49,8 @@ export default async function TaskProjectsPage({ params }: Props) {
               task:tasks!inner(
                 id,
                 name,
-                completed,
-                deleted,
+                completed_at,
+                deleted_at,
                 task_lists(
                   name
                 )
@@ -58,7 +58,7 @@ export default async function TaskProjectsPage({ params }: Props) {
             )
           `)
           .eq('ws_id', wsId)
-          .eq('task_project_tasks.task.deleted', false)
+          .is('task_project_tasks.task.deleted_at', null)
           .order('created_at', { ascending: false });
 
         if (projectsError) {
@@ -70,7 +70,7 @@ export default async function TaskProjectsPage({ params }: Props) {
           // Filter out soft-deleted tasks
           const activeTasks =
             project.task_project_tasks?.filter(
-              (link) => link.task && link.task.deleted === false
+              (link) => link.task && link.task.deleted_at === null
             ) ?? [];
 
           return {
@@ -87,7 +87,7 @@ export default async function TaskProjectsPage({ params }: Props) {
                     {
                       id: link.task.id,
                       name: link.task.name,
-                      completed: link.task.completed,
+                      completed_at: link.task.completed_at,
                       listName: link.task.task_lists?.name ?? null,
                     },
                   ]

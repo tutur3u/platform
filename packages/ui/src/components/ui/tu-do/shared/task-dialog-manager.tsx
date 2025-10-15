@@ -22,6 +22,8 @@ export function TaskDialogManager() {
   const { state, closeDialog, triggerUpdate, openTaskById } =
     useTaskDialogContext();
 
+  if (!state.isOpen || !state.task) return null;
+
   return (
     <TaskEditDialog
       task={state.task}
@@ -31,7 +33,7 @@ export function TaskDialogManager() {
       onUpdate={triggerUpdate}
       availableLists={state.availableLists}
       mode={state.mode}
-      showUserPresence={state.showUserPresence}
+      collaborationMode={state.collaborationMode}
       onOpenTask={openTaskById}
     />
   );

@@ -1,14 +1,15 @@
+import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { getUserGroupColumns } from './columns';
 import Filters from './filters';
 import UserGroupForm from './form';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'Groups',
@@ -34,12 +35,11 @@ export default async function WorkspaceUserGroupsPage({
   params,
   searchParams,
 }: Props) {
-  const t = await getTranslations();
-  const { wsId: id } = await params;
-  const workspace = await getWorkspace(id);
-  const wsId = workspace.id;
-
-  // Check permissions
+  return (
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+        const t = await getTranslations();
+          // Check permissions
   const { withoutPermission, containsPermission } = await getPermissions({
     wsId,
   });
@@ -68,7 +68,6 @@ export default async function WorkspaceUserGroupsPage({
     ws_id: wsId,
     href: `/${wsId}/users/groups/${g.id}`,
   }));
-
   return (
     <>
       <FeatureSummary
@@ -107,6 +106,9 @@ export default async function WorkspaceUserGroupsPage({
       />
     </>
   );
+      }}
+    </WorkspaceWrapper>
+  );
 }
 
 async function getData(
@@ -134,8 +136,8 @@ async function getData(
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
   if (page && pageSize) {
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
+    const parsedPage = parseInt(page, 10);
+    const parsedSize = parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize;
     queryBuilder.range(start, end).limit(parsedSize);

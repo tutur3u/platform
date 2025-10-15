@@ -51,7 +51,7 @@ export function TaskLabelsMenu({
           </div>
         )}
         {!isLoading && availableLabels.length > 0 && (
-          <ScrollArea style={{ maxHeight: 'min(300px, calc(100vh - 200px))' }}>
+          <ScrollArea style={{ height: 'min(300px, calc(100vh - 200px))' }}>
             <div className="p-1">
               {availableLabels.map((label) => {
                 const active = taskLabels.some((l) => l.id === label.id);
@@ -91,14 +91,14 @@ export function TaskLabelsMenu({
           </ScrollArea>
         )}
         {!isLoading && taskLabels.length > 0 && (
-          <div className="border-t bg-background">
+          <div className="relative z-10 border-t bg-background shadow-sm">
             <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
               {taskLabels.length} applied
             </div>
           </div>
         )}
         {!isLoading && (
-          <div className="border-t bg-background">
+          <div className="relative z-10 border-t bg-background shadow-sm">
             <DropdownMenuItem
               onSelect={(e) =>
                 onMenuItemSelect(e as unknown as Event, () => {

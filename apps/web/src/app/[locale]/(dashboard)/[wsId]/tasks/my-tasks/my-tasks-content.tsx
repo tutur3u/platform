@@ -2493,6 +2493,12 @@ export default function MyTasksContent({
                                         projectId
                                       )
                                     }
+                                    onCreateNewProject={() => {
+                                      setPreviewTaskMenuOpen((prev) => ({
+                                        ...prev,
+                                        [originalIndex]: false,
+                                      }));
+                                    }}
                                     onMenuItemSelect={handleMenuItemSelect}
                                   />
 

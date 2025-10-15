@@ -1,7 +1,6 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
-import { type NextRequest, NextResponse } from 'next/server';
 import { generateTaskEmbedding } from '@/lib/embeddings/generate-task-embedding';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 // Type interfaces for better type safety
 interface ProcessedAssignee {
@@ -17,34 +16,6 @@ interface TaskAssigneeData {
     avatar_url: string | null;
     email?: string;
   } | null;
-}
-
-interface TaskListData {
-  id: string;
-  name: string | null;
-  // Task list status: 'not_started' | 'active' | 'done' | 'closed'
-  // Used to determine task availability for time tracking
-  status: string | null;
-  workspace_boards: {
-    id: string;
-    name: string | null;
-    ws_id: string;
-  } | null;
-}
-
-interface TaskData {
-  id: string;
-  name: string;
-  description: string | null;
-  priority: TaskPriority | null;
-  completed: boolean | null;
-  start_date: string | null;
-  end_date: string | null;
-  created_at: string | null;
-  list_id: string | null;
-  archived: boolean | null;
-  task_lists: TaskListData | null;
-  assignees?: TaskAssigneeData[];
 }
 
 export async function GET(
@@ -116,7 +87,7 @@ export async function GET(
         end_date,
         created_at,
         list_id,
-        archived,
+        closed_at,
         task_lists!inner (
           id,
           name,
@@ -138,14 +109,14 @@ export async function GET(
       `
       )
       .eq('task_lists.workspace_boards.ws_id', wsId)
-      .eq('deleted', false);
+      .is('deleted_at', null);
 
     // IMPORTANT: If this is for time tracking, apply the same filters as the server-side helper
     if (isTimeTrackingRequest) {
       query = query
-        .eq('archived', false) // Only non-archived tasks
+        .is('closed_at', null) // Only non-archived tasks
         .in('task_lists.status', ['not_started', 'active']) // Only from active lists
-        .eq('task_lists.deleted', false); // Ensure list is not deleted
+        .eq('task_lists.deleted', false); // Ensure list is not deleted (task_lists still uses boolean)
     }
 
     // Apply filters based on query parameters
@@ -167,7 +138,7 @@ export async function GET(
 
     // Transform the data to match the expected WorkspaceTask format
     const tasks =
-      data?.map((task: TaskData) => ({
+      data?.map((task) => ({
         id: task.id,
         name: task.name,
         description: task.description,
@@ -177,7 +148,7 @@ export async function GET(
         end_date: task.end_date,
         created_at: task.created_at,
         list_id: task.list_id,
-        archived: task.archived,
+        closed_at: task.closed_at,
         // Add board information for context
         board_name: task.task_lists?.workspace_boards?.name,
         list_name: task.task_lists?.name,
@@ -291,7 +262,7 @@ export async function POST(
         list_id: listId,
         priority: priority || null,
         created_at: new Date().toISOString(),
-        deleted: false,
+        deleted_at: null,
         completed: false,
       })
       .select(

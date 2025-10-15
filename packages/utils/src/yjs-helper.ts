@@ -1,10 +1,10 @@
+import type { JSONContent } from '@tiptap/react';
 import { Node, type Schema } from 'prosemirror-model';
 import {
   prosemirrorToYXmlFragment,
   yXmlFragmentToProseMirrorRootNode,
 } from 'y-prosemirror';
 import * as Y from 'yjs';
-import type { JSONContent } from '@tiptap/react';
 
 export function convertJsonContentToYjsState(
   jsonContent: JSONContent,

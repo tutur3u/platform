@@ -222,7 +222,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
       case 'completed':
         return tasks.filter(
           (task) =>
-            task.archived ||
+            !!task.closed_at ||
             task.listStatus === 'done' ||
             task.listStatus === 'closed'
         );
@@ -230,7 +230,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
         const now = new Date();
         return tasks.filter(
           (task) =>
-            !task.archived &&
+            !task.closed_at &&
             task.listStatus !== 'done' &&
             task.listStatus !== 'closed' &&
             task.end_date &&
@@ -241,7 +241,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
         return tasks.filter(
           (task) =>
             task.priority === 'critical' &&
-            !task.archived &&
+            !task.closed_at &&
             task.listStatus !== 'done' &&
             task.listStatus !== 'closed'
         );
@@ -269,7 +269,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     };
 
     filteredTasks.forEach((task) => {
-      if (task.archived || task.listStatus === 'done') {
+      if (task.closed_at || task.listStatus === 'done') {
         groups.done.push(task);
       } else if (task.listStatus === 'closed') {
         groups.closed.push(task);
