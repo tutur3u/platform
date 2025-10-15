@@ -14,6 +14,7 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import InviteMemberButton from './_components/invite-member-button';
+import InviteLinksSection from './_components/invite-links-section';
 import MemberList from './_components/member-list';
 import MemberTabs from './_components/member-tabs';
 
@@ -96,6 +97,13 @@ export default async function WorkspaceMembersPage({
                 />
               </div>
             </div>
+
+            <Separator className="my-8" />
+
+            <InviteLinksSection
+              wsId={wsId}
+              canManageMembers={canManageMembers}
+            />
           </>
         );
       }}
