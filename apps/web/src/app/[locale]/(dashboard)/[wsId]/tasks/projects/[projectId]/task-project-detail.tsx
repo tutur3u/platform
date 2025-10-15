@@ -1,11 +1,9 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { KanbanBoard } from '@tuturuuu/ui/tu-do/boards/boardId/kanban';
-import { StatusGroupedBoard } from '@tuturuuu/ui/tu-do/boards/boardId/status-grouped-board';
 import type { TaskFilters } from '@tuturuuu/ui/tu-do/boards/boardId/task-filter';
 import { TimelineBoard } from '@tuturuuu/ui/tu-do/boards/boardId/timeline-board';
 import {
@@ -15,7 +13,7 @@ import {
 import { ListView } from '@tuturuuu/ui/tu-do/shared/list-view';
 import { useMemo, useState } from 'react';
 
-export type ViewType = 'kanban' | 'status-grouped' | 'list' | 'timeline';
+export type ViewType = 'kanban' | 'list' | 'timeline';
 
 interface TaskProjectDetailProps {
   workspace: Workspace;
@@ -44,7 +42,6 @@ export function TaskProjectDetail({
   currentUserId,
   wsId,
 }: TaskProjectDetailProps) {
-  const queryClient = useQueryClient();
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
   const [filters, setFilters] = useState<TaskFilters>({
     labels: [],
@@ -145,13 +142,6 @@ export function TaskProjectDetail({
     }));
   };
 
-  const handleUpdate = async () => {
-    // Refresh tasks for this project
-    await queryClient.invalidateQueries({
-      queryKey: ['workspace', wsId, 'task-projects', project.id],
-    });
-  };
-
   // Create virtual board object for BoardHeader
   const virtualBoard = {
     id: project.id,
@@ -160,17 +150,17 @@ export function TaskProjectDetail({
 
   const renderView = () => {
     switch (currentView) {
-      case 'status-grouped':
-        return (
-          <StatusGroupedBoard
-            lists={filteredLists}
-            tasks={effectiveTasks}
-            boardId={project.id}
-            onUpdate={handleUpdate}
-            hideTasksMode={true}
-            isPersonalWorkspace={workspace.personal}
-          />
-        );
+      // case 'status-grouped':
+      //   return (
+      //     <StatusGroupedBoard
+      //       lists={filteredLists}
+      //       tasks={effectiveTasks}
+      //       boardId={project.id}
+      //       onUpdate={handleUpdate}
+      //       hideTasksMode={true}
+      //       isPersonalWorkspace={workspace.personal}
+      //     />
+      //   );
       case 'kanban':
         // Use null boardId to prevent useBoardConfig from querying workspace_boards
         return (
@@ -201,13 +191,12 @@ export function TaskProjectDetail({
         );
       default:
         return (
-          <StatusGroupedBoard
-            lists={filteredLists}
+          <KanbanBoard
+            workspace={workspace}
+            boardId={null as any}
             tasks={effectiveTasks}
-            boardId={project.id}
-            onUpdate={handleUpdate}
-            hideTasksMode={true}
-            isPersonalWorkspace={workspace.personal}
+            lists={filteredLists}
+            isLoading={false}
           />
         );
     }
