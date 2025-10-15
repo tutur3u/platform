@@ -578,7 +578,11 @@ function TaskCardInner({
                           Assignees
                         </DropdownMenuSubTrigger>
                         <DropdownMenuSubContent className="max-h-[400px] w-56 overflow-hidden p-0">
-                          <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
+                          <ScrollArea
+                            style={{
+                              height: 'min(300px, calc(100vh - 200px))',
+                            }}
+                          >
                             <div className="p-1">
                               {task.assignees.map((assignee) => (
                                 <DropdownMenuItem

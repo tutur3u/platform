@@ -49,7 +49,7 @@ export function TaskProjectsMenu({
           </div>
         )}
         {!isLoading && availableProjects.length > 0 && (
-          <ScrollArea className="max-h-[min(300px,calc(100vh-200px))]">
+          <ScrollArea style={{ height: 'min(300px, calc(100vh - 200px))' }}>
             <div className="p-1">
               {availableProjects.map((project) => {
                 const active = taskProjects.some((p) => p.id === project.id);
