@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -21,7 +21,6 @@ import UserGroupForm from './form';
 
 interface UserGroupRowActionsProps {
   row: Row<UserGroup>;
-  // biome-ignore lint/suspicious/noExplicitAny: <extra data can be anything>
   canUpdate?: boolean;
   canDelete?: boolean;
   canCreate?: boolean;
@@ -29,9 +28,9 @@ interface UserGroupRowActionsProps {
 
 export function UserGroupRowActions({
   row,
-  canUpdate,
-  canDelete,
-  canCreate,
+  canUpdate = false,
+  canDelete = false,
+  canCreate = false,
 }: UserGroupRowActionsProps) {
   const router = useRouter();
   const t = useTranslations();
@@ -50,10 +49,7 @@ export function UserGroupRowActions({
       router.refresh();
     } else {
       const data = await res.json();
-      toast({
-        title: 'Failed to delete workspace user group tag',
-        description: data.message,
-      });
+      toast.error(data.message);
     }
   };
 

@@ -12,7 +12,7 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useRouter } from 'next/navigation';
@@ -81,6 +81,9 @@ export default function UserGroupForm({
           : `/api/v1/workspaces/${wsId}/user-groups`,
         {
           method: data.id ? 'PUT' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify(data),
         }
       );
@@ -90,16 +93,10 @@ export default function UserGroupForm({
         router.refresh();
       } else {
         const errorData = await res.json();
-        toast({
-          title: `Failed to ${data.id ? 'edit' : 'create'} group tag`,
-          description: errorData.message,
-        });
+        toast.error(errorData.message);
       }
     } catch (error) {
-      toast({
-        title: `Failed to ${data.id ? 'edit' : 'create'} group tag`,
-        description: error instanceof Error ? error.message : String(error),
-      });
+      toast.error(error instanceof Error ? error.message : String(error));
     }
   };
 

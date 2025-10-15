@@ -49,8 +49,7 @@ export const YearView: React.FC<{
             key={`month-${idx}`}
             onClick={() => handleMonthClick(month.getMonth())}
             className={cn(
-              'flex flex-none cursor-pointer justify-center rounded bg-foreground/5 p-4 font-semibold transition duration-300 hover:bg-foreground/10',
-              'hover:cursor-pointer'
+              'flex flex-none cursor-pointer justify-center rounded bg-foreground/5 p-4 font-semibold transition duration-300 hover:bg-foreground/10'
             )}
           >
             {month.toLocaleString(locale, { month: 'long' })}

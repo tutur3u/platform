@@ -656,45 +656,45 @@ export default function MigrationDashboard() {
 
       // Define composite key strategies for tables without primary `id` field
       const compositeKeyStrategies: Record<
-        string,
-        (item: any) => string | null
-      > = {
-        'class-packages': (item) =>
-          item.group_id && item.product_id && item.unit_id
-            ? `${item.group_id}|${item.product_id}|${item.unit_id}`
-            : null,
-        'class-members': (item) =>
-          item.user_id && item.group_id
-            ? `${item.user_id}|${item.group_id}`
-            : null,
-        'class-scores': (item) =>
-          item.user_id && item.indicator_id
-            ? `${item.user_id}|${item.indicator_id}`
-            : null,
-        'class-attendance': (item) =>
-          item.group_id && item.user_id && item.date
-            ? `${item.group_id}|${item.user_id}|${item.date}`
-            : null,
-        'bill-packages': (item) =>
-          item.invoice_id &&
-          item.product_name &&
-          item.product_unit &&
-          item.warehouse
-            ? `${item.invoice_id}|${item.product_name}|${item.product_unit}|${item.warehouse}`
-            : null,
-        'user-coupons': (item) =>
-          item.user_id && item.promo_id
-            ? `${item.user_id}|${item.promo_id}`
-            : null,
-        'product-prices': (item) =>
-          item.product_id && item.unit_id && item.warehouse_id
-            ? `${item.product_id}|${item.unit_id}|${item.warehouse_id}`
-            : null,
-        'bill-coupons': (item) =>
-          item.invoice_id && item.code && item.value && item.use_ratio
-            ? `${item.invoice_id}|${item.code}|${item.value}|${item.use_ratio}`
-            : null,
-      };
+      string,
+      (item: any) => string | null
+    > = {
+      'class-packages': (item) =>
+        item?.group_id != null && item?.product_id != null && item?.unit_id != null
+          ? `${String(item.group_id)}|${String(item.product_id)}|${String(item.unit_id)}`
+          : null,
+      'class-members': (item) =>
+        item?.user_id != null && item?.group_id != null
+          ? `${String(item.user_id)}|${String(item.group_id)}`
+          : null,
+      'class-scores': (item) =>
+        item?.user_id != null && item?.indicator_id != null
+          ? `${String(item.user_id)}|${String(item.indicator_id)}`
+          : null,
+      'class-attendance': (item) =>
+        item?.group_id != null && item?.user_id != null && item?.date != null
+          ? `${String(item.group_id)}|${String(item.user_id)}|${String(item.date)}`
+          : null,
+      'bill-packages': (item) =>
+        item?.invoice_id != null &&
+        item?.product_name != null &&
+        item?.product_unit != null &&
+        item?.warehouse != null
+          ? `${String(item.invoice_id)}|${String(item.product_name)}|${String(item.product_unit)}|${String(item.warehouse)}`
+          : null,
+      'user-coupons': (item) =>
+        item?.user_id != null && item?.promo_id != null
+          ? `${String(item.user_id)}|${String(item.promo_id)}`
+          : null,
+      'product-prices': (item) =>
+        item?.product_id != null && item?.unit_id != null && item?.warehouse_id != null
+          ? `${String(item.product_id)}|${String(item.unit_id)}|${String(item.warehouse_id)}`
+          : null,
+      'bill-coupons': (item) =>
+        item?.invoice_id != null && item?.code != null && item?.value != null && item?.use_ratio != null
+          ? `${String(item.invoice_id)}|${String(item.code)}|${String(item.value)}|${String(item.use_ratio)}`
+          : null,
+    };
 
       // Helper to get unique key for an item (composite or simple id)
       const getItemKey = (item: any): string | null => {
@@ -786,7 +786,7 @@ export default function MigrationDashboard() {
       // Analyze mapped external data vs existing data
       for (const extItem of mappedExternalData) {
         const extKey = getItemKey(extItem);
-        if (extKey && existingMap.has(extKey)) {
+        if (extKey !== null && existingMap.has(extKey)) {
           // Check if data is different (needs update)
           const existing = existingMap.get(extKey);
           const hasChanges = hasSignificantChanges(existing, extItem);

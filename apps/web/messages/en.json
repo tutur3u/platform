@@ -1316,7 +1316,10 @@
     "error": "Error",
     "sending": "Sending",
     "sent": "Sent",
-    "pending": "Pending"
+    "pending": "Pending",
+    "post_title_placeholder": "e.g. \"Meeting Notes\"",
+    "post_content_placeholder": "e.g. \"Today we discussed the upcoming event.\"",
+    "notes_placeholder": "e.g. \"Remember to follow up with the team.\""
   },
   "course-data-table": {
     "id": "ID",
@@ -2078,7 +2081,12 @@
     "edit_post_description": "Make changes to your post here.",
     "add_post_description": "Add a new post.",
     "show_post_content": "Show post content",
-    "show_post_status": "Show post status"
+    "show_post_status": "Show post status",
+    "no_posts_to_show": "No posts to show.",
+    "delete_post_confirmation_title": "Are you absolutely sure?",
+    "delete_post_confirmation_description": "This action cannot be undone. This will permanently delete your post and remove your data from our servers.",
+    "delete_cancel": "Cancel",
+    "delete_continue": "Continue"
   },
   "ws-user-group-tags": {
     "singular": "Group Tag",

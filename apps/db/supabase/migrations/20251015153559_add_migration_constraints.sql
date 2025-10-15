@@ -59,12 +59,18 @@ BEGIN
       AND a.code = b.code
       AND a.created_at > b.min_created_at;
 
-    -- Step 3: Drop the old partial unique index if it exists
+    -- Step 3: Drop legacy standalone index only if NOT owned by a constraint
     IF EXISTS (
-      SELECT 1 FROM pg_indexes
-      WHERE schemaname = 'public' AND indexname = 'finance_invoice_promotions_unique_combo'
+      SELECT 1
+      FROM pg_class idx
+      JOIN pg_namespace n ON n.oid = idx.relnamespace
+      LEFT JOIN pg_constraint con ON con.conindid = idx.oid
+      WHERE n.nspname = 'public'
+        AND idx.relkind = 'i'
+        AND idx.relname = 'finance_invoice_promotions_unique_combo'
+        AND con.oid IS NULL
     ) THEN
-      DROP INDEX finance_invoice_promotions_unique_combo;
+      DROP INDEX IF EXISTS public.finance_invoice_promotions_unique_combo;
     END IF;
 
     -- Step 4: Make invoice_id NOT NULL (if not already)

@@ -537,6 +537,12 @@ export default function GroupIndicatorsManager({
 
   const hasChanges = pendingValues.size > 0;
 
+  const canEditCell = useCallback((userId: string, indicatorId: string) => {
+    const existing = userIndicators.find(ui => ui.user_id === userId && ui.indicator_id === indicatorId);
+    if (!existing || existing.value == null) return canCreateUserGroupsScores;
+    return canUpdateUserGroupsScores || canDeleteUserGroupsScores; // allow edit if they can change or clear
+  }, [userIndicators, canCreateUserGroupsScores, canUpdateUserGroupsScores, canDeleteUserGroupsScores]);
+
   return (
     <div>
       <StickyBottomBar
@@ -677,7 +683,7 @@ export default function GroupIndicatorsManager({
               <DialogTitle>{tIndicators('edit_indicator')}</DialogTitle>
               <DialogDescription>
                 {tIndicators('edit_indicator_description')}
-              </DialogDescription>
+            </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
@@ -766,7 +772,7 @@ export default function GroupIndicatorsManager({
                       <AlertDialogAction
                         onClick={deleteIndicator}
                         disabled={isAnyMutationPending}
-                        className="bg-red-600 hover:bg-red-700"
+                        className="bg-dynamic-red/60 hover:bg-dynamic-red/70"
                       >
                         {deleteIndicatorMutation.isPending
                           ? tIndicators('removing')
@@ -867,10 +873,14 @@ export default function GroupIndicatorsManager({
                               e.target.value
                             )
                           }
+                          disabled={!canEditCell(user.id, indicator.id)}
+                          aria-readonly={!canEditCell(user.id, indicator.id)}
                           className={cn(
                             'h-8 w-20 text-center',
                             isValuePending(user.id, indicator.id) &&
-                              'border-dynamic-blue/50 bg-dynamic-blue/5'
+                              'border-dynamic-blue/50 bg-dynamic-blue/5',
+                            !canEditCell(user.id, indicator.id) &&
+                              'cursor-not-allowed'
                           )}
                           placeholder="-"
                         />

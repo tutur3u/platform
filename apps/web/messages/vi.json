@@ -1408,7 +1408,10 @@
     "error": "Lỗi",
     "sending": "Đang gửi",
     "sent": "Đã gửi",
-    "pending": "Chờ gửi"
+    "pending": "Chờ gửi",
+    "post_title_placeholder": "vd: \"Ghi chú cuộc họp\"",
+    "post_content_placeholder": "vd: \"Hôm nay chúng ta đã thảo luận về sự kiện sắp tới.\"",
+    "notes_placeholder": "vd: \"Nhớ theo dõi với đội ngũ.\""
   },
   "course-data-table": {
     "id": "Mã số",
@@ -2163,7 +2166,12 @@
     "edit_post_description": "Thực hiện thay đổi cho bài viết của bạn ở đây.",
     "add_post_description": "Thêm một bài viết mới.",
     "show_post_content": "Hiển thị nội dung bài viết",
-    "show_post_status": "Hiển thị trạng thái bài viết"
+    "show_post_status": "Hiển thị trạng thái bài viết",
+    "no_posts_to_show": "Không có bài viết nào để hiển thị.",
+    "delete_post_confirmation_title": "Bạn có chắc chắn không?",
+    "delete_post_confirmation_description": "Hành động này không thể hoàn tác. Điều này sẽ xóa vĩnh viễn bài viết của bạn và loại bỏ dữ liệu của bạn khỏi máy chủ của chúng tôi.",
+    "delete_cancel": "Hủy",
+    "delete_continue": "Tiếp tục"
   },
   "ws-user-group-tags": {
     "singular": "Gắn thẻ nhóm",

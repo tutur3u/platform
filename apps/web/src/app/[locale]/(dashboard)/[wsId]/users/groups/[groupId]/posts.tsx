@@ -237,7 +237,7 @@ export default function UserGroupPosts({
                 <Input
                   id="title"
                   name="title"
-                  placeholder='e.g. "Meeting Notes"'
+                  placeholder={t('post-email-data-table.post_title_placeholder')}
                   value={currentPost?.title || ''}
                   onChange={handleInputChange}
                   className="col-span-3"
@@ -250,7 +250,7 @@ export default function UserGroupPosts({
                 <Textarea
                   id="content"
                   name="content"
-                  placeholder='e.g. "Today we discussed the upcoming event."'
+                  placeholder={t('post-email-data-table.post_content_placeholder')}
                   value={currentPost?.content || ''}
                   onChange={handleInputChange}
                   className="col-span-3"
@@ -263,7 +263,7 @@ export default function UserGroupPosts({
                 <Textarea
                   id="notes"
                   name="notes"
-                  placeholder='e.g. "Remember to follow up with the team."'
+                  placeholder={t('post-email-data-table.notes_placeholder')}
                   value={currentPost?.notes || ''}
                   onChange={handleInputChange}
                   className="col-span-3"
@@ -361,20 +361,18 @@ export default function UserGroupPosts({
                         <AlertDialogContent>
                           <AlertDialogHeader>
                             <AlertDialogTitle>
-                              Are you absolutely sure?
+                              {t('ws-user-groups.delete_post_confirmation_title')}
                             </AlertDialogTitle>
                             <AlertDialogDescription>
-                              This action cannot be undone. This will
-                              permanently delete your account and remove your
-                              data from our servers.
+                              {t('ws-user-groups.delete_post_confirmation_description')}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>{t('ws-user-groups.delete_cancel')}</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => post.id && deletePost(post.id)}
                             >
-                              Continue
+                              {t('ws-user-groups.delete_continue')}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -395,7 +393,7 @@ export default function UserGroupPosts({
           ))
         ) : (
           <div className="text-center text-sm opacity-50">
-            No posts to show.
+            {t('ws-user-groups.no_posts_to_show')}
           </div>
         )}
       </div>

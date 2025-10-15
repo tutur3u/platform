@@ -12,6 +12,7 @@ RETURNS TABLE (
   attendance_days integer
 ) AS $$
 BEGIN
+  PERFORM set_config('statement_timeout', '5s', true);  -- tune as needed
   -- Verify caller has access to the workspace
   IF NOT is_org_member(auth.uid(), p_ws_id) THEN
     RAISE EXCEPTION 'Unauthorized: User does not have access to workspace %', p_ws_id;
