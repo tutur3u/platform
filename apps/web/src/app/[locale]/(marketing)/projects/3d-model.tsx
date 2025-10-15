@@ -9,10 +9,7 @@ import {
   useGLTF,
 } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
-import { motion } from 'framer-motion';
-import { ArrowBigLeft } from 'lucide-react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { Suspense, useRef } from 'react';
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 
@@ -44,7 +41,7 @@ export function GLBViewerCanvas({
   scale = 0.5,
 }: GLBViewerCanvasProps) {
   const controlsRef = useRef<OrbitControlsImpl>(null);
-  const router = useRouter();
+
   return (
     <div className="relative h-[45vh] max-h-[80vh] min-h-[300px] w-full rounded-2xl border border-border bg-gradient-to-br from-background/95 to-primary/5 shadow-lg sm:h-[55vh] md:h-[65vh] xl:h-[70vh]">
       {/* Background image layer */}
