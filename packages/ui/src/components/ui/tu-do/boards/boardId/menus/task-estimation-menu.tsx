@@ -45,7 +45,7 @@ export function TaskEstimationMenu({
         Estimation
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent className="max-h-[400px] w-40 overflow-hidden p-0">
-        <ScrollArea style={{ height: 'min(300px, calc(100vh - 200px))' }}>
+        <ScrollArea className="h-[300px]">
           <div className="p-1">
             {indices.map((idx) => {
               const disabledByExtended = !extendedEstimation && idx > 5;
@@ -56,9 +56,7 @@ export function TaskEstimationMenu({
                 <DropdownMenuItem
                   key={idx}
                   onSelect={(e) =>
-                    onMenuItemSelect(e as unknown as Event, () =>
-                      onEstimationChange(idx)
-                    )
+                    onMenuItemSelect(e, () => onEstimationChange(idx))
                   }
                   className={cn(
                     'flex cursor-pointer items-center justify-between',
@@ -86,9 +84,7 @@ export function TaskEstimationMenu({
         <div className="border-t bg-background">
           <DropdownMenuItem
             onSelect={(e) =>
-              onMenuItemSelect(e as unknown as Event, () =>
-                onEstimationChange(null)
-              )
+              onMenuItemSelect(e, () => onEstimationChange(null))
             }
             className={cn(
               'cursor-pointer text-muted-foreground',

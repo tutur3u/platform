@@ -47,9 +47,15 @@ export function TaskNewProjectDialog({
               placeholder="e.g., Website Redesign, Q4 Campaign"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && newProjectName.trim()) {
+                  if (creatingProject) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                  }
                   onConfirm();
                 }
               }}
+              disabled={creatingProject}
             />
           </div>
         </div>

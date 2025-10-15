@@ -66,7 +66,7 @@ import { UserPresenceAvatarsComponent } from './user-presence-avatars';
 
 export type ListStatusFilter = 'all' | 'active' | 'not_started';
 
-interface BoardConfig {
+interface BoardViewConfig {
   currentView: ViewType;
   filters: TaskFilters;
   listStatusFilter: ListStatusFilter;
@@ -76,20 +76,71 @@ function getBoardConfigKey(boardId: string): string {
   return `board_config_${boardId}`;
 }
 
-function loadBoardConfig(boardId: string): BoardConfig | null {
+function loadBoardConfig(boardId: string): BoardViewConfig | null {
   if (typeof window === 'undefined') return null;
 
   try {
     const stored = localStorage.getItem(getBoardConfigKey(boardId));
     if (!stored) return null;
-    return JSON.parse(stored) as BoardConfig;
+
+    const parsed = JSON.parse(stored);
+
+    // Validate the structure before using it
+    if (
+      typeof parsed !== 'object' ||
+      parsed === null ||
+      typeof parsed.currentView !== 'string' ||
+      typeof parsed.filters !== 'object' ||
+      typeof parsed.listStatusFilter !== 'string'
+    ) {
+      console.warn('Invalid board config structure, ignoring');
+      return null;
+    }
+
+    // Convert date strings back to Date objects in dueDateRange if present
+    if (
+      parsed.filters.dueDateRange &&
+      typeof parsed.filters.dueDateRange === 'object'
+    ) {
+      const { from, to } = parsed.filters.dueDateRange;
+
+      // Validate and convert 'from' date
+      if (typeof from === 'string') {
+        const fromDate = new Date(from);
+        if (Number.isNaN(fromDate.getTime())) {
+          // Invalid date, remove dueDateRange
+          delete parsed.filters.dueDateRange;
+        } else {
+          parsed.filters.dueDateRange.from = fromDate;
+        }
+      } else if (!(from instanceof Date)) {
+        // Invalid type, remove dueDateRange
+        delete parsed.filters.dueDateRange;
+      }
+
+      // Validate and convert 'to' date
+      if (parsed.filters.dueDateRange && typeof to === 'string') {
+        const toDate = new Date(to);
+        if (Number.isNaN(toDate.getTime())) {
+          // Invalid date, remove dueDateRange
+          delete parsed.filters.dueDateRange;
+        } else {
+          parsed.filters.dueDateRange.to = toDate;
+        }
+      } else if (parsed.filters.dueDateRange && !(to instanceof Date)) {
+        // Invalid type, remove dueDateRange
+        delete parsed.filters.dueDateRange;
+      }
+    }
+
+    return parsed as BoardViewConfig;
   } catch (error) {
     console.error('Failed to load board config from localStorage:', error);
     return null;
   }
 }
 
-function saveBoardConfig(boardId: string, config: BoardConfig): void {
+function saveBoardConfig(boardId: string, config: BoardViewConfig): void {
   if (typeof window === 'undefined') return;
 
   try {
@@ -173,12 +224,17 @@ export function BoardHeader({
 
   // Save board configuration to localStorage when it changes (excluding search)
   useEffect(() => {
-    const { searchQuery: _, ...filtersToSave } = filters;
-    saveBoardConfig(board.id, {
-      currentView,
-      filters: filtersToSave,
-      listStatusFilter,
-    });
+    // Debounce the save operation to avoid excessive writes
+    const timeoutId = setTimeout(() => {
+      const { searchQuery: _, ...filtersToSave } = filters;
+      saveBoardConfig(board.id, {
+        currentView,
+        filters: filtersToSave,
+        listStatusFilter,
+      });
+    }, 500); // 500ms debounce delay
+
+    return () => clearTimeout(timeoutId);
   }, [board.id, currentView, filters, listStatusFilter]);
 
   async function handleEdit() {
