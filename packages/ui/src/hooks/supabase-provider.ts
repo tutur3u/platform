@@ -1,7 +1,7 @@
-import { EventEmitter } from 'eventemitter3';
 import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { RealtimeChannel } from '@tuturuuu/supabase/next/realtime';
 import debug from 'debug';
+import { EventEmitter } from 'eventemitter3';
 import * as awarenessProtocol from 'y-protocols/awareness';
 import * as Y from 'yjs';
 

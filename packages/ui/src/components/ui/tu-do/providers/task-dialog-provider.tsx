@@ -49,7 +49,7 @@ interface TaskDialogState {
   boardId?: string;
   mode?: 'edit' | 'create';
   availableLists?: TaskList[];
-  showUserPresence?: boolean;
+  collaborationMode?: boolean;
   originalPathname?: string;
 }
 
@@ -116,7 +116,7 @@ export function TaskDialogProvider({
         boardId,
         mode: 'edit',
         availableLists,
-        showUserPresence: true,
+        collaborationMode: true,
       });
     },
     []
@@ -189,7 +189,7 @@ export function TaskDialogProvider({
         boardId: task.list?.board_id,
         mode: 'edit',
         availableLists: (lists as TaskList[]) || undefined,
-        showUserPresence: true,
+        collaborationMode: true,
       });
     } catch (error) {
       console.error('Failed to open task:', error);
@@ -212,7 +212,7 @@ export function TaskDialogProvider({
         boardId,
         mode: 'create',
         availableLists,
-        showUserPresence: false,
+        collaborationMode: false,
       });
     },
     []

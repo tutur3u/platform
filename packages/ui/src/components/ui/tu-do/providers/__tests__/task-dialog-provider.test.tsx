@@ -54,7 +54,7 @@ describe('TaskDialogProvider', () => {
       boardId: undefined,
       availableLists: undefined,
       mode: undefined,
-      showUserPresence: undefined,
+      collaborationMode: undefined,
     });
   });
 
@@ -106,25 +106,25 @@ describe('TaskDialogProvider', () => {
     expect(result.current.state.isOpen).toBe(false);
   });
 
-  it('should set showUserPresence to true for edit mode', () => {
+  it('should set collaborationMode to true for edit mode', () => {
     const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
 
     act(() => {
       result.current.openTask(mockTask, 'board-1', [mockList]);
     });
 
-    expect(result.current.state.showUserPresence).toBe(true);
+    expect(result.current.state.collaborationMode).toBe(true);
     expect(result.current.state.mode).toBe('edit');
   });
 
-  it('should set showUserPresence to false for create mode', () => {
+  it('should set collaborationMode to false for create mode', () => {
     const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
 
     act(() => {
       result.current.createTask('board-1', 'list-1', [mockList]);
     });
 
-    expect(result.current.state.showUserPresence).toBe(false);
+    expect(result.current.state.collaborationMode).toBe(false);
     expect(result.current.state.mode).toBe('create');
   });
 

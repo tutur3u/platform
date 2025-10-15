@@ -64,6 +64,7 @@ interface RichTextEditorProps {
   boardId?: string;
   availableLists?: TaskList[];
   queryClient?: QueryClient;
+  allowCollaboration?: boolean;
 }
 
 export function RichTextEditor({
@@ -83,11 +84,12 @@ export function RichTextEditor({
   editorRef: externalEditorRef,
   initialCursorOffset,
   onEditorReady,
-  yjsDoc = null,
-  yjsProvider = null,
   boardId,
   availableLists,
   queryClient,
+  yjsDoc = null,
+  yjsProvider = null,
+  allowCollaboration = false,
 }: RichTextEditorProps) {
   const [isUploadingPastedImage, setIsUploadingPastedImage] = useState(false);
 
@@ -228,10 +230,10 @@ export function RichTextEditor({
     extensions: getEditorExtensions({
       titlePlaceholder,
       writePlaceholder,
-      doc: yjsDoc,
-      provider: yjsProvider,
+      doc: allowCollaboration && yjsDoc ? yjsDoc : undefined,
+      provider: allowCollaboration && yjsProvider ? yjsProvider : undefined,
     }),
-    content: yjsDoc ? undefined : content,
+    content: allowCollaboration ? undefined : content,
     editable: !readOnly,
     immediatelyRender: false,
     editorProps: {
@@ -481,7 +483,7 @@ export function RichTextEditor({
 
   // Update editor content when the content prop changes externally
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || allowCollaboration) return;
 
     const currentContent = editor.getJSON();
     const contentChanged =
@@ -493,7 +495,7 @@ export function RichTextEditor({
         emitUpdate: false,
       });
     }
-  }, [editor, content]);
+  }, [editor, content, allowCollaboration]);
 
   // Handle initial cursor positioning when focusing from title
   useEffect(() => {
