@@ -11,18 +11,19 @@ import {
   Clock,
   Flag,
   Gauge,
-  Layers,
   LayoutGrid,
   List,
   Loader2,
   MoreHorizontal,
   Pencil,
   Search,
+  Settings,
   Trash2,
   X,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,6 +60,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { TaskFilter, type TaskFilters } from '../boards/boardId/task-filter';
+import { BoardLayoutSettings } from './board-layout-settings';
 import type { ViewType } from './board-views';
 import { UserPresenceAvatarsComponent } from './user-presence-avatars';
 
@@ -110,6 +112,8 @@ interface Props {
   backUrl?: string;
   hideActions?: boolean;
   isSearching?: boolean;
+  lists?: TaskList[];
+  onUpdate?: () => void;
 }
 
 export function BoardHeader({
@@ -125,11 +129,16 @@ export function BoardHeader({
   backUrl,
   hideActions = false,
   isSearching = false,
+  lists = [],
+  onUpdate,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editedName, setEditedName] = useState(board.name);
   const [boardMenuOpen, setBoardMenuOpen] = useState(false);
+  const [viewMenuOpen, setViewMenuOpen] = useState(false);
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const [layoutSettingsOpen, setLayoutSettingsOpen] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -210,11 +219,6 @@ export function BoardHeader({
   }
 
   const viewConfig = {
-    'status-grouped': {
-      icon: Layers,
-      label: 'Status',
-      description: 'Group by workflow status',
-    },
     kanban: {
       icon: LayoutGrid,
       label: 'Kanban',
@@ -266,10 +270,7 @@ export function BoardHeader({
               onFiltersChange({ ...filters, searchQuery: newSearchQuery });
 
               // Auto-switch to List view when searching in Status or Timeline view
-              if (
-                newSearchQuery &&
-                (currentView === 'status-grouped' || currentView === 'timeline')
-              ) {
+              if (newSearchQuery && currentView === 'timeline') {
                 onViewChange('list');
               }
             }}
@@ -305,11 +306,9 @@ export function BoardHeader({
               className={cn(
                 'h-6 px-1.5 text-[10px] transition-all sm:text-xs',
                 listStatusFilter === 'all' &&
-                  'bg-primary/10 text-primary shadow-sm',
-                currentView === 'status-grouped' && 'opacity-50'
+                  'bg-primary/10 text-primary shadow-sm'
               )}
               onClick={() => onListStatusFilterChange('all')}
-              disabled={currentView === 'status-grouped'}
             >
               All
             </Button>
@@ -319,11 +318,9 @@ export function BoardHeader({
               className={cn(
                 'h-6 px-1.5 text-[10px] transition-all sm:text-xs',
                 listStatusFilter === 'active' &&
-                  'bg-primary/10 text-primary shadow-sm',
-                currentView === 'status-grouped' && 'opacity-50'
+                  'bg-primary/10 text-primary shadow-sm'
               )}
               onClick={() => onListStatusFilterChange('active')}
-              disabled={currentView === 'status-grouped'}
             >
               Active
             </Button>
@@ -333,18 +330,16 @@ export function BoardHeader({
               className={cn(
                 'h-6 px-1.5 text-[10px] transition-all sm:text-xs',
                 listStatusFilter === 'not_started' &&
-                  'bg-primary/10 text-primary shadow-sm',
-                currentView === 'status-grouped' && 'opacity-50'
+                  'bg-primary/10 text-primary shadow-sm'
               )}
               onClick={() => onListStatusFilterChange('not_started')}
-              disabled={currentView === 'status-grouped'}
             >
               Backlog
             </Button>
           </div>
 
           {/* View Switcher Dropdown */}
-          <DropdownMenu>
+          <DropdownMenu open={viewMenuOpen} onOpenChange={setViewMenuOpen}>
             <DropdownMenuTrigger asChild>
               <Button size="xs" variant="outline">
                 {(() => {
@@ -367,7 +362,10 @@ export function BoardHeader({
                 return (
                   <DropdownMenuItem
                     key={view}
-                    onClick={() => onViewChange(view as ViewType)}
+                    onClick={() => {
+                      onViewChange(view as ViewType);
+                      setViewMenuOpen(false);
+                    }}
                     className="gap-2"
                   >
                     <Icon className="h-4 w-4" />
@@ -392,7 +390,7 @@ export function BoardHeader({
           />
 
           {/* Sort Dropdown */}
-          <DropdownMenu>
+          <DropdownMenu open={sortMenuOpen} onOpenChange={setSortMenuOpen}>
             <DropdownMenuTrigger asChild>
               <Button
                 size="xs"
@@ -423,15 +421,16 @@ export function BoardHeader({
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
-                    onClick={() =>
+                    onClick={() => {
                       onFiltersChange({
                         ...filters,
                         sortBy:
                           filters.sortBy === 'name-asc'
                             ? undefined
                             : 'name-asc',
-                      })
-                    }
+                      });
+                      setSortMenuOpen(false);
+                    }}
                     className="gap-2"
                   >
                     <ArrowUp className="h-3.5 w-3.5 text-dynamic-blue" />
@@ -441,15 +440,16 @@ export function BoardHeader({
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() =>
+                    onClick={() => {
                       onFiltersChange({
                         ...filters,
                         sortBy:
                           filters.sortBy === 'name-desc'
                             ? undefined
                             : 'name-desc',
-                      })
-                    }
+                      });
+                      setSortMenuOpen(false);
+                    }}
                     className="gap-2"
                   >
                     <ArrowDown className="h-3.5 w-3.5 text-dynamic-purple" />
@@ -473,15 +473,16 @@ export function BoardHeader({
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
-                    onClick={() =>
+                    onClick={() => {
                       onFiltersChange({
                         ...filters,
                         sortBy:
                           filters.sortBy === 'priority-high'
                             ? undefined
                             : 'priority-high',
-                      })
-                    }
+                      });
+                      setSortMenuOpen(false);
+                    }}
                     className="gap-2"
                   >
                     <ArrowUp className="h-3.5 w-3.5 text-dynamic-red" />
@@ -491,15 +492,16 @@ export function BoardHeader({
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() =>
+                    onClick={() => {
                       onFiltersChange({
                         ...filters,
                         sortBy:
                           filters.sortBy === 'priority-low'
                             ? undefined
                             : 'priority-low',
-                      })
-                    }
+                      });
+                      setSortMenuOpen(false);
+                    }}
                     className="gap-2"
                   >
                     <ArrowDown className="h-3.5 w-3.5 text-dynamic-gray" />
@@ -523,15 +525,16 @@ export function BoardHeader({
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
-                    onClick={() =>
+                    onClick={() => {
                       onFiltersChange({
                         ...filters,
                         sortBy:
                           filters.sortBy === 'due-date-asc'
                             ? undefined
                             : 'due-date-asc',
-                      })
-                    }
+                      });
+                      setSortMenuOpen(false);
+                    }}
                     className="gap-2"
                   >
                     <ArrowUp className="h-3.5 w-3.5 text-dynamic-orange" />
@@ -541,15 +544,16 @@ export function BoardHeader({
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() =>
+                    onClick={() => {
                       onFiltersChange({
                         ...filters,
                         sortBy:
                           filters.sortBy === 'due-date-desc'
                             ? undefined
                             : 'due-date-desc',
-                      })
-                    }
+                      });
+                      setSortMenuOpen(false);
+                    }}
                     className="gap-2"
                   >
                     <ArrowDown className="h-3.5 w-3.5 text-dynamic-blue" />
@@ -573,15 +577,16 @@ export function BoardHeader({
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
-                    onClick={() =>
+                    onClick={() => {
                       onFiltersChange({
                         ...filters,
                         sortBy:
                           filters.sortBy === 'created-date-desc'
                             ? undefined
                             : 'created-date-desc',
-                      })
-                    }
+                      });
+                      setSortMenuOpen(false);
+                    }}
                     className="gap-2"
                   >
                     <ArrowDown className="h-3.5 w-3.5 text-dynamic-green" />
@@ -591,15 +596,16 @@ export function BoardHeader({
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() =>
+                    onClick={() => {
                       onFiltersChange({
                         ...filters,
                         sortBy:
                           filters.sortBy === 'created-date-asc'
                             ? undefined
                             : 'created-date-asc',
-                      })
-                    }
+                      });
+                      setSortMenuOpen(false);
+                    }}
                     className="gap-2"
                   >
                     <ArrowUp className="h-3.5 w-3.5 text-muted-foreground" />
@@ -623,15 +629,16 @@ export function BoardHeader({
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
-                    onClick={() =>
+                    onClick={() => {
                       onFiltersChange({
                         ...filters,
                         sortBy:
                           filters.sortBy === 'estimation-high'
                             ? undefined
                             : 'estimation-high',
-                      })
-                    }
+                      });
+                      setSortMenuOpen(false);
+                    }}
                     className="gap-2"
                   >
                     <ArrowUp className="h-3.5 w-3.5 text-dynamic-purple" />
@@ -641,15 +648,16 @@ export function BoardHeader({
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() =>
+                    onClick={() => {
                       onFiltersChange({
                         ...filters,
                         sortBy:
                           filters.sortBy === 'estimation-low'
                             ? undefined
                             : 'estimation-low',
-                      })
-                    }
+                      });
+                      setSortMenuOpen(false);
+                    }}
                     className="gap-2"
                   >
                     <ArrowDown className="h-3.5 w-3.5 text-dynamic-cyan" />
@@ -665,9 +673,10 @@ export function BoardHeader({
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() =>
-                      onFiltersChange({ ...filters, sortBy: undefined })
-                    }
+                    onClick={() => {
+                      onFiltersChange({ ...filters, sortBy: undefined });
+                      setSortMenuOpen(false);
+                    }}
                     className="gap-2 text-dynamic-red/80 focus:text-dynamic-red"
                   >
                     <X className="h-4 w-4" />
@@ -702,6 +711,16 @@ export function BoardHeader({
                 >
                   <Pencil className="h-4 w-4" />
                   Rename board
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setLayoutSettingsOpen(true);
+                    setBoardMenuOpen(false);
+                  }}
+                  className="gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  Board Layout
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <AlertDialog>
@@ -786,6 +805,17 @@ export function BoardHeader({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Board Layout Settings */}
+      {onUpdate && (
+        <BoardLayoutSettings
+          open={layoutSettingsOpen}
+          onOpenChange={setLayoutSettingsOpen}
+          boardId={board.id}
+          lists={lists}
+          onUpdate={onUpdate}
+        />
+      )}
     </div>
   );
 }
