@@ -44,9 +44,7 @@ export default async function UserGroupDetailsPage({
         const { containsPermission } = await getPermissions({
           wsId,
         });
-        const canViewUserGroupsReports = containsPermission(
-          'view_user_groups'
-        );
+        const canViewUserGroupsReports = containsPermission('view_user_groups');
         if (!canViewUserGroupsReports) {
           notFound();
         }
@@ -61,16 +59,9 @@ export default async function UserGroupDetailsPage({
           'view_user_groups_scores'
         );
 
-        const canCreateReports = containsPermission(
-          'create_user_groups'
-        );
-        const canUpdateReports = containsPermission(
-          'update_user_groups'
-        );
-        const canDeleteReports = containsPermission(
-          'delete_user_groups'
-        );
-
+        const canCreateReports = containsPermission('create_user_groups');
+        const canUpdateReports = containsPermission('update_user_groups');
+        const canDeleteReports = containsPermission('delete_user_groups');
 
         return (
           <>
@@ -142,19 +133,21 @@ export default async function UserGroupDetailsPage({
                       {t('ws-user-group-details.reports')}
                     </Button>
                     {canViewUserGroupsScores && (
-                    <Link href={`/${wsId}/users/groups/${groupId}/indicators`}>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        className={cn(
-                          'border font-semibold max-sm:w-full',
-                          'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
-                        )}
+                      <Link
+                        href={`/${wsId}/users/groups/${groupId}/indicators`}
                       >
-                        <ChartColumn className="h-5 w-5" />
-                        {t('ws-user-group-details.metrics')}
-                      </Button>
-                    </Link>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          className={cn(
+                            'border font-semibold max-sm:w-full',
+                            'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
+                          )}
+                        >
+                          <ChartColumn className="h-5 w-5" />
+                          {t('ws-user-group-details.metrics')}
+                        </Button>
+                      </Link>
                     )}
                   </div>
                 </>
