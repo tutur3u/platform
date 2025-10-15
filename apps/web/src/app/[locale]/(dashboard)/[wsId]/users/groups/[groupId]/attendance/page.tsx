@@ -52,6 +52,12 @@ export default async function UserGroupAttendancePage({
         if (!canCheckUserAttendance) {
           notFound();
         }
+        const canViewUserGroupsScores = containsPermission(
+          'view_user_groups_scores'
+        );
+        const canUpdateAttendance = containsPermission(
+          'update_user_groups'
+        );
         const sp = await searchParams;
 
         const requestedDateParam = sp?.date;
@@ -136,6 +142,7 @@ export default async function UserGroupAttendancePage({
                         {t('ws-user-group-details.reports')}
                       </Button>
                     </Link>
+                    {canViewUserGroupsScores && (
                     <Link href={`/${wsId}/users/groups/${groupId}/indicators`}>
                       <Button
                         type="button"
@@ -149,6 +156,7 @@ export default async function UserGroupAttendancePage({
                         {t('ws-user-group-details.metrics')}
                       </Button>
                     </Link>
+                    )}
                   </div>
                 </>
               }
@@ -163,6 +171,7 @@ export default async function UserGroupAttendancePage({
               initialMembers={members}
               initialDate={effectiveDate}
               initialAttendance={attendanceMap}
+              canUpdateAttendance={canUpdateAttendance}
             />
           </>
         );

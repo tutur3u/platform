@@ -503,8 +503,9 @@ export default function ReferralSectionClient({
                                 disabled={unreferUserMutation.isPending}
                                 className="h-8 w-8 p-0 text-dynamic-red hover:bg-dynamic-red/10 hover:text-dynamic-red"
                                 title={t('unrefer_person')}
+                                aria-label={t('unrefer_person')}
                               >
-                                <UserMinus className="h-4 w-4" />
+                                <UserMinus className="h-4 w-4" aria-hidden="true" />
                               </Button>
                             )}
                           </div>

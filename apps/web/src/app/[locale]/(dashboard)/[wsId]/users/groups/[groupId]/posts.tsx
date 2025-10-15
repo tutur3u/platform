@@ -61,9 +61,7 @@ export default function UserGroupPosts({
   posts,
   count,
   onClick,
-  canCreateUserGroups,
-  canUpdateUserGroups,
-  canDeleteUserGroups,
+  canUpdatePosts,
 }: {
   wsId: string;
   groupId?: string;
@@ -71,9 +69,7 @@ export default function UserGroupPosts({
   posts: UserGroupPost[];
   count?: number | null;
   onClick?: (id: string) => void;
-  canCreateUserGroups: boolean;
-  canUpdateUserGroups: boolean;
-  canDeleteUserGroups: boolean;
+  canUpdatePosts: boolean;
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -164,7 +160,7 @@ export default function UserGroupPosts({
           {!!count && ` (${count})`}
         </div>
         <div className="flex items-center gap-2">
-          {groupId && canCreateUserGroups && (
+          {groupId && canUpdatePosts && (
             <Button onClick={() => handleOpenDialog()}>
               <BookPlus className="mr-1 h-5 w-5" />
               {t('ws-user-groups.add_post')}
@@ -339,7 +335,7 @@ export default function UserGroupPosts({
                         <Eye className="h-4 w-4" />
                       </Button>
                     </Link>
-                    {canUpdateUserGroups && (
+                    {canUpdatePosts && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -351,7 +347,7 @@ export default function UserGroupPosts({
                         <Pencil className="h-4 w-4" />
                       </Button>
                     )}
-                    {canDeleteUserGroups && (
+                    {canUpdatePosts && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button

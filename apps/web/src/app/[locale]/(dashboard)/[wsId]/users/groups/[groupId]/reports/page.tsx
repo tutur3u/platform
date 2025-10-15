@@ -41,14 +41,36 @@ export default async function UserGroupDetailsPage({
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {
         const t = await getTranslations();
-        const { reportId, userId } = await searchParams;
-        const group = await getData(wsId, groupId);
         const { containsPermission } = await getPermissions({
           wsId,
         });
+        const canViewUserGroupsReports = containsPermission(
+          'view_user_groups'
+        );
+        if (!canViewUserGroupsReports) {
+          notFound();
+        }
+        const { reportId, userId } = await searchParams;
+        const group = await getData(wsId, groupId);
+
         const canCheckUserAttendance = containsPermission(
           'check_user_attendance'
         );
+
+        const canViewUserGroupsScores = containsPermission(
+          'view_user_groups_scores'
+        );
+
+        const canCreateReports = containsPermission(
+          'create_user_groups'
+        );
+        const canUpdateReports = containsPermission(
+          'update_user_groups'
+        );
+        const canDeleteReports = containsPermission(
+          'delete_user_groups'
+        );
+
 
         return (
           <>
@@ -119,6 +141,7 @@ export default async function UserGroupDetailsPage({
                       <FileUser className="h-5 w-5" />
                       {t('ws-user-group-details.reports')}
                     </Button>
+                    {canViewUserGroupsScores && (
                     <Link href={`/${wsId}/users/groups/${groupId}/indicators`}>
                       <Button
                         type="button"
@@ -132,6 +155,7 @@ export default async function UserGroupDetailsPage({
                         {t('ws-user-group-details.metrics')}
                       </Button>
                     </Link>
+                    )}
                   </div>
                 </>
               }
@@ -146,6 +170,9 @@ export default async function UserGroupDetailsPage({
               initialReportId={reportId}
               groupNameFallback={group.name || t('ws-user-groups.singular')}
               canCheckUserAttendance={canCheckUserAttendance}
+              canCreateReports={canCreateReports}
+              canUpdateReports={canUpdateReports}
+              canDeleteReports={canDeleteReports}
             />
           </>
         );

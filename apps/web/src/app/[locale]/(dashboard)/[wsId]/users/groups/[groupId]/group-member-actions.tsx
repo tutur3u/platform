@@ -48,7 +48,6 @@ export interface GroupMemberActionsProps {
   groupId: string;
   memberIds: Set<string>; // non-managers
   managerIds: Set<string>;
-  canCreateUserGroups: boolean;
   canUpdateUserGroups: boolean;
 }
 
@@ -57,7 +56,6 @@ export default function GroupMemberActions({
   groupId,
   memberIds,
   managerIds,
-  canCreateUserGroups,
   canUpdateUserGroups,
 }: GroupMemberActionsProps) {
   const t = useTranslations();
@@ -215,7 +213,7 @@ export default function GroupMemberActions({
                 setSelected(initial);
               }
             }}
-            disabled={!canCreateUserGroups}
+            disabled={!canUpdateUserGroups}
           >
             {t('ws-user-group-details.add_members')}
           </DropdownMenuItem>

@@ -60,8 +60,6 @@ interface GroupMembersProps {
   pageSize: number;
   canViewPersonalInfo: boolean;
   canViewPublicInfo: boolean;
-  canDeleteUserGroups: boolean;
-  canCreateUserGroups: boolean;
   canUpdateUserGroups: boolean;
 }
 
@@ -72,8 +70,6 @@ export default function GroupMembers({
   pageSize,
   canViewPersonalInfo,
   canViewPublicInfo,
-  canDeleteUserGroups,
-  canCreateUserGroups,
   canUpdateUserGroups,
 }: GroupMembersProps) {
   const t = useTranslations();
@@ -311,14 +307,15 @@ export default function GroupMembers({
               </DropdownMenuCheckboxItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          {canUpdateUserGroups && (
           <GroupMemberActions
             wsId={wsId}
             groupId={groupId}
             memberIds={memberIds}
             managerIds={managerIds}
-            canCreateUserGroups={canCreateUserGroups}
             canUpdateUserGroups={canUpdateUserGroups}
-          />
+            />
+          )}
         </div>
       </div>
 
@@ -411,7 +408,7 @@ export default function GroupMembers({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {canDeleteUserGroups && (
+                            {canUpdateUserGroups && (
                               <DropdownMenuItem
                                 onClick={(e) => {
                                   e.preventDefault();

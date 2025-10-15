@@ -70,6 +70,8 @@ export default function EditableReportPreview({
   selectedManagerName,
   onChangeManagerAction,
   canCheckUserAttendance,
+  canUpdateReports = false,
+  canDeleteReports = false,
 }: {
   wsId: string;
   report: Partial<WorkspaceUserReport> & {
@@ -93,6 +95,8 @@ export default function EditableReportPreview({
   selectedManagerName?: string;
   onChangeManagerAction?: (name?: string) => void;
   canCheckUserAttendance?: boolean;
+  canUpdateReports?: boolean;
+  canDeleteReports?: boolean;
 }) {
   const locale = useLocale();
   const t = useTranslations();
@@ -853,10 +857,12 @@ export default function EditableReportPreview({
             if (isNew) createMutation.mutate(values);
             else updateMutation.mutate(values);
           }}
-          onDelete={!isNew ? () => setShowDeleteDialog(true) : undefined}
+          onDelete={!isNew && canDeleteReports ? () => setShowDeleteDialog(true) : undefined}
           managerOptions={managerOptions}
           selectedManagerName={selectedManagerName ?? report.creator_name}
           onChangeManager={(name) => onChangeManagerAction?.(name)}
+          canUpdate={canUpdateReports}
+          canDelete={canDeleteReports}
         />
 
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

@@ -74,9 +74,8 @@ interface LinkedProductsClientProps {
   groupId: string;
   initialLinkedProducts: LinkedProduct[];
   initialCount: number;
-  canCreateUserGroups: boolean;
-  canUpdateUserGroups: boolean;
-  canDeleteUserGroups: boolean;
+  canUpdateLinkedProducts: boolean;
+  
 }
 
 export const useProducts = (wsId: string) => {
@@ -136,9 +135,8 @@ export default function LinkedProductsClient({
   groupId,
   initialLinkedProducts,
   initialCount,
-  canCreateUserGroups,
-  canUpdateUserGroups,
-  canDeleteUserGroups,
+  canUpdateLinkedProducts,
+
 }: LinkedProductsClientProps) {
   const t = useTranslations();
   const [linkedProducts, setLinkedProducts] = useState(initialLinkedProducts);
@@ -392,7 +390,7 @@ export default function LinkedProductsClient({
           {t('user-data-table.linked_products')}
           {!!count && ` (${count})`}
         </div>
-        {canCreateUserGroups && (
+        {canUpdateLinkedProducts && (
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm">
@@ -580,7 +578,7 @@ export default function LinkedProductsClient({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    {canUpdateUserGroups && (
+                    {canUpdateLinkedProducts && (
                       <DropdownMenuItem
                         onClick={() => openEditDialog(product)}
                         className="cursor-pointer"
@@ -589,7 +587,7 @@ export default function LinkedProductsClient({
                         {t('ws-groups.edit_product')}
                       </DropdownMenuItem>
                     )}
-                    {canDeleteUserGroups && (
+                    {canUpdateLinkedProducts && (
                       <DropdownMenuItem
                         onClick={() => {
                           setDeletingProduct(product);
