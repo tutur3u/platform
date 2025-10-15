@@ -654,15 +654,67 @@ export default function MigrationDashboard() {
         `[${module}] Mapped external data: ${mappedExternalData.length} records`
       );
 
-      // Build a map of existing records by ID for quick lookup
+      // Define composite key strategies for tables without primary `id` field
+      const compositeKeyStrategies: Record<
+        string,
+        (item: any) => string | null
+      > = {
+        'class-packages': (item) =>
+          item.group_id && item.product_id && item.unit_id
+            ? `${item.group_id}|${item.product_id}|${item.unit_id}`
+            : null,
+        'class-members': (item) =>
+          item.user_id && item.group_id
+            ? `${item.user_id}|${item.group_id}`
+            : null,
+        'class-scores': (item) =>
+          item.user_id && item.indicator_id
+            ? `${item.user_id}|${item.indicator_id}`
+            : null,
+        'class-attendance': (item) =>
+          item.group_id && item.user_id && item.date
+            ? `${item.group_id}|${item.user_id}|${item.date}`
+            : null,
+        'bill-packages': (item) =>
+          item.invoice_id &&
+          item.product_name &&
+          item.product_unit &&
+          item.warehouse
+            ? `${item.invoice_id}|${item.product_name}|${item.product_unit}|${item.warehouse}`
+            : null,
+        'user-coupons': (item) =>
+          item.user_id && item.promo_id
+            ? `${item.user_id}|${item.promo_id}`
+            : null,
+        'product-prices': (item) =>
+          item.product_id && item.unit_id && item.warehouse_id
+            ? `${item.product_id}|${item.unit_id}|${item.warehouse_id}`
+            : null,
+        'bill-coupons': (item) =>
+          item.invoice_id && item.code && item.value && item.use_ratio ? `${item.invoice_id}|${item.code}|${item.value}|${item.use_ratio}` : null,
+        
+      };
+
+      // Helper to get unique key for an item (composite or simple id)
+      const getItemKey = (item: any): string | null => {
+        // Try composite key strategy first if module has one
+        const compositeKeyFn = compositeKeyStrategies[module];
+        if (compositeKeyFn) {
+          return compositeKeyFn(item);
+        }
+        // Fallback to simple id
+        return item.id || item._id || null;
+      };
+
+      // Build a map of existing records by key for quick lookup
       const existingMap = new Map();
       existingInternalData.forEach((item) => {
-        const id = item.id || item._id;
-        if (id) existingMap.set(id, item);
+        const key = getItemKey(item);
+        if (key) existingMap.set(key, item);
       });
 
       console.log(
-        `[${module}] Built existing map with ${existingMap.size} entries`
+        `[${module}] Built existing map with ${existingMap.size} entries using ${compositeKeyStrategies[module] ? 'composite key' : 'simple id'} strategy`
       );
 
       // Helper function to compare objects ignoring timestamps and metadata
@@ -722,7 +774,8 @@ export default function MigrationDashboard() {
 
         // Log first difference found for debugging
         if (firstDiff) {
-          console.log(`[${module}] First diff in ${existing.id}:`, firstDiff);
+          const key = existing.id || existing._id || 'composite-key-record';
+          console.log(`[${module}] First diff in ${key}:`, firstDiff);
         }
 
         return false;
@@ -730,10 +783,10 @@ export default function MigrationDashboard() {
 
       // Analyze mapped external data vs existing data
       for (const extItem of mappedExternalData) {
-        const extId = extItem.id || extItem._id;
-        if (extId && existingMap.has(extId)) {
+        const extKey = getItemKey(extItem);
+        if (extKey && existingMap.has(extKey)) {
           // Check if data is different (needs update)
-          const existing = existingMap.get(extId);
+          const existing = existingMap.get(extKey);
           const hasChanges = hasSignificantChanges(existing, extItem);
           if (hasChanges) {
             totalUpdates++;
