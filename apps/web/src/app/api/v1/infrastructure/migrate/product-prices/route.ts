@@ -8,12 +8,15 @@ export async function PUT(req: Request) {
 
   const { error } = await supabase
     .from('inventory_products')
-    .upsert(json?.data || []);
+    .upsert(json?.data || [], {
+      onConflict: 'product_id,unit_id,warehouse_id',
+      ignoreDuplicates: false,
+    });
 
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error migrating workspace users' },
+      { message: 'Error migrating product prices' },
       { status: 500 }
     );
   }

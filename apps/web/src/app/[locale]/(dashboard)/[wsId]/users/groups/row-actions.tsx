@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -21,9 +21,17 @@ import UserGroupForm from './form';
 
 interface UserGroupRowActionsProps {
   row: Row<UserGroup>;
+  canUpdate?: boolean;
+  canDelete?: boolean;
+  canCreate?: boolean;
 }
 
-export function UserGroupRowActions({ row }: UserGroupRowActionsProps) {
+export function UserGroupRowActions({
+  row,
+  canUpdate = false,
+  canDelete = false,
+  canCreate = false,
+}: UserGroupRowActionsProps) {
   const router = useRouter();
   const t = useTranslations();
 
@@ -41,10 +49,7 @@ export function UserGroupRowActions({ row }: UserGroupRowActionsProps) {
       router.refresh();
     } else {
       const data = await res.json();
-      toast({
-        title: 'Failed to delete workspace user group tag',
-        description: data.message,
-      });
+      toast.error(data.message);
     }
   };
 
@@ -74,24 +79,37 @@ export function UserGroupRowActions({ row }: UserGroupRowActionsProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            {t('common.edit')}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteUserGroup}>
-            {t('common.delete')}
-          </DropdownMenuItem>
+          {canUpdate && (
+            <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+              {t('common.edit')}
+            </DropdownMenuItem>
+          )}
+          {(canUpdate || canDelete) && <DropdownMenuSeparator />}
+          {canDelete && (
+            <DropdownMenuItem onClick={deleteUserGroup}>
+              {t('common.delete')}
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <ModifiableDialogTrigger
-        data={data}
-        open={showEditDialog}
-        title={t('ws-user-groups.edit')}
-        editDescription={t('ws-user-groups.edit_description')}
-        setOpen={setShowEditDialog}
-        form={<UserGroupForm wsId={data.ws_id} data={data} />}
-      />
+      {canUpdate && (
+        <ModifiableDialogTrigger
+          data={data}
+          open={showEditDialog}
+          title={t('ws-user-groups.edit')}
+          editDescription={t('ws-user-groups.edit_description')}
+          setOpen={setShowEditDialog}
+          form={
+            <UserGroupForm
+              wsId={data.ws_id}
+              data={data}
+              canCreate={canCreate}
+              canUpdate={canUpdate}
+            />
+          }
+        />
+      )}
     </div>
   );
 }

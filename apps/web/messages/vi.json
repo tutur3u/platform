@@ -1363,8 +1363,12 @@
       "no_results": "Không tìm thấy kết quả"
     },
     "referral_success": "Đã giới thiệu một người dùng mới",
+    "unrefer_success": "Đã xóa giới thiệu thành công",
     "user_already_referred": "Người dùng này đã được giới thiệu.",
     "missing_creator_id": "Thiếu ID của người tạo. \nBạn không được ủy quyền",
+    "missing_updater_id": "Thiếu ID của người cập nhật. Bạn không được ủy quyền",
+    "no_permission_to_refer": "Bạn không có quyền giới thiệu người dùng",
+    "unrefer_person": "Xóa giới thiệu",
     "sent_emails_title": "Email đã gửi",
     "no_sent_emails": "Không có email nào",
     "no_sent_emails_description": "Người dùng này chưa nhận được email nào.",
@@ -1404,7 +1408,10 @@
     "error": "Lỗi",
     "sending": "Đang gửi",
     "sent": "Đã gửi",
-    "pending": "Chờ gửi"
+    "pending": "Chờ gửi",
+    "post_title_placeholder": "vd: \"Ghi chú cuộc họp\"",
+    "post_content_placeholder": "vd: \"Hôm nay chúng ta đã thảo luận về sự kiện sắp tới.\"",
+    "notes_placeholder": "vd: \"Nhớ theo dõi với đội ngũ.\""
   },
   "course-data-table": {
     "id": "Mã số",
@@ -2159,7 +2166,12 @@
     "edit_post_description": "Thực hiện thay đổi cho bài viết của bạn ở đây.",
     "add_post_description": "Thêm một bài viết mới.",
     "show_post_content": "Hiển thị nội dung bài viết",
-    "show_post_status": "Hiển thị trạng thái bài viết"
+    "show_post_status": "Hiển thị trạng thái bài viết",
+    "no_posts_to_show": "Không có bài viết nào để hiển thị.",
+    "delete_post_confirmation_title": "Bạn có chắc chắn không?",
+    "delete_post_confirmation_description": "Hành động này không thể hoàn tác. Điều này sẽ xóa vĩnh viễn bài viết của bạn và loại bỏ dữ liệu của bạn khỏi máy chủ của chúng tôi.",
+    "delete_cancel": "Hủy",
+    "delete_continue": "Tiếp tục"
   },
   "ws-user-group-tags": {
     "singular": "Gắn thẻ nhóm",
@@ -2449,6 +2461,23 @@
     "delete_invoices_description": "Cho phép thành viên xóa hóa đơn khỏi không gian làm việc.",
     "check_user_attendance": "Kiểm tra điểm danh người dùng",
     "check_user_attendance_description": "Cho phép thành viên kiểm tra điểm danh của người dùng khác",
+    "user_groups": "Nhóm người dùng",
+    "view_user_groups": "Xem nhóm người dùng",
+    "view_user_groups_description": "Cho phép thành viên xem các nhóm người dùng trong không gian làm việc.",
+    "create_user_groups": "Tạo nhóm người dùng",
+    "create_user_groups_description": "Cho phép thành viên tạo nhóm người dùng mới trong không gian làm việc.",
+    "update_user_groups": "Cập nhật nhóm người dùng",
+    "update_user_groups_description": "Cho phép thành viên chỉnh sửa nhóm người dùng hiện có trong không gian làm việc.",
+    "delete_user_groups": "Xóa nhóm người dùng",
+    "delete_user_groups_description": "Cho phép thành viên xóa nhóm người dùng khỏi không gian làm việc.",
+    "view_user_groups_scores": "Xem điểm nhóm người dùng",
+    "view_user_groups_scores_description": "Cho phép thành viên xem điểm của các nhóm người dùng trong không gian làm việc.",
+    "create_user_groups_scores": "Tạo điểm nhóm người dùng",
+    "create_user_groups_scores_description": "Cho phép thành viên tạo điểm mới cho các nhóm người dùng trong không gian làm việc.",
+    "update_user_groups_scores": "Cập nhật điểm nhóm người dùng",
+    "update_user_groups_scores_description": "Cho phép thành viên chỉnh sửa điểm hiện có của các nhóm người dùng trong không gian làm việc.",
+    "delete_user_groups_scores": "Xóa điểm nhóm người dùng",
+    "delete_user_groups_scores_description": "Cho phép thành viên xóa điểm của các nhóm người dùng khỏi không gian làm việc.",
     "transactions": "Giao dịch tài chính"
   },
   "platform-roles": {

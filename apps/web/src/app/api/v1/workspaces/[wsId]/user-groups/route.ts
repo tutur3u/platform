@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -10,6 +11,15 @@ interface Params {
 export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId } = await params;
+
+  // Check permissions
+  const { withoutPermission } = await getPermissions({ wsId });
+  if (withoutPermission('view_user_groups')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to view user groups' },
+      { status: 403 }
+    );
+  }
 
   const { data, error } = await supabase
     .from('workspace_user_groups')
@@ -31,6 +41,15 @@ export async function GET(_: Request, { params }: Params) {
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId } = await params;
+
+  // Check permissions
+  const { withoutPermission } = await getPermissions({ wsId });
+  if (withoutPermission('create_user_groups')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to create user groups' },
+      { status: 403 }
+    );
+  }
 
   const data = (await req.json()) as {
     name: string;

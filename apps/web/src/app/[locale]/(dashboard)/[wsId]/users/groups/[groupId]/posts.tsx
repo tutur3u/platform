@@ -61,6 +61,7 @@ export default function UserGroupPosts({
   posts,
   count,
   onClick,
+  canUpdatePosts,
 }: {
   wsId: string;
   groupId?: string;
@@ -68,6 +69,7 @@ export default function UserGroupPosts({
   posts: UserGroupPost[];
   count?: number | null;
   onClick?: (id: string) => void;
+  canUpdatePosts: boolean;
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -158,7 +160,7 @@ export default function UserGroupPosts({
           {!!count && ` (${count})`}
         </div>
         <div className="flex items-center gap-2">
-          {groupId && (
+          {groupId && canUpdatePosts && (
             <Button onClick={() => handleOpenDialog()}>
               <BookPlus className="mr-1 h-5 w-5" />
               {t('ws-user-groups.add_post')}
@@ -235,7 +237,9 @@ export default function UserGroupPosts({
                 <Input
                   id="title"
                   name="title"
-                  placeholder='e.g. "Meeting Notes"'
+                  placeholder={t(
+                    'post-email-data-table.post_title_placeholder'
+                  )}
                   value={currentPost?.title || ''}
                   onChange={handleInputChange}
                   className="col-span-3"
@@ -248,7 +252,9 @@ export default function UserGroupPosts({
                 <Textarea
                   id="content"
                   name="content"
-                  placeholder='e.g. "Today we discussed the upcoming event."'
+                  placeholder={t(
+                    'post-email-data-table.post_content_placeholder'
+                  )}
                   value={currentPost?.content || ''}
                   onChange={handleInputChange}
                   className="col-span-3"
@@ -261,7 +267,7 @@ export default function UserGroupPosts({
                 <Textarea
                   id="notes"
                   name="notes"
-                  placeholder='e.g. "Remember to follow up with the team."'
+                  placeholder={t('post-email-data-table.notes_placeholder')}
                   value={currentPost?.notes || ''}
                   onChange={handleInputChange}
                   className="col-span-3"
@@ -333,47 +339,55 @@ export default function UserGroupPosts({
                         <Eye className="h-4 w-4" />
                       </Button>
                     </Link>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenDialog(post);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Are you absolutely sure?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently
-                            delete your account and remove your data from our
-                            servers.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => post.id && deletePost(post.id)}
+                    {canUpdatePosts && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenDialog(post);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {canUpdatePosts && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            Continue
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              {t(
+                                'ws-user-groups.delete_post_confirmation_title'
+                              )}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {t(
+                                'ws-user-groups.delete_post_confirmation_description'
+                              )}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>
+                              {t('ws-user-groups.delete_cancel')}
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => post.id && deletePost(post.id)}
+                            >
+                              {t('ws-user-groups.delete_continue')}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
                   </div>
                 )}
               </div>
@@ -389,7 +403,7 @@ export default function UserGroupPosts({
           ))
         ) : (
           <div className="text-center text-sm opacity-50">
-            No posts to show.
+            {t('ws-user-groups.no_posts_to_show')}
           </div>
         )}
       </div>

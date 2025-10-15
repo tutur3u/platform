@@ -60,6 +60,9 @@ interface Props {
   users: WorkspaceUser[];
   initialGroupIndicators: GroupIndicator[];
   initialUserIndicators: UserIndicator[];
+  canCreateUserGroupsScores: boolean;
+  canUpdateUserGroupsScores: boolean;
+  canDeleteUserGroupsScores: boolean;
 }
 
 export default function GroupIndicatorsManager({
@@ -69,6 +72,9 @@ export default function GroupIndicatorsManager({
   users,
   initialGroupIndicators,
   initialUserIndicators,
+  canCreateUserGroupsScores = false,
+  canUpdateUserGroupsScores = false,
+  canDeleteUserGroupsScores = false,
 }: Props) {
   const t = useTranslations();
   const tIndicators = useTranslations('ws-user-group-indicators');
@@ -257,6 +263,38 @@ export default function GroupIndicatorsManager({
 
   const updateUserIndicatorValueMutation = useMutation({
     mutationFn: async (pendingValues: PendingIndicatorValue[]) => {
+      // Check permissions based on operation type
+      for (const pendingValue of pendingValues) {
+        const existingIndicator = userIndicators.find(
+          (ui) =>
+            ui.user_id === pendingValue.user_id &&
+            ui.indicator_id === pendingValue.indicator_id
+        );
+
+        if (pendingValue.value === null) {
+          // Deleting a value (setting to null)
+          if (!canDeleteUserGroupsScores) {
+            throw new Error(
+              'Permission denied: cannot delete indicator values'
+            );
+          }
+        } else if (!existingIndicator || existingIndicator.value === null) {
+          // Creating a new value (no existing record or existing value is null)
+          if (!canCreateUserGroupsScores) {
+            throw new Error(
+              'Permission denied: cannot create indicator values'
+            );
+          }
+        } else {
+          // Updating an existing value
+          if (!canUpdateUserGroupsScores) {
+            throw new Error(
+              'Permission denied: cannot update indicator values'
+            );
+          }
+        }
+      }
+
       const { error } = await supabase.from('user_indicators').upsert(
         pendingValues.map(({ user_id, indicator_id, value }) => ({
           user_id,
@@ -273,8 +311,11 @@ export default function GroupIndicatorsManager({
       setPendingValues(new Map());
       toast.success(tIndicators('values_updated_successfully'));
     },
-    onError: (error) => {
-      console.error('Error updating indicator values:', error);
+    onError: (error: any) => {
+      console.error(
+        'Error updating indicator values:',
+        error instanceof Error ? error.message : error
+      );
       toast.error(tIndicators('failed_to_update_values'));
     },
   });
@@ -330,6 +371,43 @@ export default function GroupIndicatorsManager({
       const numericValue = value === '' ? null : parseFloat(value);
       const key = `${userId}|${indicatorId}`;
 
+      // Check permissions based on operation type
+      if (numericValue === null) {
+        // Checking if user is trying to delete a value
+        const originalIndicator = userIndicators.find(
+          (ui) => ui.user_id === userId && ui.indicator_id === indicatorId
+        );
+        if (
+          originalIndicator?.value !== null &&
+          originalIndicator?.value !== undefined
+        ) {
+          // User is clearing a value that existed, so this is a deletion
+          if (!canDeleteUserGroupsScores) {
+            toast.error(t('common.insufficient_permissions'));
+            return;
+          }
+        }
+      } else {
+        // User is setting a value
+        const existingIndicator = userIndicators.find(
+          (ui) => ui.user_id === userId && ui.indicator_id === indicatorId
+        );
+
+        if (!existingIndicator || existingIndicator.value === null) {
+          // Creating a new value (no existing record or existing value is null)
+          if (!canCreateUserGroupsScores) {
+            toast.error(t('common.insufficient_permissions'));
+            return;
+          }
+        } else {
+          // Updating an existing value
+          if (!canUpdateUserGroupsScores) {
+            toast.error(t('common.insufficient_permissions'));
+            return;
+          }
+        }
+      }
+
       setPendingValues((prev) => {
         const newMap = new Map(prev);
         if (numericValue === null) {
@@ -361,7 +439,12 @@ export default function GroupIndicatorsManager({
         return newMap;
       });
     },
-    [userIndicators]
+    [
+      userIndicators,
+      canCreateUserGroupsScores,
+      canUpdateUserGroupsScores,
+      canDeleteUserGroupsScores,
+    ]
   );
 
   // Check if a value is pending (different from original)
@@ -454,6 +537,22 @@ export default function GroupIndicatorsManager({
 
   const hasChanges = pendingValues.size > 0;
 
+  const canEditCell = useCallback(
+    (userId: string, indicatorId: string) => {
+      const existing = userIndicators.find(
+        (ui) => ui.user_id === userId && ui.indicator_id === indicatorId
+      );
+      if (!existing || existing.value == null) return canCreateUserGroupsScores;
+      return canUpdateUserGroupsScores || canDeleteUserGroupsScores; // allow edit if they can change or clear
+    },
+    [
+      userIndicators,
+      canCreateUserGroupsScores,
+      canUpdateUserGroupsScores,
+      canDeleteUserGroupsScores,
+    ]
+  );
+
   return (
     <div>
       <StickyBottomBar
@@ -487,103 +586,105 @@ export default function GroupIndicatorsManager({
 
       <div className="space-y-4">
         {/* Add Indicator Button */}
-        <div className="flex justify-end">
-          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                {tIndicators('add_indicator')}
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{tIndicators('add_indicator')}</DialogTitle>
-                <DialogDescription>
-                  {tIndicators('add_indicator_description')}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
+        {canCreateUserGroupsScores && (
+          <div className="flex justify-end">
+            <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {tIndicators('add_indicator')}
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{tIndicators('add_indicator')}</DialogTitle>
+                  <DialogDescription>
+                    {tIndicators('add_indicator_description')}
+                  </DialogDescription>
+                </DialogHeader>
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="new-vital-name">
-                      {tIndicators('indicator_name')}
-                    </Label>
-                    <Input
-                      id="new-vital-name"
-                      value={newVitalForm.name}
-                      onChange={(e) =>
-                        setNewVitalForm((prev) => ({
-                          ...prev,
-                          name: e.target.value,
-                        }))
-                      }
-                      placeholder={tIndicators('indicator_name_placeholder')}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-vital-unit">
-                      {tIndicators('unit')}
-                    </Label>
-                    <Input
-                      id="new-vital-unit"
-                      value={newVitalForm.unit}
-                      onChange={(e) =>
-                        setNewVitalForm((prev) => ({
-                          ...prev,
-                          unit: e.target.value,
-                        }))
-                      }
-                      placeholder={tIndicators('unit_placeholder')}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-vital-factor">
-                      {tIndicators('factor')}
-                    </Label>
-                    <Input
-                      id="new-vital-factor"
-                      type="number"
-                      step="0.01"
-                      value={newVitalForm.factor}
-                      onChange={(e) =>
-                        setNewVitalForm((prev) => ({
-                          ...prev,
-                          factor: parseFloat(e.target.value) || 1,
-                        }))
-                      }
-                      placeholder={tIndicators('factor_placeholder')}
-                    />
-                    <p className="text-muted-foreground text-sm">
-                      {tIndicators('factor_description')}
-                    </p>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="new-vital-name">
+                        {tIndicators('indicator_name')}
+                      </Label>
+                      <Input
+                        id="new-vital-name"
+                        value={newVitalForm.name}
+                        onChange={(e) =>
+                          setNewVitalForm((prev) => ({
+                            ...prev,
+                            name: e.target.value,
+                          }))
+                        }
+                        placeholder={tIndicators('indicator_name_placeholder')}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-vital-unit">
+                        {tIndicators('unit')}
+                      </Label>
+                      <Input
+                        id="new-vital-unit"
+                        value={newVitalForm.unit}
+                        onChange={(e) =>
+                          setNewVitalForm((prev) => ({
+                            ...prev,
+                            unit: e.target.value,
+                          }))
+                        }
+                        placeholder={tIndicators('unit_placeholder')}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-vital-factor">
+                        {tIndicators('factor')}
+                      </Label>
+                      <Input
+                        id="new-vital-factor"
+                        type="number"
+                        step="0.01"
+                        value={newVitalForm.factor}
+                        onChange={(e) =>
+                          setNewVitalForm((prev) => ({
+                            ...prev,
+                            factor: parseFloat(e.target.value) || 1,
+                          }))
+                        }
+                        placeholder={tIndicators('factor_placeholder')}
+                      />
+                      <p className="text-muted-foreground text-sm">
+                        {tIndicators('factor_description')}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setAddDialogOpen(false);
-                    setSelectedIndicator(null);
-                    setNewVitalForm({ name: '', unit: '', factor: 1 });
-                  }}
-                  disabled={isAnyMutationPending}
-                >
-                  {t('common.cancel')}
-                </Button>
-                <Button
-                  onClick={addIndicator}
-                  disabled={isAnyMutationPending || !newVitalForm.name.trim()}
-                >
-                  {addIndicatorMutation.isPending ||
-                  createVitalMutation.isPending
-                    ? tIndicators('adding')
-                    : tIndicators('add_indicator')}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setAddDialogOpen(false);
+                      setSelectedIndicator(null);
+                      setNewVitalForm({ name: '', unit: '', factor: 1 });
+                    }}
+                    disabled={isAnyMutationPending}
+                  >
+                    {t('common.cancel')}
+                  </Button>
+                  <Button
+                    onClick={addIndicator}
+                    disabled={isAnyMutationPending || !newVitalForm.name.trim()}
+                  >
+                    {addIndicatorMutation.isPending ||
+                    createVitalMutation.isPending
+                      ? tIndicators('adding')
+                      : tIndicators('add_indicator')}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
 
         {/* Edit Indicator Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
@@ -645,47 +746,52 @@ export default function GroupIndicatorsManager({
               </div>
             </div>
             <DialogFooter className="flex justify-between">
-              <AlertDialog
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
-              >
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" disabled={isAnyMutationPending}>
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    {t('common.delete')}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      {tIndicators('remove_indicator')}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {selectedIndicator?.name
-                        ? tIndicators('remove_indicator_description', {
-                            indicatorName: selectedIndicator.name,
-                          })
-                        : tIndicators('remove_indicator_description', {
-                            indicatorName: '',
-                          })}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isAnyMutationPending}>
-                      {t('common.cancel')}
-                    </AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={deleteIndicator}
+              {canDeleteUserGroupsScores && (
+                <AlertDialog
+                  open={deleteDialogOpen}
+                  onOpenChange={setDeleteDialogOpen}
+                >
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
                       disabled={isAnyMutationPending}
-                      className="bg-red-600 hover:bg-red-700"
                     >
-                      {deleteIndicatorMutation.isPending
-                        ? tIndicators('removing')
-                        : t('common.remove')}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {t('common.delete')}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        {tIndicators('remove_indicator')}
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {selectedIndicator?.name
+                          ? tIndicators('remove_indicator_description', {
+                              indicatorName: selectedIndicator.name,
+                            })
+                          : tIndicators('remove_indicator_description', {
+                              indicatorName: '',
+                            })}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={isAnyMutationPending}>
+                        {t('common.cancel')}
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={deleteIndicator}
+                        disabled={isAnyMutationPending}
+                        className="bg-dynamic-red/60 hover:bg-dynamic-red/70"
+                      >
+                        {deleteIndicatorMutation.isPending
+                          ? tIndicators('removing')
+                          : t('common.remove')}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
               <div className="flex space-x-2">
                 <Button
                   variant="outline"
@@ -724,14 +830,20 @@ export default function GroupIndicatorsManager({
                       key={indicator.id}
                       className="min-w-[120px] border-r px-4 py-2 font-semibold"
                     >
-                      <button
-                        className="w-full rounded px-2 py-1 text-center hover:bg-dynamic-purple/10 hover:text-dynamic-purple"
-                        onClick={() => openEditDialog(indicator)}
-                      >
+                      {canUpdateUserGroupsScores ? (
+                        <button
+                          className="w-full rounded px-2 py-1 text-center hover:bg-dynamic-purple/10 hover:text-dynamic-purple"
+                          onClick={() => openEditDialog(indicator)}
+                        >
+                          <span className="line-clamp-2 text-balance break-all">
+                            {indicator.name}
+                          </span>
+                        </button>
+                      ) : (
                         <span className="line-clamp-2 text-balance break-all">
                           {indicator.name}
                         </span>
-                      </button>
+                      )}
                     </th>
                   ))}
                   <th className="sticky right-0 z-20 min-w-[100px] border-l bg-background px-4 py-2 font-semibold">
@@ -771,10 +883,14 @@ export default function GroupIndicatorsManager({
                               e.target.value
                             )
                           }
+                          disabled={!canEditCell(user.id, indicator.id)}
+                          aria-readonly={!canEditCell(user.id, indicator.id)}
                           className={cn(
                             'h-8 w-20 text-center',
                             isValuePending(user.id, indicator.id) &&
-                              'border-dynamic-blue/50 bg-dynamic-blue/5'
+                              'border-dynamic-blue/50 bg-dynamic-blue/5',
+                            !canEditCell(user.id, indicator.id) &&
+                              'cursor-not-allowed'
                           )}
                           placeholder="-"
                         />

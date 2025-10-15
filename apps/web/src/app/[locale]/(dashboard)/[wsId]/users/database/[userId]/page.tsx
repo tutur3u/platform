@@ -55,6 +55,7 @@ export default async function WorkspaceUserDetailsPage({
   const hasPrivateInfo = containsPermission('view_users_private_info');
   const hasPublicInfo = containsPermission('view_users_public_info');
   const canCheckUserAttendance = containsPermission('check_user_attendance');
+  const canUpdateUsers = containsPermission('update_users');
 
   // User must have at least one permission to view user details
   if (!hasPrivateInfo && !hasPublicInfo) {
@@ -273,6 +274,7 @@ export default async function WorkspaceUserDetailsPage({
             <LinkedPromotionsClient
               wsId={wsId}
               userId={userId}
+              canUpdateUsers={canUpdateUsers}
               initialPromotions={coupons.map((c) => ({
                 id: c.id,
                 name: c.name ?? null,
@@ -289,6 +291,7 @@ export default async function WorkspaceUserDetailsPage({
             <ReferralSectionClient
               wsId={wsId}
               userId={userId}
+              canUpdateUsers={canUpdateUsers}
               workspaceSettings={workspaceSettings}
               initialAvailableUsers={availableUsers}
               initialAvailableUsersCount={availableUsersCount || 0}

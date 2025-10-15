@@ -74,6 +74,7 @@ interface LinkedProductsClientProps {
   groupId: string;
   initialLinkedProducts: LinkedProduct[];
   initialCount: number;
+  canUpdateLinkedProducts: boolean;
 }
 
 export const useProducts = (wsId: string) => {
@@ -133,6 +134,7 @@ export default function LinkedProductsClient({
   groupId,
   initialLinkedProducts,
   initialCount,
+  canUpdateLinkedProducts,
 }: LinkedProductsClientProps) {
   const t = useTranslations();
   const [linkedProducts, setLinkedProducts] = useState(initialLinkedProducts);
@@ -386,112 +388,119 @@ export default function LinkedProductsClient({
           {t('user-data-table.linked_products')}
           {!!count && ` (${count})`}
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Link className="mr-2 h-4 w-4" />
-              {t('user-data-table.link_product')}
-            </Button>
-          </DialogTrigger>
-          <DialogContent onWheel={(e) => e.stopPropagation()}>
-            <DialogHeader>
-              <DialogTitle>{t('user-data-table.link_product')}</DialogTitle>
-              <DialogDescription>
-                {t('user-data-table.link_product_description')}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="product-select">
-                  {t('ws-inventory-products.singular')}
-                </Label>
-                <Combobox
-                  t={t}
-                  options={availableProducts.map(
-                    (product): ComboboxOptions => ({
-                      value: product.id,
-                      label: `${product.name || t('ws-inventory-products.unnamed_product')}${product.manufacturer ? ` - ${product.manufacturer}` : ''}${product.description ? ` (${product.description})` : ''}`,
-                    })
-                  )}
-                  selected={selectedProduct}
-                  onChange={(value) => setSelectedProduct(value as string)}
-                  placeholder={t('ws-invoices.search_products')}
-                />
+        {canUpdateLinkedProducts && (
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Link className="mr-2 h-4 w-4" />
+                {t('user-data-table.link_product')}
+              </Button>
+            </DialogTrigger>
+            <DialogContent onWheel={(e) => e.stopPropagation()}>
+              <DialogHeader>
+                <DialogTitle>{t('user-data-table.link_product')}</DialogTitle>
+                <DialogDescription>
+                  {t('user-data-table.link_product_description')}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="product-select">
+                    {t('ws-inventory-products.singular')}
+                  </Label>
+                  <Combobox
+                    t={t}
+                    options={availableProducts.map(
+                      (product): ComboboxOptions => ({
+                        value: product.id,
+                        label: `${product.name || t('ws-inventory-products.unnamed_product')}${product.manufacturer ? ` - ${product.manufacturer}` : ''}${product.description ? ` (${product.description})` : ''}`,
+                      })
+                    )}
+                    selected={selectedProduct}
+                    onChange={(value) => setSelectedProduct(value as string)}
+                    placeholder={t('ws-invoices.search_products')}
+                  />
+                </div>
+                {selectedProduct && (
+                  <div className="space-y-2">
+                    <Label htmlFor="warehouse-select">
+                      {t('ws-inventory-warehouses.singular')}
+                    </Label>
+                    <Select
+                      value={selectedWarehouse}
+                      onValueChange={setSelectedWarehouse}
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={t('ws-groups.select_warehouse')}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {((warehouses ?? []) as WarehouseOption[]).map((wh) => (
+                          <SelectItem key={wh.id} value={wh.id}>
+                            {wh.name ||
+                              t('ws-inventory-warehouses.unnamed_warehouse')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                {selectedProduct && selectedWarehouse && (
+                  <div className="space-y-2">
+                    <Label htmlFor="unit-select">
+                      {t('ws-inventory-units.singular')}
+                    </Label>
+                    <Select
+                      value={selectedUnit}
+                      onValueChange={setSelectedUnit}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('ws-groups.select_unit')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAvailableUnits(
+                          selectedProduct,
+                          selectedWarehouse
+                        ).map((inventory) => (
+                          <SelectItem
+                            key={inventory.unit_id}
+                            value={inventory.unit_id}
+                          >
+                            {inventory.inventory_units?.name ||
+                              t('ws-inventory-units.unnamed_unit')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
-              {selectedProduct && (
-                <div className="space-y-2">
-                  <Label htmlFor="warehouse-select">
-                    {t('ws-inventory-warehouses.singular')}
-                  </Label>
-                  <Select
-                    value={selectedWarehouse}
-                    onValueChange={setSelectedWarehouse}
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={t('ws-groups.select_warehouse')}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {((warehouses ?? []) as WarehouseOption[]).map((wh) => (
-                        <SelectItem key={wh.id} value={wh.id}>
-                          {wh.name ||
-                            t('ws-inventory-warehouses.unnamed_warehouse')}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              {selectedProduct && selectedWarehouse && (
-                <div className="space-y-2">
-                  <Label htmlFor="unit-select">
-                    {t('ws-inventory-units.singular')}
-                  </Label>
-                  <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('ws-groups.select_unit')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getAvailableUnits(
-                        selectedProduct,
-                        selectedWarehouse
-                      ).map((inventory) => (
-                        <SelectItem
-                          key={inventory.unit_id}
-                          value={inventory.unit_id}
-                        >
-                          {inventory.inventory_units?.name ||
-                            t('ws-inventory-units.unnamed_unit')}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsAddDialogOpen(false)}
-                disabled={loading}
-              >
-                {t('ws-settings.cancel')}
-              </Button>
-              <Button
-                onClick={handleAddProduct}
-                disabled={
-                  loading ||
-                  !selectedProduct ||
-                  !selectedWarehouse ||
-                  !selectedUnit
-                }
-              >
-                {loading ? t('ws-groups.linking') : t('ws-groups.link_product')}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsAddDialogOpen(false)}
+                  disabled={loading}
+                >
+                  {t('ws-settings.cancel')}
+                </Button>
+                <Button
+                  onClick={handleAddProduct}
+                  disabled={
+                    loading ||
+                    !selectedProduct ||
+                    !selectedWarehouse ||
+                    !selectedUnit
+                  }
+                >
+                  {loading
+                    ? t('ws-groups.linking')
+                    : t('ws-groups.link_product')}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {count > 0 ? (
@@ -567,23 +576,27 @@ export default function LinkedProductsClient({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem
-                      onClick={() => openEditDialog(product)}
-                      className="cursor-pointer"
-                    >
-                      <Pencil className="mr-2 h-4 w-4" />
-                      {t('ws-groups.edit_product')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setDeletingProduct(product);
-                        setIsDeleteDialogOpen(true);
-                      }}
-                      className="cursor-pointer text-dynamic-red"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4 text-dynamic-red" />
-                      {t('ws-groups.remove_product')}
-                    </DropdownMenuItem>
+                    {canUpdateLinkedProducts && (
+                      <DropdownMenuItem
+                        onClick={() => openEditDialog(product)}
+                        className="cursor-pointer"
+                      >
+                        <Pencil className="mr-2 h-4 w-4" />
+                        {t('ws-groups.edit_product')}
+                      </DropdownMenuItem>
+                    )}
+                    {canUpdateLinkedProducts && (
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setDeletingProduct(product);
+                          setIsDeleteDialogOpen(true);
+                        }}
+                        className="cursor-pointer text-dynamic-red"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4 text-dynamic-red" />
+                        {t('ws-groups.remove_product')}
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

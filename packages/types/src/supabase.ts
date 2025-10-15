@@ -78,10 +78,14 @@ export type Database = {
         | 'create_inventory'
         | 'create_invoices'
         | 'create_transactions'
+        | 'create_user_groups_scores'
+        | 'create_user_groups'
         | 'create_users'
         | 'delete_inventory'
         | 'delete_invoices'
         | 'delete_transactions'
+        | 'delete_user_groups_scores'
+        | 'delete_user_groups'
         | 'delete_users'
         | 'export_finance_data'
         | 'export_users_data'
@@ -106,12 +110,16 @@ export type Database = {
         | 'update_inventory'
         | 'update_invoices'
         | 'update_transactions'
+        | 'update_user_groups_scores'
+        | 'update_user_groups'
         | 'update_users'
         | 'view_finance_stats'
         | 'view_infrastructure'
         | 'view_inventory'
         | 'view_invoices'
         | 'view_transactions'
+        | 'view_user_groups_scores'
+        | 'view_user_groups'
         | 'view_users_private_info'
         | 'view_users_public_info';
     };
@@ -625,6 +633,20 @@ export type Database = {
           months_owed: string;
           potential_total: number;
           total_sessions: number;
+          user_id: string;
+          user_name: string;
+        }[];
+      };
+      get_pending_invoices_base: {
+        Args: {
+          p_ws_id: string;
+        };
+        Returns: {
+          attendance_days: number;
+          group_id: string;
+          group_name: string;
+          month: string;
+          sessions: string[];
           user_id: string;
           user_name: string;
         }[];
@@ -3301,7 +3323,7 @@ export type Database = {
           code?: string;
           created_at?: string;
           description?: null | string;
-          invoice_id?: null | string;
+          invoice_id: string;
           name?: null | string;
           promo_id?: null | string;
           use_ratio: boolean;
@@ -3334,7 +3356,7 @@ export type Database = {
           code: string;
           created_at: string;
           description: null | string;
-          invoice_id: null | string;
+          invoice_id: string;
           name: null | string;
           promo_id: null | string;
           use_ratio: boolean;
@@ -3344,7 +3366,7 @@ export type Database = {
           code?: string;
           created_at?: string;
           description?: null | string;
-          invoice_id?: null | string;
+          invoice_id?: string;
           name?: null | string;
           promo_id?: null | string;
           use_ratio?: boolean;
@@ -13262,10 +13284,14 @@ export const Constants = {
         'create_inventory',
         'create_invoices',
         'create_transactions',
+        'create_user_groups',
+        'create_user_groups_scores',
         'create_users',
         'delete_inventory',
         'delete_invoices',
         'delete_transactions',
+        'delete_user_groups',
+        'delete_user_groups_scores',
         'delete_users',
         'export_finance_data',
         'export_users_data',
@@ -13290,12 +13316,16 @@ export const Constants = {
         'update_inventory',
         'update_invoices',
         'update_transactions',
+        'update_user_groups',
+        'update_user_groups_scores',
         'update_users',
         'view_finance_stats',
         'view_infrastructure',
         'view_inventory',
         'view_invoices',
         'view_transactions',
+        'view_user_groups',
+        'view_user_groups_scores',
         'view_users_private_info',
         'view_users_public_info',
       ],

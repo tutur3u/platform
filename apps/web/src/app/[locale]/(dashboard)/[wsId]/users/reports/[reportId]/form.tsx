@@ -31,6 +31,8 @@ export default function UserReportForm({
   managerOptions,
   selectedManagerName,
   onChangeManager,
+  canUpdate = true,
+  canDelete = false,
 }: {
   isNew: boolean;
   form: UseFormReturn<z.infer<typeof UserReportFormSchema>>;
@@ -41,6 +43,8 @@ export default function UserReportForm({
   managerOptions?: Array<{ value: string; label: string }>;
   selectedManagerName?: string;
   onChangeManager?: (name?: string) => void;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }) {
   const t = useTranslations();
   return (
@@ -141,11 +145,11 @@ export default function UserReportForm({
             <Button
               type="submit"
               className="w-full"
-              disabled={!form.formState.isDirty}
+              disabled={!form.formState.isDirty || !canUpdate}
             >
               {submitLabel}
             </Button>
-            {!isNew && onDelete && (
+            {!isNew && onDelete && canDelete && (
               <Button type="button" variant="destructive" onClick={onDelete}>
                 {t('common.delete')}
               </Button>

@@ -12,7 +12,7 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useRouter } from 'next/navigation';
@@ -23,6 +23,8 @@ interface Props {
   wsId: string;
   data?: UserGroup;
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
+  canCreate?: boolean;
+  canUpdate?: boolean;
 }
 
 const FormSchema = z.object({
@@ -31,9 +33,30 @@ const FormSchema = z.object({
   is_guest: z.boolean().default(false),
 });
 
-export default function UserGroupForm({ wsId, data, onFinish }: Props) {
+export default function UserGroupForm({
+  wsId,
+  data,
+  onFinish,
+  canCreate = false,
+  canUpdate = false,
+}: Props) {
   const t = useTranslations('ws-user-groups');
   const router = useRouter();
+
+  // If no permission to create or update, don't show the form
+  if (!canCreate && !canUpdate) {
+    return null;
+  }
+
+  // If editing and no update permission, don't show the form
+  if (data?.id && !canUpdate) {
+    return null;
+  }
+
+  // If creating and no create permission, don't show the form
+  if (!data?.id && !canCreate) {
+    return null;
+  }
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -58,6 +81,9 @@ export default function UserGroupForm({ wsId, data, onFinish }: Props) {
           : `/api/v1/workspaces/${wsId}/user-groups`,
         {
           method: data.id ? 'PUT' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify(data),
         }
       );
@@ -67,16 +93,10 @@ export default function UserGroupForm({ wsId, data, onFinish }: Props) {
         router.refresh();
       } else {
         const errorData = await res.json();
-        toast({
-          title: `Failed to ${data.id ? 'edit' : 'create'} group tag`,
-          description: errorData.message,
-        });
+        toast.error(errorData.message);
       }
     } catch (error) {
-      toast({
-        title: `Failed to ${data.id ? 'edit' : 'create'} group tag`,
-        description: error instanceof Error ? error.message : String(error),
-      });
+      toast.error(error instanceof Error ? error.message : String(error));
     }
   };
 

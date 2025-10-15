@@ -1271,8 +1271,12 @@
       "no_results": "No results found"
     },
     "referral_success": "Sucessfully referred a new user",
+    "unrefer_success": "Successfully removed referral",
     "user_already_referred": "This user has already been referred.",
     "missing_creator_id": "Missing a creator ID. You are not authorized",
+    "missing_updater_id": "Missing an updater ID. You are not authorized",
+    "no_permission_to_refer": "You don't have permission to refer users",
+    "unrefer_person": "Remove referral",
     "sent_emails_title": "Sent Emails",
     "no_sent_emails": "No sent emails",
     "no_sent_emails_description": "This user has not received any emails yet.",
@@ -1312,7 +1316,10 @@
     "error": "Error",
     "sending": "Sending",
     "sent": "Sent",
-    "pending": "Pending"
+    "pending": "Pending",
+    "post_title_placeholder": "e.g. \"Meeting Notes\"",
+    "post_content_placeholder": "e.g. \"Today we discussed the upcoming event.\"",
+    "notes_placeholder": "e.g. \"Remember to follow up with the team.\""
   },
   "course-data-table": {
     "id": "ID",
@@ -2074,7 +2081,12 @@
     "edit_post_description": "Make changes to your post here.",
     "add_post_description": "Add a new post.",
     "show_post_content": "Show post content",
-    "show_post_status": "Show post status"
+    "show_post_status": "Show post status",
+    "no_posts_to_show": "No posts to show.",
+    "delete_post_confirmation_title": "Are you absolutely sure?",
+    "delete_post_confirmation_description": "This action cannot be undone. This will permanently delete your post and remove your data from our servers.",
+    "delete_cancel": "Cancel",
+    "delete_continue": "Continue"
   },
   "ws-user-group-tags": {
     "singular": "Group Tag",
@@ -2360,6 +2372,23 @@
     "delete_invoices_description": "Allows members to delete invoices from the workspace.",
     "check_user_attendance": "Check User Attendance",
     "check_user_attendance_description": "Allows members to check for other users attendance",
+    "user_groups": "User Groups",
+    "view_user_groups": "View User Groups",
+    "view_user_groups_description": "Allows members to view user groups in the workspace.",
+    "create_user_groups": "Create User Groups",
+    "create_user_groups_description": "Allows members to create new user groups in the workspace.",
+    "update_user_groups": "Update User Groups",
+    "update_user_groups_description": "Allows members to edit existing user groups in the workspace.",
+    "delete_user_groups": "Delete User Groups",
+    "delete_user_groups_description": "Allows members to delete user groups from the workspace.",
+    "view_user_groups_scores": "View User Groups Scores",
+    "view_user_groups_scores_description": "Allows members to view scores for user groups in the workspace.",
+    "create_user_groups_scores": "Create User Groups Scores",
+    "create_user_groups_scores_description": "Allows members to create new scores for user groups in the workspace.",
+    "update_user_groups_scores": "Update User Groups Scores",
+    "update_user_groups_scores_description": "Allows members to edit existing scores for user groups in the workspace.",
+    "delete_user_groups_scores": "Delete User Groups Scores",
+    "delete_user_groups_scores_description": "Allows members to delete scores for user groups from the workspace.",
     "transactions": "Transactions"
   },
   "platform-roles": {

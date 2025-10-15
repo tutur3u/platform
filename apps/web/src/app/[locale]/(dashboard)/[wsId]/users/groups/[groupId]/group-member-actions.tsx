@@ -48,6 +48,7 @@ export interface GroupMemberActionsProps {
   groupId: string;
   memberIds: Set<string>; // non-managers
   managerIds: Set<string>;
+  canUpdateUserGroups: boolean;
 }
 
 export default function GroupMemberActions({
@@ -55,6 +56,7 @@ export default function GroupMemberActions({
   groupId,
   memberIds,
   managerIds,
+  canUpdateUserGroups,
 }: GroupMemberActionsProps) {
   const t = useTranslations();
   const queryClient = useQueryClient();
@@ -211,6 +213,7 @@ export default function GroupMemberActions({
                 setSelected(initial);
               }
             }}
+            disabled={!canUpdateUserGroups}
           >
             {t('ws-user-group-details.add_members')}
           </DropdownMenuItem>
@@ -225,6 +228,7 @@ export default function GroupMemberActions({
                 setSelected(initial);
               }
             }}
+            disabled={!canUpdateUserGroups}
           >
             {t('ws-user-group-details.add_managers')}
           </DropdownMenuItem>
