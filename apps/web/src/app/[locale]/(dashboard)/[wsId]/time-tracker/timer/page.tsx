@@ -1,15 +1,15 @@
-import WorkspaceWrapper from "@/components/workspace-wrapper";
-import { getTimeTrackingData } from "@/lib/time-tracking-helper";
-import { getCurrentUser } from "@tuturuuu/utils/user-helper";
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import TimeTrackerWrapper from "../components/time-tracker-wrapper";
-import type { TimeTrackerData } from "../types";
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getTimeTrackingData } from '@/lib/time-tracking-helper';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import TimeTrackerWrapper from '../components/time-tracker-wrapper';
+import type { TimeTrackerData } from '../types';
 
 export const metadata: Metadata = {
-  title: "Timer",
+  title: 'Timer',
   description:
-    "Manage Timer in the Time Tracker area of your Tuturuuu workspace.",
+    'Manage Timer in the Time Tracker area of your Tuturuuu workspace.',
 };
 
 interface Props {
@@ -26,7 +26,7 @@ export default async function TimeTrackerPage({ params }: Props) {
         const user = await getCurrentUser();
         if (!user) {
           notFound();
-        } 
+        }
 
         const rawData = await getTimeTrackingData(wsId, user.id);
 
