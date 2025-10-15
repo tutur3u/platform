@@ -40,6 +40,7 @@ const navItems = (t: any, user: WorkspaceUser | null) => {
     { href: '/meet-together', label: t('common.meet-together') },
     { href: '/neo-crush', label: 'Neo Crush' },
     { href: '/neo-chess', label: 'Neo Chess' },
+    { href: '/neo-generator', label: 'Neo Generator' },
   ] as NavItem[];
 
   // Only add item for logged-in users

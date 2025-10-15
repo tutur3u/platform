@@ -35,7 +35,7 @@ export default function MainProject() {
             </span>
           </div>
           <div className="mt-1 w-2/3 md:w-full">
-            <p className="text-lg leading-normal font-bold text-foreground md:mt-4 md:max-w-2xl md:text-xl lg:text-2xl">
+            <p className="text-lg leading-normal text-muted-foreground md:mt-4 md:max-w-2xl md:text-xl">
               The place where you can learn, grow and have fun with technology,
               by building projects.
             </p>
@@ -44,7 +44,7 @@ export default function MainProject() {
       </motion.div>
 
       <motion.div
-        className="relative mt-8 flex flex-col items-center text-center md:mt-12"
+        className="relative mt-8 flex flex-col items-center text-center md:mt-4"
         initial={{ opacity: 0, y: 50 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
