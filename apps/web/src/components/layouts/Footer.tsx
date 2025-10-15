@@ -128,13 +128,6 @@ export default async function Footer() {
             >
               {t('common.meet-together')}
             </Link>
-
-            <Link
-              href="/qr-generator"
-              className="text-foreground/50 hover:text-foreground/80"
-            >
-              {t('common.qr_generator')}
-            </Link>
           </div>
           <div className="flex flex-col items-start gap-1">
             <div className="text-lg font-semibold uppercase md:text-xl">

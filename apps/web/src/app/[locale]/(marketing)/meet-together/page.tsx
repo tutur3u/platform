@@ -1,6 +1,6 @@
 import Form from './form';
+import NeoMeetHeader from './neo-meet-header';
 import UserTime from './user-time';
-import GradientHeadline from '@/app/[locale]/(marketing)/gradient-headline';
 import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
 import type { SupabaseUser } from '@ncthub/supabase/next/user';
 import { MeetTogetherPlan } from '@ncthub/types/primitives/MeetTogetherPlan';
@@ -17,13 +17,8 @@ export default async function MeetTogetherPage() {
 
   return (
     <div className="flex w-full flex-col items-center">
-      <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
-        <div className="flex flex-col items-center">
-          <h1 className="mx-auto mb-2 text-center text-2xl leading-tight! font-bold tracking-tight text-balance text-foreground md:text-4xl lg:text-6xl">
-            {t('headline-p1')}{' '}
-            <GradientHeadline>{t('headline-p2')}</GradientHeadline>.
-          </h1>
-        </div>
+      <div className="container mx-auto flex max-w-6xl flex-col gap-6 px-3 py-10 lg:gap-14 lg:py-16">
+        <NeoMeetHeader />
       </div>
       <Form />
       <Separator className="mt-8 mb-4 md:mt-16" />
