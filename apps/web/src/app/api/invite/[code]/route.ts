@@ -18,7 +18,7 @@ export async function GET(_: Request, { params }: Params) {
 
     if (!code) {
       return NextResponse.json(
-        { error: 'Invite code is required' },
+        { errorCode: 'INVITE_CODE_REQUIRED' },
         { status: 400 }
       );
     }
@@ -42,7 +42,7 @@ export async function GET(_: Request, { params }: Params) {
 
     if (error || !inviteLink) {
       return NextResponse.json(
-        { error: 'Invalid or expired invite code' },
+        { errorCode: 'INVITE_INVALID_OR_EXPIRED' },
         { status: 404 }
       );
     }
@@ -50,7 +50,7 @@ export async function GET(_: Request, { params }: Params) {
     // Check if the link is expired
     if (inviteLink.is_expired) {
       return NextResponse.json(
-        { error: 'This invite link has expired' },
+        { errorCode: 'INVITE_EXPIRED' },
         { status: 410 }
       );
     }
@@ -58,14 +58,14 @@ export async function GET(_: Request, { params }: Params) {
     // Check if the link has reached max uses
     if (inviteLink.is_full) {
       return NextResponse.json(
-        { error: 'This invite link has reached its maximum usage limit' },
+        { errorCode: 'INVITE_MAX_USES_REACHED' },
         { status: 410 }
       );
     }
 
     if (!inviteLink.ws_id) {
       return NextResponse.json(
-        { error: 'Invite link is not associated with a valid workspace' },
+        { errorCode: 'INVITE_INVALID_WORKSPACE' },
         { status: 500 }
       );
     }
@@ -87,10 +87,7 @@ export async function GET(_: Request, { params }: Params) {
     );
   } catch (error) {
     console.error('Unexpected error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ errorCode: 'INTERNAL_ERROR' }, { status: 500 });
   }
 }
 
@@ -106,15 +103,12 @@ export async function POST(_: Request, { params }: Params) {
     } = await supabase.auth.getUser();
 
     if (!user?.id) {
-      return NextResponse.json(
-        { error: 'You must be signed in to join a workspace' },
-        { status: 401 }
-      );
+      return NextResponse.json({ errorCode: 'UNAUTHORIZED' }, { status: 401 });
     }
 
     if (!code) {
       return NextResponse.json(
-        { error: 'Invite code is required' },
+        { errorCode: 'INVITE_CODE_REQUIRED' },
         { status: 400 }
       );
     }
@@ -128,7 +122,7 @@ export async function POST(_: Request, { params }: Params) {
 
     if (fetchError || !inviteLink) {
       return NextResponse.json(
-        { error: 'Invalid or expired invite code' },
+        { errorCode: 'INVITE_INVALID_OR_EXPIRED' },
         { status: 404 }
       );
     }
@@ -136,14 +130,14 @@ export async function POST(_: Request, { params }: Params) {
     // Check if the link is expired (safe to check before insert)
     if (inviteLink.is_expired) {
       return NextResponse.json(
-        { error: 'This invite link has expired' },
+        { errorCode: 'INVITE_EXPIRED' },
         { status: 410 }
       );
     }
 
     if (!inviteLink.ws_id) {
       return NextResponse.json(
-        { error: 'Invite link is not associated with a valid workspace' },
+        { errorCode: 'INVITE_INVALID_WORKSPACE' },
         { status: 500 }
       );
     }
@@ -164,16 +158,13 @@ export async function POST(_: Request, { params }: Params) {
       // Check if it's a duplicate key violation (user already a member)
       if (memberError.code === '23505') {
         return NextResponse.json(
-          { error: 'You are already a member of this workspace' },
+          { errorCode: 'ALREADY_MEMBER' },
           { status: 409 }
         );
       }
 
       console.error('Failed to add member to workspace:', memberError);
-      return NextResponse.json(
-        { error: 'Failed to join workspace' },
-        { status: 500 }
-      );
+      return NextResponse.json({ errorCode: 'JOIN_FAILED' }, { status: 500 });
     }
 
     // After successful insert, verify the link hasn't exceeded max_uses
@@ -199,7 +190,7 @@ export async function POST(_: Request, { params }: Params) {
         .eq('user_id', user.id);
 
       return NextResponse.json(
-        { error: 'This invite link has reached its maximum usage limit' },
+        { errorCode: 'INVITE_MAX_USES_REACHED' },
         { status: 410 }
       );
     }
@@ -234,9 +225,6 @@ export async function POST(_: Request, { params }: Params) {
     );
   } catch (error) {
     console.error('Unexpected error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ errorCode: 'INTERNAL_ERROR' }, { status: 500 });
   }
 }

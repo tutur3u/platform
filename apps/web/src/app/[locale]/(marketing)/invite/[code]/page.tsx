@@ -67,6 +67,23 @@ export default async function InviteCodePage({ params }: Props) {
 
   if (!response.ok) {
     const error = await response.json();
+
+    // Map error codes to translation keys
+    const errorCodeMap: Record<string, string> = {
+      INVITE_CODE_REQUIRED: 'error-invite-code-required',
+      INVITE_INVALID_OR_EXPIRED: 'error-invite-invalid-or-expired',
+      INVITE_EXPIRED: 'error-invite-expired',
+      INVITE_MAX_USES_REACHED: 'error-invite-max-uses-reached',
+      INVITE_INVALID_WORKSPACE: 'error-invite-invalid-workspace',
+      INTERNAL_ERROR: 'error-internal',
+      UNAUTHORIZED: 'error-unauthorized',
+    };
+
+    const errorMessage =
+      error.errorCode && errorCodeMap[error.errorCode]
+        ? t(errorCodeMap[error.errorCode as any] as any)
+        : t('invalid-invite-message');
+
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="w-full max-w-md space-y-4 p-8">
@@ -74,9 +91,7 @@ export default async function InviteCodePage({ params }: Props) {
             <h1 className="mb-2 font-bold text-2xl text-dynamic-red">
               {t('invalid-invite-title')}
             </h1>
-            <p className="text-foreground/80">
-              {error.error || t('invalid-invite-message')}
-            </p>
+            <p className="text-foreground/80">{errorMessage}</p>
           </div>
         </div>
       </div>

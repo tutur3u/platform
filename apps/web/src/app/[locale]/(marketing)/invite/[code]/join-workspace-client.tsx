@@ -3,6 +3,7 @@
 import { ArrowRight, Check, Loader2, Sparkles, Users } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -35,6 +36,7 @@ export default function JoinWorkspaceClient({
   workspace: memberWorkspace,
 }: Props) {
   const router = useRouter();
+  const t = useTranslations('invite');
   const [joining, setJoining] = useState(false);
   const [joined, setJoined] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -45,6 +47,19 @@ export default function JoinWorkspaceClient({
 
   const handleJoin = async () => {
     setJoining(true);
+
+    // Map error codes to translation keys
+    const errorCodeMap: Record<string, string> = {
+      INVITE_CODE_REQUIRED: 'error-invite-code-required',
+      INVITE_INVALID_OR_EXPIRED: 'error-invite-invalid-or-expired',
+      INVITE_EXPIRED: 'error-invite-expired',
+      INVITE_MAX_USES_REACHED: 'error-invite-max-uses-reached',
+      INVITE_INVALID_WORKSPACE: 'error-invite-invalid-workspace',
+      INTERNAL_ERROR: 'error-internal',
+      UNAUTHORIZED: 'error-unauthorized',
+      ALREADY_MEMBER: 'error-already-member',
+      JOIN_FAILED: 'error-join-failed',
+    };
 
     try {
       const response = await fetch(`/api/invite/${code}`, {
@@ -57,7 +72,7 @@ export default function JoinWorkspaceClient({
       if (response.ok) {
         const data = await response.json();
         setJoined(true);
-        toast.success('Successfully joined workspace!');
+        toast.success(t('join-success-toast'));
 
         // Redirect to workspace after a brief delay (removed router.refresh() to prevent infinite loop)
         setTimeout(() => {
@@ -65,12 +80,16 @@ export default function JoinWorkspaceClient({
         }, 1500);
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to join workspace');
+        const errorMessage =
+          error.errorCode && errorCodeMap[error.errorCode]
+            ? t(errorCodeMap[error.errorCode as any] as any)
+            : t('join-error-toast');
+        toast.error(errorMessage);
         setJoining(false);
       }
     } catch (error) {
       console.error('Error joining workspace:', error);
-      toast.error('An unexpected error occurred');
+      toast.error(t('unexpected-error-toast'));
       setJoining(false);
     }
   };
@@ -126,18 +145,17 @@ export default function JoinWorkspaceClient({
             {/* Already Member Info */}
             <div className="mb-8 space-y-3 text-center">
               <h1 className="bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text font-bold text-3xl text-transparent">
-                You&apos;re Already In!
+                {t('already-member-title')}
               </h1>
               <div className="space-y-2">
                 <p className="text-foreground/80 text-lg">
-                  Welcome back to{' '}
+                  {t('already-member-welcome')}{' '}
                   <span className="font-semibold text-foreground">
                     {memberWorkspace.name}
                   </span>
                 </p>
                 <p className="mx-auto max-w-sm text-foreground/60 text-sm leading-relaxed">
-                  You&apos;re already part of this workspace. Ready to continue
-                  where you left off?
+                  {t('already-member-description')}
                 </p>
               </div>
             </div>
@@ -149,7 +167,7 @@ export default function JoinWorkspaceClient({
               onClick={handleGoToWorkspace}
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
-                Go to Workspace
+                {t('go-to-workspace')}
                 <ArrowRight className="h-5 w-5 transition-transform group-hover/btn:translate-x-1" />
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-dynamic-purple to-dynamic-pink opacity-0 transition-opacity group-hover/btn:opacity-100" />
@@ -158,9 +176,7 @@ export default function JoinWorkspaceClient({
 
           {/* Footer */}
           <div className="space-y-2 text-center">
-            <p className="text-foreground/50 text-sm">
-              Need help? Contact your workspace administrator
-            </p>
+            <p className="text-foreground/50 text-sm">{t('need-help')}</p>
           </div>
         </div>
       </div>
@@ -232,7 +248,7 @@ export default function JoinWorkspaceClient({
                 {workspace.name}
               </h1>
               <p className="text-foreground/70 text-lg">
-                {joined ? 'Welcome aboard!' : "You've been invited to join"}
+                {joined ? t('welcome-aboard') : t('invited-to-join')}
               </p>
             </div>
 
@@ -249,7 +265,8 @@ export default function JoinWorkspaceClient({
                 <div className="flex items-center gap-1.5 rounded-full bg-dynamic-purple/10 px-3 py-1.5 text-sm">
                   <Users className="h-4 w-4 text-dynamic-purple" />
                   <span className="font-medium text-foreground/80">
-                    {memberCount} {memberCount === 1 ? 'member' : 'members'}
+                    {memberCount}{' '}
+                    {memberCount === 1 ? t('member') : t('members')}
                   </span>
                 </div>
               </div>
@@ -274,16 +291,16 @@ export default function JoinWorkspaceClient({
                     className="zoom-in h-5 w-5 animate-in"
                     strokeWidth={3}
                   />
-                  Joined Successfully
+                  {t('joined-successfully')}
                 </>
               ) : joining ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  Joining workspace...
+                  {t('joining-workspace')}
                 </>
               ) : (
                 <>
-                  Join Workspace
+                  {t('join-workspace')}
                   <ArrowRight className="h-5 w-5 transition-transform group-hover/btn:translate-x-1" />
                 </>
               )}
@@ -297,7 +314,7 @@ export default function JoinWorkspaceClient({
             <div className="fade-in slide-in-from-bottom-2 mt-6 animate-in">
               <div className="flex items-center justify-center gap-2 text-foreground/60 text-sm">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Redirecting you to the workspace...</span>
+                <span>{t('redirecting')}</span>
               </div>
             </div>
           )}
@@ -307,8 +324,7 @@ export default function JoinWorkspaceClient({
         {!joined && (
           <div className="space-y-2 text-center">
             <p className="text-foreground/50 text-sm leading-relaxed">
-              By joining, you agree to be part of this workspace and follow its
-              guidelines
+              {t('join-agreement')}
             </p>
           </div>
         )}
