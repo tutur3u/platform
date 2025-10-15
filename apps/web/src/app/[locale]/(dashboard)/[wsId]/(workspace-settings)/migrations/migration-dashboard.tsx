@@ -700,18 +700,19 @@ export default function MigrationDashboard() {
       const getItemKey = (item: any): string | null => {
         // Try composite key strategy first if module has one
         const compositeKeyFn = compositeKeyStrategies[module];
-        if (compositeKeyFn) {
-          return compositeKeyFn(item);
+        const compositeKey = compositeKeyFn?.(item);
+        if (compositeKey) {
+          return compositeKey;
         }
-        // Fallback to simple id
-        return item.id || item._id || null;
+        // Fallback to simple id when no composite key can be derived
+        return item.id ?? item._id ?? null;
       };
 
       // Build a map of existing records by key for quick lookup
       const existingMap = new Map();
       existingInternalData.forEach((item) => {
         const key = getItemKey(item);
-        if (key) existingMap.set(key, item);
+        if (key !== null) existingMap.set(key, item);
       });
 
       console.log(
@@ -775,8 +776,8 @@ export default function MigrationDashboard() {
 
         // Log first difference found for debugging
         if (firstDiff) {
-          const key = existing.id || existing._id || 'composite-key-record';
-          console.log(`[${module}] First diff in ${key}:`, firstDiff);
+          const keyStr = getItemKey(existing) ?? 'unknown-key';
+          console.log(`[${module}] First diff in ${keyStr}:`, firstDiff);
         }
 
         return false;

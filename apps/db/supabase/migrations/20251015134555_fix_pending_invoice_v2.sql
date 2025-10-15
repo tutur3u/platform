@@ -1,24 +1,15 @@
--- Create function to get pending invoices for a workspace
--- This function calculates invoices that haven't been created yet based on:
--- 1. The valid_until date from the user's latest subscription invoice
--- 2. User attendance aggregated across all unpaid months
--- 3. Product pricing from user group linked products
--- Note: Combines all unpaid months per user-group and calculates total: attendance * price
-
-CREATE OR REPLACE FUNCTION get_pending_invoices(
-  p_ws_id uuid,
-  p_limit integer DEFAULT NULL,
-  p_offset integer DEFAULT 0
-)
+-- Create a helper function that returns base pending invoice data
+-- This eliminates duplication between get_pending_invoices and get_pending_invoices_count
+-- Returns user-group combinations with aggregated attendance data for unpaid periods
+CREATE OR REPLACE FUNCTION get_pending_invoices_base(p_ws_id uuid)
 RETURNS TABLE (
   user_id uuid,
   user_name text,
   group_id uuid,
   group_name text,
-  months_owed text,
-  attendance_days integer,
-  total_sessions integer,
-  potential_total numeric
+  month text,
+  sessions date[],
+  attendance_days integer
 ) AS $$
 BEGIN
   -- Verify caller has access to the workspace
@@ -96,17 +87,60 @@ BEGIN
       AND uga.group_id = pm.group_id
       AND to_char(uga.date, 'YYYY-MM') = pm.month
     GROUP BY pm.user_id, pm.group_id, pm.month
+  )
+  SELECT
+    pm.user_id,
+    pm.user_name,
+    pm.group_id,
+    pm.group_name,
+    pm.month,
+    pm.sessions,
+    COALESCE(ac.attendance_days, 0)::integer as attendance_days
+  FROM pending_months pm
+  LEFT JOIN attendance_counts ac 
+    ON ac.user_id = pm.user_id 
+    AND ac.group_id = pm.group_id 
+    AND ac.month = pm.month
+  WHERE COALESCE(ac.attendance_days, 0) > 0;  -- Only include months with attendance
+END;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+
+-- Create function to get pending invoices for a workspace
+-- This function calculates invoices that haven't been created yet based on:
+-- 1. The valid_until date from the user's latest subscription invoice
+-- 2. User attendance aggregated across all unpaid months
+-- 3. Product pricing from user group linked products
+-- Note: Combines all unpaid months per user-group and calculates total: attendance * price
+CREATE OR REPLACE FUNCTION get_pending_invoices(
+  p_ws_id uuid,
+  p_limit integer DEFAULT NULL,
+  p_offset integer DEFAULT 0
+)
+RETURNS TABLE (
+  user_id uuid,
+  user_name text,
+  group_id uuid,
+  group_name text,
+  months_owed text,
+  attendance_days integer,
+  total_sessions integer,
+  potential_total numeric
+) AS $$
+BEGIN
+  RETURN QUERY
+  WITH base_data AS (
+    SELECT * FROM get_pending_invoices_base(p_ws_id)
   ),
   session_counts AS (
     -- Count total sessions for each group-month
     SELECT
-      pm.group_id,
-      pm.month,
+      bd.group_id,
+      bd.month,
       COUNT(session_date)::integer as total_sessions
-    FROM pending_months pm
-    CROSS JOIN LATERAL unnest(pm.sessions) as session_date
-    WHERE to_char(session_date::timestamptz, 'YYYY-MM') = pm.month
-    GROUP BY pm.group_id, pm.month
+    FROM base_data bd
+    CROSS JOIN LATERAL unnest(bd.sessions) as session_date
+    WHERE to_char(session_date::date, 'YYYY-MM') = bd.month
+    GROUP BY bd.group_id, bd.month
   ),
   ranked_inventory AS (
     -- Rank inventory products by matching priority for each group linked product
@@ -152,23 +186,18 @@ BEGIN
   combined_pending AS (
     -- Combine all pending months per user-group with aggregated attendance
     SELECT
-      pm.user_id,
-      pm.user_name,
-      pm.group_id,
-      pm.group_name,
-      string_agg(pm.month, ', ' ORDER BY pm.month) as months_owed,
-      SUM(COALESCE(ac.attendance_days, 0))::integer as total_attendance_days,
+      bd.user_id,
+      bd.user_name,
+      bd.group_id,
+      bd.group_name,
+      string_agg(bd.month, ', ' ORDER BY bd.month) as months_owed,
+      SUM(bd.attendance_days)::integer as total_attendance_days,
       SUM(COALESCE(sc.total_sessions, 0))::integer as total_sessions
-    FROM pending_months pm
-    LEFT JOIN attendance_counts ac
-      ON ac.user_id = pm.user_id
-      AND ac.group_id = pm.group_id
-      AND ac.month = pm.month
+    FROM base_data bd
     LEFT JOIN session_counts sc
-      ON sc.group_id = pm.group_id
-      AND sc.month = pm.month
-    WHERE COALESCE(ac.attendance_days, 0) > 0  -- Only include months with attendance
-    GROUP BY pm.user_id, pm.user_name, pm.group_id, pm.group_name
+      ON sc.group_id = bd.group_id
+      AND sc.month = bd.month
+    GROUP BY bd.user_id, bd.user_name, bd.group_id, bd.group_name
   )
   SELECT
     cp.user_id::uuid,
@@ -208,96 +237,19 @@ RETURNS bigint AS $$
 DECLARE
   result_count bigint;
 BEGIN
-  -- Verify caller has access to the workspace
-  IF NOT is_org_member(auth.uid(), p_ws_id) THEN
-    RAISE EXCEPTION 'Unauthorized: User does not have access to workspace %', p_ws_id;
-  END IF;
-
-  WITH user_groups AS (
-    -- Get all active user groups with students
-    SELECT DISTINCT
-      wugu.user_id,
-      wu.full_name as user_name,
-      wug.id as group_id,
-      wug.name as group_name,
-      wug.sessions,
-      wug.starting_date,
-      wug.ending_date
-    FROM workspace_user_groups_users wugu
-    JOIN workspace_users wu ON wu.id = wugu.user_id
-    JOIN workspace_user_groups wug ON wug.id = wugu.group_id
-    WHERE wug.ws_id = p_ws_id
-      AND wugu.role = 'STUDENT'
-      AND wu.ws_id = p_ws_id
-  ),
-  latest_invoices AS (
-    -- Get the latest subscription invoice for each user-group combination
-    SELECT DISTINCT ON (fi.customer_id, fi.user_group_id)
-      fi.customer_id,
-      fi.user_group_id,
-      fi.valid_until
-    FROM finance_invoices fi
-    WHERE fi.ws_id = p_ws_id
-      AND fi.user_group_id IS NOT NULL
-      AND fi.valid_until IS NOT NULL
-    ORDER BY fi.customer_id, fi.user_group_id, fi.created_at DESC
-  ),
-  pending_months AS (
-    -- Generate months between valid_until and now that need invoices
-    -- If valid_until is 2025-11-01, we start looking from 2025-11-01 onwards
-    -- This means the October invoice (valid until Nov 1) is considered paid for October
-    SELECT
-      ug.user_id,
-      ug.user_name,
-      ug.group_id,
-      ug.group_name,
-      ug.sessions,
-      to_char(month_date, 'YYYY-MM') as month,
-      month_date
-    FROM user_groups ug
-    LEFT JOIN latest_invoices li ON li.customer_id = ug.user_id AND li.user_group_id = ug.group_id
-    CROSS JOIN LATERAL generate_series(
-      COALESCE(
-        -- Start from valid_until date (which is first day of next unpaid month)
-        date_trunc('month', li.valid_until),
-        date_trunc('month', COALESCE(ug.starting_date, CURRENT_DATE))
-      ),
-      date_trunc('month', LEAST(COALESCE(ug.ending_date, CURRENT_DATE), CURRENT_DATE)),
-      '1 month'::interval
-    ) as month_date
-    WHERE month_date <= date_trunc('month', CURRENT_DATE)
-      -- Include months from valid_until onwards (valid_until marks the START of unpaid period)
-      AND (li.valid_until IS NULL OR month_date >= date_trunc('month', li.valid_until))
-  ),
-  attendance_counts AS (
-    -- Count attendance for each user-group-month combination
-    SELECT
-      pm.user_id,
-      pm.group_id,
-      pm.month,
-      COUNT(uga.date)::integer as attendance_days
-    FROM pending_months pm
-    LEFT JOIN user_group_attendance uga 
-      ON uga.user_id = pm.user_id 
-      AND uga.group_id = pm.group_id
-      AND to_char(uga.date, 'YYYY-MM') = pm.month
-    GROUP BY pm.user_id, pm.group_id, pm.month
+  WITH base_data AS (
+    SELECT * FROM get_pending_invoices_base(p_ws_id)
   ),
   combined_pending AS (
     -- Combine all pending months per user-group with aggregated attendance
     SELECT
-      pm.user_id,
-      pm.user_name,
-      pm.group_id,
-      pm.group_name,
-      SUM(COALESCE(ac.attendance_days, 0))::integer as total_attendance_days
-    FROM pending_months pm
-    LEFT JOIN attendance_counts ac 
-      ON ac.user_id = pm.user_id 
-      AND ac.group_id = pm.group_id 
-      AND ac.month = pm.month
-    WHERE COALESCE(ac.attendance_days, 0) > 0  -- Only include months with attendance
-    GROUP BY pm.user_id, pm.user_name, pm.group_id, pm.group_name
+      bd.user_id,
+      bd.user_name,
+      bd.group_id,
+      bd.group_name,
+      SUM(bd.attendance_days)::integer as total_attendance_days
+    FROM base_data bd
+    GROUP BY bd.user_id, bd.user_name, bd.group_id, bd.group_name
   )
   SELECT COUNT(*)
   INTO result_count

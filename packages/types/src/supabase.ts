@@ -637,6 +637,20 @@ export type Database = {
           user_name: string;
         }[];
       };
+      get_pending_invoices_base: {
+        Args: {
+          p_ws_id: string;
+        };
+        Returns: {
+          attendance_days: number;
+          group_id: string;
+          group_name: string;
+          month: string;
+          sessions: string[];
+          user_id: string;
+          user_name: string;
+        }[];
+      };
       get_pending_invoices_count: {
         Args: {
           p_ws_id: string;
@@ -3309,7 +3323,7 @@ export type Database = {
           code?: string;
           created_at?: string;
           description?: null | string;
-          invoice_id?: null | string;
+          invoice_id: string;
           name?: null | string;
           promo_id?: null | string;
           use_ratio: boolean;
@@ -3342,7 +3356,7 @@ export type Database = {
           code: string;
           created_at: string;
           description: null | string;
-          invoice_id: null | string;
+          invoice_id: string;
           name: null | string;
           promo_id: null | string;
           use_ratio: boolean;
@@ -3352,7 +3366,7 @@ export type Database = {
           code?: string;
           created_at?: string;
           description?: null | string;
-          invoice_id?: null | string;
+          invoice_id?: string;
           name?: null | string;
           promo_id?: null | string;
           use_ratio?: boolean;

@@ -30,19 +30,23 @@ BEGIN
 END $$;
 
 -- ============================================================================
--- 2. finance_invoice_promotions - Add unique constraint
+-- 2. finance_invoice_promotions - Make invoice_id NOT NULL and add unique constraint
 -- ============================================================================
 -- This table has no primary key, causing massive duplicates during migration
 -- The natural unique identifier is invoice_id + code combination
 -- (same invoice can have multiple promotions, but same code shouldn't appear twice)
 
-DO $$ 
+DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_indexes 
-    WHERE schemaname = 'public' AND indexname = 'finance_invoice_promotions_unique_combo'
+  -- Check if the finance_invoice_promotions table exists before proceeding
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'finance_invoice_promotions'
   ) THEN
-    -- Remove duplicates: keep the earliest created_at for each invoice_id + code
+    -- Step 1: Remove any records with NULL invoice_id (orphaned data)
+    DELETE FROM finance_invoice_promotions WHERE invoice_id IS NULL;
+    
+    -- Step 2: Remove duplicates: keep the earliest created_at for each invoice_id + code
     DELETE FROM finance_invoice_promotions a
     USING (
       SELECT invoice_id, code, MIN(created_at) as min_created_at
@@ -51,35 +55,39 @@ BEGIN
       GROUP BY invoice_id, code
       HAVING COUNT(*) > 1
     ) b
-    WHERE a.invoice_id = b.invoice_id 
-      AND a.code = b.code 
+    WHERE a.invoice_id = b.invoice_id
+      AND a.code = b.code
       AND a.created_at > b.min_created_at;
-    
-    -- Add partial unique index (constraints cannot have WHERE clause)
-    CREATE UNIQUE INDEX finance_invoice_promotions_unique_combo
-    ON finance_invoice_promotions (invoice_id, code)
-    WHERE invoice_id IS NOT NULL AND code IS NOT NULL;
+
+    -- Step 3: Drop the old partial unique index if it exists
+    IF EXISTS (
+      SELECT 1 FROM pg_indexes
+      WHERE schemaname = 'public' AND indexname = 'finance_invoice_promotions_unique_combo'
+    ) THEN
+      DROP INDEX finance_invoice_promotions_unique_combo;
+    END IF;
+
+    -- Step 4: Make invoice_id NOT NULL (if not already)
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'finance_invoice_promotions'
+        AND column_name = 'invoice_id'
+        AND is_nullable = 'YES'
+    ) THEN
+      ALTER TABLE finance_invoice_promotions
+      ALTER COLUMN invoice_id SET NOT NULL;
+    END IF;
+
+    -- Step 5: Add unique constraint (not partial index)
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_constraint
+      WHERE conname = 'finance_invoice_promotions_unique_combo'
+    ) THEN
+      ALTER TABLE finance_invoice_promotions
+      ADD CONSTRAINT finance_invoice_promotions_unique_combo
+      UNIQUE (invoice_id, code);
+    END IF;
   END IF;
 END $$;
 
-
-
-create table public.finance_invoice_promotions (
-  code text not null default ''::text,
-  promo_id uuid null,
-  name text null default ''::text,
-  description text null default ''::text,
-  value integer not null,
-  use_ratio boolean not null,
-  created_at timestamp with time zone not null default now(),
-  invoice_id uuid null,
-  constraint finance_invoice_promotions_invoice_id_fkey foreign KEY (invoice_id) references finance_invoices (id) on update CASCADE on delete CASCADE,
-  constraint finance_invoice_promotions_promo_id_fkey foreign KEY (promo_id) references workspace_promotions (id) on update CASCADE on delete set default
-) TABLESPACE pg_default;
-
-create unique INDEX IF not exists finance_invoice_promotions_unique_combo on public.finance_invoice_promotions using btree (invoice_id, code) TABLESPACE pg_default
-where
-  (
-    (invoice_id is not null)
-    and (code is not null)
-  );
