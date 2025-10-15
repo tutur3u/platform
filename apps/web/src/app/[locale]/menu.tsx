@@ -36,9 +36,11 @@ const navItems = (t: any, user: WorkspaceUser | null) => {
     { href: '/', label: t('common.home') },
     { href: '/about', label: t('common.about') },
     { href: '/projects', label: t('common.projects') },
+    { href: '/contributors', label: t('common.contributors') },
     { href: '/meet-together', label: t('common.meet-together') },
     { href: '/neo-crush', label: 'Neo Crush' },
     { href: '/neo-chess', label: 'Neo Chess' },
+    { href: '/neo-generator', label: 'Neo Generator' },
   ] as NavItem[];
 
   // Only add Scanner for logged-in users
