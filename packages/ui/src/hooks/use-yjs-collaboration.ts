@@ -84,7 +84,6 @@ export function useYjsCollaboration(
       columnName: columnName,
       awareness,
       resyncInterval: 5000,
-      debounceInterval: 500,
     });
 
     providerRef.current = provider;
