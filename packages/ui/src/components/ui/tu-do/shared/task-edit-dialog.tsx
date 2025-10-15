@@ -639,7 +639,11 @@ function TaskEditDialogComponent({
 
         if (boardsError) throw boardsError;
 
-        const boardIds = (boards || []).map((b) => b.id);
+        const boardIds = (
+          (boards || []) as {
+            id: string;
+          }[]
+        ).map((b: { id: string }) => b.id);
         if (boardIds.length === 0) {
           setWorkspaceTasks([]);
           return;
@@ -657,7 +661,7 @@ function TaskEditDialogComponent({
         `
           )
           .in('task_lists.board_id', boardIds)
-          .eq('deleted', false);
+          .is('deleted_at', null);
 
         if (searchQuery?.trim()) {
           query = query.ilike('name', `%${searchQuery.trim()}%`);

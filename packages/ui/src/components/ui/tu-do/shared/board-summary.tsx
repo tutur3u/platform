@@ -52,7 +52,7 @@ export function BoardSummary({
   const completedTasks = tasks.filter((task) => {
     const taskList = lists.find((list) => list.id === task.list_id);
     return (
-      task.archived ||
+      task.closed_at ||
       taskList?.status === 'done' ||
       taskList?.status === 'closed'
     );
@@ -61,31 +61,32 @@ export function BoardSummary({
 
   const overdueTasks = tasks.filter(
     (task) =>
-      !task.archived && task.end_date && new Date(task.end_date) < new Date()
+      !task.closed_at && task.end_date && new Date(task.end_date) < new Date()
   ).length;
 
   const upcomingTasks = tasks.filter(
     (task) =>
-      !task.archived && task.end_date && new Date(task.end_date) > new Date()
+      !task.closed_at && task.end_date && new Date(task.end_date) > new Date()
   ).length;
 
   const unassignedTasks = tasks.filter(
-    (task) => !task.archived && (!task.assignees || task.assignees.length === 0)
+    (task) =>
+      !task.closed_at && (!task.assignees || task.assignees.length === 0)
   ).length;
 
   const priorityTasks = {
-    p1: tasks.filter((task) => !task.archived && task.priority === 'critical')
+    p1: tasks.filter((task) => !task.closed_at && task.priority === 'critical')
       .length,
-    p2: tasks.filter((task) => !task.archived && task.priority === 'high')
+    p2: tasks.filter((task) => !task.closed_at && task.priority === 'high')
       .length,
-    p3: tasks.filter((task) => !task.archived && task.priority === 'normal')
+    p3: tasks.filter((task) => !task.closed_at && task.priority === 'normal')
       .length,
   };
 
   const nextDueTask = tasks
     .filter(
       (task) =>
-        !task.archived && task.end_date && new Date(task.end_date) > new Date()
+        !task.closed_at && task.end_date && new Date(task.end_date) > new Date()
     )
     .sort((a, b) => {
       // Since we filtered for tasks with end_date, we can safely assume they exist
@@ -258,7 +259,7 @@ export function BoardSummary({
               <div className="space-y-2">
                 <p
                   className={cn('line-clamp-2 font-medium text-sm', {
-                    'text-muted-foreground line-through': nextDueTask.archived,
+                    'text-muted-foreground line-through': nextDueTask.closed_at,
                   })}
                 >
                   {nextDueTask.name}

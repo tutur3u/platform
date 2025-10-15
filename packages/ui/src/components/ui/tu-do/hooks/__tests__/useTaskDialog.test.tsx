@@ -17,7 +17,7 @@ const mockTask: Task = {
   estimation_points: null,
   list_id: 'list-1',
   labels: [],
-  archived: false,
+  closed_at: null,
   assignees: [],
   created_at: '2024-01-01T00:00:00Z',
   // updated_at: '2024-01-01T00:00:00Z',

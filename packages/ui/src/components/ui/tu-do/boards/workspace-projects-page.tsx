@@ -47,7 +47,7 @@ export default async function WorkspaceProjectsPage({
           (list: TaskList & { tasks?: Task[] }) => list.id === task.list_id
         );
         return (
-          task.archived ||
+          task.closed_at ||
           taskList?.status === 'done' ||
           taskList?.status === 'closed'
         );
@@ -57,7 +57,7 @@ export default async function WorkspaceProjectsPage({
         const taskList = board.task_lists?.find(
           (list: TaskList & { tasks?: Task[] }) => list.id === task.list_id
         );
-        return !task.archived && taskList?.status === 'active';
+        return !task.closed_at && taskList?.status === 'active';
       }).length;
 
       const overdueTasks = allTasks.filter((task: Task) => {
@@ -65,7 +65,7 @@ export default async function WorkspaceProjectsPage({
           (list: TaskList & { tasks?: Task[] }) => list.id === task.list_id
         );
         return (
-          !task.archived &&
+          !task.closed_at &&
           taskList?.status !== 'done' &&
           taskList?.status !== 'closed' &&
           task.end_date &&
@@ -83,7 +83,7 @@ export default async function WorkspaceProjectsPage({
         );
         return (
           task.priority === 'critical' &&
-          !task.archived &&
+          !task.closed_at &&
           taskList?.status !== 'done' &&
           taskList?.status !== 'closed'
         );
@@ -95,7 +95,7 @@ export default async function WorkspaceProjectsPage({
         );
         return (
           task.priority === 'high' &&
-          !task.archived &&
+          !task.closed_at &&
           taskList?.status !== 'done' &&
           taskList?.status !== 'closed'
         );
@@ -107,7 +107,7 @@ export default async function WorkspaceProjectsPage({
         );
         return (
           task.priority === 'normal' &&
-          !task.archived &&
+          !task.closed_at &&
           taskList?.status !== 'done' &&
           taskList?.status !== 'closed'
         );
@@ -218,13 +218,13 @@ async function getData(
   const { data: tasks, error: tasksError } = await supabase
     .from('tasks')
     .select(
-      'id, name, description, archived, priority, start_date, end_date, created_at, list_id'
+      'id, name, description, closed_at, priority, start_date, end_date, created_at, list_id'
     )
     .in(
       'list_id',
       (taskLists || []).map((l) => l.id)
     )
-    .eq('deleted', false);
+    .is('deleted_at', null);
 
   if (tasksError) throw tasksError;
 

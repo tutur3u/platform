@@ -90,7 +90,7 @@ export async function getTasks(supabase: TypedSupabaseClient, boardId: string) {
         'list_id',
         lists.map((list) => list.id)
       )
-      .eq('deleted', false)
+      .is('deleted_at', null)
       .order('sort_key', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: true });
 
@@ -184,7 +184,6 @@ export async function createTask(
     start_date: string | null;
     end_date: string | null;
     estimation_points: number | null;
-    archived: boolean;
     created_at: string;
   } = {
     name: task.name.trim(),
@@ -194,7 +193,6 @@ export async function createTask(
     start_date: task.start_date || null,
     end_date: task.end_date || null,
     estimation_points: task.estimation_points ?? null,
-    archived: false,
     created_at: new Date().toISOString(),
   };
 
@@ -399,7 +397,7 @@ export async function syncTaskArchivedStatus(
   // Get current task status
   const { data: task, error: taskError } = await supabase
     .from('tasks')
-    .select('archived')
+    .select('closed_at')
     .eq('id', taskId)
     .single();
 
@@ -409,10 +407,10 @@ export async function syncTaskArchivedStatus(
   }
 
   // Only update if there's a mismatch
-  if (task.archived !== shouldArchive) {
+  if (!!task.closed_at !== shouldArchive) {
     const { error: updateError } = await supabase
       .from('tasks')
-      .update({ archived: shouldArchive })
+      .update({ closed_at: shouldArchive ? new Date().toISOString() : null })
       .eq('id', taskId);
 
     if (updateError) {
@@ -437,7 +435,7 @@ export async function moveTask(
     .select(`
       id,
       list_id,
-      archived,
+      closed_at,
       task_lists!inner(status, name)
     `)
     .eq('id', taskId)
@@ -471,7 +469,7 @@ export async function moveTask(
   // 3. If moving between non-done lists: preserve current archived status
   const sourceListStatus = currentTask.task_lists.status;
   const targetListStatus = targetList.status;
-  const currentlyArchived = currentTask.archived;
+  const currentlyArchived = !!currentTask.closed_at;
 
   let shouldArchive: boolean;
 
@@ -502,7 +500,7 @@ export async function moveTask(
     .from('tasks')
     .update({
       list_id: newListId,
-      archived: shouldArchive,
+      closed_at: shouldArchive ? new Date().toISOString() : null,
     })
     .eq('id', taskId)
     .select(
@@ -569,7 +567,7 @@ export async function moveTaskToBoard(
     .select(`
       id,
       list_id,
-      archived,
+      closed_at,
       task_lists!inner(status, name, board_id)
     `)
     .eq('id', taskId)
@@ -611,7 +609,7 @@ export async function moveTaskToBoard(
   // 3. If moving between non-done lists: preserve current archived status
   const sourceListStatus = currentTask.task_lists.status;
   const targetListStatus = targetList.status;
-  const currentlyArchived = currentTask.archived;
+  const currentlyArchived = !!currentTask.closed_at;
 
   let shouldArchive: boolean;
 
@@ -728,7 +726,7 @@ export async function deleteTask(
 ) {
   const { data, error } = await supabase
     .from('tasks')
-    .update({ deleted: true })
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', taskId)
     .select()
     .single();
@@ -1492,7 +1490,7 @@ export async function moveAllTasksFromList(
     .from('tasks')
     .select('id, list_id, task_lists!inner(board_id)')
     .eq('list_id', sourceListId)
-    .eq('deleted', false);
+    .is('deleted_at', null);
 
   if (fetchError) {
     console.log('❌ Error fetching tasks from source list:', fetchError);
@@ -2017,7 +2015,7 @@ export async function normalizeListSortKeys(
     .from('tasks')
     .select('id, sort_key, created_at')
     .eq('list_id', listId)
-    .eq('deleted', false)
+    .is('deleted_at', null)
     .order('sort_key', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: true });
 

@@ -116,7 +116,7 @@ async function getTaskBoards(
           'list_id',
           taskLists.map((list) => list.id)
         )
-        .eq('deleted', false);
+        .is('deleted_at', null);
 
       return {
         id: board.id,

@@ -63,7 +63,7 @@ async function getTaskDetails(taskId: string) {
     `
     )
     .eq('id', taskId)
-    .eq('deleted', false)
+    .is('deleted_at', null)
     .single();
 
   if (error || !task) {
