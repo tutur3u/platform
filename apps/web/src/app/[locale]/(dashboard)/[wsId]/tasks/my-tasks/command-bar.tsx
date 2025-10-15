@@ -118,6 +118,18 @@ export function CommandBar({
     onModeChange?.(newMode);
   };
 
+  // Calculate dynamic height for projects popover
+  // Each item is roughly 36px (with line-clamp-1), show max 4.5 items
+  const projectsScrollHeight = useMemo(() => {
+    const ITEM_HEIGHT = 36; // approximate height per project item
+    const MAX_VISIBLE_ITEMS = 4.5; // show 4 full items + partial 5th
+    const calculatedHeight = Math.min(
+      workspaceProjects.length * ITEM_HEIGHT,
+      MAX_VISIBLE_ITEMS * ITEM_HEIGHT
+    );
+    return calculatedHeight;
+  }, [workspaceProjects.length]);
+
   const modeConfig = useMemo(
     () => ({
       note: {
@@ -652,60 +664,69 @@ export function CommandBar({
                         <Box className="h-4 w-4" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-64 p-2" align="end">
-                      <ScrollArea className="max-h-64">
-                        <div className="space-y-1">
-                          {workspaceProjects.map((project) => (
-                            <div
-                              key={project.id}
-                              className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted"
-                            >
-                              <Checkbox
-                                id={`cb-project-${project.id}`}
-                                checked={selectedProjectIds.includes(
-                                  project.id
-                                )}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    setSelectedProjectIds([
-                                      ...selectedProjectIds,
-                                      project.id,
-                                    ]);
-                                  } else {
-                                    setSelectedProjectIds(
-                                      selectedProjectIds.filter(
-                                        (id) => id !== project.id
-                                      )
-                                    );
-                                  }
-                                }}
-                              />
-                              <Label
-                                htmlFor={`cb-project-${project.id}`}
-                                className="flex flex-1 cursor-pointer items-center gap-2 font-normal text-dynamic-sky text-xs"
+                    <PopoverContent className="w-64 p-0" align="end">
+                      <div className="p-2">
+                        <ScrollArea
+                          className="w-full"
+                          style={{ height: `${projectsScrollHeight}px` }}
+                        >
+                          <div className="space-y-1 pr-3">
+                            {workspaceProjects.map((project) => (
+                              <div
+                                key={project.id}
+                                className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted"
                               >
-                                <Box className="h-3 w-3" />
-                                {project.name}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
+                                <Checkbox
+                                  id={`cb-project-${project.id}`}
+                                  checked={selectedProjectIds.includes(
+                                    project.id
+                                  )}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedProjectIds([
+                                        ...selectedProjectIds,
+                                        project.id,
+                                      ]);
+                                    } else {
+                                      setSelectedProjectIds(
+                                        selectedProjectIds.filter(
+                                          (id) => id !== project.id
+                                        )
+                                      );
+                                    }
+                                  }}
+                                />
+                                <Label
+                                  htmlFor={`cb-project-${project.id}`}
+                                  className="flex flex-1 cursor-pointer items-center gap-2 font-normal text-dynamic-sky text-xs"
+                                >
+                                  <Box className="h-3 w-3 shrink-0" />
+                                  <span className="line-clamp-1">
+                                    {project.name}
+                                  </span>
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </div>
                       {selectedProjectIds.length > 0 && (
                         <>
-                          <div className="my-2 h-px bg-border" />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full justify-start gap-2 text-muted-foreground"
-                            onClick={() => {
-                              setSelectedProjectIds([]);
-                              setProjectsOpen(false);
-                            }}
-                          >
-                            <X className="h-3.5 w-3.5" />
-                            Clear all
-                          </Button>
+                          <div className="h-px bg-border" />
+                          <div className="p-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start gap-2 text-muted-foreground"
+                              onClick={() => {
+                                setSelectedProjectIds([]);
+                                setProjectsOpen(false);
+                              }}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                              Clear all
+                            </Button>
+                          </div>
                         </>
                       )}
                     </PopoverContent>
