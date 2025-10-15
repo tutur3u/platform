@@ -220,9 +220,17 @@ export function ListView({
           break;
         }
         case 'status': {
-          const aStatus = a.closed_at ? 'completed' : 'active';
-          const bStatus = b.closed_at ? 'completed' : 'active';
-          comparison = aStatus.localeCompare(bStatus);
+          // Tri-state: closed > completed > active
+          const getStatus = (task: Task) => {
+            if (task.closed_at) return 'closed';
+            if (task.completed_at) return 'completed';
+            return 'active';
+          };
+
+          const statusOrder = { closed: 2, completed: 1, active: 0 };
+          const aStatus = getStatus(a);
+          const bStatus = getStatus(b);
+          comparison = statusOrder[aStatus] - statusOrder[bStatus];
           break;
         }
       }
@@ -480,6 +488,7 @@ export function ListView({
                       task.end_date &&
                         new Date(task.end_date) < new Date() &&
                         !task.closed_at &&
+                        !task.completed_at &&
                         'border-l-2 border-l-dynamic-red/70 bg-dynamic-red/5'
                     )}
                     onClick={(e) => {
@@ -514,7 +523,7 @@ export function ListView({
                           <span
                             className={cn(
                               'truncate text-sm',
-                              task.closed_at &&
+                              task.completed_at &&
                                 'text-muted-foreground line-through'
                             )}
                           >
@@ -590,7 +599,8 @@ export function ListView({
                               className={cn(
                                 'font-medium text-xs transition-colors',
                                 isPast(new Date(task.end_date)) &&
-                                  !task.closed_at
+                                  !task.closed_at &&
+                                  !task.completed_at
                                   ? 'text-dynamic-red'
                                   : 'text-muted-foreground'
                               )}
@@ -598,7 +608,8 @@ export function ListView({
                               {formatDate(task.end_date)}
                             </span>
                             {isPast(new Date(task.end_date)) &&
-                              !task.closed_at && (
+                              !task.closed_at &&
+                              !task.completed_at && (
                                 <Badge className="h-4 bg-dynamic-red px-1 text-[9px] text-white">
                                   Overdue
                                 </Badge>

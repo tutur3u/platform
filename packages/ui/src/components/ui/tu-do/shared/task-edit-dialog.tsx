@@ -1155,15 +1155,17 @@ function TaskEditDialogComponent({
 
   const toggleAssignee = useCallback(
     async (member: any) => {
+      // selectedAssignees has 'id' property, workspaceMembers has 'user_id' property
+      const userId = member.user_id || member.id;
       const exists = selectedAssignees.some(
-        (a) => a.user_id === member.user_id
+        (a) => (a.id || a.user_id) === userId
       );
       const supabase = createClient();
       try {
         if (mode === 'create') {
           setSelectedAssignees((prev) =>
             exists
-              ? prev.filter((a) => a.user_id !== member.user_id)
+              ? prev.filter((a) => (a.id || a.user_id) !== userId)
               : [...prev, member]
           );
           return;
@@ -1174,16 +1176,16 @@ function TaskEditDialogComponent({
             .from('task_assignees')
             .delete()
             .eq('task_id', task.id)
-            .eq('user_id', member.user_id);
+            .eq('user_id', userId);
           if (error) throw error;
           setSelectedAssignees((prev) =>
-            prev.filter((a) => a.user_id !== member.user_id)
+            prev.filter((a) => (a.id || a.user_id) !== userId)
           );
         } else {
           if (!task?.id) return;
           const { error } = await supabase
             .from('task_assignees')
-            .insert({ task_id: task.id, user_id: member.user_id });
+            .insert({ task_id: task.id, user_id: userId });
           if (error) throw error;
           setSelectedAssignees((prev) => [...prev, member]);
         }
@@ -3722,7 +3724,7 @@ function TaskEditDialogComponent({
                                 <div className="flex flex-wrap gap-1.5">
                                   {selectedAssignees.map((assignee) => (
                                     <Button
-                                      key={`selected-assignee-${assignee.user_id}`}
+                                      key={`selected-assignee-${assignee.id || assignee.user_id}`}
                                       type="button"
                                       variant="default"
                                       size="xs"
@@ -3754,8 +3756,9 @@ function TaskEditDialogComponent({
                               {(() => {
                                 const filteredMembers = workspaceMembers.filter(
                                   (member) => {
+                                    const memberId = member.user_id || member.id;
                                     const isSelected = selectedAssignees.some(
-                                      (a) => a.user_id === member.user_id
+                                      (a) => (a.id || a.user_id) === memberId
                                     );
                                     const matchesSearch =
                                       !assigneeSearchQuery ||
