@@ -74,6 +74,9 @@ interface LinkedProductsClientProps {
   groupId: string;
   initialLinkedProducts: LinkedProduct[];
   initialCount: number;
+  canCreateUserGroups: boolean;
+  canUpdateUserGroups: boolean;
+  canDeleteUserGroups: boolean;
 }
 
 export const useProducts = (wsId: string) => {
@@ -133,6 +136,9 @@ export default function LinkedProductsClient({
   groupId,
   initialLinkedProducts,
   initialCount,
+  canCreateUserGroups,
+  canUpdateUserGroups,
+  canDeleteUserGroups,
 }: LinkedProductsClientProps) {
   const t = useTranslations();
   const [linkedProducts, setLinkedProducts] = useState(initialLinkedProducts);
@@ -386,13 +392,14 @@ export default function LinkedProductsClient({
           {t('user-data-table.linked_products')}
           {!!count && ` (${count})`}
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Link className="mr-2 h-4 w-4" />
-              {t('user-data-table.link_product')}
-            </Button>
-          </DialogTrigger>
+        {canCreateUserGroups && (
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Link className="mr-2 h-4 w-4" />
+                {t('user-data-table.link_product')}
+              </Button>
+            </DialogTrigger>
           <DialogContent onWheel={(e) => e.stopPropagation()}>
             <DialogHeader>
               <DialogTitle>{t('user-data-table.link_product')}</DialogTitle>
@@ -492,6 +499,7 @@ export default function LinkedProductsClient({
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       {count > 0 ? (
@@ -567,23 +575,27 @@ export default function LinkedProductsClient({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem
-                      onClick={() => openEditDialog(product)}
-                      className="cursor-pointer"
-                    >
-                      <Pencil className="mr-2 h-4 w-4" />
-                      {t('ws-groups.edit_product')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setDeletingProduct(product);
-                        setIsDeleteDialogOpen(true);
-                      }}
-                      className="cursor-pointer text-dynamic-red"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4 text-dynamic-red" />
-                      {t('ws-groups.remove_product')}
-                    </DropdownMenuItem>
+                    {canUpdateUserGroups && (
+                      <DropdownMenuItem
+                        onClick={() => openEditDialog(product)}
+                        className="cursor-pointer"
+                      >
+                        <Pencil className="mr-2 h-4 w-4" />
+                        {t('ws-groups.edit_product')}
+                      </DropdownMenuItem>
+                    )}
+                    {canDeleteUserGroups && (
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setDeletingProduct(product);
+                          setIsDeleteDialogOpen(true);
+                        }}
+                        className="cursor-pointer text-dynamic-red"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4 text-dynamic-red" />
+                        {t('ws-groups.remove_product')}
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

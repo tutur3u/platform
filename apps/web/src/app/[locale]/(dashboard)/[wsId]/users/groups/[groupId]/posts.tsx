@@ -61,6 +61,9 @@ export default function UserGroupPosts({
   posts,
   count,
   onClick,
+  canCreateUserGroups,
+  canUpdateUserGroups,
+  canDeleteUserGroups,
 }: {
   wsId: string;
   groupId?: string;
@@ -68,6 +71,9 @@ export default function UserGroupPosts({
   posts: UserGroupPost[];
   count?: number | null;
   onClick?: (id: string) => void;
+  canCreateUserGroups: boolean;
+  canUpdateUserGroups: boolean;
+  canDeleteUserGroups: boolean;
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -158,7 +164,7 @@ export default function UserGroupPosts({
           {!!count && ` (${count})`}
         </div>
         <div className="flex items-center gap-2">
-          {groupId && (
+          {groupId && canCreateUserGroups && (
             <Button onClick={() => handleOpenDialog()}>
               <BookPlus className="mr-1 h-5 w-5" />
               {t('ws-user-groups.add_post')}
@@ -333,26 +339,29 @@ export default function UserGroupPosts({
                         <Eye className="h-4 w-4" />
                       </Button>
                     </Link>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenDialog(post);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
+                    {canUpdateUserGroups && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenDialog(post);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {canDeleteUserGroups && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
                           <AlertDialogTitle>
@@ -374,6 +383,7 @@ export default function UserGroupPosts({
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
+                    )}
                   </div>
                 )}
               </div>

@@ -23,6 +23,8 @@ interface Props {
   wsId: string;
   data?: UserGroup;
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
+  canCreate?: boolean;
+  canUpdate?: boolean;
 }
 
 const FormSchema = z.object({
@@ -31,9 +33,24 @@ const FormSchema = z.object({
   is_guest: z.boolean().default(false),
 });
 
-export default function UserGroupForm({ wsId, data, onFinish }: Props) {
+export default function UserGroupForm({ wsId, data, onFinish, canCreate = false, canUpdate = false }: Props) {
   const t = useTranslations('ws-user-groups');
   const router = useRouter();
+
+  // If no permission to create or update, don't show the form
+  if (!canCreate && !canUpdate) {
+    return null;
+  }
+
+  // If editing and no update permission, don't show the form
+  if (data?.id && !canUpdate) {
+    return null;
+  }
+
+  // If creating and no create permission, don't show the form
+  if (!data?.id && !canCreate) {
+    return null;
+  }
 
   const form = useForm({
     resolver: zodResolver(FormSchema),

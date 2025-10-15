@@ -430,13 +430,13 @@ export async function WorkspaceNavigationLinks({
           title: t('workspace-users-tabs.groups'),
           href: `/${personalOrWsId}/users/groups`,
           icon: <Users className="h-5 w-5" />,
-          disabled: withoutPermission('manage_users'),
+          disabled: withoutPermission('manage_users') || withoutPermission('view_user_groups'),
         },
         {
           title: t('workspace-users-tabs.group_tags'),
           href: `/${personalOrWsId}/users/group-tags`,
           icon: <Tags className="h-5 w-5" />,
-          disabled: withoutPermission('manage_users'),
+          disabled: withoutPermission('manage_users') || withoutPermission('view_user_groups'),
         },
         {
           title: t('workspace-users-tabs.reports'),

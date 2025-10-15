@@ -84,6 +84,18 @@ export default async function UserGroupDetailsPage({
           'check_user_attendance'
         );
 
+        // Group-related permissions from migration
+        const canViewUserGroups: boolean = containsPermission('view_user_groups');
+        const canCreateUserGroups: boolean = containsPermission('create_user_groups');
+        const canUpdateUserGroups: boolean = containsPermission('update_user_groups');
+        const canDeleteUserGroups: boolean = containsPermission('delete_user_groups');
+
+
+
+        if (!canViewUserGroups) {
+          notFound();
+        }
+
         // Fetch group members data for the GroupMembers component
         const MEMBERS_PAGE_SIZE = 10;
         const groupMembersData = await getGroupMembersData(
@@ -191,6 +203,9 @@ export default async function UserGroupDetailsPage({
                 pageSize={MEMBERS_PAGE_SIZE}
                 canViewPersonalInfo={canViewPersonalInfo}
                 canViewPublicInfo={canViewPublicInfo}
+                canDeleteUserGroups={canDeleteUserGroups}
+                canCreateUserGroups={canCreateUserGroups}
+                canUpdateUserGroups={canUpdateUserGroups}
               />
 
               <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
@@ -215,6 +230,9 @@ export default async function UserGroupDetailsPage({
                   groupId={groupId}
                   posts={posts}
                   count={postsCount}
+                  canCreateUserGroups={canCreateUserGroups}
+                  canUpdateUserGroups={canUpdateUserGroups}
+                  canDeleteUserGroups={canDeleteUserGroups}
                 />
               </div>
 
@@ -223,6 +241,9 @@ export default async function UserGroupDetailsPage({
                 groupId={groupId}
                 initialLinkedProducts={linkedProducts}
                 initialCount={lpCount || 0}
+                canCreateUserGroups={canCreateUserGroups}
+                canUpdateUserGroups={canUpdateUserGroups}
+                canDeleteUserGroups={canDeleteUserGroups}
               />
             </div>
             <Separator className="my-4" />
