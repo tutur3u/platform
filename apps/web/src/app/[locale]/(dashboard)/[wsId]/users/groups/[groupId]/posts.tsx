@@ -237,7 +237,9 @@ export default function UserGroupPosts({
                 <Input
                   id="title"
                   name="title"
-                  placeholder={t('post-email-data-table.post_title_placeholder')}
+                  placeholder={t(
+                    'post-email-data-table.post_title_placeholder'
+                  )}
                   value={currentPost?.title || ''}
                   onChange={handleInputChange}
                   className="col-span-3"
@@ -250,7 +252,9 @@ export default function UserGroupPosts({
                 <Textarea
                   id="content"
                   name="content"
-                  placeholder={t('post-email-data-table.post_content_placeholder')}
+                  placeholder={t(
+                    'post-email-data-table.post_content_placeholder'
+                  )}
                   value={currentPost?.content || ''}
                   onChange={handleInputChange}
                   className="col-span-3"
@@ -361,14 +365,20 @@ export default function UserGroupPosts({
                         <AlertDialogContent>
                           <AlertDialogHeader>
                             <AlertDialogTitle>
-                              {t('ws-user-groups.delete_post_confirmation_title')}
+                              {t(
+                                'ws-user-groups.delete_post_confirmation_title'
+                              )}
                             </AlertDialogTitle>
                             <AlertDialogDescription>
-                              {t('ws-user-groups.delete_post_confirmation_description')}
+                              {t(
+                                'ws-user-groups.delete_post_confirmation_description'
+                              )}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>{t('ws-user-groups.delete_cancel')}</AlertDialogCancel>
+                            <AlertDialogCancel>
+                              {t('ws-user-groups.delete_cancel')}
+                            </AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => post.id && deletePost(post.id)}
                             >

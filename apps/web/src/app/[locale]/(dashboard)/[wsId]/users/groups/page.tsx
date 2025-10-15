@@ -39,73 +39,75 @@ export default async function WorkspaceUserGroupsPage({
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
         const t = await getTranslations();
-          // Check permissions
-  const { withoutPermission, containsPermission } = await getPermissions({
-    wsId,
-  });
-  if (withoutPermission('view_user_groups')) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-lg font-semibold">Access Denied</h2>
-          <p className="text-muted-foreground">
-            You don't have permission to view user groups.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const { data, count } = await getData(wsId, await searchParams);
-
-  // Check permissions for the form and actions
-  const canCreate = containsPermission('create_user_groups');
-  const canUpdate = containsPermission('update_user_groups');
-  const canDelete = containsPermission('delete_user_groups');
-
-  const groups = data.map((g) => ({
-    ...g,
-    ws_id: wsId,
-    href: `/${wsId}/users/groups/${g.id}`,
-  }));
-  return (
-    <>
-      <FeatureSummary
-        pluralTitle={t('ws-user-groups.plural')}
-        singularTitle={t('ws-user-groups.singular')}
-        description={t('ws-user-groups.description')}
-        createTitle={t('ws-user-groups.create')}
-        createDescription={t('ws-user-groups.create_description')}
-        form={
-          canCreate ? (
-            <UserGroupForm
-              wsId={wsId}
-              canCreate={canCreate}
-              canUpdate={canUpdate}
-            />
-          ) : undefined
+        // Check permissions
+        const { withoutPermission, containsPermission } = await getPermissions({
+          wsId,
+        });
+        if (withoutPermission('view_user_groups')) {
+          return (
+            <div className="flex h-96 items-center justify-center">
+              <div className="text-center">
+                <h2 className="text-lg font-semibold">Access Denied</h2>
+                <p className="text-muted-foreground">
+                  You don't have permission to view user groups.
+                </p>
+              </div>
+            </div>
+          );
         }
-      />
-      <Separator className="my-4" />
-      <CustomDataTable
-        data={groups}
-        columnGenerator={getUserGroupColumns}
-        namespace="user-group-data-table"
-        count={count}
-        filters={<Filters wsId={wsId} searchParams={await searchParams} />}
-        extraData={{
-          canCreateUserGroups: canCreate,
-          canUpdateUserGroups: canUpdate,
-          canDeleteUserGroups: canDelete,
-        }}
-        defaultVisibility={{
-          id: false,
-          locked: false,
-          created_at: false,
-        }}
-      />
-    </>
-  );
+
+        const { data, count } = await getData(wsId, await searchParams);
+
+        // Check permissions for the form and actions
+        const canCreate = containsPermission('create_user_groups');
+        const canUpdate = containsPermission('update_user_groups');
+        const canDelete = containsPermission('delete_user_groups');
+
+        const groups = data.map((g) => ({
+          ...g,
+          ws_id: wsId,
+          href: `/${wsId}/users/groups/${g.id}`,
+        }));
+        return (
+          <>
+            <FeatureSummary
+              pluralTitle={t('ws-user-groups.plural')}
+              singularTitle={t('ws-user-groups.singular')}
+              description={t('ws-user-groups.description')}
+              createTitle={t('ws-user-groups.create')}
+              createDescription={t('ws-user-groups.create_description')}
+              form={
+                canCreate ? (
+                  <UserGroupForm
+                    wsId={wsId}
+                    canCreate={canCreate}
+                    canUpdate={canUpdate}
+                  />
+                ) : undefined
+              }
+            />
+            <Separator className="my-4" />
+            <CustomDataTable
+              data={groups}
+              columnGenerator={getUserGroupColumns}
+              namespace="user-group-data-table"
+              count={count}
+              filters={
+                <Filters wsId={wsId} searchParams={await searchParams} />
+              }
+              extraData={{
+                canCreateUserGroups: canCreate,
+                canUpdateUserGroups: canUpdate,
+                canDeleteUserGroups: canDelete,
+              }}
+              defaultVisibility={{
+                id: false,
+                locked: false,
+                created_at: false,
+              }}
+            />
+          </>
+        );
       }}
     </WorkspaceWrapper>
   );
