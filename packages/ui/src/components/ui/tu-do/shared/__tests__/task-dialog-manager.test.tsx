@@ -72,7 +72,7 @@ describe('TaskDialogManager', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it.skip('should lazy load and render TaskEditDialog when opened', async () => {
+  it('should lazy load and render TaskEditDialog when opened', async () => {
     const TestComponent = () => {
       const { openTask } = useTaskDialogContext();
 

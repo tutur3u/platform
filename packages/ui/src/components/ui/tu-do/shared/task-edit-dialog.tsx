@@ -52,6 +52,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import { cn } from '@tuturuuu/utils/format';
 import {
@@ -93,7 +94,6 @@ import {
 } from './slash-commands/definitions';
 import { SlashCommandMenu } from './slash-commands/slash-command-menu';
 import { UserPresenceAvatarsComponent } from './user-presence-avatars';
-import { DEV_MODE } from '@tuturuuu/utils/constants';
 
 interface TaskEditDialogProps {
   task?: Task;
@@ -153,10 +153,10 @@ function TaskEditDialogComponent({
   availableLists: propAvailableLists,
   onOpenTask,
   mode = 'edit',
-  showUserPresence = false,
+  collaborationMode = false,
 }: TaskEditDialogProps & {
   mode?: 'edit' | 'create';
-  showUserPresence?: boolean;
+  collaborationMode?: boolean;
 }) {
   const isCreateMode = mode === 'create';
   const pathname = usePathname();
@@ -261,7 +261,7 @@ function TaskEditDialogComponent({
         }
       : null,
     enabled:
-      DEV_MODE && isOpen && !isCreateMode && showUserPresence && !!task?.id,
+      DEV_MODE && isOpen && !isCreateMode && collaborationMode && !!task?.id,
   });
 
   useEffect(() => {
@@ -877,7 +877,7 @@ function TaskEditDialogComponent({
         newDate = dayjs().add(days, 'day').endOf('day').toDate();
       }
       setEndDate(newDate);
-      if (mode === 'create') {
+      if (isCreateMode) {
         return;
       }
       setIsLoading(true);
@@ -919,7 +919,15 @@ function TaskEditDialogComponent({
           }
         );
     },
-    [mode, onUpdate, queryClient, task, updateTaskMutation, boardId, toast]
+    [
+      isCreateMode,
+      onUpdate,
+      queryClient,
+      task,
+      updateTaskMutation,
+      boardId,
+      toast,
+    ]
   );
 
   const handleEndDateChange = useCallback((date: Date | undefined) => {
@@ -1156,7 +1164,7 @@ function TaskEditDialogComponent({
       );
       const supabase = createClient();
       try {
-        if (mode === 'create') {
+        if (isCreateMode) {
           setSelectedAssignees((prev) =>
             exists
               ? prev.filter((a) => a.user_id !== member.user_id)
@@ -1193,7 +1201,15 @@ function TaskEditDialogComponent({
         });
       }
     },
-    [selectedAssignees, mode, task?.id, boardId, queryClient, onUpdate, toast]
+    [
+      isCreateMode,
+      selectedAssignees,
+      task?.id,
+      boardId,
+      queryClient,
+      onUpdate,
+      toast,
+    ]
   );
 
   const toggleProject = useCallback(
@@ -2013,7 +2029,7 @@ function TaskEditDialogComponent({
   useEffect(() => {
     const taskIdChanged = previousTaskIdRef.current !== task?.id;
 
-    if (isOpen && !isCreateMode && (task?.id || taskIdChanged)) {
+    if (isOpen && !isCreateMode && taskIdChanged) {
       setName(task?.name || '');
       setDescription(getDescriptionContent(task?.description));
       setPriority(task?.priority || null);
@@ -2042,21 +2058,7 @@ function TaskEditDialogComponent({
       setSelectedProjects(task?.projects || []);
       if (task?.id) previousTaskIdRef.current = task.id;
     }
-  }, [
-    task?.id,
-    isOpen,
-    isCreateMode,
-    task?.assignees,
-    task?.description,
-    task?.end_date,
-    task?.estimation_points,
-    task?.labels,
-    task?.list_id,
-    task?.name,
-    task?.priority,
-    task?.projects,
-    task?.start_date,
-  ]);
+  }, [isCreateMode, isOpen, task]);
 
   // Reset transient edits when closing without saving in edit mode
   useEffect(() => {
@@ -2723,7 +2725,7 @@ function TaskEditDialogComponent({
               </div>
               <div className="flex items-center gap-1 md:gap-2">
                 {/* Online Users */}
-                {showUserPresence && isOpen && !isCreateMode && (
+                {collaborationMode && isOpen && !isCreateMode && (
                   <UserPresenceAvatarsComponent
                     channelName={`task_presence_${task?.id}`}
                   />
@@ -2950,14 +2952,6 @@ function TaskEditDialogComponent({
                     flushPendingRef={flushEditorPendingRef}
                     initialCursorOffset={targetEditorCursorRef.current}
                     onEditorReady={handleEditorReady}
-                    yjsDoc={
-                      isOpen && !isCreateMode && showUserPresence ? doc : null
-                    }
-                    yjsProvider={
-                      isOpen && !isCreateMode && showUserPresence
-                        ? provider
-                        : null
-                    }
                     boardId={boardId}
                     availableLists={availableLists}
                     queryClient={queryClient}
@@ -2991,10 +2985,21 @@ function TaskEditDialogComponent({
                         titleInputRef.current.setSelectionRange(length, length);
                       }
                     }}
+                    yjsDoc={
+                      isOpen && !isCreateMode && collaborationMode ? doc : null
+                    }
+                    yjsProvider={
+                      isOpen && !isCreateMode && collaborationMode
+                        ? provider
+                        : null
+                    }
+                    allowCollaboration={
+                      isOpen && !isCreateMode && collaborationMode
+                    }
                   />
                 </div>
               </div>
-              {isOpen && !isCreateMode && showUserPresence && (
+              {isOpen && !isCreateMode && collaborationMode && (
                 <CursorOverlayWrapper
                   channelName={`editor-cursor-${task?.id}`}
                   containerRef={editorContainerRef}
