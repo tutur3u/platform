@@ -121,11 +121,11 @@ export function CommandBar({
   // Calculate dynamic height for projects popover
   // Each item is roughly 36px (with line-clamp-1), show max 4.5 items
   const projectsScrollHeight = useMemo(() => {
-    const itemHeight = 36; // approximate height per project item
-    const maxItems = 4.5; // show 4 full items + partial 5th
+    const ITEM_HEIGHT = 36; // approximate height per project item
+    const MAX_VISIBLE_ITEMS = 4.5; // show 4 full items + partial 5th
     const calculatedHeight = Math.min(
-      workspaceProjects.length * itemHeight,
-      maxItems * itemHeight
+      workspaceProjects.length * ITEM_HEIGHT,
+      MAX_VISIBLE_ITEMS * ITEM_HEIGHT
     );
     return calculatedHeight;
   }, [workspaceProjects.length]);
