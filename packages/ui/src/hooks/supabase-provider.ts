@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { RealtimeChannel } from '@tuturuuu/supabase/next/realtime';
 import debug from 'debug';
 import { EventEmitter } from 'eventemitter3';
+import { debounce } from 'lodash';
 import * as awarenessProtocol from 'y-protocols/awareness';
 import * as Y from 'yjs';
 
@@ -285,7 +286,7 @@ export default class SupabaseProvider extends EventEmitter {
     });
 
     this.connect();
-    this.doc.on('update', this.onDocumentUpdate.bind(this));
+    this.doc.on('update', this.debouncedOnDocumentUpdate);
     this.awareness.on('update', this.onAwarenessUpdate.bind(this));
   }
 
@@ -368,8 +369,8 @@ export default class SupabaseProvider extends EventEmitter {
       process.off('exit', () => this.removeSelfFromAwarenessOnUnload);
     }
 
+    this.doc.off('update', this.debouncedOnDocumentUpdate);
     this.awareness.off('update', this.onAwarenessUpdate);
-    this.doc.off('update', this.onDocumentUpdate);
 
     if (this.channel) this.disconnect();
   }
