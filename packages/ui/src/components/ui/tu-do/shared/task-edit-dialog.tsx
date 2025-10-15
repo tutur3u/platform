@@ -52,6 +52,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import { cn } from '@tuturuuu/utils/format';
 import {
@@ -93,7 +94,6 @@ import {
 } from './slash-commands/definitions';
 import { SlashCommandMenu } from './slash-commands/slash-command-menu';
 import { UserPresenceAvatarsComponent } from './user-presence-avatars';
-import { DEV_MODE } from '@tuturuuu/utils/constants';
 
 interface TaskEditDialogProps {
   task?: Task;
@@ -3051,7 +3051,6 @@ function TaskEditDialogComponent({
                         <Button
                           variant="outline"
                           className="h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm"
-                          title="Priority â€“ Alt+1 Urgent, Alt+2 High, Alt+3 Medium, Alt+4 Low, Alt+0 Clear"
                         >
                           <span className="truncate">
                             {availableLists.find(
@@ -3104,11 +3103,12 @@ function TaskEditDialogComponent({
                             priority === 'critical' &&
                               'border-dynamic-red bg-dynamic-red/10 font-semibold text-dynamic-red hover:bg-dynamic-red/20'
                           )}
+                          title="Priority — Alt+1 Urgent, Alt+2 High, Alt+3 Medium, Alt+4 Low, Alt+0 Clear"
                         >
                           <span className="truncate">
                             {priority
                               ? priority === 'critical'
-                                ? 'ðŸ”¥ Urgent'
+                                ? '🔥 Urgent'
                                 : priority === 'high'
                                   ? 'High'
                                   : priority === 'normal'
@@ -3123,7 +3123,7 @@ function TaskEditDialogComponent({
                         {[
                           {
                             value: 'critical',
-                            label: 'ðŸ”¥ Urgent',
+                            label: '🔥 Urgent',
                             dot: 'bg-dynamic-red',
                             className: 'font-semibold text-dynamic-red',
                           },
