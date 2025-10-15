@@ -43,21 +43,17 @@ BEGIN
     SELECT 1 FROM information_schema.tables
     WHERE table_schema = 'public' AND table_name = 'finance_invoice_promotions'
   ) THEN
-    -- Step 1: Remove any records with NULL invoice_id (orphaned data)
-    DELETE FROM finance_invoice_promotions WHERE invoice_id IS NULL;
-    
-    -- Step 2: Remove duplicates: keep the earliest created_at for each invoice_id + code
+    -- Step 1: Remove any records with NULL invoice_id or NULL code (orphaned/invalid data)
+    DELETE FROM finance_invoice_promotions
+    WHERE invoice_id IS NULL OR code IS NULL;
+
+    -- Step 2: Remove duplicates: keep one row per invoice_id + code combination
+    -- Using ctid ensures we always keep exactly one row, even if created_at values are identical or NULL
     DELETE FROM finance_invoice_promotions a
-    USING (
-      SELECT invoice_id, code, MIN(created_at) as min_created_at
-      FROM finance_invoice_promotions
-      WHERE invoice_id IS NOT NULL AND code IS NOT NULL
-      GROUP BY invoice_id, code
-      HAVING COUNT(*) > 1
-    ) b
-    WHERE a.invoice_id = b.invoice_id
-      AND a.code = b.code
-      AND a.created_at > b.min_created_at;
+    USING finance_invoice_promotions b
+    WHERE a.ctid < b.ctid
+      AND a.invoice_id = b.invoice_id
+      AND a.code = b.code;
 
     -- Step 3: Drop legacy standalone index only if NOT owned by a constraint
     IF EXISTS (
