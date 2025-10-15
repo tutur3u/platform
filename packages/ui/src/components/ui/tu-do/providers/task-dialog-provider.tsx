@@ -259,8 +259,15 @@ export function TaskDialogProvider({
     console.log('🔔 TaskDialogProvider: Triggering close callback', {
       hasCallback: !!closeCallbackRef.current,
     });
-    closeCallbackRef.current?.();
+
+    // Always close the dialog first for immediate UI feedback
     closeDialog();
+
+    // Then call any registered callback (e.g., for navigation)
+    // The loading state in the calling component will prevent blank screen
+    if (closeCallbackRef.current) {
+      closeCallbackRef.current();
+    }
   }, [closeDialog]);
 
   const contextValue = useMemo<TaskDialogContextValue>(
