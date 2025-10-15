@@ -192,7 +192,9 @@ export function BoardViews({
     // Apply sorting - but NEVER sort done/closed tasks (they always sort by timestamps)
     if (filters.sortBy) {
       // Create a map of list_id to status
-      const listStatusMap = new Map(lists.map((list) => [list.id, list.status]));
+      const listStatusMap = new Map(
+        lists.map((list) => [list.id, list.status])
+      );
 
       // Separate tasks into sortable and completion (done/closed) tasks
       const sortableTasks = tasks.filter((task) => {
