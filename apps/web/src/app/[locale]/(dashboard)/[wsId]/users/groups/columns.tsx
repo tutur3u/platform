@@ -140,6 +140,13 @@ export const getUserGroupColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => <UserGroupRowActions row={row} canUpdate={extraData?.canUpdateUserGroups} canDelete={extraData?.canDeleteUserGroups} canCreate={extraData?.canCreateUserGroups} />
+    cell: ({ row }) => (
+      <UserGroupRowActions
+        row={row}
+        canUpdate={extraData?.canUpdateUserGroups}
+        canDelete={extraData?.canDeleteUserGroups}
+        canCreate={extraData?.canCreateUserGroups}
+      />
+    ),
   },
 ];

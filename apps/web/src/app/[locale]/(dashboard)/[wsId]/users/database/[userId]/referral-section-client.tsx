@@ -1,7 +1,13 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, Settings, User, UserPlus, UserMinus } from '@tuturuuu/icons';
+import {
+  ArrowRight,
+  Settings,
+  User,
+  UserPlus,
+  UserMinus,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
@@ -318,7 +324,8 @@ export default function ReferralSectionClient({
       // Resolve current workspace virtual user id for auditing fields
       let updaterVirtualUserId: string | null = null;
       try {
-        const { data: userData, error: userError } = await supabase.auth.getUser();
+        const { data: userData, error: userError } =
+          await supabase.auth.getUser();
         if (userError) throw userError;
         if (userData?.user?.id) {
           const { data: updaterRow, error: updaterIdErr } = await supabase
@@ -450,10 +457,16 @@ export default function ReferralSectionClient({
                   {(referredUsersQuery.data || []).map((u) => {
                     const hasAvatar = Boolean(u.avatar_url);
                     return (
-                      <Card className="p-3 transition duration-200 hover:border-foreground hover:bg-foreground/5" key={u.id}>
+                      <Card
+                        className="p-3 transition duration-200 hover:border-foreground hover:bg-foreground/5"
+                        key={u.id}
+                      >
                         <CardContent className="p-0">
                           <div className="flex items-center justify-between">
-                            <Link href={`/${wsId}/users/database/${u.id}`} className="flex-1">
+                            <Link
+                              href={`/${wsId}/users/database/${u.id}`}
+                              className="flex-1"
+                            >
                               <div className="flex items-center gap-3">
                                 {hasAvatar ? (
                                   <Avatar className="h-8 w-8">
@@ -479,18 +492,18 @@ export default function ReferralSectionClient({
                               </div>
                             </Link>
                             {canUpdateUsers && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleUnreferUser(u.id);
-                              }}
-                              disabled={unreferUserMutation.isPending}
-                              className="h-8 w-8 p-0 text-dynamic-red hover:bg-dynamic-red/10 hover:text-dynamic-red"
-                              title={t('unrefer_person')}
-                            >
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleUnreferUser(u.id);
+                                }}
+                                disabled={unreferUserMutation.isPending}
+                                className="h-8 w-8 p-0 text-dynamic-red hover:bg-dynamic-red/10 hover:text-dynamic-red"
+                                title={t('unrefer_person')}
+                              >
                                 <UserMinus className="h-4 w-4" />
                               </Button>
                             )}

@@ -27,7 +27,12 @@ interface UserGroupRowActionsProps {
   canCreate?: boolean;
 }
 
-export function UserGroupRowActions({ row, canUpdate, canDelete, canCreate }: UserGroupRowActionsProps) {
+export function UserGroupRowActions({
+  row,
+  canUpdate,
+  canDelete,
+  canCreate,
+}: UserGroupRowActionsProps) {
   const router = useRouter();
   const t = useTranslations();
 
@@ -99,7 +104,14 @@ export function UserGroupRowActions({ row, canUpdate, canDelete, canCreate }: Us
           title={t('ws-user-groups.edit')}
           editDescription={t('ws-user-groups.edit_description')}
           setOpen={setShowEditDialog}
-          form={<UserGroupForm wsId={data.ws_id} data={data} canCreate={canCreate} canUpdate={canUpdate} />}
+          form={
+            <UserGroupForm
+              wsId={data.ws_id}
+              data={data}
+              canCreate={canCreate}
+              canUpdate={canUpdate}
+            />
+          }
         />
       )}
     </div>

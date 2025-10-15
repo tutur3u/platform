@@ -85,12 +85,14 @@ export default async function UserGroupDetailsPage({
         );
 
         // Group-related permissions from migration
-        const canViewUserGroups: boolean = containsPermission('view_user_groups');
-        const canCreateUserGroups: boolean = containsPermission('create_user_groups');
-        const canUpdateUserGroups: boolean = containsPermission('update_user_groups');
-        const canDeleteUserGroups: boolean = containsPermission('delete_user_groups');
-
-
+        const canViewUserGroups: boolean =
+          containsPermission('view_user_groups');
+        const canCreateUserGroups: boolean =
+          containsPermission('create_user_groups');
+        const canUpdateUserGroups: boolean =
+          containsPermission('update_user_groups');
+        const canDeleteUserGroups: boolean =
+          containsPermission('delete_user_groups');
 
         if (!canViewUserGroups) {
           notFound();

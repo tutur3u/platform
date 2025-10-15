@@ -33,7 +33,13 @@ const FormSchema = z.object({
   is_guest: z.boolean().default(false),
 });
 
-export default function UserGroupForm({ wsId, data, onFinish, canCreate = false, canUpdate = false }: Props) {
+export default function UserGroupForm({
+  wsId,
+  data,
+  onFinish,
+  canCreate = false,
+  canUpdate = false,
+}: Props) {
   const t = useTranslations('ws-user-groups');
   const router = useRouter();
 
