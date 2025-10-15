@@ -691,8 +691,9 @@ export default function MigrationDashboard() {
             ? `${item.product_id}|${item.unit_id}|${item.warehouse_id}`
             : null,
         'bill-coupons': (item) =>
-          item.invoice_id && item.code && item.value && item.use_ratio ? `${item.invoice_id}|${item.code}|${item.value}|${item.use_ratio}` : null,
-        
+          item.invoice_id && item.code && item.value && item.use_ratio
+            ? `${item.invoice_id}|${item.code}|${item.value}|${item.use_ratio}`
+            : null,
       };
 
       // Helper to get unique key for an item (composite or simple id)

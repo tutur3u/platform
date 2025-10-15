@@ -40,7 +40,9 @@ export default async function WorkspaceUserGroupsPage({
   const wsId = workspace.id;
 
   // Check permissions
-  const { withoutPermission, containsPermission } = await getPermissions({ wsId });
+  const { withoutPermission, containsPermission } = await getPermissions({
+    wsId,
+  });
   if (withoutPermission('view_user_groups')) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -57,7 +59,7 @@ export default async function WorkspaceUserGroupsPage({
   const { data, count } = await getData(wsId, await searchParams);
 
   // Check permissions for the form and actions
-  const canCreate = containsPermission('create_user_groups'); 
+  const canCreate = containsPermission('create_user_groups');
   const canUpdate = containsPermission('update_user_groups');
   const canDelete = containsPermission('delete_user_groups');
 
@@ -75,7 +77,15 @@ export default async function WorkspaceUserGroupsPage({
         description={t('ws-user-groups.description')}
         createTitle={t('ws-user-groups.create')}
         createDescription={t('ws-user-groups.create_description')}
-        form={canCreate ? <UserGroupForm wsId={wsId} canCreate={canCreate} canUpdate={canUpdate} /> : undefined}
+        form={
+          canCreate ? (
+            <UserGroupForm
+              wsId={wsId}
+              canCreate={canCreate}
+              canUpdate={canUpdate}
+            />
+          ) : undefined
+        }
       />
       <Separator className="my-4" />
       <CustomDataTable
