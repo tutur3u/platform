@@ -89,7 +89,7 @@ BEGIN
       pm.user_id,
       pm.group_id,
       pm.month,
-      COUNT(CASE WHEN uga.status IN ('PRESENT', 'LATE') THEN 1 END)::integer as attendance_days
+      COUNT(uga.date)::integer as attendance_days
     FROM pending_months pm
     LEFT JOIN user_group_attendance uga 
       ON uga.user_id = pm.user_id 
@@ -275,7 +275,7 @@ BEGIN
       pm.user_id,
       pm.group_id,
       pm.month,
-      COUNT(CASE WHEN uga.status IN ('PRESENT', 'LATE') THEN 1 END)::integer as attendance_days
+      COUNT(uga.date)::integer as attendance_days
     FROM pending_months pm
     LEFT JOIN user_group_attendance uga 
       ON uga.user_id = pm.user_id 
