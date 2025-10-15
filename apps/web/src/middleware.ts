@@ -19,7 +19,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   const { res: nextRes, redirect } = handleRedirect({ req, res, user });
   if (redirect) return nextRes;
 
-  return handleLocale({ req, res: nextRes });
+  return handleLocale({ req });
 }
 
 export const config = {
@@ -87,7 +87,9 @@ const handleRedirect = ({
 };
 
 const getSupportedLocale = (locale: string): Locale | null => {
-  return supportedLocales.includes(locale as any) ? (locale as Locale) : null;
+  return supportedLocales.includes(locale as Locale)
+    ? (locale as Locale)
+    : null;
 };
 
 const getExistingLocale = (
@@ -128,7 +130,7 @@ const getDefaultLocale = (
   const detectedLocale = match(languages, supportedLocales, defaultLocale);
 
   return {
-    locale: supportedLocales.includes(detectedLocale as any)
+    locale: supportedLocales.includes(detectedLocale as Locale)
       ? (detectedLocale as Locale)
       : defaultLocale,
   };
@@ -166,27 +168,15 @@ const getLocale = (
   };
 };
 
-const handleLocale = ({
-  req,
-  res,
-}: {
-  req: NextRequest;
-  res: NextResponse;
-}): NextResponse => {
+const handleLocale = ({ req }: { req: NextRequest }): NextResponse => {
   // Get locale from cookie or browser languages
-  const { locale, pathname } = getLocale(req);
-
-  // Construct nextUrl with locale and redirect
-  req.nextUrl.pathname = !pathname
-    ? `/${locale}${req.nextUrl.pathname}`
-    : req.nextUrl.pathname.replace(pathname, locale);
-
-  NextResponse.rewrite(req.nextUrl, res);
+  const { locale } = getLocale(req);
 
   const nextIntlMiddleware = createIntlMiddleware({
     locales: supportedLocales,
     defaultLocale: locale as Locale,
     localeDetection: false,
+    localePrefix: 'as-needed',
   });
 
   return nextIntlMiddleware(req);

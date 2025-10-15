@@ -1,20 +1,18 @@
 import { checkEnvVariables } from './common';
-import { Database } from '@ncthub/types/supabase';
+import type { Database } from '@ncthub/types/supabase';
 import { createBrowserClient } from '@supabase/ssr';
-import type { SupabaseClient } from '@supabase/supabase-js';
 
 const { url, key } = checkEnvVariables({ useServiceKey: false });
 
-export function createDynamicClient(): SupabaseClient<any, 'public', any> {
+export function createDynamicClient() {
   return createBrowserClient(url, key);
 }
 
-export function createClient(): SupabaseClient<
-  Database,
-  'public',
-  Database['public']
-> {
+export function createClient() {
   return createBrowserClient<Database>(url, key);
 }
 
-export type { SupabaseClient };
+type TypedSupabaseClient = ReturnType<typeof createClient>;
+type SupabaseClient = TypedSupabaseClient;
+
+export type { TypedSupabaseClient, SupabaseClient };
