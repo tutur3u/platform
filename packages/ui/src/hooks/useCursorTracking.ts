@@ -36,7 +36,7 @@ export function useCursorTracking(
   const CURSOR_TIMEOUT = 5000; // Remove cursor if no update for 5 seconds
   const MAX_ERROR_COUNT = 3; // Disable after 3 consecutive errors
 
-  const handleError = (err: any) => {
+  const handleError = useCallback((err: any) => {
     errorCountRef.current++;
     if (errorCountRef.current >= MAX_ERROR_COUNT) {
       setError(true);
@@ -44,7 +44,7 @@ export function useCursorTracking(
     if (DEV_MODE) {
       console.warn('Error in cursor tracking:', err);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const setupUser = async () => {
@@ -75,7 +75,7 @@ export function useCursorTracking(
     };
 
     setupUser();
-  }, []);
+  }, [handleError]);
 
   const broadcastCursor = useCallback(
     async (x: number, y: number, user: User) => {
@@ -122,7 +122,7 @@ export function useCursorTracking(
         handleError(err);
       }
     },
-    [] // No dependencies - uses only refs
+    [handleError] // No dependencies - uses only refs
   );
 
   const smoothAnimate = useCallback(() => {
@@ -159,19 +159,22 @@ export function useCursorTracking(
     };
   }, [smoothAnimate]);
 
-  const handleMouseMove = (event: MouseEvent) => {
-    if (!currentUser?.id) return;
+  const handleMouseMove = useCallback(
+    (event: MouseEvent) => {
+      if (!currentUser?.id) return;
 
-    const rect = containerRef?.current?.getBoundingClientRect();
-    if (!rect) return;
+      const rect = containerRef?.current?.getBoundingClientRect();
+      if (!rect) return;
 
-    targetPosition.current = {
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-    };
-  };
+      targetPosition.current = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+    },
+    [currentUser, containerRef]
+  );
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = useCallback(() => {
     if (!currentUser?.id) return;
 
     // Broadcast cursor position outside the container to hide it
@@ -179,7 +182,7 @@ export function useCursorTracking(
       id: currentUser.id,
       display_name: currentUser.display_name,
     });
-  };
+  }, [currentUser, broadcastCursor]);
 
   // Clean up stale cursors
   useEffect(() => {
@@ -334,6 +337,9 @@ export function useCursorTracking(
     channelName,
     containerRef, // Broadcast cursor position outside the container to hide it
     currentUser,
+    handleError,
+    handleMouseLeave,
+    handleMouseMove,
   ]);
 
   return {
