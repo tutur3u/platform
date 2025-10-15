@@ -190,6 +190,9 @@ export function BoardHeader({
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [layoutSettingsOpen, setLayoutSettingsOpen] = useState(false);
+  const [localSearchQuery, setLocalSearchQuery] = useState(
+    filters.searchQuery || ''
+  );
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -209,6 +212,30 @@ export function BoardHeader({
     onViewChangeRef.current = onViewChange;
     searchQueryRef.current = filters.searchQuery;
   });
+
+  // Sync local search query with external filter changes
+  useEffect(() => {
+    setLocalSearchQuery(filters.searchQuery || '');
+  }, [filters.searchQuery]);
+
+  // Debounce search query updates
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (localSearchQuery !== (filters.searchQuery || '')) {
+        onFiltersChange({
+          ...filters,
+          searchQuery: localSearchQuery || undefined,
+        });
+
+        // Auto-switch to List view when searching in Timeline view
+        if (localSearchQuery && currentView === 'timeline') {
+          onViewChange('list');
+        }
+      }
+    }, 300); // 300ms debounce delay
+
+    return () => clearTimeout(timeoutId);
+  }, [localSearchQuery, currentView, filters, onFiltersChange, onViewChange]);
 
   // Load board configuration from localStorage on mount or board change
   useEffect(() => {
@@ -333,24 +360,14 @@ export function BoardHeader({
           <Input
             type="text"
             placeholder="Search tasks..."
-            value={filters.searchQuery || ''}
-            onChange={(e) => {
-              const newSearchQuery = e.target.value;
-              onFiltersChange({ ...filters, searchQuery: newSearchQuery });
-
-              // Auto-switch to List view when searching in Status or Timeline view
-              if (newSearchQuery && currentView === 'timeline') {
-                onViewChange('list');
-              }
-            }}
+            value={localSearchQuery}
+            onChange={(e) => setLocalSearchQuery(e.target.value)}
             className="placeholder:-translate-0.5 h-6 bg-background pr-8 pl-8 text-xs placeholder:text-xs sm:h-8 sm:text-sm"
           />
-          {filters.searchQuery && !isSearching && (
+          {localSearchQuery && !isSearching && (
             <button
               type="button"
-              onClick={() =>
-                onFiltersChange({ ...filters, searchQuery: undefined })
-              }
+              onClick={() => setLocalSearchQuery('')}
               className="-translate-y-1/2 absolute top-1/2 right-2 text-muted-foreground transition-colors hover:text-foreground"
             >
               <X className="h-3.5 w-3.5" />
