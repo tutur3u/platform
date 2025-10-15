@@ -52,6 +52,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import { cn } from '@tuturuuu/utils/format';
 import {
@@ -93,7 +94,6 @@ import {
 } from './slash-commands/definitions';
 import { SlashCommandMenu } from './slash-commands/slash-command-menu';
 import { UserPresenceAvatarsComponent } from './user-presence-avatars';
-import { DEV_MODE } from '@tuturuuu/utils/constants';
 
 interface TaskEditDialogProps {
   task?: Task;
@@ -1599,7 +1599,10 @@ function TaskEditDialogComponent({
       estimation_points: estimationPoints ?? null,
     };
 
-    if (task?.id)
+    if (task?.id) {
+      // Close dialog immediately for better UX
+      onClose();
+
       updateTaskMutation.mutate(
         {
           taskId: task.id,
@@ -1609,9 +1612,9 @@ function TaskEditDialogComponent({
           onSuccess: async () => {
             console.log('Task update successful, refreshing data...');
 
-            await invalidateTaskCaches(queryClient, boardId);
-
-            await queryClient.refetchQueries({
+            // Update caches and refetch in background
+            invalidateTaskCaches(queryClient, boardId);
+            queryClient.refetchQueries({
               queryKey: ['tasks', boardId],
               type: 'active',
             });
@@ -1621,7 +1624,6 @@ function TaskEditDialogComponent({
               description: 'The task has been successfully updated.',
             });
             onUpdate();
-            onClose();
           },
           onError: (error: any) => {
             console.error('Error updating task:', error);
@@ -1630,6 +1632,8 @@ function TaskEditDialogComponent({
               description: error.message || 'Please try again later',
               variant: 'destructive',
             });
+            // Reopen dialog on error so user can retry
+            // Note: This won't work well, consider showing error differently
           },
           onSettled: () => {
             setIsLoading(false);
@@ -1637,6 +1641,7 @@ function TaskEditDialogComponent({
           },
         }
       );
+    }
   }, [
     name,
     description,
@@ -2932,7 +2937,7 @@ function TaskEditDialogComponent({
                       }
                     }}
                     placeholder="What needs to be done?"
-                    className="h-auto border-0 bg-transparent p-4 font-bold text-2xl text-foreground leading-tight tracking-tight transition-colors placeholder:text-muted-foreground/30 focus-visible:outline-0 focus-visible:ring-0 md:px-8 md:pt-10 md:pb-6 md:text-2xl"
+                    className="h-auto border-0 bg-transparent p-4 pb-0 font-bold text-2xl text-foreground leading-tight tracking-tight transition-colors placeholder:text-muted-foreground/30 focus-visible:outline-0 focus-visible:ring-0 md:px-8 md:pt-10 md:pb-6 md:text-2xl"
                     autoFocus
                   />
                 </div>
@@ -3051,7 +3056,6 @@ function TaskEditDialogComponent({
                         <Button
                           variant="outline"
                           className="h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm"
-                          title="Priority â€“ Alt+1 Urgent, Alt+2 High, Alt+3 Medium, Alt+4 Low, Alt+0 Clear"
                         >
                           <span className="truncate">
                             {availableLists.find(
@@ -3104,11 +3108,12 @@ function TaskEditDialogComponent({
                             priority === 'critical' &&
                               'border-dynamic-red bg-dynamic-red/10 font-semibold text-dynamic-red hover:bg-dynamic-red/20'
                           )}
+                          title="Priority — Alt+1 Urgent, Alt+2 High, Alt+3 Medium, Alt+4 Low, Alt+0 Clear"
                         >
                           <span className="truncate">
                             {priority
                               ? priority === 'critical'
-                                ? 'ðŸ”¥ Urgent'
+                                ? '🔥 Urgent'
                                 : priority === 'high'
                                   ? 'High'
                                   : priority === 'normal'
@@ -3123,7 +3128,7 @@ function TaskEditDialogComponent({
                         {[
                           {
                             value: 'critical',
-                            label: 'ðŸ”¥ Urgent',
+                            label: '🔥 Urgent',
                             dot: 'bg-dynamic-red',
                             className: 'font-semibold text-dynamic-red',
                           },

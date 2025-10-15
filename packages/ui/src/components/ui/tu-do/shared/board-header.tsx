@@ -11,18 +11,19 @@ import {
   Clock,
   Flag,
   Gauge,
-  Layers,
   LayoutGrid,
   List,
   Loader2,
   MoreHorizontal,
   Pencil,
   Search,
+  Settings,
   Trash2,
   X,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,12 +58,97 @@ import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { TaskFilter, type TaskFilters } from '../boards/boardId/task-filter';
+import { BoardLayoutSettings } from './board-layout-settings';
 import type { ViewType } from './board-views';
 import { UserPresenceAvatarsComponent } from './user-presence-avatars';
 
 export type ListStatusFilter = 'all' | 'active' | 'not_started';
+
+interface BoardViewConfig {
+  currentView: ViewType;
+  filters: TaskFilters;
+  listStatusFilter: ListStatusFilter;
+}
+
+function getBoardConfigKey(boardId: string): string {
+  return `board_config_${boardId}`;
+}
+
+function loadBoardConfig(boardId: string): BoardViewConfig | null {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const stored = localStorage.getItem(getBoardConfigKey(boardId));
+    if (!stored) return null;
+
+    const parsed = JSON.parse(stored);
+
+    // Validate the structure before using it
+    if (
+      typeof parsed !== 'object' ||
+      parsed === null ||
+      typeof parsed.currentView !== 'string' ||
+      typeof parsed.filters !== 'object' ||
+      typeof parsed.listStatusFilter !== 'string'
+    ) {
+      console.warn('Invalid board config structure, ignoring');
+      return null;
+    }
+
+    // Convert date strings back to Date objects in dueDateRange if present
+    if (
+      parsed.filters.dueDateRange &&
+      typeof parsed.filters.dueDateRange === 'object'
+    ) {
+      const { from, to } = parsed.filters.dueDateRange;
+      const newRange: { from?: Date; to?: Date } = {};
+
+      // Validate and convert 'from' date independently
+      if (typeof from === 'string') {
+        const fromDate = new Date(from);
+        if (!Number.isNaN(fromDate.getTime())) {
+          newRange.from = fromDate;
+        }
+      } else if (from instanceof Date && !Number.isNaN(from.getTime())) {
+        newRange.from = from;
+      }
+
+      // Validate and convert 'to' date independently
+      if (typeof to === 'string') {
+        const toDate = new Date(to);
+        if (!Number.isNaN(toDate.getTime())) {
+          newRange.to = toDate;
+        }
+      } else if (to instanceof Date && !Number.isNaN(to.getTime())) {
+        newRange.to = to;
+      }
+
+      // Only keep dueDateRange if at least one valid date exists
+      if (newRange.from || newRange.to) {
+        parsed.filters.dueDateRange = newRange;
+      } else {
+        delete parsed.filters.dueDateRange;
+      }
+    }
+
+    return parsed as BoardViewConfig;
+  } catch (error) {
+    console.error('Failed to load board config from localStorage:', error);
+    return null;
+  }
+}
+
+function saveBoardConfig(boardId: string, config: BoardViewConfig): void {
+  if (typeof window === 'undefined') return;
+
+  try {
+    localStorage.setItem(getBoardConfigKey(boardId), JSON.stringify(config));
+  } catch (error) {
+    console.error('Failed to save board config to localStorage:', error);
+  }
+}
 
 interface Props {
   board: TaskBoard;
@@ -77,6 +163,8 @@ interface Props {
   backUrl?: string;
   hideActions?: boolean;
   isSearching?: boolean;
+  lists?: TaskList[];
+  onUpdate?: () => void;
 }
 
 export function BoardHeader({
@@ -92,13 +180,70 @@ export function BoardHeader({
   backUrl,
   hideActions = false,
   isSearching = false,
+  lists = [],
+  onUpdate,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editedName, setEditedName] = useState(board.name);
   const [boardMenuOpen, setBoardMenuOpen] = useState(false);
+  const [viewMenuOpen, setViewMenuOpen] = useState(false);
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const [layoutSettingsOpen, setLayoutSettingsOpen] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
+
+  // Track which board we've loaded config for to prevent re-loading
+  const loadedBoardRef = useRef<string | null>(null);
+
+  // Stable refs for callbacks and values to avoid effect re-runs
+  const onFiltersChangeRef = useRef(onFiltersChange);
+  const onListStatusFilterChangeRef = useRef(onListStatusFilterChange);
+  const onViewChangeRef = useRef(onViewChange);
+  const searchQueryRef = useRef(filters.searchQuery);
+
+  // Update refs on each render
+  useEffect(() => {
+    onFiltersChangeRef.current = onFiltersChange;
+    onListStatusFilterChangeRef.current = onListStatusFilterChange;
+    onViewChangeRef.current = onViewChange;
+    searchQueryRef.current = filters.searchQuery;
+  });
+
+  // Load board configuration from localStorage on mount or board change
+  useEffect(() => {
+    // Only load if we haven't loaded for this board yet
+    if (loadedBoardRef.current === board.id) return;
+
+    const savedConfig = loadBoardConfig(board.id);
+    if (savedConfig) {
+      // Restore saved config but preserve current search query
+      onViewChangeRef.current(savedConfig.currentView);
+      onFiltersChangeRef.current({
+        ...savedConfig.filters,
+        searchQuery: searchQueryRef.current,
+      });
+      onListStatusFilterChangeRef.current(savedConfig.listStatusFilter);
+    }
+
+    // Mark this board as loaded
+    loadedBoardRef.current = board.id;
+  }, [board.id]);
+
+  // Save board configuration to localStorage when it changes (excluding search)
+  useEffect(() => {
+    // Debounce the save operation to avoid excessive writes
+    const timeoutId = setTimeout(() => {
+      const { searchQuery: _, ...filtersToSave } = filters;
+      saveBoardConfig(board.id, {
+        currentView,
+        filters: filtersToSave,
+        listStatusFilter,
+      });
+    }, 500); // 500ms debounce delay
+
+    return () => clearTimeout(timeoutId);
+  }, [board.id, currentView, filters, listStatusFilter]);
 
   async function handleEdit() {
     if (!editedName.trim() || editedName === board.name) {
@@ -137,12 +282,12 @@ export function BoardHeader({
     }
   }
 
+  function handleSortChange(sortBy: TaskFilters['sortBy']) {
+    onFiltersChange({ ...filters, sortBy });
+    setSortMenuOpen(false);
+  }
+
   const viewConfig = {
-    'status-grouped': {
-      icon: Layers,
-      label: 'Status',
-      description: 'Group by workflow status',
-    },
     kanban: {
       icon: LayoutGrid,
       label: 'Kanban',
@@ -194,10 +339,7 @@ export function BoardHeader({
               onFiltersChange({ ...filters, searchQuery: newSearchQuery });
 
               // Auto-switch to List view when searching in Status or Timeline view
-              if (
-                newSearchQuery &&
-                (currentView === 'status-grouped' || currentView === 'timeline')
-              ) {
+              if (newSearchQuery && currentView === 'timeline') {
                 onViewChange('list');
               }
             }}
@@ -233,11 +375,9 @@ export function BoardHeader({
               className={cn(
                 'h-6 px-1.5 text-[10px] transition-all sm:text-xs',
                 listStatusFilter === 'all' &&
-                  'bg-primary/10 text-primary shadow-sm',
-                currentView === 'status-grouped' && 'opacity-50'
+                  'bg-primary/10 text-primary shadow-sm'
               )}
               onClick={() => onListStatusFilterChange('all')}
-              disabled={currentView === 'status-grouped'}
             >
               All
             </Button>
@@ -247,11 +387,9 @@ export function BoardHeader({
               className={cn(
                 'h-6 px-1.5 text-[10px] transition-all sm:text-xs',
                 listStatusFilter === 'active' &&
-                  'bg-primary/10 text-primary shadow-sm',
-                currentView === 'status-grouped' && 'opacity-50'
+                  'bg-primary/10 text-primary shadow-sm'
               )}
               onClick={() => onListStatusFilterChange('active')}
-              disabled={currentView === 'status-grouped'}
             >
               Active
             </Button>
@@ -261,18 +399,16 @@ export function BoardHeader({
               className={cn(
                 'h-6 px-1.5 text-[10px] transition-all sm:text-xs',
                 listStatusFilter === 'not_started' &&
-                  'bg-primary/10 text-primary shadow-sm',
-                currentView === 'status-grouped' && 'opacity-50'
+                  'bg-primary/10 text-primary shadow-sm'
               )}
               onClick={() => onListStatusFilterChange('not_started')}
-              disabled={currentView === 'status-grouped'}
             >
               Backlog
             </Button>
           </div>
 
           {/* View Switcher Dropdown */}
-          <DropdownMenu>
+          <DropdownMenu open={viewMenuOpen} onOpenChange={setViewMenuOpen}>
             <DropdownMenuTrigger asChild>
               <Button size="xs" variant="outline">
                 {(() => {
@@ -295,7 +431,10 @@ export function BoardHeader({
                 return (
                   <DropdownMenuItem
                     key={view}
-                    onClick={() => onViewChange(view as ViewType)}
+                    onClick={() => {
+                      onViewChange(view as ViewType);
+                      setViewMenuOpen(false);
+                    }}
                     className="gap-2"
                   >
                     <Icon className="h-4 w-4" />
@@ -320,7 +459,7 @@ export function BoardHeader({
           />
 
           {/* Sort Dropdown */}
-          <DropdownMenu>
+          <DropdownMenu open={sortMenuOpen} onOpenChange={setSortMenuOpen}>
             <DropdownMenuTrigger asChild>
               <Button
                 size="xs"
@@ -352,13 +491,9 @@ export function BoardHeader({
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
                     onClick={() =>
-                      onFiltersChange({
-                        ...filters,
-                        sortBy:
-                          filters.sortBy === 'name-asc'
-                            ? undefined
-                            : 'name-asc',
-                      })
+                      handleSortChange(
+                        filters.sortBy === 'name-asc' ? undefined : 'name-asc'
+                      )
                     }
                     className="gap-2"
                   >
@@ -370,13 +505,9 @@ export function BoardHeader({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() =>
-                      onFiltersChange({
-                        ...filters,
-                        sortBy:
-                          filters.sortBy === 'name-desc'
-                            ? undefined
-                            : 'name-desc',
-                      })
+                      handleSortChange(
+                        filters.sortBy === 'name-desc' ? undefined : 'name-desc'
+                      )
                     }
                     className="gap-2"
                   >
@@ -402,13 +533,11 @@ export function BoardHeader({
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
                     onClick={() =>
-                      onFiltersChange({
-                        ...filters,
-                        sortBy:
-                          filters.sortBy === 'priority-high'
-                            ? undefined
-                            : 'priority-high',
-                      })
+                      handleSortChange(
+                        filters.sortBy === 'priority-high'
+                          ? undefined
+                          : 'priority-high'
+                      )
                     }
                     className="gap-2"
                   >
@@ -420,13 +549,11 @@ export function BoardHeader({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() =>
-                      onFiltersChange({
-                        ...filters,
-                        sortBy:
-                          filters.sortBy === 'priority-low'
-                            ? undefined
-                            : 'priority-low',
-                      })
+                      handleSortChange(
+                        filters.sortBy === 'priority-low'
+                          ? undefined
+                          : 'priority-low'
+                      )
                     }
                     className="gap-2"
                   >
@@ -452,13 +579,11 @@ export function BoardHeader({
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
                     onClick={() =>
-                      onFiltersChange({
-                        ...filters,
-                        sortBy:
-                          filters.sortBy === 'due-date-asc'
-                            ? undefined
-                            : 'due-date-asc',
-                      })
+                      handleSortChange(
+                        filters.sortBy === 'due-date-asc'
+                          ? undefined
+                          : 'due-date-asc'
+                      )
                     }
                     className="gap-2"
                   >
@@ -470,13 +595,11 @@ export function BoardHeader({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() =>
-                      onFiltersChange({
-                        ...filters,
-                        sortBy:
-                          filters.sortBy === 'due-date-desc'
-                            ? undefined
-                            : 'due-date-desc',
-                      })
+                      handleSortChange(
+                        filters.sortBy === 'due-date-desc'
+                          ? undefined
+                          : 'due-date-desc'
+                      )
                     }
                     className="gap-2"
                   >
@@ -502,13 +625,11 @@ export function BoardHeader({
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
                     onClick={() =>
-                      onFiltersChange({
-                        ...filters,
-                        sortBy:
-                          filters.sortBy === 'created-date-desc'
-                            ? undefined
-                            : 'created-date-desc',
-                      })
+                      handleSortChange(
+                        filters.sortBy === 'created-date-desc'
+                          ? undefined
+                          : 'created-date-desc'
+                      )
                     }
                     className="gap-2"
                   >
@@ -520,13 +641,11 @@ export function BoardHeader({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() =>
-                      onFiltersChange({
-                        ...filters,
-                        sortBy:
-                          filters.sortBy === 'created-date-asc'
-                            ? undefined
-                            : 'created-date-asc',
-                      })
+                      handleSortChange(
+                        filters.sortBy === 'created-date-asc'
+                          ? undefined
+                          : 'created-date-asc'
+                      )
                     }
                     className="gap-2"
                   >
@@ -552,13 +671,11 @@ export function BoardHeader({
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
                     onClick={() =>
-                      onFiltersChange({
-                        ...filters,
-                        sortBy:
-                          filters.sortBy === 'estimation-high'
-                            ? undefined
-                            : 'estimation-high',
-                      })
+                      handleSortChange(
+                        filters.sortBy === 'estimation-high'
+                          ? undefined
+                          : 'estimation-high'
+                      )
                     }
                     className="gap-2"
                   >
@@ -570,13 +687,11 @@ export function BoardHeader({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() =>
-                      onFiltersChange({
-                        ...filters,
-                        sortBy:
-                          filters.sortBy === 'estimation-low'
-                            ? undefined
-                            : 'estimation-low',
-                      })
+                      handleSortChange(
+                        filters.sortBy === 'estimation-low'
+                          ? undefined
+                          : 'estimation-low'
+                      )
                     }
                     className="gap-2"
                   >
@@ -593,9 +708,7 @@ export function BoardHeader({
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() =>
-                      onFiltersChange({ ...filters, sortBy: undefined })
-                    }
+                    onClick={() => handleSortChange(undefined)}
                     className="gap-2 text-dynamic-red/80 focus:text-dynamic-red"
                   >
                     <X className="h-4 w-4" />
@@ -630,6 +743,16 @@ export function BoardHeader({
                 >
                   <Pencil className="h-4 w-4" />
                   Rename board
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setLayoutSettingsOpen(true);
+                    setBoardMenuOpen(false);
+                  }}
+                  className="gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  Board Layout
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <AlertDialog>
@@ -714,6 +837,17 @@ export function BoardHeader({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Board Layout Settings */}
+      {onUpdate && (
+        <BoardLayoutSettings
+          open={layoutSettingsOpen}
+          onOpenChange={setLayoutSettingsOpen}
+          boardId={board.id}
+          lists={lists}
+          onUpdate={onUpdate}
+        />
+      )}
     </div>
   );
 }

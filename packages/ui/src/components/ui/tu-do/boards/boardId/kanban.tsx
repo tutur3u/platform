@@ -86,7 +86,7 @@ import { TaskListForm } from './task-list-form';
 
 interface Props {
   workspace: Workspace;
-  boardId: string;
+  boardId: string | null;
   tasks: Task[];
   lists: TaskList[];
   isLoading: boolean;
@@ -124,8 +124,8 @@ export function KanbanBoard({
   const pickedUpTaskColumn = useRef<string | null>(null);
   const queryClient = useQueryClient();
   const supabase = createClient();
-  const moveTaskToBoardMutation = useMoveTaskToBoard(boardId);
-  const reorderTaskMutation = useReorderTask(boardId);
+  const moveTaskToBoardMutation = useMoveTaskToBoard(boardId ?? '');
+  const reorderTaskMutation = useReorderTask(boardId ?? '');
   const { createTask } = useTaskDialog();
 
   // Use React Query hook for board config (shared cache)
@@ -296,7 +296,7 @@ export function KanbanBoard({
         event.stopPropagation();
         // Open create dialog with the first list
         const firstList = columns[0];
-        if (firstList) {
+        if (firstList && boardId) {
           createTask(boardId, firstList.id, columns);
         }
       }
@@ -418,7 +418,7 @@ export function KanbanBoard({
         }
       }
     },
-    [columns.some, hoverTargetListId]
+    [columns, hoverTargetListId]
   );
 
   // Global drag state reset on mouseup/touchend
@@ -500,7 +500,7 @@ export function KanbanBoard({
       createBulkOperations({
         queryClient,
         supabase,
-        boardId,
+        boardId: boardId ?? '',
         selectedTasks,
         columns,
         workspaceLabels,
@@ -632,7 +632,7 @@ export function KanbanBoard({
         <TaskCard
           task={activeTask}
           taskList={taskList}
-          boardId={boardId}
+          boardId={boardId ?? ''}
           isOverlay
           onUpdate={handleUpdate}
           isPersonalWorkspace={workspace.personal}
@@ -673,7 +673,7 @@ export function KanbanBoard({
       activeColumn ? (
         <BoardColumn
           column={activeColumn}
-          boardId={boardId}
+          boardId={boardId ?? ''}
           tasks={tasks.filter((task) => task.list_id === activeColumn.id)}
           isOverlay
           isPersonalWorkspace={workspace.personal}
@@ -1879,11 +1879,13 @@ export function KanbanBoard({
                       <BoardColumn
                         key={list.id}
                         column={list}
-                        boardId={boardId}
+                        boardId={boardId ?? ''}
                         tasks={listTasks}
                         isPersonalWorkspace={workspace.personal}
                         onUpdate={handleUpdate}
-                        onAddTask={() => createTask(boardId, list.id, columns)}
+                        onAddTask={() =>
+                          boardId && createTask(boardId, list.id, columns)
+                        }
                         selectedTasks={selectedTasks}
                         isMultiSelectMode={isMultiSelectMode}
                         onTaskSelect={handleTaskSelect}
@@ -1897,12 +1899,15 @@ export function KanbanBoard({
                       />
                     );
                   })}
-                <TaskListForm boardId={boardId} onListCreated={handleUpdate} />
+                <TaskListForm
+                  boardId={boardId ?? ''}
+                  onListCreated={handleUpdate}
+                />
               </div>
             </SortableContext>
 
             {/* Overlay for collaborator cursors */}
-            {!workspace.personal && (
+            {!workspace.personal && boardId && (
               <CursorOverlayWrapper
                 channelName={`board-cursor-${boardId}`}
                 containerRef={boardRef}
@@ -1920,7 +1925,7 @@ export function KanbanBoard({
         open={boardSelectorOpen}
         onOpenChange={setBoardSelectorOpen}
         wsId={workspace.id}
-        currentBoardId={boardId}
+        currentBoardId={boardId ?? ''}
         taskCount={selectedTasks.size}
         onMove={handleBoardMove}
         isMoving={moveTaskToBoardMutation.isPending}

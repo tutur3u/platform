@@ -81,6 +81,7 @@ import { TaskActions } from './task-actions';
 import { TaskCustomDateDialog } from './task-dialogs/TaskCustomDateDialog';
 import { TaskDeleteDialog } from './task-dialogs/TaskDeleteDialog';
 import { TaskNewLabelDialog } from './task-dialogs/TaskNewLabelDialog';
+import { TaskNewProjectDialog } from './task-dialogs/TaskNewProjectDialog';
 
 interface TaskCardProps {
   task: Task;
@@ -182,10 +183,18 @@ function TaskCardInner({
   );
 
   // Use extracted project management hook
-  const { toggleTaskProject, projectsSaving } = useTaskProjectManagement({
+  const {
+    toggleTaskProject,
+    projectsSaving,
+    newProjectName,
+    setNewProjectName,
+    creatingProject,
+    createNewProject,
+  } = useTaskProjectManagement({
     task,
     boardId,
     workspaceProjects,
+    workspaceId: boardConfig?.ws_id,
   });
 
   // Fetch available task lists using React Query (same key as other components)
@@ -247,6 +256,7 @@ function TaskCardInner({
     dialogState.deleteDialogOpen ||
     dialogState.customDateDialogOpen ||
     dialogState.newLabelDialogOpen ||
+    dialogState.newProjectDialogOpen ||
     menuOpen;
 
   const { setNodeRef, attributes, listeners, transform, isDragging } =
@@ -337,7 +347,8 @@ function TaskCardInner({
           !menuOpen &&
           !dialogState.deleteDialogOpen &&
           !dialogState.customDateDialogOpen &&
-          !dialogState.newLabelDialogOpen
+          !dialogState.newLabelDialogOpen &&
+          !dialogState.newProjectDialogOpen
         ) {
           openTask(task, boardId, availableLists);
         }
@@ -552,6 +563,10 @@ function TaskCardInner({
                     isLoading={projectsLoading}
                     projectsSaving={projectsSaving}
                     onToggleProject={toggleTaskProject}
+                    onCreateNewProject={() => {
+                      dialogActions.openNewProjectDialog();
+                      setMenuOpen(false);
+                    }}
                     onMenuItemSelect={handleMenuItemSelect}
                   />
 
@@ -578,7 +593,11 @@ function TaskCardInner({
                           Assignees
                         </DropdownMenuSubTrigger>
                         <DropdownMenuSubContent className="max-h-[400px] w-56 overflow-hidden p-0">
-                          <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
+                          <ScrollArea
+                            style={{
+                              height: 'min(300px, calc(100vh - 200px))',
+                            }}
+                          >
                             <div className="p-1">
                               {task.assignees.map((assignee) => (
                                 <DropdownMenuItem
@@ -860,6 +879,19 @@ function TaskCardInner({
             : dialogActions.closeNewLabelDialog()
         }
         onConfirm={createNewLabel}
+      />
+
+      <TaskNewProjectDialog
+        open={dialogState.newProjectDialogOpen}
+        newProjectName={newProjectName}
+        creatingProject={creatingProject}
+        onNameChange={setNewProjectName}
+        onOpenChange={(open) =>
+          open
+            ? dialogActions.openNewProjectDialog()
+            : dialogActions.closeNewProjectDialog()
+        }
+        onConfirm={createNewProject}
       />
 
       <TaskCustomDateDialog
