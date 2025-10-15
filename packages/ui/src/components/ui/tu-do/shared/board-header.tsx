@@ -220,7 +220,9 @@ export function BoardHeader({
     const newQuery = filters.searchQuery || '';
     // Use functional updater to compare current state and only update if different
     // This prevents overwriting in-progress typing
-    setLocalSearchQuery((current) => (current === newQuery ? current : newQuery));
+    setLocalSearchQuery((current) =>
+      current === newQuery ? current : newQuery
+    );
   }, [filters.searchQuery]);
 
   // Debounce search query updates
