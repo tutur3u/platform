@@ -5,6 +5,7 @@ export interface TaskDialogState {
   deleteDialogOpen: boolean;
   customDateDialogOpen: boolean;
   newLabelDialogOpen: boolean;
+  newProjectDialogOpen: boolean;
   isClosingDialog: boolean;
 }
 
@@ -18,6 +19,8 @@ export interface TaskDialogActions {
   closeCustomDateDialog: () => void;
   openNewLabelDialog: () => void;
   closeNewLabelDialog: () => void;
+  openNewProjectDialog: () => void;
+  closeNewProjectDialog: () => void;
   isAnyDialogOpen: () => boolean;
 }
 
@@ -26,6 +29,7 @@ export function useTaskDialogState() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [customDateDialogOpen, setCustomDateDialogOpen] = useState(false);
   const [newLabelDialogOpen, setNewLabelDialogOpen] = useState(false);
+  const [newProjectDialogOpen, setNewProjectDialogOpen] = useState(false);
   const [isClosingDialog, setIsClosingDialog] = useState(false);
 
   // Track timeout for cleanup
@@ -89,18 +93,28 @@ export function useTaskDialogState() {
     setNewLabelDialogOpen(false);
   }, []);
 
+  const openNewProjectDialog = useCallback(() => {
+    setNewProjectDialogOpen(true);
+  }, []);
+
+  const closeNewProjectDialog = useCallback(() => {
+    setNewProjectDialogOpen(false);
+  }, []);
+
   const isAnyDialogOpen = useCallback(() => {
     return (
       editDialogOpen ||
       deleteDialogOpen ||
       customDateDialogOpen ||
-      newLabelDialogOpen
+      newLabelDialogOpen ||
+      newProjectDialogOpen
     );
   }, [
     editDialogOpen,
     deleteDialogOpen,
     customDateDialogOpen,
     newLabelDialogOpen,
+    newProjectDialogOpen,
   ]);
 
   const state: TaskDialogState = {
@@ -108,6 +122,7 @@ export function useTaskDialogState() {
     deleteDialogOpen,
     customDateDialogOpen,
     newLabelDialogOpen,
+    newProjectDialogOpen,
     isClosingDialog,
   };
 
@@ -121,6 +136,8 @@ export function useTaskDialogState() {
     closeCustomDateDialog,
     openNewLabelDialog,
     closeNewLabelDialog,
+    openNewProjectDialog,
+    closeNewProjectDialog,
     isAnyDialogOpen,
   };
 

@@ -14,15 +14,19 @@ interface UseTaskProjectManagementProps {
   task: Task;
   boardId: string;
   workspaceProjects: TaskProject[];
+  workspaceId?: string;
 }
 
 export function useTaskProjectManagement({
   task,
   boardId,
   workspaceProjects,
+  workspaceId,
 }: UseTaskProjectManagementProps) {
   const queryClient = useQueryClient();
   const [projectsSaving, setProjectsSaving] = useState<string | null>(null);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [creatingProject, setCreatingProject] = useState(false);
 
   // Toggle a project for the task (quick projects submenu)
   async function toggleTaskProject(projectId: string) {
@@ -107,8 +111,105 @@ export function useTaskProjectManagement({
     }
   }
 
+  // Create a new project
+  async function createNewProject() {
+    if (!newProjectName.trim() || !workspaceId) return;
+
+    setCreatingProject(true);
+    try {
+      const response = await fetch(
+        `/api/v1/workspaces/${workspaceId}/task-projects`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: newProjectName.trim(),
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to create project');
+      }
+
+      const newProject = await response.json();
+
+      // Auto-apply the newly created project to this task
+      let linkSucceeded = false;
+      try {
+        const supabase = createClient();
+
+        // Cancel any outgoing refetches
+        await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+
+        // Snapshot the previous value
+        const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+
+        // Optimistically update the cache
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: any[] | undefined) => {
+            if (!old) return old;
+            return old.map((t) => {
+              if (t.id === task.id) {
+                return {
+                  ...t,
+                  projects: [...(t.projects || []), newProject],
+                };
+              }
+              return t;
+            });
+          }
+        );
+
+        const { error: linkErr } = await supabase
+          .from('task_project_tasks')
+          .insert({ task_id: task.id, project_id: newProject.id });
+        if (linkErr) {
+          // Rollback on error
+          queryClient.setQueryData(['tasks', boardId], previousTasks);
+          toast.error(
+            'The project was created but could not be attached to the task. Refresh and try manually.'
+          );
+        } else {
+          linkSucceeded = true;
+        }
+      } catch (applyErr: any) {
+        console.error('Failed to auto-apply new project', applyErr);
+      }
+
+      // Only show success toast and reset form if link succeeded
+      if (linkSucceeded) {
+        // Reset form and close dialog
+        setNewProjectName('');
+
+        toast.success(
+          `"${newProject.name}" project created and applied to this task`
+        );
+      }
+
+      // Invalidate workspace projects cache so all task cards get the new project
+      queryClient.invalidateQueries({
+        queryKey: ['task_projects', workspaceId],
+      });
+
+      return newProject;
+    } catch (e: any) {
+      toast.error(e.message || 'Unable to create new project');
+      throw e;
+    } finally {
+      setCreatingProject(false);
+    }
+  }
+
   return {
     projectsSaving,
+    newProjectName,
+    setNewProjectName,
+    creatingProject,
     toggleTaskProject,
+    createNewProject,
   };
 }
