@@ -150,6 +150,8 @@ import { z } from 'zod';
 
 // app/[locale]/(dashboard)/[wsId]/tasks/actions.ts
 
+// app/[locale]/(dashboard)/[wsId]/tasks/actions.ts
+
 const createTaskSchema = z.object({
   name: z.string().min(1).max(255),
   description: z.string().optional(),
@@ -295,6 +297,8 @@ export default async function TasksPage({
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Database } from '@tuturuuu/types';
 import { useEffect, useState } from 'react';
+
+// app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
 
 // app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
 
