@@ -70,57 +70,59 @@ export async function POST(req: Request, { params }: Params) {
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: 'Invalid request data', details: validation.error.errors },
+        { error: 'Invalid request data', details: validation.error.issues },
         { status: 400 }
       );
     }
 
     const { role, roleTitle, maxUses, expiresAt } = validation.data;
 
-    // Generate a unique code
-    let code = nanoid(10);
-    let attempts = 0;
+    // Use insert-retry strategy to handle unique code generation
     const maxAttempts = 10;
+    let inviteLink = null;
 
-    while (attempts < maxAttempts) {
-      const { data: existing } = await sbAdmin
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const code = nanoid(10);
+
+      // Attempt to insert with the generated code
+      const { data, error: insertError } = await sbAdmin
         .from('workspace_invite_links')
-        .select('id')
-        .eq('code', code)
+        .insert({
+          ws_id: wsId,
+          code,
+          creator_id: user.id,
+          role,
+          role_title: roleTitle,
+          max_uses: maxUses,
+          expires_at: expiresAt,
+        })
+        .select()
         .single();
 
-      if (!existing) break;
+      // Check for unique violation error (PostgreSQL error code 23505)
+      if (insertError) {
+        // If it's a unique violation, retry with a new code
+        if (insertError.code === '23505') {
+          continue;
+        }
 
-      code = nanoid(10);
-      attempts++;
+        // For any other error, return immediately
+        console.error('Failed to create invite link:', insertError);
+        return NextResponse.json(
+          { error: 'Failed to create invite link' },
+          { status: 500 }
+        );
+      }
+
+      // Success - insert completed
+      inviteLink = data;
+      break;
     }
 
-    if (attempts >= maxAttempts) {
+    // If we exhausted all retries
+    if (!inviteLink) {
       return NextResponse.json(
         { error: 'Failed to generate unique code. Please try again.' },
-        { status: 500 }
-      );
-    }
-
-    // Create the invite link
-    const { data: inviteLink, error: insertError } = await sbAdmin
-      .from('workspace_invite_links')
-      .insert({
-        ws_id: wsId,
-        code,
-        creator_id: user.id,
-        role,
-        role_title: roleTitle,
-        max_uses: maxUses,
-        expires_at: expiresAt,
-      })
-      .select()
-      .single();
-
-    if (insertError) {
-      console.error('Failed to create invite link:', insertError);
-      return NextResponse.json(
-        { error: 'Failed to create invite link' },
         { status: 500 }
       );
     }

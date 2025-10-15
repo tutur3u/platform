@@ -63,11 +63,18 @@ export async function GET(_: Request, { params }: Params) {
       );
     }
 
+    if (!inviteLink.ws_id) {
+      return NextResponse.json(
+        { error: 'Invite link is not associated with a valid workspace' },
+        { status: 500 }
+      );
+    }
+
     // Get member count for the workspace
     const { count: memberCount } = await sbAdmin
       .from('workspace_members')
       .select('*', { count: 'exact', head: true })
-      .eq('ws_id', inviteLink.ws_id);
+      .eq('ws_id', inviteLink.ws_id as string);
 
     return NextResponse.json(
       {
@@ -126,7 +133,7 @@ export async function POST(_: Request, { params }: Params) {
       );
     }
 
-    // Check if the link is expired
+    // Check if the link is expired (safe to check before insert)
     if (inviteLink.is_expired) {
       return NextResponse.json(
         { error: 'This invite link has expired' },
@@ -134,40 +141,34 @@ export async function POST(_: Request, { params }: Params) {
       );
     }
 
-    // Check if the link has reached max uses
-    if (inviteLink.is_full) {
+    if (!inviteLink.ws_id) {
       return NextResponse.json(
-        { error: 'This invite link has reached its maximum usage limit' },
-        { status: 410 }
+        { error: 'Invite link is not associated with a valid workspace' },
+        { status: 500 }
       );
     }
 
-    // Check if user is already a member
-    const { data: existingMember } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', inviteLink.ws_id)
-      .eq('user_id', user.id)
-      .single();
-
-    if (existingMember) {
-      return NextResponse.json(
-        { error: 'You are already a member of this workspace' },
-        { status: 409 }
-      );
-    }
-
-    // Add user to workspace (this will trigger the sync_member_roles_from_invite function if needed)
+    // Add user to workspace first - this will fail if they're already a member (unique constraint)
+    // ws_id is already validated above to exist
+    const wsId = inviteLink.ws_id as string;
     const { error: memberError } = await sbAdmin
       .from('workspace_members')
       .insert({
-        ws_id: inviteLink.ws_id,
+        ws_id: wsId,
         user_id: user.id,
-        role: inviteLink.role,
-        role_title: inviteLink.role_title,
+        role: inviteLink.role ?? undefined,
+        role_title: inviteLink.role_title ?? undefined,
       });
 
     if (memberError) {
+      // Check if it's a duplicate key violation (user already a member)
+      if (memberError.code === '23505') {
+        return NextResponse.json(
+          { error: 'You are already a member of this workspace' },
+          { status: 409 }
+        );
+      }
+
       console.error('Failed to add member to workspace:', memberError);
       return NextResponse.json(
         { error: 'Failed to join workspace' },
@@ -175,13 +176,41 @@ export async function POST(_: Request, { params }: Params) {
       );
     }
 
-    // Record the invite link usage
+    // After successful insert, verify the link hasn't exceeded max_uses
+    // This prevents race conditions where multiple users join simultaneously
+    const { data: updatedLink } = await sbAdmin
+      .from('workspace_invite_links_with_stats')
+      .select('current_uses, max_uses, is_full')
+      .eq('id', inviteLink.id ?? '')
+      .single();
+
+    // If the link is now full and we exceeded the limit, rollback by removing the member
+    if (
+      updatedLink &&
+      inviteLink.max_uses &&
+      updatedLink.current_uses !== null &&
+      updatedLink.current_uses > inviteLink.max_uses
+    ) {
+      // Rollback: remove the member we just added
+      await sbAdmin
+        .from('workspace_members')
+        .delete()
+        .eq('ws_id', inviteLink.ws_id as string)
+        .eq('user_id', user.id);
+
+      return NextResponse.json(
+        { error: 'This invite link has reached its maximum usage limit' },
+        { status: 410 }
+      );
+    }
+
+    // Record the invite link usage (ws_id is already validated above to exist)
     const { error: usageError } = await sbAdmin
       .from('workspace_invite_link_uses')
       .insert({
-        invite_link_id: inviteLink.id,
+        invite_link_id: inviteLink.id ?? '',
         user_id: user.id,
-        ws_id: inviteLink.ws_id,
+        ws_id: inviteLink.ws_id as string,
       });
 
     if (usageError) {
@@ -193,7 +222,7 @@ export async function POST(_: Request, { params }: Params) {
     const { data: workspace } = await supabase
       .from('workspaces')
       .select('id, name, avatar_url')
-      .eq('id', inviteLink.ws_id)
+      .eq('id', inviteLink.ws_id as string)
       .single();
 
     return NextResponse.json(

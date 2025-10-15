@@ -388,7 +388,8 @@
     "confirm_delete": "Delete Report?",
     "filter": "Filter",
     "insufficient_permissions": "Insufficient Permissions",
-    "partners": "Partners"
+    "partners": "Partners",
+    "deleting": "Deleting"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -702,7 +703,9 @@
     "invited-you": "invited you",
     "workspace-invitation": "Workspace invitation",
     "you-been-invited-to-join-the": "You've been invited to join the",
-    "accept-to-start-collaborating": " workspace. Accept to start collaborating!"
+    "accept-to-start-collaborating": " workspace. Accept to start collaborating!",
+    "invalid-invite-title": "Invalid Invite",
+    "invalid-invite-message": "This invite link is invalid or has expired."
   },
   "auth": {
     "password": "Password",
@@ -3021,7 +3024,8 @@
     "cancel": "Cancel",
     "create": "Create",
     "save": "Save Changes",
-    "delete": "Delete"
+    "delete": "Delete",
+    "delete-confirm-title": "Confirm deletion"
   },
   "platform-token-usage": {
     "hourly_total_from_last_12_hours": "Hourly total token from last 12 hours",

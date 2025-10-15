@@ -128,7 +128,31 @@ as permissive
 for insert
 to authenticated
 with check (
-  is_org_member(auth.uid(), ws_id)
+  ws_id IN (
+    -- Check if user has manage_workspace_members permission via role membership
+    SELECT wrp.ws_id
+    FROM workspace_role_members wrm
+    JOIN workspace_role_permissions wrp
+      ON wrp.role_id = wrm.role_id
+      AND wrp.ws_id = workspace_invite_links.ws_id
+    WHERE wrm.user_id = auth.uid()
+      AND wrp.permission = 'manage_workspace_members'
+      AND wrp.enabled = true
+
+    UNION
+
+    -- Also check workspace-wide default permissions
+    SELECT wdp.ws_id
+    FROM workspace_default_permissions wdp
+    WHERE wdp.ws_id = workspace_invite_links.ws_id
+      AND wdp.permission = 'manage_workspace_members'
+      AND wdp.enabled = true
+      AND EXISTS (
+        SELECT 1 FROM workspace_members wm
+        WHERE wm.ws_id = workspace_invite_links.ws_id
+        AND wm.user_id = auth.uid()
+      )
+  )
   AND (NOT EXISTS (
     SELECT 1
     FROM workspace_secrets wss
@@ -143,8 +167,60 @@ on "public"."workspace_invite_links"
 as permissive
 for update
 to authenticated
-using (is_org_member(auth.uid(), ws_id))
-with check (is_org_member(auth.uid(), ws_id));
+using (
+  ws_id IN (
+    -- Check if user has manage_workspace_members permission via role membership
+    SELECT wrp.ws_id
+    FROM workspace_role_members wrm
+    JOIN workspace_role_permissions wrp
+      ON wrp.role_id = wrm.role_id
+      AND wrp.ws_id = workspace_invite_links.ws_id
+    WHERE wrm.user_id = auth.uid()
+      AND wrp.permission = 'manage_workspace_members'
+      AND wrp.enabled = true
+
+    UNION
+
+    -- Also check workspace-wide default permissions
+    SELECT wdp.ws_id
+    FROM workspace_default_permissions wdp
+    WHERE wdp.ws_id = workspace_invite_links.ws_id
+      AND wdp.permission = 'manage_workspace_members'
+      AND wdp.enabled = true
+      AND EXISTS (
+        SELECT 1 FROM workspace_members wm
+        WHERE wm.ws_id = workspace_invite_links.ws_id
+        AND wm.user_id = auth.uid()
+      )
+  )
+)
+with check (
+  ws_id IN (
+    -- Check if user has manage_workspace_members permission via role membership
+    SELECT wrp.ws_id
+    FROM workspace_role_members wrm
+    JOIN workspace_role_permissions wrp
+      ON wrp.role_id = wrm.role_id
+      AND wrp.ws_id = workspace_invite_links.ws_id
+    WHERE wrm.user_id = auth.uid()
+      AND wrp.permission = 'manage_workspace_members'
+      AND wrp.enabled = true
+
+    UNION
+
+    -- Also check workspace-wide default permissions
+    SELECT wdp.ws_id
+    FROM workspace_default_permissions wdp
+    WHERE wdp.ws_id = workspace_invite_links.ws_id
+      AND wdp.permission = 'manage_workspace_members'
+      AND wdp.enabled = true
+      AND EXISTS (
+        SELECT 1 FROM workspace_members wm
+        WHERE wm.ws_id = workspace_invite_links.ws_id
+        AND wm.user_id = auth.uid()
+      )
+  )
+);
 
 -- Allow workspace members with manage_workspace_members permission to delete invite links
 create policy "Allow workspace members to delete invite links"
@@ -152,7 +228,33 @@ on "public"."workspace_invite_links"
 as permissive
 for delete
 to authenticated
-using (is_org_member(auth.uid(), ws_id));
+using (
+  ws_id IN (
+    -- Check if user has manage_workspace_members permission via role membership
+    SELECT wrp.ws_id
+    FROM workspace_role_members wrm
+    JOIN workspace_role_permissions wrp
+      ON wrp.role_id = wrm.role_id
+      AND wrp.ws_id = workspace_invite_links.ws_id
+    WHERE wrm.user_id = auth.uid()
+      AND wrp.permission = 'manage_workspace_members'
+      AND wrp.enabled = true
+
+    UNION
+
+    -- Also check workspace-wide default permissions
+    SELECT wdp.ws_id
+    FROM workspace_default_permissions wdp
+    WHERE wdp.ws_id = workspace_invite_links.ws_id
+      AND wdp.permission = 'manage_workspace_members'
+      AND wdp.enabled = true
+      AND EXISTS (
+        SELECT 1 FROM workspace_members wm
+        WHERE wm.ws_id = workspace_invite_links.ws_id
+        AND wm.user_id = auth.uid()
+      )
+  )
+);
 
 -- RLS Policies for workspace_invite_link_uses
 
@@ -165,12 +267,28 @@ to authenticated
 using (is_org_member(auth.uid(), ws_id));
 
 -- Allow authenticated users to insert their own usage record (handled by API with additional validation)
+-- Verify the invite link belongs to the workspace and user is a member of that workspace
+-- Note: The invite join endpoint uses service_role (sbAdmin) which bypasses RLS
 create policy "Allow authenticated users to record invite link usage"
 on "public"."workspace_invite_link_uses"
 as permissive
 for insert
 to authenticated
-with check (auth.uid() = user_id);
+with check (
+  auth.uid() = user_id
+  AND EXISTS (
+    SELECT 1
+    FROM workspace_invite_links wil
+    WHERE wil.id = workspace_invite_link_uses.invite_link_id
+      AND wil.ws_id = workspace_invite_link_uses.ws_id
+  )
+  AND EXISTS (
+    SELECT 1
+    FROM workspace_members wm
+    WHERE wm.ws_id = workspace_invite_link_uses.ws_id
+      AND wm.user_id = auth.uid()
+  )
+);
 
 -- Create function to automatically update updated_at timestamp
 CREATE OR REPLACE FUNCTION public.update_workspace_invite_links_updated_at()

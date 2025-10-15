@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
+import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import JoinWorkspaceClient from './join-workspace-client';
 
@@ -12,6 +13,7 @@ interface Props {
 export default async function InviteCodePage({ params }: Props) {
   const { code } = await params;
   const supabase = await createClient();
+  const t = await getTranslations('invite');
 
   // Check if user is authenticated
   const {
@@ -70,10 +72,10 @@ export default async function InviteCodePage({ params }: Props) {
         <div className="w-full max-w-md space-y-4 p-8">
           <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-6 text-center">
             <h1 className="mb-2 font-bold text-2xl text-dynamic-red">
-              Invalid Invite
+              {t('invalid-invite-title')}
             </h1>
             <p className="text-foreground/80">
-              {error.error || 'This invite link is invalid or has expired.'}
+              {error.error || t('invalid-invite-message')}
             </p>
           </div>
         </div>

@@ -77,7 +77,7 @@ export default async function WorkspaceMembersPage({
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        className="h-6 w-6 text-white"
+                        className="h-6 w-6 text-background"
                       >
                         <title>{t('workspace-settings-layout.members')}</title>
                         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />

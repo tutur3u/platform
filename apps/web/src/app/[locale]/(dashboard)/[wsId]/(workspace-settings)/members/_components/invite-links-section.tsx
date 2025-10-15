@@ -87,6 +87,8 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
   );
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(CreateLinkSchema),
@@ -145,12 +147,13 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
     }
   };
 
-  const deleteInviteLink = async (linkId: string) => {
-    if (!confirm(t('ws-invite-links.delete-confirm'))) return;
+  const deleteInviteLink = async () => {
+    if (!confirmDeleteId) return;
 
+    setIsDeleting(true);
     try {
       const res = await fetch(
-        `/api/workspaces/${wsId}/invite-links/${linkId}`,
+        `/api/workspaces/${wsId}/invite-links/${confirmDeleteId}`,
         {
           method: 'DELETE',
         }
@@ -158,6 +161,7 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
 
       if (res.ok) {
         toast.success(t('ws-invite-links.delete-success'));
+        setConfirmDeleteId(null);
         fetchLinks();
         router.refresh();
       } else {
@@ -167,15 +171,22 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
     } catch (error) {
       console.error('Failed to delete invite link:', error);
       toast.error(t('ws-invite-links.delete-error'));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
-  const copyInviteLink = (code: string, linkId: string) => {
+  const copyInviteLink = async (code: string, linkId: string) => {
     const url = `${window.location.origin}/invite/${code}`;
-    navigator.clipboard.writeText(url);
-    setCopiedId(linkId);
-    toast.success(t('ws-invite-links.copy-success'));
-    setTimeout(() => setCopiedId(null), 2000);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedId(linkId);
+      toast.success(t('ws-invite-links.copy-success'));
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      toast.error(t('ws-invite-links.copy-error'));
+    }
   };
 
   const viewLinkDetails = async (linkId: string) => {
@@ -235,7 +246,7 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-dynamic-purple to-dynamic-blue shadow-md">
-                <Link2 className="h-5 w-5 text-white" />
+                <Link2 className="h-5 w-5 text-background" />
               </div>
               <h3 className="bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text font-semibold text-2xl text-transparent">
                 {t('ws-invite-links.title')}
@@ -424,7 +435,7 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => deleteInviteLink(link.id)}
+                        onClick={() => setConfirmDeleteId(link.id)}
                         className="h-8 w-8 p-0 hover:bg-dynamic-red/10"
                         title={t('ws-invite-links.delete-link')}
                       >
@@ -505,7 +516,7 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-dynamic-blue to-dynamic-purple">
-                <Users2 className="h-4 w-4 text-white" />
+                <Users2 className="h-4 w-4 text-background" />
               </div>
               {t('ws-invite-links.users-joined-title')}
             </DialogTitle>
@@ -589,7 +600,7 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
                                   'User'
                                 }
                               />
-                              <AvatarFallback className="bg-gradient-to-br from-dynamic-blue to-dynamic-purple font-semibold text-white">
+                              <AvatarFallback className="bg-gradient-to-br from-dynamic-blue to-dynamic-purple font-semibold text-background">
                                 {(
                                   use.users.display_name ||
                                   use.users.handle ||
@@ -642,6 +653,39 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
               )}
             </div>
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={!!confirmDeleteId}
+        onOpenChange={(open) => !open && setConfirmDeleteId(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {t('ws-invite-links.delete-confirm-title')}
+            </DialogTitle>
+            <DialogDescription>
+              {t('ws-invite-links.delete-confirm')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmDeleteId(null)}
+              disabled={isDeleting}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={deleteInviteLink}
+              disabled={isDeleting}
+            >
+              {isDeleting ? t('common.deleting') : t('common.delete')}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
