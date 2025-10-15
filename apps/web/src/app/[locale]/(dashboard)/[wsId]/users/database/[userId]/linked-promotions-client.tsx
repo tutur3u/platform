@@ -294,53 +294,53 @@ export default function LinkedPromotionsClient({
                 {t('ws-user-linked-coupons.link_action')}
               </Button>
             </DialogTrigger>
-          <DialogContent onWheel={(e) => e.stopPropagation()}>
-            <DialogHeader>
-              <DialogTitle>
-                {t('ws-user-linked-coupons.link_action')}
-              </DialogTitle>
-              <DialogDescription>
-                {t('ws-user-linked-coupons.link_description')}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="promo-select">
-                  {t('ws-user-linked-coupons.coupon_label')}
-                </Label>
-                <Combobox
-                  t={t}
-                  options={availablePromotions.map(
-                    (p): ComboboxOptions => ({
-                      value: p.id,
-                      label: `${p.name || t('ws-user-linked-coupons.coupon_label')} ${p.code ? ` (${p.code})` : ''}${p.value ? ` (${p.value}${p.use_ratio ? '%' : ''})` : ''}`,
-                    })
-                  )}
-                  selected={selectedPromoId}
-                  onChange={(value) => setSelectedPromoId(value as string)}
-                  placeholder={t('ws-user-linked-coupons.search_placeholder')}
-                />
+            <DialogContent onWheel={(e) => e.stopPropagation()}>
+              <DialogHeader>
+                <DialogTitle>
+                  {t('ws-user-linked-coupons.link_action')}
+                </DialogTitle>
+                <DialogDescription>
+                  {t('ws-user-linked-coupons.link_description')}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="promo-select">
+                    {t('ws-user-linked-coupons.coupon_label')}
+                  </Label>
+                  <Combobox
+                    t={t}
+                    options={availablePromotions.map(
+                      (p): ComboboxOptions => ({
+                        value: p.id,
+                        label: `${p.name || t('ws-user-linked-coupons.coupon_label')} ${p.code ? ` (${p.code})` : ''}${p.value ? ` (${p.value}${p.use_ratio ? '%' : ''})` : ''}`,
+                      })
+                    )}
+                    selected={selectedPromoId}
+                    onChange={(value) => setSelectedPromoId(value as string)}
+                    placeholder={t('ws-user-linked-coupons.search_placeholder')}
+                  />
+                </div>
               </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsAddDialogOpen(false)}
-                disabled={loading}
-              >
-                {t('ws-settings.cancel')}
-              </Button>
-              <Button
-                onClick={handleAdd}
-                disabled={loading || !selectedPromoId}
-              >
-                {loading
-                  ? t('ws-groups.linking')
-                  : t('ws-user-linked-coupons.link_action')}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsAddDialogOpen(false)}
+                  disabled={loading}
+                >
+                  {t('ws-settings.cancel')}
+                </Button>
+                <Button
+                  onClick={handleAdd}
+                  disabled={loading || !selectedPromoId}
+                >
+                  {loading
+                    ? t('ws-groups.linking')
+                    : t('ws-user-linked-coupons.link_action')}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
       </div>
 
