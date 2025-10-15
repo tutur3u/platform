@@ -13,6 +13,7 @@ export interface SupabaseProviderConfig {
   id: string | number;
   awareness?: awarenessProtocol.Awareness;
   resyncInterval?: number | false;
+  saveDebounceMs?: number; // Debounce time for database saves (default: 1000ms)
 }
 
 export default class SupabaseProvider extends EventEmitter {
@@ -22,10 +23,12 @@ export default class SupabaseProvider extends EventEmitter {
 
   private _synced: boolean = false;
   private resyncInterval: NodeJS.Timeout | undefined;
+  private saveTimeout: NodeJS.Timeout | undefined;
   protected logger: debug.Debugger;
   public readonly id: number;
 
   public version: number = 0;
+  private readonly saveDebounceMs: number = 1000; // Default debounce time
 
   isOnline(online?: boolean): boolean {
     if (!online && online !== false) return this.connected;
@@ -40,6 +43,31 @@ export default class SupabaseProvider extends EventEmitter {
         this.isOnline()
       );
       this.emit('message', update);
+      this.debouncedSave(); // Use debounced save instead of immediate
+    }
+  }
+
+  debouncedSave() {
+    // Clear any pending save
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+    }
+
+    // Schedule a new save after the debounce period
+    this.saveTimeout = setTimeout(() => {
+      this.logger('debounce period elapsed, saving to database');
+      this.save();
+    }, this.saveDebounceMs);
+  }
+
+  /**
+   * Immediately save any pending changes without waiting for debounce period
+   */
+  flushSave() {
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+      this.saveTimeout = undefined;
+      this.logger('flushing pending save immediately');
       this.save();
     }
   }
@@ -54,6 +82,8 @@ export default class SupabaseProvider extends EventEmitter {
   }
 
   removeSelfFromAwarenessOnUnload() {
+    // Flush any pending saves before unload
+    this.flushSave();
     awarenessProtocol.removeAwarenessStates(
       this.awareness,
       [this.doc.clientID],
@@ -62,18 +92,41 @@ export default class SupabaseProvider extends EventEmitter {
   }
 
   async save() {
-    const content = Array.from(Y.encodeStateAsUpdate(this.doc));
+    try {
+      const content = Array.from(Y.encodeStateAsUpdate(this.doc));
 
-    const { error } = await this.supabase
-      .from(this.config.tableName as any)
-      .update({ [this.config.columnName]: content })
-      .eq(this.config.idName || 'id', this.config.id);
+      // Skip save if content is empty
+      if (!content || content.length === 0) {
+        this.logger('skipping save - empty content');
+        return;
+      }
 
-    if (error) {
-      throw error;
+      this.logger(`saving ${content.length} bytes to database`);
+
+      const { error, status } = await this.supabase
+        .from(this.config.tableName as any)
+        .update({ [this.config.columnName]: content })
+        .eq(this.config.idName || 'id', this.config.id);
+
+      if (error) {
+        this.logger(`save failed with status ${status}:`, error);
+
+        // Don't throw on 422 errors - just log them
+        // This can happen if the task was deleted or there's a validation issue
+        if (status === 422) {
+          console.warn(`Failed to save Yjs state (422): ${error.message}`);
+          return;
+        }
+
+        throw error;
+      }
+
+      this.logger('save successful');
+      this.emit('save', this.version);
+    } catch (error) {
+      this.logger('unexpected error during save:', error);
+      console.error('Failed to save Yjs document:', error);
     }
-
-    this.emit('save', this.version);
   }
 
   private async onConnect() {
@@ -98,6 +151,9 @@ export default class SupabaseProvider extends EventEmitter {
 
     this.logger('setting connected flag to true');
     this.isOnline(true);
+
+    // Mark as synced after loading initial data
+    this.synced = true;
 
     this.emit('status', [{ status: 'connected' }]);
 
@@ -166,6 +222,9 @@ export default class SupabaseProvider extends EventEmitter {
     this.config = config || {};
     this.id = doc.clientID;
 
+    // Initialize save debounce time (default: 1000ms)
+    (this as any).saveDebounceMs = this.config.saveDebounceMs ?? 1000;
+
     this.supabase = supabase;
     this.on('connect', this.onConnect);
     this.on('disconnect', this.onDisconnect);
@@ -176,6 +235,7 @@ export default class SupabaseProvider extends EventEmitter {
 
     this.logger('constructor initializing');
     this.logger('connecting to Supabase Realtime', doc.guid);
+    this.logger(`save debounce set to ${this.saveDebounceMs}ms`);
 
     if (
       this.config.resyncInterval ||
@@ -295,6 +355,9 @@ export default class SupabaseProvider extends EventEmitter {
     if (this.resyncInterval) {
       clearInterval(this.resyncInterval);
     }
+
+    // Save any pending changes before destroying
+    this.flushSave();
 
     if (typeof window !== 'undefined') {
       window.removeEventListener(

@@ -52,7 +52,6 @@ import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import { cn } from '@tuturuuu/utils/format';
 import {
@@ -248,7 +247,7 @@ function TaskEditDialogComponent({
     return colors[index] || colors[0];
   }, [user?.id]);
 
-  const { doc, provider } = useYjsCollaboration({
+  const { doc, provider, synced, connected } = useYjsCollaboration({
     channel: `task-editor-${task?.id || 'new'}`,
     tableName: 'tasks',
     columnName: 'description_yjs_state',
@@ -260,9 +259,15 @@ function TaskEditDialogComponent({
           color: userColor || '',
         }
       : null,
-    enabled:
-      DEV_MODE && isOpen && !isCreateMode && collaborationMode && !!task?.id,
+    enabled: isOpen && !isCreateMode && collaborationMode && !!task?.id,
   });
+
+  // Determine if we should show loading state for Yjs sync
+  const isYjsSyncing = useMemo(() => {
+    const collaborationEnabled =
+      isOpen && !isCreateMode && collaborationMode && !!task?.id;
+    return collaborationEnabled && !synced;
+  }, [isOpen, isCreateMode, collaborationMode, task?.id, synced]);
 
   useEffect(() => {
     const getUser = async () => {
@@ -2735,6 +2740,39 @@ function TaskEditDialogComponent({
                 </div>
               </div>
               <div className="flex items-center gap-1 md:gap-2">
+                {/* Collaboration Sync Status */}
+                {collaborationMode && isOpen && !isCreateMode && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={cn(
+                          'flex items-center gap-1.5 rounded-full px-2 py-1 text-xs transition-colors',
+                          synced && connected
+                            ? 'bg-dynamic-green/10 text-dynamic-green'
+                            : 'bg-dynamic-yellow/10 text-dynamic-yellow'
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            'h-1.5 w-1.5 rounded-full',
+                            synced && connected
+                              ? 'animate-pulse bg-dynamic-green'
+                              : 'animate-pulse bg-dynamic-yellow'
+                          )}
+                        />
+                        <span className="font-medium">
+                          {synced && connected ? 'Synced' : 'Syncing...'}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {synced && connected
+                        ? 'Collaboration is active and synced'
+                        : 'Syncing collaboration state...'}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+
                 {/* Online Users */}
                 {collaborationMode && isOpen && !isCreateMode && (
                   <UserPresenceAvatarsComponent
@@ -2952,62 +2990,79 @@ function TaskEditDialogComponent({
 
                 {/* Task Description - Full editor experience with subtle border */}
                 <div ref={editorRef} className="relative flex-1 pb-8">
-                  <RichTextEditor
-                    content={description}
-                    onChange={setDescription}
-                    writePlaceholder="Add a detailed description, attach files, or use markdown..."
-                    titlePlaceholder=""
-                    className="min-h-[400px] border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
-                    workspaceId={workspaceId || undefined}
-                    onImageUpload={handleImageUpload}
-                    flushPendingRef={flushEditorPendingRef}
-                    initialCursorOffset={targetEditorCursorRef.current}
-                    onEditorReady={handleEditorReady}
-                    boardId={boardId}
-                    availableLists={availableLists}
-                    queryClient={queryClient}
-                    onArrowUp={(cursorOffset) => {
-                      // Focus the title input when pressing arrow up at the start
-                      if (titleInputRef.current) {
-                        titleInputRef.current.focus();
+                  {isYjsSyncing ? (
+                    <div className="flex min-h-[400px] items-center justify-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        <p className="text-muted-foreground text-sm">
+                          Syncing collaboration state...
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <RichTextEditor
+                      content={description}
+                      onChange={setDescription}
+                      writePlaceholder="Add a detailed description, attach files, or use markdown..."
+                      titlePlaceholder=""
+                      className="min-h-[400px] border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
+                      workspaceId={workspaceId || undefined}
+                      onImageUpload={handleImageUpload}
+                      flushPendingRef={flushEditorPendingRef}
+                      initialCursorOffset={targetEditorCursorRef.current}
+                      onEditorReady={handleEditorReady}
+                      boardId={boardId}
+                      availableLists={availableLists}
+                      queryClient={queryClient}
+                      onArrowUp={(cursorOffset) => {
+                        // Focus the title input when pressing arrow up at the start
+                        if (titleInputRef.current) {
+                          titleInputRef.current.focus();
 
-                        // Apply smart cursor positioning
-                        if (cursorOffset !== undefined) {
-                          const textLength = titleInputRef.current.value.length;
-                          // Use the stored position from last down arrow, or the offset from editor
-                          const targetPosition =
-                            lastCursorPositionRef.current ??
-                            Math.min(cursorOffset, textLength);
-                          titleInputRef.current.setSelectionRange(
-                            targetPosition,
-                            targetPosition
-                          );
-                          // Clear the stored position after use
-                          lastCursorPositionRef.current = null;
+                          // Apply smart cursor positioning
+                          if (cursorOffset !== undefined) {
+                            const textLength =
+                              titleInputRef.current.value.length;
+                            // Use the stored position from last down arrow, or the offset from editor
+                            const targetPosition =
+                              lastCursorPositionRef.current ??
+                              Math.min(cursorOffset, textLength);
+                            titleInputRef.current.setSelectionRange(
+                              targetPosition,
+                              targetPosition
+                            );
+                            // Clear the stored position after use
+                            lastCursorPositionRef.current = null;
+                          }
                         }
+                      }}
+                      onArrowLeft={() => {
+                        // Focus the title input at the end when pressing arrow left at the start
+                        if (titleInputRef.current) {
+                          titleInputRef.current.focus();
+                          // Set cursor to the end of the input
+                          const length = titleInputRef.current.value.length;
+                          titleInputRef.current.setSelectionRange(
+                            length,
+                            length
+                          );
+                        }
+                      }}
+                      yjsDoc={
+                        isOpen && !isCreateMode && collaborationMode
+                          ? doc
+                          : null
                       }
-                    }}
-                    onArrowLeft={() => {
-                      // Focus the title input at the end when pressing arrow left at the start
-                      if (titleInputRef.current) {
-                        titleInputRef.current.focus();
-                        // Set cursor to the end of the input
-                        const length = titleInputRef.current.value.length;
-                        titleInputRef.current.setSelectionRange(length, length);
+                      yjsProvider={
+                        isOpen && !isCreateMode && collaborationMode
+                          ? provider
+                          : null
                       }
-                    }}
-                    yjsDoc={
-                      isOpen && !isCreateMode && collaborationMode ? doc : null
-                    }
-                    yjsProvider={
-                      isOpen && !isCreateMode && collaborationMode
-                        ? provider
-                        : null
-                    }
-                    allowCollaboration={
-                      isOpen && !isCreateMode && collaborationMode
-                    }
-                  />
+                      allowCollaboration={
+                        isOpen && !isCreateMode && collaborationMode
+                      }
+                    />
+                  )}
                 </div>
               </div>
               {isOpen && !isCreateMode && collaborationMode && (

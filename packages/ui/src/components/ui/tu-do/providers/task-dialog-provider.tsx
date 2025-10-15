@@ -76,8 +76,14 @@ interface TaskDialogContextValue {
   // Register callback for when task is updated
   onUpdate: (callback: () => void) => void;
 
+  // Register callback for when dialog is closed
+  onClose: (callback: () => void) => void;
+
   // Trigger the registered update callback (internal use)
   triggerUpdate: () => void;
+
+  // Trigger the registered close callback (internal use)
+  triggerClose: () => void;
 }
 
 const TaskDialogContext = createContext<TaskDialogContextValue | null>(null);
@@ -107,6 +113,8 @@ export function TaskDialogProvider({
 
   // Store the update callback in a ref for dynamic registration
   const updateCallbackRef = useRef<(() => void) | null>(null);
+  // Store the close callback in a ref for dynamic registration
+  const closeCallbackRef = useRef<(() => void) | null>(null);
 
   const openTask = useCallback(
     (task: Task, boardId: string, availableLists?: TaskList[]) => {
@@ -230,7 +238,13 @@ export function TaskDialogProvider({
     updateCallbackRef.current = callback;
   }, []);
 
-  // Call the registered callback (used internally by TaskEditDialog)
+  // Register a close callback
+  const onClose = useCallback((callback: () => void) => {
+    console.log('📝 TaskDialogProvider: Registering close callback');
+    closeCallbackRef.current = callback;
+  }, []);
+
+  // Call the registered update callback (used internally by TaskEditDialog)
   const triggerUpdate = useCallback(() => {
     console.log('🔔 TaskDialogProvider: Triggering update callback', {
       hasCallback: !!updateCallbackRef.current,
@@ -240,6 +254,15 @@ export function TaskDialogProvider({
     externalOnUpdate?.();
   }, [externalOnUpdate]);
 
+  // Call the registered close callback (used internally by TaskEditDialog)
+  const triggerClose = useCallback(() => {
+    console.log('🔔 TaskDialogProvider: Triggering close callback', {
+      hasCallback: !!closeCallbackRef.current,
+    });
+    closeCallbackRef.current?.();
+    closeDialog();
+  }, [closeDialog]);
+
   const contextValue = useMemo<TaskDialogContextValue>(
     () => ({
       state,
@@ -248,7 +271,9 @@ export function TaskDialogProvider({
       createTask,
       closeDialog,
       onUpdate,
+      onClose,
       triggerUpdate,
+      triggerClose,
     }),
     [
       state,
@@ -257,7 +282,9 @@ export function TaskDialogProvider({
       createTask,
       closeDialog,
       onUpdate,
+      onClose,
       triggerUpdate,
+      triggerClose,
     ]
   );
 

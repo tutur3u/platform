@@ -7,7 +7,7 @@ import { useTaskDialogContext } from '../providers/task-dialog-provider';
  *
  * Usage:
  * ```tsx
- * const { openTask, createTask, closeDialog, onUpdate } = useTaskDialog();
+ * const { openTask, createTask, closeDialog, onUpdate, onClose } = useTaskDialog();
  *
  * // Open existing task for editing
  * openTask(task, boardId, availableLists);
@@ -18,6 +18,11 @@ import { useTaskDialogContext } from '../providers/task-dialog-provider';
  * // Register an update callback
  * onUpdate(() => {
  *   // Handle task update (e.g., refresh data)
+ * });
+ *
+ * // Register a close callback
+ * onClose(() => {
+ *   // Handle dialog close (e.g., navigate back)
  * });
  * ```
  */
@@ -30,8 +35,9 @@ export function useTaskDialog(): {
   ) => void;
   closeDialog: () => void;
   onUpdate: (callback: () => void) => void;
+  onClose: (callback: () => void) => void;
 } {
-  const { openTask, createTask, closeDialog, onUpdate } =
+  const { openTask, createTask, closeDialog, onUpdate, onClose } =
     useTaskDialogContext();
 
   return {
@@ -39,5 +45,6 @@ export function useTaskDialog(): {
     createTask,
     closeDialog,
     onUpdate,
+    onClose,
   };
 }
