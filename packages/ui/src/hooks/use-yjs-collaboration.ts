@@ -83,7 +83,8 @@ export function useYjsCollaboration(
       tableName: tableName,
       columnName: columnName,
       awareness,
-      resyncInterval: 5000, // Resync every 5 seconds
+      resyncInterval: 5000,
+      debounceInterval: 500,
     });
 
     providerRef.current = provider;
