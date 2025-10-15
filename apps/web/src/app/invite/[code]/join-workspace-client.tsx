@@ -1,24 +1,11 @@
 'use client';
 
+import type { Workspace, WorkspaceInfo } from '@/lib/invite/types';
 import { ArrowRight, Check, Users } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-
-interface Workspace {
-  id: string;
-  name: string;
-  avatar_url?: string;
-  logo_url?: string;
-}
-
-interface WorkspaceInfo {
-  workspace: Workspace;
-  role: string;
-  roleTitle: string;
-  memberCount: number;
-}
 
 interface Props {
   code: string;
