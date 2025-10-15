@@ -37,14 +37,14 @@ export const TaskCardMetadata = memo(function TaskCardMetadata({
     <div className="flex items-center gap-2">
       <div className="scrollbar-hide flex w-full min-w-0 items-center gap-1 overflow-auto whitespace-nowrap rounded-lg">
         {/* Priority */}
-        {!task.archived && task.priority && (
+        {!task.closed_at && task.priority && (
           <div className="flex-none overflow-hidden">
             {getPriorityIndicator(task.priority)}
           </div>
         )}
 
         {/* Project indicator */}
-        {!task.archived && task.projects && task.projects.length > 0 && (
+        {!task.closed_at && task.projects && task.projects.length > 0 && (
           <div className="min-w-0 flex-shrink-0">
             <Badge
               variant="secondary"
@@ -62,7 +62,7 @@ export const TaskCardMetadata = memo(function TaskCardMetadata({
         )}
 
         {/* Estimation Points */}
-        {!task.archived && task.estimation_points && (
+        {!task.closed_at && task.estimation_points && (
           <div className="min-w-0 flex-shrink-0">
             <TaskEstimationDisplay
               points={task.estimation_points}
@@ -74,7 +74,7 @@ export const TaskCardMetadata = memo(function TaskCardMetadata({
         )}
 
         {/* Labels */}
-        {!task.archived && task.labels && task.labels.length > 0 && (
+        {!task.closed_at && task.labels && task.labels.length > 0 && (
           <div className="flex min-w-0 flex-shrink-0 flex-wrap gap-1">
             {/* Sort labels for deterministic display order */}
             <TaskLabelsDisplay
@@ -87,7 +87,7 @@ export const TaskCardMetadata = memo(function TaskCardMetadata({
         )}
 
         {/* Description indicators */}
-        {!task.archived &&
+        {!task.closed_at &&
           (descriptionMeta.hasText ||
             descriptionMeta.hasImages ||
             descriptionMeta.hasVideos ||

@@ -688,13 +688,15 @@ export function KanbanBoard({
     (
       prevSortKey: number | null | undefined,
       nextSortKey: number | null | undefined,
-      listId: string
+      listId: string,
+      visualOrderTasks?: Pick<Task, 'id' | 'sort_key' | 'created_at'>[]
     ) =>
       createCalculateSortKeyWithRetry(
         supabase,
         prevSortKey,
         nextSortKey,
-        listId
+        listId,
+        visualOrderTasks
       ),
     [supabase]
   );
@@ -963,10 +965,37 @@ export function KanbanBoard({
       // Get all tasks in the target list (INCLUDE the dragged task if it's in the same list)
       let targetListTasks = tasks.filter((t) => t.list_id === targetListId);
 
+      // Find the target list to check its status
+      const targetList = columns.find((col) => String(col.id) === targetListId);
+
+      // IMPORTANT: For "done" and "closed" lists, always place at first position (top)
+      // These lists are sorted by completed_at/closed_at timestamps (most recent first)
+      // The server auto-updates these timestamps, so new tasks will appear at top after DB update
+      const isCompletionList =
+        targetList?.status === 'done' || targetList?.status === 'closed';
+
       // Only sort by sort_key if parent hasn't already sorted (match rendering behavior)
       if (!disableSort) {
         targetListTasks = targetListTasks.sort((a, b) => {
-          // Use MAX_SAFE_INTEGER for null sort_key to match rendering behavior
+          // For done lists, sort by completed_at (most recent first)
+          if (targetList?.status === 'done') {
+            const completionA = a.completed_at
+              ? new Date(a.completed_at).getTime()
+              : 0;
+            const completionB = b.completed_at
+              ? new Date(b.completed_at).getTime()
+              : 0;
+            if (completionA !== completionB) return completionB - completionA; // Descending order
+          }
+
+          // For closed lists, sort by closed_at (most recent first)
+          if (targetList?.status === 'closed') {
+            const closedA = a.closed_at ? new Date(a.closed_at).getTime() : 0;
+            const closedB = b.closed_at ? new Date(b.closed_at).getTime() : 0;
+            if (closedA !== closedB) return closedB - closedA; // Descending order
+          }
+
+          // For all other lists, sort by sort_key first, then by created_at as fallback
           const sortA = a.sort_key ?? MAX_SAFE_INTEGER_SORT;
           const sortB = b.sort_key ?? MAX_SAFE_INTEGER_SORT;
           if (sortA !== sortB) return sortA - sortB;
@@ -986,7 +1015,44 @@ export function KanbanBoard({
       // Calculate new sort_key based on drop location
       let newSortKey: number;
 
-      if (overType === 'Task') {
+      // For completion lists (done/closed), ALWAYS place at position 0 (first/top)
+      if (isCompletionList) {
+        console.log(
+          '📍 Dropping into completion list, forcing first position (top)'
+        );
+
+        try {
+          if (targetListTasks.length === 0) {
+            // Empty list - use default
+            newSortKey = await calculateSortKeyWithRetry(
+              null,
+              null,
+              targetListId,
+              targetListTasks
+            );
+          } else {
+            // Always place at beginning before first task
+            const firstTask = targetListTasks[0];
+            newSortKey = await calculateSortKeyWithRetry(
+              null,
+              firstTask?.sort_key ?? null,
+              targetListId,
+              targetListTasks
+            );
+          }
+        } catch (error) {
+          console.error('Failed to calculate sort key:', error);
+          // Reset drag state on error
+          setActiveColumn(null);
+          setActiveTask(null);
+          setHoverTargetListId(null);
+          setDragPreviewPosition(null);
+          pickedUpTaskColumn.current = null;
+          (processDragOver as any).lastTargetListId = null;
+          setOptimisticUpdateInProgress(new Set());
+          return;
+        }
+      } else if (overType === 'Task') {
         // Dropping on or near another task - use arrayMove to match @dnd-kit's visual preview
         const activeIndex = targetListTasks.findIndex(
           (t) => t.id === active.id
@@ -1058,7 +1124,8 @@ export function KanbanBoard({
             newSortKey = await calculateSortKeyWithRetry(
               null,
               null,
-              targetListId
+              targetListId,
+              targetListTasks
             );
           } else if (newIndex === 0) {
             // At beginning - next task is at index 1
@@ -1066,7 +1133,8 @@ export function KanbanBoard({
             newSortKey = await calculateSortKeyWithRetry(
               null,
               nextTask?.sort_key ?? null,
-              targetListId
+              targetListId,
+              targetListTasks
             );
           } else if (newIndex === reorderedTasks.length - 1) {
             // At end - prev task is at index length-2
@@ -1074,7 +1142,8 @@ export function KanbanBoard({
             newSortKey = await calculateSortKeyWithRetry(
               prevTask?.sort_key ?? null,
               null,
-              targetListId
+              targetListId,
+              targetListTasks
             );
           } else {
             // In middle - use the actual prev and next tasks
@@ -1083,7 +1152,8 @@ export function KanbanBoard({
             newSortKey = await calculateSortKeyWithRetry(
               prevTask?.sort_key ?? null,
               nextTask?.sort_key ?? null,
-              targetListId
+              targetListId,
+              targetListTasks
             );
           }
         } catch (error) {
@@ -1108,7 +1178,8 @@ export function KanbanBoard({
             newSortKey = await calculateSortKeyWithRetry(
               null,
               null,
-              targetListId
+              targetListId,
+              targetListTasks
             );
           } else if (overType === 'Column') {
             // Dropping on column header - insert at the BEGINNING
@@ -1116,7 +1187,8 @@ export function KanbanBoard({
             newSortKey = await calculateSortKeyWithRetry(
               null,
               firstTask?.sort_key ?? null,
-              targetListId
+              targetListId,
+              targetListTasks
             );
           } else {
             // Dropping on ColumnSurface - add to the END
@@ -1124,7 +1196,8 @@ export function KanbanBoard({
             newSortKey = await calculateSortKeyWithRetry(
               lastTask?.sort_key ?? null,
               null,
-              targetListId
+              targetListId,
+              targetListTasks
             );
           }
         } catch (error) {
@@ -1187,8 +1260,15 @@ export function KanbanBoard({
           );
 
           // Find the insertion point index based on where the dragged task was dropped
+          // IMPORTANT: For completion lists (done/closed), always insert at position 0 (top)
           let insertionIndex: number;
-          if (overType === 'Task') {
+          if (isCompletionList) {
+            // Always place at top for completion lists
+            insertionIndex = 0;
+            console.log(
+              '📍 Batch move to completion list: inserting at beginning'
+            );
+          } else if (overType === 'Task') {
             // When dropping on a task, find its position in the filtered list
             const overTaskInFiltered = targetListTasksExcludingMoved.findIndex(
               (t) => t.id === over.id
@@ -1252,7 +1332,8 @@ export function KanbanBoard({
                 batchSortKey = await calculateSortKeyWithRetry(
                   null,
                   null,
-                  targetListId
+                  targetListId,
+                  targetListTasks
                 );
               } else if (positionInSimulated === 0) {
                 // At beginning - calculate based on next task
@@ -1260,7 +1341,8 @@ export function KanbanBoard({
                 batchSortKey = await calculateSortKeyWithRetry(
                   null,
                   nextTask?.sort_key ?? null,
-                  targetListId
+                  targetListId,
+                  targetListTasks
                 );
               } else if (
                 positionInSimulated ===
@@ -1271,7 +1353,8 @@ export function KanbanBoard({
                 batchSortKey = await calculateSortKeyWithRetry(
                   prevTask?.sort_key ?? null,
                   null,
-                  targetListId
+                  targetListId,
+                  targetListTasks
                 );
               } else {
                 // In middle - use actual neighbors
@@ -1291,7 +1374,8 @@ export function KanbanBoard({
                   batchSortKey = await calculateSortKeyWithRetry(
                     prevTask?.sort_key ?? null,
                     nextTask?.sort_key ?? null,
-                    targetListId
+                    targetListId,
+                    targetListTasks
                   );
                 } else if (prevIsMoving && !nextIsMoving) {
                   // Prev is moving, next is stationary
@@ -1307,7 +1391,8 @@ export function KanbanBoard({
                   batchSortKey = await calculateSortKeyWithRetry(
                     stationaryPrev?.sort_key ?? null,
                     nextTask?.sort_key ?? null,
-                    targetListId
+                    targetListId,
+                    targetListTasks
                   );
                 } else if (!prevIsMoving && nextIsMoving) {
                   // Prev is stationary, next is moving
@@ -1327,7 +1412,8 @@ export function KanbanBoard({
                   batchSortKey = await calculateSortKeyWithRetry(
                     prevTask?.sort_key ?? null,
                     stationaryNext?.sort_key ?? null,
-                    targetListId
+                    targetListId,
+                    targetListTasks
                   );
                 } else {
                   // Both neighbors are moving - find boundary tasks
@@ -1358,7 +1444,8 @@ export function KanbanBoard({
                   batchSortKey = await calculateSortKeyWithRetry(
                     boundaryPrev?.sort_key ?? null,
                     boundaryNext?.sort_key ?? null,
-                    targetListId
+                    targetListId,
+                    targetListTasks
                   );
                 }
               }
@@ -1863,7 +1950,30 @@ export function KanbanBoard({
                     // Only apply sort_key sorting if parent hasn't already sorted
                     if (!disableSort) {
                       listTasks = listTasks.sort((a, b) => {
-                        // Sort by sort_key first, then by created_at as fallback
+                        // For done lists, sort by completed_at (most recent first)
+                        if (list.status === 'done') {
+                          const completionA = a.completed_at
+                            ? new Date(a.completed_at).getTime()
+                            : 0;
+                          const completionB = b.completed_at
+                            ? new Date(b.completed_at).getTime()
+                            : 0;
+                          if (completionA !== completionB)
+                            return completionB - completionA; // Descending order
+                        }
+
+                        // For closed lists, sort by closed_at (most recent first)
+                        if (list.status === 'closed') {
+                          const closedA = a.closed_at
+                            ? new Date(a.closed_at).getTime()
+                            : 0;
+                          const closedB = b.closed_at
+                            ? new Date(b.closed_at).getTime()
+                            : 0;
+                          if (closedA !== closedB) return closedB - closedA; // Descending order
+                        }
+
+                        // For all other lists, sort by sort_key first, then by created_at as fallback
                         const sortA = a.sort_key ?? MAX_SAFE_INTEGER_SORT;
                         const sortB = b.sort_key ?? MAX_SAFE_INTEGER_SORT;
                         if (sortA !== sortB) return sortA - sortB;

@@ -90,7 +90,7 @@ export async function getTasks(supabase: TypedSupabaseClient, boardId: string) {
         'list_id',
         lists.map((list) => list.id)
       )
-      .eq('deleted', false)
+      .is('deleted_at', null)
       .order('sort_key', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: true });
 
@@ -175,6 +175,23 @@ export async function createTask(
     throw new Error('List not found');
   }
 
+  // Get the highest sort_key in the list to place new task at the end
+  const { data: existingTasks, error: tasksError } = await supabase
+    .from('tasks')
+    .select('sort_key')
+    .eq('list_id', listId)
+    .is('deleted_at', null)
+    .order('sort_key', { ascending: false })
+    .limit(1);
+
+  if (tasksError) {
+    console.error('Error fetching existing tasks for sort key:', tasksError);
+  }
+
+  // Calculate the sort key for the new task (placed at the end of the list)
+  const highestSortKey = existingTasks?.[0]?.sort_key ?? null;
+  const newSortKey = calculateSortKey(highestSortKey, null);
+
   // Prepare task data with only the fields that exist in the database
   const taskData: {
     name: string;
@@ -184,7 +201,7 @@ export async function createTask(
     start_date: string | null;
     end_date: string | null;
     estimation_points: number | null;
-    archived: boolean;
+    sort_key: number;
     created_at: string;
   } = {
     name: task.name.trim(),
@@ -194,7 +211,7 @@ export async function createTask(
     start_date: task.start_date || null,
     end_date: task.end_date || null,
     estimation_points: task.estimation_points ?? null,
-    archived: false,
+    sort_key: newSortKey,
     created_at: new Date().toISOString(),
   };
 
@@ -399,7 +416,7 @@ export async function syncTaskArchivedStatus(
   // Get current task status
   const { data: task, error: taskError } = await supabase
     .from('tasks')
-    .select('archived')
+    .select('closed_at')
     .eq('id', taskId)
     .single();
 
@@ -409,10 +426,10 @@ export async function syncTaskArchivedStatus(
   }
 
   // Only update if there's a mismatch
-  if (task.archived !== shouldArchive) {
+  if (!!task.closed_at !== shouldArchive) {
     const { error: updateError } = await supabase
       .from('tasks')
-      .update({ archived: shouldArchive })
+      .update({ closed_at: shouldArchive ? new Date().toISOString() : null })
       .eq('id', taskId);
 
     if (updateError) {
@@ -437,7 +454,7 @@ export async function moveTask(
     .select(`
       id,
       list_id,
-      archived,
+      closed_at,
       task_lists!inner(status, name)
     `)
     .eq('id', taskId)
@@ -471,7 +488,7 @@ export async function moveTask(
   // 3. If moving between non-done lists: preserve current archived status
   const sourceListStatus = currentTask.task_lists.status;
   const targetListStatus = targetList.status;
-  const currentlyArchived = currentTask.archived;
+  const currentlyArchived = !!currentTask.closed_at;
 
   let shouldArchive: boolean;
 
@@ -502,7 +519,7 @@ export async function moveTask(
     .from('tasks')
     .update({
       list_id: newListId,
-      archived: shouldArchive,
+      closed_at: shouldArchive ? new Date().toISOString() : null,
     })
     .eq('id', taskId)
     .select(
@@ -569,7 +586,7 @@ export async function moveTaskToBoard(
     .select(`
       id,
       list_id,
-      archived,
+      closed_at,
       task_lists!inner(status, name, board_id)
     `)
     .eq('id', taskId)
@@ -611,7 +628,7 @@ export async function moveTaskToBoard(
   // 3. If moving between non-done lists: preserve current archived status
   const sourceListStatus = currentTask.task_lists.status;
   const targetListStatus = targetList.status;
-  const currentlyArchived = currentTask.archived;
+  const currentlyArchived = !!currentTask.closed_at;
 
   let shouldArchive: boolean;
 
@@ -642,7 +659,7 @@ export async function moveTaskToBoard(
     .from('tasks')
     .update({
       list_id: newListId,
-      archived: shouldArchive,
+      closed_at: shouldArchive ? new Date().toISOString() : null,
     })
     .eq('id', taskId)
     .select(
@@ -728,7 +745,7 @@ export async function deleteTask(
 ) {
   const { data, error } = await supabase
     .from('tasks')
-    .update({ deleted: true })
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', taskId)
     .select()
     .single();
@@ -851,8 +868,8 @@ export function useCreateTask(boardId: string) {
         start_date: task.start_date,
         end_date: task.end_date,
         priority: task.priority,
-        archived: false,
-        deleted: false,
+        closed_at: null,
+        deleted_at: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         assignees: [],
@@ -993,7 +1010,7 @@ export function useMoveTask(boardId: string) {
               return {
                 ...task,
                 list_id: newListId,
-                archived: shouldArchive || false,
+                closed_at: shouldArchive ? new Date().toISOString() : null,
               };
             }
             return task;
@@ -1132,7 +1149,7 @@ export function useMoveTaskToBoard(currentBoardId: string) {
             const updatedTask = {
               ...taskToMove,
               list_id: newListId,
-              archived: shouldArchive || false,
+              closed_at: shouldArchive ? new Date().toISOString() : null,
             };
 
             console.log('🔄 Adding task to target board cache:', updatedTask);
@@ -1164,7 +1181,7 @@ export function useMoveTaskToBoard(currentBoardId: string) {
                 return {
                   ...task,
                   list_id: newListId,
-                  archived: shouldArchive || false,
+                  closed_at: shouldArchive ? new Date().toISOString() : null,
                 };
               }
               return task;
@@ -1492,7 +1509,7 @@ export async function moveAllTasksFromList(
     .from('tasks')
     .select('id, list_id, task_lists!inner(board_id)')
     .eq('list_id', sourceListId)
-    .eq('deleted', false);
+    .is('deleted_at', null);
 
   if (fetchError) {
     console.log('❌ Error fetching tasks from source list:', fetchError);
@@ -2005,44 +2022,74 @@ export function normalizeSortKeys(tasks: Task[]): Task[] {
 /**
  * Batch normalize sort keys in the database for a specific list (BIGINT version)
  * Uses BASE_UNIT (1,000,000) spacing between tasks
+ *
+ * @param supabase - Supabase client for database operations
+ * @param listId - ID of the list to normalize
+ * @param visualOrderTasks - Optional array of tasks in their current visual order (respects active filters)
+ *                           If provided, sort keys will be assigned based on this order instead of database order
  */
 export async function normalizeListSortKeys(
   supabase: TypedSupabaseClient,
-  listId: string
+  listId: string,
+  visualOrderTasks?: Pick<Task, 'id' | 'sort_key' | 'created_at'>[]
 ): Promise<void> {
   console.log('🔧 Normalizing sort keys for list:', listId);
 
-  // Fetch all tasks in the list
-  const { data: tasks, error: fetchError } = await supabase
-    .from('tasks')
-    .select('id, sort_key, created_at')
-    .eq('list_id', listId)
-    .eq('deleted', false)
-    .order('sort_key', { ascending: true, nullsFirst: false })
-    .order('created_at', { ascending: true });
+  let tasks: Pick<Task, 'id' | 'sort_key' | 'created_at'>[];
 
-  if (fetchError) {
-    console.error('Failed to fetch tasks for normalization:', fetchError);
-    throw fetchError;
+  if (visualOrderTasks && visualOrderTasks.length > 0) {
+    // Use the provided visual order (respects active filters/sorting)
+    console.log(
+      '✨ Using provided visual order for normalization (respects active filters)'
+    );
+    tasks = visualOrderTasks;
+  } else {
+    // Fetch all tasks in the list from database
+    const { data: fetchedTasks, error: fetchError } = await supabase
+      .from('tasks')
+      .select('id, sort_key, created_at')
+      .eq('list_id', listId)
+      .is('deleted_at', null)
+      .order('sort_key', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: true });
+
+    if (fetchError) {
+      console.error('Failed to fetch tasks for normalization:', fetchError);
+      throw fetchError;
+    }
+
+    if (!fetchedTasks || fetchedTasks.length === 0) {
+      console.log('No tasks to normalize');
+      return;
+    }
+
+    tasks = fetchedTasks as Pick<Task, 'id' | 'sort_key' | 'created_at'>[];
   }
 
-  if (!tasks || tasks.length === 0) {
+  if (tasks.length === 0) {
     console.log('No tasks to normalize');
     return;
   }
 
-  // Check if normalization is needed
-  const needsNormalization = hasSortKeyCollisions(tasks as unknown as Task[]);
+  // Check if normalization is needed (skip check if visual order provided, as it likely needs update)
+  if (!visualOrderTasks) {
+    const needsNormalization = hasSortKeyCollisions(tasks as unknown as Task[]);
 
-  if (!needsNormalization) {
-    console.log('✅ Sort keys are already properly spaced');
-    return;
+    if (!needsNormalization) {
+      console.log('✅ Sort keys are already properly spaced');
+      return;
+    }
   }
 
-  console.log('⚠️ Collisions detected, normalizing...');
+  console.log(
+    visualOrderTasks
+      ? '✨ Normalizing with visual order (preserving filtered/sorted view)'
+      : '⚠️ Collisions detected, normalizing...'
+  );
 
   // Normalize and update in batch
   // Use BASE_UNIT spacing (1,000,000) between tasks
+  // Tasks array is already in the desired order (either visual or database)
   const updates = tasks.map((task, index) => ({
     id: task.id,
     sort_key: (index + 1) * SORT_KEY_BASE_UNIT,
@@ -2106,7 +2153,7 @@ export async function reorderTask(
     .update({
       list_id: newListId,
       sort_key: newSortKey,
-      archived: shouldArchive,
+      closed_at: shouldArchive ? new Date().toISOString() : null,
     })
     .eq('id', taskId)
     .select(
@@ -2193,7 +2240,7 @@ export function useReorderTask(boardId: string) {
                 ...task,
                 list_id: newListId,
                 sort_key: newSortKey,
-                archived: shouldArchive || false,
+                closed_at: shouldArchive ? new Date().toISOString() : null,
               };
             }
             return task;

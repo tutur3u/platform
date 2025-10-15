@@ -38,7 +38,7 @@ export const TaskCardHeader = memo(function TaskCardHeader({
             className={cn(
               'w-full cursor-pointer text-left font-semibold text-xs leading-tight transition-colors duration-200',
               'line-clamp-2',
-              task.archived
+              task.closed_at
                 ? 'text-muted-foreground line-through'
                 : '-mx-1 -my-0.5 rounded-sm px-1 py-0.5 text-foreground active:bg-muted/50'
             )}

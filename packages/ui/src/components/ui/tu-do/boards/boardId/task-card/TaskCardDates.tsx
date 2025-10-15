@@ -47,14 +47,14 @@ export const TaskCardDates = memo(function TaskCardDates({
         <div
           className={cn(
             'flex items-center gap-1',
-            taskIsOverdue && !task.archived
+            taskIsOverdue && !task.closed_at
               ? 'font-medium text-dynamic-red'
               : 'text-muted-foreground'
           )}
         >
           <Calendar className="h-2.5 w-2.5 shrink-0" />
           <span className="truncate">Due {formatSmartDate(endDate)}</span>
-          {taskIsOverdue && !task.archived ? (
+          {taskIsOverdue && !task.closed_at ? (
             <Badge className="ml-1 h-4 bg-dynamic-red px-1 font-semibold text-[9px] text-white tracking-wide">
               OVERDUE
             </Badge>

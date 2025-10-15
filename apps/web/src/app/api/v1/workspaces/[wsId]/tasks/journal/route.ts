@@ -731,9 +731,6 @@ export async function POST(
       priority: task.priority,
       end_date: task.dueDate,
       estimation_points: task.estimationPoints ?? null,
-      archived: false,
-      deleted: false,
-      completed: false,
       created_at: nowIso,
     }));
 

@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
       .from('tasks')
       .select('id, name, description')
       .is('embedding', null)
-      .eq('deleted', false)
+      .is('deleted_at', null)
       .limit(100);
 
     if (fetchError) {

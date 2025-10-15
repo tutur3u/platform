@@ -190,6 +190,9 @@ export function BoardHeader({
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [layoutSettingsOpen, setLayoutSettingsOpen] = useState(false);
+  const [localSearchQuery, setLocalSearchQuery] = useState(
+    filters.searchQuery || ''
+  );
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -201,6 +204,7 @@ export function BoardHeader({
   const onListStatusFilterChangeRef = useRef(onListStatusFilterChange);
   const onViewChangeRef = useRef(onViewChange);
   const searchQueryRef = useRef(filters.searchQuery);
+  const filtersRef = useRef(filters);
 
   // Update refs on each render
   useEffect(() => {
@@ -208,7 +212,38 @@ export function BoardHeader({
     onListStatusFilterChangeRef.current = onListStatusFilterChange;
     onViewChangeRef.current = onViewChange;
     searchQueryRef.current = filters.searchQuery;
+    filtersRef.current = filters;
   });
+
+  // Sync local search query with external filter changes
+  useEffect(() => {
+    const newQuery = filters.searchQuery || '';
+    // Use functional updater to compare current state and only update if different
+    // This prevents overwriting in-progress typing
+    setLocalSearchQuery((current) =>
+      current === newQuery ? current : newQuery
+    );
+  }, [filters.searchQuery]);
+
+  // Debounce search query updates
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const currentFilters = filtersRef.current;
+      if (localSearchQuery !== (currentFilters.searchQuery || '')) {
+        onFiltersChangeRef.current({
+          ...currentFilters,
+          searchQuery: localSearchQuery || undefined,
+        });
+
+        // Auto-switch to List view when searching in Timeline view
+        if (localSearchQuery && currentView === 'timeline') {
+          onViewChangeRef.current('list');
+        }
+      }
+    }, 300); // 300ms debounce delay
+
+    return () => clearTimeout(timeoutId);
+  }, [localSearchQuery, currentView]);
 
   // Load board configuration from localStorage on mount or board change
   useEffect(() => {
@@ -333,25 +368,16 @@ export function BoardHeader({
           <Input
             type="text"
             placeholder="Search tasks..."
-            value={filters.searchQuery || ''}
-            onChange={(e) => {
-              const newSearchQuery = e.target.value;
-              onFiltersChange({ ...filters, searchQuery: newSearchQuery });
-
-              // Auto-switch to List view when searching in Status or Timeline view
-              if (newSearchQuery && currentView === 'timeline') {
-                onViewChange('list');
-              }
-            }}
+            value={localSearchQuery}
+            onChange={(e) => setLocalSearchQuery(e.target.value)}
             className="placeholder:-translate-0.5 h-6 bg-background pr-8 pl-8 text-xs placeholder:text-xs sm:h-8 sm:text-sm"
           />
-          {filters.searchQuery && !isSearching && (
+          {localSearchQuery && !isSearching && (
             <button
               type="button"
-              onClick={() =>
-                onFiltersChange({ ...filters, searchQuery: undefined })
-              }
+              onClick={() => setLocalSearchQuery('')}
               className="-translate-y-1/2 absolute top-1/2 right-2 text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="Clear search"
             >
               <X className="h-3.5 w-3.5" />
             </button>

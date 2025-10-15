@@ -24,14 +24,14 @@ export const TaskCardCheckbox = memo(function TaskCardCheckbox({
 
   return (
     <Checkbox
-      checked={task.archived}
+      checked={!!task.closed_at}
       className={cn(
         'h-4 w-4 flex-none transition-all duration-200',
         'data-[state=checked]:border-dynamic-green/70 data-[state=checked]:bg-dynamic-green/70',
         'hover:scale-110 hover:border-primary/50',
         getListColorClasses(taskList?.color as SupportedColor),
         taskIsOverdue &&
-          !task.archived &&
+          !task.closed_at &&
           'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
       )}
       disabled={isLoading}
