@@ -78,17 +78,21 @@ export const pendingInvoiceColumns = (
       if (!monthsValue || monthsValue.length === 0)
         return <div className="min-w-48">-</div>;
 
-      // Format months array as range
-      const startMonth = moment(monthsValue[0] + '-01').format('MMM YYYY');
-      const endMonth = moment(
-        monthsValue[monthsValue.length - 1] + '-01'
-      ).format('MMM YYYY');
-      const formattedRange = `${startMonth} → ${endMonth}`;
+      // Format months array as range or single month
+      const formattedMonths = monthsValue.length === 1
+        ? moment(monthsValue[0] + '-01').format('MMM YYYY')
+        : (() => {
+            const startMonth = moment(monthsValue[0] + '-01').format('MMM YYYY');
+            const endMonth = moment(
+              monthsValue[monthsValue.length - 1] + '-01'
+            ).format('MMM YYYY');
+            return `${startMonth} → ${endMonth}`;
+          })();
 
       return (
         <div className="min-w-48">
           <span className="inline-flex items-center rounded-md bg-dynamic-blue/10 px-2.5 py-1 font-medium text-dynamic-blue text-xs">
-            {formattedRange}
+            {formattedMonths}
           </span>
         </div>
       );

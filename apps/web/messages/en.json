@@ -1271,8 +1271,12 @@
       "no_results": "No results found"
     },
     "referral_success": "Sucessfully referred a new user",
+    "unrefer_success": "Successfully removed referral",
     "user_already_referred": "This user has already been referred.",
     "missing_creator_id": "Missing a creator ID. You are not authorized",
+    "missing_updater_id": "Missing an updater ID. You are not authorized",
+    "no_permission_to_refer": "You don't have permission to refer users",
+    "unrefer_person": "Remove referral",
     "sent_emails_title": "Sent Emails",
     "no_sent_emails": "No sent emails",
     "no_sent_emails_description": "This user has not received any emails yet.",

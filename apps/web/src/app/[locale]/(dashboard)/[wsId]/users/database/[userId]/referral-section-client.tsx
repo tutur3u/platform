@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, Settings, User, UserPlus } from '@tuturuuu/icons';
+import { ArrowRight, Settings, User, UserPlus, UserMinus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState } from 'react';
 interface ReferralSectionClientProps {
   wsId: string;
   userId: string;
+  canUpdateUsers: boolean;
   workspaceSettings: {
     referral_count_cap: number;
     referral_increment_percent: number;
@@ -30,6 +31,7 @@ interface ReferralSectionClientProps {
 export default function ReferralSectionClient({
   wsId,
   userId,
+  canUpdateUsers,
   workspaceSettings,
   initialAvailableUsers,
   initialAvailableUsersCount,
@@ -311,9 +313,107 @@ export default function ReferralSectionClient({
     },
   });
 
+  const unreferUserMutation = useMutation({
+    mutationFn: async (referredUserId: string) => {
+      // Resolve current workspace virtual user id for auditing fields
+      let updaterVirtualUserId: string | null = null;
+      try {
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        if (userData?.user?.id) {
+          const { data: updaterRow, error: updaterIdErr } = await supabase
+            .from('workspace_user_linked_users')
+            .select('virtual_user_id')
+            .eq('ws_id', wsId)
+            .eq('platform_user_id', userData.user.id)
+            .maybeSingle();
+          if (updaterIdErr) throw updaterIdErr;
+          updaterVirtualUserId = updaterRow?.virtual_user_id ?? null;
+        }
+      } catch (error) {
+        // If we fail to resolve the virtual user id, proceed without it
+        updaterVirtualUserId = null;
+      }
+
+      // Require a valid updaterVirtualUserId; otherwise, do nothing.
+      if (!updaterVirtualUserId) {
+        throw new Error(t('missing_updater_id'));
+      }
+
+      // 1) Remove referred_by relationship
+      const { error: updateErr } = await supabase
+        .from('workspace_users')
+        .update({ referred_by: null, updated_by: updaterVirtualUserId })
+        .eq('id', referredUserId)
+        .eq('ws_id', wsId)
+        .eq('referred_by', userId); // Ensure they were referred by this user
+
+      if (updateErr) throw updateErr;
+
+      // 2) Remove linked referral promotion if it exists and is the default workspace referral promotion
+      const { data: wsSettings, error: settingsErr } = await supabase
+        .from('workspace_settings')
+        .select('referral_promotion_id')
+        .eq('ws_id', wsId)
+        .maybeSingle();
+      if (settingsErr) throw settingsErr;
+
+      const promoIdToRemove = wsSettings?.referral_promotion_id || null;
+      if (promoIdToRemove) {
+        const { error: unlinkErr } = await supabase
+          .from('user_linked_promotions')
+          .delete()
+          .eq('user_id', referredUserId)
+          .eq('promo_id', promoIdToRemove);
+        if (unlinkErr) throw unlinkErr;
+      }
+
+      return referredUserId;
+    },
+    onSuccess: async (referredUserId) => {
+      toast.success(t('unrefer_success'));
+      setSelectedUserId('');
+
+      // Invalidate queries to refresh data from server
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['ws', wsId, 'users', 'available-for-referral', userId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['ws', wsId, 'user', userId, 'referrals', 'count'],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['ws', wsId, 'user', userId, 'referrals', 'list'],
+        }),
+        // Also refresh linked promotions for this user, since we may have
+        // removed the workspace's default referral promotion
+        queryClient.invalidateQueries({
+          queryKey: ['user-linked-promotions', wsId, userId],
+        }),
+        // Refresh linked promotions for this user in the invoice page
+        queryClient.invalidateQueries({
+          queryKey: ['user-linked-promotions', userId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['user-referral-discounts', wsId, userId],
+        }),
+      ]);
+    },
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error ? error.message : t('common.error');
+      toast.error(message);
+    },
+  });
+
   const handleReferUser = async () => {
     if (!selectedUserId || referUserMutation.isPending) return;
     await referUserMutation.mutateAsync(selectedUserId);
+  };
+
+  const handleUnreferUser = async (referredUserId: string) => {
+    if (unreferUserMutation.isPending) return;
+    await unreferUserMutation.mutateAsync(referredUserId);
   };
 
   return (
@@ -350,35 +450,53 @@ export default function ReferralSectionClient({
                   {(referredUsersQuery.data || []).map((u) => {
                     const hasAvatar = Boolean(u.avatar_url);
                     return (
-                      <Link href={`/${wsId}/users/database/${u.id}`} key={u.id}>
-                        <Card className="p-3 transition duration-200 hover:border-foreground hover:bg-foreground/5">
-                          <CardContent className="p-0">
-                            <div className="flex items-center gap-3">
-                              {hasAvatar ? (
-                                <Avatar className="h-8 w-8">
-                                  <AvatarImage
-                                    src={u.avatar_url as string}
-                                    alt={
-                                      u.display_name ||
-                                      u.full_name ||
-                                      t('avatar')
-                                    }
-                                  />
-                                </Avatar>
-                              ) : (
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-dynamic-blue/10">
-                                  <User className="h-4 w-4 text-dynamic-blue" />
+                      <Card className="p-3 transition duration-200 hover:border-foreground hover:bg-foreground/5" key={u.id}>
+                        <CardContent className="p-0">
+                          <div className="flex items-center justify-between">
+                            <Link href={`/${wsId}/users/database/${u.id}`} className="flex-1">
+                              <div className="flex items-center gap-3">
+                                {hasAvatar ? (
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarImage
+                                      src={u.avatar_url as string}
+                                      alt={
+                                        u.display_name ||
+                                        u.full_name ||
+                                        t('avatar')
+                                      }
+                                    />
+                                  </Avatar>
+                                ) : (
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-dynamic-blue/10">
+                                    <User className="h-4 w-4 text-dynamic-blue" />
+                                  </div>
+                                )}
+                                <div className="font-medium">
+                                  {u.display_name ||
+                                    u.full_name ||
+                                    t('common.unknown')}
                                 </div>
-                              )}
-                              <div className="font-medium">
-                                {u.display_name ||
-                                  u.full_name ||
-                                  t('common.unknown')}
                               </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </Link>
+                            </Link>
+                            {canUpdateUsers && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleUnreferUser(u.id);
+                              }}
+                              disabled={unreferUserMutation.isPending}
+                              className="h-8 w-8 p-0 text-dynamic-red hover:bg-dynamic-red/10 hover:text-dynamic-red"
+                              title={t('unrefer_person')}
+                            >
+                                <UserMinus className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
                     );
                   })}
                 </div>
@@ -386,38 +504,44 @@ export default function ReferralSectionClient({
             </div>
           )}
 
-          {canReferMore ? (
-            <>
-              <div className="space-y-2">
-                <label htmlFor="user-select" className="font-medium text-sm">
-                  {t('select_person_to_refer_with_remaining', {
-                    remaining: remainingReferrals,
-                  })}
-                </label>
-                <Combobox
-                  t={t}
-                  options={userOptions}
-                  selected={selectedUserId}
-                  onChange={(value) => setSelectedUserId(value as string)}
-                  placeholder={t('search_person_to_refer_placeholder')}
-                />
-                {/* No pagination */}
-              </div>
+          {canUpdateUsers ? (
+            canReferMore ? (
+              <>
+                <div className="space-y-2">
+                  <label htmlFor="user-select" className="font-medium text-sm">
+                    {t('select_person_to_refer_with_remaining', {
+                      remaining: remainingReferrals,
+                    })}
+                  </label>
+                  <Combobox
+                    t={t}
+                    options={userOptions}
+                    selected={selectedUserId}
+                    onChange={(value) => setSelectedUserId(value as string)}
+                    placeholder={t('search_person_to_refer_placeholder')}
+                  />
+                  {/* No pagination */}
+                </div>
 
-              <Button
-                onClick={handleReferUser}
-                disabled={!isSelectedValid || referUserMutation.isPending}
-                className="w-full"
-              >
-                <UserPlus className="mr-2 h-4 w-4" />
-                {t('refer_selected_person')}
-              </Button>
-            </>
+                <Button
+                  onClick={handleReferUser}
+                  disabled={!isSelectedValid || referUserMutation.isPending}
+                  className="w-full"
+                >
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  {t('refer_selected_person')}
+                </Button>
+              </>
+            ) : (
+              <div className="flex w-full flex-1 items-center justify-center py-8 text-center opacity-60">
+                {t('reached_max_referrals', {
+                  cap: workspaceSettings.referral_count_cap,
+                })}
+              </div>
+            )
           ) : (
             <div className="flex w-full flex-1 items-center justify-center py-8 text-center opacity-60">
-              {t('reached_max_referrals', {
-                cap: workspaceSettings.referral_count_cap,
-              })}
+              {t('no_permission_to_refer')}
             </div>
           )}
         </div>

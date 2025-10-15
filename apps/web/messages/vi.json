@@ -1363,8 +1363,12 @@
       "no_results": "Không tìm thấy kết quả"
     },
     "referral_success": "Đã giới thiệu một người dùng mới",
+    "unrefer_success": "Đã xóa giới thiệu thành công",
     "user_already_referred": "Người dùng này đã được giới thiệu.",
     "missing_creator_id": "Thiếu ID của người tạo. \nBạn không được ủy quyền",
+    "missing_updater_id": "Thiếu ID của người cập nhật. Bạn không được ủy quyền",
+    "no_permission_to_refer": "Bạn không có quyền giới thiệu người dùng",
+    "unrefer_person": "Xóa giới thiệu",
     "sent_emails_title": "Email đã gửi",
     "no_sent_emails": "Không có email nào",
     "no_sent_emails_description": "Người dùng này chưa nhận được email nào.",
