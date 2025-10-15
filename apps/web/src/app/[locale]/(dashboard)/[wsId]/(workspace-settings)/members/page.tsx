@@ -1,20 +1,19 @@
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { User } from '@tuturuuu/types/primitives/User';
-import { Separator } from '@tuturuuu/ui/separator';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
   getPermissions,
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
-import InviteMemberButton from './_components/invite-member-button';
+import { redirect } from 'next/navigation';
 import InviteLinksSection from './_components/invite-links-section';
+import InviteMemberButton from './_components/invite-member-button';
 import MemberList from './_components/member-list';
 import MemberTabs from './_components/member-tabs';
 
@@ -63,8 +62,8 @@ export default async function WorkspaceMembersPage({
             {/* Header Section with gradient background */}
             <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-background via-background to-foreground/[0.02] p-6 shadow-sm">
               {/* Decorative elements */}
-              <div className="pointer-events-none absolute -right-4 -top-4 h-32 w-32 rounded-full bg-dynamic-blue/5 blur-2xl" />
-              <div className="pointer-events-none absolute -bottom-4 -left-4 h-32 w-32 rounded-full bg-dynamic-purple/5 blur-2xl" />
+              <div className="-right-4 -top-4 pointer-events-none absolute h-32 w-32 rounded-full bg-dynamic-blue/5 blur-2xl" />
+              <div className="-bottom-4 -left-4 pointer-events-none absolute h-32 w-32 rounded-full bg-dynamic-purple/5 blur-2xl" />
 
               <div className="relative flex flex-col justify-between gap-6 md:flex-row md:items-start">
                 <div className="space-y-2">
@@ -80,6 +79,7 @@ export default async function WorkspaceMembersPage({
                         strokeLinejoin="round"
                         className="h-6 w-6 text-white"
                       >
+                        <title>{t('workspace-settings-layout.members')}</title>
                         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                         <circle cx="9" cy="7" r="4" />
                         <path d="M22 21v-2a4 4 0 0 0-3-3.87" />

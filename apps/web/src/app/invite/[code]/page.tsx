@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { redirect } from 'next/navigation';
 import JoinWorkspaceClient from './join-workspace-client';
 
@@ -53,7 +54,7 @@ export default async function InviteCodePage({ params }: Props) {
 
   // Fetch workspace info using the invite code
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_VERCEL_URL ? 'https://' + process.env.NEXT_PUBLIC_VERCEL_URL : 'http://localhost:7803'}/api/invite/${code}`,
+    `${DEV_MODE ? 'http://localhost:7803' : 'https://tuturuuu.com'}/api/invite/${code}`,
     {
       method: 'GET',
       headers: {
