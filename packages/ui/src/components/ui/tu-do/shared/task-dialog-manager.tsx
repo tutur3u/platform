@@ -19,7 +19,7 @@ const TaskEditDialog = dynamic(
  * It lazy-loads the actual dialog component only when first opened
  */
 export function TaskDialogManager() {
-  const { state, closeDialog, triggerUpdate, openTaskById } =
+  const { state, triggerClose, triggerUpdate, openTaskById } =
     useTaskDialogContext();
 
   if (!state.isOpen || !state.task) return null;
@@ -29,7 +29,7 @@ export function TaskDialogManager() {
       task={state.task}
       boardId={state.boardId || ''}
       isOpen={state.isOpen}
-      onClose={closeDialog}
+      onClose={triggerClose}
       onUpdate={triggerUpdate}
       availableLists={state.availableLists}
       mode={state.mode}

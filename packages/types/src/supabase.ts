@@ -10131,6 +10131,176 @@ export type Database = {
           ws_id?: string;
         };
       };
+      workspace_invite_link_uses: {
+        Insert: {
+          id?: string;
+          invite_link_id: string;
+          joined_at?: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['invite_link_id'];
+            foreignKeyName: 'workspace_invite_link_uses_invite_link_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_invite_links';
+          },
+          {
+            columns: ['invite_link_id'];
+            foreignKeyName: 'workspace_invite_link_uses_invite_link_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_invite_links_with_stats';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'workspace_invite_link_uses_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'workspace_invite_link_uses_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'workspace_invite_link_uses_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'workspace_invite_link_uses_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'workspace_invite_link_uses_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'workspace_invite_link_uses_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          id: string;
+          invite_link_id: string;
+          joined_at: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          id?: string;
+          invite_link_id?: string;
+          joined_at?: string;
+          user_id?: string;
+          ws_id?: string;
+        };
+      };
+      workspace_invite_links: {
+        Insert: {
+          code: string;
+          created_at?: string;
+          creator_id: string;
+          expires_at?: null | string;
+          id?: string;
+          max_uses?: null | number;
+          role?: string;
+          role_title?: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'workspace_invite_links_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'workspace_invite_links_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'workspace_invite_links_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'workspace_invite_links_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
+          },
+          {
+            columns: ['role'];
+            foreignKeyName: 'workspace_invite_links_role_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_default_roles';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'workspace_invite_links_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'workspace_invite_links_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          code: string;
+          created_at: string;
+          creator_id: string;
+          expires_at: null | string;
+          id: string;
+          max_uses: null | number;
+          role: string;
+          role_title: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Update: {
+          code?: string;
+          created_at?: string;
+          creator_id?: string;
+          expires_at?: null | string;
+          id?: string;
+          max_uses?: null | number;
+          role?: string;
+          role_title?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+      };
       workspace_invites: {
         Insert: {
           created_at?: null | string;
@@ -12851,6 +13021,74 @@ export type Database = {
           created_at: null | string;
           dataset_id: null | string;
           row_id: null | string;
+        };
+      };
+      workspace_invite_links_with_stats: {
+        Relationships: [
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'workspace_invite_links_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'workspace_invite_links_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'workspace_invite_links_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'workspace_invite_links_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
+          },
+          {
+            columns: ['role'];
+            foreignKeyName: 'workspace_invite_links_role_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_default_roles';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'workspace_invite_links_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'workspace_invite_links_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          code: null | string;
+          created_at: null | string;
+          creator_id: null | string;
+          current_uses: null | number;
+          expires_at: null | string;
+          id: null | string;
+          is_expired: boolean | null;
+          is_full: boolean | null;
+          max_uses: null | number;
+          role: null | string;
+          role_title: null | string;
+          updated_at: null | string;
+          ws_id: null | string;
         };
       };
       workspace_link_counts: {
