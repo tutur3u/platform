@@ -3552,7 +3552,8 @@
     "failed_create_promotion": "Đã có lỗi xảy ra khi tạo mã giảm giá"
   },
   "ws_post_details": {
-    "check_all": "Đã kiểm tra tất cả"
+    "check_all": "Đã kiểm tra tất cả",
+    "completed": "Hoàn thành"
   },
   "ws-documents": {
     "plural": "Tài liệu",

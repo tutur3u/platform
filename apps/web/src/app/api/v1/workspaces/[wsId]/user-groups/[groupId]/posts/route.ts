@@ -24,7 +24,7 @@ export async function GET(_: Request, { params }: Params) {
 
   const { data, error, count } = await supabase
     .from('user_group_posts')
-    .select('*')
+    .select('*', { count: 'exact' })
     .eq('group_id', groupId)
     .order('created_at', { ascending: false });
 

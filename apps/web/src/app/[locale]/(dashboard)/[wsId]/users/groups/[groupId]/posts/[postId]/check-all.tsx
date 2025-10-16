@@ -60,7 +60,7 @@ export function CheckAll({
       disabled={loading || completed || !canUpdateUserGroupsPosts}
     >
       <CheckCheck className="mr-1" />
-      {completed || t('ws_post_details.check_all')}
+      {completed ? t('ws_post_details.completed') : t('ws_post_details.check_all')}
     </Button>
   );
 }

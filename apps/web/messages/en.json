@@ -3411,7 +3411,8 @@
     "failed_create_promotion": "Failed to create promotion"
   },
   "ws_post_details": {
-    "check_all": "Check all"
+    "check_all": "Check all",
+    "completed": "Completed"
   },
   "ws-documents": {
     "plural": "Documents",
