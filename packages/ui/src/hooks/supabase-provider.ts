@@ -286,6 +286,9 @@ export default class SupabaseProvider extends EventEmitter {
 
     this.connect();
     this.awareness.on('update', this.onAwarenessUpdate.bind(this));
+
+    // Listen to document updates and broadcast them to peers
+    this.doc.on('update', this.onDocumentUpdate.bind(this));
   }
 
   get synced() {
@@ -368,6 +371,7 @@ export default class SupabaseProvider extends EventEmitter {
     }
 
     this.awareness.off('update', this.onAwarenessUpdate);
+    this.doc.off('update', this.onDocumentUpdate);
 
     if (this.channel) this.disconnect();
   }

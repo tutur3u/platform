@@ -859,16 +859,21 @@ function TaskEditDialogComponent({
   ]);
 
   const hasUnsavedChanges = useMemo(() => {
+    // When collaboration is enabled, description is managed by Yjs - don't track it
+    const descriptionChanged = collaborationMode
+      ? false
+      : initialSnapshot.description !== currentSnapshot.description;
+
     return (
       initialSnapshot.name !== currentSnapshot.name ||
-      initialSnapshot.description !== currentSnapshot.description ||
+      descriptionChanged ||
       initialSnapshot.priority !== currentSnapshot.priority ||
       initialSnapshot.start !== currentSnapshot.start ||
       initialSnapshot.end !== currentSnapshot.end ||
       initialSnapshot.listId !== currentSnapshot.listId ||
       initialSnapshot.estimationPoints !== currentSnapshot.estimationPoints
     );
-  }, [initialSnapshot, currentSnapshot]);
+  }, [initialSnapshot, currentSnapshot, collaborationMode]);
 
   const canSave = useMemo(() => {
     const hasName = !!(name || '').trim();
@@ -1616,15 +1621,20 @@ function TaskEditDialogComponent({
       return;
     }
 
+    // When collaboration is enabled, description is managed by Yjs - don't update it
     const taskUpdates: any = {
       name: name.trim(),
-      description: descriptionString,
       priority: priority,
       start_date: startDate ? startDate.toISOString() : null,
       end_date: endDate ? endDate.toISOString() : null,
       list_id: selectedListId,
       estimation_points: estimationPoints ?? null,
     };
+
+    // Only update description when NOT in collaboration mode
+    if (!collaborationMode) {
+      taskUpdates.description = descriptionString;
+    }
 
     if (task?.id) {
       // Close dialog immediately for better UX
@@ -1690,6 +1700,7 @@ function TaskEditDialogComponent({
     onClose,
     task?.id,
     updateTaskMutation,
+    collaborationMode,
   ]);
 
   const handleClose = useCallback(() => {

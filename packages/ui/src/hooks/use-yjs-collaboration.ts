@@ -84,6 +84,7 @@ export function useYjsCollaboration(
       columnName: columnName,
       awareness,
       resyncInterval: 5000,
+      saveDebounceMs: 300, // Faster saves for better UX (broadcasts are still instant)
     });
 
     providerRef.current = provider;

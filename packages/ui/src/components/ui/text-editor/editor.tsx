@@ -470,7 +470,8 @@ export function RichTextEditor({
       onEditorReady?.(editor);
     },
     onUpdate: ({ editor }) => {
-      if (!readOnly) {
+      // Don't call onChange when using collaboration - Yjs doc is the source of truth
+      if (!readOnly && !allowCollaboration) {
         debouncedOnChange(editor.getJSON());
       }
     },
@@ -538,6 +539,11 @@ export function RichTextEditor({
     if (!flushPendingRef || !editor) return;
 
     flushPendingRef.current = () => {
+      // When using collaboration, don't flush to local state - Yjs doc is the source
+      if (allowCollaboration) {
+        return null;
+      }
+
       // Flush pending debounced changes immediately
       if (debouncedOnChangeRef.current) {
         debouncedOnChangeRef.current.flush();
@@ -552,7 +558,7 @@ export function RichTextEditor({
       // Return the content so caller can use it immediately
       return finalContent;
     };
-  }, [editor, flushPendingRef]);
+  }, [editor, flushPendingRef, allowCollaboration]);
 
   return (
     <div className="group relative h-full">
