@@ -23,6 +23,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import {
+  buildEstimationIndices,
+  type EstimationType,
+  mapEstimationPoints,
+} from '@tuturuuu/ui/tu-do/shared/estimation-mapping';
 import { cn } from '@tuturuuu/utils/format';
 import type { KeyboardEvent } from 'react';
 import { useMemo, useState } from 'react';
@@ -48,6 +53,12 @@ interface WorkspaceProject {
   name: string;
 }
 
+interface WorkspaceEstimationConfig {
+  estimation_type?: EstimationType;
+  extended_estimation?: boolean | null;
+  allow_zero_estimates?: boolean | null;
+}
+
 interface CommandBarProps {
   onCreateNote: (content: string) => Promise<void>;
   onCreateTask: (title: string, options?: TaskOptions) => void;
@@ -69,6 +80,7 @@ interface CommandBarProps {
   onModeChange?: (mode: CommandMode) => void;
   workspaceLabels?: WorkspaceLabel[];
   workspaceProjects?: WorkspaceProject[];
+  workspaceEstimationConfig?: WorkspaceEstimationConfig | null;
   wsId?: string;
 }
 
@@ -90,6 +102,7 @@ export function CommandBar({
   onModeChange,
   workspaceLabels = [],
   workspaceProjects = [],
+  workspaceEstimationConfig = null,
 }: CommandBarProps) {
   const [internalMode, setInternalMode] = useState<CommandMode>('task');
   const [inputText, setInputText] = useState('');
@@ -129,6 +142,14 @@ export function CommandBar({
     );
     return calculatedHeight;
   }, [workspaceProjects.length]);
+
+  // Calculate available estimation indices based on board config
+  const availableEstimationIndices = useMemo(() => {
+    return buildEstimationIndices({
+      extended: workspaceEstimationConfig?.extended_estimation,
+      allowZero: workspaceEstimationConfig?.allow_zero_estimates,
+    });
+  }, [workspaceEstimationConfig]);
 
   const modeConfig = useMemo(
     () => ({
@@ -591,61 +612,97 @@ export function CommandBar({
                 </Popover>
 
                 {/* Estimation Popover */}
-                <Popover open={estimationOpen} onOpenChange={setEstimationOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className={cn(
-                        'h-10 w-10 rounded-lg transition-all',
-                        estimationPoints
-                          ? 'border-dynamic-blue/50 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
-                          : 'border-border/50 hover:bg-muted'
-                      )}
+                {workspaceEstimationConfig &&
+                  workspaceEstimationConfig.estimation_type &&
+                  availableEstimationIndices.length > 0 && (
+                    <Popover
+                      open={estimationOpen}
+                      onOpenChange={setEstimationOpen}
                     >
-                      <Timer className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-44 p-2" align="end">
-                    <ScrollArea className="max-h-64">
-                      <div className="grid grid-cols-3 gap-1">
-                        {[1, 2, 3, 5, 8, 13, 21, 34, 55].map((points) => (
-                          <Button
-                            key={points}
-                            variant={
-                              estimationPoints === points ? 'default' : 'ghost'
-                            }
-                            size="sm"
-                            onClick={() => {
-                              setEstimationPoints(points);
-                              setEstimationOpen(false);
-                            }}
-                            className="h-9 text-dynamic-purple"
-                          >
-                            {points}
-                          </Button>
-                        ))}
-                      </div>
-                      {estimationPoints && (
-                        <>
-                          <div className="my-2 h-px bg-border" />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full justify-start gap-2 text-muted-foreground"
-                            onClick={() => {
-                              setEstimationPoints(null);
-                              setEstimationOpen(false);
-                            }}
-                          >
-                            <X className="h-3.5 w-3.5" />
-                            Clear
-                          </Button>
-                        </>
-                      )}
-                    </ScrollArea>
-                  </PopoverContent>
-                </Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className={cn(
+                            'h-10 rounded-lg transition-all',
+                            estimationPoints !== null
+                              ? 'border-dynamic-blue/50 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
+                              : 'border-border/50 hover:bg-muted',
+                            estimationPoints !== null ? 'w-auto px-3' : 'w-10'
+                          )}
+                        >
+                          <Timer className="h-4 w-4" />
+                          {estimationPoints !== null && (
+                            <span className="ml-1.5 font-semibold text-xs">
+                              {mapEstimationPoints(
+                                estimationPoints,
+                                workspaceEstimationConfig?.estimation_type
+                              )}
+                            </span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-44 p-2" align="end">
+                        <ScrollArea className="max-h-64">
+                          <div className="grid grid-cols-3 gap-1">
+                            {availableEstimationIndices.map((index) => {
+                              const isExtended = index > 5;
+                              const isDisabled =
+                                isExtended &&
+                                !workspaceEstimationConfig?.extended_estimation;
+
+                              return (
+                                <Button
+                                  key={index}
+                                  variant={
+                                    estimationPoints === index
+                                      ? 'default'
+                                      : 'ghost'
+                                  }
+                                  size="sm"
+                                  onClick={() => {
+                                    if (!isDisabled) {
+                                      setEstimationPoints(index);
+                                      setEstimationOpen(false);
+                                    }
+                                  }}
+                                  disabled={isDisabled}
+                                  className="h-9 text-dynamic-purple"
+                                  title={
+                                    isDisabled
+                                      ? 'Upgrade to use this value'
+                                      : ''
+                                  }
+                                >
+                                  {mapEstimationPoints(
+                                    index,
+                                    workspaceEstimationConfig?.estimation_type
+                                  )}
+                                </Button>
+                              );
+                            })}
+                          </div>
+                          {estimationPoints !== null && (
+                            <>
+                              <div className="my-2 h-px bg-border" />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start gap-2 text-muted-foreground"
+                                onClick={() => {
+                                  setEstimationPoints(null);
+                                  setEstimationOpen(false);
+                                }}
+                              >
+                                <X className="h-3.5 w-3.5" />
+                                Clear
+                              </Button>
+                            </>
+                          )}
+                        </ScrollArea>
+                      </PopoverContent>
+                    </Popover>
+                  )}
 
                 {/* Projects Popover */}
                 {workspaceProjects.length > 0 && (

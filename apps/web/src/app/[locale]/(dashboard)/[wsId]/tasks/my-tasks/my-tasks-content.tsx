@@ -1448,6 +1448,15 @@ export default function MyTasksContent({
           onModeChange={setActiveMode}
           workspaceLabels={workspaceLabels}
           workspaceProjects={workspaceProjects}
+          workspaceEstimationConfig={
+            boardConfig
+              ? {
+                  estimation_type: boardConfig.estimation_type,
+                  extended_estimation: boardConfig.extended_estimation,
+                  allow_zero_estimates: boardConfig.allow_zero_estimates,
+                }
+              : null
+          }
           wsId={wsId}
         />
       </div>
