@@ -294,6 +294,319 @@ function TaskEditDialogComponent({
   }, []);
 
   // ============================================================================
+  // REALTIME SYNC - Subscribe to task changes from other users
+  // ============================================================================
+  useEffect(() => {
+    // Only subscribe in edit mode when dialog is open and we have a task ID
+    if (isCreateMode || !isOpen || !task?.id) return;
+
+    const supabase = createClient();
+    console.log('🔄 Setting up realtime subscription for task:', task.id);
+
+    // Helper function to fetch labels for the task
+    const fetchTaskLabels = async () => {
+      try {
+        const { data: labelLinks, error } = await supabase
+          .from('task_labels')
+          .select('label_id')
+          .eq('task_id', task.id);
+
+        if (error) {
+          console.error('Error fetching label links:', error);
+          throw error;
+        }
+
+        if (!labelLinks || labelLinks.length === 0) {
+          console.log('No labels found for task');
+          return [];
+        }
+
+        const labelIds = labelLinks
+          .map((l: any) => l.label_id)
+          .filter((id: any) => id != null);
+
+        if (labelIds.length === 0) return [];
+
+        const { data: labels, error: labelsError } = await supabase
+          .from('workspace_task_labels')
+          .select('id, name, color, created_at')
+          .in('id', labelIds);
+
+        if (labelsError) {
+          console.error('Error fetching label details:', labelsError);
+          throw labelsError;
+        }
+
+        return labels || [];
+      } catch (error: any) {
+        console.error('Failed to fetch task labels:', {
+          error,
+          message: error?.message,
+          details: error?.details,
+          hint: error?.hint,
+        });
+        return [];
+      }
+    };
+
+    // Helper function to fetch assignees for the task
+    const fetchTaskAssignees = async () => {
+      try {
+        const { data: assigneeLinks, error } = await supabase
+          .from('task_assignees')
+          .select('user_id')
+          .eq('task_id', task.id);
+
+        if (error) {
+          console.error('Error fetching assignee links:', error);
+          throw error;
+        }
+
+        if (!assigneeLinks || assigneeLinks.length === 0) {
+          console.log('No assignees found for task');
+          return [];
+        }
+
+        const userIds = assigneeLinks
+          .map((a: any) => a.user_id)
+          .filter((id: any) => id != null);
+
+        if (userIds.length === 0) return [];
+
+        const { data: users, error: usersError } = await supabase
+          .from('users')
+          .select('id, display_name, avatar_url')
+          .in('id', userIds);
+
+        if (usersError) {
+          console.error('Error fetching user details:', usersError);
+          throw usersError;
+        }
+
+        return users || [];
+      } catch (error: any) {
+        console.error('Failed to fetch task assignees:', {
+          error,
+          message: error?.message,
+          details: error?.details,
+          hint: error?.hint,
+        });
+        return [];
+      }
+    };
+
+    // Helper function to fetch projects for the task
+    const fetchTaskProjects = async () => {
+      try {
+        const { data: projectLinks, error } = await supabase
+          .from('task_project_tasks')
+          .select('project_id')
+          .eq('task_id', task.id);
+
+        if (error) {
+          console.error('Error fetching project links:', error);
+          throw error;
+        }
+
+        if (!projectLinks || projectLinks.length === 0) {
+          console.log('No projects found for task');
+          return [];
+        }
+
+        const projectIds = projectLinks
+          .map((p: any) => p.project_id)
+          .filter((id: any) => id != null);
+
+        if (projectIds.length === 0) return [];
+
+        const { data: projects, error: projectsError } = await supabase
+          .from('task_projects')
+          .select('id, name, status')
+          .in('id', projectIds);
+
+        if (projectsError) {
+          console.error('Error fetching project details:', projectsError);
+          throw projectsError;
+        }
+
+        return projects || [];
+      } catch (error: any) {
+        console.error('Failed to fetch task projects:', {
+          error,
+          message: error?.message,
+          details: error?.details,
+          hint: error?.hint,
+        });
+        return [];
+      }
+    };
+
+    // Subscribe to task changes (main task fields)
+    const taskChannel = supabase
+      .channel(`task-updates-${task.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tasks',
+          filter: `id=eq.${task.id}`,
+        },
+        async (payload) => {
+          console.log('📥 Received realtime update for task:', payload);
+          const updatedTask = payload.new as Task;
+
+          // Update local state with changes from other users
+          // Only update if no pending name update (avoid conflicts with debounced saves)
+          if (!pendingNameRef.current && updatedTask.name !== name) {
+            console.log(
+              '📝 Updating task name from realtime:',
+              updatedTask.name
+            );
+            setName(updatedTask.name);
+          }
+
+          // Update priority if changed
+          if (updatedTask.priority !== priority) {
+            console.log(
+              '🚩 Updating priority from realtime:',
+              updatedTask.priority
+            );
+            setPriority(updatedTask.priority ?? null);
+          }
+
+          // Update start date if changed
+          const updatedStartDate = updatedTask.start_date
+            ? new Date(updatedTask.start_date)
+            : undefined;
+          const currentStartDate = startDate?.toISOString();
+          const newStartDate = updatedStartDate?.toISOString();
+          if (currentStartDate !== newStartDate) {
+            console.log(
+              '📅 Updating start date from realtime:',
+              updatedStartDate
+            );
+            setStartDate(updatedStartDate);
+          }
+
+          // Update end date if changed
+          const updatedEndDate = updatedTask.end_date
+            ? new Date(updatedTask.end_date)
+            : undefined;
+          const currentEndDate = endDate?.toISOString();
+          const newEndDate = updatedEndDate?.toISOString();
+          if (currentEndDate !== newEndDate) {
+            console.log('📅 Updating end date from realtime:', updatedEndDate);
+            setEndDate(updatedEndDate);
+          }
+
+          // Update estimation points if changed
+          if (updatedTask.estimation_points !== estimationPoints) {
+            console.log(
+              '⏱️ Updating estimation points from realtime:',
+              updatedTask.estimation_points
+            );
+            setEstimationPoints(updatedTask.estimation_points ?? null);
+          }
+
+          // Update list assignment if changed
+          if (updatedTask.list_id !== selectedListId) {
+            console.log('📋 Updating list from realtime:', updatedTask.list_id);
+            setSelectedListId(updatedTask.list_id);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Realtime subscription status (tasks):', status);
+      });
+
+    // Subscribe to label changes
+    const labelChannel = supabase
+      .channel(`task-labels-${task.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'task_labels',
+          filter: `task_id=eq.${task.id}`,
+        },
+        async () => {
+          console.log('📥 Received realtime update for task labels');
+          const labels = await fetchTaskLabels();
+          console.log('🏷️ Updating labels from realtime:', labels);
+          setSelectedLabels(labels);
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Realtime subscription status (labels):', status);
+      });
+
+    // Subscribe to assignee changes
+    const assigneeChannel = supabase
+      .channel(`task-assignees-${task.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'task_assignees',
+          filter: `task_id=eq.${task.id}`,
+        },
+        async () => {
+          console.log('📥 Received realtime update for task assignees');
+          const assignees = await fetchTaskAssignees();
+          console.log('👥 Updating assignees from realtime:', assignees);
+          setSelectedAssignees(assignees);
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Realtime subscription status (assignees):', status);
+      });
+
+    // Subscribe to project changes
+    const projectChannel = supabase
+      .channel(`task-projects-${task.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'task_project_tasks',
+          filter: `task_id=eq.${task.id}`,
+        },
+        async () => {
+          console.log('📥 Received realtime update for task projects');
+          const projects = await fetchTaskProjects();
+          console.log('📦 Updating projects from realtime:', projects);
+          setSelectedProjects(projects);
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Realtime subscription status (projects):', status);
+      });
+
+    // Cleanup subscriptions on unmount or when task changes
+    return () => {
+      console.log('🧹 Cleaning up realtime subscriptions for task:', task.id);
+      supabase.removeChannel(taskChannel);
+      supabase.removeChannel(labelChannel);
+      supabase.removeChannel(assigneeChannel);
+      supabase.removeChannel(projectChannel);
+    };
+  }, [
+    isCreateMode,
+    isOpen,
+    task?.id,
+    name,
+    priority,
+    startDate,
+    endDate,
+    estimationPoints,
+    selectedListId,
+  ]);
+
+  // ============================================================================
   // BOARD & WORKSPACE DATA - Board config, workspace ID, and lists
   // ============================================================================
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
@@ -797,6 +1110,8 @@ function TaskEditDialogComponent({
   const [hasDraft, setHasDraft] = useState(false);
 
   const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const nameUpdateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingNameRef = useRef<string | null>(null);
 
   const draftStorageKey = useMemo(
     () => `tu-do:task-draft:${boardId}`,
@@ -812,6 +1127,7 @@ function TaskEditDialogComponent({
   const quickDueRef = useRef<(days: number | null) => void>(() => {});
   const updateEstimationRef = useRef<(points: number | null) => void>(() => {});
   const handleConvertToTaskRef = useRef<(() => Promise<void>) | null>(null);
+  const flushNameUpdateRef = useRef<(() => Promise<void>) | null>(null);
 
   // ============================================================================
   // CHANGE DETECTION - Track unsaved changes for save button state
@@ -1109,6 +1425,69 @@ function TaskEditDialogComponent({
     },
     [selectedListId, isCreateMode, task?.id, queryClient, boardId, toast]
   );
+
+  const saveNameToDatabase = useCallback(
+    async (newName: string) => {
+      const trimmedName = newName.trim();
+      if (!trimmedName || trimmedName === (task?.name || '').trim()) return;
+
+      if (isCreateMode || !task?.id || task?.id === 'new') {
+        return;
+      }
+
+      try {
+        const supabase = createClient();
+        const { error } = await supabase
+          .from('tasks')
+          .update({ name: trimmedName })
+          .eq('id', task.id);
+        if (error) throw error;
+        await invalidateTaskCaches(queryClient, boardId);
+      } catch (e: any) {
+        console.error('Failed updating task name', e);
+        toast({
+          title: 'Failed to update task name',
+          description: e.message || 'Please try again',
+          variant: 'destructive',
+        });
+      }
+    },
+    [task?.name, task?.id, isCreateMode, queryClient, boardId, toast]
+  );
+
+  const updateName = useCallback(
+    (newName: string) => {
+      // Clear any pending save
+      if (nameUpdateTimerRef.current) {
+        clearTimeout(nameUpdateTimerRef.current);
+      }
+
+      // Store the pending name
+      pendingNameRef.current = newName;
+
+      // Schedule debounced save (1 second delay)
+      nameUpdateTimerRef.current = setTimeout(() => {
+        saveNameToDatabase(newName);
+        pendingNameRef.current = null;
+        nameUpdateTimerRef.current = null;
+      }, 1000);
+    },
+    [saveNameToDatabase]
+  );
+
+  const flushNameUpdate = useCallback(async () => {
+    // Clear the debounce timer
+    if (nameUpdateTimerRef.current) {
+      clearTimeout(nameUpdateTimerRef.current);
+      nameUpdateTimerRef.current = null;
+    }
+
+    // Save immediately if there's a pending name
+    if (pendingNameRef.current) {
+      await saveNameToDatabase(pendingNameRef.current);
+      pendingNameRef.current = null;
+    }
+  }, [saveNameToDatabase]);
 
   const handleImageUpload = useCallback(
     async (file: File): Promise<string> => {
@@ -1634,6 +2013,13 @@ function TaskEditDialogComponent({
   const handleSave = useCallback(async () => {
     if (!name?.trim()) return;
 
+    // Clear any pending name update timer since we're saving now
+    if (nameUpdateTimerRef.current) {
+      clearTimeout(nameUpdateTimerRef.current);
+      nameUpdateTimerRef.current = null;
+      pendingNameRef.current = null;
+    }
+
     let currentDescription = description;
     if (flushEditorPendingRef.current) {
       const flushedContent = flushEditorPendingRef.current();
@@ -1821,8 +2207,11 @@ function TaskEditDialogComponent({
     collaborationMode,
   ]);
 
-  const handleClose = useCallback(() => {
+  const handleClose = useCallback(async () => {
     if (isLoading) return;
+
+    // Flush any pending name update before closing
+    await flushNameUpdate();
 
     // Check if we're in collaboration mode and not synced
     if (collaborationMode && !isCreateMode && (!synced || !connected)) {
@@ -1839,6 +2228,7 @@ function TaskEditDialogComponent({
     onClose();
   }, [
     isLoading,
+    flushNameUpdate,
     collaborationMode,
     isCreateMode,
     synced,
@@ -1847,15 +2237,17 @@ function TaskEditDialogComponent({
     onClose,
   ]);
 
-  const handleForceClose = useCallback(() => {
+  const handleForceClose = useCallback(async () => {
     setShowSyncWarning(false);
+    // Flush any pending name update before force closing
+    await flushNameUpdate();
     try {
       if (!isCreateMode && typeof window !== 'undefined') {
         localStorage.removeItem(draftStorageKey);
       }
     } catch {}
     onClose();
-  }, [isCreateMode, draftStorageKey, onClose]);
+  }, [isCreateMode, draftStorageKey, onClose, flushNameUpdate]);
 
   const handleDialogOpenChange = useCallback(
     (open: boolean) => {
@@ -1879,8 +2271,10 @@ function TaskEditDialogComponent({
   useEffect(() => {
     if (showSyncWarning && synced && connected) {
       // Give a brief moment for user to see the success state
-      const timer = setTimeout(() => {
+      const timer = setTimeout(async () => {
         setShowSyncWarning(false);
+        // Flush any pending name update before closing
+        await flushNameUpdate();
         // Now safe to close - proceed with the actual close
         try {
           if (!isCreateMode && typeof window !== 'undefined') {
@@ -1896,6 +2290,7 @@ function TaskEditDialogComponent({
     showSyncWarning,
     synced,
     connected,
+    flushNameUpdate,
     isCreateMode,
     draftStorageKey,
     onClose,
@@ -1968,6 +2363,12 @@ function TaskEditDialogComponent({
   // Reset state when dialog closes or opens
   useEffect(() => {
     if (!isOpen) {
+      // Clear pending name update timer
+      if (nameUpdateTimerRef.current) {
+        clearTimeout(nameUpdateTimerRef.current);
+        nameUpdateTimerRef.current = null;
+        pendingNameRef.current = null;
+      }
       setSlashState(createInitialSuggestionState());
       setMentionState(createInitialSuggestionState());
       setEditorInstance(null);
@@ -2797,6 +3198,7 @@ function TaskEditDialogComponent({
   quickDueRef.current = handleQuickDueDate;
   updateEstimationRef.current = updateEstimation;
   handleConvertToTaskRef.current = handleConvertToTask;
+  flushNameUpdateRef.current = flushNameUpdate;
 
   // ============================================================================
   // RENDER HELPERS - JSX fragments and menu components
@@ -3162,11 +3564,27 @@ function TaskEditDialogComponent({
                   <Input
                     ref={titleInputRef}
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      // Trigger debounced save while typing (in edit mode)
+                      if (!isCreateMode && e.target.value.trim()) {
+                        updateName(e.target.value);
+                      }
+                    }}
+                    onBlur={(e) => {
+                      // Flush pending save immediately when user clicks away (in edit mode)
+                      if (!isCreateMode && e.target.value.trim()) {
+                        flushNameUpdate();
+                      }
+                    }}
                     onKeyDown={(e) => {
                       // Enter key moves to description
                       if (e.key === 'Enter') {
                         e.preventDefault();
+                        // Flush pending save immediately when pressing Enter (in edit mode)
+                        if (!isCreateMode && e.currentTarget.value.trim()) {
+                          flushNameUpdate();
+                        }
                         const editorElement = editorRef.current?.querySelector(
                           '.ProseMirror'
                         ) as HTMLElement;
