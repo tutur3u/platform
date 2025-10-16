@@ -1,13 +1,31 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+
+interface Params {
+  params: Promise<{
+    postId: string;
+    wsId: string;
+  }>;
+}
 
 export async function PUT(
   req: Request,
-  { params }: { params: Promise<{ postId: string }> }
+  { params }: Params
 ) {
   const supabase = await createClient();
   const data = await req.json();
-  const { postId } = await params;
+  const { postId, wsId } = await params;
+
+  // Check permissions
+  const { withoutPermission } = await getPermissions({ wsId });
+  const canUpdateUserGroupsPosts = !withoutPermission('update_user_groups_posts');
+  if (!canUpdateUserGroupsPosts) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to update user group posts' },
+      { status: 403 }
+    );
+  }
 
   const multiple = Array.isArray(data);
 

@@ -4,8 +4,10 @@ import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getGuestLeadColumns } from './columns';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { GuestLeadHeader } from './header';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Guest User Leads',
@@ -28,34 +30,38 @@ export default async function GuestUserLeadsPage({
   params,
   searchParams,
 }: Props) {
-  const { wsId: id } = await params;
-  const searchParamsResolved = await searchParams;
-  const workspace = await getWorkspace(id);
-  const wsId = workspace.id;
-  const { data, count } = await getData(wsId, searchParamsResolved);
-
-  // const user = await getCurrentUser(true);
-  // const wsUser = await getWorkspaceUser(wsId, user?.id!);
-
-  const settingsRow = await getWorkspaceSettings(wsId);
-
   return (
-    <>
-      <GuestLeadHeader settingsRow={settingsRow} wsId={wsId} />
-      <Separator className="my-4" />
-      <CustomDataTable
-        data={data}
-        columnGenerator={getGuestLeadColumns}
-        namespace="guest-lead-data-table"
-        count={count}
-        defaultVisibility={{
-          id: false,
-          created_at: false,
-        }}
-      />
-    </>
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+        const { containsPermission } = await getPermissions({ wsId });
+        const canCreateLeadGenerations = containsPermission('create_lead_generations');
+        if (!canCreateLeadGenerations) {
+          notFound();
+        }
+        const searchParamsResolved = await searchParams;
+        const { data, count } = await getData(wsId, searchParamsResolved);
+        const settingsRow = await getWorkspaceSettings(wsId);
+        return (
+          <>
+            <GuestLeadHeader settingsRow={settingsRow} wsId={wsId} canCreateLeadGenerations={canCreateLeadGenerations} />
+            <Separator className="my-4" />
+            <CustomDataTable
+              data={data}
+              columnGenerator={getGuestLeadColumns}
+              namespace="guest-lead-data-table"
+              count={count}
+              defaultVisibility={{
+                id: false,
+                created_at: false,
+              }}
+            />
+          </>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
+
 
 async function getData(
   wsId: string,

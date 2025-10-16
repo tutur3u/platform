@@ -32,7 +32,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -62,6 +62,9 @@ export default function UserGroupPosts({
   count,
   onClick,
   canUpdatePosts,
+  canCreatePosts,
+  canDeletePosts,
+  canViewPosts = false,
 }: {
   wsId: string;
   groupId?: string;
@@ -70,6 +73,9 @@ export default function UserGroupPosts({
   count?: number | null;
   onClick?: (id: string) => void;
   canUpdatePosts: boolean;
+  canCreatePosts: boolean;
+  canDeletePosts: boolean;
+  canViewPosts?: boolean;
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -124,10 +130,8 @@ export default function UserGroupPosts({
       handleCloseDialog();
       router.refresh();
     } else {
-      toast({
-        title: 'Error',
-        content: 'An error occurred while saving the post.',
-      });
+      const errorData = await res.json();
+      toast.error(errorData.message);
     }
   };
 
@@ -145,10 +149,8 @@ export default function UserGroupPosts({
       handleCloseDialog();
       router.refresh();
     } else {
-      toast({
-        title: 'Error',
-        content: 'An error occurred while deleting the post.',
-      });
+      const errorData = await res.json();
+      toast.error(errorData.message);
     }
   };
 
@@ -160,7 +162,7 @@ export default function UserGroupPosts({
           {!!count && ` (${count})`}
         </div>
         <div className="flex items-center gap-2">
-          {groupId && canUpdatePosts && (
+          {groupId && canCreatePosts && (
             <Button onClick={() => handleOpenDialog()}>
               <BookPlus className="mr-1 h-5 w-5" />
               {t('ws-user-groups.add_post')}
@@ -214,7 +216,8 @@ export default function UserGroupPosts({
         </div>
       </div>
       <Separator className="mt-4 w-full" />
-      <div className="flex max-h-96 flex-col gap-2 overflow-y-auto py-4">
+      {canViewPosts && (
+        <div className="flex max-h-96 flex-col gap-2 overflow-y-auto py-4">
         <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
@@ -351,7 +354,7 @@ export default function UserGroupPosts({
                         <Pencil className="h-4 w-4" />
                       </Button>
                     )}
-                    {canUpdatePosts && (
+                    {canDeletePosts && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
@@ -406,7 +409,8 @@ export default function UserGroupPosts({
             {t('ws-user-groups.no_posts_to_show')}
           </div>
         )}
-      </div>
+        </div>
+      )}
     </>
   );
 }

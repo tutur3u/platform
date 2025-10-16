@@ -32,6 +32,7 @@ interface Props {
   post: UserGroupPost;
   hideEmailSending: boolean;
   disableEmailSending: boolean;
+  canUpdateUserGroupsPosts?: boolean;
 }
 
 export interface UserGroupPost {
@@ -53,6 +54,7 @@ function UserCard({
   post,
   hideEmailSending,
   disableEmailSending,
+  canUpdateUserGroupsPosts = false,
 }: Props) {
   const router = useRouter();
 
@@ -242,7 +244,7 @@ function UserCard({
                   notes,
                 })
               }
-              disabled={saving || !check}
+              disabled={saving || !check || !canUpdateUserGroupsPosts}
             >
               <Save />
             </Button>
@@ -266,7 +268,7 @@ function UserCard({
                     : '',
                   'w-full border'
                 )}
-                disabled={saving || !check}
+                disabled={saving || !check || !canUpdateUserGroupsPosts}
               >
                 <X />
               </Button>
@@ -284,7 +286,7 @@ function UserCard({
                     : '',
                   'w-full border'
                 )}
-                disabled={saving || !check}
+                disabled={saving || !check || !canUpdateUserGroupsPosts}
               >
                 <CircleSlash />
               </Button>
@@ -297,7 +299,7 @@ function UserCard({
                     : '',
                   'w-full border'
                 )}
-                disabled={saving || !check}
+                disabled={saving || !check || !canUpdateUserGroupsPosts}
               >
                 <Check />
               </Button>

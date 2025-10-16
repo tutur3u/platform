@@ -81,17 +81,27 @@ export default async function UserGroupDetailsPage({
         }
         const group = await getData(wsId, groupId);
 
+        // User Information Permissions
         const canViewPersonalInfo = containsPermission(
           'view_users_private_info'
         );
         const canViewPublicInfo = containsPermission('view_users_public_info');
+
+        // Feature Summary Navigation Button Permissions
         const canCheckUserAttendance = containsPermission(
           'check_user_attendance'
         );
-        const canUpdateUserGroups = containsPermission('update_user_groups');
         const canViewUserGroupsScores = containsPermission(
           'view_user_groups_scores'
         );
+        const canUpdateUserGroups = containsPermission('update_user_groups');
+
+        // Posts Permissions
+        const canViewUserGroupsPosts = containsPermission('view_user_groups_posts');
+        const canCreateUserGroupsPosts = containsPermission('create_user_groups_posts');
+        const canUpdateUserGroupsPosts = containsPermission('update_user_groups_posts');
+        const canDeleteUserGroupsPosts = containsPermission('delete_user_groups_posts');
+
 
         // Fetch group members data for the GroupMembers component
         const MEMBERS_PAGE_SIZE = 10;
@@ -105,7 +115,7 @@ export default async function UserGroupDetailsPage({
           }
         );
 
-        const { data: posts, count: postsCount } = await getGroupPosts(groupId);
+        const { data: posts, count: postsCount } = await getGroupPosts(wsId, groupId);
         const { data: linkedProducts, count: lpCount } =
           await getLinkedProducts(groupId);
 
@@ -224,13 +234,18 @@ export default async function UserGroupDetailsPage({
               </div>
 
               <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
+                {canViewUserGroupsPosts && (
                 <PostsClient
                   wsId={wsId}
                   groupId={groupId}
                   posts={posts}
                   count={postsCount}
-                  canUpdatePosts={canUpdateUserGroups}
-                />
+                  canUpdatePosts={canUpdateUserGroupsPosts}
+                  canCreatePosts={canCreateUserGroupsPosts}
+                  canDeletePosts={canDeleteUserGroupsPosts}
+                  canViewPosts={canViewUserGroupsPosts}
+                  />
+                )}
               </div>
 
               <LinkedProductsClient
@@ -263,7 +278,7 @@ async function getData(wsId: string, groupId: string) {
   return data as UserGroup;
 }
 
-async function getGroupPosts(groupId: string) {
+async function getGroupPosts(wsId: string, groupId: string) {
   const supabase = await createClient();
   const { data, error, count } = await supabase
     .from('user_group_posts')

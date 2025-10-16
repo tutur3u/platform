@@ -5,6 +5,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import DOMPurify from 'isomorphic-dompurify';
 import juice from 'juice';
 import type { NextRequest } from 'next/server';
@@ -30,6 +31,14 @@ export async function POST(
   }
 ) {
   const { wsId, userId } = await params;
+  const { withoutPermission } = await getPermissions({ wsId });
+
+  if (withoutPermission('create_lead_generations')) {
+    return NextResponse.json(
+      { message: 'User does not have permission to create lead generation emails' },
+      { status: 403 }
+    );
+  }
 
   // Parse and validate request body with Zod
   const parseResult = followUpEmailSchema.safeParse(await req.json());

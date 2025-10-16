@@ -77,13 +77,16 @@ export type Database = {
         | 'check_user_attendance'
         | 'create_inventory'
         | 'create_invoices'
+        | 'create_lead_generations'
         | 'create_transactions'
+        | 'create_user_groups_posts'
         | 'create_user_groups_scores'
         | 'create_user_groups'
         | 'create_users'
         | 'delete_inventory'
         | 'delete_invoices'
         | 'delete_transactions'
+        | 'delete_user_groups_posts'
         | 'delete_user_groups_scores'
         | 'delete_user_groups'
         | 'delete_users'
@@ -110,6 +113,7 @@ export type Database = {
         | 'update_inventory'
         | 'update_invoices'
         | 'update_transactions'
+        | 'update_user_groups_posts'
         | 'update_user_groups_scores'
         | 'update_user_groups'
         | 'update_users'
@@ -118,6 +122,7 @@ export type Database = {
         | 'view_inventory'
         | 'view_invoices'
         | 'view_transactions'
+        | 'view_user_groups_posts'
         | 'view_user_groups_scores'
         | 'view_user_groups'
         | 'view_users_private_info'
@@ -13521,14 +13526,17 @@ export const Constants = {
         'check_user_attendance',
         'create_inventory',
         'create_invoices',
+        'create_lead_generations',
         'create_transactions',
         'create_user_groups',
+        'create_user_groups_posts',
         'create_user_groups_scores',
         'create_users',
         'delete_inventory',
         'delete_invoices',
         'delete_transactions',
         'delete_user_groups',
+        'delete_user_groups_posts',
         'delete_user_groups_scores',
         'delete_users',
         'export_finance_data',
@@ -13555,6 +13563,7 @@ export const Constants = {
         'update_invoices',
         'update_transactions',
         'update_user_groups',
+        'update_user_groups_posts',
         'update_user_groups_scores',
         'update_users',
         'view_finance_stats',
@@ -13563,6 +13572,7 @@ export const Constants = {
         'view_invoices',
         'view_transactions',
         'view_user_groups',
+        'view_user_groups_posts',
         'view_user_groups_scores',
         'view_users_private_info',
         'view_users_public_info',

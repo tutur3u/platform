@@ -16,9 +16,9 @@ export async function PUT(req: Request, { params }: Params) {
 
   // Check permissions
   const { withoutPermission } = await getPermissions({ wsId });
-  if (withoutPermission('update_user_groups')) {
+  if (withoutPermission('update_user_groups_posts')) {
     return NextResponse.json(
-      { message: 'Insufficient permissions to update user groups' },
+      { message: 'Insufficient permissions to update user group posts' },
       { status: 403 }
     );
   }
@@ -45,9 +45,9 @@ export async function DELETE(_: Request, { params }: Params) {
 
   // Check permissions
   const { withoutPermission } = await getPermissions({ wsId });
-  if (withoutPermission('update_user_groups')) {
+  if (withoutPermission('delete_user_groups_posts')) {
     return NextResponse.json(
-      { message: 'Insufficient permissions to update user groups' },
+      { message: 'Insufficient permissions to delete user group posts' },
       { status: 403 }
     );
   }
