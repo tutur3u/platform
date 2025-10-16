@@ -34,50 +34,16 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useState } from 'react';
+import type {
+  SortOption,
+  TaskAssignee,
+  TaskFilters,
+  TaskLabel,
+  TaskProject,
+} from '../../shared/task-filter.types';
 
-interface TaskLabel {
-  id: string;
-  name: string;
-  color: string;
-  created_at: string;
-}
-
-interface TaskAssignee {
-  id: string;
-  display_name: string | null;
-  avatar_url?: string | null;
-  email?: string | null;
-}
-
-interface TaskProject {
-  id: string;
-  name: string;
-}
-
-export type SortOption =
-  | 'name-asc'
-  | 'name-desc'
-  | 'priority-high'
-  | 'priority-low'
-  | 'due-date-asc'
-  | 'due-date-desc'
-  | 'created-date-desc'
-  | 'created-date-asc'
-  | 'estimation-high'
-  | 'estimation-low';
-
-export interface TaskFilters {
-  labels: TaskLabel[];
-  assignees: TaskAssignee[];
-  projects: TaskProject[];
-  priorities: TaskPriority[];
-  dueDateRange: { from?: Date; to?: Date } | null;
-  estimationRange: { min?: number; max?: number } | null;
-  includeMyTasks: boolean;
-  includeUnassigned: boolean;
-  searchQuery?: string;
-  sortBy?: SortOption;
-}
+// Re-export types for backward compatibility
+export type { SortOption, TaskAssignee, TaskFilters, TaskLabel, TaskProject };
 
 interface Props {
   wsId: string;

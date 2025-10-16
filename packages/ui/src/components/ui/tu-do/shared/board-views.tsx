@@ -363,14 +363,14 @@ export function BoardViews({
         event.stopPropagation();
         const firstList = filteredLists[0];
         if (firstList) {
-          createTask(board.id, firstList.id, filteredLists);
+          createTask(board.id, firstList.id, filteredLists, filters);
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [board.id, createTask, filteredLists]);
+  }, [board.id, createTask, filteredLists, filters]);
 
   const renderView = () => {
     switch (currentView) {
@@ -394,6 +394,7 @@ export function BoardViews({
             lists={filteredLists}
             isLoading={false}
             disableSort={!!filters.sortBy}
+            filters={filters}
           />
         );
       case 'list':
@@ -423,6 +424,7 @@ export function BoardViews({
             lists={filteredLists}
             isLoading={false}
             disableSort={!!filters.sortBy}
+            filters={filters}
           />
         );
     }

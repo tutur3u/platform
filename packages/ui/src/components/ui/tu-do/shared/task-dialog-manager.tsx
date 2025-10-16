@@ -35,6 +35,7 @@ export function TaskDialogManager() {
       mode={state.mode}
       collaborationMode={state.collaborationMode}
       onOpenTask={openTaskById}
+      filters={state.filters}
     />
   );
 }

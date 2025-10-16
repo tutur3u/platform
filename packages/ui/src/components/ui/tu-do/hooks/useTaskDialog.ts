@@ -1,5 +1,6 @@
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import type { TaskFilters } from '@tuturuuu/ui/tu-do/boards/boardId/task-filter';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
 
 /**
@@ -13,7 +14,7 @@ import { useTaskDialogContext } from '../providers/task-dialog-provider';
  * openTask(task, boardId, availableLists);
  *
  * // Create new task
- * createTask(boardId, listId, availableLists);
+ * createTask(boardId, listId, availableLists, filters);
  *
  * // Register an update callback
  * onUpdate(() => {
@@ -31,7 +32,8 @@ export function useTaskDialog(): {
   createTask: (
     boardId: string,
     listId: string,
-    availableLists?: TaskList[]
+    availableLists?: TaskList[],
+    filters?: TaskFilters
   ) => void;
   closeDialog: () => void;
   onUpdate: (callback: () => void) => void;

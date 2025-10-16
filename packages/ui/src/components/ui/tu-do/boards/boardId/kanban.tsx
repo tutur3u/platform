@@ -81,6 +81,7 @@ import {
 } from './kanban-constants';
 import { calculateSortKeyWithRetry as createCalculateSortKeyWithRetry } from './kanban-sort-helpers';
 import { TaskCard } from './task';
+import type { TaskFilters } from './task-filter';
 import { BoardColumn } from './task-list';
 import { TaskListForm } from './task-list-form';
 
@@ -91,6 +92,7 @@ interface Props {
   lists: TaskList[];
   isLoading: boolean;
   disableSort?: boolean; // When true, skip internal sort_key sorting (parent already sorted)
+  filters?: TaskFilters;
 }
 
 export function KanbanBoard({
@@ -100,6 +102,7 @@ export function KanbanBoard({
   lists,
   isLoading,
   disableSort = false,
+  filters,
 }: Props) {
   const [activeColumn, setActiveColumn] = useState<TaskList | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -297,7 +300,7 @@ export function KanbanBoard({
         // Open create dialog with the first list
         const firstList = columns[0];
         if (firstList && boardId) {
-          createTask(boardId, firstList.id, columns);
+          createTask(boardId, firstList.id, columns, filters);
         }
       }
 
@@ -322,6 +325,7 @@ export function KanbanBoard({
     columns,
     boardId,
     createTask,
+    filters,
   ]);
 
   const processDragOver = useCallback(
@@ -1997,7 +2001,8 @@ export function KanbanBoard({
                         isPersonalWorkspace={workspace.personal}
                         onUpdate={handleUpdate}
                         onAddTask={() =>
-                          boardId && createTask(boardId, list.id, columns)
+                          boardId &&
+                          createTask(boardId, list.id, columns, filters)
                         }
                         selectedTasks={selectedTasks}
                         isMultiSelectMode={isMultiSelectMode}
@@ -2009,6 +2014,7 @@ export function KanbanBoard({
                         }
                         taskHeightsRef={taskHeightsRef}
                         optimisticUpdateInProgress={optimisticUpdateInProgress}
+                        filters={filters}
                       />
                     );
                   })}

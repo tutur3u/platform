@@ -160,14 +160,17 @@ export function RichTextEditor({
       '[&_ul[data-type="taskList"]_li_p]:my-1',
       // Checkbox styling
       '[&_ul[data-type="taskList"]_input[type="checkbox"]]:appearance-none [&_ul[data-type="taskList"]_input[type="checkbox"]]:h-[18px] [&_ul[data-type="taskList"]_input[type="checkbox"]]:w-[18px]',
-      '[&_ul[data-type="taskList"]_input[type="checkbox"]]:cursor-pointer [&_ul[data-type="taskList"]_input[type="checkbox"]]:rounded-[4px] [&_ul[data-type="taskList"]_input[type="checkbox"]]:border-2 [&_ul[data-type="taskList"]_input[type="checkbox"]]:border-dynamic-border',
+      '[&_ul[data-type="taskList"]_input[type="checkbox"]]:cursor-pointer [&_ul[data-type="taskList"]_input[type="checkbox"]]:rounded-[4px] [&_ul[data-type="taskList"]_input[type="checkbox"]]:border-2 [&_ul[data-type="taskList"]_input[type="checkbox"]]:border-input',
       '[&_ul[data-type="taskList"]_input[type="checkbox"]]:bg-background [&_ul[data-type="taskList"]_input[type="checkbox"]]:transition-all [&_ul[data-type="taskList"]_input[type="checkbox"]]:duration-150',
       '[&_ul[data-type="taskList"]_input[type="checkbox"]]:shrink-0',
       '[&_ul[data-type="taskList"]_input[type="checkbox"]:hover]:border-dynamic-gray [&_ul[data-type="taskList"]_input[type="checkbox"]:hover]:bg-dynamic-gray/10 [&_ul[data-type="taskList"]_input[type="checkbox"]:hover]:scale-105',
       '[&_ul[data-type="taskList"]_input[type="checkbox"]:focus]:outline-none [&_ul[data-type="taskList"]_input[type="checkbox"]:focus]:ring-2 [&_ul[data-type="taskList"]_input[type="checkbox"]:focus]:ring-dynamic-gray/30 [&_ul[data-type="taskList"]_input[type="checkbox"]:focus]:ring-offset-2 [&_ul[data-type="taskList"]_input[type="checkbox"]:focus]:border-dynamic-gray',
-      '[&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-dynamic-gray/30 [&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:border-dynamic-gray',
-      '[&_ul[data-type="taskList"]_input[type="checkbox"]:checked:hover]:bg-dynamic-gray/50 [&_ul[data-type="taskList"]_input[type="checkbox"]:checked:hover]:border-dynamic-gray/90',
-      `[&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M4%208l2.5%202.5L12%205%22%2F%3E%3C%2Fsvg%3E')]`,
+      '[&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-dynamic-gray/20 [&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:border-dynamic-gray',
+      '[&_ul[data-type="taskList"]_input[type="checkbox"]:checked:hover]:bg-dynamic-gray/10 [&_ul[data-type="taskList"]_input[type="checkbox"]:checked:hover]:border-dynamic-gray',
+      // Light mode checkmark (dark/black)
+      `[&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22%2309090b%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M4%208l2.5%202.5L12%205%22%2F%3E%3C%2Fsvg%3E')]`,
+      // Dark mode checkmark (white)
+      `dark:[&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M4%208l2.5%202.5L12%205%22%2F%3E%3C%2Fsvg%3E')]`,
       '[&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-center [&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-no-repeat [&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-[length:14px_14px]',
       // Nested task lists
       '[&_ul[data-type="taskList"]_ul[data-type="taskList"]]:my-0 [&_ul[data-type="taskList"]_ul[data-type="taskList"]]:ml-0',
