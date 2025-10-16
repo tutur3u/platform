@@ -7,13 +7,19 @@ export default function PostsClient({
   groupId,
   posts,
   count,
-  canUpdatePosts,
+  canUpdatePosts = false,
+  canCreatePosts = false,
+  canDeletePosts = false,
+  canViewPosts = true,
 }: {
   wsId: string;
   groupId: string;
   posts: UserGroupPost[];
   count: number | null;
-  canUpdatePosts: boolean;
+  canUpdatePosts?: boolean;
+  canCreatePosts?: boolean;
+  canDeletePosts?: boolean;
+  canViewPosts?: boolean;
 }) {
   return (
     <UserGroupPosts
@@ -22,6 +28,9 @@ export default function PostsClient({
       posts={posts}
       count={count}
       canUpdatePosts={canUpdatePosts}
+      canCreatePosts={canCreatePosts}
+      canDeletePosts={canDeletePosts}
+      canViewPosts={canViewPosts}
     />
   );
 }

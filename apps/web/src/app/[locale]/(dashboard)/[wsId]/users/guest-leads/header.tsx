@@ -19,9 +19,14 @@ interface Props {
   settingsRow: {
     guest_user_checkup_threshold: number | null;
   } | null;
+  canCreateLeadGenerations: boolean;
 }
 
-export function GuestLeadHeader({ wsId, settingsRow }: Props) {
+export function GuestLeadHeader({
+  wsId,
+  settingsRow,
+  canCreateLeadGenerations,
+}: Props) {
   const t = useTranslations();
   const [open, setOpen] = useState(false);
 
@@ -40,7 +45,7 @@ export function GuestLeadHeader({ wsId, settingsRow }: Props) {
       <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            {!hasThreshold ? (
+            {!hasThreshold && canCreateLeadGenerations ? (
               <Button
                 size="xs"
                 className="w-full md:w-fit border border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/15"
@@ -49,7 +54,7 @@ export function GuestLeadHeader({ wsId, settingsRow }: Props) {
                 <Settings className="h-4 w-4" />
                 {t('users.guest_leads.create_settings')}
               </Button>
-            ) : (
+            ) : canCreateLeadGenerations ? (
               <Button
                 size="xs"
                 variant="ghost"
@@ -59,7 +64,7 @@ export function GuestLeadHeader({ wsId, settingsRow }: Props) {
                 <Settings className="h-4 w-4 mr-1" />
                 {t('common.settings')}
               </Button>
-            )}
+            ) : null}
           </DialogTrigger>
           <DialogContent
             onOpenAutoFocus={(e) => e.preventDefault()}
@@ -75,6 +80,7 @@ export function GuestLeadHeader({ wsId, settingsRow }: Props) {
               wsId={wsId}
               data={settingsRow ?? undefined}
               onFinish={() => setOpen(false)}
+              canCreateLeadGenerations={canCreateLeadGenerations}
             />
           </DialogContent>
         </Dialog>

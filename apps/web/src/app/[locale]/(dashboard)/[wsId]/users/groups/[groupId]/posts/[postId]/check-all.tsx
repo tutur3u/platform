@@ -13,12 +13,14 @@ export function CheckAll({
   postId,
   users,
   completed,
+  canUpdateUserGroupsPosts = false,
 }: {
   wsId: string;
   groupId: string;
   postId: string;
   users: WorkspaceUser[];
   completed: boolean;
+  canUpdateUserGroupsPosts?: boolean;
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -28,7 +30,7 @@ export function CheckAll({
   const endpoint = `/api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}`;
 
   const handleSubmit = async () => {
-    if (loading) return;
+    if (loading || !canUpdateUserGroupsPosts) return;
     setLoading(true);
 
     const response = await fetch(endpoint, {
@@ -53,9 +55,14 @@ export function CheckAll({
   };
 
   return (
-    <Button onClick={handleSubmit} disabled={loading || completed}>
+    <Button
+      onClick={handleSubmit}
+      disabled={loading || completed || !canUpdateUserGroupsPosts}
+    >
       <CheckCheck className="mr-1" />
-      {completed || t('ws_post_details.check_all')}
+      {completed
+        ? t('ws_post_details.completed')
+        : t('ws_post_details.check_all')}
     </Button>
   );
 }

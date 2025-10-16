@@ -2418,6 +2418,17 @@
     "update_user_groups_scores_description": "Allows members to edit existing scores for user groups in the workspace.",
     "delete_user_groups_scores": "Delete User Groups Scores",
     "delete_user_groups_scores_description": "Allows members to delete scores for user groups from the workspace.",
+    "view_user_groups_posts": "View User Groups Posts",
+    "view_user_groups_posts_description": "Allows members to view posts in user groups in the workspace.",
+    "create_user_groups_posts": "Create User Groups Posts",
+    "create_user_groups_posts_description": "Allows members to create new posts in user groups in the workspace.",
+    "update_user_groups_posts": "Update User Groups Posts",
+    "update_user_groups_posts_description": "Allows members to edit existing posts in user groups in the workspace.",
+    "delete_user_groups_posts": "Delete User Groups Posts",
+    "delete_user_groups_posts_description": "Allows members to delete posts from user groups in the workspace.",
+    "leads": "Leads",
+    "create_lead_generations": "Create Lead Generations",
+    "create_lead_generations_description": "Allows members to create new lead generations in the workspace.",
     "transactions": "Transactions"
   },
   "platform-roles": {
@@ -3400,7 +3411,8 @@
     "failed_create_promotion": "Failed to create promotion"
   },
   "ws_post_details": {
-    "check_all": "Check all"
+    "check_all": "Check all",
+    "completed": "Completed"
   },
   "ws-documents": {
     "plural": "Documents",

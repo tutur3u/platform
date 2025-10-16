@@ -32,6 +32,7 @@ interface Props {
   post: UserGroupPost;
   hideEmailSending: boolean;
   disableEmailSending: boolean;
+  canUpdateUserGroupsPosts?: boolean;
 }
 
 export interface UserGroupPost {
@@ -53,6 +54,7 @@ function UserCard({
   post,
   hideEmailSending,
   disableEmailSending,
+  canUpdateUserGroupsPosts = false,
 }: Props) {
   const router = useRouter();
 
@@ -236,71 +238,79 @@ function UserCard({
       >
         <div className="flex w-full items-center justify-center gap-2">
           {check && check.notes !== notes ? (
-            <Button
-              onClick={() =>
-                handleSaveStatus({
-                  notes,
-                })
-              }
-              disabled={saving || !check}
-            >
-              <Save />
-            </Button>
+            canUpdateUserGroupsPosts && (
+              <Button
+                onClick={() =>
+                  handleSaveStatus({
+                    notes,
+                  })
+                }
+                disabled={saving || !check}
+              >
+                <Save />
+              </Button>
+            )
           ) : (
             <>
-              <Button
-                variant={
-                  check?.is_completed != null && check.is_completed
-                    ? 'outline'
-                    : 'ghost'
-                }
-                onClick={() =>
-                  handleSaveStatus({
-                    isCompleted: false,
-                    notes,
-                  })
-                }
-                className={cn(
-                  check?.is_completed != null && !check.is_completed
-                    ? 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20 hover:text-dynamic-red'
-                    : '',
-                  'w-full border'
-                )}
-                disabled={saving || !check}
-              >
-                <X />
-              </Button>
-              <Button
-                variant={check?.is_completed != null ? 'outline' : 'ghost'}
-                onClick={() =>
-                  handleSaveStatus({
-                    isCompleted: null,
-                    notes,
-                  })
-                }
-                className={cn(
-                  check?.is_completed == null
-                    ? 'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20 hover:text-dynamic-blue'
-                    : '',
-                  'w-full border'
-                )}
-                disabled={saving || !check}
-              >
-                <CircleSlash />
-              </Button>
-              <Button
-                variant={check?.is_completed == null ? 'outline' : 'ghost'}
-                onClick={() => handleSaveStatus({ isCompleted: true, notes })}
-                className={cn(
-                  check?.is_completed != null && check.is_completed
-                    ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20 hover:text-dynamic-green'
-                    : '',
-                  'w-full border'
-                )}
-                disabled={saving || !check}
-              >
-                <Check />
-              </Button>
+              {canUpdateUserGroupsPosts && (
+                <Button
+                  variant={
+                    check?.is_completed != null && check.is_completed
+                      ? 'outline'
+                      : 'ghost'
+                  }
+                  onClick={() =>
+                    handleSaveStatus({
+                      isCompleted: false,
+                      notes,
+                    })
+                  }
+                  className={cn(
+                    check?.is_completed != null && !check.is_completed
+                      ? 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20 hover:text-dynamic-red'
+                      : '',
+                    'w-full border'
+                  )}
+                  disabled={saving || !check}
+                >
+                  <X />
+                </Button>
+              )}
+              {canUpdateUserGroupsPosts && (
+                <Button
+                  variant={check?.is_completed != null ? 'outline' : 'ghost'}
+                  onClick={() =>
+                    handleSaveStatus({
+                      isCompleted: null,
+                      notes,
+                    })
+                  }
+                  className={cn(
+                    check?.is_completed == null
+                      ? 'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20 hover:text-dynamic-blue'
+                      : '',
+                    'w-full border'
+                  )}
+                  disabled={saving || !check}
+                >
+                  <CircleSlash />
+                </Button>
+              )}
+              {canUpdateUserGroupsPosts && (
+                <Button
+                  variant={check?.is_completed == null ? 'outline' : 'ghost'}
+                  onClick={() => handleSaveStatus({ isCompleted: true, notes })}
+                  className={cn(
+                    check?.is_completed != null && check.is_completed
+                      ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20 hover:text-dynamic-green'
+                      : '',
+                    'w-full border'
+                  )}
+                  disabled={saving || !check}
+                >
+                  <Check />
+                </Button>
+              )}
             </>
           )}
         </div>

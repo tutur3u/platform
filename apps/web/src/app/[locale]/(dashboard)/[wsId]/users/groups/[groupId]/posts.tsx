@@ -32,7 +32,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -62,6 +62,9 @@ export default function UserGroupPosts({
   count,
   onClick,
   canUpdatePosts,
+  canCreatePosts,
+  canDeletePosts,
+  canViewPosts = false,
 }: {
   wsId: string;
   groupId?: string;
@@ -70,6 +73,9 @@ export default function UserGroupPosts({
   count?: number | null;
   onClick?: (id: string) => void;
   canUpdatePosts: boolean;
+  canCreatePosts: boolean;
+  canDeletePosts: boolean;
+  canViewPosts?: boolean;
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -124,10 +130,8 @@ export default function UserGroupPosts({
       handleCloseDialog();
       router.refresh();
     } else {
-      toast({
-        title: 'Error',
-        content: 'An error occurred while saving the post.',
-      });
+      const errorData = await res.json();
+      toast.error(errorData.message);
     }
   };
 
@@ -145,10 +149,8 @@ export default function UserGroupPosts({
       handleCloseDialog();
       router.refresh();
     } else {
-      toast({
-        title: 'Error',
-        content: 'An error occurred while deleting the post.',
-      });
+      const errorData = await res.json();
+      toast.error(errorData.message);
     }
   };
 
@@ -160,7 +162,7 @@ export default function UserGroupPosts({
           {!!count && ` (${count})`}
         </div>
         <div className="flex items-center gap-2">
-          {groupId && canUpdatePosts && (
+          {groupId && canCreatePosts && (
             <Button onClick={() => handleOpenDialog()}>
               <BookPlus className="mr-1 h-5 w-5" />
               {t('ws-user-groups.add_post')}
@@ -214,199 +216,204 @@ export default function UserGroupPosts({
         </div>
       </div>
       <Separator className="mt-4 w-full" />
-      <div className="flex max-h-96 flex-col gap-2 overflow-y-auto py-4">
-        <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>
-                {currentPost?.id
-                  ? t('ws-user-groups.edit_post')
-                  : t('ws-user-groups.add_post')}
-              </DialogTitle>
-              <DialogDescription>
-                {currentPost?.id
-                  ? t('ws-user-groups.edit_post_description')
-                  : t('ws-user-groups.add_post_description')}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid items-center gap-2">
-                <Label htmlFor="title">
-                  {t('post-email-data-table.post_title')}
-                </Label>
-                <Input
-                  id="title"
-                  name="title"
-                  placeholder={t(
-                    'post-email-data-table.post_title_placeholder'
-                  )}
-                  value={currentPost?.title || ''}
-                  onChange={handleInputChange}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid items-center gap-2">
-                <Label htmlFor="content">
-                  {t('post-email-data-table.post_content')}
-                </Label>
-                <Textarea
-                  id="content"
-                  name="content"
-                  placeholder={t(
-                    'post-email-data-table.post_content_placeholder'
-                  )}
-                  value={currentPost?.content || ''}
-                  onChange={handleInputChange}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid items-center gap-2">
-                <Label htmlFor="created_at">
-                  {t('post-email-data-table.notes')}
-                </Label>
-                <Textarea
-                  id="notes"
-                  name="notes"
-                  placeholder={t('post-email-data-table.notes_placeholder')}
-                  value={currentPost?.notes || ''}
-                  onChange={handleInputChange}
-                  className="col-span-3"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit" onClick={submitPost}>
-                {currentPost?.id ? t('common.save') : t('common.create')}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {posts.length > 0 ? (
-          posts.map((post) => (
-            <div
-              key={post.id}
-              role={onClick ? 'button' : undefined}
-              tabIndex={onClick ? 0 : -1}
-              className={cn(
-                'flex flex-col gap-2 rounded border p-2 transition duration-300 hover:border-foreground hover:bg-foreground/5',
-                selectedPostId === post.id &&
-                  'border-foreground bg-foreground/5',
-                onClick ? 'cursor-pointer' : ''
-              )}
-              onClick={() => post.id && onClick && onClick(post.id)}
-              onKeyDown={(e) => {
-                if (!onClick) return;
-                if ((e.key === 'Enter' || e.key === ' ') && post.id) {
-                  e.preventDefault();
-                  onClick(post.id);
-                }
-              }}
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-left font-semibold text-sm">
-                    {post.title}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 font-semibold">
-                    {post?.group_name && (
-                      <div className="flex w-fit items-center gap-0.5 rounded bg-foreground px-2 py-1 text-background text-xs">
-                        {post?.group_name}
-                      </div>
+      {canViewPosts && (
+        <div className="flex max-h-96 flex-col gap-2 overflow-y-auto py-4">
+          <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>
+                  {currentPost?.id
+                    ? t('ws-user-groups.edit_post')
+                    : t('ws-user-groups.add_post')}
+                </DialogTitle>
+                <DialogDescription>
+                  {currentPost?.id
+                    ? t('ws-user-groups.edit_post_description')
+                    : t('ws-user-groups.add_post_description')}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid items-center gap-2">
+                  <Label htmlFor="title">
+                    {t('post-email-data-table.post_title')}
+                  </Label>
+                  <Input
+                    id="title"
+                    name="title"
+                    placeholder={t(
+                      'post-email-data-table.post_title_placeholder'
                     )}
-                    {post.created_at && (
-                      <div className="flex items-center gap-0.5 text-xs opacity-70">
-                        <Clock className="h-3 w-3" />
-                        {format(new Date(post.created_at), 'HH:mm, dd/MM/yyyy')}
-                      </div>
-                    )}
-                  </div>
+                    value={currentPost?.title || ''}
+                    onChange={handleInputChange}
+                    className="col-span-3"
+                  />
                 </div>
-                {groupId && (
-                  <div className="flex gap-2 text-start">
-                    <Link
-                      href={
-                        groupId
-                          ? `/${wsId}/users/groups/${groupId}/posts/${post.id}`
-                          : '#'
-                      }
-                    >
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                    {canUpdatePosts && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenDialog(post);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                <div className="grid items-center gap-2">
+                  <Label htmlFor="content">
+                    {t('post-email-data-table.post_content')}
+                  </Label>
+                  <Textarea
+                    id="content"
+                    name="content"
+                    placeholder={t(
+                      'post-email-data-table.post_content_placeholder'
                     )}
-                    {canUpdatePosts && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              {t(
-                                'ws-user-groups.delete_post_confirmation_title'
-                              )}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                              {t(
-                                'ws-user-groups.delete_post_confirmation_description'
-                              )}
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>
-                              {t('ws-user-groups.delete_cancel')}
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => post.id && deletePost(post.id)}
+                    value={currentPost?.content || ''}
+                    onChange={handleInputChange}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid items-center gap-2">
+                  <Label htmlFor="created_at">
+                    {t('post-email-data-table.notes')}
+                  </Label>
+                  <Textarea
+                    id="notes"
+                    name="notes"
+                    placeholder={t('post-email-data-table.notes_placeholder')}
+                    value={currentPost?.notes || ''}
+                    onChange={handleInputChange}
+                    className="col-span-3"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" onClick={submitPost}>
+                  {currentPost?.id ? t('common.save') : t('common.create')}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {posts.length > 0 ? (
+            posts.map((post) => (
+              <div
+                key={post.id}
+                role={onClick ? 'button' : undefined}
+                tabIndex={onClick ? 0 : -1}
+                className={cn(
+                  'flex flex-col gap-2 rounded border p-2 transition duration-300 hover:border-foreground hover:bg-foreground/5',
+                  selectedPostId === post.id &&
+                    'border-foreground bg-foreground/5',
+                  onClick ? 'cursor-pointer' : ''
+                )}
+                onClick={() => post.id && onClick && onClick(post.id)}
+                onKeyDown={(e) => {
+                  if (!onClick) return;
+                  if ((e.key === 'Enter' || e.key === ' ') && post.id) {
+                    e.preventDefault();
+                    onClick(post.id);
+                  }
+                }}
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="text-left font-semibold text-sm">
+                      {post.title}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 font-semibold">
+                      {post?.group_name && (
+                        <div className="flex w-fit items-center gap-0.5 rounded bg-foreground px-2 py-1 text-background text-xs">
+                          {post?.group_name}
+                        </div>
+                      )}
+                      {post.created_at && (
+                        <div className="flex items-center gap-0.5 text-xs opacity-70">
+                          <Clock className="h-3 w-3" />
+                          {format(
+                            new Date(post.created_at),
+                            'HH:mm, dd/MM/yyyy'
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {groupId && (
+                    <div className="flex gap-2 text-start">
+                      <Link
+                        href={
+                          groupId
+                            ? `/${wsId}/users/groups/${groupId}/posts/${post.id}`
+                            : '#'
+                        }
+                      >
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                      {canUpdatePosts && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDialog(post);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {canDeletePosts && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={(e) => e.stopPropagation()}
                             >
-                              {t('ws-user-groups.delete_continue')}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                {t(
+                                  'ws-user-groups.delete_post_confirmation_title'
+                                )}
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {t(
+                                  'ws-user-groups.delete_post_confirmation_description'
+                                )}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>
+                                {t('ws-user-groups.delete_cancel')}
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => post.id && deletePost(post.id)}
+                              >
+                                {t('ws-user-groups.delete_continue')}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {configs.showContent && post.content && (
+                  <div className="whitespace-pre-line text-start text-sm opacity-70">
+                    {post.content}
                   </div>
                 )}
+                {configs.showStatus && groupId && post.id && (
+                  <PostEmailStatus groupId={groupId} postId={post.id} />
+                )}
               </div>
-              {configs.showContent && post.content && (
-                <div className="whitespace-pre-line text-start text-sm opacity-70">
-                  {post.content}
-                </div>
-              )}
-              {configs.showStatus && groupId && post.id && (
-                <PostEmailStatus groupId={groupId} postId={post.id} />
-              )}
+            ))
+          ) : (
+            <div className="text-center text-sm opacity-50">
+              {t('ws-user-groups.no_posts_to_show')}
             </div>
-          ))
-        ) : (
-          <div className="text-center text-sm opacity-50">
-            {t('ws-user-groups.no_posts_to_show')}
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </>
   );
 }

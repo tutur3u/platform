@@ -27,14 +27,18 @@ interface Props {
 export default async function GuestLeadFollowUpPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
-      {async ({ wsId }) => {
-        const { userId } = await params;
+      {async ({ wsId, userId }) => {
+        const { containsPermission } = await getPermissions({ wsId });
+        const canCreateLeadGenerations = containsPermission(
+          'create_lead_generations'
+        );
+        if (!canCreateLeadGenerations) {
+          notFound();
+        }
         const t = await getTranslations();
         const supabase = await createClient();
         const sbAdmin = await createAdminClient();
-        const { containsPermission } = await getPermissions({
-          wsId,
-        });
+
         const canCheckUserAttendance = containsPermission(
           'check_user_attendance'
         );

@@ -15,28 +15,28 @@ export async function GET(_: Request, { params }: Params) {
 
   // Check permissions
   const { withoutPermission } = await getPermissions({ wsId });
-  if (withoutPermission('view_user_groups')) {
+  if (withoutPermission('view_user_groups_posts')) {
     return NextResponse.json(
-      { message: 'Insufficient permissions to view user groups' },
+      { message: 'Insufficient permissions to view user group posts' },
       { status: 403 }
     );
   }
 
-  const { data, error } = await supabase
+  const { data, error, count } = await supabase
     .from('user_group_posts')
-    .select('*')
+    .select('*', { count: 'exact' })
     .eq('group_id', groupId)
-    .single();
+    .order('created_at', { ascending: false });
 
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error fetching workspace user groups' },
+      { message: 'Error fetching user group posts' },
       { status: 500 }
     );
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json({ data, count });
 }
 
 export async function POST(req: Request, { params }: Params) {
@@ -46,9 +46,9 @@ export async function POST(req: Request, { params }: Params) {
 
   // Check permissions
   const { withoutPermission } = await getPermissions({ wsId });
-  if (withoutPermission('update_user_groups')) {
+  if (withoutPermission('create_user_groups_posts')) {
     return NextResponse.json(
-      { message: 'Insufficient permissions to update user groups' },
+      { message: 'Insufficient permissions to create user group posts' },
       { status: 403 }
     );
   }

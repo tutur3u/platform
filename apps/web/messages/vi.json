@@ -2518,6 +2518,17 @@
     "update_user_groups_scores_description": "Cho phép thành viên chỉnh sửa điểm hiện có của các nhóm người dùng trong không gian làm việc.",
     "delete_user_groups_scores": "Xóa điểm nhóm người dùng",
     "delete_user_groups_scores_description": "Cho phép thành viên xóa điểm của các nhóm người dùng khỏi không gian làm việc.",
+    "view_user_groups_posts": "Xem bài viết nhóm người dùng",
+    "view_user_groups_posts_description": "Cho phép thành viên xem bài viết trong các nhóm người dùng trong không gian làm việc.",
+    "create_user_groups_posts": "Tạo bài viết nhóm người dùng",
+    "create_user_groups_posts_description": "Cho phép thành viên tạo bài viết mới trong các nhóm người dùng trong không gian làm việc.",
+    "update_user_groups_posts": "Cập nhật bài viết nhóm người dùng",
+    "update_user_groups_posts_description": "Cho phép thành viên chỉnh sửa bài viết hiện có trong các nhóm người dùng trong không gian làm việc.",
+    "delete_user_groups_posts": "Xóa bài viết nhóm người dùng",
+    "delete_user_groups_posts_description": "Cho phép thành viên xóa bài viết khỏi các nhóm người dùng trong không gian làm việc.",
+    "leads": "Khách hàng tiềm năng",
+    "create_lead_generations": "Tạo khách hàng tiềm năng",
+    "create_lead_generations_description": "Cho phép thành viên tạo khách hàng tiềm năng mới trong không gian làm việc.",
     "transactions": "Giao dịch tài chính"
   },
   "platform-roles": {
@@ -3541,7 +3552,8 @@
     "failed_create_promotion": "Đã có lỗi xảy ra khi tạo mã giảm giá"
   },
   "ws_post_details": {
-    "check_all": "Đã kiểm tra tất cả"
+    "check_all": "Đã kiểm tra tất cả",
+    "completed": "Hoàn thành"
   },
   "ws-documents": {
     "plural": "Tài liệu",
