@@ -1,12 +1,23 @@
 'use client';
 
 import { AuthButton } from './auth-button';
+import { NavItem, useNavigation } from './shared/navigation-config';
 import { SupabaseUser } from '@ncthub/supabase/next/user';
 import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@ncthub/ui/accordion';
 import { ThemeToggle } from '@ncthub/ui/custom/theme-toggle';
 import { MenuIcon } from '@ncthub/ui/icons';
-import { Separator } from '@ncthub/ui/separator';
-import { Sheet, SheetContent, SheetTrigger } from '@ncthub/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from '@ncthub/ui/sheet';
 import { cn } from '@ncthub/utils/format';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -24,32 +35,6 @@ interface NavLinkProps {
   onClick?: () => void;
   className?: string;
 }
-
-interface NavItem {
-  href: string;
-  label: string;
-  external?: boolean;
-}
-
-const navItems = (t: any, user: WorkspaceUser | null) => {
-  const baseItems = [
-    { href: '/', label: t('common.home') },
-    { href: '/about', label: t('common.about') },
-    { href: '/projects', label: t('common.projects') },
-    { href: '/contributors', label: t('common.contributors') },
-    { href: '/meet-together', label: t('common.meet-together') },
-    { href: '/neo-crush', label: 'Neo Crush' },
-    { href: '/neo-chess', label: 'Neo Chess' },
-    { href: '/neo-generator', label: 'Neo Generator' },
-  ] as NavItem[];
-
-  // Only add Scanner for logged-in users
-  if (user) {
-    baseItems.push({ href: '/scanner', label: 'Scanner' });
-  }
-
-  return baseItems;
-};
 
 const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
   const pathname = usePathname();
@@ -69,23 +54,6 @@ const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
   return <Link {...linkProps}>{item.label}</Link>;
 };
 
-const DesktopMenu: React.FC<{ t: any; user: WorkspaceUser | null }> = ({
-  t,
-  user,
-}) => {
-  return (
-    <div className="hidden w-full items-center rounded-2xl border-[0.5px] border-gray-700/50 bg-primary-foreground px-6 py-3 font-semibold md:flex md:gap-6 lg:gap-8">
-      {navItems(t, user).map((item) => (
-        <NavLink
-          key={item.href}
-          item={item}
-          className="md:text-sm lg:text-base"
-        />
-      ))}
-    </div>
-  );
-};
-
 const MobileNavLink: React.FC<NavLinkProps> = ({ item, onClick }) => (
   <NavLink
     item={item}
@@ -98,25 +66,120 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
   const [isOpened, setIsOpened] = useState(false);
   const closeMenu = () => setIsOpened(false);
 
+  const { categories } = useNavigation(t);
+
+  // Extract categories by their titles
+  const mainLinks = categories.find((cat) => cat.title === 'main')?.items || [];
+  const resources =
+    categories.find((cat) => cat.title === 'resources')?.items || [];
+  const products =
+    categories.find((cat) => cat.title === 'products')?.items || [];
+  const games = categories.find((cat) => cat.title === 'games')?.items || [];
+
   return (
     <Sheet open={isOpened} onOpenChange={setIsOpened}>
-      <SheetTrigger className="rounded-lg border border-brand-light-blue/20 bg-brand-light-blue/5 p-2 font-semibold text-brand-light-blue transition hover:bg-brand-light-blue/10">
+      <SheetTrigger className="rounded-lg p-2 transition-all hover:bg-accent active:bg-accent/80">
         <MenuIcon className="h-5 w-5" />
       </SheetTrigger>
-      <SheetContent className="md:hidden">
-        <div className={cn('mt-6 items-center gap-1', user ? 'grid' : 'flex')}>
-          <AuthButton
-            user={sbUser}
-            className="w-full items-center justify-center"
-            onClick={closeMenu}
-          />
-          {!user && <ThemeToggle forceDisplay />}
-        </div>
-        <Separator className="my-4" />
-        <div className="grid gap-2 text-center font-semibold">
-          {navItems(t, user).map((item) => (
-            <MobileNavLink key={item.href} item={item} onClick={closeMenu} />
-          ))}
+
+      <SheetContent side="right" className="w-full border-l p-0 md:hidden">
+        <SheetTitle />
+        <div className="flex h-full flex-col">
+          {/* Header with Auth and Theme */}
+          <div className="border-b px-6 py-6">
+            <div className={cn('items-center gap-3', user ? 'grid' : 'flex')}>
+              <AuthButton
+                user={sbUser}
+                className="w-full items-center justify-center"
+                onClick={closeMenu}
+              />
+              {!user && <ThemeToggle forceDisplay />}
+            </div>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="flex flex-col space-y-4 py-6">
+              {/* Main Links */}
+              <div className="px-6">
+                <div className="grid gap-2 font-medium">
+                  {mainLinks.map((item) => (
+                    <MobileNavLink
+                      key={item.href}
+                      item={item}
+                      onClick={closeMenu}
+                      className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <Accordion type="multiple" className="space-y-3">
+                {/* Resources Section */}
+                <AccordionItem value="resources" className="border-none px-4">
+                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
+                    <span className="text-sm font-semibold">
+                      {t('common.resources')}
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-3 pb-2">
+                    <div className="grid gap-2 px-2">
+                      {resources.map((item) => (
+                        <MobileNavLink
+                          key={item.href}
+                          item={item}
+                          onClick={closeMenu}
+                          className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
+                        />
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* Products Section */}
+                <AccordionItem value="products" className="border-none px-4">
+                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
+                    <span className="text-sm font-semibold">
+                      {t('common.products')}
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-3 pb-2">
+                    <div className="grid gap-2 px-2">
+                      {products.map((item) => (
+                        <MobileNavLink
+                          key={item.href}
+                          item={item}
+                          onClick={closeMenu}
+                          className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
+                        />
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* Games Section */}
+                <AccordionItem value="games" className="border-none px-4">
+                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
+                    <span className="text-sm font-semibold">
+                      {t('common.games')}
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-3 pb-2">
+                    <div className="grid gap-2 px-2">
+                      {games.map((item) => (
+                        <MobileNavLink
+                          key={item.href}
+                          item={item}
+                          onClick={closeMenu}
+                          className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
+                        />
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
@@ -127,12 +190,9 @@ const Menu: React.FC<MenuProps> = ({ sbUser, user }) => {
   const t = useTranslations();
 
   return (
-    <>
-      <DesktopMenu t={t} user={user} />
-      <div className="flex gap-2 md:hidden">
-        <MobileMenu sbUser={sbUser} user={user} t={t} />
-      </div>
-    </>
+    <div className="flex gap-2 md:hidden">
+      <MobileMenu sbUser={sbUser} user={user} t={t} />
+    </div>
   );
 };
 
