@@ -708,7 +708,14 @@ function TaskEditDialogComponent({
   );
   const [slashHighlightIndex, setSlashHighlightIndex] = useState(0);
   const [mentionHighlightIndex, setMentionHighlightIndex] = useState(0);
-  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(true);
+
+  // Dropdown open states for controlled closing behavior
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [isListDropdownOpen, setIsListDropdownOpen] = useState(false);
+  const [isPriorityDropdownOpen, setIsPriorityDropdownOpen] = useState(false);
+  const [isEstimationDropdownOpen, setIsEstimationDropdownOpen] =
+    useState(false);
 
   const slashListRef = useRef<HTMLDivElement>(null);
   const mentionListRef = useRef<HTMLDivElement>(null);
@@ -946,23 +953,6 @@ function TaskEditDialogComponent({
     ]
   );
 
-  const handleEndDateChange = useCallback((date: Date | undefined) => {
-    if (date) {
-      let selectedDate = dayjs(date);
-      if (
-        selectedDate.hour() === 0 &&
-        selectedDate.minute() === 0 &&
-        selectedDate.second() === 0 &&
-        selectedDate.millisecond() === 0
-      ) {
-        selectedDate = selectedDate.endOf('day');
-      }
-      setEndDate(selectedDate.toDate());
-    } else {
-      setEndDate(undefined);
-    }
-  }, []);
-
   const updateEstimation = useCallback(
     async (points: number | null) => {
       if (points === estimationPoints) return;
@@ -992,6 +982,132 @@ function TaskEditDialogComponent({
       }
     },
     [estimationPoints, isCreateMode, task?.id, queryClient, boardId, toast]
+  );
+
+  const updatePriority = useCallback(
+    async (newPriority: TaskPriority | null) => {
+      if (newPriority === priority) return;
+      setPriority(newPriority);
+      if (isCreateMode || !task?.id || task?.id === 'new') {
+        return;
+      }
+      try {
+        const supabase = createClient();
+        const { error } = await supabase
+          .from('tasks')
+          .update({ priority: newPriority })
+          .eq('id', task.id);
+        if (error) throw error;
+        await invalidateTaskCaches(queryClient, boardId);
+      } catch (e: any) {
+        console.error('Failed updating priority', e);
+        toast({
+          title: 'Failed to update priority',
+          description: e.message || 'Please try again',
+          variant: 'destructive',
+        });
+      }
+    },
+    [priority, isCreateMode, task?.id, queryClient, boardId, toast]
+  );
+
+  const updateStartDate = useCallback(
+    async (newDate: Date | undefined) => {
+      setStartDate(newDate);
+      if (isCreateMode || !task?.id || task?.id === 'new') {
+        return;
+      }
+      try {
+        const supabase = createClient();
+        const { error } = await supabase
+          .from('tasks')
+          .update({ start_date: newDate ? newDate.toISOString() : null })
+          .eq('id', task.id);
+        if (error) throw error;
+        await invalidateTaskCaches(queryClient, boardId);
+      } catch (e: any) {
+        console.error('Failed updating start date', e);
+        toast({
+          title: 'Failed to update start date',
+          description: e.message || 'Please try again',
+          variant: 'destructive',
+        });
+      }
+    },
+    [isCreateMode, task?.id, queryClient, boardId, toast]
+  );
+
+  const updateEndDate = useCallback(
+    async (newDate: Date | undefined) => {
+      setEndDate(newDate);
+      if (isCreateMode || !task?.id || task?.id === 'new') {
+        return;
+      }
+      try {
+        const supabase = createClient();
+        const { error } = await supabase
+          .from('tasks')
+          .update({ end_date: newDate ? newDate.toISOString() : null })
+          .eq('id', task.id);
+        if (error) throw error;
+        await invalidateTaskCaches(queryClient, boardId);
+      } catch (e: any) {
+        console.error('Failed updating end date', e);
+        toast({
+          title: 'Failed to update end date',
+          description: e.message || 'Please try again',
+          variant: 'destructive',
+        });
+      }
+    },
+    [isCreateMode, task?.id, queryClient, boardId, toast]
+  );
+
+  const handleEndDateChange = useCallback(
+    (date: Date | undefined) => {
+      if (date) {
+        let selectedDate = dayjs(date);
+        if (
+          selectedDate.hour() === 0 &&
+          selectedDate.minute() === 0 &&
+          selectedDate.second() === 0 &&
+          selectedDate.millisecond() === 0
+        ) {
+          selectedDate = selectedDate.endOf('day');
+        }
+        updateEndDate(selectedDate.toDate());
+      } else {
+        updateEndDate(undefined);
+      }
+    },
+    [updateEndDate]
+  );
+
+  const updateList = useCallback(
+    async (newListId: string) => {
+      if (newListId === selectedListId) return;
+      setSelectedListId(newListId);
+      if (isCreateMode || !task?.id || task?.id === 'new') {
+        return;
+      }
+      try {
+        const supabase = createClient();
+        const { error } = await supabase
+          .from('tasks')
+          .update({ list_id: newListId })
+          .eq('id', task.id);
+        if (error) throw error;
+        await invalidateTaskCaches(queryClient, boardId);
+      } catch (e: any) {
+        console.error('Failed updating list', e);
+        toast({
+          title: 'Failed to update list',
+          description: e.message || 'Please try again',
+          variant: 'destructive',
+        });
+      }
+    },
+    [selectedListId, isCreateMode, task?.id, queryClient, boardId, toast]
   );
 
   const handleImageUpload = useCallback(
@@ -2441,11 +2557,16 @@ function TaskEditDialogComponent({
   ]);
 
   // Global keyboard shortcut: Cmd/Ctrl + Enter to save
+  // Disabled in edit mode when collaboration is enabled (realtime sync)
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault();
+        // Don't allow save shortcut in edit mode with collaboration (realtime sync)
+        if (!isCreateMode && collaborationMode) {
+          return;
+        }
         if (canSave) {
           handleSaveRef.current();
         } else if (!hasUnsavedChangesRef.current) {
@@ -2456,7 +2577,7 @@ function TaskEditDialogComponent({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, canSave]);
+  }, [isOpen, canSave, collaborationMode, isCreateMode]);
 
   // Keyboard shortcuts for options (Alt-based)
   useEffect(() => {
@@ -2899,7 +3020,10 @@ function TaskEditDialogComponent({
                   </Button>
                 ) : (
                   task?.id && (
-                    <DropdownMenu>
+                    <DropdownMenu
+                      open={isMoreMenuOpen}
+                      onOpenChange={setIsMoreMenuOpen}
+                    >
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="ghost"
@@ -2919,6 +3043,7 @@ function TaskEditDialogComponent({
                               description:
                                 'Task ID has been copied to clipboard',
                             });
+                            setIsMoreMenuOpen(false);
                           }}
                         >
                           <Copy className="mr-2 h-4 w-4" />
@@ -2933,6 +3058,7 @@ function TaskEditDialogComponent({
                               description:
                                 'Task link has been copied to clipboard',
                             });
+                            setIsMoreMenuOpen(false);
                           }}
                         >
                           <ExternalLink className="mr-2 h-4 w-4" />
@@ -2940,15 +3066,19 @@ function TaskEditDialogComponent({
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          onClick={() =>
-                            setShowOptionsSidebar(!showOptionsSidebar)
-                          }
+                          onClick={() => {
+                            setShowOptionsSidebar(!showOptionsSidebar);
+                            setIsMoreMenuOpen(false);
+                          }}
                         >
                           <Settings className="mr-2 h-4 w-4" />
                           Options
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => setShowDeleteConfirm(true)}
+                          onClick={() => {
+                            setShowDeleteConfirm(true);
+                            setIsMoreMenuOpen(false);
+                          }}
                           className="text-dynamic-red focus:text-dynamic-red"
                         >
                           <Trash className="mr-2 h-4 w-4" />
@@ -2992,32 +3122,35 @@ function TaskEditDialogComponent({
                     <Trash className="h-4 w-4" />
                   </Button>
                 )}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="secondary"
-                      onClick={handleSave}
-                      disabled={!canSave}
-                      size="xs"
-                      className="hidden md:inline-flex"
-                    >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Check className="h-4 w-4" />
-                          {isCreateMode ? 'Create Task' : 'Save Changes'}
-                        </>
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    Cmd/Ctrl + Enter
-                  </TooltipContent>
-                </Tooltip>
+                {/* Hide save button in edit mode when collaboration is enabled (realtime sync) */}
+                {(isCreateMode || !collaborationMode) && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="secondary"
+                        onClick={handleSave}
+                        disabled={!canSave}
+                        size="xs"
+                        className="hidden md:inline-flex"
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Check className="h-4 w-4" />
+                            {isCreateMode ? 'Create Task' : 'Save Changes'}
+                          </>
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      Cmd/Ctrl + Enter
+                    </TooltipContent>
+                  </Tooltip>
+                )}
               </div>
             </div>
 
@@ -3216,7 +3349,10 @@ function TaskEditDialogComponent({
                       </div>
                       List
                     </Label>
-                    <DropdownMenu>
+                    <DropdownMenu
+                      open={isListDropdownOpen}
+                      onOpenChange={setIsListDropdownOpen}
+                    >
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="outline"
@@ -3234,7 +3370,10 @@ function TaskEditDialogComponent({
                         {availableLists.map((list) => (
                           <DropdownMenuItem
                             key={list.id}
-                            onClick={() => setSelectedListId(list.id)}
+                            onClick={() => {
+                              updateList(list.id);
+                              setIsListDropdownOpen(false);
+                            }}
                             className={cn(
                               'cursor-pointer transition-colors',
                               selectedListId === list.id &&
@@ -3264,7 +3403,10 @@ function TaskEditDialogComponent({
                       </div>
                       Priority
                     </Label>
-                    <DropdownMenu>
+                    <DropdownMenu
+                      open={isPriorityDropdownOpen}
+                      onOpenChange={setIsPriorityDropdownOpen}
+                    >
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="outline"
@@ -3318,9 +3460,10 @@ function TaskEditDialogComponent({
                         ].map((opt) => (
                           <DropdownMenuItem
                             key={opt.value}
-                            onClick={() =>
-                              setPriority(opt.value as TaskPriority)
-                            }
+                            onClick={() => {
+                              updatePriority(opt.value as TaskPriority);
+                              setIsPriorityDropdownOpen(false);
+                            }}
                             className={cn(
                               'cursor-pointer',
                               opt.className,
@@ -3342,7 +3485,10 @@ function TaskEditDialogComponent({
                           </DropdownMenuItem>
                         ))}
                         <DropdownMenuItem
-                          onClick={() => setPriority(null)}
+                          onClick={() => {
+                            updatePriority(null);
+                            setIsPriorityDropdownOpen(false);
+                          }}
                           className="cursor-pointer text-dynamic-red focus:text-dynamic-red"
                         >
                           <X className="mr-2 h-4 w-4" /> Clear priority
@@ -3360,12 +3506,15 @@ function TaskEditDialogComponent({
                         </div>
                         Estimation
                       </Label>
-                      <DropdownMenu>
+                      <DropdownMenu
+                        open={isEstimationDropdownOpen}
+                        onOpenChange={setIsEstimationDropdownOpen}
+                      >
                         <DropdownMenuTrigger asChild>
                           <Button
                             variant="outline"
                             className="h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm"
-                            title="Estimation â€“ Alt+Shift+0..7 set, Alt+Shift+X clear"
+                            title="Estimation Alt+Shift+0..7 set, Alt+Shift+X clear"
                           >
                             <span className="truncate">
                               {typeof estimationPoints === 'number'
@@ -3382,7 +3531,10 @@ function TaskEditDialogComponent({
                           {estimationIndices.map((idx) => (
                             <DropdownMenuItem
                               key={idx}
-                              onClick={() => updateEstimation(idx)}
+                              onClick={() => {
+                                updateEstimation(idx);
+                                setIsEstimationDropdownOpen(false);
+                              }}
                               className="cursor-pointer"
                             >
                               <span className="flex-1">
@@ -3397,7 +3549,10 @@ function TaskEditDialogComponent({
                             </DropdownMenuItem>
                           ))}
                           <DropdownMenuItem
-                            onClick={() => updateEstimation(null)}
+                            onClick={() => {
+                              updateEstimation(null);
+                              setIsEstimationDropdownOpen(false);
+                            }}
                             className="cursor-pointer text-dynamic-red focus:text-dynamic-red"
                           >
                             <X className="mr-2 h-4 w-4" /> Clear estimation
@@ -3423,7 +3578,7 @@ function TaskEditDialogComponent({
                         </Label>
                         <DateTimePicker
                           date={startDate}
-                          setDate={setStartDate}
+                          setDate={updateStartDate}
                           showTimeSelect={true}
                           allowClear={true}
                           showFooterControls={true}
@@ -3515,501 +3670,473 @@ function TaskEditDialogComponent({
                     </div>
                   </div>
 
-                  {/* Advanced Options Toggle */}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="xs"
-                    onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-                    className="h-8 w-full justify-between text-muted-foreground text-xs transition-all hover:bg-dynamic-orange/5 hover:text-dynamic-orange"
-                    title="Toggle advanced options â€“ Alt+A"
-                  >
-                    <span className="flex items-center gap-2">
-                      <Settings className="h-3 w-3" />
-                      {showAdvancedOptions ? 'Hide' : 'Show'} advanced options
-                    </span>
-                    <ChevronDown
-                      className={cn(
-                        'h-3 w-3 transition-transform',
-                        showAdvancedOptions && 'rotate-180'
+                  {/* Advanced Options */}
+                  <div className="space-y-4">
+                    {/* Labels Section */}
+                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                      <Label className="flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                            <Tag className="h-3.5 w-3.5 text-dynamic-orange" />
+                          </div>
+                          Labels
+                        </span>
+                      </Label>
+                      {boardConfig && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Input
+                              placeholder="New label name"
+                              value={newLabelName}
+                              onChange={(e) => setNewLabelName(e.target.value)}
+                              className="h-8 flex-1 text-xs transition-all focus:border-dynamic-orange/50"
+                            />
+                            <select
+                              className="h-8 rounded-md border bg-background px-2 text-xs transition-all hover:border-dynamic-orange/50 focus:border-dynamic-orange/50 focus:outline-none focus:ring-1 focus:ring-dynamic-orange/20"
+                              value={newLabelColor}
+                              onChange={(e) => setNewLabelColor(e.target.value)}
+                            >
+                              {[
+                                'red',
+                                'orange',
+                                'yellow',
+                                'green',
+                                'blue',
+                                'indigo',
+                                'purple',
+                                'pink',
+                                'gray',
+                              ].map((c) => (
+                                <option key={c} value={c}>
+                                  {c.charAt(0).toUpperCase() + c.slice(1)}
+                                </option>
+                              ))}
+                            </select>
+                            <Button
+                              type="button"
+                              size="xs"
+                              className="h-8 bg-dynamic-orange px-3 text-white text-xs shadow-sm hover:bg-dynamic-orange/90"
+                              onClick={handleCreateLabel}
+                              disabled={creatingLabel || !newLabelName.trim()}
+                            >
+                              {creatingLabel ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                'Add'
+                              )}
+                            </Button>
+                          </div>
+                        </div>
                       )}
-                    />
-                  </Button>
 
-                  {/* Advanced Options - Collapsible */}
-                  {showAdvancedOptions && (
-                    <div className="slide-in-from-top-2 animate-in space-y-4 duration-200">
-                      {/* Labels Section */}
-                      <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
-                        <Label className="flex items-center justify-between gap-2">
-                          <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                              <Tag className="h-3.5 w-3.5 text-dynamic-orange" />
-                            </div>
-                            Labels
-                          </span>
-                        </Label>
-                        {boardConfig && (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Input
-                                placeholder="New label name"
-                                value={newLabelName}
-                                onChange={(e) =>
-                                  setNewLabelName(e.target.value)
-                                }
-                                className="h-8 flex-1 text-xs transition-all focus:border-dynamic-orange/50"
-                              />
-                              <select
-                                className="h-8 rounded-md border bg-background px-2 text-xs transition-all hover:border-dynamic-orange/50 focus:border-dynamic-orange/50 focus:outline-none focus:ring-1 focus:ring-dynamic-orange/20"
-                                value={newLabelColor}
-                                onChange={(e) =>
-                                  setNewLabelColor(e.target.value)
-                                }
-                              >
-                                {[
-                                  'red',
-                                  'orange',
-                                  'yellow',
-                                  'green',
-                                  'blue',
-                                  'indigo',
-                                  'purple',
-                                  'pink',
-                                  'gray',
-                                ].map((c) => (
-                                  <option key={c} value={c}>
-                                    {c.charAt(0).toUpperCase() + c.slice(1)}
-                                  </option>
-                                ))}
-                              </select>
+                      {labelsLoading ? (
+                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-6">
+                          <Loader2 className="h-4 w-4 animate-spin text-dynamic-orange" />
+                          <p className="text-muted-foreground text-xs">
+                            Loading labels...
+                          </p>
+                        </div>
+                      ) : availableLabels.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-6">
+                          <Tag className="h-4 w-4 text-muted-foreground/40" />
+                          <div className="text-center">
+                            <p className="font-medium text-muted-foreground text-xs">
+                              No labels yet
+                            </p>
+                            <p className="mt-1 text-[10px] text-muted-foreground/60">
+                              Create your first label above
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5 md:gap-2">
+                          {availableLabels.map((label) => {
+                            const active = selectedLabels.some(
+                              (l) => l.id === label.id
+                            );
+                            const styles = computeAccessibleLabelStyles(
+                              label.color
+                            );
+                            return (
                               <Button
+                                key={label.id}
                                 type="button"
+                                variant={active ? 'default' : 'outline'}
                                 size="xs"
-                                className="h-8 bg-dynamic-orange px-3 text-white text-xs shadow-sm hover:bg-dynamic-orange/90"
-                                onClick={handleCreateLabel}
-                                disabled={creatingLabel || !newLabelName.trim()}
-                              >
-                                {creatingLabel ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                  'Add'
+                                onClick={() => toggleLabel(label)}
+                                className={cn(
+                                  'h-7 border px-3 text-xs transition-all',
+                                  !active &&
+                                    'bg-background hover:border-dynamic-orange/50',
+                                  active && 'shadow-sm'
                                 )}
+                                style={
+                                  active && styles
+                                    ? {
+                                        backgroundColor: styles.bg,
+                                        borderColor: styles.border,
+                                        color: styles.text,
+                                      }
+                                    : undefined
+                                }
+                              >
+                                {label.name || 'Unnamed'}
+                                {active && <X className="ml-1.5 h-3 w-3" />}
                               </Button>
-                            </div>
-                          </div>
-                        )}
-
-                        {labelsLoading ? (
-                          <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-6">
-                            <Loader2 className="h-4 w-4 animate-spin text-dynamic-orange" />
-                            <p className="text-muted-foreground text-xs">
-                              Loading labels...
-                            </p>
-                          </div>
-                        ) : availableLabels.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-6">
-                            <Tag className="h-4 w-4 text-muted-foreground/40" />
-                            <div className="text-center">
-                              <p className="font-medium text-muted-foreground text-xs">
-                                No labels yet
-                              </p>
-                              <p className="mt-1 text-[10px] text-muted-foreground/60">
-                                Create your first label above
-                              </p>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex flex-wrap gap-1.5 md:gap-2">
-                            {availableLabels.map((label) => {
-                              const active = selectedLabels.some(
-                                (l) => l.id === label.id
-                              );
-                              const styles = computeAccessibleLabelStyles(
-                                label.color
-                              );
-                              return (
-                                <Button
-                                  key={label.id}
-                                  type="button"
-                                  variant={active ? 'default' : 'outline'}
-                                  size="xs"
-                                  onClick={() => toggleLabel(label)}
-                                  className={cn(
-                                    'h-7 border px-3 text-xs transition-all',
-                                    !active &&
-                                      'bg-background hover:border-dynamic-orange/50',
-                                    active && 'shadow-sm'
-                                  )}
-                                  style={
-                                    active && styles
-                                      ? {
-                                          backgroundColor: styles.bg,
-                                          borderColor: styles.border,
-                                          color: styles.text,
-                                        }
-                                      : undefined
-                                  }
-                                >
-                                  {label.name || 'Unnamed'}
-                                  {active && <X className="ml-1.5 h-3 w-3" />}
-                                </Button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Projects Section */}
-                      <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
-                        <Label className="flex items-center justify-between gap-2">
-                          <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                              <Box className="h-3.5 w-3.5 text-dynamic-orange" />
-                            </div>
-                            Projects
-                          </span>
-                          {selectedProjects.length > 0 && (
-                            <Badge
-                              variant="secondary"
-                              className="h-5 rounded-full px-2 font-semibold text-[10px]"
-                            >
-                              {selectedProjects.length}
-                            </Badge>
-                          )}
-                        </Label>
-
-                        {loadingProjects ? (
-                          <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-8">
-                            <Loader2 className="h-5 w-5 animate-spin text-dynamic-orange" />
-                            <p className="text-muted-foreground text-xs">
-                              Loading projects...
-                            </p>
-                          </div>
-                        ) : taskProjects.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-8">
-                            <Box className="h-5 w-5 text-muted-foreground/40" />
-                            <p className="text-center text-muted-foreground text-xs">
-                              No projects available
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="space-y-2.5">
-                            {/* Search input */}
-                            <div className="relative">
-                              <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                              <Input
-                                type="text"
-                                placeholder="Search projects..."
-                                value={projectSearchQuery}
-                                onChange={(e) =>
-                                  setProjectSearchQuery(e.target.value)
-                                }
-                                className="h-8 border-muted-foreground/20 bg-background/50 pl-8 text-xs placeholder:text-muted-foreground/50"
-                              />
-                              {projectSearchQuery && (
-                                <button
-                                  type="button"
-                                  onClick={() => setProjectSearchQuery('')}
-                                  className="-translate-y-1/2 absolute top-1/2 right-2 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              )}
-                            </div>
-
-                            {/* Selected projects (if any) */}
-                            {selectedProjects.length > 0 && (
-                              <div className="space-y-1.5">
-                                <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                                  Selected ({selectedProjects.length})
-                                </p>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {selectedProjects.map((project) => (
-                                    <Button
-                                      key={`selected-project-${project.id}`}
-                                      type="button"
-                                      variant="default"
-                                      size="xs"
-                                      onClick={() => toggleProject(project)}
-                                      className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
-                                    >
-                                      {project.name}
-                                      <X className="h-3 w-3 opacity-70" />
-                                    </Button>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Available projects */}
-                            <div className="space-y-1.5">
-                              {(() => {
-                                const filteredProjects = taskProjects.filter(
-                                  (project) => {
-                                    const isSelected = selectedProjects.some(
-                                      (p) => p.id === project.id
-                                    );
-                                    const matchesSearch =
-                                      !projectSearchQuery ||
-                                      (project.name || '')
-                                        .toLowerCase()
-                                        .includes(
-                                          projectSearchQuery.toLowerCase()
-                                        );
-                                    return !isSelected && matchesSearch;
-                                  }
-                                );
-
-                                if (filteredProjects.length === 0) {
-                                  return projectSearchQuery ? (
-                                    <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
-                                      <Search className="h-4 w-4 text-muted-foreground/40" />
-                                      <p className="text-center text-muted-foreground text-xs">
-                                        No projects found
-                                      </p>
-                                    </div>
-                                  ) : (
-                                    <div className="rounded-lg bg-muted/30 py-3 text-center">
-                                      <p className="text-muted-foreground text-xs">
-                                        All projects selected
-                                      </p>
-                                    </div>
-                                  );
-                                }
-
-                                return (
-                                  <>
-                                    <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                                      Available ({filteredProjects.length})
-                                    </p>
-                                    <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
-                                      {filteredProjects.map((project) => (
-                                        <button
-                                          key={`available-project-${project.id}`}
-                                          type="button"
-                                          onClick={() => toggleProject(project)}
-                                          className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
-                                        >
-                                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-dynamic-orange/10">
-                                            <ListTodo className="h-4 w-4 text-dynamic-orange" />
-                                          </div>
-                                          <div className="flex-1 truncate">
-                                            <span className="block truncate text-sm">
-                                              {project.name}
-                                            </span>
-                                            {project.status && (
-                                              <span className="block text-muted-foreground text-xs">
-                                                {project.status}
-                                              </span>
-                                            )}
-                                          </div>
-                                          <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                                        </button>
-                                      ))}
-                                    </div>
-                                  </>
-                                );
-                              })()}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Assignees Section */}
-                      <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
-                        <Label className="flex items-center justify-between gap-2">
-                          <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                              <Users className="h-3.5 w-3.5 text-dynamic-orange" />
-                            </div>
-                            Assignees
-                          </span>
-                          {selectedAssignees.length > 0 && (
-                            <Badge
-                              variant="secondary"
-                              className="h-5 rounded-full px-2 font-semibold text-[10px]"
-                            >
-                              {selectedAssignees.length}
-                            </Badge>
-                          )}
-                        </Label>
-
-                        {loadingMembers ? (
-                          <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-8">
-                            <Loader2 className="h-5 w-5 animate-spin text-dynamic-orange" />
-                            <p className="text-muted-foreground text-xs">
-                              Loading members...
-                            </p>
-                          </div>
-                        ) : workspaceMembers.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-8">
-                            <Users className="h-5 w-5 text-muted-foreground/40" />
-                            <p className="text-center text-muted-foreground text-xs">
-                              No workspace members
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="space-y-2.5">
-                            {/* Search input */}
-                            <div className="relative">
-                              <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                              <Input
-                                type="text"
-                                placeholder="Search members..."
-                                value={assigneeSearchQuery}
-                                onChange={(e) =>
-                                  setAssigneeSearchQuery(e.target.value)
-                                }
-                                className="h-8 border-muted-foreground/20 bg-background/50 pl-8 text-xs placeholder:text-muted-foreground/50"
-                              />
-                              {assigneeSearchQuery && (
-                                <button
-                                  type="button"
-                                  onClick={() => setAssigneeSearchQuery('')}
-                                  className="-translate-y-1/2 absolute top-1/2 right-2 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              )}
-                            </div>
-
-                            {/* Selected assignees (if any) */}
-                            {selectedAssignees.length > 0 && (
-                              <div className="space-y-1.5">
-                                <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                                  Selected ({selectedAssignees.length})
-                                </p>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {selectedAssignees.map((assignee) => (
-                                    <Button
-                                      key={`selected-assignee-${assignee.id || assignee.user_id}`}
-                                      type="button"
-                                      variant="default"
-                                      size="xs"
-                                      onClick={() => toggleAssignee(assignee)}
-                                      className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
-                                    >
-                                      <Avatar className="h-4 w-4">
-                                        <AvatarImage
-                                          src={assignee.avatar_url}
-                                          alt={
-                                            assignee.display_name || 'Unknown'
-                                          }
-                                        />
-                                        <AvatarFallback className="bg-dynamic-orange/20 font-bold text-[9px]">
-                                          {(assignee.display_name ||
-                                            'Unknown')[0]?.toUpperCase()}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      {assignee.display_name || 'Unknown'}
-                                      <X className="h-3 w-3 opacity-70" />
-                                    </Button>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Available members */}
-                            <div className="space-y-1.5">
-                              {(() => {
-                                const filteredMembers = workspaceMembers.filter(
-                                  (member) => {
-                                    const memberId =
-                                      member.user_id || member.id;
-                                    const isSelected = selectedAssignees.some(
-                                      (a) => (a.id || a.user_id) === memberId
-                                    );
-                                    const matchesSearch =
-                                      !assigneeSearchQuery ||
-                                      (member.display_name || '')
-                                        .toLowerCase()
-                                        .includes(
-                                          assigneeSearchQuery.toLowerCase()
-                                        );
-                                    return !isSelected && matchesSearch;
-                                  }
-                                );
-
-                                if (filteredMembers.length === 0) {
-                                  return assigneeSearchQuery ? (
-                                    <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
-                                      <Search className="h-4 w-4 text-muted-foreground/40" />
-                                      <p className="text-center text-muted-foreground text-xs">
-                                        No members found
-                                      </p>
-                                    </div>
-                                  ) : (
-                                    <div className="rounded-lg bg-muted/30 py-3 text-center">
-                                      <p className="text-muted-foreground text-xs">
-                                        All members assigned
-                                      </p>
-                                    </div>
-                                  );
-                                }
-
-                                return (
-                                  <>
-                                    <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                                      Available ({filteredMembers.length})
-                                    </p>
-                                    <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
-                                      {filteredMembers.map((member) => (
-                                        <button
-                                          key={`available-member-${member.user_id}`}
-                                          type="button"
-                                          onClick={() => toggleAssignee(member)}
-                                          className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
-                                        >
-                                          <Avatar className="h-7 w-7 shrink-0">
-                                            <AvatarImage
-                                              src={member.avatar_url}
-                                              alt={
-                                                member.display_name || 'Unknown'
-                                              }
-                                            />
-                                            <AvatarFallback className="bg-muted font-semibold text-muted-foreground text-xs group-hover:bg-dynamic-orange/20 group-hover:text-dynamic-orange">
-                                              {(member.display_name ||
-                                                'Unknown')[0]?.toUpperCase()}
-                                            </AvatarFallback>
-                                          </Avatar>
-                                          <span className="flex-1 truncate text-sm">
-                                            {member.display_name || 'Unknown'}
-                                          </span>
-                                          <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                                        </button>
-                                      ))}
-                                    </div>
-                                  </>
-                                );
-                              })()}
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                  )}
+
+                    {/* Projects Section */}
+                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                      <Label className="flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                            <Box className="h-3.5 w-3.5 text-dynamic-orange" />
+                          </div>
+                          Projects
+                        </span>
+                        {selectedProjects.length > 0 && (
+                          <Badge
+                            variant="secondary"
+                            className="h-5 rounded-full px-2 font-semibold text-[10px]"
+                          >
+                            {selectedProjects.length}
+                          </Badge>
+                        )}
+                      </Label>
+
+                      {loadingProjects ? (
+                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-8">
+                          <Loader2 className="h-5 w-5 animate-spin text-dynamic-orange" />
+                          <p className="text-muted-foreground text-xs">
+                            Loading projects...
+                          </p>
+                        </div>
+                      ) : taskProjects.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-8">
+                          <Box className="h-5 w-5 text-muted-foreground/40" />
+                          <p className="text-center text-muted-foreground text-xs">
+                            No projects available
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2.5">
+                          {/* Search input */}
+                          <div className="relative">
+                            <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                            <Input
+                              type="text"
+                              placeholder="Search projects..."
+                              value={projectSearchQuery}
+                              onChange={(e) =>
+                                setProjectSearchQuery(e.target.value)
+                              }
+                              className="h-8 border-muted-foreground/20 bg-background/50 pl-8 text-xs placeholder:text-muted-foreground/50"
+                            />
+                            {projectSearchQuery && (
+                              <button
+                                type="button"
+                                onClick={() => setProjectSearchQuery('')}
+                                className="-translate-y-1/2 absolute top-1/2 right-2 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Selected projects (if any) */}
+                          {selectedProjects.length > 0 && (
+                            <div className="space-y-1.5">
+                              <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                Selected ({selectedProjects.length})
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {selectedProjects.map((project) => (
+                                  <Button
+                                    key={`selected-project-${project.id}`}
+                                    type="button"
+                                    variant="default"
+                                    size="xs"
+                                    onClick={() => toggleProject(project)}
+                                    className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
+                                  >
+                                    {project.name}
+                                    <X className="h-3 w-3 opacity-70" />
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Available projects */}
+                          <div className="space-y-1.5">
+                            {(() => {
+                              const filteredProjects = taskProjects.filter(
+                                (project) => {
+                                  const isSelected = selectedProjects.some(
+                                    (p) => p.id === project.id
+                                  );
+                                  const matchesSearch =
+                                    !projectSearchQuery ||
+                                    (project.name || '')
+                                      .toLowerCase()
+                                      .includes(
+                                        projectSearchQuery.toLowerCase()
+                                      );
+                                  return !isSelected && matchesSearch;
+                                }
+                              );
+
+                              if (filteredProjects.length === 0) {
+                                return projectSearchQuery ? (
+                                  <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
+                                    <Search className="h-4 w-4 text-muted-foreground/40" />
+                                    <p className="text-center text-muted-foreground text-xs">
+                                      No projects found
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <div className="rounded-lg bg-muted/30 py-3 text-center">
+                                    <p className="text-muted-foreground text-xs">
+                                      All projects selected
+                                    </p>
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <>
+                                  <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                    Available ({filteredProjects.length})
+                                  </p>
+                                  <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
+                                    {filteredProjects.map((project) => (
+                                      <button
+                                        key={`available-project-${project.id}`}
+                                        type="button"
+                                        onClick={() => toggleProject(project)}
+                                        className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
+                                      >
+                                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-dynamic-orange/10">
+                                          <ListTodo className="h-4 w-4 text-dynamic-orange" />
+                                        </div>
+                                        <div className="flex-1 truncate">
+                                          <span className="block truncate text-sm">
+                                            {project.name}
+                                          </span>
+                                          {project.status && (
+                                            <span className="block text-muted-foreground text-xs">
+                                              {project.status}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                                      </button>
+                                    ))}
+                                  </div>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Assignees Section */}
+                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                      <Label className="flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                            <Users className="h-3.5 w-3.5 text-dynamic-orange" />
+                          </div>
+                          Assignees
+                        </span>
+                        {selectedAssignees.length > 0 && (
+                          <Badge
+                            variant="secondary"
+                            className="h-5 rounded-full px-2 font-semibold text-[10px]"
+                          >
+                            {selectedAssignees.length}
+                          </Badge>
+                        )}
+                      </Label>
+
+                      {loadingMembers ? (
+                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-8">
+                          <Loader2 className="h-5 w-5 animate-spin text-dynamic-orange" />
+                          <p className="text-muted-foreground text-xs">
+                            Loading members...
+                          </p>
+                        </div>
+                      ) : workspaceMembers.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-8">
+                          <Users className="h-5 w-5 text-muted-foreground/40" />
+                          <p className="text-center text-muted-foreground text-xs">
+                            No workspace members
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2.5">
+                          {/* Search input */}
+                          <div className="relative">
+                            <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                            <Input
+                              type="text"
+                              placeholder="Search members..."
+                              value={assigneeSearchQuery}
+                              onChange={(e) =>
+                                setAssigneeSearchQuery(e.target.value)
+                              }
+                              className="h-8 border-muted-foreground/20 bg-background/50 pl-8 text-xs placeholder:text-muted-foreground/50"
+                            />
+                            {assigneeSearchQuery && (
+                              <button
+                                type="button"
+                                onClick={() => setAssigneeSearchQuery('')}
+                                className="-translate-y-1/2 absolute top-1/2 right-2 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Selected assignees (if any) */}
+                          {selectedAssignees.length > 0 && (
+                            <div className="space-y-1.5">
+                              <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                Selected ({selectedAssignees.length})
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {selectedAssignees.map((assignee) => (
+                                  <Button
+                                    key={`selected-assignee-${assignee.id || assignee.user_id}`}
+                                    type="button"
+                                    variant="default"
+                                    size="xs"
+                                    onClick={() => toggleAssignee(assignee)}
+                                    className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
+                                  >
+                                    <Avatar className="h-4 w-4">
+                                      <AvatarImage
+                                        src={assignee.avatar_url}
+                                        alt={assignee.display_name || 'Unknown'}
+                                      />
+                                      <AvatarFallback className="bg-dynamic-orange/20 font-bold text-[9px]">
+                                        {(assignee.display_name ||
+                                          'Unknown')[0]?.toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    {assignee.display_name || 'Unknown'}
+                                    <X className="h-3 w-3 opacity-70" />
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Available members */}
+                          <div className="space-y-1.5">
+                            {(() => {
+                              const filteredMembers = workspaceMembers.filter(
+                                (member) => {
+                                  const memberId = member.user_id || member.id;
+                                  const isSelected = selectedAssignees.some(
+                                    (a) => (a.id || a.user_id) === memberId
+                                  );
+                                  const matchesSearch =
+                                    !assigneeSearchQuery ||
+                                    (member.display_name || '')
+                                      .toLowerCase()
+                                      .includes(
+                                        assigneeSearchQuery.toLowerCase()
+                                      );
+                                  return !isSelected && matchesSearch;
+                                }
+                              );
+
+                              if (filteredMembers.length === 0) {
+                                return assigneeSearchQuery ? (
+                                  <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
+                                    <Search className="h-4 w-4 text-muted-foreground/40" />
+                                    <p className="text-center text-muted-foreground text-xs">
+                                      No members found
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <div className="rounded-lg bg-muted/30 py-3 text-center">
+                                    <p className="text-muted-foreground text-xs">
+                                      All members assigned
+                                    </p>
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <>
+                                  <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                    Available ({filteredMembers.length})
+                                  </p>
+                                  <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
+                                    {filteredMembers.map((member) => (
+                                      <button
+                                        key={`available-member-${member.user_id}`}
+                                        type="button"
+                                        onClick={() => toggleAssignee(member)}
+                                        className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
+                                      >
+                                        <Avatar className="h-7 w-7 shrink-0">
+                                          <AvatarImage
+                                            src={member.avatar_url}
+                                            alt={
+                                              member.display_name || 'Unknown'
+                                            }
+                                          />
+                                          <AvatarFallback className="bg-muted font-semibold text-muted-foreground text-xs group-hover:bg-dynamic-orange/20 group-hover:text-dynamic-orange">
+                                            {(member.display_name ||
+                                              'Unknown')[0]?.toUpperCase()}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <span className="flex-1 truncate text-sm">
+                                          {member.display_name || 'Unknown'}
+                                        </span>
+                                        <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                                      </button>
+                                    ))}
+                                  </div>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Mobile floating save button */}
-          <div className="fixed right-4 bottom-4 z-40 md:hidden">
-            <Button
-              variant="default"
-              size="lg"
-              onClick={handleSave}
-              disabled={!canSave}
-              className="h-14 w-14 rounded-full bg-dynamic-orange shadow-lg hover:bg-dynamic-orange/90"
-            >
-              {isLoading ? (
-                <Loader2 className="h-6 w-6 animate-spin" />
-              ) : (
-                <Check className="h-6 w-6" />
-              )}
-            </Button>
-          </div>
+          {/* Mobile floating save button - hidden in edit mode when collaboration is enabled */}
+          {(isCreateMode || !collaborationMode) && (
+            <div className="fixed right-4 bottom-4 z-40 md:hidden">
+              <Button
+                variant="default"
+                size="lg"
+                onClick={handleSave}
+                disabled={!canSave}
+                className="h-14 w-14 rounded-full bg-dynamic-orange shadow-lg hover:bg-dynamic-orange/90"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                ) : (
+                  <Check className="h-6 w-6" />
+                )}
+              </Button>
+            </div>
+          )}
 
           {/* Overlay when sidebar is open */}
           {showOptionsSidebar && (
