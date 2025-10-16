@@ -3,6 +3,7 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import type { TaskFilters } from '@tuturuuu/ui/tu-do/boards/boardId/task-filter';
 import {
   createContext,
   type ReactNode,
@@ -51,6 +52,7 @@ interface TaskDialogState {
   availableLists?: TaskList[];
   collaborationMode?: boolean;
   originalPathname?: string;
+  filters?: TaskFilters;
 }
 
 interface TaskDialogContextValue {
@@ -67,7 +69,8 @@ interface TaskDialogContextValue {
   createTask: (
     boardId: string,
     listId: string,
-    availableLists?: TaskList[]
+    availableLists?: TaskList[],
+    filters?: TaskFilters
   ) => void;
 
   // Close dialog
@@ -205,7 +208,12 @@ export function TaskDialogProvider({
   }, []);
 
   const createTask = useCallback(
-    (boardId: string, listId: string, availableLists?: TaskList[]) => {
+    (
+      boardId: string,
+      listId: string,
+      availableLists?: TaskList[],
+      filters?: TaskFilters
+    ) => {
       setState({
         isOpen: true,
         task: {
@@ -221,6 +229,7 @@ export function TaskDialogProvider({
         mode: 'create',
         availableLists,
         collaborationMode: false,
+        filters,
       });
     },
     []

@@ -72,6 +72,7 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 import * as Y from 'yjs';
+import type { TaskFilters } from '../boards/boardId/task-filter';
 import { CursorOverlayWrapper } from './cursor-overlay';
 import { CustomDatePickerDialog } from './custom-date-picker/custom-date-picker-dialog';
 import {
@@ -103,6 +104,7 @@ interface TaskEditDialogProps {
   onUpdate: () => void;
   availableLists?: TaskList[];
   onOpenTask?: (taskId: string) => void;
+  filters?: TaskFilters;
 }
 
 // Helper types
@@ -154,6 +156,7 @@ function TaskEditDialogComponent({
   onOpenTask,
   mode = 'edit',
   collaborationMode = false,
+  filters,
 }: TaskEditDialogProps & {
   mode?: 'edit' | 'create';
   collaborationMode?: boolean;
@@ -2383,11 +2386,85 @@ function TaskEditDialogComponent({
       setSelectedMinute('59');
       setSelectedPeriod('PM');
     } else {
-      if (isCreateMode) {
+      if (isCreateMode && filters) {
         setShowOptionsSidebar(true);
+
+        console.log('🔧 Applying filters to new task:', {
+          labels: filters.labels?.length || 0,
+          assignees: filters.assignees?.length || 0,
+          projects: filters.projects?.length || 0,
+          priorities: filters.priorities?.length || 0,
+          includeMyTasks: filters.includeMyTasks,
+        });
+
+        // Apply labels from filters
+        if (filters.labels && filters.labels.length > 0) {
+          console.log('  📋 Setting labels:', filters.labels);
+          setSelectedLabels(filters.labels);
+        }
+
+        // Apply assignees from filters or add current user if includeMyTasks is true
+        if (filters.assignees && filters.assignees.length > 0) {
+          console.log('  👥 Setting assignees:', filters.assignees);
+          // Transform filter assignees to include user_id (filters have 'id', save expects 'user_id')
+          const transformedAssignees = filters.assignees.map((a) => ({
+            ...a,
+            user_id: a.id, // Add user_id from id
+          }));
+          setSelectedAssignees(transformedAssignees);
+        } else if (filters.includeMyTasks) {
+          // Fetch and add current user
+          console.log('  👤 Fetching current user for My Tasks filter');
+          (async () => {
+            try {
+              const supabase = createClient();
+              const {
+                data: { user },
+              } = await supabase.auth.getUser();
+
+              if (!user) {
+                console.log('  ❌ No user found');
+                return;
+              }
+
+              // Fetch current user's details
+              const { data: userData } = await supabase
+                .from('users')
+                .select('id, display_name, avatar_url')
+                .eq('id', user.id)
+                .single();
+
+              if (userData) {
+                console.log('  ✅ Adding current user as assignee:', userData);
+                setSelectedAssignees([
+                  {
+                    user_id: userData.id,
+                    id: userData.id,
+                    display_name: userData.display_name,
+                    avatar_url: userData.avatar_url,
+                  },
+                ]);
+              }
+            } catch (error) {
+              console.error('  ❌ Error applying current user filter:', error);
+            }
+          })();
+        }
+
+        // Apply projects from filters
+        if (filters.projects && filters.projects.length > 0) {
+          console.log('  📦 Setting projects:', filters.projects);
+          setSelectedProjects(filters.projects);
+        }
+
+        // Apply priority if only one priority is selected in filters
+        if (filters.priorities && filters.priorities.length === 1) {
+          console.log('  🚩 Setting priority:', filters.priorities[0]);
+          setPriority(filters.priorities[0] || null);
+        }
       }
     }
-  }, [isOpen, isCreateMode]);
+  }, [isOpen, isCreateMode, filters]);
 
   // Manage slash command highlight index
   useEffect(() => {

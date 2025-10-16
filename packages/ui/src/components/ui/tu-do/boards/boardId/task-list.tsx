@@ -26,6 +26,7 @@ import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { ListActions } from './list-actions';
 import { statusIcons } from './status-section';
 import { MeasuredTaskCard } from './task';
+import type { TaskFilters } from './task-filter';
 
 // Color mappings for visual consistency
 const colorClasses: Record<SupportedColor, string> = {
@@ -61,6 +62,7 @@ interface BoardColumnProps {
   } | null;
   taskHeightsRef?: React.MutableRefObject<Map<string, number>>;
   optimisticUpdateInProgress?: Set<string>;
+  filters?: TaskFilters;
 }
 
 function BoardColumnInner({
@@ -77,6 +79,7 @@ function BoardColumnInner({
   dragPreviewPosition,
   taskHeightsRef,
   optimisticUpdateInProgress,
+  filters,
 }: BoardColumnProps) {
   const params = useParams();
   const wsId = params.wsId as string;
@@ -221,7 +224,7 @@ function BoardColumnInner({
           onClick={() =>
             onAddTask
               ? onAddTask(column)
-              : createTask(boardId, column.id, [column])
+              : createTask(boardId, column.id, [column], filters)
           }
           className="w-full justify-start rounded-lg border border-dynamic-gray/40 border-dashed text-muted-foreground text-xs transition-all hover:border-dynamic-gray/60 hover:bg-muted/40 hover:text-foreground"
         >
