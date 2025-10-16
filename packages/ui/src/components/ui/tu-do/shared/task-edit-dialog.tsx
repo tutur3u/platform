@@ -92,6 +92,7 @@ import {
   type SlashCommandDefinition,
 } from './slash-commands/definitions';
 import { SlashCommandMenu } from './slash-commands/slash-command-menu';
+import { SyncWarningDialog } from './sync-warning-dialog';
 import { UserPresenceAvatarsComponent } from './user-presence-avatars';
 
 interface TaskEditDialogProps {
@@ -781,6 +782,7 @@ function TaskEditDialogComponent({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showOptionsSidebar, setShowOptionsSidebar] = useState(isCreateMode);
   const [createMultiple, setCreateMultiple] = useState(false);
+  const [showSyncWarning, setShowSyncWarning] = useState(false);
 
   // ============================================================================
   // DRAFT PERSISTENCE - Auto-save drafts in create mode
@@ -1704,15 +1706,40 @@ function TaskEditDialogComponent({
   ]);
 
   const handleClose = useCallback(() => {
-    if (!isLoading) {
-      try {
-        if (!isCreateMode && typeof window !== 'undefined') {
-          localStorage.removeItem(draftStorageKey);
-        }
-      } catch {}
-      onClose();
+    if (isLoading) return;
+
+    // Check if we're in collaboration mode and not synced
+    if (collaborationMode && !isCreateMode && (!synced || !connected)) {
+      setShowSyncWarning(true);
+      return;
     }
-  }, [isLoading, isCreateMode, draftStorageKey, onClose]);
+
+    // Safe to close
+    try {
+      if (!isCreateMode && typeof window !== 'undefined') {
+        localStorage.removeItem(draftStorageKey);
+      }
+    } catch {}
+    onClose();
+  }, [
+    isLoading,
+    collaborationMode,
+    isCreateMode,
+    synced,
+    connected,
+    draftStorageKey,
+    onClose,
+  ]);
+
+  const handleForceClose = useCallback(() => {
+    setShowSyncWarning(false);
+    try {
+      if (!isCreateMode && typeof window !== 'undefined') {
+        localStorage.removeItem(draftStorageKey);
+      }
+    } catch {}
+    onClose();
+  }, [isCreateMode, draftStorageKey, onClose]);
 
   const handleDialogOpenChange = useCallback(
     (open: boolean) => {
@@ -2760,7 +2787,9 @@ function TaskEditDialogComponent({
                           'flex items-center gap-1.5 rounded-full px-2 py-1 text-xs transition-colors',
                           synced && connected
                             ? 'bg-dynamic-green/10 text-dynamic-green'
-                            : 'bg-dynamic-yellow/10 text-dynamic-yellow'
+                            : !connected
+                              ? 'bg-dynamic-red/10 text-dynamic-red'
+                              : 'bg-dynamic-yellow/10 text-dynamic-yellow'
                         )}
                       >
                         <span
@@ -2768,18 +2797,51 @@ function TaskEditDialogComponent({
                             'h-1.5 w-1.5 rounded-full',
                             synced && connected
                               ? 'animate-pulse bg-dynamic-green'
-                              : 'animate-pulse bg-dynamic-yellow'
+                              : !connected
+                                ? 'bg-dynamic-red'
+                                : 'animate-pulse bg-dynamic-yellow'
                           )}
                         />
                         <span className="font-medium">
-                          {synced && connected ? 'Synced' : 'Syncing...'}
+                          {synced && connected
+                            ? 'Synced'
+                            : !connected
+                              ? 'Reconnecting...'
+                              : 'Syncing...'}
                         </span>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent>
-                      {synced && connected
-                        ? 'Collaboration is active and synced'
-                        : 'Syncing collaboration state...'}
+                    <TooltipContent className="max-w-xs">
+                      <div className="space-y-1.5">
+                        <p className="font-medium">
+                          {synced && connected
+                            ? 'All changes synced'
+                            : !connected
+                              ? 'Connection lost'
+                              : 'Syncing in progress'}
+                        </p>
+                        <div className="space-y-1 text-xs">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${connected ? 'bg-dynamic-green' : 'bg-dynamic-red'}`}
+                            />
+                            <span>
+                              {connected ? 'Connected' : 'Disconnected'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${synced ? 'bg-dynamic-green' : 'bg-dynamic-yellow'}`}
+                            />
+                            <span>{synced ? 'Synced' : 'Syncing'}</span>
+                          </div>
+                        </div>
+                        {!connected && (
+                          <p className="text-muted-foreground text-xs">
+                            Attempting to reconnect automatically...
+                          </p>
+                        )}
+                      </div>
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -3997,6 +4059,15 @@ function TaskEditDialogComponent({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Sync warning dialog */}
+      <SyncWarningDialog
+        open={showSyncWarning}
+        onOpenChange={setShowSyncWarning}
+        synced={synced}
+        connected={connected}
+        onForceClose={handleForceClose}
+      />
     </>
   );
 }

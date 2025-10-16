@@ -24,11 +24,17 @@ export default class SupabaseProvider extends EventEmitter {
   private _synced: boolean = false;
   private resyncInterval: NodeJS.Timeout | undefined;
   private saveTimeout: NodeJS.Timeout | undefined;
+  private reconnectTimeout: NodeJS.Timeout | undefined;
+  private reconnectAttempts: number = 0;
+  private maxReconnectAttempts: number = 10;
+  private reconnectDelay: number = 1000; // Start with 1 second
+  private maxReconnectDelay: number = 30000; // Max 30 seconds
   protected logger: debug.Debugger;
   public readonly id: number;
 
   public version: number = 0;
   private readonly saveDebounceMs: number = 1000; // Default debounce time
+  private destroyed: boolean = false;
 
   isOnline(online?: boolean): boolean {
     if (!online && online !== false) return this.connected;
@@ -131,6 +137,13 @@ export default class SupabaseProvider extends EventEmitter {
 
   private async onConnect() {
     this.logger('connected');
+
+    // Reset reconnect attempts on successful connection
+    this.reconnectAttempts = 0;
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = undefined;
+    }
 
     const { data, status } = await this.supabase
       .from(this.config.tableName as any)
@@ -311,6 +324,40 @@ export default class SupabaseProvider extends EventEmitter {
     }
   }
 
+  private scheduleReconnect() {
+    if (this.destroyed || this.reconnectTimeout) return;
+
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      this.logger('max reconnect attempts reached');
+      this.emit('reconnect-failed');
+      return;
+    }
+
+    // Exponential backoff with jitter
+    const delay = Math.min(
+      this.reconnectDelay * 2 ** this.reconnectAttempts,
+      this.maxReconnectDelay
+    );
+    const jitter = Math.random() * 1000; // Add up to 1 second jitter
+    const actualDelay = delay + jitter;
+
+    this.logger(
+      `scheduling reconnect attempt ${this.reconnectAttempts + 1} in ${Math.round(actualDelay)}ms`
+    );
+
+    this.reconnectTimeout = setTimeout(() => {
+      this.reconnectTimeout = undefined;
+      this.reconnectAttempts++;
+      this.logger(`reconnect attempt ${this.reconnectAttempts}`);
+
+      // Disconnect old channel if it exists
+      this.disconnect();
+
+      // Try to reconnect
+      this.connect();
+    }, actualDelay);
+  }
+
   public onDisconnect() {
     this.logger('disconnected');
 
@@ -327,6 +374,11 @@ export default class SupabaseProvider extends EventEmitter {
       (client) => client !== this.doc.clientID
     );
     awarenessProtocol.removeAwarenessStates(this.awareness, states, this);
+
+    // Auto-reconnect if not destroyed
+    if (!this.destroyed) {
+      this.scheduleReconnect();
+    }
   }
 
   public onMessage(message: Uint8Array, _origin: any) {
@@ -353,6 +405,13 @@ export default class SupabaseProvider extends EventEmitter {
 
   public destroy() {
     this.logger('destroying');
+    this.destroyed = true;
+
+    // Clear reconnect timeout
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = undefined;
+    }
 
     if (this.resyncInterval) {
       clearInterval(this.resyncInterval);
