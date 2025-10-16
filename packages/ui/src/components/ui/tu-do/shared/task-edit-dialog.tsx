@@ -2364,8 +2364,10 @@ function TaskEditDialogComponent({
   }, [isOpen, task?.id, pathname, boardId, isCreateMode, workspaceId]);
 
   // Reset state when dialog closes or opens
+  const isMountedRef = useRef(true);
+
   useEffect(() => {
-    let isMounted = true;
+    isMountedRef.current = true;
 
     if (!isOpen) {
       // Clear pending name update timer
@@ -2413,7 +2415,7 @@ function TaskEditDialogComponent({
                 data: { user },
               } = await supabase.auth.getUser();
 
-              if (!user || !isMounted) {
+              if (!user || !isMountedRef.current) {
                 return;
               }
 
@@ -2424,7 +2426,7 @@ function TaskEditDialogComponent({
                 .eq('id', user.id)
                 .single();
 
-              if (userData && isMounted) {
+              if (userData && isMountedRef.current) {
                 setSelectedAssignees([
                   {
                     user_id: userData.id,
@@ -2453,7 +2455,7 @@ function TaskEditDialogComponent({
     }
 
     return () => {
-      isMounted = false;
+      isMountedRef.current = false;
     };
   }, [isOpen, isCreateMode, filters]);
 
