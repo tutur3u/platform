@@ -25,6 +25,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import {
   buildEstimationIndices,
+  type EstimationType,
   mapEstimationPoints,
 } from '@tuturuuu/ui/tu-do/shared/estimation-mapping';
 import { cn } from '@tuturuuu/utils/format';
@@ -53,7 +54,7 @@ interface WorkspaceProject {
 }
 
 interface WorkspaceEstimationConfig {
-  estimation_type?: string | null;
+  estimation_type?: EstimationType;
   extended_estimation?: boolean | null;
   allow_zero_estimates?: boolean | null;
 }
@@ -612,6 +613,7 @@ export function CommandBar({
 
                 {/* Estimation Popover */}
                 {workspaceEstimationConfig &&
+                  workspaceEstimationConfig.estimation_type &&
                   availableEstimationIndices.length > 0 && (
                     <Popover
                       open={estimationOpen}
