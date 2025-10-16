@@ -72,7 +72,6 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 import * as Y from 'yjs';
-import type { TaskFilters } from '../boards/boardId/task-filter';
 import { CursorOverlayWrapper } from './cursor-overlay';
 import { CustomDatePickerDialog } from './custom-date-picker/custom-date-picker-dialog';
 import {
@@ -94,6 +93,7 @@ import {
 } from './slash-commands/definitions';
 import { SlashCommandMenu } from './slash-commands/slash-command-menu';
 import { SyncWarningDialog } from './sync-warning-dialog';
+import type { TaskFilters } from './types';
 import { UserPresenceAvatarsComponent } from './user-presence-avatars';
 
 interface TaskEditDialogProps {
@@ -2365,6 +2365,8 @@ function TaskEditDialogComponent({
 
   // Reset state when dialog closes or opens
   useEffect(() => {
+    let isMounted = true;
+
     if (!isOpen) {
       // Clear pending name update timer
       if (nameUpdateTimerRef.current) {
@@ -2389,23 +2391,13 @@ function TaskEditDialogComponent({
       if (isCreateMode && filters) {
         setShowOptionsSidebar(true);
 
-        console.log('🔧 Applying filters to new task:', {
-          labels: filters.labels?.length || 0,
-          assignees: filters.assignees?.length || 0,
-          projects: filters.projects?.length || 0,
-          priorities: filters.priorities?.length || 0,
-          includeMyTasks: filters.includeMyTasks,
-        });
-
         // Apply labels from filters
         if (filters.labels && filters.labels.length > 0) {
-          console.log('  📋 Setting labels:', filters.labels);
           setSelectedLabels(filters.labels);
         }
 
         // Apply assignees from filters or add current user if includeMyTasks is true
         if (filters.assignees && filters.assignees.length > 0) {
-          console.log('  👥 Setting assignees:', filters.assignees);
           // Transform filter assignees to include user_id (filters have 'id', save expects 'user_id')
           const transformedAssignees = filters.assignees.map((a) => ({
             ...a,
@@ -2414,7 +2406,6 @@ function TaskEditDialogComponent({
           setSelectedAssignees(transformedAssignees);
         } else if (filters.includeMyTasks) {
           // Fetch and add current user
-          console.log('  👤 Fetching current user for My Tasks filter');
           (async () => {
             try {
               const supabase = createClient();
@@ -2422,8 +2413,7 @@ function TaskEditDialogComponent({
                 data: { user },
               } = await supabase.auth.getUser();
 
-              if (!user) {
-                console.log('  ❌ No user found');
+              if (!user || !isMounted) {
                 return;
               }
 
@@ -2434,8 +2424,7 @@ function TaskEditDialogComponent({
                 .eq('id', user.id)
                 .single();
 
-              if (userData) {
-                console.log('  ✅ Adding current user as assignee:', userData);
+              if (userData && isMounted) {
                 setSelectedAssignees([
                   {
                     user_id: userData.id,
@@ -2445,25 +2434,27 @@ function TaskEditDialogComponent({
                   },
                 ]);
               }
-            } catch (error) {
-              console.error('  ❌ Error applying current user filter:', error);
+            } catch {
+              // Silently fail - user can still manually select assignees
             }
           })();
         }
 
         // Apply projects from filters
         if (filters.projects && filters.projects.length > 0) {
-          console.log('  📦 Setting projects:', filters.projects);
           setSelectedProjects(filters.projects);
         }
 
         // Apply priority if only one priority is selected in filters
         if (filters.priorities && filters.priorities.length === 1) {
-          console.log('  🚩 Setting priority:', filters.priorities[0]);
           setPriority(filters.priorities[0] || null);
         }
       }
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [isOpen, isCreateMode, filters]);
 
   // Manage slash command highlight index
@@ -2703,6 +2694,15 @@ function TaskEditDialogComponent({
   useEffect(() => {
     const taskIdChanged = previousTaskIdRef.current !== task?.id;
 
+    // Helper to check if filters have any active values
+    const hasActiveFilters =
+      filters &&
+      ((filters.labels && filters.labels.length > 0) ||
+        (filters.assignees && filters.assignees.length > 0) ||
+        (filters.projects && filters.projects.length > 0) ||
+        (filters.priorities && filters.priorities.length > 0) ||
+        filters.includeMyTasks);
+
     if (isOpen && !isCreateMode && taskIdChanged) {
       setName(task?.name || '');
       setDescription(getDescriptionContent(task?.description));
@@ -2718,7 +2718,8 @@ function TaskEditDialogComponent({
     } else if (
       isOpen &&
       (isCreateMode || task?.id === 'new') &&
-      taskIdChanged
+      taskIdChanged &&
+      !hasActiveFilters // Only reset if no active filters
     ) {
       setName(task?.name || '');
       setDescription(getDescriptionContent(task?.description) || null);
@@ -2732,7 +2733,7 @@ function TaskEditDialogComponent({
       setSelectedProjects(task?.projects || []);
       if (task?.id) previousTaskIdRef.current = task.id;
     }
-  }, [isCreateMode, isOpen, task]);
+  }, [isCreateMode, isOpen, task, filters]);
 
   // Reset transient edits when closing without saving in edit mode
   useEffect(() => {
