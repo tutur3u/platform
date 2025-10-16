@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { ValidateInviteResult, Workspace, WorkspaceInfo } from './types';
 
@@ -32,8 +35,10 @@ export async function validateInvite(
       };
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Check if user is already a member of the workspace
-    const { data: inviteLink, error: inviteLinkError } = await supabase
+    const { data: inviteLink, error: inviteLinkError } = await sbAdmin
       .from('workspace_invite_links')
       .select('ws_id, workspaces:ws_id(id, name, avatar_url, logo_url)')
       .eq('code', code)
@@ -84,7 +89,7 @@ export async function validateInvite(
     };
 
     // Check if user is already a member
-    const { data: existingMember } = await supabase
+    const { data: existingMember } = await sbAdmin
       .from('workspace_members')
       .select('user_id')
       .eq('ws_id', inviteLink.ws_id)
