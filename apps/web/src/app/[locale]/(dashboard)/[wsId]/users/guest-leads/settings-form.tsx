@@ -33,7 +33,12 @@ const FormSchema = z.object({
   guest_user_checkup_threshold: z.coerce.number().int().min(1).max(100),
 });
 
-export function GuestLeadSettingsForm({ wsId, data, onFinish, canCreateLeadGenerations }: Props) {
+export function GuestLeadSettingsForm({
+  wsId,
+  data,
+  onFinish,
+  canCreateLeadGenerations,
+}: Props) {
   const t = useTranslations();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -104,7 +109,12 @@ export function GuestLeadSettingsForm({ wsId, data, onFinish, canCreateLeadGener
         <Button
           type="submit"
           className="w-full"
-          disabled={loading || mutation.isPending || !form.formState.isDirty || !canCreateLeadGenerations}
+          disabled={
+            loading ||
+            mutation.isPending ||
+            !form.formState.isDirty ||
+            !canCreateLeadGenerations
+          }
         >
           {loading || mutation.isPending
             ? t('common.processing')

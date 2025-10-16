@@ -11,7 +11,10 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getGuestGroup, getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getGuestGroup,
+  getPermissions,
+} from '@tuturuuu/utils/workspace-helper';
 import { format } from 'date-fns';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
@@ -46,38 +49,43 @@ interface Props {
 }
 
 export default async function HomeworkCheck({ params, searchParams }: Props) {
-
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId, postId }) => {
         const t = await getTranslations();
         const { containsPermission } = await getPermissions({ wsId });
-        const canViewUserGroupsPosts = containsPermission('view_user_groups_posts');
+        const canViewUserGroupsPosts = containsPermission(
+          'view_user_groups_posts'
+        );
         if (!canViewUserGroupsPosts) {
           notFound();
         }
         const post = await getPostData(postId);
         const group = await getGroupData(wsId, groupId);
         const status = await getPostStatus(groupId, postId);
-      
+
         const { data: rawUsers } = await getUserData(
           wsId,
           groupId,
           await searchParams
         );
-      
+
         const users = rawUsers.map((u) => ({
           ...u,
           href: `/${wsId}/users/database/${u.id}`,
         }));
-      
+
         // Get permissions
-      
-        const canUpdateUserGroupsPosts = containsPermission('update_user_groups_posts');
-        const canSendUserGroupPostEmails = containsPermission('send_user_group_post_emails');
-        
+
+        const canUpdateUserGroupsPosts = containsPermission(
+          'update_user_groups_posts'
+        );
+        const canSendUserGroupPostEmails = containsPermission(
+          'send_user_group_post_emails'
+        );
+
         const isGuestGroup = (await getGuestGroup({ groupId })) ?? false;
-      
+
         return (
           <div>
             <FeatureSummary
@@ -128,7 +136,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
                     canUpdateUserGroupsPosts={canUpdateUserGroupsPosts}
                   />
                 ) : undefined
-              } 
+              }
               disableSecondaryTrigger={status.checked === status.count}
               action={
                 canSendUserGroupPostEmails ? (

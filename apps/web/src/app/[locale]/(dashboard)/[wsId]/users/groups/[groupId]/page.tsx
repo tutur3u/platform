@@ -97,11 +97,18 @@ export default async function UserGroupDetailsPage({
         const canUpdateUserGroups = containsPermission('update_user_groups');
 
         // Posts Permissions
-        const canViewUserGroupsPosts = containsPermission('view_user_groups_posts');
-        const canCreateUserGroupsPosts = containsPermission('create_user_groups_posts');
-        const canUpdateUserGroupsPosts = containsPermission('update_user_groups_posts');
-        const canDeleteUserGroupsPosts = containsPermission('delete_user_groups_posts');
-
+        const canViewUserGroupsPosts = containsPermission(
+          'view_user_groups_posts'
+        );
+        const canCreateUserGroupsPosts = containsPermission(
+          'create_user_groups_posts'
+        );
+        const canUpdateUserGroupsPosts = containsPermission(
+          'update_user_groups_posts'
+        );
+        const canDeleteUserGroupsPosts = containsPermission(
+          'delete_user_groups_posts'
+        );
 
         // Fetch group members data for the GroupMembers component
         const MEMBERS_PAGE_SIZE = 10;
@@ -115,7 +122,9 @@ export default async function UserGroupDetailsPage({
           }
         );
 
-        const { data: posts, count: postsCount } = canViewUserGroupsPosts ? await getGroupPosts(groupId) : { data: [], count: 0 };
+        const { data: posts, count: postsCount } = canViewUserGroupsPosts
+          ? await getGroupPosts(groupId)
+          : { data: [], count: 0 };
         const { data: linkedProducts, count: lpCount } =
           await getLinkedProducts(groupId);
 
@@ -235,15 +244,15 @@ export default async function UserGroupDetailsPage({
 
               <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
                 {canViewUserGroupsPosts && (
-                <PostsClient
-                  wsId={wsId}
-                  groupId={groupId}
-                  posts={posts}
-                  count={postsCount}
-                  canUpdatePosts={canUpdateUserGroupsPosts}
-                  canCreatePosts={canCreateUserGroupsPosts}
-                  canDeletePosts={canDeleteUserGroupsPosts}
-                  canViewPosts={canViewUserGroupsPosts}
+                  <PostsClient
+                    wsId={wsId}
+                    groupId={groupId}
+                    posts={posts}
+                    count={postsCount}
+                    canUpdatePosts={canUpdateUserGroupsPosts}
+                    canCreatePosts={canCreateUserGroupsPosts}
+                    canDeletePosts={canDeleteUserGroupsPosts}
+                    canViewPosts={canViewUserGroupsPosts}
                   />
                 )}
               </div>

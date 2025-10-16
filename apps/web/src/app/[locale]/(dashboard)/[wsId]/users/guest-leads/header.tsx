@@ -22,7 +22,11 @@ interface Props {
   canCreateLeadGenerations: boolean;
 }
 
-export function GuestLeadHeader({ wsId, settingsRow, canCreateLeadGenerations }: Props) {
+export function GuestLeadHeader({
+  wsId,
+  settingsRow,
+  canCreateLeadGenerations,
+}: Props) {
   const t = useTranslations();
   const [open, setOpen] = useState(false);
 
@@ -50,9 +54,8 @@ export function GuestLeadHeader({ wsId, settingsRow, canCreateLeadGenerations }:
                 <Settings className="h-4 w-4" />
                 {t('users.guest_leads.create_settings')}
               </Button>
-            ) : (
-              canCreateLeadGenerations ? (
-                <Button
+            ) : canCreateLeadGenerations ? (
+              <Button
                 size="xs"
                 variant="ghost"
                 className="w-full md:w-fit"
@@ -61,8 +64,7 @@ export function GuestLeadHeader({ wsId, settingsRow, canCreateLeadGenerations }:
                 <Settings className="h-4 w-4 mr-1" />
                 {t('common.settings')}
               </Button>
-              ) : null
-            )}
+            ) : null}
           </DialogTrigger>
           <DialogContent
             onOpenAutoFocus={(e) => e.preventDefault()}
