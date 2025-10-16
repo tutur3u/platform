@@ -44,10 +44,22 @@ export default class SupabaseProvider extends EventEmitter {
 
   onDocumentUpdate(update: Uint8Array, origin: any) {
     if (origin !== this) {
+      // Only broadcast and save if connected and not destroyed
+      if (!this.connected || this.destroyed) {
+        this.logger('skipping broadcast - not connected or destroyed');
+        return;
+      }
+
+      // Validate update size (avoid broadcasting empty or corrupted updates)
+      if (!update || update.length === 0) {
+        this.logger('skipping broadcast - empty update');
+        return;
+      }
+
       this.logger(
-        'document updated locally, broadcasting update to peers',
-        this.isOnline()
+        `document updated locally (${update.length} bytes), broadcasting update to peers`
       );
+
       this.emit('message', update);
       this.debouncedSave(); // Use debounced save instead of immediate
     }
@@ -99,11 +111,23 @@ export default class SupabaseProvider extends EventEmitter {
 
   async save() {
     try {
+      // Don't save if not connected or destroyed
+      if (!this.connected || this.destroyed) {
+        this.logger('skipping save - not connected or destroyed');
+        return;
+      }
+
       const content = Array.from(Y.encodeStateAsUpdate(this.doc));
 
-      // Skip save if content is empty
+      // Skip save if content is empty or too small (likely invalid)
       if (!content || content.length === 0) {
         this.logger('skipping save - empty content');
+        return;
+      }
+
+      // Skip save if content is suspiciously small (might be corrupted)
+      if (content.length < 10) {
+        this.logger('skipping save - content too small, possibly corrupted');
         return;
       }
 
@@ -117,10 +141,30 @@ export default class SupabaseProvider extends EventEmitter {
       if (error) {
         this.logger(`save failed with status ${status}:`, error);
 
-        // Don't throw on 422 errors - just log them
-        // This can happen if the task was deleted or there's a validation issue
+        // Handle 422 errors - task was deleted, validation failed, or RLS rejected
         if (status === 422) {
-          console.warn(`Failed to save Yjs state (422): ${error.message}`);
+          console.warn(
+            `Failed to save Yjs state (422 - Unprocessable Entity):`,
+            {
+              message: error.message,
+              details: error.details,
+              hint: error.hint,
+              taskId: this.config.id,
+            }
+          );
+
+          // Mark as not synced so UI shows warning
+          this.synced = false;
+
+          // Stop trying to save this document
+          this.logger('stopping future saves due to 422 error');
+          return;
+        }
+
+        // Handle 404 errors - task doesn't exist
+        if (status === 404) {
+          console.warn(`Task ${this.config.id} not found, stopping saves`);
+          this.synced = false;
           return;
         }
 
@@ -129,9 +173,13 @@ export default class SupabaseProvider extends EventEmitter {
 
       this.logger('save successful');
       this.emit('save', this.version);
-    } catch (error) {
+    } catch (error: any) {
       this.logger('unexpected error during save:', error);
-      console.error('Failed to save Yjs document:', error);
+      console.error('Failed to save Yjs document:', {
+        error,
+        message: error?.message,
+        taskId: this.config.id,
+      });
     }
   }
 
@@ -261,14 +309,29 @@ export default class SupabaseProvider extends EventEmitter {
         `setting resync interval to every ${(this.config.resyncInterval || 5000) / 1000} seconds`
       );
       this.resyncInterval = setInterval(() => {
+        // Only resync if connected and not destroyed
+        if (!this.connected || this.destroyed) {
+          this.logger('skipping resync - not connected or destroyed');
+          return;
+        }
+
         this.logger('resyncing (resync interval elapsed)');
-        this.emit('message', Y.encodeStateAsUpdate(this.doc));
-        if (this.channel)
+        const update = Y.encodeStateAsUpdate(this.doc);
+
+        // Validate update before broadcasting
+        if (!update || update.length === 0) {
+          this.logger('skipping resync - empty update');
+          return;
+        }
+
+        this.emit('message', update);
+        if (this.channel) {
           this.channel.send({
             type: 'broadcast',
             event: 'message',
-            payload: Array.from(Y.encodeStateAsUpdate(this.doc)),
+            payload: Array.from(update),
           });
+        }
       }, this.config.resyncInterval || 5000);
     }
 
@@ -281,20 +344,30 @@ export default class SupabaseProvider extends EventEmitter {
       process.on('exit', () => this.removeSelfFromAwarenessOnUnload);
     }
     this.on('awareness', (update) => {
-      if (this.channel)
-        this.channel.send({
-          type: 'broadcast',
-          event: 'awareness',
-          payload: Array.from(update),
-        });
+      // Only broadcast if connected and channel exists
+      if (this.connected && this.channel && !this.destroyed) {
+        // Validate update before broadcasting
+        if (update && update.length > 0) {
+          this.channel.send({
+            type: 'broadcast',
+            event: 'awareness',
+            payload: Array.from(update),
+          });
+        }
+      }
     });
     this.on('message', (update) => {
-      if (this.channel)
-        this.channel.send({
-          type: 'broadcast',
-          event: 'message',
-          payload: Array.from(update),
-        });
+      // Only broadcast if connected and channel exists
+      if (this.connected && this.channel && !this.destroyed) {
+        // Validate update before broadcasting
+        if (update && update.length > 0) {
+          this.channel.send({
+            type: 'broadcast',
+            event: 'message',
+            payload: Array.from(update),
+          });
+        }
+      }
     });
 
     this.connect();
