@@ -151,7 +151,7 @@ export function CommandBar({
   const hasDestination = Boolean(
     selectedDestination?.boardName && selectedDestination?.listName
   );
-  const canExecute = inputText.trim() && (mode === 'note' || hasDestination);
+  const canExecute = Boolean(inputText.trim());
 
   const handleAction = async () => {
     if (!inputText.trim()) return;
@@ -382,7 +382,7 @@ export function CommandBar({
               <Switch
                 checked={aiEnabled}
                 onCheckedChange={setAiEnabled}
-                disabled={isLoading || (mode === 'task' && !hasDestination)}
+                disabled={isLoading}
                 className="scale-90"
               />
             </div>
