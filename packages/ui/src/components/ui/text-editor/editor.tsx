@@ -542,9 +542,10 @@ export function RichTextEditor({
     if (!flushPendingRef || !editor) return;
 
     flushPendingRef.current = () => {
-      // When using collaboration, don't flush to local state - Yjs doc is the source
+      // When using collaboration, get content directly from editor (which reflects Yjs state)
       if (allowCollaboration) {
-        return null;
+        const currentContent = editor.getJSON();
+        return hasContent(currentContent) ? currentContent : null;
       }
 
       // Flush pending debounced changes immediately

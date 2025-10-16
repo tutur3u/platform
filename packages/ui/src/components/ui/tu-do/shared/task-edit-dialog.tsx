@@ -2128,7 +2128,7 @@ function TaskEditDialogComponent({
       return;
     }
 
-    // When collaboration is enabled, description is managed by Yjs - don't update it
+    // When collaboration is enabled, get description from Yjs for embeddings
     const taskUpdates: any = {
       name: name.trim(),
       priority: priority,
@@ -2138,8 +2138,15 @@ function TaskEditDialogComponent({
       estimation_points: estimationPoints ?? null,
     };
 
-    // Only update description when NOT in collaboration mode
-    if (!collaborationMode) {
+    // Always update description field for embeddings and calculations
+    // In collaboration mode, get the current state from Yjs
+    // In non-collaboration mode, use the local description state
+    if (collaborationMode && flushEditorPendingRef.current) {
+      const yjsDescription = flushEditorPendingRef.current();
+      taskUpdates.description = yjsDescription
+        ? JSON.stringify(yjsDescription)
+        : null;
+    } else {
       taskUpdates.description = descriptionString;
     }
 
@@ -2222,6 +2229,36 @@ function TaskEditDialogComponent({
       return;
     }
 
+    // Save Yjs description to database for embeddings and calculations
+    if (collaborationMode && !isCreateMode && task?.id) {
+      try {
+        // Extract current content from Yjs document via editor
+        let currentDescription = null;
+        if (flushEditorPendingRef.current) {
+          currentDescription = flushEditorPendingRef.current();
+        }
+
+        // Save to database if we have content
+        if (currentDescription) {
+          const supabase = createClient();
+          const descriptionString = JSON.stringify(currentDescription);
+
+          const { error } = await supabase
+            .from('tasks')
+            .update({ description: descriptionString })
+            .eq('id', task.id);
+
+          if (error) {
+            console.error('Error saving Yjs description:', error);
+          } else {
+            console.log('✅ Yjs description saved for embeddings');
+          }
+        }
+      } catch (error) {
+        console.error('Failed to save Yjs description:', error);
+      }
+    }
+
     // Safe to close
     try {
       if (!isCreateMode && typeof window !== 'undefined') {
@@ -2238,19 +2275,63 @@ function TaskEditDialogComponent({
     connected,
     draftStorageKey,
     onClose,
+    task?.id,
   ]);
 
   const handleForceClose = useCallback(async () => {
     setShowSyncWarning(false);
     // Flush any pending name update before force closing
     await flushNameUpdate();
+
+    // Save Yjs description to database for embeddings and calculations
+    if (collaborationMode && !isCreateMode && task?.id) {
+      try {
+        // Extract current content from Yjs document via editor
+        let currentDescription = null;
+        if (flushEditorPendingRef.current) {
+          currentDescription = flushEditorPendingRef.current();
+        }
+
+        // Save to database if we have content
+        if (currentDescription) {
+          const supabase = createClient();
+          const descriptionString = JSON.stringify(currentDescription);
+
+          const { error } = await supabase
+            .from('tasks')
+            .update({ description: descriptionString })
+            .eq('id', task.id);
+
+          if (error) {
+            console.error(
+              'Error saving Yjs description on force close:',
+              error
+            );
+          } else {
+            console.log(
+              '✅ Yjs description saved for embeddings (force close)'
+            );
+          }
+        }
+      } catch (error) {
+        console.error('Failed to save Yjs description on force close:', error);
+      }
+    }
+
     try {
       if (!isCreateMode && typeof window !== 'undefined') {
         localStorage.removeItem(draftStorageKey);
       }
     } catch {}
     onClose();
-  }, [isCreateMode, draftStorageKey, onClose, flushNameUpdate]);
+  }, [
+    isCreateMode,
+    draftStorageKey,
+    onClose,
+    flushNameUpdate,
+    collaborationMode,
+    task?.id,
+  ]);
 
   const handleDialogOpenChange = useCallback(
     (open: boolean) => {
@@ -2278,6 +2359,45 @@ function TaskEditDialogComponent({
         setShowSyncWarning(false);
         // Flush any pending name update before closing
         await flushNameUpdate();
+
+        // Save Yjs description to database for embeddings and calculations
+        if (collaborationMode && !isCreateMode && task?.id) {
+          try {
+            // Extract current content from Yjs document via editor
+            let currentDescription = null;
+            if (flushEditorPendingRef.current) {
+              currentDescription = flushEditorPendingRef.current();
+            }
+
+            // Save to database if we have content
+            if (currentDescription) {
+              const supabase = createClient();
+              const descriptionString = JSON.stringify(currentDescription);
+
+              const { error } = await supabase
+                .from('tasks')
+                .update({ description: descriptionString })
+                .eq('id', task.id);
+
+              if (error) {
+                console.error(
+                  'Error saving Yjs description on auto-close:',
+                  error
+                );
+              } else {
+                console.log(
+                  '✅ Yjs description saved for embeddings (auto-close)'
+                );
+              }
+            }
+          } catch (error) {
+            console.error(
+              'Failed to save Yjs description on auto-close:',
+              error
+            );
+          }
+        }
+
         // Now safe to close - proceed with the actual close
         try {
           if (!isCreateMode && typeof window !== 'undefined') {
@@ -2297,6 +2417,8 @@ function TaskEditDialogComponent({
     isCreateMode,
     draftStorageKey,
     onClose,
+    collaborationMode,
+    task?.id,
   ]);
 
   // Initialize Yjs state for task description if not present
@@ -2336,6 +2458,56 @@ function TaskEditDialogComponent({
     };
     initializeYjsState();
   }, [doc, description, editorInstance, task?.id]);
+
+  // Periodic sync: Update description field from Yjs for real-time UI updates (checkbox counts, etc.)
+  useEffect(() => {
+    // Only run in collaboration mode when dialog is open and we have a valid task
+    if (!collaborationMode || isCreateMode || !isOpen || !task?.id) return;
+
+    let lastSyncedContent: string | null = null;
+
+    const syncDescriptionFromYjs = async () => {
+      try {
+        // Extract current content from Yjs document via editor
+        if (!flushEditorPendingRef.current) return;
+
+        const currentDescription = flushEditorPendingRef.current();
+        if (!currentDescription) return;
+
+        const descriptionString = JSON.stringify(currentDescription);
+
+        // Only update if content has actually changed
+        if (descriptionString === lastSyncedContent) {
+          return;
+        }
+
+        const supabase = createClient();
+
+        const { error } = await supabase
+          .from('tasks')
+          .update({ description: descriptionString })
+          .eq('id', task.id);
+
+        if (error) {
+          console.error('Error syncing description from Yjs:', error);
+        } else {
+          lastSyncedContent = descriptionString;
+          // Invalidate task caches so UI updates immediately
+          await invalidateTaskCaches(queryClient, boardId);
+        }
+      } catch (error) {
+        console.error('Failed to sync description from Yjs:', error);
+      }
+    };
+
+    // Sync every 2 seconds while dialog is open
+    const syncInterval = setInterval(syncDescriptionFromYjs, 2000);
+
+    // Also sync immediately on mount
+    syncDescriptionFromYjs();
+
+    return () => clearInterval(syncInterval);
+  }, [collaborationMode, isCreateMode, isOpen, task?.id, boardId, queryClient]);
 
   // Sync URL with task dialog state (edit mode only)
   useEffect(() => {
@@ -3638,7 +3810,7 @@ function TaskEditDialogComponent({
 
             {/* Main editing area with improved spacing */}
             <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
-              <div ref={editorContainerRef} className="flex flex-col">
+              <div ref={editorContainerRef} className="flex h-full flex-col">
                 {/* Task Name - Large and prominent with underline effect */}
                 <div className="group">
                   <Input
@@ -3719,7 +3891,7 @@ function TaskEditDialogComponent({
                 </div>
 
                 {/* Task Description - Full editor experience with subtle border */}
-                <div ref={editorRef} className="relative flex-1 pb-8">
+                <div ref={editorRef} className="relative h-full flex-1 pb-8">
                   {isYjsSyncing ? (
                     <div className="flex min-h-[400px] items-center justify-center">
                       <div className="flex flex-col items-center gap-3">
@@ -3735,7 +3907,7 @@ function TaskEditDialogComponent({
                       onChange={setDescription}
                       writePlaceholder="Add a detailed description, attach files, or use markdown..."
                       titlePlaceholder=""
-                      className="min-h-[400px] border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
+                      className="h-full min-h-[400px] border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
                       workspaceId={workspaceId || undefined}
                       onImageUpload={handleImageUpload}
                       flushPendingRef={flushEditorPendingRef}
