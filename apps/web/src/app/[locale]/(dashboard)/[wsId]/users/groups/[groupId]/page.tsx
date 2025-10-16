@@ -115,7 +115,7 @@ export default async function UserGroupDetailsPage({
           }
         );
 
-        const { data: posts, count: postsCount } = await getGroupPosts(wsId, groupId);
+        const { data: posts, count: postsCount } = await getGroupPosts(groupId);
         const { data: linkedProducts, count: lpCount } =
           await getLinkedProducts(groupId);
 
@@ -278,7 +278,7 @@ async function getData(wsId: string, groupId: string) {
   return data as UserGroup;
 }
 
-async function getGroupPosts(wsId: string, groupId: string) {
+async function getGroupPosts(groupId: string) {
   const supabase = await createClient();
   const { data, error, count } = await supabase
     .from('user_group_posts')

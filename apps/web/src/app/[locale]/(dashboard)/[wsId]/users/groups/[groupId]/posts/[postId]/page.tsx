@@ -128,14 +128,14 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
                     canUpdateUserGroupsPosts={canUpdateUserGroupsPosts}
                   />
                 ) : undefined
-              }
+              } 
               disableSecondaryTrigger={status.checked === status.count}
               action={
                 canSendUserGroupPostEmails ? (
                   <EmailList wsId={wsId} groupId={groupId} />
                 ) : null
               }
-              showSecondaryTrigger={canSendUserGroupPostEmails}
+              showSecondaryTrigger={canUpdateUserGroupsPosts}
             />
             <Separator className="my-4" />
             <div className="gird-cols-1 grid grid-cols-2 gap-2 lg:grid-cols-4">
