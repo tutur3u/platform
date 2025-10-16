@@ -115,7 +115,7 @@ export default async function UserGroupDetailsPage({
           }
         );
 
-        const { data: posts, count: postsCount } = await getGroupPosts(groupId);
+        const { data: posts, count: postsCount } = canViewUserGroupsPosts ? await getGroupPosts(groupId) : { data: [], count: 0 };
         const { data: linkedProducts, count: lpCount } =
           await getLinkedProducts(groupId);
 
