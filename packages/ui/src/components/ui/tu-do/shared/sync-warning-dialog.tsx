@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, Loader2, WifiOff } from '@tuturuuu/icons';
+import { AlertTriangle, Check, Loader2, WifiOff } from '@tuturuuu/icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,12 +27,18 @@ export function SyncWarningDialog({
   connected,
   onForceClose,
 }: SyncWarningDialogProps) {
+  const isSynced = synced && connected;
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <div className="flex items-center gap-3">
-            {!connected ? (
+            {isSynced ? (
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-dynamic-green/10">
+                <Check className="h-6 w-6 text-dynamic-green" />
+              </div>
+            ) : !connected ? (
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-dynamic-red/10">
                 <WifiOff className="h-6 w-6 text-dynamic-red" />
               </div>
@@ -43,12 +49,18 @@ export function SyncWarningDialog({
             )}
             <div className="flex-1">
               <AlertDialogTitle>
-                {!connected ? 'Connection Lost' : 'Syncing Changes'}
+                {isSynced
+                  ? 'Sync Complete'
+                  : !connected
+                    ? 'Connection Lost'
+                    : 'Syncing Changes'}
               </AlertDialogTitle>
               <AlertDialogDescription className="mt-1">
-                {!connected
-                  ? 'Unable to sync your changes. Attempting to reconnect...'
-                  : 'Your changes are still being synced with the server.'}
+                {isSynced
+                  ? 'All changes have been synced. Closing...'
+                  : !connected
+                    ? 'Unable to sync your changes. Attempting to reconnect...'
+                    : 'Your changes are still being synced with the server.'}
               </AlertDialogDescription>
             </div>
           </div>
@@ -56,17 +68,25 @@ export function SyncWarningDialog({
 
         <div className="my-4 rounded-lg border bg-muted/50 p-4">
           <div className="flex items-center gap-3">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            {isSynced ? (
+              <Check className="h-5 w-5 text-dynamic-green" />
+            ) : (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            )}
             <div className="flex-1">
               <p className="font-medium text-sm">
-                {!connected
-                  ? 'Reconnecting to server...'
-                  : 'Syncing your changes...'}
+                {isSynced
+                  ? 'All changes saved'
+                  : !connected
+                    ? 'Reconnecting to server...'
+                    : 'Syncing your changes...'}
               </p>
               <p className="text-muted-foreground text-xs">
-                {!connected
-                  ? 'Please wait while we restore the connection'
-                  : 'Please wait a moment for sync to complete'}
+                {isSynced
+                  ? 'Dialog will close automatically'
+                  : !connected
+                    ? 'Please wait while we restore the connection'
+                    : 'Please wait a moment for sync to complete'}
               </p>
             </div>
             <div className="flex flex-col items-end gap-1">
@@ -96,15 +116,17 @@ export function SyncWarningDialog({
           </div>
         </div>
 
-        <AlertDialogFooter>
-          <AlertDialogCancel>Wait for Sync</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={onForceClose}
-            className="bg-dynamic-red text-white hover:bg-dynamic-red/90"
-          >
-            Close Anyway
-          </AlertDialogAction>
-        </AlertDialogFooter>
+        {!isSynced && (
+          <AlertDialogFooter>
+            <AlertDialogCancel>Wait for Sync</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={onForceClose}
+              className="bg-dynamic-red text-white hover:bg-dynamic-red/90"
+            >
+              Close Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        )}
       </AlertDialogContent>
     </AlertDialog>
   );

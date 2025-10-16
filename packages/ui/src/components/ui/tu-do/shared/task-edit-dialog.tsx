@@ -1759,6 +1759,32 @@ function TaskEditDialogComponent({
   // EFFECTS - Side effects for data fetching, state synchronization, etc.
   // ============================================================================
 
+  // Auto-close sync warning dialog when sync completes
+  useEffect(() => {
+    if (showSyncWarning && synced && connected) {
+      // Give a brief moment for user to see the success state
+      const timer = setTimeout(() => {
+        setShowSyncWarning(false);
+        // Now safe to close - proceed with the actual close
+        try {
+          if (!isCreateMode && typeof window !== 'undefined') {
+            localStorage.removeItem(draftStorageKey);
+          }
+        } catch {}
+        onClose();
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [
+    showSyncWarning,
+    synced,
+    connected,
+    isCreateMode,
+    draftStorageKey,
+    onClose,
+  ]);
+
   // Initialize Yjs state for task description if not present
   useEffect(() => {
     if (!task?.id || !editorInstance?.schema || !description || !doc) return;
