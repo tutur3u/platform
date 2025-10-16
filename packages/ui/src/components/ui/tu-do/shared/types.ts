@@ -7,5 +7,8 @@
 
 export type {
   SortOption,
+  TaskAssignee,
   TaskFilters,
-} from '../boards/boardId/task-filter';
+  TaskLabel,
+  TaskProject,
+} from './task-filter.types';
