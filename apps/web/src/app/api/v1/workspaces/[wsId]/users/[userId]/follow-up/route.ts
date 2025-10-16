@@ -35,7 +35,10 @@ export async function POST(
 
   if (withoutPermission('create_lead_generations')) {
     return NextResponse.json(
-      { message: 'User does not have permission to create lead generation emails' },
+      {
+        message:
+          'User does not have permission to create lead generation emails',
+      },
       { status: 403 }
     );
   }

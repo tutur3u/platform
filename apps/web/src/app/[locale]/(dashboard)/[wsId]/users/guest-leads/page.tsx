@@ -34,7 +34,9 @@ export default async function GuestUserLeadsPage({
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
         const { containsPermission } = await getPermissions({ wsId });
-        const canCreateLeadGenerations = containsPermission('create_lead_generations');
+        const canCreateLeadGenerations = containsPermission(
+          'create_lead_generations'
+        );
         if (!canCreateLeadGenerations) {
           notFound();
         }
@@ -43,7 +45,11 @@ export default async function GuestUserLeadsPage({
         const settingsRow = await getWorkspaceSettings(wsId);
         return (
           <>
-            <GuestLeadHeader settingsRow={settingsRow} wsId={wsId} canCreateLeadGenerations={canCreateLeadGenerations} />
+            <GuestLeadHeader
+              settingsRow={settingsRow}
+              wsId={wsId}
+              canCreateLeadGenerations={canCreateLeadGenerations}
+            />
             <Separator className="my-4" />
             <CustomDataTable
               data={data}
@@ -61,7 +67,6 @@ export default async function GuestUserLeadsPage({
     </WorkspaceWrapper>
   );
 }
-
 
 async function getData(
   wsId: string,

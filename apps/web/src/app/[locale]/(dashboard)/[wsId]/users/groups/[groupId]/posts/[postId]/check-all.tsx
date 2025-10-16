@@ -55,7 +55,10 @@ export function CheckAll({
   };
 
   return (
-    <Button onClick={handleSubmit} disabled={loading || completed || !canUpdateUserGroupsPosts}>
+    <Button
+      onClick={handleSubmit}
+      disabled={loading || completed || !canUpdateUserGroupsPosts}
+    >
       <CheckCheck className="mr-1" />
       {completed || t('ws_post_details.check_all')}
     </Button>

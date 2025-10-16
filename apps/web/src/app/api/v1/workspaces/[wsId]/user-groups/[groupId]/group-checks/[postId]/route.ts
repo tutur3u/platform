@@ -11,17 +11,16 @@ interface Params {
   }>;
 }
 
-export async function PUT(
-  req: Request,
-  { params }: Params
-) {
+export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient();
   const data = await req.json();
   const { wsId, groupId, postId } = await params;
 
   // Check permissions
   const { withoutPermission } = await getPermissions({ wsId });
-  const canUpdateUserGroupsPosts = !withoutPermission('update_user_groups_posts');
+  const canUpdateUserGroupsPosts = !withoutPermission(
+    'update_user_groups_posts'
+  );
   if (!canUpdateUserGroupsPosts) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update user group posts' },
@@ -54,7 +53,9 @@ export async function PUT(
   });
   const MultipleSchema = z.array(SingleSchema);
   const isArray = Array.isArray(data);
-  const parse = isArray ? MultipleSchema.safeParse(data) : SingleSchema.safeParse(data);
+  const parse = isArray
+    ? MultipleSchema.safeParse(data)
+    : SingleSchema.safeParse(data);
   if (!parse.success) {
     return NextResponse.json({ message: 'Invalid payload' }, { status: 400 });
   }
@@ -66,11 +67,13 @@ export async function PUT(
     const { error } = await supabase
       .from('user_group_post_checks')
       .upsert(
-        (validatedData as Array<{
-          user_id: string;
-          is_completed: boolean;
-          notes?: string | null;
-        }>).map(item => ({
+        (
+          validatedData as Array<{
+            user_id: string;
+            is_completed: boolean;
+            notes?: string | null;
+          }>
+        ).map((item) => ({
           post_id: postId,
           user_id: item.user_id,
           notes: item.notes ?? null,
