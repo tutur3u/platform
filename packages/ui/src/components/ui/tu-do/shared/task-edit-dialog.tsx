@@ -97,6 +97,9 @@ import { SyncWarningDialog } from './sync-warning-dialog';
 import type { TaskFilters } from './types';
 import { UserPresenceAvatarsComponent } from './user-presence-avatars';
 
+// Module-level Supabase client singleton to avoid repeated instantiation
+const supabase = createClient();
+
 interface TaskEditDialogProps {
   task?: Task;
   boardId: string;
@@ -185,8 +188,6 @@ async function saveYjsDescriptionToDatabase({
     const descriptionString = currentDescription
       ? JSON.stringify(currentDescription)
       : null;
-
-    const supabase = createClient();
 
     const { error } = await supabase
       .from('tasks')
@@ -353,7 +354,6 @@ function TaskEditDialogComponent({
 
   useEffect(() => {
     const getUser = async () => {
-      const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -381,7 +381,6 @@ function TaskEditDialogComponent({
     // Only subscribe in edit mode when dialog is open and we have a task ID
     if (isCreateMode || !isOpen || !task?.id) return;
 
-    const supabase = createClient();
     console.log('🔄 Setting up realtime subscription for task:', task.id);
 
     // Helper function to fetch labels for the task
@@ -696,7 +695,6 @@ function TaskEditDialogComponent({
   const { data: availableLists = [] } = useQuery({
     queryKey: ['task_lists', boardId],
     queryFn: async () => {
-      const supabase = createClient();
       const { data, error } = await supabase
         .from('task_lists')
         .select('*')
@@ -887,7 +885,6 @@ function TaskEditDialogComponent({
   const fetchWorkspaceMembers = useCallback(async (wsId: string) => {
     try {
       setLoadingMembers(true);
-      const supabase = createClient();
       const { data: members, error } = await supabase
         .from('workspace_members')
         .select(
@@ -943,7 +940,6 @@ function TaskEditDialogComponent({
   const fetchTaskProjects = useCallback(async (wsId: string) => {
     try {
       setLoadingProjects(true);
-      const supabase = createClient();
       const { data: projects, error } = await supabase
         .from('task_projects')
         .select('id, name, status')
@@ -982,7 +978,6 @@ function TaskEditDialogComponent({
   const fetchAllWorkspaces = useCallback(async () => {
     try {
       setAllWorkspacesLoading(true);
-      const supabase = createClient();
 
       const {
         data: { user },
@@ -1009,7 +1004,6 @@ function TaskEditDialogComponent({
     if (!wsId) return;
     try {
       setWorkspaceDetailsLoading(true);
-      const supabase = createClient();
       const { data, error } = await supabase
         .from('workspaces')
         .select('id, name, handle')
@@ -1030,7 +1024,6 @@ function TaskEditDialogComponent({
       if (!wsId) return;
       try {
         setWorkspaceTasksLoading(true);
-        const supabase = createClient();
 
         const { data: boards, error: boardsError } = await supabase
           .from('workspace_boards')
@@ -1359,8 +1352,6 @@ function TaskEditDialogComponent({
       }
       setEstimationSaving(true);
       try {
-        const supabase = createClient();
-
         const { error } = await supabase
           .from('tasks')
           .update({ estimation_points: points })
@@ -1389,7 +1380,6 @@ function TaskEditDialogComponent({
         return;
       }
       try {
-        const supabase = createClient();
         const { error } = await supabase
           .from('tasks')
           .update({ priority: newPriority })
@@ -1415,7 +1405,6 @@ function TaskEditDialogComponent({
         return;
       }
       try {
-        const supabase = createClient();
         const { error } = await supabase
           .from('tasks')
           .update({ start_date: newDate ? newDate.toISOString() : null })
@@ -1441,7 +1430,6 @@ function TaskEditDialogComponent({
         return;
       }
       try {
-        const supabase = createClient();
         const { error } = await supabase
           .from('tasks')
           .update({ end_date: newDate ? newDate.toISOString() : null })
@@ -1488,7 +1476,6 @@ function TaskEditDialogComponent({
         return;
       }
       try {
-        const supabase = createClient();
         const { error } = await supabase
           .from('tasks')
           .update({ list_id: newListId })
@@ -1517,7 +1504,6 @@ function TaskEditDialogComponent({
       }
 
       try {
-        const supabase = createClient();
         const { error } = await supabase
           .from('tasks')
           .update({ name: trimmedName })
@@ -1576,8 +1562,6 @@ function TaskEditDialogComponent({
         throw new Error('Workspace ID not found');
       }
 
-      const supabase = createClient();
-
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `${workspaceId}/task-images/${fileName}`;
@@ -1612,7 +1596,6 @@ function TaskEditDialogComponent({
   const toggleLabel = useCallback(
     async (label: WorkspaceTaskLabel) => {
       const exists = selectedLabels.some((l) => l.id === label.id);
-      const supabase = createClient();
       try {
         if (isCreateMode) {
           setSelectedLabels((prev) =>
@@ -1659,7 +1642,6 @@ function TaskEditDialogComponent({
     if (!newLabelName.trim() || !boardConfig) return;
     setCreatingLabel(true);
     try {
-      const supabase = createClient();
       let wsId: string | undefined = (boardConfig as any)?.ws_id;
       if (!wsId) {
         const { data: board } = await supabase
@@ -1756,7 +1738,6 @@ function TaskEditDialogComponent({
       const exists = selectedAssignees.some(
         (a) => (a.id || a.user_id) === userId
       );
-      const supabase = createClient();
       try {
         if (isCreateMode) {
           setSelectedAssignees((prev) =>
@@ -1809,7 +1790,6 @@ function TaskEditDialogComponent({
   const toggleProject = useCallback(
     async (project: any) => {
       const exists = selectedProjects.some((p) => p.id === project.id);
-      const supabase = createClient();
       try {
         if (isCreateMode) {
           setSelectedProjects((prev) =>
@@ -2059,7 +2039,6 @@ function TaskEditDialogComponent({
         name: string;
         listId: string;
       }) => {
-        const supabase = createClient();
         const { data: newTask, error } = await supabase
           .from('tasks')
           .insert({
@@ -2131,7 +2110,6 @@ function TaskEditDialogComponent({
 
     if (isCreateMode) {
       try {
-        const supabase = createClient();
         const { createTask } = await import('@tuturuuu/utils/task-helper');
         const taskData: Partial<Task> = {
           name: name.trim(),
@@ -2456,8 +2434,6 @@ function TaskEditDialogComponent({
 
     const initializeYjsState = async () => {
       try {
-        const supabase = createClient();
-
         const { data: taskData, error: taskDataError } = await supabase
           .from('tasks')
           .select('description_yjs_state')
@@ -2638,7 +2614,6 @@ function TaskEditDialogComponent({
           // Fetch and add current user
           (async () => {
             try {
-              const supabase = createClient();
               const {
                 data: { user },
               } = await supabase.auth.getUser();
@@ -4911,7 +4886,6 @@ function TaskEditDialogComponent({
               onClick={async () => {
                 try {
                   if (task?.id) {
-                    const supabase = createClient();
                     const { error } = await supabase
                       .from('tasks')
                       .delete()
