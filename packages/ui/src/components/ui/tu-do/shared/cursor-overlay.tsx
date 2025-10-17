@@ -1,6 +1,5 @@
 'use client';
 
-import { MousePointer2 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   type CursorPosition,
@@ -42,13 +41,35 @@ export default function CursorOverlay({
               transform: `translate(${x}px, ${y}px)`,
             }}
           >
-            {/* Triangle cursor indicator */}
+            {/* Filled cursor indicator with stroke for visibility */}
             <div className="absolute z-10">
-              <MousePointer2 className="size-5 text-foreground" />
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <title>Cursor</title>
+                {/* White stroke for visibility over any background */}
+                <path
+                  d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="stroke-background"
+                />
+                {/* Filled cursor */}
+                <path
+                  d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"
+                  fill="currentColor"
+                  className="text-foreground"
+                />
+              </svg>
             </div>
 
             {/* Badge */}
-            <Badge className="absolute top-4 left-4 border-2 border-background bg-background ring-1 ring-border transition-shadow hover:ring-2">
+            <Badge className="absolute top-4 left-4 border-2 border-background bg-background px-1 py-0.5 ring-1 ring-border transition-shadow hover:ring-2">
               <p className="font-medium text-foreground text-xs">
                 {user?.display_name || 'Unknown User'}
               </p>
