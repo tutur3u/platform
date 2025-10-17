@@ -1,27 +1,27 @@
 'use client';
 
-import { DEV_MODE } from '@/constants/common';
 import {
   BookText,
   Building,
+  Calendar,
+  CheckCircle2,
   Factory,
   FileText,
   GraduationCap,
   HardHat,
   HeartHandshake,
   Hotel,
-  Info,
+  MessageSquare,
   Paintbrush,
   Pill,
   Shield,
-  Sparkles,
   Store,
   Users,
-  UsersRound,
   Utensils,
-  WandSparkles,
+  Wallet,
 } from '@tuturuuu/icons';
 import type { ReactNode } from 'react';
+import { DEV_MODE } from '@/constants/common';
 
 export interface NavItem {
   href: string;
@@ -38,27 +38,68 @@ export interface NavCategory {
 }
 
 export const useNavigation = (t: any): { categories: NavCategory[] } => {
-  const products: NavItem[] = [
+  const main: NavItem[] = [
+    { href: '/', label: t('common.home'), description: '' },
     {
-      href: '/meet-together',
-      label: t('common.meet-together'),
-      description: t('common.meet-together-description'),
-      icon: <UsersRound className="h-4 w-4" />,
+      href: '/about',
+      label: t('common.about'),
+      description: '',
     },
     {
-      href: DEV_MODE ? 'http://localhost:7804' : 'https://rewise.me',
-      label: 'Rewise',
-      description: t('common.rewise-description'),
-      icon: <Sparkles className="h-4 w-4" />,
+      href: '/contact',
+      label: t('common.contact'),
+      description: '',
+    },
+    {
+      href: '/?hash-nav=1#pricing',
+      label: t('common.pricing'),
+      description: '',
+    },
+  ];
+
+  const products: NavItem[] = [
+    {
+      href: DEV_MODE
+        ? 'http://localhost:3001'
+        : 'https://calendar.tuturuuu.com',
+      label: t(`landing.features.apps.tuplan.title`),
+      description: t(`landing.features.apps.tuplan.description`),
       badge: t('common.waitlist'),
-      external: true,
+      icon: <Calendar className="h-4 w-4" />,
+    },
+    {
+      href: DEV_MODE ? 'http://localhost:7809' : 'https://tudo.com',
+      label: t(`landing.features.apps.tudo.title`),
+      description: t(`landing.features.apps.tudo.description`),
+      badge: t('common.waitlist'),
+      icon: <CheckCircle2 className="h-4 w-4" />,
+    },
+    {
+      // href: '/meet-together',
+      href: DEV_MODE ? 'http://localhost:7807' : 'https://tumeet.me',
+      label: t(`landing.features.apps.tumeet.title`),
+      description: t(`landing.features.apps.tumeet.description`),
+      icon: <Users className="h-4 w-4" />,
+    },
+    {
+      href: DEV_MODE ? 'http://localhost:7810' : 'https://tuchat.com',
+      label: t(`landing.features.apps.tuchat.title`),
+      description: t(`landing.features.apps.tuchat.description`),
+      badge: t('common.coming_soon'),
+      icon: <MessageSquare className="h-4 w-4" />,
+    },
+    {
+      href: DEV_MODE ? 'http://localhost:7808' : 'https://tufinance.com',
+      label: t(`landing.features.apps.tufinance.title`),
+      description: t(`landing.features.apps.tufinance.description`),
+      badge: t('common.coming_soon'),
+      icon: <Wallet className="h-4 w-4" />,
     },
     {
       href: DEV_MODE ? 'http://localhost:7805' : 'https://nova.ai.vn',
-      label: 'Nova',
-      description: t('common.nova-description'),
-      icon: <WandSparkles className="h-4 w-4" />,
-      badge: t('common.coming_soon'),
+      label: t(`landing.features.apps.nova.title`),
+      description: t(`landing.features.apps.nova.description`),
+      icon: <GraduationCap className="h-4 w-4" />,
       external: true,
     },
   ];
@@ -122,12 +163,6 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       icon: <BookText className="h-4 w-4" />,
     },
     {
-      href: '/about',
-      label: t('common.about'),
-      description: t('common.about-description'),
-      icon: <Info className="h-4 w-4" />,
-    },
-    {
       href: '/careers',
       label: t('common.careers'),
       description: t('common.careers-description'),
@@ -167,26 +202,12 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
     },
   ];
 
-  const company: NavItem[] = [
-    {
-      href: '/?hash-nav=1#pricing',
-      label: t('common.pricing'),
-      description: '',
-    },
-    {
-      href: '/contact',
-      label: t('common.contact'),
-      description: '',
-    },
-  ];
-
   return {
     categories: [
-      { title: 'main', items: [{ href: '/', label: t('common.home') }] },
+      { title: 'main', items: main },
       { title: 'products', items: products },
       { title: 'solutions', items: solutions },
       { title: 'resources', items: resources },
-      { title: 'company', items: company },
     ],
   };
 };
