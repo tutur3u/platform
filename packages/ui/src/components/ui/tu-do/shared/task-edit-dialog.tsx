@@ -62,6 +62,7 @@ import {
 } from '@tuturuuu/utils/task-helper';
 import { convertJsonContentToYjsState } from '@tuturuuu/utils/yjs-helper';
 import dayjs from 'dayjs';
+import debounce from 'lodash/debounce';
 import { usePathname } from 'next/navigation';
 import React, {
   useCallback,
@@ -95,6 +96,9 @@ import { SlashCommandMenu } from './slash-commands/slash-command-menu';
 import { SyncWarningDialog } from './sync-warning-dialog';
 import type { TaskFilters } from './types';
 import { UserPresenceAvatarsComponent } from './user-presence-avatars';
+
+// Module-level Supabase client singleton to avoid repeated instantiation
+const supabase = createClient();
 
 interface TaskEditDialogProps {
   task?: Task;
@@ -143,6 +147,66 @@ function getDescriptionContent(desc: any): JSONContent | null {
         },
       ],
     };
+  }
+}
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+const DESCRIPTION_SYNC_DEBOUNCE_MS = 500; // Debounce delay for Yjs update events
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Saves Yjs-derived description to the database for embeddings and analytics
+ * @param taskId - The task ID to update
+ * @param getContent - Function that returns the current editor content (can be null if empty)
+ * @param boardId - Board ID for cache invalidation
+ * @param queryClient - React Query client for cache management
+ * @param context - Optional context string for logging (e.g., 'close', 'force-close', 'auto-close')
+ */
+async function saveYjsDescriptionToDatabase({
+  taskId,
+  getContent,
+  boardId,
+  queryClient,
+  context = 'save',
+}: {
+  taskId: string;
+  getContent: () => JSONContent | null;
+  boardId: string;
+  queryClient: any;
+  context?: string;
+}): Promise<boolean> {
+  try {
+    const currentDescription = getContent();
+
+    // Always update: null if empty, JSON string if has content
+    // This ensures clearing content is properly reflected in the database
+    const descriptionString = currentDescription
+      ? JSON.stringify(currentDescription)
+      : null;
+
+    const { error } = await supabase
+      .from('tasks')
+      .update({ description: descriptionString })
+      .eq('id', taskId);
+
+    if (error) {
+      console.error(`Error saving Yjs description (${context}):`, error);
+      return false;
+    }
+
+    console.log(`✅ Yjs description saved for embeddings (${context})`);
+
+    // Invalidate task caches so UI updates immediately
+    await invalidateTaskCaches(queryClient, boardId);
+    return true;
+  } catch (error) {
+    console.error(`Failed to save Yjs description (${context}):`, error);
+    return false;
   }
 }
 
@@ -215,6 +279,21 @@ function TaskEditDialogComponent({
   const editorRef = useRef<HTMLDivElement>(null);
   const lastCursorPositionRef = useRef<number | null>(null);
   const targetEditorCursorRef = useRef<number | null>(null);
+
+  /**
+   * Reference to a function that flushes pending editor content
+   *
+   * TYPE CONTRACT:
+   * - In collaboration mode: Returns JSONContent | null (actual content from Yjs state)
+   *   - null indicates empty/cleared editor
+   *   - JSONContent represents the current editor state
+   * - In non-collaboration mode: Returns JSONContent | null (pending changes)
+   *
+   * This function is provided by the RichTextEditor component and is used to:
+   * 1. Extract current editor content before closing/saving
+   * 2. Sync Yjs-derived description to database for embeddings and analytics
+   * 3. Enable real-time UI updates (e.g., checkbox counts) without requiring save/close
+   */
   const flushEditorPendingRef = useRef<(() => JSONContent | null) | undefined>(
     undefined
   );
@@ -275,7 +354,6 @@ function TaskEditDialogComponent({
 
   useEffect(() => {
     const getUser = async () => {
-      const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -303,7 +381,6 @@ function TaskEditDialogComponent({
     // Only subscribe in edit mode when dialog is open and we have a task ID
     if (isCreateMode || !isOpen || !task?.id) return;
 
-    const supabase = createClient();
     console.log('🔄 Setting up realtime subscription for task:', task.id);
 
     // Helper function to fetch labels for the task
@@ -618,7 +695,6 @@ function TaskEditDialogComponent({
   const { data: availableLists = [] } = useQuery({
     queryKey: ['task_lists', boardId],
     queryFn: async () => {
-      const supabase = createClient();
       const { data, error } = await supabase
         .from('task_lists')
         .select('*')
@@ -809,7 +885,6 @@ function TaskEditDialogComponent({
   const fetchWorkspaceMembers = useCallback(async (wsId: string) => {
     try {
       setLoadingMembers(true);
-      const supabase = createClient();
       const { data: members, error } = await supabase
         .from('workspace_members')
         .select(
@@ -865,7 +940,6 @@ function TaskEditDialogComponent({
   const fetchTaskProjects = useCallback(async (wsId: string) => {
     try {
       setLoadingProjects(true);
-      const supabase = createClient();
       const { data: projects, error } = await supabase
         .from('task_projects')
         .select('id, name, status')
@@ -904,7 +978,6 @@ function TaskEditDialogComponent({
   const fetchAllWorkspaces = useCallback(async () => {
     try {
       setAllWorkspacesLoading(true);
-      const supabase = createClient();
 
       const {
         data: { user },
@@ -931,7 +1004,6 @@ function TaskEditDialogComponent({
     if (!wsId) return;
     try {
       setWorkspaceDetailsLoading(true);
-      const supabase = createClient();
       const { data, error } = await supabase
         .from('workspaces')
         .select('id, name, handle')
@@ -952,7 +1024,6 @@ function TaskEditDialogComponent({
       if (!wsId) return;
       try {
         setWorkspaceTasksLoading(true);
-        const supabase = createClient();
 
         const { data: boards, error: boardsError } = await supabase
           .from('workspace_boards')
@@ -1281,8 +1352,6 @@ function TaskEditDialogComponent({
       }
       setEstimationSaving(true);
       try {
-        const supabase = createClient();
-
         const { error } = await supabase
           .from('tasks')
           .update({ estimation_points: points })
@@ -1311,7 +1380,6 @@ function TaskEditDialogComponent({
         return;
       }
       try {
-        const supabase = createClient();
         const { error } = await supabase
           .from('tasks')
           .update({ priority: newPriority })
@@ -1337,7 +1405,6 @@ function TaskEditDialogComponent({
         return;
       }
       try {
-        const supabase = createClient();
         const { error } = await supabase
           .from('tasks')
           .update({ start_date: newDate ? newDate.toISOString() : null })
@@ -1363,7 +1430,6 @@ function TaskEditDialogComponent({
         return;
       }
       try {
-        const supabase = createClient();
         const { error } = await supabase
           .from('tasks')
           .update({ end_date: newDate ? newDate.toISOString() : null })
@@ -1410,7 +1476,6 @@ function TaskEditDialogComponent({
         return;
       }
       try {
-        const supabase = createClient();
         const { error } = await supabase
           .from('tasks')
           .update({ list_id: newListId })
@@ -1439,7 +1504,6 @@ function TaskEditDialogComponent({
       }
 
       try {
-        const supabase = createClient();
         const { error } = await supabase
           .from('tasks')
           .update({ name: trimmedName })
@@ -1498,8 +1562,6 @@ function TaskEditDialogComponent({
         throw new Error('Workspace ID not found');
       }
 
-      const supabase = createClient();
-
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `${workspaceId}/task-images/${fileName}`;
@@ -1534,7 +1596,6 @@ function TaskEditDialogComponent({
   const toggleLabel = useCallback(
     async (label: WorkspaceTaskLabel) => {
       const exists = selectedLabels.some((l) => l.id === label.id);
-      const supabase = createClient();
       try {
         if (isCreateMode) {
           setSelectedLabels((prev) =>
@@ -1581,7 +1642,6 @@ function TaskEditDialogComponent({
     if (!newLabelName.trim() || !boardConfig) return;
     setCreatingLabel(true);
     try {
-      const supabase = createClient();
       let wsId: string | undefined = (boardConfig as any)?.ws_id;
       if (!wsId) {
         const { data: board } = await supabase
@@ -1678,7 +1738,6 @@ function TaskEditDialogComponent({
       const exists = selectedAssignees.some(
         (a) => (a.id || a.user_id) === userId
       );
-      const supabase = createClient();
       try {
         if (isCreateMode) {
           setSelectedAssignees((prev) =>
@@ -1731,7 +1790,6 @@ function TaskEditDialogComponent({
   const toggleProject = useCallback(
     async (project: any) => {
       const exists = selectedProjects.some((p) => p.id === project.id);
-      const supabase = createClient();
       try {
         if (isCreateMode) {
           setSelectedProjects((prev) =>
@@ -1981,7 +2039,6 @@ function TaskEditDialogComponent({
         name: string;
         listId: string;
       }) => {
-        const supabase = createClient();
         const { data: newTask, error } = await supabase
           .from('tasks')
           .insert({
@@ -2053,7 +2110,6 @@ function TaskEditDialogComponent({
 
     if (isCreateMode) {
       try {
-        const supabase = createClient();
         const { createTask } = await import('@tuturuuu/utils/task-helper');
         const taskData: Partial<Task> = {
           name: name.trim(),
@@ -2128,7 +2184,7 @@ function TaskEditDialogComponent({
       return;
     }
 
-    // When collaboration is enabled, description is managed by Yjs - don't update it
+    // When collaboration is enabled, get description from Yjs for embeddings
     const taskUpdates: any = {
       name: name.trim(),
       priority: priority,
@@ -2138,8 +2194,15 @@ function TaskEditDialogComponent({
       estimation_points: estimationPoints ?? null,
     };
 
-    // Only update description when NOT in collaboration mode
-    if (!collaborationMode) {
+    // Always update description field for embeddings and calculations
+    // In collaboration mode, get the current state from Yjs
+    // In non-collaboration mode, use the local description state
+    if (collaborationMode && flushEditorPendingRef.current) {
+      const yjsDescription = flushEditorPendingRef.current();
+      taskUpdates.description = yjsDescription
+        ? JSON.stringify(yjsDescription)
+        : null;
+    } else {
       taskUpdates.description = descriptionString;
     }
 
@@ -2222,6 +2285,22 @@ function TaskEditDialogComponent({
       return;
     }
 
+    // Save Yjs description to database for embeddings and calculations
+    if (
+      collaborationMode &&
+      !isCreateMode &&
+      task?.id &&
+      flushEditorPendingRef.current
+    ) {
+      await saveYjsDescriptionToDatabase({
+        taskId: task.id,
+        getContent: flushEditorPendingRef.current,
+        boardId,
+        queryClient,
+        context: 'close',
+      });
+    }
+
     // Safe to close
     try {
       if (!isCreateMode && typeof window !== 'undefined') {
@@ -2238,19 +2317,48 @@ function TaskEditDialogComponent({
     connected,
     draftStorageKey,
     onClose,
+    task?.id,
+    boardId,
+    queryClient,
   ]);
 
   const handleForceClose = useCallback(async () => {
     setShowSyncWarning(false);
     // Flush any pending name update before force closing
     await flushNameUpdate();
+
+    // Save Yjs description to database for embeddings and calculations
+    if (
+      collaborationMode &&
+      !isCreateMode &&
+      task?.id &&
+      flushEditorPendingRef.current
+    ) {
+      await saveYjsDescriptionToDatabase({
+        taskId: task.id,
+        getContent: flushEditorPendingRef.current,
+        boardId,
+        queryClient,
+        context: 'force-close',
+      });
+    }
+
     try {
       if (!isCreateMode && typeof window !== 'undefined') {
         localStorage.removeItem(draftStorageKey);
       }
     } catch {}
     onClose();
-  }, [isCreateMode, draftStorageKey, onClose, flushNameUpdate]);
+  }, [
+    isCreateMode,
+    draftStorageKey,
+    onClose,
+    flushNameUpdate,
+    collaborationMode,
+    task?.id,
+    boardId,
+    queryClient,
+  ]);
 
   const handleDialogOpenChange = useCallback(
     (open: boolean) => {
@@ -2278,6 +2386,23 @@ function TaskEditDialogComponent({
         setShowSyncWarning(false);
         // Flush any pending name update before closing
         await flushNameUpdate();
+
+        // Save Yjs description to database for embeddings and calculations
+        if (
+          collaborationMode &&
+          !isCreateMode &&
+          task?.id &&
+          flushEditorPendingRef.current
+        ) {
+          await saveYjsDescriptionToDatabase({
+            taskId: task.id,
+            getContent: flushEditorPendingRef.current,
+            boardId,
+            queryClient,
+            context: 'auto-close',
+          });
+        }
+
         // Now safe to close - proceed with the actual close
         try {
           if (!isCreateMode && typeof window !== 'undefined') {
@@ -2297,6 +2422,10 @@ function TaskEditDialogComponent({
     isCreateMode,
     draftStorageKey,
     onClose,
+    collaborationMode,
+    task?.id,
+    boardId,
+    queryClient,
   ]);
 
   // Initialize Yjs state for task description if not present
@@ -2305,8 +2434,6 @@ function TaskEditDialogComponent({
 
     const initializeYjsState = async () => {
       try {
-        const supabase = createClient();
-
         const { data: taskData, error: taskDataError } = await supabase
           .from('tasks')
           .select('description_yjs_state')
@@ -2336,6 +2463,83 @@ function TaskEditDialogComponent({
     };
     initializeYjsState();
   }, [doc, description, editorInstance, task?.id]);
+
+  // Event-based sync: Update description field from Yjs for real-time UI updates (checkbox counts, etc.)
+  // Listens to Yjs document updates and debounces DB writes to avoid unnecessary operations
+  // This ensures task cards show accurate metadata (e.g., checkbox counts) without saving/closing
+  useEffect(() => {
+    // Only run in collaboration mode when dialog is open and we have a valid task
+    if (
+      !collaborationMode ||
+      isCreateMode ||
+      !isOpen ||
+      !task?.id ||
+      !flushEditorPendingRef.current ||
+      !doc
+    ) {
+      return;
+    }
+
+    let lastSyncedContent: string | null = null;
+
+    const syncDescriptionFromYjs = async () => {
+      if (!flushEditorPendingRef.current) return;
+
+      const currentDescription = flushEditorPendingRef.current();
+
+      // Convert to string for comparison (null if empty, JSON string if has content)
+      const descriptionString = currentDescription
+        ? JSON.stringify(currentDescription)
+        : null;
+
+      // Only update if content has actually changed (avoids unnecessary DB writes)
+      if (descriptionString === lastSyncedContent) {
+        return;
+      }
+
+      // Save to database using centralized helper
+      const success = await saveYjsDescriptionToDatabase({
+        taskId: task.id,
+        getContent: () => currentDescription,
+        boardId,
+        queryClient,
+        context: 'yjs-update',
+      });
+
+      if (success) {
+        lastSyncedContent = descriptionString;
+      }
+    };
+
+    // Debounce the sync function to avoid excessive DB writes
+    const debouncedSync = debounce(
+      syncDescriptionFromYjs,
+      DESCRIPTION_SYNC_DEBOUNCE_MS
+    );
+
+    // Listen to Yjs document updates
+    const handleYjsUpdate = () => {
+      debouncedSync();
+    };
+
+    doc.on('update', handleYjsUpdate);
+
+    // Initial sync on mount
+    syncDescriptionFromYjs();
+
+    return () => {
+      doc.off('update', handleYjsUpdate);
+      debouncedSync.cancel(); // Cancel any pending debounced calls
+    };
+  }, [
+    collaborationMode,
+    isCreateMode,
+    isOpen,
+    task?.id,
+    boardId,
+    queryClient,
+    doc,
+  ]);
 
   // Sync URL with task dialog state (edit mode only)
   useEffect(() => {
@@ -2410,7 +2614,6 @@ function TaskEditDialogComponent({
           // Fetch and add current user
           (async () => {
             try {
-              const supabase = createClient();
               const {
                 data: { user },
               } = await supabase.auth.getUser();
@@ -3638,7 +3841,7 @@ function TaskEditDialogComponent({
 
             {/* Main editing area with improved spacing */}
             <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
-              <div ref={editorContainerRef} className="flex flex-col">
+              <div ref={editorContainerRef} className="flex h-full flex-col">
                 {/* Task Name - Large and prominent with underline effect */}
                 <div className="group">
                   <Input
@@ -3719,7 +3922,7 @@ function TaskEditDialogComponent({
                 </div>
 
                 {/* Task Description - Full editor experience with subtle border */}
-                <div ref={editorRef} className="relative flex-1 pb-8">
+                <div ref={editorRef} className="relative h-full flex-1 pb-8">
                   {isYjsSyncing ? (
                     <div className="flex min-h-[400px] items-center justify-center">
                       <div className="flex flex-col items-center gap-3">
@@ -3735,7 +3938,7 @@ function TaskEditDialogComponent({
                       onChange={setDescription}
                       writePlaceholder="Add a detailed description, attach files, or use markdown..."
                       titlePlaceholder=""
-                      className="min-h-[400px] border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
+                      className="h-full min-h-[400px] border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
                       workspaceId={workspaceId || undefined}
                       onImageUpload={handleImageUpload}
                       flushPendingRef={flushEditorPendingRef}
@@ -4683,7 +4886,6 @@ function TaskEditDialogComponent({
               onClick={async () => {
                 try {
                   if (task?.id) {
-                    const supabase = createClient();
                     const { error } = await supabase
                       .from('tasks')
                       .delete()
