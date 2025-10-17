@@ -62,6 +62,7 @@ import {
 } from '@tuturuuu/utils/task-helper';
 import { convertJsonContentToYjsState } from '@tuturuuu/utils/yjs-helper';
 import dayjs from 'dayjs';
+import debounce from 'lodash/debounce';
 import { usePathname } from 'next/navigation';
 import React, {
   useCallback,
@@ -146,6 +147,68 @@ function getDescriptionContent(desc: any): JSONContent | null {
   }
 }
 
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+const DESCRIPTION_SYNC_DEBOUNCE_MS = 500; // Debounce delay for Yjs update events
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Saves Yjs-derived description to the database for embeddings and analytics
+ * @param taskId - The task ID to update
+ * @param getContent - Function that returns the current editor content (can be null if empty)
+ * @param boardId - Board ID for cache invalidation
+ * @param queryClient - React Query client for cache management
+ * @param context - Optional context string for logging (e.g., 'close', 'force-close', 'auto-close')
+ */
+async function saveYjsDescriptionToDatabase({
+  taskId,
+  getContent,
+  boardId,
+  queryClient,
+  context = 'save',
+}: {
+  taskId: string;
+  getContent: () => JSONContent | null;
+  boardId: string;
+  queryClient: any;
+  context?: string;
+}): Promise<boolean> {
+  try {
+    const currentDescription = getContent();
+
+    // Always update: null if empty, JSON string if has content
+    // This ensures clearing content is properly reflected in the database
+    const descriptionString = currentDescription
+      ? JSON.stringify(currentDescription)
+      : null;
+
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from('tasks')
+      .update({ description: descriptionString })
+      .eq('id', taskId);
+
+    if (error) {
+      console.error(`Error saving Yjs description (${context}):`, error);
+      return false;
+    }
+
+    console.log(`✅ Yjs description saved for embeddings (${context})`);
+
+    // Invalidate task caches so UI updates immediately
+    await invalidateTaskCaches(queryClient, boardId);
+    return true;
+  } catch (error) {
+    console.error(`Failed to save Yjs description (${context}):`, error);
+    return false;
+  }
+}
+
 function TaskEditDialogComponent({
   task,
   boardId,
@@ -215,6 +278,21 @@ function TaskEditDialogComponent({
   const editorRef = useRef<HTMLDivElement>(null);
   const lastCursorPositionRef = useRef<number | null>(null);
   const targetEditorCursorRef = useRef<number | null>(null);
+
+  /**
+   * Reference to a function that flushes pending editor content
+   *
+   * TYPE CONTRACT:
+   * - In collaboration mode: Returns JSONContent | null (actual content from Yjs state)
+   *   - null indicates empty/cleared editor
+   *   - JSONContent represents the current editor state
+   * - In non-collaboration mode: Returns JSONContent | null (pending changes)
+   *
+   * This function is provided by the RichTextEditor component and is used to:
+   * 1. Extract current editor content before closing/saving
+   * 2. Sync Yjs-derived description to database for embeddings and analytics
+   * 3. Enable real-time UI updates (e.g., checkbox counts) without requiring save/close
+   */
   const flushEditorPendingRef = useRef<(() => JSONContent | null) | undefined>(
     undefined
   );
@@ -2230,33 +2308,14 @@ function TaskEditDialogComponent({
     }
 
     // Save Yjs description to database for embeddings and calculations
-    if (collaborationMode && !isCreateMode && task?.id) {
-      try {
-        // Extract current content from Yjs document via editor
-        let currentDescription = null;
-        if (flushEditorPendingRef.current) {
-          currentDescription = flushEditorPendingRef.current();
-        }
-
-        // Save to database if we have content
-        if (currentDescription) {
-          const supabase = createClient();
-          const descriptionString = JSON.stringify(currentDescription);
-
-          const { error } = await supabase
-            .from('tasks')
-            .update({ description: descriptionString })
-            .eq('id', task.id);
-
-          if (error) {
-            console.error('Error saving Yjs description:', error);
-          } else {
-            console.log('✅ Yjs description saved for embeddings');
-          }
-        }
-      } catch (error) {
-        console.error('Failed to save Yjs description:', error);
-      }
+    if (collaborationMode && !isCreateMode && task?.id && flushEditorPendingRef.current) {
+      await saveYjsDescriptionToDatabase({
+        taskId: task.id,
+        getContent: flushEditorPendingRef.current,
+        boardId,
+        queryClient,
+        context: 'close',
+      });
     }
 
     // Safe to close
@@ -2276,6 +2335,8 @@ function TaskEditDialogComponent({
     draftStorageKey,
     onClose,
     task?.id,
+    boardId,
+    queryClient,
   ]);
 
   const handleForceClose = useCallback(async () => {
@@ -2284,38 +2345,14 @@ function TaskEditDialogComponent({
     await flushNameUpdate();
 
     // Save Yjs description to database for embeddings and calculations
-    if (collaborationMode && !isCreateMode && task?.id) {
-      try {
-        // Extract current content from Yjs document via editor
-        let currentDescription = null;
-        if (flushEditorPendingRef.current) {
-          currentDescription = flushEditorPendingRef.current();
-        }
-
-        // Save to database if we have content
-        if (currentDescription) {
-          const supabase = createClient();
-          const descriptionString = JSON.stringify(currentDescription);
-
-          const { error } = await supabase
-            .from('tasks')
-            .update({ description: descriptionString })
-            .eq('id', task.id);
-
-          if (error) {
-            console.error(
-              'Error saving Yjs description on force close:',
-              error
-            );
-          } else {
-            console.log(
-              '✅ Yjs description saved for embeddings (force close)'
-            );
-          }
-        }
-      } catch (error) {
-        console.error('Failed to save Yjs description on force close:', error);
-      }
+    if (collaborationMode && !isCreateMode && task?.id && flushEditorPendingRef.current) {
+      await saveYjsDescriptionToDatabase({
+        taskId: task.id,
+        getContent: flushEditorPendingRef.current,
+        boardId,
+        queryClient,
+        context: 'force-close',
+      });
     }
 
     try {
@@ -2331,6 +2368,8 @@ function TaskEditDialogComponent({
     flushNameUpdate,
     collaborationMode,
     task?.id,
+    boardId,
+    queryClient,
   ]);
 
   const handleDialogOpenChange = useCallback(
@@ -2361,41 +2400,14 @@ function TaskEditDialogComponent({
         await flushNameUpdate();
 
         // Save Yjs description to database for embeddings and calculations
-        if (collaborationMode && !isCreateMode && task?.id) {
-          try {
-            // Extract current content from Yjs document via editor
-            let currentDescription = null;
-            if (flushEditorPendingRef.current) {
-              currentDescription = flushEditorPendingRef.current();
-            }
-
-            // Save to database if we have content
-            if (currentDescription) {
-              const supabase = createClient();
-              const descriptionString = JSON.stringify(currentDescription);
-
-              const { error } = await supabase
-                .from('tasks')
-                .update({ description: descriptionString })
-                .eq('id', task.id);
-
-              if (error) {
-                console.error(
-                  'Error saving Yjs description on auto-close:',
-                  error
-                );
-              } else {
-                console.log(
-                  '✅ Yjs description saved for embeddings (auto-close)'
-                );
-              }
-            }
-          } catch (error) {
-            console.error(
-              'Failed to save Yjs description on auto-close:',
-              error
-            );
-          }
+        if (collaborationMode && !isCreateMode && task?.id && flushEditorPendingRef.current) {
+          await saveYjsDescriptionToDatabase({
+            taskId: task.id,
+            getContent: flushEditorPendingRef.current,
+            boardId,
+            queryClient,
+            context: 'auto-close',
+          });
         }
 
         // Now safe to close - proceed with the actual close
@@ -2419,6 +2431,8 @@ function TaskEditDialogComponent({
     onClose,
     collaborationMode,
     task?.id,
+    boardId,
+    queryClient,
   ]);
 
   // Initialize Yjs state for task description if not present
@@ -2459,55 +2473,64 @@ function TaskEditDialogComponent({
     initializeYjsState();
   }, [doc, description, editorInstance, task?.id]);
 
-  // Periodic sync: Update description field from Yjs for real-time UI updates (checkbox counts, etc.)
+  // Event-based sync: Update description field from Yjs for real-time UI updates (checkbox counts, etc.)
+  // Listens to Yjs document updates and debounces DB writes to avoid unnecessary operations
+  // This ensures task cards show accurate metadata (e.g., checkbox counts) without saving/closing
   useEffect(() => {
     // Only run in collaboration mode when dialog is open and we have a valid task
-    if (!collaborationMode || isCreateMode || !isOpen || !task?.id) return;
+    if (!collaborationMode || isCreateMode || !isOpen || !task?.id || !flushEditorPendingRef.current || !doc) {
+      return;
+    }
 
     let lastSyncedContent: string | null = null;
 
     const syncDescriptionFromYjs = async () => {
-      try {
-        // Extract current content from Yjs document via editor
-        if (!flushEditorPendingRef.current) return;
+      if (!flushEditorPendingRef.current) return;
 
-        const currentDescription = flushEditorPendingRef.current();
-        if (!currentDescription) return;
+      const currentDescription = flushEditorPendingRef.current();
 
-        const descriptionString = JSON.stringify(currentDescription);
+      // Convert to string for comparison (null if empty, JSON string if has content)
+      const descriptionString = currentDescription
+        ? JSON.stringify(currentDescription)
+        : null;
 
-        // Only update if content has actually changed
-        if (descriptionString === lastSyncedContent) {
-          return;
-        }
+      // Only update if content has actually changed (avoids unnecessary DB writes)
+      if (descriptionString === lastSyncedContent) {
+        return;
+      }
 
-        const supabase = createClient();
+      // Save to database using centralized helper
+      const success = await saveYjsDescriptionToDatabase({
+        taskId: task.id,
+        getContent: () => currentDescription,
+        boardId,
+        queryClient,
+        context: 'yjs-update',
+      });
 
-        const { error } = await supabase
-          .from('tasks')
-          .update({ description: descriptionString })
-          .eq('id', task.id);
-
-        if (error) {
-          console.error('Error syncing description from Yjs:', error);
-        } else {
-          lastSyncedContent = descriptionString;
-          // Invalidate task caches so UI updates immediately
-          await invalidateTaskCaches(queryClient, boardId);
-        }
-      } catch (error) {
-        console.error('Failed to sync description from Yjs:', error);
+      if (success) {
+        lastSyncedContent = descriptionString;
       }
     };
 
-    // Sync every 2 seconds while dialog is open
-    const syncInterval = setInterval(syncDescriptionFromYjs, 2000);
+    // Debounce the sync function to avoid excessive DB writes
+    const debouncedSync = debounce(syncDescriptionFromYjs, DESCRIPTION_SYNC_DEBOUNCE_MS);
 
-    // Also sync immediately on mount
+    // Listen to Yjs document updates
+    const handleYjsUpdate = () => {
+      debouncedSync();
+    };
+
+    doc.on('update', handleYjsUpdate);
+
+    // Initial sync on mount
     syncDescriptionFromYjs();
 
-    return () => clearInterval(syncInterval);
-  }, [collaborationMode, isCreateMode, isOpen, task?.id, boardId, queryClient]);
+    return () => {
+      doc.off('update', handleYjsUpdate);
+      debouncedSync.cancel(); // Cancel any pending debounced calls
+    };
+  }, [collaborationMode, isCreateMode, isOpen, task?.id, boardId, queryClient, doc]);
 
   // Sync URL with task dialog state (edit mode only)
   useEffect(() => {
