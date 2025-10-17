@@ -436,6 +436,27 @@ export default function MyTasksContent({
     },
   });
 
+  // Fetch workspace members for CommandBar
+  const { data: workspaceMembers = [] } = useQuery({
+    queryKey: ['workspace', wsId, 'members'],
+    queryFn: async () => {
+      const response = await fetch(`/api/v1/workspaces/${wsId}/members`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch members');
+      }
+      const data = await response.json();
+
+      // Map the workspace_members data to the expected format
+      // The API returns workspace_members with nested user data
+      return (data || []).map((member: any) => ({
+        id: member.id || member.user_id,
+        display_name: member.display_name,
+        email: member.email,
+        avatar_url: member.avatar_url,
+      }));
+    },
+  });
+
   // Fetch board config for selected board (needed for estimation options in preview)
   const { data: boardConfig } = useBoardConfig(selectedBoardId || undefined);
 
@@ -704,6 +725,20 @@ export default function MyTasksContent({
           options.projectIds.map((projectId) => ({
             task_id: newTask.id,
             project_id: projectId,
+          }))
+        );
+      }
+
+      // Link assignees if provided
+      if (
+        options?.assigneeIds &&
+        options.assigneeIds.length > 0 &&
+        newTask?.id
+      ) {
+        await supabase.from('task_assignees').insert(
+          options.assigneeIds.map((assigneeId) => ({
+            task_id: newTask.id,
+            user_id: assigneeId,
           }))
         );
       }
@@ -1448,6 +1483,7 @@ export default function MyTasksContent({
           onModeChange={setActiveMode}
           workspaceLabels={workspaceLabels}
           workspaceProjects={workspaceProjects}
+          workspaceMembers={workspaceMembers}
           workspaceEstimationConfig={
             boardConfig
               ? {

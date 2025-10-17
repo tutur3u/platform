@@ -13,8 +13,12 @@ import {
   Sparkles,
   Tag,
   Timer,
+  UserMinus,
+  UserPlus,
+  UserStar,
   X,
 } from '@tuturuuu/icons';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
@@ -40,6 +44,7 @@ export interface TaskOptions {
   estimationPoints?: number | null;
   labelIds?: string[];
   projectIds?: string[];
+  assigneeIds?: string[];
 }
 
 interface WorkspaceLabel {
@@ -51,6 +56,13 @@ interface WorkspaceLabel {
 interface WorkspaceProject {
   id: string;
   name: string;
+}
+
+interface WorkspaceMember {
+  id: string;
+  display_name?: string;
+  email?: string;
+  avatar_url?: string;
 }
 
 interface WorkspaceEstimationConfig {
@@ -80,6 +92,7 @@ interface CommandBarProps {
   onModeChange?: (mode: CommandMode) => void;
   workspaceLabels?: WorkspaceLabel[];
   workspaceProjects?: WorkspaceProject[];
+  workspaceMembers?: WorkspaceMember[];
   workspaceEstimationConfig?: WorkspaceEstimationConfig | null;
   wsId?: string;
 }
@@ -102,6 +115,7 @@ export function CommandBar({
   onModeChange,
   workspaceLabels = [],
   workspaceProjects = [],
+  workspaceMembers = [],
   workspaceEstimationConfig = null,
 }: CommandBarProps) {
   const [internalMode, setInternalMode] = useState<CommandMode>('task');
@@ -116,6 +130,7 @@ export function CommandBar({
   const [estimationPoints, setEstimationPoints] = useState<number | null>(null);
   const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([]);
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
+  const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<string[]>([]);
 
   // Popover open states
   const [priorityOpen, setPriorityOpen] = useState(false);
@@ -123,6 +138,7 @@ export function CommandBar({
   const [estimationOpen, setEstimationOpen] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
+  const [assigneesOpen, setAssigneesOpen] = useState(false);
 
   // Use controlled mode if provided, otherwise use internal state
   const mode = controlledMode ?? internalMode;
@@ -142,6 +158,21 @@ export function CommandBar({
     );
     return calculatedHeight;
   }, [workspaceProjects.length]);
+
+  // Calculate dynamic height for assignees popover
+  // Each item is roughly 48px (avatar + padding), show max 4.5 items
+  const assigneesScrollHeight = useMemo(() => {
+    const availableMembers = workspaceMembers.filter(
+      (member) => !selectedAssigneeIds.includes(member.id)
+    );
+    const ITEM_HEIGHT = 50; // approximate height per assignee item
+    const MAX_VISIBLE_ITEMS = 4.5; // show 4 full items + partial 5th
+    const calculatedHeight = Math.min(
+      availableMembers.length * ITEM_HEIGHT,
+      MAX_VISIBLE_ITEMS * ITEM_HEIGHT
+    );
+    return calculatedHeight;
+  }, [workspaceMembers, selectedAssigneeIds]);
 
   // Calculate available estimation indices based on board config
   const availableEstimationIndices = useMemo(() => {
@@ -200,6 +231,8 @@ export function CommandBar({
               selectedLabelIds.length > 0 ? selectedLabelIds : undefined,
             projectIds:
               selectedProjectIds.length > 0 ? selectedProjectIds : undefined,
+            assigneeIds:
+              selectedAssigneeIds.length > 0 ? selectedAssigneeIds : undefined,
           };
           onCreateTask(inputText.trim(), options);
         }
@@ -210,6 +243,7 @@ export function CommandBar({
         setEstimationPoints(null);
         setSelectedLabelIds([]);
         setSelectedProjectIds([]);
+        setSelectedAssigneeIds([]);
       }
     } catch (error) {
       console.error('Command bar action error:', error);
@@ -270,7 +304,7 @@ export function CommandBar({
                 {hasDestination && selectedDestination ? (
                   <Badge
                     variant="outline"
-                    className="h-8 gap-2 rounded-lg bg-background pr-1.5 pl-3 font-normal shadow-sm"
+                    className="h-10 gap-2 rounded-lg bg-background pr-1.5 pl-3 font-normal shadow-sm"
                   >
                     <LayoutDashboard className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="max-w-[200px] truncate font-medium text-xs">
@@ -293,7 +327,7 @@ export function CommandBar({
                     size="sm"
                     onClick={onOpenBoardSelector}
                     disabled={isLoading}
-                    className="h-8 gap-2 rounded-lg bg-background px-4 shadow-sm"
+                    className="h-10 gap-2 rounded-lg bg-background px-3 shadow-sm"
                   >
                     <MapPin className="h-3.5 w-3.5" />
                     <span className="font-semibold text-xs">Select board</span>
@@ -440,7 +474,11 @@ export function CommandBar({
             {mode === 'task' && hasDestination && !aiEnabled && (
               <>
                 {/* Priority Popover */}
-                <Popover open={priorityOpen} onOpenChange={setPriorityOpen}>
+                <Popover
+                  open={priorityOpen}
+                  onOpenChange={setPriorityOpen}
+                  modal={true}
+                >
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
@@ -455,7 +493,11 @@ export function CommandBar({
                       <Flag className="h-4 w-4" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-44 p-2" align="end">
+                  <PopoverContent
+                    className="w-44 p-2"
+                    align="end"
+                    sideOffset={5}
+                  >
                     <ScrollArea className="max-h-64">
                       <div className="space-y-1">
                         <Button
@@ -531,7 +573,11 @@ export function CommandBar({
                 </Popover>
 
                 {/* Due Date Popover */}
-                <Popover open={dueDateOpen} onOpenChange={setDueDateOpen}>
+                <Popover
+                  open={dueDateOpen}
+                  onOpenChange={setDueDateOpen}
+                  modal={true}
+                >
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
@@ -546,7 +592,11 @@ export function CommandBar({
                       <Calendar className="h-4 w-4" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-44 p-2" align="end">
+                  <PopoverContent
+                    className="w-44 p-2"
+                    align="end"
+                    sideOffset={5}
+                  >
                     <ScrollArea className="max-h-64">
                       <div className="space-y-1">
                         <Button
@@ -612,12 +662,12 @@ export function CommandBar({
                 </Popover>
 
                 {/* Estimation Popover */}
-                {workspaceEstimationConfig &&
-                  workspaceEstimationConfig.estimation_type &&
+                {workspaceEstimationConfig?.estimation_type &&
                   availableEstimationIndices.length > 0 && (
                     <Popover
                       open={estimationOpen}
                       onOpenChange={setEstimationOpen}
+                      modal={true}
                     >
                       <PopoverTrigger asChild>
                         <Button
@@ -642,7 +692,11 @@ export function CommandBar({
                           )}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-44 p-2" align="end">
+                      <PopoverContent
+                        className="w-44 p-2"
+                        align="end"
+                        sideOffset={5}
+                      >
                         <ScrollArea className="max-h-64">
                           <div className="grid grid-cols-3 gap-1">
                             {availableEstimationIndices.map((index) => {
@@ -706,7 +760,11 @@ export function CommandBar({
 
                 {/* Projects Popover */}
                 {workspaceProjects.length > 0 && (
-                  <Popover open={projectsOpen} onOpenChange={setProjectsOpen}>
+                  <Popover
+                    open={projectsOpen}
+                    onOpenChange={setProjectsOpen}
+                    modal={true}
+                  >
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
@@ -721,7 +779,11 @@ export function CommandBar({
                         <Box className="h-4 w-4" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-64 p-0" align="end">
+                    <PopoverContent
+                      className="w-64 p-0"
+                      align="end"
+                      sideOffset={5}
+                    >
                       <div className="p-2">
                         <ScrollArea
                           className="w-full"
@@ -792,7 +854,11 @@ export function CommandBar({
 
                 {/* Labels Popover */}
                 {workspaceLabels.length > 0 && (
-                  <Popover open={labelsOpen} onOpenChange={setLabelsOpen}>
+                  <Popover
+                    open={labelsOpen}
+                    onOpenChange={setLabelsOpen}
+                    modal={true}
+                  >
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
@@ -807,7 +873,11 @@ export function CommandBar({
                         <Tag className="h-4 w-4" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-64 p-0" align="end">
+                    <PopoverContent
+                      className="w-64 p-0"
+                      align="end"
+                      sideOffset={5}
+                    >
                       <div className="p-2">
                         <ScrollArea className="h-64">
                           <div className="space-y-1 pr-3">
@@ -869,6 +939,160 @@ export function CommandBar({
                           </div>
                         </>
                       )}
+                    </PopoverContent>
+                  </Popover>
+                )}
+
+                {/* Assignees Popover */}
+                {workspaceMembers.length > 0 && (
+                  <Popover
+                    open={assigneesOpen}
+                    onOpenChange={setAssigneesOpen}
+                    modal={true}
+                  >
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className={cn(
+                          'h-10 w-10 rounded-lg transition-all',
+                          selectedAssigneeIds.length > 0
+                            ? 'border-dynamic-orange/50 bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/20'
+                            : 'border-border/50 hover:bg-muted'
+                        )}
+                      >
+                        <UserStar className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-80 border p-3 shadow-lg"
+                      align="end"
+                      sideOffset={5}
+                    >
+                      <div className="space-y-3">
+                        {/* Selected Assignees */}
+                        {selectedAssigneeIds.length > 0 && (
+                          <div className="space-y-1.5">
+                            <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                              Assigned ({selectedAssigneeIds.length})
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {workspaceMembers
+                                .filter((member) =>
+                                  selectedAssigneeIds.includes(member.id)
+                                )
+                                .map((member) => (
+                                  <Button
+                                    key={member.id}
+                                    type="button"
+                                    variant="default"
+                                    size="xs"
+                                    onClick={() => {
+                                      setSelectedAssigneeIds(
+                                        selectedAssigneeIds.filter(
+                                          (id) => id !== member.id
+                                        )
+                                      );
+                                    }}
+                                    className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
+                                  >
+                                    <Avatar className="h-4 w-4">
+                                      <AvatarImage src={member.avatar_url} />
+                                      <AvatarFallback className="bg-dynamic-orange/20 font-bold text-[9px]">
+                                        {member.display_name?.[0] ||
+                                          member.email?.[0] ||
+                                          '?'}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    {member.display_name || member.email}
+                                    <X className="h-3 w-3 opacity-70" />
+                                  </Button>
+                                ))}
+                            </div>
+                            {selectedAssigneeIds.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="xs"
+                                onClick={() => {
+                                  setSelectedAssigneeIds([]);
+                                }}
+                                className="mt-1 h-6 w-full text-dynamic-red text-xs hover:bg-dynamic-red/10 hover:text-dynamic-red"
+                              >
+                                <UserMinus className="mr-1 h-3 w-3" />
+                                Remove all
+                              </Button>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Available Members */}
+                        <div className="space-y-1.5">
+                          {(() => {
+                            const availableMembers = workspaceMembers.filter(
+                              (member) =>
+                                !selectedAssigneeIds.includes(member.id)
+                            );
+
+                            if (availableMembers.length === 0) {
+                              return selectedAssigneeIds.length > 0 ? (
+                                <div className="rounded-lg bg-muted/30 py-3 text-center">
+                                  <p className="text-muted-foreground text-xs">
+                                    All members assigned
+                                  </p>
+                                </div>
+                              ) : (
+                                <div className="rounded-lg bg-muted/30 py-3 text-center">
+                                  <p className="text-muted-foreground text-xs">
+                                    No members available
+                                  </p>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <>
+                                <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                  Available ({availableMembers.length})
+                                </p>
+                                <div
+                                  className="flex flex-col gap-1 overflow-y-auto"
+                                  style={{
+                                    maxHeight: `${assigneesScrollHeight}px`,
+                                  }}
+                                >
+                                  {availableMembers.map((member) => (
+                                    <button
+                                      key={member.id}
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedAssigneeIds([
+                                          ...selectedAssigneeIds,
+                                          member.id,
+                                        ]);
+                                      }}
+                                      className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
+                                    >
+                                      <Avatar className="h-7 w-7 shrink-0">
+                                        <AvatarImage src={member.avatar_url} />
+                                        <AvatarFallback className="bg-muted font-semibold text-muted-foreground text-xs group-hover:bg-dynamic-orange/20 group-hover:text-dynamic-orange">
+                                          {member.display_name?.[0] ||
+                                            member.email?.[0] ||
+                                            '?'}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <span className="flex-1 truncate text-sm">
+                                        {member.display_name || member.email}
+                                      </span>
+                                      <UserPlus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                                    </button>
+                                  ))}
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
                     </PopoverContent>
                   </Popover>
                 )}
