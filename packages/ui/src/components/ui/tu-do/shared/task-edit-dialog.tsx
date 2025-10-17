@@ -2308,7 +2308,12 @@ function TaskEditDialogComponent({
     }
 
     // Save Yjs description to database for embeddings and calculations
-    if (collaborationMode && !isCreateMode && task?.id && flushEditorPendingRef.current) {
+    if (
+      collaborationMode &&
+      !isCreateMode &&
+      task?.id &&
+      flushEditorPendingRef.current
+    ) {
       await saveYjsDescriptionToDatabase({
         taskId: task.id,
         getContent: flushEditorPendingRef.current,
@@ -2345,7 +2350,12 @@ function TaskEditDialogComponent({
     await flushNameUpdate();
 
     // Save Yjs description to database for embeddings and calculations
-    if (collaborationMode && !isCreateMode && task?.id && flushEditorPendingRef.current) {
+    if (
+      collaborationMode &&
+      !isCreateMode &&
+      task?.id &&
+      flushEditorPendingRef.current
+    ) {
       await saveYjsDescriptionToDatabase({
         taskId: task.id,
         getContent: flushEditorPendingRef.current,
@@ -2400,7 +2410,12 @@ function TaskEditDialogComponent({
         await flushNameUpdate();
 
         // Save Yjs description to database for embeddings and calculations
-        if (collaborationMode && !isCreateMode && task?.id && flushEditorPendingRef.current) {
+        if (
+          collaborationMode &&
+          !isCreateMode &&
+          task?.id &&
+          flushEditorPendingRef.current
+        ) {
           await saveYjsDescriptionToDatabase({
             taskId: task.id,
             getContent: flushEditorPendingRef.current,
@@ -2478,7 +2493,14 @@ function TaskEditDialogComponent({
   // This ensures task cards show accurate metadata (e.g., checkbox counts) without saving/closing
   useEffect(() => {
     // Only run in collaboration mode when dialog is open and we have a valid task
-    if (!collaborationMode || isCreateMode || !isOpen || !task?.id || !flushEditorPendingRef.current || !doc) {
+    if (
+      !collaborationMode ||
+      isCreateMode ||
+      !isOpen ||
+      !task?.id ||
+      !flushEditorPendingRef.current ||
+      !doc
+    ) {
       return;
     }
 
@@ -2514,7 +2536,10 @@ function TaskEditDialogComponent({
     };
 
     // Debounce the sync function to avoid excessive DB writes
-    const debouncedSync = debounce(syncDescriptionFromYjs, DESCRIPTION_SYNC_DEBOUNCE_MS);
+    const debouncedSync = debounce(
+      syncDescriptionFromYjs,
+      DESCRIPTION_SYNC_DEBOUNCE_MS
+    );
 
     // Listen to Yjs document updates
     const handleYjsUpdate = () => {
@@ -2530,7 +2555,15 @@ function TaskEditDialogComponent({
       doc.off('update', handleYjsUpdate);
       debouncedSync.cancel(); // Cancel any pending debounced calls
     };
-  }, [collaborationMode, isCreateMode, isOpen, task?.id, boardId, queryClient, doc]);
+  }, [
+    collaborationMode,
+    isCreateMode,
+    isOpen,
+    task?.id,
+    boardId,
+    queryClient,
+    doc,
+  ]);
 
   // Sync URL with task dialog state (edit mode only)
   useEffect(() => {
