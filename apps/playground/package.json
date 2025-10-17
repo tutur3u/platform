@@ -30,7 +30,7 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "dayjs": "^1.11.18",
-    "next": "^16.0.0-canary.8",
+    "next": "^16.0.0-canary.10",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "zod": "^4.1.12"
@@ -38,7 +38,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.14",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^24.8.0",
+    "@types/node": "^24.8.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "postcss": "^8.5.6",
