@@ -1004,7 +1004,7 @@ export function CommandBar({
                                           '?'}
                                       </AvatarFallback>
                                     </Avatar>
-                                    {member.display_name || member.email}
+                                    {member.display_name || member.email || "Unknown User"}
                                     <X className="h-3 w-3 opacity-70" />
                                   </Button>
                                 ))}
@@ -1082,7 +1082,7 @@ export function CommandBar({
                                         </AvatarFallback>
                                       </Avatar>
                                       <span className="flex-1 truncate text-sm">
-                                        {member.display_name || member.email}
+                                        {member.display_name || member.email || "Unknown User"}
                                       </span>
                                       <UserPlus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
                                     </button>
