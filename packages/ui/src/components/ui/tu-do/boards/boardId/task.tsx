@@ -62,6 +62,7 @@ import { useTaskProjectManagement } from '../../hooks/useTaskProjectManagement';
 import { AssigneeSelect } from '../../shared/assignee-select';
 import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
+import { UserPresenceAvatarsComponent } from '../../shared/user-presence-avatars';
 import {
   getAssigneeInitials,
   getCardColorClasses as getCardColorClassesUtil,
@@ -870,22 +871,30 @@ function TaskCardInner({
                   </div>
                 )}
             </div>
-            {/* Checkbox: always at far right */}
-            <Checkbox
-              checked={!!task.closed_at}
-              className={cn(
-                'h-4 w-4 flex-none transition-all duration-200',
-                'data-[state=checked]:border-dynamic-green/70 data-[state=checked]:bg-dynamic-green/70',
-                'hover:scale-110 hover:border-primary/50',
-                getListColorClasses(taskList?.color as SupportedColor),
-                isOverdue &&
-                  !task.closed_at &&
-                  'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
-              )}
-              disabled={isLoading}
-              onCheckedChange={handleArchiveToggle}
-              onClick={(e) => e.stopPropagation()}
-            />
+            <div className="flex items-center gap-2">
+              <UserPresenceAvatarsComponent
+                channelName={`task_presence_${task.id}`}
+                trackCurrentUser={dialogState.editDialogOpen}
+                avatarClassName="size-4 sm:size-5"
+              />
+
+              {/* Checkbox: always at far right */}
+              <Checkbox
+                checked={!!task.closed_at}
+                className={cn(
+                  'h-4 w-4 flex-none transition-all duration-200',
+                  'data-[state=checked]:border-dynamic-green/70 data-[state=checked]:bg-dynamic-green/70',
+                  'hover:scale-110 hover:border-primary/50',
+                  getListColorClasses(taskList?.color as SupportedColor),
+                  isOverdue &&
+                    !task.closed_at &&
+                    'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
+                )}
+                disabled={isLoading}
+                onCheckedChange={handleArchiveToggle}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
           </div>
         )}
       </div>

@@ -5,7 +5,11 @@ import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import type { UserPresenceState } from '@tuturuuu/ui/hooks/usePresence';
 import { usePresence } from '@tuturuuu/ui/hooks/usePresence';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@tuturuuu/ui/hover-card';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 
@@ -13,20 +17,29 @@ interface UserPresenceAvatarsProps {
   presenceState: RealtimePresenceState<UserPresenceState>;
   currentUserId?: string;
   maxDisplay?: number;
+  avatarClassName?: string;
 }
 
 export function UserPresenceAvatarsComponent({
   channelName,
+  trackCurrentUser = true,
+  avatarClassName,
 }: {
   channelName: string;
+  trackCurrentUser?: boolean;
+  avatarClassName?: string;
 }) {
-  const { presenceState, currentUserId } = usePresence(channelName);
+  const { presenceState, currentUserId } = usePresence(
+    channelName,
+    trackCurrentUser
+  );
 
   return (
     <UserPresenceAvatars
       presenceState={presenceState}
       currentUserId={currentUserId}
       maxDisplay={5}
+      avatarClassName={avatarClassName}
     />
   );
 }
@@ -35,6 +48,7 @@ export function UserPresenceAvatars({
   presenceState,
   currentUserId,
   maxDisplay = 5,
+  avatarClassName,
 }: UserPresenceAvatarsProps) {
   const uniqueUsers = Object.entries(presenceState)
     .map(([, presences]) => presences[0]?.user)
@@ -66,14 +80,15 @@ export function UserPresenceAvatars({
         const presenceCount = presences.length;
 
         return (
-          <Tooltip key={user.id}>
-            <TooltipTrigger asChild>
+          <HoverCard key={user.id}>
+            <HoverCardTrigger asChild>
               <div className="relative transition-transform hover:z-10 hover:scale-110">
                 <Avatar
                   className={cn(
                     'size-7 border-2 border-background ring-1 ring-border transition-shadow hover:ring-2 sm:size-8',
                     isCurrentUser &&
-                      'ring-dynamic-blue/60 hover:ring-dynamic-blue'
+                      'ring-dynamic-blue/60 hover:ring-dynamic-blue',
+                    avatarClassName
                   )}
                 >
                   {user.avatar_url ? (
@@ -90,40 +105,56 @@ export function UserPresenceAvatars({
                     )}
                   </AvatarFallback>
                 </Avatar>
-                {/* Online indicator dot */}
-                {/* <div className="-right-0.5 -bottom-0.5 absolute h-2 w-2 rounded-full border-2 border-background bg-dynamic-green sm:h-2.5 sm:w-2.5" /> */}
-                {/* Multiple sessions indicator */}
                 {presenceCount > 1 && (
                   <div className="-right-1 -top-1 absolute flex h-3.5 w-3.5 items-center justify-center rounded-full border border-background bg-dynamic-blue font-bold text-[9px] text-white sm:h-4 sm:w-4 sm:text-[10px]">
                     {presenceCount}
                   </div>
                 )}
               </div>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-none">
-              <div className="space-y-0.5">
-                <p className="font-medium text-sm">
-                  {user.display_name || 'Unknown User'}
-                  {isCurrentUser && ' (You)'}
-                </p>
-                {user.email && (
-                  <p className="text-muted-foreground text-xs">{user.email}</p>
-                )}
-                {presenceCount > 1 && (
-                  <p className="text-muted-foreground text-xs">
-                    {presenceCount} active sessions
+            </HoverCardTrigger>
+            <HoverCardContent side="bottom" className="w-80">
+              <div className="flex gap-3">
+                <Avatar className="size-10">
+                  {user.avatar_url ? (
+                    <AvatarImage
+                      src={user.avatar_url}
+                      alt={user.display_name || user.email || 'User'}
+                    />
+                  ) : null}
+                  <AvatarFallback className="font-semibold text-foreground text-sm">
+                    {user.display_name || user.email ? (
+                      getInitials(user.display_name || user.email)
+                    ) : (
+                      <User className="h-5 w-5" />
+                    )}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 space-y-1">
+                  <p className="font-medium text-sm">
+                    {user.display_name || 'Unknown User'}
+                    {isCurrentUser && ' (You)'}
                   </p>
-                )}
+                  {user.email && (
+                    <p className="text-muted-foreground text-xs">
+                      {user.email}
+                    </p>
+                  )}
+                </div>
               </div>
-            </TooltipContent>
-          </Tooltip>
+              <div className="mt-3 border-t pt-2">
+                <p className="text-muted-foreground text-xs">
+                  Active sessions: {presenceCount}
+                </p>
+              </div>
+            </HoverCardContent>
+          </HoverCard>
         );
       })}
 
       {/* Overflow indicator */}
       {remainingCount > 0 && (
-        <Tooltip>
-          <TooltipTrigger asChild>
+        <HoverCard>
+          <HoverCardTrigger asChild>
             <div className="relative transition-transform hover:z-10 hover:scale-110">
               <Avatar className="size-7 border-2 border-background ring-1 ring-border transition-shadow hover:ring-2 sm:size-8">
                 <AvatarFallback className="bg-muted font-semibold text-[10px] text-muted-foreground sm:text-xs">
@@ -131,11 +162,11 @@ export function UserPresenceAvatars({
                 </AvatarFallback>
               </Avatar>
             </div>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
+          </HoverCardTrigger>
+          <HoverCardContent side="bottom">
             <p className="text-sm">{remainingCount} more online</p>
-          </TooltipContent>
-        </Tooltip>
+          </HoverCardContent>
+        </HoverCard>
       )}
     </div>
   );
