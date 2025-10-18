@@ -1,6 +1,6 @@
 'use client';
 
-import { BookText, Zap } from '@tuturuuu/icons';
+import { BookText } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import {
@@ -13,8 +13,8 @@ import {
   navigationMenuTriggerStyle,
 } from '@tuturuuu/ui/navigation-menu';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import { useNavigation } from './shared/navigation-config';
 
@@ -22,19 +22,36 @@ export function MainNavigationMenu() {
   const t = useTranslations();
   const { categories } = useNavigation(t);
 
-  const products =
-    categories.find((cat) => cat.title === 'products')?.items || [];
+  const mainLinks = categories.find((cat) => cat.title === 'main')?.items || [];
+  // const products =
+  //   categories.find((cat) => cat.title === 'products')?.items || [];
   // const solutions =
   //   categories.find((cat) => cat.title === 'solutions')?.items || [];
   const resources =
     categories.find((cat) => cat.title === 'resources')?.items || [];
-  const company =
-    categories.find((cat) => cat.title === 'company')?.items || [];
 
   return (
     <NavigationMenu className="flex w-full max-w-none">
       <NavigationMenuList className="flex w-full justify-between">
-        <NavigationMenuItem>
+        {mainLinks.map((item) => {
+          if (item.href === `/`) return null;
+
+          return (
+            <NavigationMenuItem key={item.href}>
+              <NavigationMenuLink
+                href={item.href}
+                className={cn(
+                  navigationMenuTriggerStyle(),
+                  'bg-transparent px-6 font-semibold transition-all duration-300 hover:bg-foreground/5'
+                )}
+              >
+                <span className="flex items-center gap-2">{item.label}</span>
+              </NavigationMenuLink>
+            </NavigationMenuItem>
+          );
+        })}
+
+        {/* <NavigationMenuItem>
           <NavigationMenuTrigger className="group bg-transparent font-semibold transition-all duration-300 hover:bg-foreground/5">
             <span className="flex items-center gap-2">
               {t('common.products')}
@@ -65,21 +82,21 @@ export function MainNavigationMenu() {
               ))}
             </ul>
           </NavigationMenuContent>
-        </NavigationMenuItem>
+        </NavigationMenuItem> */}
 
         {/* <NavigationMenuItem>
-          <NavigationMenuTrigger className="hover:bg-foreground/5 group bg-transparent font-semibold transition-all duration-300">
+          <NavigationMenuTrigger className="group bg-transparent font-semibold transition-all duration-300 hover:bg-foreground/5">
             <span className="flex items-center gap-2">
               {t('common.solutions')}
-              <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs">
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-primary text-xs">
                 {t('common.new')}
               </span>
             </span>
           </NavigationMenuTrigger>
           <NavigationMenuContent>
-            <ul className="bg-linear-to-br from-background via-background/95 to-background/90 grid w-[400px] gap-3 p-6 backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px]">
-              <Card className="bg-primary/5 col-span-full mb-2 p-4">
-                <div className="flex items-center gap-2 text-sm font-medium">
+            <ul className="grid w-[400px] gap-3 bg-linear-to-br from-background via-background/95 to-background/90 p-6 backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px]">
+              <Card className="col-span-full mb-2 bg-primary/5 p-4">
+                <div className="flex items-center gap-2 font-medium text-sm">
                   <Building className="h-4 w-4" />
                   <span>Industry Solutions</span>
                 </div>
@@ -123,20 +140,6 @@ export function MainNavigationMenu() {
             </ul>
           </NavigationMenuContent>
         </NavigationMenuItem>
-
-        {company.map((item) => (
-          <NavigationMenuItem key={item.href}>
-            <NavigationMenuLink
-              href={item.href}
-              className={cn(
-                navigationMenuTriggerStyle(),
-                'bg-transparent px-6 font-semibold transition-all duration-300 hover:bg-foreground/5'
-              )}
-            >
-              <span className="flex items-center gap-2">{item.label}</span>
-            </NavigationMenuLink>
-          </NavigationMenuItem>
-        ))}
       </NavigationMenuList>
     </NavigationMenu>
   );
@@ -188,7 +191,7 @@ const ListItem = React.forwardRef<
                   </Badge>
                 )}
               </div>
-              <p className="mt-2 line-clamp-2 text-muted-foreground text-sm leading-snug opacity-80 transition-opacity duration-300 group-hover:opacity-100">
+              <p className="mt-2 line-clamp-3 text-muted-foreground text-sm leading-snug opacity-80 transition-opacity duration-300 group-hover:opacity-100">
                 {children}
               </p>
             </div>

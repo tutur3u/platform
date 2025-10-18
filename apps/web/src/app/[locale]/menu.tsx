@@ -17,9 +17,9 @@ import {
   SheetTrigger,
 } from '@tuturuuu/ui/sheet';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { AuthButton } from './auth-button';
 import { type NavItem, useNavigation } from './shared/navigation-config';
@@ -27,7 +27,6 @@ import { type NavItem, useNavigation } from './shared/navigation-config';
 interface MenuProps {
   sbUser: SupabaseUser | null;
   user: WorkspaceUser | null;
-  // biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
   t?: any;
 }
 
@@ -81,14 +80,12 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
 
   // Extract categories by their titles
   const mainLinks = categories.find((cat) => cat.title === 'main')?.items || [];
-  const products =
-    categories.find((cat) => cat.title === 'products')?.items || [];
-  const solutions =
-    categories.find((cat) => cat.title === 'solutions')?.items || [];
+  // const products =
+  //   categories.find((cat) => cat.title === 'products')?.items || [];
+  // const solutions =
+  //   categories.find((cat) => cat.title === 'solutions')?.items || [];
   const resources =
     categories.find((cat) => cat.title === 'resources')?.items || [];
-  const company =
-    categories.find((cat) => cat.title === 'company')?.items || [];
 
   return (
     <Sheet open={isOpened} onOpenChange={setIsOpened}>
@@ -115,22 +112,20 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
           <div className="flex-1 overflow-y-auto">
             <div className="flex flex-col space-y-4 py-6">
               {/* Main Links */}
-              <div className="px-6">
-                <div className="grid gap-2 font-medium">
-                  {mainLinks.map((item) => (
-                    <MobileNavLink
-                      key={item.href}
-                      item={item}
-                      onClick={closeMenu}
-                      className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
-                    />
-                  ))}
-                </div>
+              <div className="grid gap-2 px-4 font-medium">
+                {mainLinks.map((item) => (
+                  <MobileNavLink
+                    key={item.href}
+                    item={item}
+                    onClick={closeMenu}
+                    className="rounded-lg px-4 py-2.5 text-sm transition-all hover:bg-accent active:bg-accent/80"
+                  />
+                ))}
               </div>
 
               <Accordion type="multiple" className="space-y-3">
                 {/* Products Section */}
-                <AccordionItem value="products" className="border-none px-4">
+                {/* <AccordionItem value="products" className="border-none px-4">
                   <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
                     <span className="font-semibold text-sm">
                       {t('common.products')}
@@ -148,10 +143,10 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                       ))}
                     </div>
                   </AccordionContent>
-                </AccordionItem>
+                </AccordionItem> */}
 
                 {/* Solutions Section */}
-                <AccordionItem value="solutions" className="border-none px-4">
+                {/* <AccordionItem value="solutions" className="border-none px-4">
                   <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
                     <span className="font-semibold text-sm">
                       {t('common.solutions')}
@@ -169,7 +164,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                       ))}
                     </div>
                   </AccordionContent>
-                </AccordionItem>
+                </AccordionItem> */}
 
                 {/* Resources Section */}
                 <AccordionItem value="resources" className="border-none px-4">
@@ -181,27 +176,6 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                   <AccordionContent className="pt-3 pb-2">
                     <div className="grid gap-2 px-2">
                       {resources.map((item) => (
-                        <MobileNavLink
-                          key={item.href}
-                          item={item}
-                          onClick={closeMenu}
-                          className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
-                        />
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                {/* Company Section */}
-                <AccordionItem value="company" className="border-none px-4">
-                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
-                    <span className="font-semibold text-sm">
-                      {t('common.company')}
-                    </span>
-                  </AccordionTrigger>
-                  <AccordionContent className="pt-3 pb-2">
-                    <div className="grid gap-2 px-2">
-                      {company.map((item) => (
                         <MobileNavLink
                           key={item.href}
                           item={item}
