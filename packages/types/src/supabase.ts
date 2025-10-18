@@ -218,6 +218,12 @@ export type Database = {
         };
         Returns: number;
       };
+      count_user_workspaces: {
+        Args: {
+          user_id: string;
+        };
+        Returns: number;
+      };
       create_ai_chat: {
         Args: {
           message: string;
@@ -1140,6 +1146,12 @@ export type Database = {
         Args: {
           _board_id: string;
           _user_id: string;
+        };
+        Returns: boolean;
+      };
+      is_tuturuuu_email: {
+        Args: {
+          user_email: string;
         };
         Returns: boolean;
       };

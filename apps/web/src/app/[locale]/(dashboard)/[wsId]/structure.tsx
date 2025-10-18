@@ -38,7 +38,7 @@ interface MailProps {
   actions: ReactNode;
   userPopover: ReactNode;
   children: ReactNode;
-  disableCreateNewWorkspace: boolean;
+  disableCreateNewWorkspace?: boolean;
 }
 
 export function Structure({
@@ -49,7 +49,7 @@ export function Structure({
   actions,
   userPopover,
   children,
-  disableCreateNewWorkspace,
+  disableCreateNewWorkspace = false,
 }: MailProps) {
   const t = useTranslations();
   const pathname = usePathname();

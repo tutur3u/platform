@@ -12,9 +12,9 @@
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",
-    "@supabase/supabase-js": "^2.75.0",
+    "@supabase/supabase-js": "^2.75.1",
     "@tuturuuu/types": "workspace:*",
-    "next": "^16.0.0-canary.10",
+    "next": "^16.0.0-canary.12",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "zod": "^4.1.12"

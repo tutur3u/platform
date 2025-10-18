@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { checkWorkspaceCreationLimit } from '@tuturuuu/utils/workspace-limits';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
@@ -57,6 +58,25 @@ export async function POST(req: Request) {
 
   if (!user) {
     return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
+  }
+
+  // Check workspace creation limits
+  const limitCheck = await checkWorkspaceCreationLimit(
+    supabase,
+    user.id,
+    user.email
+  );
+
+  if (!limitCheck.canCreate) {
+    const statusCode =
+      limitCheck.errorCode === 'WORKSPACE_COUNT_ERROR' ? 500 : 403;
+    return NextResponse.json(
+      {
+        message: limitCheck.errorMessage,
+        code: limitCheck.errorCode,
+      },
+      { status: statusCode }
+    );
   }
 
   const { name } = await req.json();
