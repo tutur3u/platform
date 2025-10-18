@@ -29,15 +29,17 @@ import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 // Language Switcher Component
 function LanguageSwitcher({
   locale: currentLocale,
   className,
+  reduceEffects = false,
 }: {
   locale: string;
   className?: string;
+  reduceEffects?: boolean;
 }) {
   const t = useTranslations('vietnameseWomensDay');
   const router = useRouter();
@@ -61,7 +63,12 @@ function LanguageSwitcher({
 
   return (
     <div className={cn('flex flex-col items-end gap-2', className)}>
-      <div className="rounded-lg border border-border/50 bg-background/80 px-3 py-1.5 text-muted-foreground text-xs backdrop-blur-sm">
+      <div
+        className={cn(
+          'rounded-lg border border-border/50 bg-background/80 px-3 py-1.5 text-muted-foreground text-xs',
+          !reduceEffects && 'backdrop-blur-sm'
+        )}
+      >
         {t('languageAvailable')}
       </div>
       <Button
@@ -69,7 +76,10 @@ function LanguageSwitcher({
         variant="outline"
         size="sm"
         disabled={loading}
-        className="group gap-2 border-dynamic-pink/30 bg-background/80 font-semibold backdrop-blur-sm transition-all hover:border-dynamic-pink/50 hover:bg-dynamic-pink/10"
+        className={cn(
+          'group gap-2 border-dynamic-pink/30 bg-background/80 font-semibold transition-all hover:border-dynamic-pink/50 hover:bg-dynamic-pink/10',
+          !reduceEffects && 'backdrop-blur-sm'
+        )}
       >
         <Globe className="h-4 w-4 transition-transform group-hover:rotate-12" />
         {loading ? (
@@ -84,7 +94,7 @@ function LanguageSwitcher({
   );
 }
 
-// Animated counter component
+// Animated counter component - optimized for mobile performance
 function AnimatedCounter({ value }: { value: string }) {
   const [count, setCount] = useState(0);
   const [hasAnimated, setHasAnimated] = useState(false);
@@ -98,18 +108,26 @@ function AnimatedCounter({ value }: { value: string }) {
     let start = 0;
     const duration = 2000;
     const increment = targetValue / (duration / 16);
+    let animationFrame: number;
 
-    const timer = setInterval(() => {
+    const animate = () => {
       start += increment;
       if (start >= targetValue) {
         setCount(targetValue);
-        clearInterval(timer);
+        setHasAnimated(true);
       } else {
         setCount(start);
+        animationFrame = requestAnimationFrame(animate);
       }
-    }, 16);
+    };
 
-    return () => clearInterval(timer);
+    animationFrame = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
   }, [hasAnimated, value]);
 
   return (
@@ -117,7 +135,8 @@ function AnimatedCounter({ value }: { value: string }) {
       initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}
       onViewportEnter={() => setHasAnimated(true)}
-      viewport={{ once: true }}
+      viewport={{ once: true, margin: '-100px' }}
+      transition={{ duration: 0.3 }}
     >
       {value.includes('%')
         ? `${Math.round(count)}%`
@@ -132,9 +151,115 @@ export default function VietnameseWomensDayPage() {
   const t = useTranslations('vietnameseWomensDay');
   const locale = useLocale();
 
+  // Detect mobile and reduced motion preference for performance optimization
+  const [isMobile, setIsMobile] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    // Check if device is mobile
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+
+    // Check reduced motion preference
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    const handleChange = (e: MediaQueryListEvent) =>
+      setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener('change', handleChange);
+
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      mediaQuery.removeEventListener('change', handleChange);
+    };
+  }, []);
+
+  // Disable expensive scroll animations on mobile for better performance
   const { scrollYProgress } = useScroll();
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
-  const heroY = useTransform(scrollYProgress, [0, 0.2], [0, -50]);
+  const heroOpacity = useTransform(
+    scrollYProgress,
+    [0, 0.2],
+    isMobile || prefersReducedMotion ? [1, 1] : [1, 0]
+  );
+  const heroY = useTransform(
+    scrollYProgress,
+    [0, 0.2],
+    isMobile || prefersReducedMotion ? [0, 0] : [0, -50]
+  );
+
+  // Simplified animation variants for better mobile performance
+  // Memoized to prevent recreation on every render
+  const shouldReduceMotion = isMobile || prefersReducedMotion;
+
+  const fadeInUpVariant = useMemo(
+    () =>
+      (delay = 0) => ({
+        initial: {
+          opacity: shouldReduceMotion ? 1 : 0,
+          y: shouldReduceMotion ? 0 : 20,
+        },
+        animate: { opacity: 1, y: 0 },
+        transition: {
+          duration: shouldReduceMotion ? 0 : 0.6,
+          delay: shouldReduceMotion ? 0 : delay,
+        },
+      }),
+    [shouldReduceMotion]
+  );
+  const fadeInViewVariant = useMemo(
+    () =>
+      (delay = 0) => ({
+        initial: {
+          opacity: shouldReduceMotion ? 1 : 0,
+          y: shouldReduceMotion ? 0 : 30,
+        },
+        whileInView: { opacity: 1, y: 0 },
+        viewport: { once: true, margin: shouldReduceMotion ? '0px' : '-50px' },
+        transition: {
+          duration: shouldReduceMotion ? 0 : 0.6,
+          delay: shouldReduceMotion ? 0 : delay,
+        },
+      }),
+    [shouldReduceMotion]
+  );
+
+  // Image scale animation variant - prevents blinking after animation
+  const imageScaleVariant = useMemo(
+    () =>
+      (delay = 0) => ({
+        initial: {
+          opacity: shouldReduceMotion ? 1 : 0,
+          scale: shouldReduceMotion ? 1 : 0.95,
+        },
+        whileInView: { opacity: 1, scale: 1 },
+        viewport: { once: true, amount: 0.3 },
+        transition: {
+          duration: shouldReduceMotion ? 0 : 0.5,
+          delay: shouldReduceMotion ? 0 : delay,
+        },
+      }),
+    [shouldReduceMotion]
+  );
+
+  // Image slide animation variant - prevents blinking after animation
+  const imageSlideVariant = useMemo(
+    () =>
+      (direction: 'left' | 'right', delay = 0) => ({
+        initial: {
+          opacity: shouldReduceMotion ? 1 : 0,
+          x: shouldReduceMotion ? 0 : direction === 'left' ? -40 : 40,
+        },
+        whileInView: { opacity: 1, x: 0 },
+        viewport: { once: true, amount: 0.3 },
+        transition: {
+          duration: shouldReduceMotion ? 0 : 0.6,
+          delay: shouldReduceMotion ? 0 : delay,
+        },
+      }),
+    [shouldReduceMotion]
+  );
 
   return (
     <main className="relative mx-auto w-full overflow-x-hidden text-balance">
@@ -147,12 +272,10 @@ export default function VietnameseWomensDayPage() {
 
       {/* Language Switcher */}
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.6 }}
+        {...fadeInUpVariant(0.3)}
         className="relative mx-auto max-w-7xl px-4 pt-6 sm:px-6 sm:pt-4 lg:px-8 lg:pt-8"
       >
-        <LanguageSwitcher locale={locale} />
+        <LanguageSwitcher locale={locale} reduceEffects={shouldReduceMotion} />
       </motion.div>
 
       {/* Hero Section */}
@@ -161,14 +284,13 @@ export default function VietnameseWomensDayPage() {
         className="relative px-4 pt-8 pb-20 sm:px-6 sm:pt-12 sm:pb-24 lg:px-8 lg:pt-16 lg:pb-32"
       >
         <div className="mx-auto max-w-7xl text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
+          <motion.div {...fadeInUpVariant(0)}>
             <Badge
               variant="secondary"
-              className="mb-6 border-dynamic-pink/30 bg-dynamic-pink/10 px-6 py-2 text-sm backdrop-blur"
+              className={cn(
+                'mb-6 border-dynamic-pink/30 bg-dynamic-pink/10 px-6 py-2 text-xs md:text-sm',
+                !shouldReduceMotion && 'backdrop-blur'
+              )}
             >
               <Heart className="mr-2 h-4 w-4 text-dynamic-pink" />
               {t('hero.badge')}
@@ -176,9 +298,7 @@ export default function VietnameseWomensDayPage() {
           </motion.div>
 
           <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
+            {...fadeInUpVariant(0.1)}
             className="mb-12 font-bold text-3xl tracking-tight sm:text-6xl md:text-7xl lg:text-8xl"
           >
             {t('hero.title.part1')}{' '}
@@ -190,18 +310,14 @@ export default function VietnameseWomensDayPage() {
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
+            {...fadeInUpVariant(0.2)}
             className="mx-auto mb-10 max-w-3xl text-foreground/80 text-lg sm:text-xl md:text-2xl"
           >
             {t('hero.description')}
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
+            {...fadeInUpVariant(0.3)}
             className="flex flex-col flex-wrap items-center justify-center gap-4 sm:flex-row"
           >
             <Button
@@ -246,14 +362,13 @@ export default function VietnameseWomensDayPage() {
       {/* Inspirational Quote Section */}
       <section className="relative px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
         <div className="mx-auto max-w-5xl">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="relative"
-          >
-            <Card className="relative overflow-hidden border border-dynamic-purple/20 bg-gradient-to-br from-dynamic-pink/5 via-background to-dynamic-purple/5 p-12 text-center backdrop-blur-sm md:p-16">
+          <motion.div {...fadeInViewVariant(0)} className="relative">
+            <Card
+              className={cn(
+                'relative overflow-hidden border border-dynamic-purple/20 bg-gradient-to-br from-dynamic-pink/5 via-background to-dynamic-purple/5 p-12 text-center md:p-16',
+                !shouldReduceMotion && 'backdrop-blur-sm'
+              )}
+            >
               {/* Quote Icon */}
               <div className="absolute top-8 left-8 opacity-10">
                 <Sparkles className="h-24 w-24 text-dynamic-pink" />
@@ -265,10 +380,7 @@ export default function VietnameseWomensDayPage() {
               {/* Quote Content */}
               <div className="relative">
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.2, duration: 0.5 }}
+                  {...imageScaleVariant(0.2)}
                   className="mb-6 text-6xl text-dynamic-pink/40"
                 >
                   "
@@ -306,20 +418,17 @@ export default function VietnameseWomensDayPage() {
       {/* CEO Message Section */}
       <section className="relative px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
         <div className="mx-auto max-w-6xl">
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-50px' }}
-            transition={{ duration: 0.6 }}
-          >
-            <Card className="overflow-hidden border border-dynamic-purple/20 bg-gradient-to-br from-background/80 to-background p-8 shadow-xl backdrop-blur-sm md:p-12">
+          <motion.div {...fadeInViewVariant(0)}>
+            <Card
+              className={cn(
+                'overflow-hidden border border-dynamic-purple/20 bg-gradient-to-br from-background/80 to-background p-8 shadow-xl md:p-12',
+                !shouldReduceMotion && 'backdrop-blur-sm'
+              )}
+            >
               <div className="flex flex-col gap-8 md:flex-row md:items-start">
                 {/* CEO Image */}
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5 }}
+                  {...imageScaleVariant(0)}
                   className="flex shrink-0 flex-col items-center gap-4"
                 >
                   <div className="group relative h-64 w-64 overflow-hidden rounded-2xl border-2 border-dynamic-purple/30 shadow-xl transition-all hover:border-dynamic-purple/50 hover:shadow-2xl">
@@ -411,30 +520,20 @@ export default function VietnameseWomensDayPage() {
 
           <div className="space-y-20">
             {/* Executive Leadership */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="grid gap-8 md:grid-cols-2 md:items-center"
-            >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-                className="group relative overflow-hidden rounded-2xl border-2 border-dynamic-purple/30 shadow-xl transition-all hover:border-dynamic-purple/50 hover:shadow-2xl"
-              >
-                <div className="relative aspect-[4/3]">
+            <div className="grid gap-8 md:grid-cols-2 md:items-center">
+              <div className="group relative overflow-hidden rounded-2xl border-2 border-dynamic-purple/30 shadow-xl transition-all hover:border-dynamic-purple/50 hover:shadow-2xl">
+                <div className="relative aspect-[4/3] bg-dynamic-purple/5">
                   <Image
                     src="/media/marketing/events/women-in-tech/first-women-coo-with-first-women-people-and-operations-coordinator.jpeg"
                     alt={t('womenInLeadership.executives.name')}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 768px) 100vw, 50vw"
+                    loading="eager"
+                    priority
                   />
                 </div>
-              </motion.div>
+              </div>
               <div>
                 <div className="mb-4 inline-block rounded-full bg-dynamic-purple/10 px-4 py-2">
                   <span className="font-semibold text-dynamic-purple text-sm">
@@ -451,16 +550,10 @@ export default function VietnameseWomensDayPage() {
                   {t('womenInLeadership.executives.story')}
                 </p>
               </div>
-            </motion.div>
+            </div>
 
             {/* Engineering Excellence */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="grid gap-8 md:grid-cols-2 md:items-center"
-            >
+            <div className="grid gap-8 md:grid-cols-2 md:items-center">
               <div className="order-2 md:order-1">
                 <div className="mb-4 inline-block rounded-full bg-dynamic-pink/10 px-4 py-2">
                   <span className="font-semibold text-dynamic-pink text-sm">
@@ -477,50 +570,36 @@ export default function VietnameseWomensDayPage() {
                   {t('womenInLeadership.engineering.story')}
                 </p>
               </div>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-                className="group relative order-1 overflow-hidden rounded-2xl border-2 border-dynamic-pink/30 shadow-xl transition-all hover:border-dynamic-pink/50 hover:shadow-2xl md:order-2"
-              >
-                <div className="relative aspect-[4/3]">
+              <div className="group relative order-1 overflow-hidden rounded-2xl border-2 border-dynamic-pink/30 shadow-xl transition-all hover:border-dynamic-pink/50 hover:shadow-2xl md:order-2">
+                <div className="relative aspect-[4/3] bg-dynamic-pink/5">
                   <Image
                     src="/media/marketing/events/women-in-tech/anh-thu-first-women-contributor.jpg"
                     alt={t('womenInLeadership.engineering.name')}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 768px) 100vw, 50vw"
+                    loading="eager"
+                    priority
                   />
                 </div>
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
 
             {/* Next-Generation Marketing */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="grid gap-8 md:grid-cols-2 md:items-center"
-            >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-                className="group relative overflow-hidden rounded-2xl border-2 border-dynamic-blue/30 shadow-xl transition-all hover:border-dynamic-blue/50 hover:shadow-2xl"
-              >
-                <div className="relative aspect-[4/3]">
+            <div className="grid gap-8 md:grid-cols-2 md:items-center">
+              <div className="group relative overflow-hidden rounded-2xl border-2 border-dynamic-blue/30 shadow-xl transition-all hover:border-dynamic-blue/50 hover:shadow-2xl">
+                <div className="relative aspect-[4/3] bg-dynamic-blue/5">
                   <Image
                     src="/media/marketing/events/women-in-tech/next-generation-of-women-marketing-leader.jpg"
                     alt={t('womenInLeadership.marketing.name')}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 768px) 100vw, 50vw"
+                    loading="eager"
+                    priority
                   />
                 </div>
-              </motion.div>
+              </div>
               <div>
                 <div className="mb-4 inline-block rounded-full bg-dynamic-blue/10 px-4 py-2">
                   <span className="font-semibold text-dynamic-blue text-sm">
@@ -537,16 +616,10 @@ export default function VietnameseWomensDayPage() {
                   {t('womenInLeadership.marketing.story')}
                 </p>
               </div>
-            </motion.div>
+            </div>
 
             {/* Breaking Boundaries - Remote */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="grid gap-8 md:grid-cols-2 md:items-center"
-            >
+            <div className="grid gap-8 md:grid-cols-2 md:items-center">
               <div className="order-2 md:order-1">
                 <div className="mb-4 inline-block rounded-full bg-dynamic-green/10 px-4 py-2">
                   <span className="font-semibold text-dynamic-green text-sm">
@@ -563,24 +636,20 @@ export default function VietnameseWomensDayPage() {
                   {t('womenInLeadership.remote.story')}
                 </p>
               </div>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-                className="group relative order-1 overflow-hidden rounded-2xl border-2 border-dynamic-green/30 shadow-xl transition-all hover:border-dynamic-green/50 hover:shadow-2xl md:order-2"
-              >
-                <div className="relative aspect-[4/3]">
+              <div className="group relative order-1 overflow-hidden rounded-2xl border-2 border-dynamic-green/30 shadow-xl transition-all hover:border-dynamic-green/50 hover:shadow-2xl md:order-2">
+                <div className="relative aspect-[4/3] bg-dynamic-green/5">
                   <Image
                     src="/media/marketing/events/women-in-tech/linh-dan-first-remote-women-software-engineer-intern.jpeg"
                     alt={t('womenInLeadership.remote.name')}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 768px) 100vw, 50vw"
+                    loading="eager"
+                    priority
                   />
                 </div>
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -838,10 +907,10 @@ export default function VietnameseWomensDayPage() {
               ].map((achievement, index) => (
                 <motion.div
                   key={achievement.key}
-                  initial={{ opacity: 0, x: index % 2 === 0 ? -40 : 40 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, margin: '-50px' }}
-                  transition={{ delay: index * 0.1, duration: 0.6 }}
+                  {...imageSlideVariant(
+                    index % 2 === 0 ? 'left' : 'right',
+                    index * 0.1
+                  )}
                   className={cn(
                     'relative grid gap-8 lg:grid-cols-2',
                     index % 2 === 0 ? 'lg:text-right' : 'lg:flex-row-reverse'
@@ -1000,40 +1069,32 @@ export default function VietnameseWomensDayPage() {
 
           {/* Images Showcase */}
           <div className="mt-16 grid gap-8 md:grid-cols-2">
-            <motion.div
-              initial={{ opacity: 0, x: -40 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="group relative overflow-hidden rounded-2xl border-2 border-dynamic-purple/30 shadow-xl transition-all hover:border-dynamic-purple/50 hover:shadow-2xl"
-            >
-              <div className="relative aspect-video">
+            <div className="group relative overflow-hidden rounded-2xl border-2 border-dynamic-purple/30 shadow-xl transition-all hover:border-dynamic-purple/50 hover:shadow-2xl">
+              <div className="relative aspect-video bg-dynamic-purple/5">
                 <Image
                   src="/media/marketing/events/women-in-tech/experiences-with-women-in-tech-peers-from-vietnam-to-the-world.jpg"
                   alt="Women in Tech: Vietnam to the World"
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                   sizes="(max-width: 768px) 100vw, 50vw"
+                  loading="eager"
+                  priority
                 />
               </div>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: 40 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="group relative overflow-hidden rounded-2xl border-2 border-dynamic-pink/30 shadow-xl transition-all hover:border-dynamic-pink/50 hover:shadow-2xl"
-            >
-              <div className="relative aspect-video">
+            </div>
+            <div className="group relative overflow-hidden rounded-2xl border-2 border-dynamic-pink/30 shadow-xl transition-all hover:border-dynamic-pink/50 hover:shadow-2xl">
+              <div className="relative aspect-video bg-dynamic-pink/5">
                 <Image
                   src="/media/marketing/events/women-in-tech/experiences-with-women-in-tech-peers-from-vietnam-to-the-world-2.jpg"
                   alt="Global Tech Collaboration"
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                   sizes="(max-width: 768px) 100vw, 50vw"
+                  loading="eager"
+                  priority
                 />
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
@@ -1055,20 +1116,17 @@ export default function VietnameseWomensDayPage() {
             </p>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
+          <div>
             <Card className="group overflow-hidden border border-dynamic-pink/30 p-0 shadow-xl backdrop-blur-sm transition-all hover:border-dynamic-pink/50 hover:shadow-2xl">
-              <div className="relative aspect-video w-full overflow-hidden">
+              <div className="relative aspect-video w-full overflow-hidden bg-dynamic-pink/5">
                 <Image
                   src="/media/marketing/events/women-in-tech/team.jpg"
                   alt={t('team.imageTitle')}
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+                  loading="eager"
+                  priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent" />
               </div>
@@ -1082,7 +1140,7 @@ export default function VietnameseWomensDayPage() {
                 </p>
               </div>
             </Card>
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -1196,12 +1254,7 @@ export default function VietnameseWomensDayPage() {
 
           <div className="grid gap-8 md:grid-cols-2 2xl:grid-cols-4">
             {/* AllMind Partnership - Sophie & Sweet */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-            >
+            <motion.div {...fadeInViewVariant(0)}>
               <Card className="h-full overflow-hidden border-2 border-dynamic-purple/30 p-0 shadow-xl transition-all hover:border-dynamic-purple/50 hover:shadow-2xl">
                 <div className="relative aspect-video overflow-hidden">
                   <Image
@@ -1226,12 +1279,7 @@ export default function VietnameseWomensDayPage() {
             </motion.div>
 
             {/* RMIT University - Professor Iwona, Hoa & Nguyên */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-            >
+            <motion.div {...fadeInViewVariant(0.1)}>
               <Card className="h-full overflow-hidden border-2 border-dynamic-blue/30 p-0 shadow-xl transition-all hover:border-dynamic-blue/50 hover:shadow-2xl">
                 <div className="relative aspect-video overflow-hidden">
                   <Image
@@ -1265,12 +1313,7 @@ export default function VietnameseWomensDayPage() {
             </motion.div>
 
             {/* SPARK Hub - Tien */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1, duration: 0.6 }}
-            >
+            <motion.div {...fadeInViewVariant(0.05)}>
               <Card className="h-full overflow-hidden border-2 border-dynamic-green/30 p-0 shadow-xl transition-all hover:border-dynamic-green/50 hover:shadow-2xl">
                 <div className="relative aspect-video overflow-hidden">
                   <Image
@@ -1303,12 +1346,7 @@ export default function VietnameseWomensDayPage() {
             </motion.div>
 
             {/* SOKI Startup - Kim */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-            >
+            <motion.div {...fadeInViewVariant(0.15)}>
               <Card className="h-full overflow-hidden border-2 border-dynamic-orange/30 p-0 shadow-xl transition-all hover:border-dynamic-orange/50 hover:shadow-2xl">
                 <div className="relative aspect-video overflow-hidden">
                   <Image
@@ -1333,12 +1371,7 @@ export default function VietnameseWomensDayPage() {
             </motion.div>
 
             {/* Mai Nhung - rbac.vn Developer */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-            >
+            <motion.div {...fadeInViewVariant(0.2)}>
               <Card className="h-full overflow-hidden border-2 border-dynamic-cyan/30 p-0 shadow-xl transition-all hover:border-dynamic-cyan/50 hover:shadow-2xl">
                 <div className="relative aspect-video overflow-hidden">
                   <Image
@@ -1363,12 +1396,7 @@ export default function VietnameseWomensDayPage() {
             </motion.div>
 
             {/* Đài - RBAC Project Leader */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.5, duration: 0.6 }}
-            >
+            <motion.div {...fadeInViewVariant(0.25)}>
               <Card className="h-full overflow-hidden border-2 border-dynamic-purple/30 p-0 shadow-xl transition-all hover:border-dynamic-purple/50 hover:shadow-2xl">
                 <div className="relative aspect-video overflow-hidden">
                   <Image
@@ -1393,12 +1421,7 @@ export default function VietnameseWomensDayPage() {
             </motion.div>
 
             {/* Như - RBAC Project Assistant */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.6, duration: 0.6 }}
-            >
+            <motion.div {...fadeInViewVariant(0.3)}>
               <Card className="h-full overflow-hidden border-2 border-dynamic-indigo/30 p-0 shadow-xl transition-all hover:border-dynamic-indigo/50 hover:shadow-2xl">
                 <div className="relative aspect-video overflow-hidden">
                   <Image
@@ -1423,12 +1446,7 @@ export default function VietnameseWomensDayPage() {
             </motion.div>
 
             {/* Community Engagement */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.7, duration: 0.6 }}
-            >
+            <motion.div {...fadeInViewVariant(0.35)}>
               <Card className="h-full overflow-hidden border-2 border-dynamic-pink/30 p-0 shadow-xl transition-all hover:border-dynamic-pink/50 hover:shadow-2xl">
                 <div className="relative aspect-video overflow-hidden">
                   <Image
@@ -1469,13 +1487,13 @@ export default function VietnameseWomensDayPage() {
       {/* CTA Section */}
       <section className="relative px-4 py-20 pb-32 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
         <div className="mx-auto max-w-5xl">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <Card className="relative overflow-hidden border border-dynamic-pink/30 bg-gradient-to-br from-dynamic-pink/10 to-background p-12 backdrop-blur-sm">
+          <motion.div {...fadeInViewVariant(0)}>
+            <Card
+              className={cn(
+                'relative overflow-hidden border border-dynamic-pink/30 bg-gradient-to-br from-dynamic-pink/10 to-background p-12',
+                !shouldReduceMotion && 'backdrop-blur-sm'
+              )}
+            >
               <div className="relative text-center">
                 <div className="mb-6 inline-block rounded-2xl bg-gradient-to-r from-dynamic-pink to-dynamic-purple p-4 shadow-lg">
                   <Rocket className="h-12 w-12 text-white" />
@@ -1537,15 +1555,13 @@ export default function VietnameseWomensDayPage() {
       <section className="relative px-4 pb-20 sm:px-6 sm:pb-24 lg:px-8 lg:pb-32">
         <div className="mx-auto max-w-7xl">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            {...fadeInViewVariant(0)}
             className="flex items-center justify-center"
           >
             <LanguageSwitcher
               locale={locale}
               className="items-center justify-center"
+              reduceEffects={shouldReduceMotion}
             />
           </motion.div>
         </div>
