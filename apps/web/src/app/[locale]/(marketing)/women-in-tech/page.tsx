@@ -225,24 +225,6 @@ export default function VietnameseWomensDayPage() {
     [shouldReduceMotion]
   );
 
-  // Image scale animation variant - prevents blinking after animation
-  const imageScaleVariant = useMemo(
-    () =>
-      (delay = 0) => ({
-        initial: {
-          opacity: shouldReduceMotion ? 1 : 0,
-          scale: shouldReduceMotion ? 1 : 0.95,
-        },
-        whileInView: { opacity: 1, scale: 1 },
-        viewport: { once: true, amount: 0.3 },
-        transition: {
-          duration: shouldReduceMotion ? 0 : 0.5,
-          delay: shouldReduceMotion ? 0 : delay,
-        },
-      }),
-    [shouldReduceMotion]
-  );
-
   // Image slide animation variant - prevents blinking after animation
   const imageSlideVariant = useMemo(
     () =>
@@ -362,11 +344,10 @@ export default function VietnameseWomensDayPage() {
       {/* Inspirational Quote Section */}
       <section className="relative px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
         <div className="mx-auto max-w-5xl">
-          <motion.div {...fadeInViewVariant(0)} className="relative">
+          <div className="relative">
             <Card
               className={cn(
-                'relative overflow-hidden border border-dynamic-purple/20 bg-gradient-to-br from-dynamic-pink/5 via-background to-dynamic-purple/5 p-12 text-center md:p-16',
-                !shouldReduceMotion && 'backdrop-blur-sm'
+                'relative border-2 border-dynamic-purple/20 bg-dynamic-purple/10 p-12 text-center md:p-16'
               )}
             >
               {/* Quote Icon */}
@@ -379,59 +360,38 @@ export default function VietnameseWomensDayPage() {
 
               {/* Quote Content */}
               <div className="relative">
-                <motion.div
-                  {...imageScaleVariant(0.2)}
-                  className="mb-6 text-6xl text-dynamic-pink/40"
-                >
-                  "
-                </motion.div>
+                <div className="mb-6 text-6xl text-dynamic-pink/40">"</div>
 
-                <motion.p
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.3, duration: 0.6 }}
-                  className="mb-6 bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-pink bg-clip-text pb-4 font-bold text-2xl text-transparent sm:text-3xl md:text-4xl"
-                >
+                <p className="mb-6 bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-pink bg-clip-text pb-4 font-bold text-2xl text-transparent sm:text-3xl md:text-4xl">
                   {t('quote.text')}
-                </motion.p>
+                </p>
 
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.4, duration: 0.6 }}
-                  className="flex items-center justify-center gap-2 text-foreground/60"
-                >
+                <div className="flex items-center justify-center gap-2 text-foreground/60">
                   <div className="h-px w-8 bg-gradient-to-r from-transparent to-dynamic-purple/50" />
                   <span className="font-medium text-sm">
                     {t('quote.author')}
                   </span>
                   <div className="h-px w-8 bg-gradient-to-l from-transparent to-dynamic-pink/50" />
-                </motion.div>
+                </div>
               </div>
             </Card>
-          </motion.div>
+          </div>
         </div>
       </section>
 
       {/* CEO Message Section */}
       <section className="relative px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
         <div className="mx-auto max-w-6xl">
-          <motion.div {...fadeInViewVariant(0)}>
+          <div>
             <Card
               className={cn(
-                'overflow-hidden border border-dynamic-purple/20 bg-gradient-to-br from-background/80 to-background p-8 shadow-xl md:p-12',
-                !shouldReduceMotion && 'backdrop-blur-sm'
+                'overflow-hidden border border-dynamic-purple/20 bg-dynamic-purple/10 p-8 shadow-xl md:p-12'
               )}
             >
               <div className="flex flex-col gap-8 md:flex-row md:items-start">
                 {/* CEO Image */}
-                <motion.div
-                  {...imageScaleVariant(0)}
-                  className="flex shrink-0 flex-col items-center gap-4"
-                >
-                  <div className="group relative h-64 w-64 overflow-hidden rounded-2xl border-2 border-dynamic-purple/30 shadow-xl transition-all hover:border-dynamic-purple/50 hover:shadow-2xl">
+                <div className="flex shrink-0 flex-col items-center gap-4">
+                  <div className="group relative h-64 w-64 overflow-hidden rounded-2xl border-2 border-dynamic-purple/30 bg-dynamic-purple/5 shadow-xl transition-all hover:border-dynamic-purple/50 hover:shadow-2xl">
                     <Image
                       src="/media/marketing/events/women-in-tech/founder.jpg"
                       alt={t('ceo.name')}
@@ -452,7 +412,7 @@ export default function VietnameseWomensDayPage() {
                       {t('ceo.company')}
                     </div>
                   </div>
-                </motion.div>
+                </div>
 
                 {/* CEO Message */}
                 <div className="flex-1">
@@ -473,16 +433,8 @@ export default function VietnameseWomensDayPage() {
                         'paragraph3',
                         'paragraph4',
                       ] as const
-                    ).map((key, index) => (
-                      <motion.p
-                        key={key}
-                        initial={{ opacity: 0, x: -20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: index * 0.1, duration: 0.5 }}
-                      >
-                        {t(`ceo.message.${key}` as any)}
-                      </motion.p>
+                    ).map((key) => (
+                      <p key={key}>{t(`ceo.message.${key}` as any)}</p>
                     ))}
                   </div>
 
@@ -497,7 +449,7 @@ export default function VietnameseWomensDayPage() {
                 </div>
               </div>
             </Card>
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -682,7 +634,8 @@ export default function VietnameseWomensDayPage() {
                 titleKey: 'impact.stats.innovation.title',
                 subtitleKey: 'impact.stats.innovation.subtitle',
                 descriptionKey: 'impact.stats.innovation.description',
-                color: 'yellow',
+                color:
+                  'border-dynamic-yellow/30 bg-dynamic-yellow/10 hover:border-dynamic-yellow/50',
                 gradient: 'from-dynamic-yellow to-dynamic-orange',
               },
               {
@@ -690,7 +643,8 @@ export default function VietnameseWomensDayPage() {
                 titleKey: 'impact.stats.leadership.title',
                 subtitleKey: 'impact.stats.leadership.subtitle',
                 descriptionKey: 'impact.stats.leadership.description',
-                color: 'purple',
+                color:
+                  'border-dynamic-purple/30 bg-dynamic-purple/10 hover:border-dynamic-purple/50',
                 gradient: 'from-dynamic-purple to-dynamic-pink',
               },
               {
@@ -698,7 +652,8 @@ export default function VietnameseWomensDayPage() {
                 titleKey: 'impact.stats.growth.title',
                 subtitleKey: 'impact.stats.growth.subtitle',
                 descriptionKey: 'impact.stats.growth.description',
-                color: 'blue',
+                color:
+                  'border-dynamic-blue/30 bg-dynamic-blue/10 hover:border-dynamic-blue/50',
                 gradient: 'from-dynamic-blue to-dynamic-cyan',
               },
             ].map((stat, index) => (
@@ -712,7 +667,7 @@ export default function VietnameseWomensDayPage() {
                 <Card
                   className={cn(
                     'group hover:-translate-y-2 h-full p-8 text-center transition-all hover:shadow-lg',
-                    `border-dynamic-${stat.color}/30 hover:border-dynamic-${stat.color}/50`
+                    stat.color
                   )}
                 >
                   <div
@@ -777,37 +732,43 @@ export default function VietnameseWomensDayPage() {
                 icon: Star,
                 titleKey: 'values.items.excellence.title',
                 descriptionKey: 'values.items.excellence.description',
-                color: 'yellow',
+                color:
+                  'border-dynamic-yellow/30 bg-dynamic-yellow/10 hover:border-dynamic-yellow/50',
               },
               {
                 icon: Lightbulb,
                 titleKey: 'values.items.innovation.title',
                 descriptionKey: 'values.items.innovation.description',
-                color: 'orange',
+                color:
+                  'border-dynamic-orange/30 bg-dynamic-orange/10 hover:border-dynamic-orange/50',
               },
               {
                 icon: Users,
                 titleKey: 'values.items.collaboration.title',
                 descriptionKey: 'values.items.collaboration.description',
-                color: 'blue',
+                color:
+                  'border-dynamic-blue/30 bg-dynamic-blue/10 hover:border-dynamic-blue/50',
               },
               {
                 icon: GraduationCap,
                 titleKey: 'values.items.growth.title',
                 descriptionKey: 'values.items.growth.description',
-                color: 'purple',
+                color:
+                  'border-dynamic-purple/30 bg-dynamic-purple/10 hover:border-dynamic-purple/50',
               },
               {
                 icon: Heart,
                 titleKey: 'values.items.inclusion.title',
                 descriptionKey: 'values.items.inclusion.description',
-                color: 'pink',
+                color:
+                  'border-dynamic-pink/30 bg-dynamic-pink/10 hover:border-dynamic-pink/50',
               },
               {
                 icon: Code2,
                 titleKey: 'values.items.excellence-tech.title',
                 descriptionKey: 'values.items.excellence-tech.description',
-                color: 'green',
+                color:
+                  'border-dynamic-green/30 bg-dynamic-green/10 hover:border-dynamic-green/50',
               },
             ].map((value, index) => (
               <motion.div
@@ -820,7 +781,7 @@ export default function VietnameseWomensDayPage() {
                 <Card
                   className={cn(
                     'hover:-translate-y-1 h-full p-6 transition-all hover:shadow-md',
-                    `border-dynamic-${value.color}/30 hover:border-dynamic-${value.color}/50`
+                    value.color
                   )}
                 >
                   <div
@@ -883,25 +844,29 @@ export default function VietnameseWomensDayPage() {
                 {
                   key: 'founding',
                   icon: Calendar,
-                  color: 'pink',
+                  color:
+                    'border-dynamic-pink/30 bg-dynamic-pink/10 hover:border-dynamic-pink/50',
                   gradient: 'from-dynamic-pink to-dynamic-red',
                 },
                 {
                   key: 'growth',
                   icon: TrendingUp,
-                  color: 'purple',
+                  color:
+                    'border-dynamic-purple/30 bg-dynamic-purple/10 hover:border-dynamic-purple/50',
                   gradient: 'from-dynamic-purple to-dynamic-pink',
                 },
                 {
                   key: 'mentorship',
                   icon: Users,
-                  color: 'blue',
+                  color:
+                    'border-dynamic-blue/30 bg-dynamic-blue/10 hover:border-dynamic-blue/50',
                   gradient: 'from-dynamic-blue to-dynamic-purple',
                 },
                 {
                   key: 'community',
                   icon: Award,
-                  color: 'green',
+                  color:
+                    'border-dynamic-green/30 bg-dynamic-green/10 hover:border-dynamic-green/50',
                   gradient: 'from-dynamic-green to-dynamic-blue',
                 },
               ].map((achievement, index) => (
@@ -928,7 +893,7 @@ export default function VietnameseWomensDayPage() {
                     <Card
                       className={cn(
                         'hover:-translate-y-1 p-6 transition-all hover:shadow-lg',
-                        `border-dynamic-${achievement.color}/30 hover:border-dynamic-${achievement.color}/50`
+                        achievement.color
                       )}
                     >
                       <div
@@ -1017,17 +982,20 @@ export default function VietnameseWomensDayPage() {
               {
                 key: 'vietnam',
                 gradient: 'from-dynamic-red to-dynamic-yellow',
-                color: 'red',
+                color:
+                  'border-dynamic-red/30 bg-dynamic-red/10 hover:border-dynamic-red/50',
               },
               {
                 key: 'global',
                 gradient: 'from-dynamic-blue to-dynamic-purple',
-                color: 'blue',
+                color:
+                  'border-dynamic-blue/30 bg-dynamic-blue/10 hover:border-dynamic-blue/50',
               },
               {
                 key: 'future',
                 gradient: 'from-dynamic-purple to-dynamic-pink',
-                color: 'purple',
+                color:
+                  'border-dynamic-purple/30 bg-dynamic-purple/10 hover:border-dynamic-purple/50',
               },
             ].map((item, index) => (
               <motion.div
@@ -1040,7 +1008,7 @@ export default function VietnameseWomensDayPage() {
                 <Card
                   className={cn(
                     'group hover:-translate-y-2 h-full p-8 text-center transition-all hover:shadow-xl',
-                    `border-dynamic-${item.color}/30 hover:border-dynamic-${item.color}/50`
+                    item.color
                   )}
                 >
                   <div
@@ -1117,7 +1085,7 @@ export default function VietnameseWomensDayPage() {
           </motion.div>
 
           <div>
-            <Card className="group overflow-hidden border border-dynamic-pink/30 p-0 shadow-xl backdrop-blur-sm transition-all hover:border-dynamic-pink/50 hover:shadow-2xl">
+            <Card className="group overflow-hidden border border-dynamic-pink/30 bg-dynamic-pink/10 p-0 shadow-xl backdrop-blur-sm transition-all hover:border-dynamic-pink/50 hover:shadow-2xl">
               <div className="relative aspect-video w-full overflow-hidden bg-dynamic-pink/5">
                 <Image
                   src="/media/marketing/events/women-in-tech/team.jpg"
@@ -1128,7 +1096,7 @@ export default function VietnameseWomensDayPage() {
                   loading="eager"
                   priority
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-dynamic-pink/20 via-dynamic-pink/10 to-transparent" />
               </div>
 
               <div className="p-8 text-center">
@@ -1163,19 +1131,22 @@ export default function VietnameseWomensDayPage() {
               {
                 key: 'perspective',
                 icon: Eye,
-                color: 'pink',
+                color:
+                  'border-dynamic-pink/30 bg-dynamic-pink/10 hover:border-dynamic-pink/50',
                 gradient: 'from-dynamic-pink to-dynamic-red',
               },
               {
                 key: 'creativity',
                 icon: Palette,
-                color: 'purple',
+                color:
+                  'border-dynamic-purple/30 bg-dynamic-purple/10 hover:border-dynamic-purple/50',
                 gradient: 'from-dynamic-purple to-dynamic-pink',
               },
               {
                 key: 'market',
                 icon: Globe,
-                color: 'blue',
+                color:
+                  'border-dynamic-blue/30 bg-dynamic-blue/10 hover:border-dynamic-blue/50',
                 gradient: 'from-dynamic-blue to-dynamic-cyan',
               },
             ].map((item, index) => (
@@ -1189,7 +1160,7 @@ export default function VietnameseWomensDayPage() {
                 <Card
                   className={cn(
                     'group hover:-translate-y-2 h-full p-8 transition-all hover:shadow-xl',
-                    `border-dynamic-${item.color}/30 hover:border-dynamic-${item.color}/50`
+                    item.color
                   )}
                 >
                   {/* Icon */}
@@ -1238,237 +1209,216 @@ export default function VietnameseWomensDayPage() {
       {/* Partnerships Section */}
       <section className="relative px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
         <div className="mx-auto max-w-7xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mb-16 text-center"
-          >
+          <div className="mb-16 text-center">
             <h2 className="mb-4 bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text pb-4 font-bold text-4xl text-transparent sm:text-5xl lg:text-6xl">
               {t('partnerships.title')}
             </h2>
             <p className="mx-auto max-w-2xl text-foreground/70 text-lg">
               {t('partnerships.subtitle')}
             </p>
-          </motion.div>
+          </div>
 
           <div className="grid gap-8 md:grid-cols-2 2xl:grid-cols-4">
             {/* AllMind Partnership - Sophie & Sweet */}
-            <motion.div {...fadeInViewVariant(0)}>
-              <Card className="h-full overflow-hidden border-2 border-dynamic-purple/30 p-0 shadow-xl transition-all hover:border-dynamic-purple/50 hover:shadow-2xl">
-                <div className="relative aspect-video overflow-hidden">
-                  <Image
-                    src="/media/marketing/events/women-in-tech/empowering-women-led-startup-partners-from-allmind-2.jpeg"
-                    alt="AllMind: Sophie & Sweet"
-                    fill
-                    className="object-cover transition-transform duration-500 hover:scale-105"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
+            <Card className="h-full overflow-hidden border-2 border-dynamic-blue/30 bg-dynamic-blue/10 p-0 shadow-xl transition-all hover:border-dynamic-blue/50 hover:shadow-2xl">
+              <div className="relative aspect-video overflow-hidden">
+                <Image
+                  src="/media/marketing/events/women-in-tech/empowering-women-led-startup-partners-from-allmind-2.jpeg"
+                  alt="AllMind: Sophie & Sweet"
+                  fill
+                  className="object-cover transition-transform duration-500 hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+              </div>
+              <div className="p-8">
+                <div className="mb-4 inline-block rounded-full bg-dynamic-blue/10 px-4 py-2">
+                  <span className="font-semibold text-dynamic-blue text-sm">
+                    {t('partnerships.allmind.title')}
+                  </span>
                 </div>
-                <div className="p-8">
-                  <div className="mb-4 inline-block rounded-full bg-dynamic-purple/10 px-4 py-2">
-                    <span className="font-semibold text-dynamic-purple text-sm">
-                      {t('partnerships.allmind.title')}
-                    </span>
-                  </div>
-                  <p className="text-foreground/80">
-                    {t('partnerships.allmind.description')}
-                  </p>
-                </div>
-              </Card>
-            </motion.div>
+                <p className="text-foreground/80">
+                  {t('partnerships.allmind.description')}
+                </p>
+              </div>
+            </Card>
 
             {/* RMIT University - Professor Iwona, Hoa & Nguyên */}
-            <motion.div {...fadeInViewVariant(0.1)}>
-              <Card className="h-full overflow-hidden border-2 border-dynamic-blue/30 p-0 shadow-xl transition-all hover:border-dynamic-blue/50 hover:shadow-2xl">
-                <div className="relative aspect-video overflow-hidden">
-                  <Image
-                    src="/media/marketing/events/women-in-tech/professor-iwona-miliszewska-dean-of-sset-rmit.jpg"
-                    alt="RMIT University: Professor Iwona, Hoa & Nguyên"
-                    fill
-                    className="object-cover transition-transform duration-500 hover:scale-105"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
+            <Card className="h-full overflow-hidden border-2 border-dynamic-red/30 bg-dynamic-red/10 p-0 shadow-xl transition-all hover:border-dynamic-red/50 hover:shadow-2xl">
+              <div className="relative aspect-video overflow-hidden">
+                <Image
+                  src="/media/marketing/events/women-in-tech/professor-iwona-miliszewska-dean-of-sset-rmit.jpg"
+                  alt="RMIT University: Professor Iwona, Hoa & Nguyên"
+                  fill
+                  className="object-cover transition-transform duration-500 hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+              </div>
+              <div className="p-8">
+                <div className="mb-4 inline-block rounded-full bg-dynamic-red/10 px-4 py-2">
+                  <span className="font-semibold text-dynamic-red text-sm">
+                    {t('partnerships.rmit.title')}
+                  </span>
                 </div>
-                <div className="p-8">
-                  <div className="mb-4 inline-block rounded-full bg-dynamic-blue/10 px-4 py-2">
-                    <span className="font-semibold text-dynamic-blue text-sm">
-                      {t('partnerships.rmit.title')}
-                    </span>
-                  </div>
-                  <p className="text-foreground/80">
-                    {t('partnerships.rmit.description')}
-                  </p>
-                  <Link
-                    href={t('partnerships.rmit.link')}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-4 inline-flex items-center gap-2 text-dynamic-blue text-sm transition-colors hover:text-dynamic-blue/80"
-                  >
-                    {t('partnerships.rmit.linkText')}
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </div>
-              </Card>
-            </motion.div>
+                <p className="text-foreground/80">
+                  {t('partnerships.rmit.description')}
+                </p>
+                <Link
+                  href={t('partnerships.rmit.link')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center gap-2 text-dynamic-red text-sm transition-colors hover:text-dynamic-red/80"
+                >
+                  {t('partnerships.rmit.linkText')}
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </Card>
 
             {/* SPARK Hub - Tien */}
-            <motion.div {...fadeInViewVariant(0.05)}>
-              <Card className="h-full overflow-hidden border-2 border-dynamic-green/30 p-0 shadow-xl transition-all hover:border-dynamic-green/50 hover:shadow-2xl">
-                <div className="relative aspect-video overflow-hidden">
-                  <Image
-                    src="/media/marketing/events/women-in-tech/spark-hub-program-coordinator.jpeg"
-                    alt="SPARK Hub: Tien"
-                    fill
-                    className="object-cover transition-transform duration-500 hover:scale-105"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
+            <Card className="h-full overflow-hidden border-2 border-dynamic-green/30 bg-dynamic-green/10 p-0 shadow-xl transition-all hover:border-dynamic-green/50 hover:shadow-2xl">
+              <div className="relative aspect-video overflow-hidden">
+                <Image
+                  src="/media/marketing/events/women-in-tech/spark-hub-program-coordinator.jpeg"
+                  alt="SPARK Hub: Tien"
+                  fill
+                  className="object-cover transition-transform duration-500 hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+              </div>
+              <div className="p-8">
+                <div className="mb-4 inline-block rounded-full bg-dynamic-green/10 px-4 py-2">
+                  <span className="font-semibold text-dynamic-green text-sm">
+                    {t('partnerships.sparkHub.title')}
+                  </span>
                 </div>
-                <div className="p-8">
-                  <div className="mb-4 inline-block rounded-full bg-dynamic-green/10 px-4 py-2">
-                    <span className="font-semibold text-dynamic-green text-sm">
-                      {t('partnerships.sparkHub.title')}
-                    </span>
-                  </div>
-                  <p className="text-foreground/80">
-                    {t('partnerships.sparkHub.description')}
+                <p className="text-foreground/80">
+                  {t('partnerships.sparkHub.description')}
+                </p>
+                <div className="mt-4 rounded-r-lg border-dynamic-green/30 border-l-4 bg-dynamic-green/5 p-4">
+                  <p className="text-foreground/70 text-sm italic">
+                    "{t('partnerships.sparkHub.quote')}"
                   </p>
-                  <div className="mt-4 rounded-r-lg border-dynamic-green/30 border-l-4 bg-dynamic-green/5 p-4">
-                    <p className="text-foreground/70 text-sm italic">
-                      "{t('partnerships.sparkHub.quote')}"
-                    </p>
-                    <p className="mt-2 text-foreground/60 text-xs">
-                      — Tiên, SPARK Hub
-                    </p>
-                  </div>
+                  <p className="mt-2 text-foreground/60 text-xs">
+                    — Tiên, SPARK Hub
+                  </p>
                 </div>
-              </Card>
-            </motion.div>
+              </div>
+            </Card>
 
             {/* SOKI Startup - Kim */}
-            <motion.div {...fadeInViewVariant(0.15)}>
-              <Card className="h-full overflow-hidden border-2 border-dynamic-orange/30 p-0 shadow-xl transition-all hover:border-dynamic-orange/50 hover:shadow-2xl">
-                <div className="relative aspect-video overflow-hidden">
-                  <Image
-                    src="/media/marketing/events/women-in-tech/soki-startup-another-women-led-startup-also-tuturuuus-neighbor-inside-spark-hub-community.jpg"
-                    alt="SOKI Startup: Kim"
-                    fill
-                    className="object-cover transition-transform duration-500 hover:scale-105"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
+            <Card className="h-full overflow-hidden border-2 border-dynamic-orange/30 bg-dynamic-orange/10 p-0 shadow-xl transition-all hover:border-dynamic-orange/50 hover:shadow-2xl">
+              <div className="relative aspect-video overflow-hidden">
+                <Image
+                  src="/media/marketing/events/women-in-tech/soki-startup-another-women-led-startup-also-tuturuuus-neighbor-inside-spark-hub-community.jpg"
+                  alt="SOKI Startup: Kim"
+                  fill
+                  className="object-cover transition-transform duration-500 hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+              </div>
+              <div className="p-8">
+                <div className="mb-4 inline-block rounded-full bg-dynamic-orange/10 px-4 py-2">
+                  <span className="font-semibold text-dynamic-orange text-sm">
+                    {t('partnerships.soki.title')}
+                  </span>
                 </div>
-                <div className="p-8">
-                  <div className="mb-4 inline-block rounded-full bg-dynamic-orange/10 px-4 py-2">
-                    <span className="font-semibold text-dynamic-orange text-sm">
-                      {t('partnerships.soki.title')}
-                    </span>
-                  </div>
-                  <p className="text-foreground/80">
-                    {t('partnerships.soki.description')}
-                  </p>
-                </div>
-              </Card>
-            </motion.div>
+                <p className="text-foreground/80">
+                  {t('partnerships.soki.description')}
+                </p>
+              </div>
+            </Card>
 
             {/* Mai Nhung - rbac.vn Developer */}
-            <motion.div {...fadeInViewVariant(0.2)}>
-              <Card className="h-full overflow-hidden border-2 border-dynamic-cyan/30 p-0 shadow-xl transition-all hover:border-dynamic-cyan/50 hover:shadow-2xl">
-                <div className="relative aspect-video overflow-hidden">
-                  <Image
-                    src="/media/marketing/events/women-in-tech/rbac-website-designed-and-developed-by-mai-nhung.jpg"
-                    alt="Mai Nhung: rbac.vn Developer"
-                    fill
-                    className="object-cover transition-transform duration-500 hover:scale-105"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
+            <Card className="h-full overflow-hidden border-2 border-dynamic-cyan/30 bg-dynamic-cyan/10 p-0 shadow-xl transition-all hover:border-dynamic-cyan/50 hover:shadow-2xl">
+              <div className="relative aspect-video overflow-hidden">
+                <Image
+                  src="/media/marketing/events/women-in-tech/rbac-website-designed-and-developed-by-mai-nhung.jpg"
+                  alt="Mai Nhung: rbac.vn Developer"
+                  fill
+                  className="object-cover transition-transform duration-500 hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+              </div>
+              <div className="p-8">
+                <div className="mb-4 inline-block rounded-full bg-dynamic-cyan/10 px-4 py-2">
+                  <span className="font-semibold text-dynamic-cyan text-sm">
+                    {t('partnerships.nhung.title')}
+                  </span>
                 </div>
-                <div className="p-8">
-                  <div className="mb-4 inline-block rounded-full bg-dynamic-cyan/10 px-4 py-2">
-                    <span className="font-semibold text-dynamic-cyan text-sm">
-                      {t('partnerships.nhung.title')}
-                    </span>
-                  </div>
-                  <p className="text-foreground/80">
-                    {t('partnerships.nhung.description')}
-                  </p>
-                </div>
-              </Card>
-            </motion.div>
+                <p className="text-foreground/80">
+                  {t('partnerships.nhung.description')}
+                </p>
+              </div>
+            </Card>
 
             {/* Đài - RBAC Project Leader */}
-            <motion.div {...fadeInViewVariant(0.25)}>
-              <Card className="h-full overflow-hidden border-2 border-dynamic-purple/30 p-0 shadow-xl transition-all hover:border-dynamic-purple/50 hover:shadow-2xl">
-                <div className="relative aspect-video overflow-hidden">
-                  <Image
-                    src="/media/marketing/events/women-in-tech/dai-rbac-project-leader.jpg"
-                    alt="Đài: RBAC Project Leader"
-                    fill
-                    className="object-cover transition-transform duration-500 hover:scale-105"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
+            <Card className="h-full overflow-hidden border-2 border-dynamic-purple/30 bg-dynamic-purple/10 p-0 shadow-xl transition-all hover:border-dynamic-purple/50 hover:shadow-2xl">
+              <div className="relative aspect-video overflow-hidden">
+                <Image
+                  src="/media/marketing/events/women-in-tech/dai-rbac-project-leader.jpg"
+                  alt="Đài: RBAC Project Leader"
+                  fill
+                  className="object-cover transition-transform duration-500 hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+              </div>
+              <div className="p-8">
+                <div className="mb-4 inline-block rounded-full bg-dynamic-purple/10 px-4 py-2">
+                  <span className="font-semibold text-dynamic-purple text-sm">
+                    {t('partnerships.dai.title')}
+                  </span>
                 </div>
-                <div className="p-8">
-                  <div className="mb-4 inline-block rounded-full bg-dynamic-purple/10 px-4 py-2">
-                    <span className="font-semibold text-dynamic-purple text-sm">
-                      {t('partnerships.dai.title')}
-                    </span>
-                  </div>
-                  <p className="text-foreground/80">
-                    {t('partnerships.dai.description')}
-                  </p>
-                </div>
-              </Card>
-            </motion.div>
+                <p className="text-foreground/80">
+                  {t('partnerships.dai.description')}
+                </p>
+              </div>
+            </Card>
 
             {/* Như - RBAC Project Assistant */}
-            <motion.div {...fadeInViewVariant(0.3)}>
-              <Card className="h-full overflow-hidden border-2 border-dynamic-indigo/30 p-0 shadow-xl transition-all hover:border-dynamic-indigo/50 hover:shadow-2xl">
-                <div className="relative aspect-video overflow-hidden">
-                  <Image
-                    src="/media/marketing/events/women-in-tech/nhu-rbac-project-assistant.jpg"
-                    alt="Như: RBAC Project Assistant"
-                    fill
-                    className="object-cover transition-transform duration-500 hover:scale-105"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
+            <Card className="h-full overflow-hidden border-2 border-dynamic-blue/30 bg-dynamic-blue/10 p-0 shadow-xl transition-all hover:border-dynamic-blue/50 hover:shadow-2xl">
+              <div className="relative aspect-video overflow-hidden">
+                <Image
+                  src="/media/marketing/events/women-in-tech/nhu-rbac-project-assistant.jpg"
+                  alt="Như: RBAC Project Assistant"
+                  fill
+                  className="object-cover transition-transform duration-500 hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+              </div>
+              <div className="p-8">
+                <div className="mb-4 inline-block rounded-full bg-dynamic-blue/10 px-4 py-2">
+                  <span className="font-semibold text-dynamic-blue text-sm">
+                    {t('partnerships.nhu.title')}
+                  </span>
                 </div>
-                <div className="p-8">
-                  <div className="mb-4 inline-block rounded-full bg-dynamic-indigo/10 px-4 py-2">
-                    <span className="font-semibold text-dynamic-indigo text-sm">
-                      {t('partnerships.nhu.title')}
-                    </span>
-                  </div>
-                  <p className="text-foreground/80">
-                    {t('partnerships.nhu.description')}
-                  </p>
-                </div>
-              </Card>
-            </motion.div>
+                <p className="text-foreground/80">
+                  {t('partnerships.nhu.description')}
+                </p>
+              </div>
+            </Card>
 
             {/* Community Engagement */}
-            <motion.div {...fadeInViewVariant(0.35)}>
-              <Card className="h-full overflow-hidden border-2 border-dynamic-pink/30 p-0 shadow-xl transition-all hover:border-dynamic-pink/50 hover:shadow-2xl">
-                <div className="relative aspect-video overflow-hidden">
-                  <Image
-                    src="/media/marketing/events/women-in-tech/empowering-women-in-stem-from-student-club.jpg"
-                    alt="Community Partnerships"
-                    fill
-                    className="object-cover transition-transform duration-500 hover:scale-105"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
+            <Card className="h-full overflow-hidden border-2 border-dynamic-pink/30 bg-dynamic-pink/10 p-0 shadow-xl transition-all hover:border-dynamic-pink/50 hover:shadow-2xl">
+              <div className="relative aspect-video overflow-hidden">
+                <Image
+                  src="/media/marketing/events/women-in-tech/empowering-women-in-stem-from-student-club.jpg"
+                  alt="Community Partnerships"
+                  fill
+                  className="object-cover transition-transform duration-500 hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+              </div>
+              <div className="p-8">
+                <div className="mb-4 inline-block rounded-full bg-dynamic-pink/10 px-4 py-2">
+                  <span className="font-semibold text-dynamic-pink text-sm">
+                    {t('partnerships.community.title')}
+                  </span>
                 </div>
-                <div className="p-8">
-                  <div className="mb-4 inline-block rounded-full bg-dynamic-pink/10 px-4 py-2">
-                    <span className="font-semibold text-dynamic-pink text-sm">
-                      {t('partnerships.community.title')}
-                    </span>
-                  </div>
-                  <p className="text-foreground/80">
-                    {t('partnerships.community.description')}
-                  </p>
-                </div>
-              </Card>
-            </motion.div>
+                <p className="text-foreground/80">
+                  {t('partnerships.community.description')}
+                </p>
+              </div>
+            </Card>
           </div>
         </div>
       </section>
