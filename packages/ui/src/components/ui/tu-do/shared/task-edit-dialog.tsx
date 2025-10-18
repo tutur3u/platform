@@ -95,7 +95,7 @@ import {
 import { SlashCommandMenu } from './slash-commands/slash-command-menu';
 import { SyncWarningDialog } from './sync-warning-dialog';
 import type { TaskFilters } from './types';
-import { UserPresenceAvatarsComponent } from './user-presence-avatars';
+import { TaskDialogAvatarsComponent } from './user-presence-avatars';
 
 // Module-level Supabase client singleton to avoid repeated instantiation
 const supabase = createClient();
@@ -3679,9 +3679,10 @@ function TaskEditDialogComponent({
                 )}
 
                 {/* Online Users */}
-                {collaborationMode && isOpen && !isCreateMode && (
-                  <UserPresenceAvatarsComponent
-                    channelName={`task_presence_${task?.id}`}
+                {collaborationMode && isOpen && !isCreateMode && task?.id && (
+                  <TaskDialogAvatarsComponent
+                    boardId={boardId}
+                    taskId={task.id}
                   />
                 )}
                 {isCreateMode && (

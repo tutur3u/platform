@@ -3,7 +3,7 @@
 import { User } from '@tuturuuu/icons';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import type { UserPresenceState } from '@tuturuuu/ui/hooks/usePresence';
+import type { UserPresenceState as BaseUserPresenceState } from '@tuturuuu/ui/hooks/usePresence';
 import { usePresence } from '@tuturuuu/ui/hooks/usePresence';
 import {
   HoverCard,
@@ -12,26 +12,75 @@ import {
 } from '@tuturuuu/ui/hover-card';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+import { useEffect } from 'react';
+import {
+  type UserPresenceState,
+  useTaskViewerContext,
+} from '../providers/task-viewer-provider';
 
 interface UserPresenceAvatarsProps {
-  presenceState: RealtimePresenceState<UserPresenceState>;
+  presenceState:
+    | RealtimePresenceState<UserPresenceState>
+    | RealtimePresenceState<BaseUserPresenceState>;
   currentUserId?: string;
   maxDisplay?: number;
   avatarClassName?: string;
 }
 
-export function UserPresenceAvatarsComponent({
-  channelName,
-  trackCurrentUser = true,
-  avatarClassName,
+export function TaskViewerAvatarsComponent({
+  boardId,
+  taskId,
 }: {
-  channelName: string;
-  trackCurrentUser?: boolean;
-  avatarClassName?: string;
+  boardId: string;
+  taskId: string;
 }) {
+  const { getTaskViewers, currentUserId, viewTask, unviewTask } =
+    useTaskViewerContext();
+
+  useEffect(() => {
+    // Start tracking board presence when component mounts
+    viewTask(taskId, boardId);
+
+    // Stop tracking when component unmounts
+    return () => {
+      unviewTask();
+    };
+  }, [taskId, boardId, viewTask, unviewTask]);
+
+  // Get viewers for the board (not per task)
+  const presenceState = getTaskViewers(taskId);
+
+  return (
+    <UserPresenceAvatars
+      presenceState={presenceState}
+      currentUserId={currentUserId}
+      maxDisplay={5}
+      avatarClassName="size-4 sm:size-5"
+    />
+  );
+}
+
+export function TaskDialogAvatarsComponent({
+  boardId,
+  taskId,
+}: {
+  boardId: string;
+  taskId: string;
+}) {
+  const { viewTask, unviewTask } = useTaskViewerContext();
+
+  useEffect(() => {
+    // Start tracking board presence when dialog opens
+    viewTask(taskId, boardId);
+
+    // Stop tracking when dialog closes
+    return () => {
+      unviewTask();
+    };
+  }, [taskId, boardId, viewTask, unviewTask]);
+
   const { presenceState, currentUserId } = usePresence(
-    channelName,
-    trackCurrentUser
+    `task_dialog_presence_${boardId}`
   );
 
   return (
@@ -39,7 +88,22 @@ export function UserPresenceAvatarsComponent({
       presenceState={presenceState}
       currentUserId={currentUserId}
       maxDisplay={5}
-      avatarClassName={avatarClassName}
+    />
+  );
+}
+
+export function UserPresenceAvatarsComponent({
+  channelName,
+}: {
+  channelName: string;
+}) {
+  const { presenceState, currentUserId } = usePresence(channelName);
+
+  return (
+    <UserPresenceAvatars
+      presenceState={presenceState}
+      currentUserId={currentUserId}
+      maxDisplay={5}
     />
   );
 }

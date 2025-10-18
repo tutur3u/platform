@@ -62,7 +62,7 @@ import { useTaskProjectManagement } from '../../hooks/useTaskProjectManagement';
 import { AssigneeSelect } from '../../shared/assignee-select';
 import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
-import { UserPresenceAvatarsComponent } from '../../shared/user-presence-avatars';
+import { TaskViewerAvatarsComponent } from '../../shared/user-presence-avatars';
 import {
   getAssigneeInitials,
   getCardColorClasses as getCardColorClassesUtil,
@@ -872,11 +872,7 @@ function TaskCardInner({
                 )}
             </div>
             <div className="flex items-center gap-2">
-              <UserPresenceAvatarsComponent
-                channelName={`task_presence_${task.id}`}
-                trackCurrentUser={dialogState.editDialogOpen}
-                avatarClassName="size-4 sm:size-5"
-              />
+              <TaskViewerAvatarsComponent boardId={boardId} taskId={task.id} />
 
               {/* Checkbox: always at far right */}
               <Checkbox
