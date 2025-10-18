@@ -50,6 +50,7 @@ import {
 } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+import { WORKSPACE_LIMIT_ERROR_CODE } from '@tuturuuu/utils/workspace-limits';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -137,7 +138,7 @@ export function WorkspaceSelect({
         // Check if it's a workspace limit error
         if (
           res.status === 403 &&
-          errorData.code === 'WORKSPACE_LIMIT_REACHED'
+          errorData.code === WORKSPACE_LIMIT_ERROR_CODE
         ) {
           toast.error(t('common.workspace_limit_reached'), {
             description: errorData.message,

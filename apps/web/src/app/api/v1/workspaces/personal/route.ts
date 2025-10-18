@@ -1,6 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { MAX_WORKSPACES_FOR_FREE_USERS } from '@tuturuuu/utils/constants';
-import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
+import { checkWorkspaceCreationLimit } from '@tuturuuu/utils/workspace-limits';
 import { NextResponse } from 'next/server';
 
 export async function POST() {
@@ -28,31 +27,23 @@ export async function POST() {
     );
   }
 
-  // Check workspace creation limits for non-Tuturuuu emails
-  if (!isValidTuturuuuEmail(user.email)) {
-    const { count, error: countError } = await supabase
-      .from('workspaces')
-      .select('*', { count: 'exact', head: true })
-      .eq('creator_id', user.id)
-      .eq('deleted', false);
+  // Check workspace creation limits
+  const limitCheck = await checkWorkspaceCreationLimit(
+    supabase,
+    user.id,
+    user.email
+  );
 
-    if (countError) {
-      console.error('Error counting workspaces:', countError);
-      return NextResponse.json(
-        { message: 'Error checking workspace limit' },
-        { status: 500 }
-      );
-    }
-
-    if (count !== null && count >= MAX_WORKSPACES_FOR_FREE_USERS) {
-      return NextResponse.json(
-        {
-          message: `You have reached the maximum limit of ${MAX_WORKSPACES_FOR_FREE_USERS} workspaces. Please upgrade to a paid plan or contact the Tuturuuu team for more information.`,
-          code: 'WORKSPACE_LIMIT_REACHED',
-        },
-        { status: 403 }
-      );
-    }
+  if (!limitCheck.canCreate) {
+    const statusCode =
+      limitCheck.errorCode === 'WORKSPACE_COUNT_ERROR' ? 500 : 403;
+    return NextResponse.json(
+      {
+        message: limitCheck.errorMessage,
+        code: limitCheck.errorCode,
+      },
+      { status: statusCode }
+    );
   }
 
   const { data, error } = await supabase
