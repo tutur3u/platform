@@ -193,6 +193,9 @@
     "create_workspace": "Tạo không gian làm việc",
     "create_workspace_description": "Thêm một không gian làm việc mới để dễ dàng quản lý mọi thứ thiết yếu, và hợp tác với đội của bạn một cách hiệu quả.",
     "workspace_name": "Tên không gian làm việc",
+    "workspace_limit_reached": "Đã đạt giới hạn không gian làm việc",
+    "error_creating_workspace": "Lỗi khi tạo không gian làm việc",
+    "workspace_creation_failed": "Không thể tạo không gian làm việc. Vui lòng thử lại.",
     "subscription_plan": "Gói đăng ký",
     "free": "Miễn phí",
     "pro": "Chuyên nghiệp",
@@ -648,7 +651,8 @@
       "title": "Lỗi",
       "save-progress": "Không thể lưu tiến trình. Vui lòng thử lại.",
       "create-workspace": "Không thể tạo không gian làm việc. Vui lòng thử lại.",
-      "update-profile": "Không thể cập nhật hồ sơ. Vui lòng thử lại."
+      "update-profile": "Không thể cập nhật hồ sơ. Vui lòng thử lại.",
+      "workspace-limit-title": "Đã đạt giới hạn không gian làm việc"
     }
   },
   "meet-together": {
@@ -4784,7 +4788,14 @@
   },
   "personal-workspace": {
     "create_new_personal_workspace": "Tạo một không gian làm việc mới dành riêng cho bạn",
-    "change_prompt": "Bạn có thể thay đổi điều này sau trong cài đặt không gian làm việc"
+    "change_prompt": "Bạn có thể thay đổi điều này sau trong cài đặt không gian làm việc",
+    "workspace_limit_reached": "Đã đạt giới hạn không gian làm việc",
+    "create_failed": "Không thể tạo không gian làm việc",
+    "error_creating_workspace": "Không thể tạo không gian làm việc. Vui lòng thử lại.",
+    "workspace_created": "Không gian làm việc đã được tạo thành công",
+    "mark_failed": "Không thể đánh dấu không gian làm việc",
+    "error_marking_workspace": "Không thể đánh dấu không gian làm việc là cá nhân. Vui lòng thử lại.",
+    "workspace_marked": "Không gian làm việc đã được đánh dấu là cá nhân thành công"
   },
   "dashboard": {
     "recently_created_tasks": "Các tác vụ được tạo gần đây",

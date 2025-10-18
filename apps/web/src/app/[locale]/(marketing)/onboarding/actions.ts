@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { checkWorkspaceCreationLimit } from '@tuturuuu/utils/workspace-limits';
 import { redirect } from 'next/navigation';
 import type {
   OnboardingProgress,
@@ -154,6 +155,20 @@ export async function createWorkspaceFromOnboarding(
 
     if (authError || !user?.id || user.id !== userId) {
       return { success: false, error: 'Authentication error' };
+    }
+
+    // Check workspace creation limits
+    const limitCheck = await checkWorkspaceCreationLimit(
+      supabase,
+      user.id,
+      user.email
+    );
+
+    if (!limitCheck.canCreate) {
+      return {
+        success: false,
+        error: limitCheck.errorMessage,
+      };
     }
 
     // First, create the workspace

@@ -4,6 +4,9 @@ export const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
 export const INTERNAL_WORKSPACE_SLUG = 'internal';
 export const PERSONAL_WORKSPACE_SLUG = 'personal';
 
+// Workspace creation limits
+export const MAX_WORKSPACES_FOR_FREE_USERS = 10;
+
 export const resolveWorkspaceId = (identifier: string): string => {
   if (!identifier) return identifier;
 

@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { checkWorkspaceCreationLimit } from '@tuturuuu/utils/workspace-limits';
 import { NextResponse } from 'next/server';
 
 export async function POST() {
@@ -23,6 +24,25 @@ export async function POST() {
     return NextResponse.json(
       { message: 'Already has personal workspace' },
       { status: 400 }
+    );
+  }
+
+  // Check workspace creation limits
+  const limitCheck = await checkWorkspaceCreationLimit(
+    supabase,
+    user.id,
+    user.email
+  );
+
+  if (!limitCheck.canCreate) {
+    const statusCode =
+      limitCheck.errorCode === 'WORKSPACE_COUNT_ERROR' ? 500 : 403;
+    return NextResponse.json(
+      {
+        message: limitCheck.errorMessage,
+        code: limitCheck.errorCode,
+      },
+      { status: statusCode }
     );
   }
 
