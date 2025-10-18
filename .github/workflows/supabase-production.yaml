@@ -66,13 +66,17 @@ jobs:
           echo "Staging migration status: $STAGING_STATUS"
           echo "Staging migration conclusion: $STAGING_CONCLUSION"
 
-          if [ "$STAGING_CONCLUSION" != "success" ]; then
+          if [ "$STAGING_CONCLUSION" != "success" ] && [ "$STAGING_CONCLUSION" != "skipped" ]; then
             echo "❌ Staging migration has not completed successfully. Cannot proceed with production migration."
             echo "Please ensure staging migration completes successfully before deploying to production."
             exit 1
           fi
 
-          echo "✅ Staging migration completed successfully."
+          if [ "$STAGING_CONCLUSION" = "skipped" ]; then
+            echo "⏭️  Staging migration was skipped (database already up-to-date)."
+          else
+            echo "✅ Staging migration completed successfully."
+          fi
           echo "✅ All prerequisites met. Proceeding with production migration."
 
       - uses: supabase/setup-cli@v1
