@@ -58,7 +58,10 @@ export default function PersonalWorkspacePrompt({
         const errorData = await res.json();
 
         // Check if it's a workspace limit error
-        if (res.status === 403 && errorData.code === 'WORKSPACE_LIMIT_REACHED') {
+        if (
+          res.status === 403 &&
+          errorData.code === 'WORKSPACE_LIMIT_REACHED'
+        ) {
           toast.error(t('workspace_limit_reached'), {
             description: errorData.message,
           });
