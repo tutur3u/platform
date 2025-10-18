@@ -32,7 +32,6 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
@@ -43,6 +42,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { toast } from '@tuturuuu/ui/sonner';
 import {
   PERSONAL_WORKSPACE_SLUG,
   resolveWorkspaceId,
@@ -110,32 +110,53 @@ export function WorkspaceSelect({
     if (disableCreateNewWorkspace) return;
     setLoading(true);
 
-    const res = await fetch(`/api/v1/workspaces`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(formData),
-    });
-
-    if (res.ok) {
-      form.reset();
-
-      const { id } = await res.json();
-
-      if (customRedirectSuffix) router.push(`/${id}/${customRedirectSuffix}`);
-      else router.push(`/${id}`);
-      router.refresh();
-
-      setShowNewWorkspaceDialog(false);
-      setLoading(false);
-      setOpen(false);
-    } else {
-      setLoading(false);
-      toast({
-        title: 'Error creating workspace',
-        description: 'An error occurred while creating the workspace',
+    try {
+      const res = await fetch(`/api/v1/workspaces`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
       });
+
+      if (res.ok) {
+        form.reset();
+
+        const { id } = await res.json();
+
+        if (customRedirectSuffix) router.push(`/${id}/${customRedirectSuffix}`);
+        else router.push(`/${id}`);
+        router.refresh();
+
+        setShowNewWorkspaceDialog(false);
+        setLoading(false);
+        setOpen(false);
+      } else {
+        const errorData = await res.json();
+
+        // Check if it's a workspace limit error
+        if (
+          res.status === 403 &&
+          errorData.code === 'WORKSPACE_LIMIT_REACHED'
+        ) {
+          toast.error(t('common.workspace_limit_reached'), {
+            description: errorData.message,
+          });
+        } else {
+          toast.error(t('common.error_creating_workspace'), {
+            description:
+              errorData.message || t('common.workspace_creation_failed'),
+          });
+        }
+
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Error creating workspace:', error);
+      toast.error(t('common.error_creating_workspace'), {
+        description: t('common.workspace_creation_failed'),
+      });
+      setLoading(false);
     }
   }
 

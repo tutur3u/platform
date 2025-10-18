@@ -1,6 +1,8 @@
 'use server';
 
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { MAX_WORKSPACES_FOR_FREE_USERS } from '@tuturuuu/utils/constants';
+import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { redirect } from 'next/navigation';
 import type {
   OnboardingProgress,
@@ -154,6 +156,27 @@ export async function createWorkspaceFromOnboarding(
 
     if (authError || !user?.id || user.id !== userId) {
       return { success: false, error: 'Authentication error' };
+    }
+
+    // Check workspace creation limits for non-Tuturuuu emails
+    if (!isValidTuturuuuEmail(user.email)) {
+      const { count, error: countError } = await supabase
+        .from('workspaces')
+        .select('*', { count: 'exact', head: true })
+        .eq('creator_id', user.id)
+        .eq('deleted', false);
+
+      if (countError) {
+        console.error('Error counting workspaces:', countError);
+        return { success: false, error: 'Error checking workspace limit' };
+      }
+
+      if (count !== null && count >= MAX_WORKSPACES_FOR_FREE_USERS) {
+        return {
+          success: false,
+          error: `You have reached the maximum limit of ${MAX_WORKSPACES_FOR_FREE_USERS} workspaces. Please upgrade to a paid plan or contact the Tuturuuu team for more information.`,
+        };
+      }
     }
 
     // First, create the workspace

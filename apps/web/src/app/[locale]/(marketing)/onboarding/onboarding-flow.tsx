@@ -51,7 +51,19 @@ export default function OnboardingFlow({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create personal workspace');
+        const errorData = await response.json();
+
+        // Check if it's a workspace limit error
+        if (response.status === 403 && errorData.code === 'WORKSPACE_LIMIT_REACHED') {
+          toast({
+            title: t('errors.workspace-limit-title'),
+            description: errorData.message,
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        throw new Error(errorData.message || 'Failed to create personal workspace');
       }
 
       const result = await response.json();

@@ -43,12 +43,6 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (!user?.id) redirect('/login');
 
   const supabase = await createClient();
-  const { data: platformUserRole } = await supabase
-    .from('platform_user_roles')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('allow_workspace_creation', true)
-    .maybeSingle();
 
   const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
   const behaviorCookie = (await cookies()).get(SIDEBAR_BEHAVIOR_COOKIE_NAME);
@@ -168,7 +162,6 @@ export default async function Layout({ children, params }: LayoutProps) {
             <UserNav hideMetadata />
           </Suspense>
         }
-        disableCreateNewWorkspace={!platformUserRole?.allow_workspace_creation}
       >
         <TaskDialogWrapper>{children}</TaskDialogWrapper>
       </Structure>

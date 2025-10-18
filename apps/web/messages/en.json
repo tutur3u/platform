@@ -199,6 +199,9 @@
     "create_workspace": "Create Workspace",
     "create_workspace_description": "Add a new workspace to easily manage everything that matters to you, and collaborate with your team as you go.",
     "workspace_name": "Workspace Name",
+    "workspace_limit_reached": "Workspace Limit Reached",
+    "error_creating_workspace": "Error Creating Workspace",
+    "workspace_creation_failed": "Failed to create workspace. Please try again.",
     "subscription_plan": "Subscription Plan",
     "free": "Free",
     "pro": "Pro",
@@ -569,7 +572,8 @@
       "title": "Error",
       "save-progress": "Failed to save progress. Please try again.",
       "create-workspace": "Failed to create workspace. Please try again.",
-      "update-profile": "Failed to update profile. Please try again."
+      "update-profile": "Failed to update profile. Please try again.",
+      "workspace-limit-title": "Workspace Limit Reached"
     }
   },
   "meet-together": {
@@ -4799,7 +4803,14 @@
   },
   "personal-workspace": {
     "create_new_personal_workspace": "Create a new personal workspace just for you",
-    "change_prompt": "You can change this later in Workspace settings"
+    "change_prompt": "You can change this later in Workspace settings",
+    "workspace_limit_reached": "Workspace Limit Reached",
+    "create_failed": "Failed to Create Workspace",
+    "error_creating_workspace": "Unable to create workspace. Please try again.",
+    "workspace_created": "Workspace created successfully",
+    "mark_failed": "Failed to Mark Workspace",
+    "error_marking_workspace": "Unable to mark workspace as personal. Please try again.",
+    "workspace_marked": "Workspace marked as personal successfully"
   },
   "dashboard": {
     "recently_created_tasks": "Recently Created Tasks",

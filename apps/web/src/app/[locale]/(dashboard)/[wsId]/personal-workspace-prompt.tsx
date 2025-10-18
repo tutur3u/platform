@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -52,8 +53,31 @@ export default function PersonalWorkspacePrompt({
       const res = await fetch('/api/v1/workspaces/personal', {
         method: 'POST',
       });
-      if (!res.ok) throw new Error('Failed');
+
+      if (!res.ok) {
+        const errorData = await res.json();
+
+        // Check if it's a workspace limit error
+        if (res.status === 403 && errorData.code === 'WORKSPACE_LIMIT_REACHED') {
+          toast.error(t('workspace_limit_reached'), {
+            description: errorData.message,
+          });
+          return;
+        }
+
+        toast.error(t('create_failed'), {
+          description: errorData.message || t('error_creating_workspace'),
+        });
+        return;
+      }
+
+      toast.success(t('workspace_created'));
       router.push('/personal');
+    } catch (error) {
+      console.error('Error creating personal workspace:', error);
+      toast.error(t('create_failed'), {
+        description: t('error_creating_workspace'),
+      });
     } finally {
       setSubmitting(false);
     }
@@ -68,8 +92,22 @@ export default function PersonalWorkspacePrompt({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ workspaceId: selectedId }),
       });
-      if (!res.ok) throw new Error('Failed');
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        toast.error(t('mark_failed'), {
+          description: errorData.message || t('error_marking_workspace'),
+        });
+        return;
+      }
+
+      toast.success(t('workspace_marked'));
       router.push('/personal');
+    } catch (error) {
+      console.error('Error marking personal workspace:', error);
+      toast.error(t('mark_failed'), {
+        description: t('error_marking_workspace'),
+      });
     } finally {
       setSubmitting(false);
     }
