@@ -77,7 +77,7 @@ export function Navbar({
     <nav
       id="navbar"
       className={cn(
-        'fixed inset-x-0 top-0 z-50',
+        'fixed inset-x-0 top-0 z-50 shrink-0',
         onlyOnMobile && 'md:hidden',
         className
       )}

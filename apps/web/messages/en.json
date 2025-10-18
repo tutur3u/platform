@@ -262,6 +262,8 @@
     "pricing": "Pricing",
     "about": "About",
     "contact": "Contact",
+    "women-in-tech": "Women in Tech",
+    "vietnamese-womens-day": "Vietnamese Women's Day",
     "ai-assistant": "AI Assistant",
     "lms": "LMS",
     "calendar": "Calendar",
@@ -5606,6 +5608,237 @@
       },
       "action": {
         "generate": "Generate"
+      }
+    }
+  },
+  "vietnameseWomensDay": {
+    "languageAvailable": "This page is available in English and Vietnamese",
+    "hero": {
+      "badge": "October 20, 2025 · Vietnamese Women's Day",
+      "title": {
+        "part1": "From Vietnam to the World:",
+        "highlight": "Women Leading",
+        "part2": "the Future of Technology"
+      },
+      "description": "At every step of our journey—from our first contributor to our executive team, from local partnerships to global collaborations—women have been leading, building, and inspiring. This is how we're creating the future together.",
+      "cta": {
+        "joinUs": "Join the Movement",
+        "learnMore": "Our Global Story"
+      }
+    },
+    "ceo": {
+      "name": "Vo Hoang Phuc",
+      "title": "Founder & CEO",
+      "company": "Tuturuuu",
+      "messageTitle": "Building Together: From Friends to a Global Movement",
+      "message": {
+        "paragraph1": "When we started Tuturuuu, I dreamed of building technology with people I trust—friends, mentors, and passionate builders. What makes me most proud is that women have been leading this journey from day one, not as employees, but as friends, partners, and pioneers.",
+        "paragraph2": "Thu, my peer and the first engineer at Tuturuuu aside from me, believed in this crazy idea when it was just a dream. Quynh, who became the first COO of Tuturuuu and mentor to all of us, helped shape what Tuturuuu could become. Tam, younger but equally brilliant, became our first People & Operations Coordinator and built our people operations from nothing. They're not just teammates—they're family.",
+        "paragraph3": "Today, we build alongside Sophie and Sweet, the amazing women founders of AllMind who are on the same journey. Tien, from SPARK Hub, opened doors we didn't know existed—connecting us with incredible people, giving us space to innovate together, and believing in us when we needed it most. From RMIT students to global partnerships, every connection has made us stronger.",
+        "paragraph4": "This isn't just about business—it's about friends supporting friends, mentors lifting up the next generation, and people from everywhere coming together to build something meaningful. If you're passionate about technology and want to be part of a family that builds together, we're here.",
+        "closing": "To Thu, Quynh, Tam, Sophie, Sweet, Tien, and every woman who's been part of our journey: thank you for being more than colleagues. You're the reason Tuturuuu exists."
+      }
+    },
+    "impact": {
+      "title": {
+        "part1": "The Power of",
+        "highlight": "Women in Technology"
+      },
+      "subtitle": "Celebrating the incredible impact women make in the tech industry every day",
+      "stats": {
+        "innovation": {
+          "title": "35%",
+          "subtitle": "More Innovation",
+          "description": "Companies with diverse teams produce 19% more revenue from innovation and solve problems 35% faster"
+        },
+        "leadership": {
+          "title": "50%",
+          "subtitle": "Better Decisions",
+          "description": "Teams with women in leadership roles make better business decisions up to 50% of the time"
+        },
+        "growth": {
+          "title": "2x",
+          "subtitle": "Team Performance",
+          "description": "Gender-diverse teams are twice as likely to meet or exceed financial targets"
+        }
+      }
+    },
+    "values": {
+      "title": "Empowering Women in Tech",
+      "subtitle": "The values that drive our commitment to gender diversity and inclusion",
+      "items": {
+        "excellence": {
+          "title": "Excellence Without Limits",
+          "description": "We believe talent has no gender. Every woman brings unique strengths that make our team stronger and our products better."
+        },
+        "innovation": {
+          "title": "Innovation Through Diversity",
+          "description": "Different perspectives lead to breakthrough solutions. Women's voices and ideas are crucial to building technology that serves everyone."
+        },
+        "collaboration": {
+          "title": "Collaborative Leadership",
+          "description": "We foster an environment where everyone's contributions are valued, and women have equal opportunities to lead and mentor."
+        },
+        "growth": {
+          "title": "Continuous Growth",
+          "description": "We invest in professional development, mentorship programs, and learning opportunities to help women advance in their tech careers."
+        },
+        "inclusion": {
+          "title": "Inclusive Culture",
+          "description": "Creating a workplace where women feel welcomed, respected, and empowered to be their authentic selves every day."
+        },
+        "excellence-tech": {
+          "title": "Technical Excellence",
+          "description": "We celebrate and support women in technical roles, providing resources and recognition for outstanding engineering and innovation."
+        }
+      }
+    },
+    "team": {
+      "title": "Our Amazing Team",
+      "subtitle": "Meet the talented people making Tuturuuu possible",
+      "imageTitle": "The Tuturuuu Team",
+      "imageDescription": "Our diverse team of innovators, engineers, designers, and leaders working together to build the future of productivity technology. We're proud of the incredible women who are key members of our team."
+    },
+    "quote": {
+      "text": "Building amazing things together isn't just about code—it's about people, trust, and believing in each other's potential.",
+      "author": "The Tuturuuu Family"
+    },
+    "womenInLeadership": {
+      "title": "The Women Who Made It Happen",
+      "subtitle": "Friends, mentors, and peers building Tuturuuu together—from Vietnam to the world",
+      "executives": {
+        "title": "Mentors & Builders",
+        "name": "Vo Khanh Quynh & Nguyen Ha Gia Tam",
+        "roles": "First COO of Tuturuuu · First People & Operations Coordinator of Tuturuuu",
+        "story": "Quynh, our mentor and the first COO of Tuturuuu, showed us what leadership really means—not managing, but empowering. Tam, younger but equally visionary, became our first People & Operations Coordinator and built our people operations from scratch. Together, they created a culture where everyone feels like family."
+      },
+      "engineering": {
+        "title": "Peers & Innovators",
+        "name": "Nguyen Pham Anh Thu & Our Engineering Team",
+        "roles": "First Engineer at Tuturuuu · Platform Engineers · Technical Leaders",
+        "story": "Thu, my peer and the first engineer at Tuturuuu aside from me, took a chance on this wild idea. From her to our robotics engineering interns, the women on our technical team aren't just colleagues—they're friends building the future together, one line of code at a time."
+      },
+      "marketing": {
+        "title": "Storytellers & Connectors",
+        "name": "Our Marketing Leaders",
+        "roles": "Marketing Leadership · Brand Strategy",
+        "story": "Our marketing team understands something special: technology is about people. They tell our authentic stories, connect us with the world, and build a community that feels like home."
+      },
+      "remote": {
+        "title": "No Borders, Just Passion",
+        "name": "Linh Dan & Our Remote Team",
+        "roles": "First Remote Software Engineer Intern · Global Team",
+        "story": "Linh Dan, our first remote women software engineer intern, proved something powerful: talent knows no borders. Now we're building a global family where passionate people from anywhere can come together and create something meaningful."
+      }
+    },
+    "globalImpact": {
+      "title": "From Vietnam to the World",
+      "subtitle": "Building bridges and creating opportunities across borders",
+      "vietnam": {
+        "title": "Rooted in Vietnam",
+        "description": "Our journey started in Vietnam with a vision to empower the next generation of technologists. Through partnerships with RMIT NEO Culture Technology Club and local communities, we're nurturing talent right here at home."
+      },
+      "global": {
+        "title": "Connected Globally",
+        "description": "From collaborations with women in tech across Asia to partnerships that span continents, we're proving that Vietnamese innovation can lead on the global stage. Our network grows stronger every day."
+      },
+      "future": {
+        "title": "Leading the Future",
+        "description": "We're not just participating in the global tech ecosystem—we're shaping it. With women leaders from diverse backgrounds, we're at the forefront of building technology that serves everyone, everywhere."
+      }
+    },
+    "partnerships": {
+      "title": "Friends Building Together",
+      "subtitle": "The people and places that made our journey possible",
+      "allmind": {
+        "title": "AllMind: Sophie & Sweet",
+        "description": "Sophie and Sweet (Thư and Ngọc in Vietnamese), the amazing founders of AllMind, have been incredible neighbor-startups. They appreciate how Tuturuuu is always helpful and always there for everyone—not just those who needed help. Together, we're building an ecosystem where everyone supports each other, no matter who you are."
+      },
+      "sparkHub": {
+        "title": "SPARK Hub: Tien's Impact",
+        "description": "Tien, SPARK Hub's program coordinator, gave us more than co-working space—she gave us opportunities, connections, and belief when we needed it most. She's been a mentor, connector, and champion for everyone at Tuturuuu.",
+        "quote": "Knowing individuals like you is the reason why I love my job despite whatever it is I'm experiencing. I could say almost everything about any other aspect but never regret one bit of working with talented individuals like you all. I'm grateful to have you and Tuturuuu here."
+      },
+      "rmit": {
+        "title": "RMIT: Opening Doors to the World",
+        "description": "Professor Iwona Miliszewska, Dean of SSET, led the Poznań trip initiative that changed our perspective. Hoa, Manager of External Engagement & Events at SSET, and Nguyên, Senior Coordinator of Academic Advisory and Planning, helped engineers in SSET (School of Science, Engineering & Technology) access incredible opportunities to go abroad—like the International Strategic Management Workshop in Poznań, Poland at Poznań University of Technology (PUT). They believed in students' potential and opened doors to global experiences that shaped our worldview.",
+        "link": "https://www.rmit.edu.vn/students/student-news-and-events/student-news/2025/together-abroad-rmit-students-build-global-bonds-in-poland",
+        "linkText": "Read about our Poland experience"
+      },
+      "soki": {
+        "title": "SOKI: Strategic Collaborations",
+        "description": "Kim, founder of SOKI—another women-led startup and wonderful neighbor at SPARK Hub—helped Tuturuuu expand its network through strategic collaborations with RMIT RISE Club. She's building her own vision while helping others grow theirs, showing what true community looks like."
+      },
+      "nhung": {
+        "title": "Mai Nhung: Building rbac.vn",
+        "description": "Nhung, Associate Software Engineer from Tuturuuu and dedicated open-source contributor, designed and developed rbac.vn for RMIT Business Analytics Champion Season 6 (2025). Her technical excellence and commitment to community-driven innovation powered the website that connects students with real-world data analytics challenges. Working alongside the RMIT Analytics Club team, she brought Tuturuuu's vision of empowering students through technology to life."
+      },
+      "dai": {
+        "title": "Đài: Leading RBAC Forward",
+        "description": "Đài, Head of Organizing Committee for RMIT Business Analytics Champion Season 6 (2025) from RMIT Analytics Club, coordinated the successful execution of this pioneering data analytics competition. Her leadership in refining the competition structure and ensuring smooth operations showcased how students can lead meaningful initiatives that bridge academia and industry."
+      },
+      "nhu": {
+        "title": "Như: Project Excellence",
+        "description": "Như, Project Assistant for RMIT Business Analytics Champion Season 6 (2025) from RMIT Analytics Club, was instrumental in coordinating the development and refinement of rbac.vn. Her dedication and attention to detail ensured the website met the needs of both participants and organizers, demonstrating how collaboration creates excellence."
+      },
+      "community": {
+        "title": "Growing Together",
+        "description": "From RMIT students to global tech communities, from local meetups to international connections—we're building a family that supports each other across borders."
+      }
+    },
+    "achievements": {
+      "title": "Our Journey Together",
+      "subtitle": "The incredible women who've shaped Tuturuuu from the start",
+      "items": {
+        "founding": {
+          "year": "2023",
+          "title": "Our First Contributor",
+          "description": "Nguyen Pham Anh Thu joined as our first software engineer, bringing talent and passion that set the tone for everything we'd build"
+        },
+        "growth": {
+          "year": "2024",
+          "title": "Women-Led Foundation",
+          "description": "Vo Khanh Quynh became our first COO and Nguyen Ha Gia Tam our first People & Operations Coordinator—building our leadership team"
+        },
+        "mentorship": {
+          "year": "2024",
+          "title": "Growing Together",
+          "description": "Started mentoring female coworkers internally, helping them unlock their potential and achieve bigger things together"
+        },
+        "community": {
+          "year": "2025",
+          "title": "Empowering the Community",
+          "description": "From RMIT NEO Culture Technology Club to the world—creating opportunities for passionate people everywhere"
+        }
+      }
+    },
+    "diversity": {
+      "title": "Why Diversity Drives Innovation",
+      "subtitle": "Different perspectives create better products",
+      "items": {
+        "perspective": {
+          "title": "Diverse Perspectives",
+          "description": "Teams with varied backgrounds identify problems and solutions others might miss"
+        },
+        "creativity": {
+          "title": "Enhanced Creativity",
+          "description": "Diversity of thought leads to more innovative approaches and breakthrough ideas"
+        },
+        "market": {
+          "title": "Better Products",
+          "description": "Diverse teams build products that serve a wider range of users effectively"
+        }
+      }
+    },
+    "cta": {
+      "title": "Let's Build Something Amazing Together",
+      "description": "We're always looking for passionate people who want to make a real impact. If you love technology and want to work with a team that truly values each other—let's talk!",
+      "joinTeam": "Join Our Journey",
+      "learnMore": "Meet the Team",
+      "benefits": {
+        "growth": "Grow Together",
+        "culture": "Real Mentorship",
+        "impact": "Build Meaningful Things"
       }
     }
   }
