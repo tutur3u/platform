@@ -9,6 +9,7 @@ import {
   type ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useRef,
   useState,
 } from 'react';
@@ -16,11 +17,11 @@ import {
 export interface UserPresenceState {
   user: User;
   online_at: string;
-  taskId: string;
+  taskId: string | null;
 }
 
 interface TaskViewerContextValue {
-  viewTask: (taskId: string, boardId: string) => void;
+  viewTask: (taskId: string) => void;
   unviewTask: () => void;
   getTaskViewers: (taskId: string) => RealtimePresenceState<UserPresenceState>;
   currentUserId?: string;
@@ -33,7 +34,13 @@ const TaskViewerContext = createContext<TaskViewerContextValue | null>(null);
  * Provider that tracks viewers on a board using a single channel per board.
  * Multiple tasks can display the same board presence state.
  */
-export function TaskViewerProvider({ children }: { children: ReactNode }) {
+export function TaskViewerProvider({
+  boardId,
+  children,
+}: {
+  boardId: string;
+  children: ReactNode;
+}) {
   // Map structure: taskId -> RealtimePresenceState<UserPresenceState>
   const [taskViewersMap, setTaskViewersMap] = useState<
     Map<string, RealtimePresenceState<UserPresenceState>>
@@ -42,24 +49,16 @@ export function TaskViewerProvider({ children }: { children: ReactNode }) {
 
   // Single channel per board
   const channelRef = useRef<any>(null);
+  const userDataRef = useRef<any>(null);
   const retryCountRef = useRef(0);
-  const isCleanedUpRef = useRef(false);
   const MAX_RETRIES = 3;
 
-  // Function to set up presence tracking for a board
-  const setupTaskViewer = useCallback(
-    async (boardId: string, taskId: string) => {
-      if (isCleanedUpRef.current) return;
+  // Initialize channel once on mount
+  useEffect(() => {
+    const supabase = createClient();
+    const channelName = `task-viewer:${boardId}`;
 
-      const supabase = createClient();
-      const channelName = `task-viewer:${boardId}`;
-
-      // Clean up existing channel if switching boards
-      if (channelRef.current && channelRef.current.topic === channelName) {
-        await supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-
+    const initializeChannel = async () => {
       try {
         const {
           data: { user },
@@ -81,6 +80,12 @@ export function TaskViewerProvider({ children }: { children: ReactNode }) {
         }
 
         setCurrentUserId(user.id);
+        userDataRef.current = {
+          id: user.id,
+          display_name: userData.display_name,
+          email: user.email,
+          avatar_url: userData.avatar_url,
+        };
 
         const channel = supabase.channel(channelName, {
           config: {
@@ -144,62 +149,24 @@ export function TaskViewerProvider({ children }: { children: ReactNode }) {
 
             switch (status) {
               case 'SUBSCRIBED': {
-                const presenceTrackStatus = await channel.track({
-                  user: {
-                    id: currentUserId,
-                    display_name: userData.display_name,
-                    email: userData.email,
-                    avatar_url: userData.avatar_url,
-                  },
-                  online_at: new Date().toISOString(),
-                  taskId,
-                });
-
+                // Channel is ready, but don't track any task yet
                 if (DEV_MODE) {
-                  console.log(
-                    `Board ${boardId} presence track status:`,
-                    presenceTrackStatus
-                  );
+                  console.log(`✅ Board ${boardId} channel subscribed`);
                 }
-
-                if (
-                  presenceTrackStatus === 'timed out' &&
-                  !isCleanedUpRef.current
-                ) {
-                  if (DEV_MODE) {
-                    console.warn(
-                      `⚠️ Board ${boardId} presence tracking timed out, retrying...`
-                    );
-                  }
-                  setTimeout(async () => {
-                    if (!isCleanedUpRef.current && channelRef.current) {
-                      await channel.track({
-                        user: {
-                          id: currentUserId,
-                          display_name: userData.display_name,
-                          email: userData.email,
-                          avatar_url: userData.avatar_url,
-                        },
-                        online_at: new Date().toISOString(),
-                        taskId,
-                      });
-                    }
-                  }, 1000);
-                }
-
                 // Reset retry count on success
                 retryCountRef.current = 0;
                 break;
               }
               case 'CHANNEL_ERROR':
+                if (DEV_MODE) {
+                  console.error(`❌ Board ${boardId} channel error:`, status);
+                }
+                break;
               case 'TIMED_OUT': {
                 if (DEV_MODE) {
                   console.error(`❌ Board ${boardId} channel error:`, status);
                 }
-                if (
-                  retryCountRef.current < MAX_RETRIES &&
-                  !isCleanedUpRef.current
-                ) {
+                if (retryCountRef.current < MAX_RETRIES) {
                   retryCountRef.current++;
                   if (DEV_MODE) {
                     console.log(
@@ -207,7 +174,7 @@ export function TaskViewerProvider({ children }: { children: ReactNode }) {
                     );
                   }
                   setTimeout(() => {
-                    setupTaskViewer(boardId, taskId);
+                    initializeChannel();
                   }, 2000 * retryCountRef.current);
                 }
                 break;
@@ -217,8 +184,6 @@ export function TaskViewerProvider({ children }: { children: ReactNode }) {
                   console.info(`📡 Board ${boardId} channel closed`);
                 }
                 break;
-              default:
-                break;
             }
           });
       } catch (error) {
@@ -226,34 +191,90 @@ export function TaskViewerProvider({ children }: { children: ReactNode }) {
           console.error(`Error setting up board ${boardId} presence:`, error);
         }
 
-        if (retryCountRef.current < MAX_RETRIES && !isCleanedUpRef.current) {
+        if (retryCountRef.current < MAX_RETRIES) {
           retryCountRef.current++;
           setTimeout(() => {
-            setupTaskViewer(boardId, taskId);
+            initializeChannel();
           }, 2000 * retryCountRef.current);
         }
       }
-    },
-    [currentUserId]
-  );
+    };
 
-  // Function to start tracking a task/board
-  const viewTask = useCallback(
-    (taskId: string, boardId: string) => {
-      setupTaskViewer(boardId, taskId);
-    },
-    [setupTaskViewer]
-  );
+    initializeChannel();
 
-  const unviewTask = () => {
-    if (channelRef.current) {
-      channelRef.current.track({
-        user: {},
-        online_at: new Date().toISOString(),
-        taskId: null, // Untrack this task
-      });
+    // Cleanup on unmount
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, [boardId]);
+
+  // Function to start tracking a task
+  const viewTask = useCallback(async (taskId: string) => {
+    if (!channelRef.current || !userDataRef.current) {
+      if (DEV_MODE) {
+        console.warn('Channel or user data not ready yet');
+      }
+      return;
     }
-  };
+
+    try {
+      const presenceTrackStatus = await channelRef.current.track({
+        user: userDataRef.current,
+        online_at: new Date().toISOString(),
+        taskId,
+      });
+
+      if (DEV_MODE) {
+        console.log(`👁️ Viewing task ${taskId}:`, presenceTrackStatus);
+      }
+
+      if (presenceTrackStatus === 'timed out') {
+        if (DEV_MODE) {
+          console.warn(
+            `⚠️ Task ${taskId} presence tracking timed out, retrying...`
+          );
+        }
+        // Retry once
+        setTimeout(async () => {
+          if (channelRef.current) {
+            await channelRef.current.track({
+              user: userDataRef.current,
+              online_at: new Date().toISOString(),
+              taskId,
+            });
+          }
+        }, 1000);
+      }
+    } catch (error) {
+      if (DEV_MODE) {
+        console.error(`Error tracking task ${taskId}:`, error);
+      }
+    }
+  }, []);
+
+  // Function to stop tracking
+  const unviewTask = useCallback(async () => {
+    if (!channelRef.current || !userDataRef.current) return;
+
+    try {
+      await channelRef.current.track({
+        user: userDataRef.current,
+        online_at: new Date().toISOString(),
+        taskId: null,
+      });
+
+      if (DEV_MODE) {
+        console.log('👁️ Stopped viewing task');
+      }
+    } catch (error) {
+      if (DEV_MODE) {
+        console.error('Error untracking task:', error);
+      }
+    }
+  }, []);
 
   // Function to get viewers for a task
   const getTaskViewers = useCallback(

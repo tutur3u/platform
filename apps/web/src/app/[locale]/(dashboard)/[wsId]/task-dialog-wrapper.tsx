@@ -1,7 +1,6 @@
 'use client';
 
 import { TaskDialogProvider } from '@tuturuuu/ui/tu-do/providers/task-dialog-provider';
-import { TaskViewerProvider } from '@tuturuuu/ui/tu-do/providers/task-viewer-provider';
 import { TaskDialogManager } from '@tuturuuu/ui/tu-do/shared/task-dialog-manager';
 import type { ReactNode } from 'react';
 
@@ -15,11 +14,9 @@ interface TaskDialogWrapperProps {
  */
 export function TaskDialogWrapper({ children }: TaskDialogWrapperProps) {
   return (
-    <TaskViewerProvider>
-      <TaskDialogProvider>
-        {children}
-        <TaskDialogManager />
-      </TaskDialogProvider>
-    </TaskViewerProvider>
+    <TaskDialogProvider>
+      {children}
+      <TaskDialogManager />
+    </TaskDialogProvider>
   );
 }

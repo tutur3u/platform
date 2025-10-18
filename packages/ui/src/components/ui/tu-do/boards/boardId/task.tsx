@@ -59,6 +59,7 @@ import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { useTaskDialogState } from '../../hooks/useTaskDialogState';
 import { useTaskLabelManagement } from '../../hooks/useTaskLabelManagement';
 import { useTaskProjectManagement } from '../../hooks/useTaskProjectManagement';
+import { useTaskDialogContext } from '../../providers/task-dialog-provider';
 import { AssigneeSelect } from '../../shared/assignee-select';
 import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
@@ -118,6 +119,7 @@ function TaskCardInner({
 
   // Use extracted dialog state management hook
   const { state: dialogState, actions: dialogActions } = useTaskDialogState();
+  const { state: dialogStateFromProvider } = useTaskDialogContext();
 
   // Use centralized task dialog
   const { openTask } = useTaskDialog();
@@ -872,7 +874,10 @@ function TaskCardInner({
                 )}
             </div>
             <div className="flex items-center gap-2">
-              <TaskViewerAvatarsComponent boardId={boardId} taskId={task.id} />
+              <TaskViewerAvatarsComponent
+                taskId={task.id}
+                isViewing={dialogStateFromProvider.isOpen}
+              />
 
               {/* Checkbox: always at far right */}
               <Checkbox

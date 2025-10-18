@@ -28,24 +28,22 @@ interface UserPresenceAvatarsProps {
 }
 
 export function TaskViewerAvatarsComponent({
-  boardId,
   taskId,
+  isViewing,
 }: {
-  boardId: string;
   taskId: string;
+  isViewing: boolean;
 }) {
   const { getTaskViewers, currentUserId, viewTask, unviewTask } =
     useTaskViewerContext();
 
   useEffect(() => {
-    // Start tracking board presence when component mounts
-    viewTask(taskId, boardId);
-
-    // Stop tracking when component unmounts
-    return () => {
+    if (isViewing) {
+      viewTask(taskId);
+    } else {
       unviewTask();
-    };
-  }, [taskId, boardId, viewTask, unviewTask]);
+    }
+  }, [taskId, isViewing, viewTask, unviewTask]);
 
   // Get viewers for the board (not per task)
   const presenceState = getTaskViewers(taskId);
@@ -56,38 +54,6 @@ export function TaskViewerAvatarsComponent({
       currentUserId={currentUserId}
       maxDisplay={5}
       avatarClassName="size-4 sm:size-5"
-    />
-  );
-}
-
-export function TaskDialogAvatarsComponent({
-  boardId,
-  taskId,
-}: {
-  boardId: string;
-  taskId: string;
-}) {
-  const { viewTask, unviewTask } = useTaskViewerContext();
-
-  useEffect(() => {
-    // Start tracking board presence when dialog opens
-    viewTask(taskId, boardId);
-
-    // Stop tracking when dialog closes
-    return () => {
-      unviewTask();
-    };
-  }, [taskId, boardId, viewTask, unviewTask]);
-
-  const { presenceState, currentUserId } = usePresence(
-    `task_dialog_presence_${boardId}`
-  );
-
-  return (
-    <UserPresenceAvatars
-      presenceState={presenceState}
-      currentUserId={currentUserId}
-      maxDisplay={5}
     />
   );
 }
