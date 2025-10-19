@@ -1,7 +1,10 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
+import type {
+  RealtimeChannel,
+  RealtimePresenceState,
+} from '@tuturuuu/supabase/next/realtime';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import {
@@ -14,18 +17,21 @@ import {
   useState,
 } from 'react';
 
-export interface UserPresenceState {
+export interface TaskViewerPresenceState {
+  presence_ref: string;
   user: User;
   online_at: string;
-  taskId: string | null;
+  taskId: string;
 }
 
 interface TaskViewerContextValue {
   viewTask: (taskId: string) => void;
-  unviewTask: () => void;
-  getTaskViewers: (taskId: string) => RealtimePresenceState<UserPresenceState>;
+  unviewTask: (taskId: string) => void;
+  getTaskViewers: (
+    taskId: string
+  ) => RealtimePresenceState<TaskViewerPresenceState>;
   currentUserId?: string;
-  taskViewersMap: Map<string, RealtimePresenceState<UserPresenceState>>;
+  taskViewersMap: Map<string, RealtimePresenceState<TaskViewerPresenceState>>;
 }
 
 const TaskViewerContext = createContext<TaskViewerContextValue | null>(null);
@@ -41,15 +47,15 @@ export function TaskViewerProvider({
   boardId: string;
   children: ReactNode;
 }) {
-  // Map structure: taskId -> RealtimePresenceState<UserPresenceState>
+  // Map structure: taskId -> RealtimePresenceState<TaskViewerPresenceState>
   const [taskViewersMap, setTaskViewersMap] = useState<
-    Map<string, RealtimePresenceState<UserPresenceState>>
+    Map<string, RealtimePresenceState<TaskViewerPresenceState>>
   >(new Map());
   const [currentUserId, setCurrentUserId] = useState<string>();
 
   // Single channel per board
-  const channelRef = useRef<any>(null);
-  const userDataRef = useRef<any>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const userDataRef = useRef<User | null>(null);
   const retryCountRef = useRef(0);
   const MAX_RETRIES = 3;
 
@@ -105,11 +111,11 @@ export function TaskViewerProvider({
 
             const taskViewers = new Map<
               string,
-              RealtimePresenceState<UserPresenceState>
+              RealtimePresenceState<TaskViewerPresenceState>
             >();
 
             for (const [userId, presences] of Object.entries(newState)) {
-              for (const presence of presences as any[]) {
+              for (const presence of presences as TaskViewerPresenceState[]) {
                 const tid = presence.taskId;
                 if (tid) {
                   if (!taskViewers.has(tid)) {
@@ -124,24 +130,16 @@ export function TaskViewerProvider({
 
             setTaskViewersMap(taskViewers);
           })
-          .on(
-            'presence',
-            { event: 'join' },
-            ({ key }: { key: string; newPresences: unknown[] }) => {
-              if (DEV_MODE) {
-                console.log(`👋 User joined board ${boardId}:`, key);
-              }
+          .on('presence', { event: 'join' }, ({ key }) => {
+            if (DEV_MODE) {
+              console.log(`👋 User joined board ${boardId}:`, key);
             }
-          )
-          .on(
-            'presence',
-            { event: 'leave' },
-            ({ key }: { key: string; leftPresences: unknown[] }) => {
-              if (DEV_MODE) {
-                console.log(`👋 User left board ${boardId}:`, key);
-              }
+          })
+          .on('presence', { event: 'leave' }, ({ key }) => {
+            if (DEV_MODE) {
+              console.log(`👋 User left board ${boardId}:`, key);
             }
-          )
+          })
           .subscribe(async (status: string) => {
             if (DEV_MODE) {
               console.log(`📡 Board ${boardId} channel status:`, status);
@@ -256,14 +254,14 @@ export function TaskViewerProvider({
   }, []);
 
   // Function to stop tracking
-  const unviewTask = useCallback(async () => {
+  const unviewTask = useCallback(async (taskId: string) => {
     if (!channelRef.current || !userDataRef.current) return;
 
     try {
-      await channelRef.current.track({
+      await channelRef.current.untrack({
         user: userDataRef.current,
         online_at: new Date().toISOString(),
-        taskId: null,
+        taskId,
       });
 
       if (DEV_MODE) {
@@ -278,7 +276,7 @@ export function TaskViewerProvider({
 
   // Function to get viewers for a task
   const getTaskViewers = useCallback(
-    (taskId: string): RealtimePresenceState<UserPresenceState> => {
+    (taskId: string): RealtimePresenceState<TaskViewerPresenceState> => {
       return taskViewersMap.get(taskId) || {};
     },
     [taskViewersMap]

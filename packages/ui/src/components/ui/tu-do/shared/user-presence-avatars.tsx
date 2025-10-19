@@ -3,7 +3,7 @@
 import { User } from '@tuturuuu/icons';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import type { UserPresenceState as BaseUserPresenceState } from '@tuturuuu/ui/hooks/usePresence';
+import type { UserPresenceState } from '@tuturuuu/ui/hooks/usePresence';
 import { usePresence } from '@tuturuuu/ui/hooks/usePresence';
 import {
   HoverCard,
@@ -13,15 +13,10 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useEffect } from 'react';
-import {
-  type UserPresenceState,
-  useTaskViewerContext,
-} from '../providers/task-viewer-provider';
+import { useTaskViewerContext } from '../providers/task-viewer-provider';
 
 interface UserPresenceAvatarsProps {
-  presenceState:
-    | RealtimePresenceState<UserPresenceState>
-    | RealtimePresenceState<BaseUserPresenceState>;
+  presenceState: RealtimePresenceState<UserPresenceState>;
   currentUserId?: string;
   maxDisplay?: number;
   avatarClassName?: string;
@@ -41,7 +36,7 @@ export function TaskViewerAvatarsComponent({
     if (isViewing) {
       viewTask(taskId);
     } else {
-      unviewTask();
+      unviewTask(taskId);
     }
   }, [taskId, isViewing, viewTask, unviewTask]);
 
