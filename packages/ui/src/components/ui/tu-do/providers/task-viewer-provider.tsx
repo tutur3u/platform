@@ -254,18 +254,14 @@ export function TaskViewerProvider({
   }, []);
 
   // Function to stop tracking
-  const unviewTask = useCallback(async (taskId: string) => {
+  const unviewTask = useCallback(async (taskId: string): Promise<void> => {
     if (!channelRef.current || !userDataRef.current) return;
 
     try {
-      await channelRef.current.untrack({
-        user: userDataRef.current,
-        online_at: new Date().toISOString(),
-        taskId,
-      });
+      await channelRef.current.untrack();
 
       if (DEV_MODE) {
-        console.log('👁️ Stopped viewing task');
+        console.log(`👁️ Stopped viewing task ${taskId}`);
       }
     } catch (error) {
       if (DEV_MODE) {
@@ -297,7 +293,7 @@ export function TaskViewerProvider({
   );
 }
 
-export function useTaskViewerContext() {
+export function useTaskViewerContext(): TaskViewerContextValue {
   const context = useContext(TaskViewerContext);
 
   if (!context) {
