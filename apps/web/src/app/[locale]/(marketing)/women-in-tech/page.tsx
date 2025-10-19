@@ -1275,9 +1275,9 @@ export default function VietnameseWomensDayPage() {
                 key: 'khoi',
                 image:
                   '/media/marketing/events/women-in-tech/khoi-software-engineer-intern-at-tuturuuu.jpg',
-                gradient: 'from-dynamic-pink to-dynamic-purple',
+                gradient: 'from-dynamic-red to-dynamic-purple',
                 borderColor:
-                  'border-dynamic-pink/30 bg-dynamic-pink/10 hover:border-dynamic-pink/50',
+                  'border-dynamic-red/30 bg-dynamic-red/10 hover:border-dynamic-red/50',
                 size: 'lg:col-span-2',
               },
               {
