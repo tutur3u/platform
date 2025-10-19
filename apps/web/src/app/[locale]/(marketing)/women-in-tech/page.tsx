@@ -1389,9 +1389,9 @@ export default function VietnameseWomensDayPage() {
             </p>
           </div>
 
-          <div className="grid gap-8 text-pretty text-center md:grid-cols-2 2xl:grid-cols-4">
+          <div className="grid gap-8 text-pretty text-center md:grid-cols-2 xl:grid-cols-6">
             {/* AllMind Partnership - Sophie & Sweet */}
-            <Card className="h-full overflow-hidden border-2 border-dynamic-blue/30 bg-dynamic-blue/10 p-0 shadow-xl transition-all hover:border-dynamic-blue/50 hover:shadow-2xl">
+            <Card className="h-full overflow-hidden border-2 border-dynamic-blue/30 bg-dynamic-blue/10 p-0 shadow-xl transition-all hover:border-dynamic-blue/50 hover:shadow-2xl xl:col-span-2">
               <div className="relative aspect-video overflow-hidden">
                 <Image
                   src="/media/marketing/events/women-in-tech/empowering-women-led-startup-partners-from-allmind-2.jpeg"
@@ -1414,7 +1414,7 @@ export default function VietnameseWomensDayPage() {
             </Card>
 
             {/* RMIT University - Professor Iwona, Hoa & Nguyên */}
-            <Card className="h-full overflow-hidden border-2 border-dynamic-red/30 bg-dynamic-red/10 p-0 shadow-xl transition-all hover:border-dynamic-red/50 hover:shadow-2xl">
+            <Card className="h-full overflow-hidden border-2 border-dynamic-red/30 bg-dynamic-red/10 p-0 shadow-xl transition-all hover:border-dynamic-red/50 hover:shadow-2xl xl:col-span-2">
               <div className="relative aspect-video overflow-hidden">
                 <Image
                   src="/media/marketing/events/women-in-tech/professor-iwona-miliszewska-dean-of-sset-rmit.jpg"
@@ -1445,8 +1445,123 @@ export default function VietnameseWomensDayPage() {
               </div>
             </Card>
 
+            {/* SOKI Startup - Kim */}
+            <Card className="h-full overflow-hidden border-2 border-dynamic-orange/30 bg-dynamic-orange/10 p-0 shadow-xl transition-all hover:border-dynamic-orange/50 hover:shadow-2xl xl:col-span-2">
+              <div className="relative aspect-video overflow-hidden">
+                <Image
+                  src="/media/marketing/events/women-in-tech/soki-startup-another-women-led-startup-also-tuturuuus-neighbor-inside-spark-hub-community.jpg"
+                  alt="SOKI Startup: Kim"
+                  fill
+                  className="object-cover transition-transform duration-500 hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+              </div>
+              <div className="flex flex-col items-center justify-center p-8">
+                <div className="mb-4 inline-block rounded-full border border-dynamic-orange/20 bg-dynamic-orange/10 px-4 py-2">
+                  <span className="font-semibold text-dynamic-orange text-sm">
+                    {t('partnerships.soki.title')}
+                  </span>
+                </div>
+                <p className="text-foreground/80">
+                  {t('partnerships.soki.description')}
+                </p>
+              </div>
+            </Card>
+
+            {/* Mai Nhung - rbac.vn Developer */}
+            <Card className="h-full overflow-hidden border-2 border-dynamic-cyan/30 bg-dynamic-cyan/10 p-0 shadow-xl transition-all hover:border-dynamic-cyan/50 hover:shadow-2xl xl:col-span-2">
+              <div className="relative aspect-video overflow-hidden">
+                <Image
+                  src="/media/marketing/events/women-in-tech/rbac-website-designed-and-developed-by-mai-nhung.jpg"
+                  alt="Mai Nhung: rbac.vn Developer"
+                  fill
+                  className="object-cover transition-transform duration-500 hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+              </div>
+              <div className="flex flex-col items-center justify-center p-8">
+                <div className="mb-4 inline-block rounded-full border border-dynamic-cyan/20 bg-dynamic-cyan/10 px-4 py-2">
+                  <span className="font-semibold text-dynamic-cyan text-sm">
+                    {t('partnerships.nhung.title')}
+                  </span>
+                </div>
+                <p className="text-foreground/80">
+                  {t('partnerships.nhung.description')}
+                </p>
+              </div>
+            </Card>
+
+            {/* Đài - RBAC Project Leader */}
+            <Card className="h-full overflow-hidden border-2 border-dynamic-purple/30 bg-dynamic-purple/10 p-0 shadow-xl transition-all hover:border-dynamic-purple/50 hover:shadow-2xl xl:col-span-2">
+              <div className="relative aspect-video overflow-hidden">
+                <Image
+                  src="/media/marketing/events/women-in-tech/dai-rbac-project-leader.jpg"
+                  alt="Đài: RBAC Project Leader"
+                  fill
+                  className="object-cover transition-transform duration-500 hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+              </div>
+              <div className="flex flex-col items-center justify-center p-8">
+                <div className="mb-4 inline-block rounded-full border border-dynamic-purple/20 bg-dynamic-purple/10 px-4 py-2">
+                  <span className="font-semibold text-dynamic-purple text-sm">
+                    {t('partnerships.dai.title')}
+                  </span>
+                </div>
+                <p className="text-foreground/80">
+                  {t('partnerships.dai.description')}
+                </p>
+              </div>
+            </Card>
+
+            {/* Như - RBAC Project Assistant */}
+            <Card className="h-full overflow-hidden border-2 border-dynamic-blue/30 bg-dynamic-blue/10 p-0 shadow-xl transition-all hover:border-dynamic-blue/50 hover:shadow-2xl xl:col-span-2">
+              <div className="relative aspect-video overflow-hidden">
+                <Image
+                  src="/media/marketing/events/women-in-tech/nhu-rbac-project-assistant.jpg"
+                  alt="Như: RBAC Project Assistant"
+                  fill
+                  className="object-cover transition-transform duration-500 hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+              </div>
+              <div className="flex flex-col items-center justify-center p-8">
+                <div className="mb-4 inline-block rounded-full border border-dynamic-blue/20 bg-dynamic-blue/10 px-4 py-2">
+                  <span className="font-semibold text-dynamic-blue text-sm">
+                    {t('partnerships.nhu.title')}
+                  </span>
+                </div>
+                <p className="text-foreground/80">
+                  {t('partnerships.nhu.description')}
+                </p>
+              </div>
+            </Card>
+
+            {/* Community Engagement */}
+            <Card className="h-full overflow-hidden border-2 border-dynamic-pink/30 bg-dynamic-pink/10 p-0 shadow-xl transition-all hover:border-dynamic-pink/50 hover:shadow-2xl xl:col-span-3">
+              <div className="relative aspect-video overflow-hidden">
+                <Image
+                  src="/media/marketing/events/women-in-tech/empowering-women-in-stem-from-student-club.jpg"
+                  alt="Community Partnerships"
+                  fill
+                  className="object-cover transition-transform duration-500 hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+              </div>
+              <div className="flex flex-col items-center justify-center p-8">
+                <div className="mb-4 inline-block rounded-full border border-dynamic-pink/20 bg-dynamic-pink/10 px-4 py-2">
+                  <span className="font-semibold text-dynamic-pink text-sm">
+                    {t('partnerships.community.title')}
+                  </span>
+                </div>
+                <p className="text-foreground/80">
+                  {t('partnerships.community.description')}
+                </p>
+              </div>
+            </Card>
+
             {/* SPARK Hub - Tien */}
-            <Card className="h-full overflow-hidden border-2 border-dynamic-green/30 bg-dynamic-green/10 p-0 shadow-xl transition-all hover:border-dynamic-green/50 hover:shadow-2xl">
+            <Card className="h-full overflow-hidden border-2 border-dynamic-green/30 bg-dynamic-green/10 p-0 shadow-xl transition-all hover:border-dynamic-green/50 hover:shadow-2xl xl:col-span-3">
               <div className="relative aspect-video overflow-hidden">
                 <Image
                   src="/media/marketing/events/women-in-tech/spark-hub-program-coordinator.jpeg"
@@ -1473,121 +1588,6 @@ export default function VietnameseWomensDayPage() {
                     — Tiên, SPARK Hub
                   </p>
                 </div>
-              </div>
-            </Card>
-
-            {/* SOKI Startup - Kim */}
-            <Card className="h-full overflow-hidden border-2 border-dynamic-orange/30 bg-dynamic-orange/10 p-0 shadow-xl transition-all hover:border-dynamic-orange/50 hover:shadow-2xl">
-              <div className="relative aspect-video overflow-hidden">
-                <Image
-                  src="/media/marketing/events/women-in-tech/soki-startup-another-women-led-startup-also-tuturuuus-neighbor-inside-spark-hub-community.jpg"
-                  alt="SOKI Startup: Kim"
-                  fill
-                  className="object-cover transition-transform duration-500 hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                />
-              </div>
-              <div className="flex flex-col items-center justify-center p-8">
-                <div className="mb-4 inline-block rounded-full border border-dynamic-orange/20 bg-dynamic-orange/10 px-4 py-2">
-                  <span className="font-semibold text-dynamic-orange text-sm">
-                    {t('partnerships.soki.title')}
-                  </span>
-                </div>
-                <p className="text-foreground/80">
-                  {t('partnerships.soki.description')}
-                </p>
-              </div>
-            </Card>
-
-            {/* Mai Nhung - rbac.vn Developer */}
-            <Card className="h-full overflow-hidden border-2 border-dynamic-cyan/30 bg-dynamic-cyan/10 p-0 shadow-xl transition-all hover:border-dynamic-cyan/50 hover:shadow-2xl">
-              <div className="relative aspect-video overflow-hidden">
-                <Image
-                  src="/media/marketing/events/women-in-tech/rbac-website-designed-and-developed-by-mai-nhung.jpg"
-                  alt="Mai Nhung: rbac.vn Developer"
-                  fill
-                  className="object-cover transition-transform duration-500 hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                />
-              </div>
-              <div className="flex flex-col items-center justify-center p-8">
-                <div className="mb-4 inline-block rounded-full border border-dynamic-cyan/20 bg-dynamic-cyan/10 px-4 py-2">
-                  <span className="font-semibold text-dynamic-cyan text-sm">
-                    {t('partnerships.nhung.title')}
-                  </span>
-                </div>
-                <p className="text-foreground/80">
-                  {t('partnerships.nhung.description')}
-                </p>
-              </div>
-            </Card>
-
-            {/* Đài - RBAC Project Leader */}
-            <Card className="h-full overflow-hidden border-2 border-dynamic-purple/30 bg-dynamic-purple/10 p-0 shadow-xl transition-all hover:border-dynamic-purple/50 hover:shadow-2xl">
-              <div className="relative aspect-video overflow-hidden">
-                <Image
-                  src="/media/marketing/events/women-in-tech/dai-rbac-project-leader.jpg"
-                  alt="Đài: RBAC Project Leader"
-                  fill
-                  className="object-cover transition-transform duration-500 hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                />
-              </div>
-              <div className="flex flex-col items-center justify-center p-8">
-                <div className="mb-4 inline-block rounded-full border border-dynamic-purple/20 bg-dynamic-purple/10 px-4 py-2">
-                  <span className="font-semibold text-dynamic-purple text-sm">
-                    {t('partnerships.dai.title')}
-                  </span>
-                </div>
-                <p className="text-foreground/80">
-                  {t('partnerships.dai.description')}
-                </p>
-              </div>
-            </Card>
-
-            {/* Như - RBAC Project Assistant */}
-            <Card className="h-full overflow-hidden border-2 border-dynamic-blue/30 bg-dynamic-blue/10 p-0 shadow-xl transition-all hover:border-dynamic-blue/50 hover:shadow-2xl">
-              <div className="relative aspect-video overflow-hidden">
-                <Image
-                  src="/media/marketing/events/women-in-tech/nhu-rbac-project-assistant.jpg"
-                  alt="Như: RBAC Project Assistant"
-                  fill
-                  className="object-cover transition-transform duration-500 hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                />
-              </div>
-              <div className="flex flex-col items-center justify-center p-8">
-                <div className="mb-4 inline-block rounded-full border border-dynamic-blue/20 bg-dynamic-blue/10 px-4 py-2">
-                  <span className="font-semibold text-dynamic-blue text-sm">
-                    {t('partnerships.nhu.title')}
-                  </span>
-                </div>
-                <p className="text-foreground/80">
-                  {t('partnerships.nhu.description')}
-                </p>
-              </div>
-            </Card>
-
-            {/* Community Engagement */}
-            <Card className="h-full overflow-hidden border-2 border-dynamic-pink/30 bg-dynamic-pink/10 p-0 shadow-xl transition-all hover:border-dynamic-pink/50 hover:shadow-2xl">
-              <div className="relative aspect-video overflow-hidden">
-                <Image
-                  src="/media/marketing/events/women-in-tech/empowering-women-in-stem-from-student-club.jpg"
-                  alt="Community Partnerships"
-                  fill
-                  className="object-cover transition-transform duration-500 hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                />
-              </div>
-              <div className="flex flex-col items-center justify-center p-8">
-                <div className="mb-4 inline-block rounded-full border border-dynamic-pink/20 bg-dynamic-pink/10 px-4 py-2">
-                  <span className="font-semibold text-dynamic-pink text-sm">
-                    {t('partnerships.community.title')}
-                  </span>
-                </div>
-                <p className="text-foreground/80">
-                  {t('partnerships.community.description')}
-                </p>
               </div>
             </Card>
           </div>
