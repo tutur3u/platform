@@ -257,6 +257,11 @@ export function RichTextEditor({
 
         // Handle Backspace
         if (event.key === 'Backspace' && onArrowUpRef.current) {
+          // If there's a text selection, let default behavior handle deletion
+          if (!selection.empty) {
+            return false;
+          }
+
           console.log('Backspace at pos:', $from.pos);
 
           // Check if we're on the first line
@@ -359,6 +364,74 @@ export function RichTextEditor({
           if ($from.pos === 1) {
             event.preventDefault();
             onArrowLeftRef.current();
+            return true;
+          }
+        }
+
+        // Handle Tab to convert paragraph to bullet list or indent list items
+        if (event.key === 'Tab' && !event.shiftKey) {
+          const { $from } = selection;
+          const node = $from.node();
+
+          // If we're in a list item, let default TipTap behavior handle indentation
+          if (
+            node.type.name === 'listItem' ||
+            $from.parent.type.name === 'listItem'
+          ) {
+            return false;
+          }
+
+          // If we're in a paragraph, convert to bullet list
+          if (
+            node.type.name === 'paragraph' ||
+            $from.parent.type.name === 'paragraph'
+          ) {
+            event.preventDefault();
+
+            // Manually create bullet list
+            const { schema } = state;
+            const bulletList = schema.nodes.bulletList;
+            const listItem = schema.nodes.listItem;
+            const paragraph = schema.nodes.paragraph;
+
+            if (bulletList && listItem && paragraph) {
+              const tr = state.tr;
+
+              // Find the position of the paragraph we want to replace
+              const paragraphDepth = $from.depth;
+              const paragraphPos = $from.before(paragraphDepth);
+              const paragraphEndPos = $from.after(paragraphDepth);
+
+              // Create a new paragraph with the current paragraph's content
+              const paragraphNode = paragraph.create(
+                null,
+                $from.parent.content
+              );
+
+              // Wrap the paragraph in a list item
+              const listItemNode = listItem.create(null, [paragraphNode]);
+
+              // Wrap the list item in a bullet list
+              const bulletListNode = bulletList.create(null, [listItemNode]);
+
+              // Replace the paragraph with the bullet list
+              tr.replaceWith(paragraphPos, paragraphEndPos, bulletListNode);
+
+              // Calculate new cursor position
+              // The structure is: bulletList (pos) + listItem (pos+1) + paragraph (pos+2) + content
+              const cursorOffset = selection.from - (paragraphPos + 1); // Offset from start of paragraph content
+              const newPos = paragraphPos + 3 + cursorOffset;
+
+              tr.setSelection(TextSelection.near(tr.doc.resolve(newPos)));
+
+              dispatch(tr);
+
+              // Manually trigger onChange if needed
+              if (!readOnly && onChangeRef.current) {
+                const newJson = tr.doc.toJSON();
+                onChangeRef.current(hasContent(newJson) ? newJson : null);
+              }
+            }
             return true;
           }
         }

@@ -25,6 +25,8 @@ export const APP_PUBLIC_PATHS = [
   '/documents',
   '/tumeet',
   '/meet-together',
+  '/women-in-tech',
+  '/vietnamese-womens-day',
   '/visualizations/horse-racing',
 ].reduce((acc: string[], path) => {
   // Add the original path

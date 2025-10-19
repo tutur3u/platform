@@ -1,5 +1,6 @@
 'use client';
 
+import { DEV_MODE } from '@/constants/common';
 import {
   BookText,
   Building,
@@ -21,7 +22,6 @@ import {
   Wallet,
 } from '@tuturuuu/icons';
 import type { ReactNode } from 'react';
-import { DEV_MODE } from '@/constants/common';
 
 export interface NavItem {
   href: string;
@@ -48,6 +48,11 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
     {
       href: '/contact',
       label: t('common.contact'),
+      description: '',
+    },
+    {
+      href: '/women-in-tech',
+      label: t('common.women-in-tech'),
       description: '',
     },
     {

@@ -277,6 +277,8 @@ function TaskEditDialogComponent({
   const previousTaskIdRef = useRef<string | null>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
+  const richTextEditorRef = useRef<HTMLDivElement>(null);
   const lastCursorPositionRef = useRef<number | null>(null);
   const targetEditorCursorRef = useRef<number | null>(null);
 
@@ -1111,7 +1113,6 @@ function TaskEditDialogComponent({
   const previousSlashQueryRef = useRef('');
   const previousMentionQueryRef = useRef('');
   const originalUrlRef = useRef<string | null>(null);
-  const editorContainerRef = useRef<HTMLDivElement>(null);
 
   const suggestionMenuWidth = 360;
 
@@ -3840,8 +3841,11 @@ function TaskEditDialogComponent({
             </div>
 
             {/* Main editing area with improved spacing */}
-            <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
-              <div ref={editorContainerRef} className="flex h-full flex-col">
+            <div
+              ref={editorContainerRef}
+              className="relative flex min-h-0 flex-1 flex-col overflow-y-auto"
+            >
+              <div className="flex flex-col">
                 {/* Task Name - Large and prominent with underline effect */}
                 <div className="group">
                   <Input
@@ -3922,7 +3926,7 @@ function TaskEditDialogComponent({
                 </div>
 
                 {/* Task Description - Full editor experience with subtle border */}
-                <div ref={editorRef} className="relative h-full flex-1 pb-8">
+                <div ref={editorRef} className="relative pb-8">
                   {isYjsSyncing ? (
                     <div className="flex min-h-[400px] items-center justify-center">
                       <div className="flex flex-col items-center gap-3">
@@ -3933,77 +3937,79 @@ function TaskEditDialogComponent({
                       </div>
                     </div>
                   ) : (
-                    <RichTextEditor
-                      content={description}
-                      onChange={setDescription}
-                      writePlaceholder="Add a detailed description, attach files, or use markdown..."
-                      titlePlaceholder=""
-                      className="h-full min-h-[400px] border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
-                      workspaceId={workspaceId || undefined}
-                      onImageUpload={handleImageUpload}
-                      flushPendingRef={flushEditorPendingRef}
-                      initialCursorOffset={targetEditorCursorRef.current}
-                      onEditorReady={handleEditorReady}
-                      boardId={boardId}
-                      availableLists={availableLists}
-                      queryClient={queryClient}
-                      onArrowUp={(cursorOffset) => {
-                        // Focus the title input when pressing arrow up at the start
-                        if (titleInputRef.current) {
-                          titleInputRef.current.focus();
+                    <div ref={richTextEditorRef} className="relative">
+                      <RichTextEditor
+                        content={description}
+                        onChange={setDescription}
+                        writePlaceholder="Add a detailed description, attach files, or use markdown..."
+                        titlePlaceholder=""
+                        className="min-h-[400px] border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
+                        workspaceId={workspaceId || undefined}
+                        onImageUpload={handleImageUpload}
+                        flushPendingRef={flushEditorPendingRef}
+                        initialCursorOffset={targetEditorCursorRef.current}
+                        onEditorReady={handleEditorReady}
+                        boardId={boardId}
+                        availableLists={availableLists}
+                        queryClient={queryClient}
+                        onArrowUp={(cursorOffset) => {
+                          // Focus the title input when pressing arrow up at the start
+                          if (titleInputRef.current) {
+                            titleInputRef.current.focus();
 
-                          // Apply smart cursor positioning
-                          if (cursorOffset !== undefined) {
-                            const textLength =
-                              titleInputRef.current.value.length;
-                            // Use the stored position from last down arrow, or the offset from editor
-                            const targetPosition =
-                              lastCursorPositionRef.current ??
-                              Math.min(cursorOffset, textLength);
-                            titleInputRef.current.setSelectionRange(
-                              targetPosition,
-                              targetPosition
-                            );
-                            // Clear the stored position after use
-                            lastCursorPositionRef.current = null;
+                            // Apply smart cursor positioning
+                            if (cursorOffset !== undefined) {
+                              const textLength =
+                                titleInputRef.current.value.length;
+                              // Use the stored position from last down arrow, or the offset from editor
+                              const targetPosition =
+                                lastCursorPositionRef.current ??
+                                Math.min(cursorOffset, textLength);
+                              titleInputRef.current.setSelectionRange(
+                                targetPosition,
+                                targetPosition
+                              );
+                              // Clear the stored position after use
+                              lastCursorPositionRef.current = null;
+                            }
                           }
+                        }}
+                        onArrowLeft={() => {
+                          // Focus the title input at the end when pressing arrow left at the start
+                          if (titleInputRef.current) {
+                            titleInputRef.current.focus();
+                            // Set cursor to the end of the input
+                            const length = titleInputRef.current.value.length;
+                            titleInputRef.current.setSelectionRange(
+                              length,
+                              length
+                            );
+                          }
+                        }}
+                        yjsDoc={
+                          isOpen && !isCreateMode && collaborationMode
+                            ? doc
+                            : null
                         }
-                      }}
-                      onArrowLeft={() => {
-                        // Focus the title input at the end when pressing arrow left at the start
-                        if (titleInputRef.current) {
-                          titleInputRef.current.focus();
-                          // Set cursor to the end of the input
-                          const length = titleInputRef.current.value.length;
-                          titleInputRef.current.setSelectionRange(
-                            length,
-                            length
-                          );
+                        yjsProvider={
+                          isOpen && !isCreateMode && collaborationMode
+                            ? provider
+                            : null
                         }
-                      }}
-                      yjsDoc={
-                        isOpen && !isCreateMode && collaborationMode
-                          ? doc
-                          : null
-                      }
-                      yjsProvider={
-                        isOpen && !isCreateMode && collaborationMode
-                          ? provider
-                          : null
-                      }
-                      allowCollaboration={
-                        isOpen && !isCreateMode && collaborationMode
-                      }
-                    />
+                        allowCollaboration={
+                          isOpen && !isCreateMode && collaborationMode
+                        }
+                      />
+                      {isOpen && !isCreateMode && collaborationMode && (
+                        <CursorOverlayWrapper
+                          channelName={`editor-cursor-${task?.id}`}
+                          containerRef={richTextEditorRef}
+                        />
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
-              {isOpen && !isCreateMode && collaborationMode && (
-                <CursorOverlayWrapper
-                  channelName={`editor-cursor-${task?.id}`}
-                  containerRef={editorContainerRef}
-                />
-              )}
             </div>
           </div>
 

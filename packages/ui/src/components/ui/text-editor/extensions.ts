@@ -1,6 +1,7 @@
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import Highlight from '@tiptap/extension-highlight';
+import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import { TaskItem, TaskList } from '@tiptap/extension-list';
@@ -54,6 +55,7 @@ export function getEditorExtensions({
     StarterKit.configure({
       link: false,
       strike: false,
+      horizontalRule: false, // Disable default to use custom config
       undoRedo: doc ? false : undefined,
       bulletList: {
         HTMLAttributes: {
@@ -64,6 +66,29 @@ export function getEditorExtensions({
         HTMLAttributes: {
           class: 'list-decimal ml-3',
         },
+      },
+    }),
+    HorizontalRule.extend({
+      addInputRules() {
+        return [
+          {
+            find: /^---$/,
+            handler: ({ state, range: _, chain }) => {
+              const { $from } = state.selection;
+
+              // Get the position of the paragraph containing "---"
+              const paragraphDepth = $from.depth;
+              const paragraphPos = $from.before(paragraphDepth);
+              const paragraphEndPos = $from.after(paragraphDepth);
+
+              // Replace the entire paragraph with just the horizontal rule
+              chain()
+                .deleteRange({ from: paragraphPos, to: paragraphEndPos })
+                .insertContentAt(paragraphPos, { type: 'horizontalRule' })
+                .run();
+            },
+          },
+        ];
       },
     }),
     TextAlign.configure({
