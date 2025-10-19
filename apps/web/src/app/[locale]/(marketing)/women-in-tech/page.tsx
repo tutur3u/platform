@@ -1389,7 +1389,7 @@ export default function VietnameseWomensDayPage() {
             </p>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-2 2xl:grid-cols-4">
+          <div className="grid gap-8 text-pretty text-center md:grid-cols-2 2xl:grid-cols-4">
             {/* AllMind Partnership - Sophie & Sweet */}
             <Card className="h-full overflow-hidden border-2 border-dynamic-blue/30 bg-dynamic-blue/10 p-0 shadow-xl transition-all hover:border-dynamic-blue/50 hover:shadow-2xl">
               <div className="relative aspect-video overflow-hidden">

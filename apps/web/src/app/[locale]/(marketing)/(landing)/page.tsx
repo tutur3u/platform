@@ -88,6 +88,67 @@ export default function MarketingPage() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.04)_1px,transparent_1px)] bg-[size:120px]" />
       </div>
 
+      {/* Vietnamese Women's Day Banner */}
+      <motion.section
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="relative px-4 pt-6 sm:px-6 lg:px-8"
+      >
+        <div className="mx-auto max-w-7xl">
+          <Link href="/women-in-tech">
+            <Card className="group relative overflow-hidden border-2 border-dynamic-pink/30 bg-gradient-to-r from-dynamic-pink/10 via-dynamic-purple/10 to-dynamic-pink/10 p-6 transition-all hover:border-dynamic-pink/50 hover:shadow-dynamic-pink/20 hover:shadow-lg sm:p-8">
+              {/* Decorative Elements */}
+              <div className="absolute inset-0 overflow-hidden opacity-20">
+                <div className="absolute top-0 left-0 h-32 w-32 rounded-full bg-dynamic-pink blur-3xl" />
+                <div className="absolute right-0 bottom-0 h-32 w-32 rounded-full bg-dynamic-purple blur-3xl" />
+              </div>
+
+              {/* Content */}
+              <div className="relative flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+                {/* Icon */}
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-dynamic-pink to-dynamic-purple shadow-lg sm:h-20 sm:w-20">
+                  <Heart className="h-8 w-8 text-white sm:h-10 sm:w-10" />
+                </div>
+
+                {/* Text Content */}
+                <div className="flex-1">
+                  <div className="mb-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+                    <Badge
+                      variant="secondary"
+                      className="border-dynamic-pink/30 bg-dynamic-pink/20 text-dynamic-pink"
+                    >
+                      <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                      {t('womenInTechBanner.date')}
+                    </Badge>
+                    <Badge
+                      variant="secondary"
+                      className="border-dynamic-purple/30 bg-dynamic-purple/20 text-dynamic-purple"
+                    >
+                      {t('womenInTechBanner.occasion')}
+                    </Badge>
+                  </div>
+                  <h3 className="mb-2 bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-pink bg-clip-text font-bold text-2xl text-transparent sm:text-3xl">
+                    {t('womenInTechBanner.title')}
+                  </h3>
+                  <p className="text-foreground/70 sm:text-lg">
+                    {t('womenInTechBanner.description')}
+                  </p>
+                </div>
+
+                {/* CTA Arrow */}
+                <div className="flex items-center gap-2 text-dynamic-pink">
+                  <span className="hidden font-semibold sm:block">
+                    {t('womenInTechBanner.cta')}
+                  </span>
+                  <ArrowRight className="h-6 w-6 transition-transform group-hover:translate-x-1" />
+                </div>
+              </div>
+            </Card>
+          </Link>
+        </div>
+      </motion.section>
+
       {/* Hero Section */}
       <section className="relative px-4 pt-24 pb-16 sm:px-6 sm:pt-32 sm:pb-20 lg:px-8 lg:pt-40 lg:pb-24">
         <div className="mx-auto max-w-7xl">

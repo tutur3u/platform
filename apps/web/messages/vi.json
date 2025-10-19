@@ -3981,6 +3981,13 @@
     "description": "Lịch sử chạy được sử dụng để xem lịch sử của các công việc định kỳ."
   },
   "landing": {
+    "womenInTechBanner": {
+      "date": "20 Tháng 10",
+      "occasion": "Ngày Phụ Nữ Việt Nam",
+      "title": "Tôn Vinh Phụ Nữ Trong Ngành Công Nghệ",
+      "description": "Vinh danh những người phụ nữ xuất sắc đang định hình đội ngũ của chúng tôi và ngành công nghệ. Khám phá câu chuyện về sự đổi mới, khả năng lãnh đạo và tầm ảnh hưởng của họ.",
+      "cta": "Tìm Hiểu Thêm"
+    },
     "hero": {
       "badge": "Hệ Điều Hành Thông Minh Cho Công Việc Hiện Đại",
       "title": {

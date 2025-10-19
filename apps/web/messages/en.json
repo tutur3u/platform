@@ -3845,6 +3845,13 @@
     "description": "Cron executions are used to view the history of cron jobs."
   },
   "landing": {
+    "womenInTechBanner": {
+      "date": "October 20",
+      "occasion": "Vietnamese Women's Day",
+      "title": "Celebrating Women in Tech",
+      "description": "Honoring the incredible women shaping our team and the tech industry. Discover their stories of innovation, leadership, and impact.",
+      "cta": "Learn More"
+    },
     "hero": {
       "badge": "The Intelligent OS for Modern Work",
       "title": {
