@@ -5539,12 +5539,12 @@
         "description": "Thư và Ngọc (Sophie và Sweet), những người sáng lập tuyệt vời của AllMind, là những người hàng xóm trong cộng đồng SPARK Hub tuyệt vời. Họ rất trân trọng việc Tuturuuu luôn sẵn sàng giúp đỡ và luôn ở đó với mọi người—không chỉ những người cần giúp đỡ. Cùng nhau, tụi mình đang xây dựng hệ sinh thái nơi mọi người tương trợ nhau, bất kể bạn là ai."
       },
       "sparkHub": {
-        "title": "SPARK Hub: Chị Tiên và Những Đóng Góp",
+        "title": "SPARK Hub: Ngọn Lửa Mới",
         "description": "Chị Tiên, program coordinator của SPARK Hub, đã cho tụi mình nhiều hơn không gian co-working—chị cho tụi mình cơ hội, kết nối, và sự tin tưởng khi tụi mình cần nhất. Chị là mentor, người kết nối, và người ủng hộ tất cả mọi người ở Tuturuuu.",
         "quote": "Được biết những cá nhân như các bạn chính là lý do mình yêu công việc của mình bất chấp những gì mình đang trải qua. Mình có thể nói gần như mọi thứ về bất kỳ khía cạnh nào nhưng không bao giờ hối hận dù chỉ một chút khi làm việc với những cá nhân tài năng như tất cả các bạn. Mình biết ơn vì có các bạn và Tuturuuu ở đây."
       },
       "rmit": {
-        "title": "Đại học RMIT: Mở Cánh Cửa Ra Thế Giới",
+        "title": "RMIT: Mở Cánh Cửa Ra Thế Giới",
         "description": "Giáo sư Iwona Miliszewska, Trưởng khoa SSET, đã dẫn dắt sáng kiến chuyến đi Poznań thay đổi góc nhìn của tụi mình. Chị Hoa, Manager của External Engagement & Events tại SSET, và chị Nguyên, Senior Coordinator của Academic Advisory and Planning, đã giúp các kỹ sư tại SSET (School of Science, Engineering & Technology) có được những cơ hội tuyệt vời để đi ra nước ngoài—như International Strategic Management Workshop tại Poznań, Ba Lan tại Poznań University of Technology (PUT). Họ tin tưởng vào tiềm năng của sinh viên và mở ra những cánh cửa dẫn đến trải nghiệm toàn cầu định hình nên thế giới quan của tụi mình.",
         "link": "https://www.rmit.edu.vn/students/student-news-and-events/student-news/2025/together-abroad-rmit-students-build-global-bonds-in-poland",
         "linkText": "Đọc về trải nghiệm tại Ba Lan"
@@ -5554,7 +5554,7 @@
         "description": "Chị Kim, founder của SOKI—một startup do phụ nữ lãnh đạo và là hàng xóm tuyệt vời tại SPARK Hub—đã giúp Tuturuuu mở rộng network thông qua hợp tác chiến lược với RMIT RISE Club. Chị đang xây dựng tầm nhìn của riêng mình trong khi giúp đỡ những người khác phát triển, thể hiện cộng đồng thực sự là gì."
       },
       "nhung": {
-        "title": "Mai Nhung: Xây Dựng rbac.vn",
+        "title": "Nhung: Xây Dựng rbac.vn",
         "description": "Chị Nhung, Associate Software Engineer từ Tuturuuu và là người đóng góp mã nguồn mở (open-source) tận tâm, đã thiết kế và phát triển rbac.vn cho RMIT Business Analytics Champion Mùa 6 (2025). Sự xuất sắc về kỹ thuật và cam kết với đổi mới dựa trên cộng đồng của chị đã tạo nên website kết nối sinh viên với các thử thách phân tích dữ liệu thực tế. Làm việc cùng team RMIT Analytics Club, chị đã biến tầm nhìn của Tuturuuu về trao quyền cho sinh viên thông qua công nghệ thành hiện thực."
       },
       "dai": {
@@ -5566,7 +5566,7 @@
         "description": "Em Như, phó ban tổ chức của RMIT Business Analytics Champion Mùa 6 (2025) từ RMIT Analytics Club, đã đóng vai trò quan trọng trong việc phối hợp phát triển và tinh chỉnh rbac.vn. Sự tận tâm và chú ý đến từng chi tiết của em đảm bảo website đáp ứng nhu cầu của cả thí sinh và ban tổ chức, thể hiện cách hợp tác tạo nên sự xuất sắc."
       },
       "community": {
-        "title": "NEO Culture Tech: Cùng Nhau Lớn Lên",
+        "title": "NCT: Cùng Nhau Lớn Lên",
         "description": "Từ sinh viên RMIT đến cộng đồng công nghệ toàn cầu, từ gặp gỡ địa phương đến kết nối quốc tế—tụi mình đang xây dựng một gia đình hỗ trợ nhau vượt qua biên giới."
       }
     },
