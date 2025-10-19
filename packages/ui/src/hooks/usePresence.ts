@@ -9,7 +9,7 @@ export interface UserPresenceState {
   online_at: string;
 }
 
-export function usePresence(channelName: string, trackCurrentUser = true) {
+export function usePresence(channelName: string) {
   const [presenceState, setPresenceState] = useState<
     RealtimePresenceState<UserPresenceState>
   >({});
@@ -90,10 +90,6 @@ export function usePresence(channelName: string, trackCurrentUser = true) {
 
             switch (status) {
               case 'SUBSCRIBED': {
-                if (!trackCurrentUser) {
-                  break;
-                }
-
                 const presenceTrackStatus = await channel.track({
                   user: {
                     id: user.id,
@@ -213,7 +209,7 @@ export function usePresence(channelName: string, trackCurrentUser = true) {
         channelRef.current = null;
       }
     };
-  }, [channelName, trackCurrentUser]);
+  }, [channelName]);
 
   return {
     presenceState,

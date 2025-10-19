@@ -67,6 +67,7 @@ import {
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
+import { TaskViewerProvider } from '../../providers/task-viewer-provider';
 import { CursorOverlayWrapper } from '../../shared/cursor-overlay';
 import {
   buildEstimationIndices,
@@ -1911,133 +1912,139 @@ export function KanbanBoard({
       )}
 
       {/* Kanban Board */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCorners}
-          onDragStart={onDragStart}
-          onDragOver={onDragOver}
-          onDragEnd={onDragEnd}
-          measuring={{
-            droppable: {
-              strategy: MeasuringStrategy.Always,
-            },
-          }}
-          autoScroll={false}
-        >
-          <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent relative flex h-full w-full gap-4 overflow-x-auto">
-            <SortableContext
-              items={columnsId}
-              strategy={horizontalListSortingStrategy}
-            >
-              <div ref={boardRef} className="flex h-full gap-4 p-2 md:px-4">
-                {columns
-                  .sort((a, b) => {
-                    // First sort by status priority, then by position within status
-                    const statusOrder = {
-                      not_started: 0,
-                      active: 1,
-                      done: 2,
-                      closed: 3,
-                    };
-                    const statusA =
-                      statusOrder[a.status as keyof typeof statusOrder] ?? 999;
-                    const statusB =
-                      statusOrder[b.status as keyof typeof statusOrder] ?? 999;
-                    if (statusA !== statusB) return statusA - statusB;
-                    return a.position - b.position;
-                  })
-                  .map((list) => {
-                    // Filter tasks for this list
-                    let listTasks = tasks.filter(
-                      (task) => task.list_id === list.id
-                    );
+      <TaskViewerProvider boardId={boardId ?? ''}>
+        <div className="flex-1 overflow-x-auto overflow-y-hidden">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={onDragStart}
+            onDragOver={onDragOver}
+            onDragEnd={onDragEnd}
+            measuring={{
+              droppable: {
+                strategy: MeasuringStrategy.Always,
+              },
+            }}
+            autoScroll={false}
+          >
+            <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent relative flex h-full w-full gap-4 overflow-x-auto">
+              <SortableContext
+                items={columnsId}
+                strategy={horizontalListSortingStrategy}
+              >
+                <div ref={boardRef} className="flex h-full gap-4 p-2 md:px-4">
+                  {columns
+                    .sort((a, b) => {
+                      // First sort by status priority, then by position within status
+                      const statusOrder = {
+                        not_started: 0,
+                        active: 1,
+                        done: 2,
+                        closed: 3,
+                      };
+                      const statusA =
+                        statusOrder[a.status as keyof typeof statusOrder] ??
+                        999;
+                      const statusB =
+                        statusOrder[b.status as keyof typeof statusOrder] ??
+                        999;
+                      if (statusA !== statusB) return statusA - statusB;
+                      return a.position - b.position;
+                    })
+                    .map((list) => {
+                      // Filter tasks for this list
+                      let listTasks = tasks.filter(
+                        (task) => task.list_id === list.id
+                      );
 
-                    // Sort tasks - done/closed lists ALWAYS sort by timestamps only, others respect disableSort
-                    listTasks = listTasks.sort((a, b) => {
-                      // For done lists, ONLY sort by completed_at (most recent first) - no fallback to sort_key
-                      if (list.status === 'done') {
-                        const completionA = a.completed_at
-                          ? new Date(a.completed_at).getTime()
-                          : 0;
-                        const completionB = b.completed_at
-                          ? new Date(b.completed_at).getTime()
-                          : 0;
-                        return completionB - completionA; // Always return, never fall through
-                      }
-
-                      // For closed lists, ONLY sort by closed_at (most recent first) - no fallback to sort_key
-                      if (list.status === 'closed') {
-                        const closedA = a.closed_at
-                          ? new Date(a.closed_at).getTime()
-                          : 0;
-                        const closedB = b.closed_at
-                          ? new Date(b.closed_at).getTime()
-                          : 0;
-                        return closedB - closedA; // Always return, never fall through
-                      }
-
-                      // For all other lists, only sort by sort_key if parent hasn't already sorted
-                      if (!disableSort) {
-                        const sortA = a.sort_key ?? MAX_SAFE_INTEGER_SORT;
-                        const sortB = b.sort_key ?? MAX_SAFE_INTEGER_SORT;
-                        if (sortA !== sortB) return sortA - sortB;
-                        if (!a.created_at || !b.created_at) return 0;
-                        return (
-                          new Date(a.created_at).getTime() -
-                          new Date(b.created_at).getTime()
-                        );
-                      }
-
-                      return 0;
-                    });
-
-                    return (
-                      <BoardColumn
-                        key={list.id}
-                        column={list}
-                        boardId={boardId ?? ''}
-                        tasks={listTasks}
-                        isPersonalWorkspace={workspace.personal}
-                        onUpdate={handleUpdate}
-                        onAddTask={() =>
-                          boardId &&
-                          createTask(boardId, list.id, columns, filters)
+                      // Sort tasks - done/closed lists ALWAYS sort by timestamps only, others respect disableSort
+                      listTasks = listTasks.sort((a, b) => {
+                        // For done lists, ONLY sort by completed_at (most recent first) - no fallback to sort_key
+                        if (list.status === 'done') {
+                          const completionA = a.completed_at
+                            ? new Date(a.completed_at).getTime()
+                            : 0;
+                          const completionB = b.completed_at
+                            ? new Date(b.completed_at).getTime()
+                            : 0;
+                          return completionB - completionA; // Always return, never fall through
                         }
-                        selectedTasks={selectedTasks}
-                        isMultiSelectMode={isMultiSelectMode}
-                        onTaskSelect={handleTaskSelect}
-                        dragPreviewPosition={
-                          dragPreviewPosition?.listId === String(list.id)
-                            ? dragPreviewPosition
-                            : null
+
+                        // For closed lists, ONLY sort by closed_at (most recent first) - no fallback to sort_key
+                        if (list.status === 'closed') {
+                          const closedA = a.closed_at
+                            ? new Date(a.closed_at).getTime()
+                            : 0;
+                          const closedB = b.closed_at
+                            ? new Date(b.closed_at).getTime()
+                            : 0;
+                          return closedB - closedA; // Always return, never fall through
                         }
-                        taskHeightsRef={taskHeightsRef}
-                        optimisticUpdateInProgress={optimisticUpdateInProgress}
-                        filters={filters}
-                      />
-                    );
-                  })}
-                <TaskListForm
-                  boardId={boardId ?? ''}
-                  onListCreated={handleUpdate}
+
+                        // For all other lists, only sort by sort_key if parent hasn't already sorted
+                        if (!disableSort) {
+                          const sortA = a.sort_key ?? MAX_SAFE_INTEGER_SORT;
+                          const sortB = b.sort_key ?? MAX_SAFE_INTEGER_SORT;
+                          if (sortA !== sortB) return sortA - sortB;
+                          if (!a.created_at || !b.created_at) return 0;
+                          return (
+                            new Date(a.created_at).getTime() -
+                            new Date(b.created_at).getTime()
+                          );
+                        }
+
+                        return 0;
+                      });
+
+                      return (
+                        <BoardColumn
+                          key={list.id}
+                          column={list}
+                          boardId={boardId ?? ''}
+                          tasks={listTasks}
+                          isPersonalWorkspace={workspace.personal}
+                          onUpdate={handleUpdate}
+                          onAddTask={() =>
+                            boardId &&
+                            createTask(boardId, list.id, columns, filters)
+                          }
+                          selectedTasks={selectedTasks}
+                          isMultiSelectMode={isMultiSelectMode}
+                          onTaskSelect={handleTaskSelect}
+                          dragPreviewPosition={
+                            dragPreviewPosition?.listId === String(list.id)
+                              ? dragPreviewPosition
+                              : null
+                          }
+                          taskHeightsRef={taskHeightsRef}
+                          optimisticUpdateInProgress={
+                            optimisticUpdateInProgress
+                          }
+                          filters={filters}
+                        />
+                      );
+                    })}
+                  <TaskListForm
+                    boardId={boardId ?? ''}
+                    onListCreated={handleUpdate}
+                  />
+                </div>
+              </SortableContext>
+
+              {/* Overlay for collaborator cursors */}
+              {!workspace.personal && boardId && (
+                <CursorOverlayWrapper
+                  channelName={`board-cursor-${boardId}`}
+                  containerRef={boardRef}
                 />
-              </div>
-            </SortableContext>
-
-            {/* Overlay for collaborator cursors */}
-            {!workspace.personal && boardId && (
-              <CursorOverlayWrapper
-                channelName={`board-cursor-${boardId}`}
-                containerRef={boardRef}
-              />
-            )}
-          </div>
-          <DragOverlay dropAnimation={null}>
-            {MemoizedTaskOverlay || MemoizedColumnOverlay}
-          </DragOverlay>
-        </DndContext>
-      </div>
+              )}
+            </div>
+            <DragOverlay dropAnimation={null}>
+              {MemoizedTaskOverlay || MemoizedColumnOverlay}
+            </DragOverlay>
+          </DndContext>
+        </div>
+      </TaskViewerProvider>
 
       {/* Board Selector Dialog */}
       <BoardSelector

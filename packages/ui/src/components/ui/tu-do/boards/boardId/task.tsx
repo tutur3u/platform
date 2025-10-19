@@ -59,10 +59,11 @@ import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { useTaskDialogState } from '../../hooks/useTaskDialogState';
 import { useTaskLabelManagement } from '../../hooks/useTaskLabelManagement';
 import { useTaskProjectManagement } from '../../hooks/useTaskProjectManagement';
+import { useTaskDialogContext } from '../../providers/task-dialog-provider';
 import { AssigneeSelect } from '../../shared/assignee-select';
 import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
-import { UserPresenceAvatarsComponent } from '../../shared/user-presence-avatars';
+import { TaskViewerAvatarsComponent } from '../../shared/user-presence-avatars';
 import {
   getAssigneeInitials,
   getCardColorClasses as getCardColorClassesUtil,
@@ -118,6 +119,7 @@ function TaskCardInner({
 
   // Use extracted dialog state management hook
   const { state: dialogState, actions: dialogActions } = useTaskDialogState();
+  const { state: dialogStateFromProvider } = useTaskDialogContext();
 
   // Use centralized task dialog
   const { openTask } = useTaskDialog();
@@ -872,10 +874,12 @@ function TaskCardInner({
                 )}
             </div>
             <div className="flex items-center gap-2">
-              <UserPresenceAvatarsComponent
-                channelName={`task_presence_${task.id}`}
-                trackCurrentUser={dialogState.editDialogOpen}
-                avatarClassName="size-4 sm:size-5"
+              <TaskViewerAvatarsComponent
+                taskId={task.id}
+                isViewing={
+                  dialogStateFromProvider.isOpen &&
+                  dialogStateFromProvider.task?.id === task.id
+                }
               />
 
               {/* Checkbox: always at far right */}

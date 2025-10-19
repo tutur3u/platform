@@ -10,7 +10,7 @@ interface TaskDialogWrapperProps {
 
 /**
  * Client-side wrapper that provides the centralized task dialog
- * to all components in the workspace
+ * and task viewer tracking to all components in the workspace
  */
 export function TaskDialogWrapper({ children }: TaskDialogWrapperProps) {
   return (

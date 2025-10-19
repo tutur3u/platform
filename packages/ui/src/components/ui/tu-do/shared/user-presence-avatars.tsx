@@ -12,6 +12,8 @@ import {
 } from '@tuturuuu/ui/hover-card';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+import { useEffect } from 'react';
+import { useTaskViewerContext } from '../providers/task-viewer-provider';
 
 interface UserPresenceAvatarsProps {
   presenceState: RealtimePresenceState<UserPresenceState>;
@@ -20,26 +22,49 @@ interface UserPresenceAvatarsProps {
   avatarClassName?: string;
 }
 
-export function UserPresenceAvatarsComponent({
-  channelName,
-  trackCurrentUser = true,
-  avatarClassName,
+export function TaskViewerAvatarsComponent({
+  taskId,
+  isViewing,
 }: {
-  channelName: string;
-  trackCurrentUser?: boolean;
-  avatarClassName?: string;
+  taskId: string;
+  isViewing: boolean;
 }) {
-  const { presenceState, currentUserId } = usePresence(
-    channelName,
-    trackCurrentUser
-  );
+  const { getTaskViewers, currentUserId, viewTask, unviewTask } =
+    useTaskViewerContext();
+
+  useEffect(() => {
+    if (isViewing) {
+      viewTask(taskId);
+    } else {
+      unviewTask(taskId);
+    }
+  }, [taskId, isViewing, viewTask, unviewTask]);
+
+  // Get viewers for the board (not per task)
+  const presenceState = getTaskViewers(taskId);
 
   return (
     <UserPresenceAvatars
       presenceState={presenceState}
       currentUserId={currentUserId}
       maxDisplay={5}
-      avatarClassName={avatarClassName}
+      avatarClassName="size-4 sm:size-5"
+    />
+  );
+}
+
+export function UserPresenceAvatarsComponent({
+  channelName,
+}: {
+  channelName: string;
+}) {
+  const { presenceState, currentUserId } = usePresence(channelName);
+
+  return (
+    <UserPresenceAvatars
+      presenceState={presenceState}
+      currentUserId={currentUserId}
+      maxDisplay={5}
     />
   );
 }
