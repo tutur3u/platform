@@ -5403,265 +5403,265 @@
     }
   },
   "vietnameseWomensDay": {
-    "languageAvailable": "Trang này có sẵn bằng tiếng Việt và tiếng Anh",
+    "languageAvailable": "Bài viết này có cả phiên bản tiếng Việt và tiếng Anh",
     "hero": {
       "badge": "20 Tháng 10, 2025 · Ngày Phụ Nữ Việt Nam",
       "title": {
-        "part1": "Từ Việt Nam Ra Thế Giới:",
-        "highlight": "Phụ Nữ Dẫn Dắt",
+        "part1": "Từ Việt Nam Vươn Ra Thế Giới:",
+        "highlight": "Phụ Nữ Viết Nên",
         "part2": "Tương Lai Công Nghệ"
       },
-      "description": "Ở từng bước đi của hành trình, từ người đóng góp đầu tiên cho đến ban lãnh đạo, từ hợp tác trong nước đến kết nối toàn cầu. Phụ nữ đã và đang lãnh đạo, xây dựng, và truyền cảm hứng. Đây là cách tụi mình cùng nhau tạo nên tương lai.",
+      "description": "Trong từng bước chân của hành trình, từ người đóng góp đầu tiên đến ban lãnh đạo, từ những mối liên kết trong nước đến hợp tác toàn cầu. Phụ nữ đã và đang dẫn dắt, xây dựng, và thắp lên ngọn lửa nhiệt huyết. Đây là cách tụi mình cùng nhau tạo nên tương lai.",
       "cta": {
-        "joinUs": "Tham Gia Phong Trào",
-        "learnMore": "Câu Chuyện Toàn Cầu"
+        "joinUs": "Cùng Tụi Mình Tạo Dấu Ấn",
+        "learnMore": "Câu Chuyện Từ Việt Nam Ra Thế Giới"
       }
     },
     "ceo": {
       "name": "Võ Hoàng Phúc",
       "title": "Nhà Sáng Lập & CEO",
       "company": "Tuturuuu",
-      "messageTitle": "Cùng Nhau Xây Dựng: Từ Bạn Bè Đến Phong Trào Toàn Cầu",
+      "messageTitle": "Cùng Nhau Viết Nên Câu Chuyện: Từ Những Người Bạn Đến Phong Trào Toàn Cầu",
       "message": {
-        "paragraph1": "Khi khởi đầu Tuturuuu, mình mơ ước xây dựng công nghệ cùng những người mình tin tưởng - bạn bè, những người mentors, và những người tràn đầy đam mê và nhiệt huyết. Điều tự hào nhất với mình là những người phụ nữ đã dẫn dắt hành trình này từ ngày đầu tiên, không phải là nhân viên, mà là bạn bè, đối tác, và những người tiên phong.",
-        "paragraph2": "Thư, bạn cùng trang lứa và là kỹ sư đầu tiên tại Tuturuuu ngoài mình, đã tin vào ý tưởng điên rồ này khi nó chỉ là giấc mơ. Chị Quỳnh, người trở thành COO đầu tiên của Tuturuuu và mentoring cho tất cả tụi mình, đã giúp định hình Tuturuuu có thể trở thành điều gì. Em Tâm, trẻ hơn nhưng cũng tài năng không kém, trở thành People & Operations Coordinator đầu tiên và xây dựng people operations từ con số 0. Họ không chỉ là đồng đội - họ là gia đình.",
-        "paragraph3": "Hôm nay, tụi mình cùng xây dựng với Thư và Ngọc, những người sáng lập tuyệt vời của AllMind đang trên cùng một hành trình. Chị Tiên, từ SPARK Hub, đã mở ra những cánh cửa mà tụi mình không biết là có - kết nối tụi mình với những con người tuyệt vời, tạo không gian để cùng nhau đổi mới, và quan trọng nhất là tin tưởng vào tụi mình khi tụi mình cần nhất. Từ sinh viên RMIT đến các đối tác toàn cầu, mỗi kết nối làm tụi mình mạnh mẽ hơn.",
-        "paragraph4": "Đây không chỉ là về kinh doanh - mà là về bạn bè hỗ trợ lẫn nhau, những người mentors nâng đỡ thế hệ kế tiếp, và mọi người từ khắp nơi cùng nhau xây dựng điều gì đó ý nghĩa. Nếu bạn đam mê công nghệ và muốn là một phần của gia đình cùng nhau xây dựng, tụi mình ở đây.",
-        "closing": "Gửi bạn Thư, chị Quỳnh, em Tâm, Thư và Ngọc (AllMind), chị Tiên, và tất cả những người phụ nữ đã đồng hành: cảm ơn vì đã luôn ở đây, không chỉ là đồng nghiệp mà là gia đình. Các chị, các em, các bạn chính là lý do Tuturuuu tồn tại và tiếp tục phát triển."
+        "paragraph1": "Khi khởi đầu Tuturuuu, mình mơ ước được xây dựng công nghệ cùng những con người mình tin tưởng - bạn bè, những người chỉ đường, và những tâm hồn tràn đầy đam mê. Điều khiến mình tự hào nhất chính là những người phụ nữ đã dẫn lối cho hành trình này ngay từ những ngày đầu, không phải với vai trò nhân viên, mà là những người bạn đồng hành, những đối tác tin cậy, và những người tiên phong mở đường.",
+        "paragraph2": "Thư, người bạn cùng trang lứa và là kỹ sư đầu tiên gia nhập Tuturuuu bên cạnh mình, đã tin vào giấc mơ điên rồ này khi nó còn chưa thành hình. Chị Quỳnh, người trở thành COO đầu tiên và là người cố vấn cho tất cả tụi mình, đã giúp vẽ nên bức tranh Tuturuuu có thể trở thành. Em Tâm, tuy trẻ nhưng không kém phần tài năng, đã trở thành People & Operations Coordinator đầu tiên và xây dựng people operations từ con số 0. Họ không chỉ đơn thuần là đồng đội, họ là gia đình thực sự của tụi mình.",
+        "paragraph3": "Hôm nay, tụi mình được sát cánh cùng Thư và Ngọc, hai người sáng lập tài năng của AllMind, những người cũng đang trên cùng một hành trình. Chị Tiên từ SPARK Hub đã mở ra những cánh cửa mà tụi mình không ngờ tới, kết nối tụi mình với những con người tuyệt vời, tạo không gian để cùng nhau đổi mới, và quan trọng nhất là tin tưởng vào tụi mình trong những lúc tụi mình cần nhất. Từ các bạn sinh viên RMIT cho đến những đối tác toàn cầu, mỗi mối liên kết đều làm tụi mình thêm mạnh mẽ.",
+        "paragraph4": "Đây không chỉ đơn thuần là câu chuyện kinh doanh, mà còn là về những người bạn sát cánh bên nhau, những người dẫn đường nâng đỡ thế hệ kế tiếp, và những con người từ khắp nơi trên thế giới cùng nhau tạo nên điều gì đó thật sự ý nghĩa. Nếu bạn yêu công nghệ và khao khát được là một phần của gia đình cùng nhau xây dựng giấc mơ, tụi mình luôn chào đón bạn.",
+        "closing": "Gửi đến Thư, chị Quỳnh, em Tâm, Thư và Ngọc (AllMind), chị Tiên, và tất cả những người phụ nữ đã cùng tụi mình bước đi: Cảm ơn vì đã luôn ở đây, không chỉ là những đồng nghiệp mà là những người thân trong gia đình Tuturuuu. Các chị, các em, các bạn chính là lý do khiến Tuturuuu ra đời và không ngừng lớn mạnh."
       }
     },
     "impact": {
       "title": {
-        "part1": "Sức Mạnh Của",
+        "part1": "Sức Mạnh Vô Song Của",
         "highlight": "Phụ Nữ Trong Công Nghệ"
       },
-      "subtitle": "Tôn vinh tác động to lớn mà phụ nữ tạo ra trong ngành công nghệ mỗi ngày",
+      "subtitle": "Tôn vinh những đóng góp to lớn mà phụ nữ đang tạo nên mỗi ngày trong ngành công nghệ",
       "stats": {
         "innovation": {
           "title": "35%",
-          "subtitle": "Đổi Mới Nhiều Hơn",
-          "description": "Các công ty có đội ngũ đa dạng tạo ra doanh thu từ đổi mới cao hơn 19% và giải quyết vấn đề nhanh hơn 35%"
+          "subtitle": "Sáng Tạo Hơn",
+          "description": "Những đội ngũ đa dạng mang lại doanh thu từ đổi mới cao hơn 19% và tìm ra giải pháp nhanh hơn 35%"
         },
         "leadership": {
           "title": "50%",
-          "subtitle": "Quyết Định Tốt Hơn",
-          "description": "Các đội có phụ nữ trong vai trò lãnh đạo đưa ra quyết định kinh doanh tốt hơn tới 50%"
+          "subtitle": "Quyết Định Sáng Suốt Hơn",
+          "description": "Các đội có phụ nữ trong vai trò lãnh đạo đưa ra những quyết định kinh doanh tốt hơn tới 50%"
         },
         "growth": {
           "title": "2x",
-          "subtitle": "Hiệu Suất Đội Ngũ",
+          "subtitle": "Hiệu Quả Vượt Trội",
           "description": "Các đội đa dạng giới có khả năng đạt hoặc vượt mục tiêu tài chính cao gấp đôi"
         }
       }
     },
     "values": {
-      "title": "Trao Quyền Cho Phụ Nữ Trong Công Nghệ",
-      "subtitle": "Những giá trị thúc đẩy cam kết của chúng tôi về đa dạng giới và hòa nhập",
+      "title": "Cùng Nhau Tạo Nên Sức Mạnh",
+      "subtitle": "Những giá trị cốt lõi thúc đẩy cam kết của tụi mình về sự đa dạng và hòa nhập",
       "items": {
         "excellence": {
-          "title": "Xuất Sắc Không Giới Hạn",
-          "description": "Chúng tôi tin rằng tài năng không phân biệt giới tính. Mỗi người phụ nữ mang đến những điểm mạnh độc đáo giúp đội ngũ của chúng tôi mạnh mẽ hơn và sản phẩm tốt hơn."
+          "title": "Tài Năng Không Ranh Giới",
+          "description": "Tụi mình tin rằng tài năng không phân biệt giới tính. Mỗi người phụ nữ đều mang đến những điểm mạnh độc đáo, giúp đội ngũ vững vàng hơn và sản phẩm hoàn thiện hơn."
         },
         "innovation": {
-          "title": "Đổi Mới Qua Đa Dạng",
-          "description": "Những góc nhìn khác nhau dẫn đến những giải pháp đột phá. Tiếng nói và ý tưởng của phụ nữ rất quan trọng trong việc xây dựng công nghệ phục vụ tất cả mọi người."
+          "title": "Sáng Tạo Từ Sự Đa Dạng",
+          "description": "Những góc nhìn khác biệt tạo nên những giải pháp đột phá. Tiếng nói và ý tưởng của phụ nữ là chìa khóa để xây dựng công nghệ phục vụ tất cả mọi người."
         },
         "collaboration": {
-          "title": "Lãnh Đạo Hợp Tác",
-          "description": "Chúng tôi thúc đẩy môi trường nơi đóng góp của mọi người đều được trân trọng, và phụ nữ có cơ hội bình đẳng để lãnh đạo và hướng dẫn."
+          "title": "Dẫn Dắt Bằng Trái Tim",
+          "description": "Tụi mình xây dựng môi trường nơi mỗi đóng góp đều được trân trọng, và phụ nữ có cơ hội ngang bằng để dẫn dắt và truyền lửa cho người khác."
         },
         "growth": {
-          "title": "Phát Triển Liên Tục",
-          "description": "Chúng tôi đầu tư vào phát triển nghề nghiệp, chương trình cố vấn và cơ hội học tập để giúp phụ nữ thăng tiến trong sự nghiệp công nghệ."
+          "title": "Cùng Nhau Lớn Mạnh",
+          "description": "Tụi mình đầu tư vào sự phát triển nghề nghiệp, các chương trình cố vấn và cơ hội học tập để giúp phụ nữ vững bước trên con đường sự nghiệp công nghệ."
         },
         "inclusion": {
-          "title": "Văn Hóa Hòa Nhập",
-          "description": "Tạo ra môi trường làm việc nơi phụ nữ cảm thấy được chào đón, tôn trọng và được trao quyền để thể hiện bản thân một cách chân thật mỗi ngày."
+          "title": "Nơi Mọi Người Thuộc Về",
+          "description": "Tạo dựng môi trường làm việc nơi phụ nữ cảm thấy được chào đón, được tôn trọng và tự tin thể hiện con người thật của mình mỗi ngày."
         },
         "excellence-tech": {
-          "title": "Xuất Sắc Kỹ Thuật",
-          "description": "Chúng tôi tôn vinh và hỗ trợ phụ nữ trong các vai trò kỹ thuật, cung cấp nguồn lực và sự ghi nhận cho kỹ thuật và đổi mới xuất sắc."
+          "title": "Thành Tựu Kỹ Thuật",
+          "description": "Tụi mình tôn vinh và hỗ trợ phụ nữ trong các vai trò kỹ thuật, mang đến nguồn lực và sự ghi nhận xứng đáng cho những thành tựu xuất sắc."
         }
       }
     },
     "team": {
-      "title": "Đội Ngũ Tuyệt Vời Của Chúng Tôi",
-      "subtitle": "Gặp gỡ những người tài năng đang làm nên Tuturuuu",
-      "imageTitle": "Đội Ngũ Tuturuuu",
-      "imageDescription": "Đội ngũ đa dạng của chúng tôi bao gồm các nhà đổi mới, kỹ sư, nhà thiết kế và lãnh đạo cùng nhau xây dựng tương lai của công nghệ năng suất. Chúng tôi tự hào về những người phụ nữ tuyệt vời là thành viên chủ chốt của đội ngũ."
+      "title": "Đội Ngũ Tuyệt Vời Của Tụi Mình",
+      "subtitle": "Gặp gỡ những con người tài năng đang viết nên câu chuyện Tuturuuu",
+      "imageTitle": "Đại Gia Đình Tuturuuu",
+      "imageDescription": "Đội ngũ đa dạng của tụi mình gồm những nhà đổi mới, kỹ sư, nhà thiết kế và ban lãnh đạo cùng nhau kiến tạo tương lai của công nghệ năng suất. Tụi mình tự hào về những người phụ nữ xuất sắc - những thành viên nòng cốt của gia đình này."
     },
     "quote": {
-      "text": "Xây dựng những điều tuyệt vời cùng nhau không chỉ là về code, mà là về con người, sự tin tưởng, và niềm tin vào tiềm năng của nhau.",
+      "text": "Xây dựng những điều tuyệt vời cùng nhau không chỉ nằm ở những dòng code, mà còn ở con người, sự tin tưởng, và niềm tin vào tiềm năng của nhau.",
       "author": "Gia Đình Tuturuuu"
     },
     "womenInLeadership": {
-      "title": "Những Người Phụ Nữ Tạo Nên Tuturuuu",
-      "subtitle": "Bạn bè, ban cố vấn, và những người cùng trang lứa xây dựng Tuturuuu, từ Việt Nam ra thế giới",
+      "title": "Những Người Phụ Nữ Viết Nên Câu Chuyện Tuturuuu",
+      "subtitle": "Những người bạn, những người chỉ đường, và những người cùng chung chí hướng xây dựng Tuturuuu, từ Việt Nam vươn ra thế giới",
       "executives": {
-        "title": "Mentors & Người Xây Dựng",
+        "title": "Những Người Chỉ Đường & Kiến Tạo",
         "name": "Võ Khánh Quỳnh & Nguyễn Hà Gia Tâm",
         "roles": "COO Đầu Tiên của Tuturuuu · People & Operations Coordinator Đầu Tiên của Tuturuuu",
-        "story": "Chị Quỳnh, mentor và COO đầu tiên của Tuturuuu, đã chỉ cho tụi mình leadership thực sự nghĩa là gì. Không phải quản lý, mà là trao quyền. Em Tâm, trẻ hơn nhưng có tầm nhìn không kém, trở thành People & Operations Coordinator đầu tiên và xây dựng people operations từ đầu. Cùng nhau, họ tạo nên văn hóa nơi mà mọi người cảm thấy như một gia đình."
+        "story": "Chị Quỳnh, người cố vấn và COO đầu tiên của Tuturuuu, đã chỉ cho tụi mình thấy leadership thực sự nghĩa là gì - không phải là quản lý từ trên xuống, mà là trao quyền và đồng hành. Em Tâm, tuy trẻ nhưng tầm nhìn không kém phần sáng suốt, đã trở thành People & Operations Coordinator đầu tiên và xây dựng people operations từ con số 0. Cùng nhau, hai người đã tạo nên văn hóa nơi mọi người cảm thấy như đang ở nhà, ở giữa gia đình."
       },
       "engineering": {
-        "title": "Bạn Bè & Người Đổi Mới",
+        "title": "Những Người Bạn & Nhà Đổi Mới",
         "name": "Nguyễn Phạm Anh Thư & Đội Kỹ Thuật",
-        "roles": "Kỹ Sư Đầu Tiên tại Tuturuuu · Lập trình web · Nhà lãnh đạo kỹ thuật tương lai",
-        "story": "Thư, bạn cùng trang lứa và là kỹ sư đầu tiên tại Tuturuuu ngoài mình, đã không ngần ngại thử nghiệm với ý tưởng điên rồ này. Từ bạn ấy đến các kỹ sư robotics thực tập, những người phụ nữ trong team kỹ thuật không chỉ là đồng nghiệp. Họ là bạn bè cùng nhau xây dựng tương lai, từng dòng code một."
+        "roles": "Kỹ Sư Đầu Tiên tại Tuturuuu · Lập trình web · Những nhà lãnh đạo kỹ thuật của ngày mai",
+        "story": "Thư, người bạn cùng trang lứa và là kỹ sư đầu tiên gia nhập Tuturuuu bên cạnh mình, đã không ngần ngại đặt cược vào giấc mơ điên rồ này. Từ bạn ấy đến các kỹ sư robotics thực tập, những người phụ nữ trong team kỹ thuật không chỉ đơn thuần là đồng nghiệp. Họ là những người bạn cùng nhau kiến tạo tương lai, từng dòng code, từng dòng suy nghĩ."
       },
       "marketing": {
-        "title": "Người Kể Chuyện & Kết Nối",
+        "title": "Những Người Kể Chuyện & Tạo Kết Nối",
         "name": "Đội lãnh đạo Marketing tài năng",
         "roles": "Lãnh Đạo Marketing · Chiến Lược Thương Hiệu",
-        "story": "Team marketing hiểu một điều đặc biệt: công nghệ là về con người. Họ kể những câu chuyện chân thực của tụi mình, kết nối với thế giới, và xây dựng một cộng đồng cảm giác như ở cùng một nhà."
+        "story": "Team marketing hiểu rõ một điều đặc biệt: công nghệ không chỉ là máy móc, mà là về con người. Họ kể những câu chuyện chân thật nhất của tụi mình, kết nối với thế giới bên ngoài, và xây dựng một cộng đồng nơi mọi người đều cảm thấy ấm áp như ở nhà."
       },
       "remote": {
-        "title": "Không Biên Giới, Chỉ Đam Mê",
+        "title": "Không Có Biên Giới, Chỉ Có Đam Mê",
         "name": "Linh Đan & Đội Ngũ Toàn Cầu",
         "roles": "Thực tập sinh Kỹ sư phần mềm làm việc từ xa đầu tiên · Đội ngũ từ khắp nơi trên thế giới",
-        "story": "Linh Đan, thực tập sinh kỹ sư phần mềm phụ nữ làm việc từ xa đầu tiên ở Tuturuuu, đã chứng minh điều mạnh mẽ: tài năng không có biên giới. Giờ tụi mình đang xây dựng một gia đình toàn cầu nơi những người đam mê từ bất cứ đâu có thể cùng nhau tạo ra điều gì đó ý nghĩa."
+        "story": "Linh Đan, thực tập sinh kỹ sư phần mềm phụ nữ làm việc từ xa đầu tiên tại Tuturuuu, đã chứng minh một điều mạnh mẽ: tài năng không biết ranh giới địa lý. Giờ đây tụi mình đang xây dựng một gia đình toàn cầu, nơi những tâm hồn đam mê từ mọi miền có thể cùng nhau tạo nên điều gì đó thật sự ý nghĩa."
       }
     },
     "globalImpact": {
-      "title": "Từ Việt Nam Ra Thế Giới",
-      "subtitle": "Xây dựng cầu nối và tạo cơ hội vượt qua biên giới",
+      "title": "Từ Việt Nam Vươn Tầm Thế Giới",
+      "subtitle": "Xây dựng những cây cầu kết nối và mở ra cơ hội không biên giới",
       "vietnam": {
-        "title": "Bắt Nguồn Từ Việt Nam",
-        "description": "Hành trình của tụi mình bắt đầu tại Việt Nam với tầm nhìn trao quyền cho thế hệ công nghệ kế tiếp. Qua hợp tác với CLB RMIT NEO Culture Technology và cộng đồng địa phương, tụi mình đang nuôi dưỡng tài năng ngay tại quê nhà."
+        "title": "Rễ Sâu Từ Việt Nam",
+        "description": "Hành trình của tụi mình khởi đầu từ Việt Nam với khát vọng trao quyền cho thế hệ công nghệ kế tiếp. Qua những mối liên kết với CLB RMIT NEO Culture Technology và cộng đồng địa phương, tụi mình đang ươm mầm tài năng ngay tại mảnh đất quê hương."
       },
       "global": {
-        "title": "Kết Nối Toàn Cầu",
-        "description": "Từ hợp tác với phụ nữ trong công nghệ khắp châu Á đến các đối tác trên nhiều châu lục, tụi mình chứng minh rằng sự đổi mới từ Việt Nam có thể dẫn dắt trên sân khấu toàn cầu. Mạng lưới của tụi mình ngày càng mạnh mẽ."
+        "title": "Lan Tỏa Khắp Năm Châu",
+        "description": "Từ những hợp tác với phụ nữ trong công nghệ khắp châu Á đến các đối tác trải dài nhiều châu lục, tụi mình đang chứng minh rằng sự đổi mới từ Việt Nam có thể tỏa sáng trên sân khấu toàn cầu. Mạng lưới của tụi mình ngày càng vững mạnh."
       },
       "future": {
-        "title": "Dẫn Dắt Tương Lai",
-        "description": "Tụi mình không chỉ tham gia vào hệ sinh thái công nghệ toàn cầu, tụi mình đang định hình nó. Với các lãnh đạo nữ từ nhiều nền tảng khác nhau, tụi mình đứng ở vị trí tiên phong xây dựng công nghệ phục vụ mọi người, ở khắp mọi nơi."
+        "title": "Kiến Tạo Tương Lai",
+        "description": "Tụi mình không chỉ đơn thuần tham gia vào hệ sinh thái công nghệ toàn cầu - tụi mình đang góp phần định hình nó. Với những lãnh đạo nữ từ đủ mọi xuất thân, tụi mình đang đi tiên phong xây dựng công nghệ phục vụ mọi người, ở mọi nơi trên thế giới."
       }
     },
     "partnerships": {
-      "title": "Bạn Bè Cùng Nhau Xây Dựng",
-      "subtitle": "Những người và nơi chốn tạo nên hành trình của tụi mình",
+      "title": "Những Người Bạn Cùng Chung Chí Hướng",
+      "subtitle": "Những con người và nơi chốn đã làm nên hành trình của tụi mình",
       "allmind": {
         "title": "AllMind: Thư & Ngọc",
-        "description": "Thư và Ngọc (Sophie và Sweet), những người sáng lập tuyệt vời của AllMind, là những người hàng xóm trong cộng đồng SPARK Hub tuyệt vời. Họ rất trân trọng việc Tuturuuu luôn sẵn sàng giúp đỡ và luôn ở đó với mọi người, không phải chỉ những người cần giúp đỡ. Cùng nhau, tụi mình đang xây dựng hệ sinh thái nơi mọi người tương trợ nhau, bất kể bạn là ai."
+        "description": "Thư và Ngọc (Sophie và Sweet), hai người sáng lập tài năng của AllMind, là những người hàng xóm thân thiết trong cộng đồng SPARK Hub. Họ luôn trân trọng việc Tuturuuu sẵn sàng giúp đỡ và luôn ở bên mọi người, không chỉ những ai đang cần hỗ trợ. Cùng nhau, tụi mình đang xây dựng một hệ sinh thái nơi mọi người đều chung tay nâng đỡ nhau, bất kể bạn là ai."
       },
       "sparkHub": {
-        "title": "SPARK Hub: Ngọn Lửa Mới",
-        "description": "Chị Tiên, Program Coordinator của SPARK Hub, đã cho Tuturuuu nhiều hơn một không gian làm việc - chị trao cho tụi mình niềm tin, cơ hội, và những kết nối quý giá khi tụi mình cần nhất. Từ những ngày đầu, chị đã mở cửa chào đón, kết nối tụi mình với những con người tuyệt vời, và luôn sát cánh trong từng bước đi. Chị không chỉ là người dẫn đường, mà còn là chỗ dựa tin cậy và là người luôn tin tưởng vào tiềm năng của mọi người ở Tuturuuu.",
-        "quote": "Được biết và đồng hành cùng những bạn trẻ tài năng, nhiệt huyết như Tuturuuu chính là lý do mình yêu công việc này. Mình thật sự biết ơn vì được có các bạn ở đây."
+        "title": "SPARK Hub: Thắp Lên Ngọn Lửa",
+        "description": "Chị Tiên, Program Coordinator của SPARK Hub, đã mang đến cho Tuturuuu nhiều hơn một không gian làm việc - chị trao tụi mình niềm tin, cơ hội, và những mối liên kết quý giá nhất khi tụi mình cần nhất. Ngay từ những ngày đầu tiên, chị đã rộng mở vòng tay đón nhận, kết nối tụi mình với những con người tuyệt vời, và luôn sát cánh trong từng bước đi. Chị không chỉ là người chỉ đường, mà còn là chỗ dựa vững chắc và là người luôn tin tưởng vào tiềm năng của tất cả mọi người tại Tuturuuu.",
+        "quote": "Được biết và đồng hành cùng những bạn trẻ tài năng, tràn đầy nhiệt huyết như Tuturuuu chính là lý do khiến mình yêu công việc này. Mình thật sự biết ơn vì được có các bạn ở đây."
       },
       "rmit": {
-        "title": "RMIT: Mở Cánh Cửa Ra Thế Giới",
-        "description": "Giáo sư Iwona Miliszewska, Trưởng khoa SSET, đã dẫn dắt sáng kiến chuyến đi Poznań thay đổi góc nhìn của tụi mình. Chị Hoa, Manager của External Engagement & Events tại SSET, và chị Nguyên, Senior Coordinator của Academic Advisory and Planning, đã giúp các kỹ sư tại SSET (School of Science, Engineering & Technology) có được những cơ hội tuyệt vời để đi ra nước ngoài, như chuyến đi International Strategic Management Workshop tại Poznań, Ba Lan tại Poznań University of Technology (PUT). Họ tin tưởng vào tiềm năng của sinh viên và mở ra những cánh cửa dẫn đến trải nghiệm toàn cầu định hình nên thế giới quan của tụi mình.",
+        "title": "RMIT: Mở Rộng Chân Trời",
+        "description": "Giáo sư Iwona Miliszewska, Trưởng khoa SSET, đã dẫn dắt sáng kiến chuyến đi Poznań làm thay đổi hoàn toàn góc nhìn của tụi mình. Chị Hoa, Manager của External Engagement & Events tại SSET, và chị Nguyên, Senior Coordinator của Academic Advisory and Planning, đã giúp các kỹ sư tại SSET (School of Science, Engineering & Technology) tiếp cận những cơ hội tuyệt vời ra nước ngoài, như chuyến International Strategic Management Workshop tại Poznań, Ba Lan tại Poznań University of Technology (PUT). Họ tin tưởng vào tiềm năng của sinh viên và mở ra những cánh cửa dẫn đến những trải nghiệm toàn cầu định hình nên cách tụi mình nhìn thế giới.",
         "link": "https://www.rmit.edu.vn/students/student-news-and-events/student-news/2025/together-abroad-rmit-students-build-global-bonds-in-poland",
-        "linkText": "Đọc về trải nghiệm tại Ba Lan"
+        "linkText": "Đọc về hành trình Ba Lan"
       },
       "soki": {
-        "title": "SOKI: Hợp Tác Chiến Lược",
-        "description": "Chị Kim, founder của SOKI, một startup do phụ nữ lãnh đạo và là hàng xóm tuyệt vời tại SPARK Hub, đã giúp Tuturuuu mở rộng network thông qua hợp tác chiến lược với RMIT RISE Club. Chị đang xây dựng tầm nhìn của riêng mình trong khi giúp đỡ những người khác phát triển, thể hiện cộng đồng thực sự là gì."
+        "title": "SOKI: Cùng Nhau Phát Triển",
+        "description": "Chị Kim, founder của SOKI - một startup do phụ nữ dẫn dắt và là người hàng xóm thân thiết tại SPARK Hub, đã giúp Tuturuuu mở rộng mạng lưới thông qua những hợp tác chiến lược với RMIT RISE Club. Chị đang xây dựng tầm nhìn riêng của mình trong khi cùng lúc nâng đỡ người khác phát triển - thể hiện đúng nghĩa của một cộng đồng đoàn kết."
       },
       "nhung": {
-        "title": "Nhung: Xây Dựng rbac.vn",
-        "description": "Chị Nhung, Associate Software Engineer từ Tuturuuu và là người đóng góp mã nguồn mở (open-source) tận tâm, đã thiết kế và phát triển rbac.vn cho RMIT Business Analytics Champion Mùa 6 (2025). Sự xuất sắc về kỹ thuật và cam kết với đổi mới dựa trên cộng đồng của chị đã tạo nên website kết nối sinh viên với các thử thách phân tích dữ liệu thực tế. Làm việc cùng team RMIT Analytics Club, chị đã biến tầm nhìn của Tuturuuu về trao quyền cho sinh viên thông qua công nghệ thành hiện thực."
+        "title": "Nhung: Kiến Tạo rbac.vn",
+        "description": "Chị Nhung, Associate Software Engineer từ Tuturuuu và là người đóng góp mã nguồn mở (open-source) tận tâm, đã thiết kế và phát triển rbac.vn cho RMIT Business Analytics Champion Mùa 6 (2025). Sự xuất sắc về kỹ thuật và tinh thần cống hiến cho cộng đồng của chị đã tạo nên website kết nối sinh viên với những thử thách phân tích dữ liệu thực tế. Làm việc cùng team RMIT Analytics Club, chị đã biến tầm nhìn của Tuturuuu về trao quyền cho sinh viên qua công nghệ thành hiện thực."
       },
       "dai": {
-        "title": "Đài: Dẫn Dắt RBAC",
-        "description": "Em Đài, trưởng ban tổ chức của RMIT Business Analytics Champion Mùa 6 (2025) từ RMIT Analytics Club, đã phối hợp thành công việc tổ chức cuộc thi phân tích dữ liệu tiên phong này. Khả năng lãnh đạo của em trong việc tinh chỉnh cấu trúc cuộc thi và đảm bảo vận hành trơn tru đã showcase cách sinh viên có thể dẫn dắt những sáng kiến ý nghĩa kết nối học thuật và ngành nghề."
+        "title": "Đài: Dẫn Lối Cho RBAC",
+        "description": "Em Đài, trưởng ban tổ chức của RMIT Business Analytics Champion Mùa 6 (2025) từ RMIT Analytics Club, đã phối hợp xuất sắc trong việc tổ chức cuộc thi phân tích dữ liệu tiên phong này. Khả năng lãnh đạo của em trong việc hoàn thiện cấu trúc cuộc thi và đảm bảo mọi thứ diễn ra suôn sẻ đã cho thấy cách sinh viên có thể dẫn dắt những sáng kiến ý nghĩa, bắc cầu nối giữa học thuật và thực tiễn."
       },
       "nhu": {
-        "title": "Như: Xuất Sắc Trong Dự Án",
-        "description": "Em Như, phó ban tổ chức của RMIT Business Analytics Champion Mùa 6 (2025) từ RMIT Analytics Club, đã đóng vai trò quan trọng trong việc phối hợp phát triển và tinh chỉnh rbac.vn. Sự tận tâm và chú ý đến từng chi tiết của em đảm bảo website đáp ứng nhu cầu của cả thí sinh và ban tổ chức, thể hiện cách hợp tác tạo nên sự xuất sắc."
+        "title": "Như: Tận Tâm Hoàn Thiện",
+        "description": "Em Như, phó ban tổ chức của RMIT Business Analytics Champion Mùa 6 (2025) từ RMIT Analytics Club, đã đóng vai trò then chốt trong việc phối hợp phát triển và hoàn thiện rbac.vn. Sự tận tâm và tinh thần cầu toàn đến từng chi tiết của em đảm bảo website đáp ứng tốt nhu cầu của cả thí sinh lẫn ban tổ chức, minh chứng cho sức mạnh của sự hợp tác."
       },
       "community": {
-        "title": "NCT: Cùng Nhau Lớn Lên",
-        "description": "Từ sinh viên RMIT đến cộng đồng công nghệ toàn cầu, từ gặp gỡ địa phương đến kết nối quốc tế. Tụi mình đang xây dựng một gia đình hỗ trợ nhau vượt qua biên giới."
+        "title": "NCT: Cùng Nhau Trưởng Thành",
+        "description": "Từ sinh viên RMIT đến cộng đồng công nghệ toàn cầu, từ những buổi gặp gỡ địa phương đến các mối kết nối quốc tế. Tụi mình đang xây dựng một gia đình luôn sát cánh, nâng đỡ nhau vượt qua mọi ranh giới."
       }
     },
     "achievements": {
-      "title": "Hành Trình Của Tụi Mình",
-      "subtitle": "Những người phụ nữ tuyệt vời đã tạo nên Tuturuuu từ những ngày đầu",
+      "title": "Hành Trình Chung Của Tụi Mình",
+      "subtitle": "Những người phụ nữ tuyệt vời đã định hình Tuturuuu ngay từ những ngày đầu tiên",
       "items": {
         "founding": {
           "year": "2023",
-          "title": "Contributor Đầu Tiên",
-          "description": "Nguyễn Phạm Anh Thư gia nhập với vai trò software engineer đầu tiên, mang đến tài năng và đam mê đặt nền móng cho mọi thứ tụi mình xây dựng"
+          "title": "Những Bước Chân Đầu Tiên",
+          "description": "Nguyễn Phạm Anh Thư gia nhập với vai trò software engineer đầu tiên, mang theo tài năng và niềm đam mê - đặt nền móng vững chắc cho tất cả những gì tụi mình xây dựng"
         },
         "growth": {
           "year": "2024",
-          "title": "Nền Tảng Do Phụ Nữ Lãnh Đạo",
-          "description": "Võ Khánh Quỳnh trở thành COO đầu tiên và Nguyễn Hà Gia Tâm là People & Operations Coordinator đầu tiên, xây dựng đội ngũ lãnh đạo"
+          "title": "Nền Tảng Do Phụ Nữ Dẫn Dắt",
+          "description": "Võ Khánh Quỳnh trở thành COO đầu tiên và Nguyễn Hà Gia Tâm là People & Operations Coordinator đầu tiên, cùng nhau kiến tạo đội ngũ lãnh đạo"
         },
         "mentorship": {
           "year": "2024",
-          "title": "Cùng Nhau Phát Triển",
-          "description": "Bắt đầu mentoring đồng nghiệp nữ trong nội bộ, giúp họ mở khóa tiềm năng và đạt được những điều lớn lao hơn cùng nhau"
+          "title": "Cùng Nhau Vươn Lên",
+          "description": "Khởi đầu các chương trình mentoring nội bộ, giúp đồng nghiệp nữ khơi dậy tiềm năng và cùng nhau đạt được những điều phi thường hơn"
         },
         "community": {
           "year": "2025",
-          "title": "Trao Quyền Cho Cộng Đồng",
-          "description": "Từ CLB RMIT NEO Culture Technology đến cả thế giới, tạo cơ hội cho những người đam mê ở khắp mọi nơi"
+          "title": "Trao Năng Lượng Cho Cộng Đồng",
+          "description": "Từ CLB RMIT NEO Culture Technology đến khắp thế giới, mở ra cơ hội cho những tâm hồn đam mê ở mọi nơi"
         }
       }
     },
     "diversity": {
-      "title": "Tại Sao Sự Đa Dạng Thúc Đẩy Đổi Mới",
-      "subtitle": "Những góc nhìn khác nhau tạo ra sản phẩm tốt hơn",
+      "title": "Sức Mạnh Từ Sự Đa Dạng",
+      "subtitle": "Khi những góc nhìn khác biệt gặp nhau, sản phẩm tốt hơn được tạo ra",
       "items": {
         "perspective": {
-          "title": "Góc Nhìn Đa Dạng",
-          "description": "Các đội có nền tảng đa dạng nhận diện được vấn đề và giải pháp mà người khác có thể bỏ lỡ"
+          "title": "Nhìn Xa Hơn, Thấy Nhiều Hơn",
+          "description": "Các đội có xuất thân đa dạng nhận ra được những vấn đề và giải pháp mà người khác có thể bỏ lỡ"
         },
         "creativity": {
-          "title": "Sáng Tạo Nâng Cao",
-          "description": "Sự đa dạng trong tư duy dẫn đến những cách tiếp cận đổi mới và ý tưởng đột phá"
+          "title": "Sáng Tạo Không Giới Hạn",
+          "description": "Sự đa dạng trong tư duy mở ra những cách tiếp cận sáng tạo và những ý tưởng đột phá"
         },
         "market": {
-          "title": "Sản Phẩm Tốt Hơn",
-          "description": "Các đội đa dạng xây dựng sản phẩm phục vụ hiệu quả nhiều người dùng hơn"
+          "title": "Sản Phẩm Phục Vụ Tốt Hơn",
+          "description": "Những đội ngũ đa dạng xây dựng sản phẩm đáp ứng hiệu quả nhu cầu của nhiều người dùng hơn"
         }
       }
     },
     "maleColleagues": {
-      "title": "Lời Chúc Từ Các Anh Em",
-      "subtitle": "Những đồng nghiệp nam tại Tuturuuu gửi lời chúc đến những người phụ nữ tuyệt vời",
+      "title": "Những Lời Chúc Chân Thành Từ Anh Em",
+      "subtitle": "Những đồng nghiệp nam tại Tuturuuu gửi trọn tấm lòng đến những người phụ nữ xuất sắc",
       "groupPhotoAlt": "Các đồng nghiệp nam tại Tuturuuu chúc mừng ngày Phụ Nữ Việt Nam",
       "wishes": {
         "phuc": {
           "name": "Phúc",
           "role": "Nhà Sáng Lập & Tổng Giám Đốc",
-          "message": "Gửi tất cả những người phụ nữ tuyệt vời tại Tuturuuu. Cảm ơn các bạn đã dạy mình ý nghĩa thực sự của việc lãnh đạo. Các bạn đã cho mình thấy rằng sức mạnh không đến từ việc tận dụng quyền lực, mà là từ sự thấu cảm, tầm nhìn, và sự tin tưởng tuyệt đối dành cho nhau. Các bạn không chỉ đang xây dựng một công ty, mà các bạn còn đang định hình cả tương lai công nghệ Việt Nam và xa hơn thế nữa."
+          "message": "Gửi đến tất cả những người phụ nữ tuyệt vời tại Tuturuuu. Cảm ơn các bạn đã dạy mình ý nghĩa thực sự của việc lãnh đạo. Các bạn đã cho mình thấy rằng sức mạnh thực sự không đến từ việc sử dụng quyền lực, mà đến từ sự thấu hiểu, tầm nhìn xa, và niềm tin không gì lay chuyển dành cho nhau. Các bạn không chỉ đang xây dựng một công ty, các bạn đang viết nên tương lai công nghệ Việt Nam và còn hơn thế nữa."
         },
         "henry": {
           "name": "Henry",
           "role": "Giám Đốc Điều Hành",
-          "message": "Được làm việc cùng những người phụ nữ xuất sắc là niềm vinh dự lớn nhất trong sự nghiệp của mình. Sự tận tâm, sáng tạo và kiên cường của các bạn truyền cảm hứng cho mình mỗi ngày. Hãy phá vỡ rào cản, vượt qua mọi giới hạn, và chứng minh rằng tương lai công nghệ chính là sự hòa nhập, đa dạng, và không thể ngăn cản."
+          "message": "Được cùng làm việc với những người phụ nữ xuất sắc là niềm vinh dự lớn nhất trong sự nghiệp của mình. Sự tận tâm, óc sáng tạo và ý chí kiên cường của các bạn truyền cảm hứng cho mình mỗi ngày. Hãy tiếp tục phá vỡ mọi rào cản, vượt qua mọi giới hạn, và chứng minh rằng tương lai của công nghệ chính là sự đa dạng, hòa nhập, và không gì có thể ngăn cản."
         },
         "sam": {
           "name": "Sam",
           "role": "Kỹ Sư Phần Mềm",
-          "message": "Kể từ ngày đầu tiên mình làm việc tại Tuturuuu, mình đã vô cùng ấn tượng trước sự hỗ trợ mà mình nhận được từ những đồng nghiệp nữ. Tinh thần hợp tác và động viên này lan tỏa khắp toàn bộ công ty. Mình liên tục được truyền động lực bởi tài năng, sự kiên cường và khả năng lãnh đạo mà các đồng nghiệp nữ ở mọi phòng ban thể hiện. Các bạn luôn sẵn sàng dìu dắt, đi đầu trong việc tìm ra giải pháp, và là động lực to lớn thúc đẩy thành công của công ty. Cảm ơn tất cả những người phụ nữ tuyệt vời tại Tuturuuu vì những đóng góp vô giá và vì đã nuôi dưỡng một môi trường tích cực và truyền động lực như vậy."
+          "message": "Ngay từ ngày đầu tiên mình bước vào Tuturuuu, mình đã vô cùng ấn tượng trước sự hỗ trợ nhiệt tình mà mình nhận được từ các đồng nghiệp nữ. Tinh thần hợp tác và cổ vũ lẫn nhau này lan tỏa khắp mọi ngóc ngách công ty. Mình không ngừng được truyền lửa bởi tài năng, sự kiên cường và khả năng lãnh đạo mà các đồng nghiệp nữ ở mọi phòng ban thể hiện. Các bạn luôn sẵn sàng dìu dắt, đi tiên phong trong việc tìm ra giải pháp, và là nguồn động lực to lớn đưa công ty đến thành công. Cảm ơn tất cả những người phụ nữ tuyệt vời tại Tuturuuu vì những đóng góp vô giá và vì đã tạo nên một môi trường tràn đầy năng lượng tích cực."
         },
         "khang": {
           "name": "Khang",
           "role": "Kỹ Sư Phần Mềm (Junior)",
-          "message": "Là người còn đang học hỏi và phát triển, mình vô cùng biết ơn khi được làm việc với những người phụ nữ dẫn dắt bằng cả sự xuất sắc lẫn lòng thương. Mọi người đã cho mình thấy thành công không phải là cạnh tranh, mà là giúp đỡ nhau cùng đi lên. Cảm ơn vì đã là những mentor và tấm gương tuyệt vời."
+          "message": "Là người còn đang trên hành trình học hỏi và trưởng thành, mình vô cùng biết ơn khi được làm việc cùng những người phụ nữ dẫn dắt bằng cả sự xuất sắc lẫn trái tim ấm áp. Mọi người đã cho mình thấy rằng thành công thật sự không phải là cạnh tranh, mà là nâng đỡ nhau cùng tiến bước. Cảm ơn vì đã là những người cố vấn và tấm gương sáng cho mình."
         },
         "khoi": {
           "name": "Khôi",
           "role": "Kỹ Sư Phần Mềm Thực Tập",
-          "message": "Gửi những người đã chào đón mình, giúp đỡ mình, và tin tưởng vào tiềm năng của mình. Cảm ơn các chị, các bạn, và các em. Mọi người đã tạo ra không gian nơi mọi người có thể phát triển, bất kể là giới tính hay xuất thân của mỗi người. Mình tự hào được học hỏi từ những lãnh đạo đang định hình không chỉ sản phẩm, mà cả tương lai của cả ngành."
+          "message": "Gửi đến những người đã rộng lòng chào đón mình, tận tình giúp đỡ mình, và luôn tin tưởng vào tiềm năng của mình. Cảm ơn các chị, các bạn, và các em. Mọi người đã tạo nên một không gian nơi tất cả đều có thể phát triển, bất kể giới tính hay xuất thân. Mình tự hào được học hỏi từ những người lãnh đạo đang định hình không chỉ sản phẩm, mà cả tương lai của ngành công nghệ."
         }
       }
     },
     "cta": {
-      "title": "Cùng Nhau Xây Dựng Điều Gì Đó Tuyệt Vời",
-      "description": "Tụi mình luôn tìm kiếm những người đam mê muốn tạo ra tác động thực sự. Nếu bạn yêu công nghệ và muốn làm việc với một team thực sự coi trọng nhau. Hãy giữ liên lạc với tụi mình nhé!",
-      "joinTeam": "Cùng Đồng Hành",
-      "learnMore": "Gặp Team Mình",
+      "title": "Cùng Nhau Viết Nên Câu Chuyện Đặc Biệt",
+      "description": "Tụi mình luôn chào đón những tâm hồn đam mê, khao khát tạo nên những thay đổi có ý nghĩa. Nếu bạn yêu công nghệ và mong muốn được là một phần của đội ngũ thực sự coi trọng và nâng đỡ nhau - hãy cùng tụi mình viết tiếp câu chuyện này nhé!",
+      "joinTeam": "Cùng Tụi Mình Bước Đi",
+      "learnMore": "Gặp Gỡ Gia Đình Tuturuuu",
       "benefits": {
-        "growth": "Cùng Nhau Lớn Lên",
-        "culture": "Mentorship Thực Sự",
-        "impact": "Xây Những Thứ Ý Nghĩa"
+        "growth": "Cùng Nhau Trưởng Thành",
+        "culture": "Được Dẫn Dắt Tận Tâm",
+        "impact": "Xây Điều Gì Đó Thật Sự Ý Nghĩa"
       }
     }
   }
