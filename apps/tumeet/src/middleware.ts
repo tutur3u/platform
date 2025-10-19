@@ -2,8 +2,7 @@ import { match } from '@formatjs/intl-localematcher';
 import { createCentralizedAuthMiddleware } from '@tuturuuu/auth/proxy';
 import Negotiator from 'negotiator';
 import createIntlMiddleware from 'next-intl/middleware';
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import type { NextRequest, NextResponse } from 'next/server';
 import { CENTRAL_PORT, LOCALE_COOKIE_NAME } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 
@@ -18,7 +17,7 @@ const authMiddleware = createCentralizedAuthMiddleware({
   skipApiRoutes: true,
 });
 
-export async function proxy(req: NextRequest): Promise<NextResponse> {
+export async function middleware(req: NextRequest): Promise<NextResponse> {
   // Handle authentication and MFA with the centralized middleware
   const authRes = await authMiddleware(req);
 
@@ -33,7 +32,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   }
 
   // Continue with locale handling
-  return handleLocale({ req, res: authRes });
+  return handleLocale({ req });
 }
 
 export const config = {
@@ -143,27 +142,15 @@ const getLocale = (
   };
 };
 
-const handleLocale = ({
-  req,
-  res,
-}: {
-  req: NextRequest;
-  res: NextResponse;
-}): NextResponse => {
+const handleLocale = ({ req }: { req: NextRequest }): NextResponse => {
   // Get locale from cookie or browser languages
-  const { locale, pathname } = getLocale(req);
-
-  // Construct nextUrl with locale and redirect
-  req.nextUrl.pathname = !pathname
-    ? `/${locale}${req.nextUrl.pathname}`
-    : req.nextUrl.pathname.replace(pathname, locale);
-
-  NextResponse.rewrite(req.nextUrl, res);
+  const { locale } = getLocale(req);
 
   const nextIntlMiddleware = createIntlMiddleware({
     locales: supportedLocales,
     defaultLocale: locale as Locale,
     localeDetection: false,
+    localePrefix: 'as-needed',
   });
 
   return nextIntlMiddleware(req);

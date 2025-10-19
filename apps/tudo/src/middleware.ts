@@ -18,7 +18,7 @@ const authMiddleware = createCentralizedAuthMiddleware({
   skipApiRoutes: true,
 });
 
-export async function proxy(req: NextRequest): Promise<NextResponse> {
+export async function middleware(req: NextRequest): Promise<NextResponse> {
   // Handle authentication and MFA with the centralized middleware
   const authRes = await authMiddleware(req);
 
