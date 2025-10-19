@@ -5620,7 +5620,7 @@
         "highlight": "Women Leading",
         "part2": "the Future of Technology"
       },
-      "description": "At every step of our journey—from our first contributor to our executive team, from local partnerships to global collaborations—women have been leading, building, and inspiring. This is how we're creating the future together.",
+      "description": "At every step of our journey, from our first contributor to our executive team, from local partnerships to global collaborations. Women have been leading, building, and inspiring. This is how we're creating the future together.",
       "cta": {
         "joinUs": "Join the Movement",
         "learnMore": "Our Global Story"
@@ -5700,23 +5700,23 @@
       "imageDescription": "Our diverse team of innovators, engineers, designers, and leaders working together to build the future of productivity technology. We're proud of the incredible women who are key members of our team."
     },
     "quote": {
-      "text": "Building amazing things together isn't just about code—it's about people, trust, and believing in each other's potential.",
+      "text": "Building amazing things together isn't just about code. It's about people, trust, and believing in each other's potential.",
       "author": "The Tuturuuu Family"
     },
     "womenInLeadership": {
       "title": "The Women Who Made It Happen",
-      "subtitle": "Friends, mentors, and peers building Tuturuuu together—from Vietnam to the world",
+      "subtitle": "Friends, mentors, and peers building Tuturuuu together, from Vietnam to the world",
       "executives": {
         "title": "Mentors & Builders",
         "name": "Vo Khanh Quynh & Nguyen Ha Gia Tam",
         "roles": "First COO of Tuturuuu · First People & Operations Coordinator of Tuturuuu",
-        "story": "Quynh, our mentor and the first COO of Tuturuuu, showed us what leadership really means—not managing, but empowering. Tam, younger but equally visionary, became our first People & Operations Coordinator and built our people operations from scratch. Together, they created a culture where everyone feels like family."
+        "story": "Quynh, our mentor and the first COO of Tuturuuu, showed us what leadership really means - not managing, but empowering. Tam, younger but equally visionary, became our first People & Operations Coordinator and built our people operations from scratch. Together, they created a culture where everyone feels like family."
       },
       "engineering": {
         "title": "Peers & Innovators",
         "name": "Nguyen Pham Anh Thu & Our Engineering Team",
         "roles": "First Engineer at Tuturuuu · Platform Engineers · Technical Leaders",
-        "story": "Thu, my peer and the first engineer at Tuturuuu aside from me, took a chance on this wild idea. From her to our robotics engineering interns, the women on our technical team aren't just colleagues—they're friends building the future together, one line of code at a time."
+        "story": "Thu, my peer and the first engineer at Tuturuuu aside from me, took a chance on this wild idea. From her to our robotics engineering interns, the women on our technical team aren't just colleagues. They're friends building the future together, one line of code at a time."
       },
       "marketing": {
         "title": "Storytellers & Connectors",
@@ -5744,7 +5744,7 @@
       },
       "future": {
         "title": "Leading the Future",
-        "description": "We're not just participating in the global tech ecosystem—we're shaping it. With women leaders from diverse backgrounds, we're at the forefront of building technology that serves everyone, everywhere."
+        "description": "We're not just participating in the global tech ecosystem, we're shaping it. With women leaders from diverse backgrounds, we're at the forefront of building technology that serves everyone, everywhere."
       }
     },
     "partnerships": {
@@ -5752,22 +5752,22 @@
       "subtitle": "The people and places that made our journey possible",
       "allmind": {
         "title": "AllMind: Sophie & Sweet",
-        "description": "Sophie and Sweet (Thư and Ngọc in Vietnamese), the amazing founders of AllMind, have been incredible neighbor-startups. They appreciate how Tuturuuu is always helpful and always there for everyone—not just those who needed help. Together, we're building an ecosystem where everyone supports each other, no matter who you are."
+        "description": "Sophie and Sweet (Thư and Ngọc in Vietnamese), the amazing founders of AllMind, have been incredible neighbor-startups. They appreciate how Tuturuuu is always helpful and always there for everyone, not just those who needed help. Together, we're building an ecosystem where everyone supports each other, no matter who you are."
       },
       "sparkHub": {
         "title": "SPARK Hub: A new spark",
-        "description": "Tien, SPARK Hub's program coordinator, gave us more than co-working space—she gave us opportunities, connections, and belief when we needed it most. She's been a mentor, connector, and champion for everyone at Tuturuuu.",
+        "description": "Tien, SPARK Hub's program coordinator, gave us more than co-working space. She gave us opportunities, connections, and belief when we needed it most. She's been a mentor, connector, and champion for everyone at Tuturuuu.",
         "quote": "Knowing individuals like you is the reason why I love my job despite whatever it is I'm experiencing. I could say almost everything about any other aspect but never regret one bit of working with talented individuals like you all. I'm grateful to have you and Tuturuuu here."
       },
       "rmit": {
         "title": "RMIT: Opening Doors to the World",
-        "description": "Professor Iwona Miliszewska, Dean of SSET, led the Poznań trip initiative that changed our perspective. Hoa, Manager of External Engagement & Events at SSET, and Nguyên, Senior Coordinator of Academic Advisory and Planning, helped engineers in SSET (School of Science, Engineering & Technology) access incredible opportunities to go abroad—like the International Strategic Management Workshop in Poznań, Poland at Poznań University of Technology (PUT). They believed in students' potential and opened doors to global experiences that shaped our worldview.",
+        "description": "Professor Iwona Miliszewska, Dean of SSET, led the Poznań trip initiative that changed our perspective. Hoa, Manager of External Engagement & Events at SSET, and Nguyên, Senior Coordinator of Academic Advisory and Planning, helped engineers in SSET (School of Science, Engineering & Technology) access incredible opportunities to go abroad, like the International Strategic Management Workshop in Poznań, Poland at Poznań University of Technology (PUT). They believed in students' potential and opened doors to global experiences that shaped our worldview.",
         "link": "https://www.rmit.edu.vn/students/student-news-and-events/student-news/2025/together-abroad-rmit-students-build-global-bonds-in-poland",
         "linkText": "Read about our Poland experience"
       },
       "soki": {
         "title": "SOKI: Strategic Collaborations",
-        "description": "Kim, founder of SOKI—another women-led startup and wonderful neighbor at SPARK Hub—helped Tuturuuu expand its network through strategic collaborations with RMIT RISE Club. She's building her own vision while helping others grow theirs, showing what true community looks like."
+        "description": "Kim, founder of SOKI, another women-led startup and wonderful neighbor at SPARK Hub, helped Tuturuuu expand its network through strategic collaborations with RMIT RISE Club. She's building her own vision while helping others grow theirs, showing what true community looks like."
       },
       "nhung": {
         "title": "Nhung: Building rbac.vn",
@@ -5783,7 +5783,7 @@
       },
       "community": {
         "title": "NCT: Growing Together",
-        "description": "From RMIT students to global tech communities, from local meetups to international connections—we're building a family that supports each other across borders."
+        "description": "From RMIT students to global tech communities, from local meetups to international connections. We're building a family that supports each other across borders."
       }
     },
     "achievements": {
@@ -5798,7 +5798,7 @@
         "growth": {
           "year": "2024",
           "title": "Women-Led Foundation",
-          "description": "Vo Khanh Quynh became our first COO and Nguyen Ha Gia Tam our first People & Operations Coordinator—building our leadership team"
+          "description": "Vo Khanh Quynh became our first COO and Nguyen Ha Gia Tam our first People & Operations Coordinator, building our leadership team"
         },
         "mentorship": {
           "year": "2024",
@@ -5808,7 +5808,7 @@
         "community": {
           "year": "2025",
           "title": "Empowering the Community",
-          "description": "From RMIT NEO Culture Technology Club to the world—creating opportunities for passionate people everywhere"
+          "description": "From RMIT NEO Culture Technology Club to the world, creating opportunities for passionate people everywhere"
         }
       }
     },
@@ -5830,9 +5830,41 @@
         }
       }
     },
+    "maleColleagues": {
+      "title": "Messages from Our Brothers",
+      "subtitle": "Our male colleagues celebrate the incredible women who make Tuturuuu extraordinary",
+      "groupPhotoAlt": "Male colleagues at Tuturuuu celebrating Vietnamese Women's Day",
+      "wishes": {
+        "phuc": {
+          "name": "Phuc",
+          "role": "Founder & CEO",
+          "message": "To all the incredible women at Tuturuuu, thank you for teaching me what true leadership means. You've shown me that strength comes not from authority, but from empathy, vision, and unwavering belief in each other. You're not just building a company, you're shaping the future of tech in Vietnam and beyond."
+        },
+        "henry": {
+          "name": "Henry",
+          "role": "Chief Operating Officer",
+          "message": "Working alongside such brilliant women has been the greatest privilege of my career. Your dedication, creativity, and resilience inspire me every single day. Here's to breaking barriers, shattering ceilings, and proving that the future of technology is diverse, inclusive, and unstoppable."
+        },
+        "sam": {
+          "name": "Sam",
+          "role": "Software Engineer",
+          "message": "To the amazing women developers, leaders, and innovators at Tuturuuu, you've redefined what it means to be an engineer. Your code isn't just elegant; it's purposeful. Your leadership isn't just effective; it's transformative. Thank you for making me a better engineer and a better person."
+        },
+        "khang": {
+          "name": "Khang",
+          "role": "Junior Software Engineer",
+          "message": "As someone still learning and growing, I'm incredibly grateful to work with women who lead with both excellence and compassion. You've shown me that success isn't about competing, it's about lifting each other up. Thank you for being incredible mentors and role models."
+        },
+        "khoi": {
+          "name": "Khoi",
+          "role": "Software Engineer Intern",
+          "message": "To the women who welcomed me, mentored me, and believed in my potential, thank you. You've created a space where everyone can thrive, regardless of gender or background. I'm honored to learn from leaders who are shaping not just products, but the entire industry's future."
+        }
+      }
+    },
     "cta": {
       "title": "Let's Build Something Amazing Together",
-      "description": "We're always looking for passionate people who want to make a real impact. If you love technology and want to work with a team that truly values each other—let's talk!",
+      "description": "We're always looking for passionate people who want to make a real impact. If you love technology and want to work with a team that truly values each other. Let's talk!",
       "joinTeam": "Join Our Journey",
       "learnMore": "Meet the Team",
       "benefits": {

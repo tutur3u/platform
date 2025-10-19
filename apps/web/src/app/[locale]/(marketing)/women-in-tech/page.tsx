@@ -175,11 +175,7 @@ export default function VietnameseWomensDayPage() {
 
   // Disable expensive scroll animations on mobile for better performance
   const { scrollYProgress } = useScroll();
-  const heroOpacity = useTransform(
-    scrollYProgress,
-    [0, 0.2],
-    isMobile || prefersReducedMotion ? [1, 1] : [1, 0]
-  );
+
   const heroY = useTransform(
     scrollYProgress,
     [0, 0.2],
@@ -259,7 +255,7 @@ export default function VietnameseWomensDayPage() {
 
       {/* Hero Section */}
       <motion.section
-        style={{ opacity: heroOpacity, y: heroY }}
+        style={{ y: heroY }}
         className="relative px-4 pt-8 pb-20 sm:px-6 sm:pt-12 sm:pb-24 lg:px-8 lg:pt-16 lg:pb-32"
       >
         <div className="mx-auto max-w-7xl text-center">
@@ -368,80 +364,6 @@ export default function VietnameseWomensDayPage() {
                     {t('quote.author')}
                   </span>
                   <div className="h-px w-8 bg-gradient-to-l from-transparent to-dynamic-pink/50" />
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* CEO Message Section */}
-      <section className="relative px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
-        <div className="mx-auto max-w-6xl">
-          <div>
-            <Card
-              className={cn(
-                'overflow-hidden border border-dynamic-purple/20 bg-dynamic-purple/10 p-8 shadow-xl md:p-12'
-              )}
-            >
-              <div className="flex flex-col gap-8 md:flex-row md:items-start">
-                {/* CEO Image */}
-                <div className="flex shrink-0 flex-col items-center gap-4">
-                  <div className="group relative h-64 w-64 overflow-hidden rounded-2xl border-2 border-dynamic-purple/30 bg-dynamic-purple/5 shadow-xl transition-all hover:border-dynamic-purple/50 hover:shadow-2xl">
-                    <Image
-                      src="/media/marketing/events/women-in-tech/founder.jpg"
-                      alt={t('ceo.name')}
-                      fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      priority
-                    />
-                  </div>
-
-                  <div className="text-center">
-                    <div className="mb-1 font-bold text-xl">
-                      {t('ceo.name')}
-                    </div>
-                    <div className="text-dynamic-purple text-sm">
-                      {t('ceo.title')}
-                    </div>
-                    <div className="text-foreground/60 text-xs">
-                      {t('ceo.company')}
-                    </div>
-                  </div>
-                </div>
-
-                {/* CEO Message */}
-                <div className="flex-1">
-                  <div className="mb-6 flex flex-col items-center gap-3 md:flex-row">
-                    <div className="mb-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-dynamic-purple/10">
-                      <Sparkles className="h-6 w-6 text-dynamic-purple" />
-                    </div>
-                    <h2 className="bg-gradient-to-r from-dynamic-purple to-dynamic-pink bg-clip-text pb-4 text-center font-bold text-transparent text-xl md:text-balance md:text-3xl">
-                      {t('ceo.messageTitle')}
-                    </h2>
-                  </div>
-
-                  <div className="space-y-4 text-foreground/80">
-                    {(
-                      [
-                        'paragraph1',
-                        'paragraph2',
-                        'paragraph3',
-                        'paragraph4',
-                      ] as const
-                    ).map((key) => (
-                      <p key={key}>{t(`ceo.message.${key}` as any)}</p>
-                    ))}
-                  </div>
-
-                  <div className="mt-6 rounded-lg border-dynamic-purple/20 border-l-4 bg-dynamic-purple/5 p-4">
-                    <p className="text-foreground/90 text-sm italic">
-                      {t('ceo.message.closing')}
-                    </p>
-                    <p className="mt-2 font-semibold text-foreground">
-                      {t('ceo.name')}
-                    </p>
-                  </div>
                 </div>
               </div>
             </Card>
@@ -799,6 +721,80 @@ export default function VietnameseWomensDayPage() {
                 </Card>
               </motion.div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CEO Message Section */}
+      <section className="relative px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+        <div className="mx-auto max-w-6xl">
+          <div>
+            <Card
+              className={cn(
+                'overflow-hidden border border-dynamic-purple/20 bg-dynamic-purple/10 p-8 shadow-xl md:p-12'
+              )}
+            >
+              <div className="flex flex-col gap-8 md:flex-row md:items-start">
+                {/* CEO Image */}
+                <div className="flex shrink-0 flex-col items-center gap-4">
+                  <div className="group relative h-64 w-64 overflow-hidden rounded-2xl border-2 border-dynamic-purple/30 bg-dynamic-purple/5 shadow-xl transition-all hover:border-dynamic-purple/50 hover:shadow-2xl">
+                    <Image
+                      src="/media/marketing/events/women-in-tech/founder.jpg"
+                      alt={t('ceo.name')}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      priority
+                    />
+                  </div>
+
+                  <div className="text-center">
+                    <div className="mb-1 font-bold text-xl">
+                      {t('ceo.name')}
+                    </div>
+                    <div className="text-dynamic-purple text-sm">
+                      {t('ceo.title')}
+                    </div>
+                    <div className="text-foreground/60 text-xs">
+                      {t('ceo.company')}
+                    </div>
+                  </div>
+                </div>
+
+                {/* CEO Message */}
+                <div className="flex-1">
+                  <div className="mb-6 flex flex-col items-center gap-3 md:flex-row">
+                    <div className="mb-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-dynamic-purple/10">
+                      <Sparkles className="h-6 w-6 text-dynamic-purple" />
+                    </div>
+                    <h2 className="bg-gradient-to-r from-dynamic-purple to-dynamic-pink bg-clip-text pb-4 text-center font-bold text-transparent text-xl md:text-balance md:text-start md:text-3xl">
+                      {t('ceo.messageTitle')}
+                    </h2>
+                  </div>
+
+                  <div className="space-y-4 text-foreground/80">
+                    {(
+                      [
+                        'paragraph1',
+                        'paragraph2',
+                        'paragraph3',
+                        'paragraph4',
+                      ] as const
+                    ).map((key) => (
+                      <p key={key}>{t(`ceo.message.${key}` as any)}</p>
+                    ))}
+                  </div>
+
+                  <div className="mt-6 rounded-lg border-dynamic-purple/20 border-l-4 bg-dynamic-purple/5 p-4">
+                    <p className="text-foreground/90 text-sm italic">
+                      {t('ceo.message.closing')}
+                    </p>
+                    <p className="mt-2 font-semibold text-foreground">
+                      {t('ceo.name')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
           </div>
         </div>
       </section>
@@ -1196,6 +1192,183 @@ export default function VietnameseWomensDayPage() {
                         `bg-gradient-to-r ${item.gradient}`
                       )}
                     />
+                  </div>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Male Colleagues Wishes Section */}
+      <section className="relative px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+        <div className="mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-12 text-center"
+          >
+            <h2 className="mb-4 bg-gradient-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-purple bg-clip-text pb-4 font-bold text-4xl text-transparent sm:text-5xl lg:text-6xl">
+              {t('maleColleagues.title')}
+            </h2>
+            <p className="mx-auto max-w-2xl text-foreground/70 text-lg">
+              {t('maleColleagues.subtitle')}
+            </p>
+          </motion.div>
+
+          {/* Group Photo */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="mb-16"
+          >
+            <Card className="group overflow-hidden border border-dynamic-blue/30 bg-dynamic-blue/10 p-0 shadow-xl transition-all hover:border-dynamic-blue/50 hover:shadow-2xl">
+              <div className="relative aspect-video w-full overflow-hidden bg-dynamic-blue/5">
+                <Image
+                  src="/media/marketing/events/women-in-tech/tuturuuu-male-colleagues.jpg"
+                  alt={t('maleColleagues.groupPhotoAlt')}
+                  fill
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+                  loading="eager"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-dynamic-blue/10 via-dynamic-blue/5 to-transparent" />
+              </div>
+            </Card>
+          </motion.div>
+
+          {/* Individual Wishes */}
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-6">
+            {[
+              {
+                key: 'phuc',
+                image:
+                  '/media/marketing/events/women-in-tech/phuc-founder-ceo-of-tuturuuu.jpg',
+                gradient: 'from-dynamic-purple to-dynamic-pink',
+                borderColor:
+                  'border-dynamic-purple/30 bg-dynamic-purple/10 hover:border-dynamic-purple/50',
+                size: 'md:col-span-full lg:col-span-3',
+              },
+              {
+                key: 'henry',
+                image:
+                  '/media/marketing/events/women-in-tech/henry-coo-of-tuturuuu.jpg',
+                gradient: 'from-dynamic-blue to-dynamic-cyan',
+                borderColor:
+                  'border-dynamic-blue/30 bg-dynamic-blue/10 hover:border-dynamic-blue/50',
+                size: 'lg:col-span-3',
+              },
+              {
+                key: 'sam',
+                image:
+                  '/media/marketing/events/women-in-tech/sam-software-engineer-at-tuturuuu.jpg',
+                gradient: 'from-dynamic-green to-dynamic-blue',
+                borderColor:
+                  'border-dynamic-green/30 bg-dynamic-green/10 hover:border-dynamic-green/50',
+                size: 'lg:col-span-2',
+              },
+              {
+                key: 'khoi',
+                image:
+                  '/media/marketing/events/women-in-tech/khoi-software-engineer-intern-at-tuturuuu.jpg',
+                gradient: 'from-dynamic-pink to-dynamic-purple',
+                borderColor:
+                  'border-dynamic-pink/30 bg-dynamic-pink/10 hover:border-dynamic-pink/50',
+                size: 'lg:col-span-2',
+              },
+              {
+                key: 'khang',
+                image:
+                  '/media/marketing/events/women-in-tech/khang-junior-software-engineer-at-tuturuuu.jpg',
+                gradient: 'from-dynamic-orange to-dynamic-red',
+                borderColor:
+                  'border-dynamic-orange/30 bg-dynamic-orange/10 hover:border-dynamic-orange/50',
+                size: 'lg:col-span-2',
+              },
+            ].map((colleague, index) => (
+              <motion.div
+                key={colleague.key}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1, duration: 0.6 }}
+                className={cn(colleague.size)}
+              >
+                <Card
+                  className={cn(
+                    'group hover:-translate-y-2 h-full overflow-hidden transition-all hover:shadow-xl',
+                    colleague.borderColor
+                  )}
+                >
+                  {/* Photo */}
+                  <div className="relative aspect-square overflow-hidden">
+                    <Image
+                      src={colleague.image}
+                      alt={t(
+                        `maleColleagues.wishes.${colleague.key}.name` as any
+                      )}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-110"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    />
+                    <div
+                      className={cn(
+                        'absolute inset-0 bg-gradient-to-t via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100',
+                        `from-black/20`
+                      )}
+                    />
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-6">
+                    {/* Name & Role Badge */}
+                    <div className="mb-4 flex flex-col items-center gap-2">
+                      <div
+                        className={cn(
+                          'inline-block rounded-full px-4 py-1.5',
+                          `bg-gradient-to-r ${colleague.gradient}`
+                        )}
+                      >
+                        <span className="font-bold text-sm text-white">
+                          {t(
+                            `maleColleagues.wishes.${colleague.key}.name` as any
+                          )}
+                        </span>
+                      </div>
+                      <p className="text-center text-foreground/60 text-xs">
+                        {t(
+                          `maleColleagues.wishes.${colleague.key}.role` as any
+                        )}
+                      </p>
+                    </div>
+
+                    {/* Decorative Quote */}
+                    <div className="mb-3 flex justify-center">
+                      <div
+                        className={cn(
+                          'h-1 w-12 rounded-full',
+                          `bg-gradient-to-r ${colleague.gradient}`
+                        )}
+                      />
+                    </div>
+
+                    {/* Wish Message */}
+                    <div className="relative">
+                      <div className="-top-2 -left-2 absolute text-4xl opacity-20">
+                        <Heart className={cn('h-6 w-6')} />
+                      </div>
+                      <p className="relative text-center text-foreground/80 text-sm italic leading-relaxed">
+                        "
+                        {t(
+                          `maleColleagues.wishes.${colleague.key}.message` as any
+                        )}
+                        "
+                      </p>
+                    </div>
                   </div>
                 </Card>
               </motion.div>
