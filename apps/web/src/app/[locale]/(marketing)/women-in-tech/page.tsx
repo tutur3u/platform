@@ -35,7 +35,6 @@ import { useEffect, useMemo, useState } from 'react';
 function LanguageSwitcher({
   locale: currentLocale,
   className,
-  reduceEffects = false,
 }: {
   locale: string;
   className?: string;
@@ -65,8 +64,7 @@ function LanguageSwitcher({
     <div className={cn('flex flex-col items-end gap-2', className)}>
       <div
         className={cn(
-          'rounded-lg border border-border/50 bg-background/80 px-3 py-1.5 text-muted-foreground text-xs',
-          !reduceEffects && 'backdrop-blur-sm'
+          'rounded-lg border border-border/50 bg-background/80 px-3 py-1.5 text-muted-foreground text-xs'
         )}
       >
         {t('languageAvailable')}
@@ -77,8 +75,7 @@ function LanguageSwitcher({
         size="sm"
         disabled={loading}
         className={cn(
-          'group gap-2 border-dynamic-pink/30 bg-background/80 font-semibold transition-all hover:border-dynamic-pink/50 hover:bg-dynamic-pink/10',
-          !reduceEffects && 'backdrop-blur-sm'
+          'group gap-2 border-dynamic-pink/30 bg-background/80 font-semibold transition-all hover:border-dynamic-pink/50 hover:bg-dynamic-pink/10'
         )}
       >
         <Globe className="h-4 w-4 transition-transform group-hover:rotate-12" />
@@ -270,8 +267,7 @@ export default function VietnameseWomensDayPage() {
             <Badge
               variant="secondary"
               className={cn(
-                'mb-6 border-dynamic-pink/30 bg-dynamic-pink/10 px-6 py-2 text-xs md:text-sm',
-                !shouldReduceMotion && 'backdrop-blur'
+                'mb-6 border-dynamic-pink/30 bg-dynamic-pink/10 px-6 py-2 text-xs md:text-sm'
               )}
             >
               <Heart className="mr-2 h-4 w-4 text-dynamic-pink" />
@@ -316,7 +312,7 @@ export default function VietnameseWomensDayPage() {
             <Button
               size="lg"
               variant="outline"
-              className="border-2 border-dynamic-pink/30 px-8 py-6 backdrop-blur transition-all hover:border-dynamic-pink/50 hover:bg-dynamic-pink/5 sm:w-auto"
+              className="border-2 border-dynamic-pink/30 px-8 py-6 transition-all hover:border-dynamic-pink/50 hover:bg-dynamic-pink/5 sm:w-auto"
               asChild
             >
               <Link href="/about">
@@ -420,7 +416,7 @@ export default function VietnameseWomensDayPage() {
                     <div className="mb-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-dynamic-purple/10">
                       <Sparkles className="h-6 w-6 text-dynamic-purple" />
                     </div>
-                    <h2 className="bg-gradient-to-r from-dynamic-purple to-dynamic-pink bg-clip-text pb-4 font-bold text-3xl text-transparent">
+                    <h2 className="bg-gradient-to-r from-dynamic-purple to-dynamic-pink bg-clip-text pb-4 text-center font-bold text-transparent text-xl md:text-balance md:text-3xl">
                       {t('ceo.messageTitle')}
                     </h2>
                   </div>
@@ -472,7 +468,7 @@ export default function VietnameseWomensDayPage() {
 
           <div className="space-y-20">
             {/* Executive Leadership */}
-            <div className="grid gap-8 md:grid-cols-2 md:items-center">
+            <div className="grid gap-8 text-center md:grid-cols-2 md:items-center md:text-balance">
               <div className="group relative overflow-hidden rounded-2xl border-2 border-dynamic-purple/30 shadow-xl transition-all hover:border-dynamic-purple/50 hover:shadow-2xl">
                 <div className="relative aspect-[4/3] bg-dynamic-purple/5">
                   <Image
@@ -487,7 +483,7 @@ export default function VietnameseWomensDayPage() {
                 </div>
               </div>
               <div>
-                <div className="mb-4 inline-block rounded-full bg-dynamic-purple/10 px-4 py-2">
+                <div className="mb-4 inline-block rounded-full border border-dynamic-purple/20 bg-dynamic-purple/10 px-4 py-2">
                   <span className="font-semibold text-dynamic-purple text-sm">
                     {t('womenInLeadership.executives.title')}
                   </span>
@@ -498,16 +494,16 @@ export default function VietnameseWomensDayPage() {
                 <p className="mb-4 text-foreground/60 text-sm">
                   {t('womenInLeadership.executives.roles')}
                 </p>
-                <p className="text-foreground/80">
+                <p className="text-balance text-foreground/80">
                   {t('womenInLeadership.executives.story')}
                 </p>
               </div>
             </div>
 
             {/* Engineering Excellence */}
-            <div className="grid gap-8 md:grid-cols-2 md:items-center">
+            <div className="grid gap-8 text-center md:grid-cols-2 md:items-center md:text-balance">
               <div className="order-2 md:order-1">
-                <div className="mb-4 inline-block rounded-full bg-dynamic-pink/10 px-4 py-2">
+                <div className="mb-4 inline-block rounded-full border border-dynamic-pink/20 bg-dynamic-pink/10 px-4 py-2">
                   <span className="font-semibold text-dynamic-pink text-sm">
                     {t('womenInLeadership.engineering.title')}
                   </span>
@@ -518,7 +514,7 @@ export default function VietnameseWomensDayPage() {
                 <p className="mb-4 text-foreground/60 text-sm">
                   {t('womenInLeadership.engineering.roles')}
                 </p>
-                <p className="text-foreground/80">
+                <p className="text-balance text-foreground/80">
                   {t('womenInLeadership.engineering.story')}
                 </p>
               </div>
@@ -538,7 +534,7 @@ export default function VietnameseWomensDayPage() {
             </div>
 
             {/* Next-Generation Marketing */}
-            <div className="grid gap-8 md:grid-cols-2 md:items-center">
+            <div className="grid gap-8 text-center md:grid-cols-2 md:items-center md:text-balance">
               <div className="group relative overflow-hidden rounded-2xl border-2 border-dynamic-blue/30 shadow-xl transition-all hover:border-dynamic-blue/50 hover:shadow-2xl">
                 <div className="relative aspect-[4/3] bg-dynamic-blue/5">
                   <Image
@@ -553,7 +549,7 @@ export default function VietnameseWomensDayPage() {
                 </div>
               </div>
               <div>
-                <div className="mb-4 inline-block rounded-full bg-dynamic-blue/10 px-4 py-2">
+                <div className="mb-4 inline-block rounded-full border border-dynamic-blue/20 bg-dynamic-blue/10 px-4 py-2">
                   <span className="font-semibold text-dynamic-blue text-sm">
                     {t('womenInLeadership.marketing.title')}
                   </span>
@@ -564,16 +560,16 @@ export default function VietnameseWomensDayPage() {
                 <p className="mb-4 text-foreground/60 text-sm">
                   {t('womenInLeadership.marketing.roles')}
                 </p>
-                <p className="text-foreground/80">
+                <p className="text-balance text-foreground/80">
                   {t('womenInLeadership.marketing.story')}
                 </p>
               </div>
             </div>
 
             {/* Breaking Boundaries - Remote */}
-            <div className="grid gap-8 md:grid-cols-2 md:items-center">
+            <div className="grid gap-8 text-center md:grid-cols-2 md:items-center md:text-balance">
               <div className="order-2 md:order-1">
-                <div className="mb-4 inline-block rounded-full bg-dynamic-green/10 px-4 py-2">
+                <div className="mb-4 inline-block rounded-full border border-dynamic-green/20 bg-dynamic-green/10 px-4 py-2">
                   <span className="font-semibold text-dynamic-green text-sm">
                     {t('womenInLeadership.remote.title')}
                   </span>
@@ -584,7 +580,7 @@ export default function VietnameseWomensDayPage() {
                 <p className="mb-4 text-foreground/60 text-sm">
                   {t('womenInLeadership.remote.roles')}
                 </p>
-                <p className="text-foreground/80">
+                <p className="text-balance text-foreground/80">
                   {t('womenInLeadership.remote.story')}
                 </p>
               </div>
@@ -710,7 +706,7 @@ export default function VietnameseWomensDayPage() {
       </section>
 
       {/* Values Section */}
-      <section className="relative px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+      <section className="relative px-4 py-20 text-center sm:px-6 sm:py-24 lg:px-8 lg:py-32">
         <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -780,7 +776,7 @@ export default function VietnameseWomensDayPage() {
               >
                 <Card
                   className={cn(
-                    'hover:-translate-y-1 h-full p-6 transition-all hover:shadow-md',
+                    'hover:-translate-y-1 flex h-full flex-col items-center justify-center p-6 transition-all hover:shadow-md',
                     value.color
                   )}
                 >
@@ -878,7 +874,9 @@ export default function VietnameseWomensDayPage() {
                   )}
                   className={cn(
                     'relative grid gap-8 lg:grid-cols-2',
-                    index % 2 === 0 ? 'lg:text-right' : 'lg:flex-row-reverse'
+                    index % 2 === 0
+                      ? 'text-center lg:text-right'
+                      : 'text-center lg:flex-row-reverse lg:text-left'
                   )}
                 >
                   {/* Content */}
@@ -900,8 +898,8 @@ export default function VietnameseWomensDayPage() {
                         className={cn(
                           'flex items-center gap-2',
                           index % 2 === 0
-                            ? 'lg:justify-end'
-                            : 'lg:justify-start'
+                            ? 'justify-center lg:justify-end'
+                            : 'justify-center lg:justify-start'
                         )}
                       >
                         <div
@@ -1085,7 +1083,7 @@ export default function VietnameseWomensDayPage() {
           </motion.div>
 
           <div>
-            <Card className="group overflow-hidden border border-dynamic-pink/30 bg-dynamic-pink/10 p-0 shadow-xl backdrop-blur-sm transition-all hover:border-dynamic-pink/50 hover:shadow-2xl">
+            <Card className="group overflow-hidden border border-dynamic-pink/30 bg-dynamic-pink/10 p-0 shadow-xl transition-all hover:border-dynamic-pink/50 hover:shadow-2xl">
               <div className="relative aspect-video w-full overflow-hidden bg-dynamic-pink/5">
                 <Image
                   src="/media/marketing/events/women-in-tech/team.jpg"
@@ -1096,7 +1094,7 @@ export default function VietnameseWomensDayPage() {
                   loading="eager"
                   priority
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-dynamic-pink/20 via-dynamic-pink/10 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-dynamic-pink/10 via-dynamic-pink/5 to-transparent" />
               </div>
 
               <div className="p-8 text-center">
@@ -1230,8 +1228,8 @@ export default function VietnameseWomensDayPage() {
                   sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
               </div>
-              <div className="p-8">
-                <div className="mb-4 inline-block rounded-full bg-dynamic-blue/10 px-4 py-2">
+              <div className="flex flex-col items-center justify-center p-8">
+                <div className="mb-4 inline-block rounded-full border border-dynamic-blue/20 bg-dynamic-blue/10 px-4 py-2">
                   <span className="font-semibold text-dynamic-blue text-sm">
                     {t('partnerships.allmind.title')}
                   </span>
@@ -1253,8 +1251,8 @@ export default function VietnameseWomensDayPage() {
                   sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
               </div>
-              <div className="p-8">
-                <div className="mb-4 inline-block rounded-full bg-dynamic-red/10 px-4 py-2">
+              <div className="flex flex-col items-center justify-center p-8">
+                <div className="mb-4 inline-block rounded-full border border-dynamic-red/20 bg-dynamic-red/10 px-4 py-2">
                   <span className="font-semibold text-dynamic-red text-sm">
                     {t('partnerships.rmit.title')}
                   </span>
@@ -1285,8 +1283,8 @@ export default function VietnameseWomensDayPage() {
                   sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
               </div>
-              <div className="p-8">
-                <div className="mb-4 inline-block rounded-full bg-dynamic-green/10 px-4 py-2">
+              <div className="flex flex-col items-center justify-center p-8">
+                <div className="mb-4 inline-block rounded-full border border-dynamic-green/20 bg-dynamic-green/10 px-4 py-2">
                   <span className="font-semibold text-dynamic-green text-sm">
                     {t('partnerships.sparkHub.title')}
                   </span>
@@ -1316,8 +1314,8 @@ export default function VietnameseWomensDayPage() {
                   sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
               </div>
-              <div className="p-8">
-                <div className="mb-4 inline-block rounded-full bg-dynamic-orange/10 px-4 py-2">
+              <div className="flex flex-col items-center justify-center p-8">
+                <div className="mb-4 inline-block rounded-full border border-dynamic-orange/20 bg-dynamic-orange/10 px-4 py-2">
                   <span className="font-semibold text-dynamic-orange text-sm">
                     {t('partnerships.soki.title')}
                   </span>
@@ -1339,8 +1337,8 @@ export default function VietnameseWomensDayPage() {
                   sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
               </div>
-              <div className="p-8">
-                <div className="mb-4 inline-block rounded-full bg-dynamic-cyan/10 px-4 py-2">
+              <div className="flex flex-col items-center justify-center p-8">
+                <div className="mb-4 inline-block rounded-full border border-dynamic-cyan/20 bg-dynamic-cyan/10 px-4 py-2">
                   <span className="font-semibold text-dynamic-cyan text-sm">
                     {t('partnerships.nhung.title')}
                   </span>
@@ -1362,8 +1360,8 @@ export default function VietnameseWomensDayPage() {
                   sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
               </div>
-              <div className="p-8">
-                <div className="mb-4 inline-block rounded-full bg-dynamic-purple/10 px-4 py-2">
+              <div className="flex flex-col items-center justify-center p-8">
+                <div className="mb-4 inline-block rounded-full border border-dynamic-purple/20 bg-dynamic-purple/10 px-4 py-2">
                   <span className="font-semibold text-dynamic-purple text-sm">
                     {t('partnerships.dai.title')}
                   </span>
@@ -1385,8 +1383,8 @@ export default function VietnameseWomensDayPage() {
                   sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
               </div>
-              <div className="p-8">
-                <div className="mb-4 inline-block rounded-full bg-dynamic-blue/10 px-4 py-2">
+              <div className="flex flex-col items-center justify-center p-8">
+                <div className="mb-4 inline-block rounded-full border border-dynamic-blue/20 bg-dynamic-blue/10 px-4 py-2">
                   <span className="font-semibold text-dynamic-blue text-sm">
                     {t('partnerships.nhu.title')}
                   </span>
@@ -1408,8 +1406,8 @@ export default function VietnameseWomensDayPage() {
                   sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
               </div>
-              <div className="p-8">
-                <div className="mb-4 inline-block rounded-full bg-dynamic-pink/10 px-4 py-2">
+              <div className="flex flex-col items-center justify-center p-8">
+                <div className="mb-4 inline-block rounded-full border border-dynamic-pink/20 bg-dynamic-pink/10 px-4 py-2">
                   <span className="font-semibold text-dynamic-pink text-sm">
                     {t('partnerships.community.title')}
                   </span>
@@ -1440,8 +1438,7 @@ export default function VietnameseWomensDayPage() {
           <motion.div {...fadeInViewVariant(0)}>
             <Card
               className={cn(
-                'relative overflow-hidden border border-dynamic-pink/30 bg-gradient-to-br from-dynamic-pink/10 to-background p-12',
-                !shouldReduceMotion && 'backdrop-blur-sm'
+                'relative overflow-hidden border border-dynamic-pink/30 bg-gradient-to-br from-dynamic-pink/10 to-background p-12'
               )}
             >
               <div className="relative text-center">
@@ -1449,7 +1446,7 @@ export default function VietnameseWomensDayPage() {
                   <Rocket className="h-12 w-12 text-white" />
                 </div>
 
-                <h2 className="mb-4 bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text pb-4 font-bold text-4xl text-transparent sm:text-5xl">
+                <h2 className="mb-4 bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text pb-4 font-bold text-2xl text-transparent md:text-4xl">
                   {t('cta.title')}
                 </h2>
 
@@ -1471,7 +1468,7 @@ export default function VietnameseWomensDayPage() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="border-2 border-dynamic-pink/30 backdrop-blur transition-all hover:border-dynamic-pink/50 hover:bg-dynamic-pink/5"
+                    className="border-2 border-dynamic-pink/30 transition-all hover:border-dynamic-pink/50 hover:bg-dynamic-pink/5"
                     asChild
                   >
                     <Link href="/about">
