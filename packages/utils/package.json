@@ -20,7 +20,7 @@
     "clsx": "^2.1.1",
     "dayjs": "^1.11.18",
     "moment": "^2.30.1",
-    "next": "^16.0.0-canary.13",
+    "next": "^16.0.0-canary.14",
     "prosemirror-model": "^1.25.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
