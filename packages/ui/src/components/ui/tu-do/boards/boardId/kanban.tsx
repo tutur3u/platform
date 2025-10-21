@@ -68,7 +68,8 @@ import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { TaskViewerProvider } from '../../providers/task-viewer-provider';
-import { CursorOverlayWrapper } from '../../shared/cursor-overlay';
+import type { ListStatusFilter } from '../../shared/board-header';
+import CursorOverlayMultiWrapper from '../../shared/cursor-overlay-multi-wrapper';
 import {
   buildEstimationIndices,
   mapEstimationPoints,
@@ -93,6 +94,7 @@ interface Props {
   lists: TaskList[];
   isLoading: boolean;
   disableSort?: boolean; // When true, skip internal sort_key sorting (parent already sorted)
+  listStatusFilter?: ListStatusFilter;
   filters?: TaskFilters;
 }
 
@@ -103,6 +105,7 @@ export function KanbanBoard({
   lists,
   isLoading,
   disableSort = false,
+  listStatusFilter = 'all',
   filters,
 }: Props) {
   const [activeColumn, setActiveColumn] = useState<TaskList | null>(null);
@@ -2033,9 +2036,11 @@ export function KanbanBoard({
 
               {/* Overlay for collaborator cursors */}
               {!workspace.personal && boardId && (
-                <CursorOverlayWrapper
+                <CursorOverlayMultiWrapper
                   channelName={`board-cursor-${boardId}`}
                   containerRef={boardRef}
+                  listStatusFilter={listStatusFilter}
+                  filters={filters}
                 />
               )}
             </div>
