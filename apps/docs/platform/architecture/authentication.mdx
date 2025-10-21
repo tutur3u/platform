@@ -36,7 +36,7 @@ The Tuturuuu platform uses Supabase Auth for user authentication with support fo
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { redirect } from 'next/navigation';
 
 export async function signUp(formData: FormData) {
@@ -102,7 +102,7 @@ export function SignUpForm() {
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { redirect } from 'next/navigation';
 
 export async function signIn(formData: FormData) {
@@ -129,7 +129,7 @@ export async function signIn(formData: FormData) {
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function signInWithOAuth(provider: 'google' | 'github') {
   const supabase = createClient();
@@ -182,7 +182,7 @@ export function OAuthButtons() {
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { redirect } from 'next/navigation';
 
 export async function signOut() {
@@ -199,7 +199,7 @@ export async function signOut() {
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function enableMFA() {
   const supabase = createClient();
@@ -224,7 +224,7 @@ export async function enableMFA() {
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function verifyMFAEnrollment(factorId: string, code: string) {
   const supabase = createClient();
@@ -244,7 +244,7 @@ export async function verifyMFAEnrollment(factorId: string, code: string) {
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function signInWithMFA(email: string, password: string) {
   const supabase = createClient();
@@ -286,7 +286,7 @@ export async function signInWithMFA(email: string, password: string) {
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function verifyMFACode(
   factorId: string,
@@ -311,7 +311,7 @@ export async function verifyMFACode(
 ### Get Current Session
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function getSession() {
   const supabase = createClient();
@@ -326,7 +326,7 @@ export async function getSession() {
 ### Get Current User
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function getCurrentUser() {
   const supabase = createClient();
@@ -346,7 +346,7 @@ export async function getCurrentUser() {
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function refreshSession() {
   const supabase = createClient();
@@ -365,7 +365,7 @@ export async function refreshSession() {
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function requestPasswordReset(email: string) {
   const supabase = createClient();
@@ -384,7 +384,7 @@ export async function requestPasswordReset(email: string) {
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function resetPassword(newPassword: string) {
   const supabase = createClient();
@@ -405,7 +405,7 @@ export async function resetPassword(newPassword: string) {
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function resendVerificationEmail() {
   const supabase = createClient();
@@ -471,7 +471,7 @@ Protect routes using Next.js middleware:
 
 ```typescript
 // middleware.ts
-import { createDynamicClient } from '@tuturuuu/supabase/server';
+import { createDynamicClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function middleware(request: NextRequest) {
@@ -500,7 +500,7 @@ export const config = {
 ## Protected Server Component
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { redirect } from 'next/navigation';
 
 export default async function ProtectedPage() {
@@ -581,7 +581,7 @@ Link multiple auth providers to same account:
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function linkIdentity(provider: 'google' | 'github') {
   const supabase = createClient();

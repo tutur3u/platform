@@ -11,7 +11,7 @@ The `@tuturuuu/supabase` package provides type-safe Supabase client utilities fo
 
 ```bash
 # Already included in monorepo workspace
-import { createClient, createAdminClient } from '@tuturuuu/supabase/server';
+import { createClient, createAdminClient } from '@tuturuuu/supabase/next/server';
 ```
 
 ## Client Types
@@ -25,7 +25,7 @@ import { createClient, createAdminClient } from '@tuturuuu/supabase/server';
 **Privilege Level:** Current authenticated user
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export default async function TaskPage() {
   const supabase = createClient();
@@ -56,7 +56,7 @@ export default async function TaskPage() {
 **Privilege Level:** Service role (bypasses RLS)
 
 ```typescript
-import { createAdminClient } from '@tuturuuu/supabase/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 
 export async function createWorkspace(name: string, ownerId: string) {
   const supabase = createAdminClient();
@@ -94,7 +94,7 @@ export async function createWorkspace(name: string, ownerId: string) {
 **Context:** Next.js middleware, edge functions
 
 ```typescript
-import { createDynamicClient } from '@tuturuuu/supabase/server';
+import { createDynamicClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
@@ -115,7 +115,7 @@ export async function middleware(request: NextRequest) {
 #### Get Current User
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function getCurrentUser() {
   const supabase = createClient();
@@ -134,7 +134,7 @@ export async function getCurrentUser() {
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function createTask(formData: FormData) {
   const supabase = createClient();
@@ -166,7 +166,7 @@ export async function createTask(formData: FormData) {
 #### Get User's Workspaces
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function getUserWorkspaces(userId: string) {
   const supabase = createClient();
@@ -193,7 +193,7 @@ export async function getUserWorkspaces(userId: string) {
 #### Check Workspace Permission
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
 
 type Permission = Database['public']['Enums']['workspace_role_permission'];
@@ -227,7 +227,7 @@ export async function hasPermission(
 #### Paginated Query
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function getTasks(wsId: string, page = 0, pageSize = 20) {
   const supabase = createClient();
@@ -256,7 +256,7 @@ export async function getTasks(wsId: string, page = 0, pageSize = 20) {
 #### Filtered Query with Relations
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function getTasksWithAssignees(wsId: string, completed?: boolean) {
   const supabase = createClient();
@@ -355,7 +355,7 @@ export function useTaskSubscription(wsId: string) {
 
 ```typescript
 import type { Database } from '@tuturuuu/types';
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 type Task = Database['public']['Tables']['workspace_tasks']['Row'];
 type TaskInsert = Database['public']['Tables']['workspace_tasks']['Insert'];
@@ -397,7 +397,7 @@ type Permission = Enums<'workspace_role_permission'>;
 ### Standard Pattern
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function getTask(taskId: string) {
   const supabase = createClient();
@@ -420,7 +420,7 @@ export async function getTask(taskId: string) {
 ### With Try-Catch
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function safeGetTask(taskId: string) {
   try {
@@ -446,7 +446,7 @@ export async function safeGetTask(taskId: string) {
 ### Upload File
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function uploadAvatar(userId: string, file: File) {
   const supabase = createClient();
@@ -474,7 +474,7 @@ export async function uploadAvatar(userId: string, file: File) {
 ### Download File
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function downloadFile(path: string) {
   const supabase = createClient();
@@ -555,7 +555,7 @@ export async function downloadFile(path: string) {
 ### Mock Supabase Client
 
 ```typescript
-// __mocks__/@tuturuuu/supabase/server.ts
+// __mocks__/@tuturuuu/supabase/next/server.ts
 export const createClient = vi.fn(() => ({
   from: vi.fn(() => ({
     select: vi.fn(() => ({
@@ -578,7 +578,7 @@ export const createClient = vi.fn(() => ({
 import { describe, it, expect, vi } from 'vitest';
 import { getTask } from './tasks';
 
-vi.mock('@tuturuuu/supabase/server');
+vi.mock('@tuturuuu/supabase/next/server');
 
 describe('getTask', () => {
   it('should fetch task by ID', async () => {
