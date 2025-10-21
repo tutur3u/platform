@@ -69,7 +69,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { TaskViewerProvider } from '../../providers/task-viewer-provider';
 import type { ListStatusFilter } from '../../shared/board-header';
-import { CursorOverlayWrapper } from '../../shared/cursor-overlay';
+import CursorOverlayMultiWrapper from '../../shared/cursor-overlay-multi-wrapper';
 import {
   buildEstimationIndices,
   mapEstimationPoints,
@@ -2036,7 +2036,7 @@ export function KanbanBoard({
 
               {/* Overlay for collaborator cursors */}
               {!workspace.personal && boardId && (
-                <CursorOverlayWrapper
+                <CursorOverlayMultiWrapper
                   channelName={`board-cursor-${boardId}`}
                   containerRef={boardRef}
                   listStatusFilter={listStatusFilter}

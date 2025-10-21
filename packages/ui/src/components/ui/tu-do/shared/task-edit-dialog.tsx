@@ -74,7 +74,7 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 import * as Y from 'yjs';
-import { CursorOverlayWrapper } from './cursor-overlay';
+import CursorOverlayWrapper from './cursor-overlay-wrapper';
 import { CustomDatePickerDialog } from './custom-date-picker/custom-date-picker-dialog';
 import {
   buildEstimationIndices,
