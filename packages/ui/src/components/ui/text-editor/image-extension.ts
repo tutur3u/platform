@@ -88,7 +88,11 @@ export const CustomImage = (options: ImageOptions = {}) => {
               update: (view: EditorView) => {
                 // Find all image nodes (check both imageResize and image for compatibility)
                 view.state.doc.descendants((node, pos) => {
-                  if (node.type.name !== 'imageResize' && node.type.name !== 'image') return;
+                  if (
+                    node.type.name !== 'imageResize' &&
+                    node.type.name !== 'image'
+                  )
+                    return;
 
                   // Skip if already snapped in this cycle
                   if (node.attrs['data-snapped'] === 'true') return;
@@ -185,7 +189,8 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       const url = await onImageUpload(image);
 
                       // Try imageResize first (custom), fallback to image (base)
-                      const nodeType = schema.nodes.imageResize || schema.nodes.image;
+                      const nodeType =
+                        schema.nodes.imageResize || schema.nodes.image;
                       if (!nodeType) {
                         console.error('No image node type found in schema');
                         continue;
