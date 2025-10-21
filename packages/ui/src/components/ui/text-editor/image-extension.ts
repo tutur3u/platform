@@ -1,3 +1,5 @@
+import type { EditorView } from '@tiptap/pm/view';
+import { Plugin, PluginKey } from 'prosemirror-state';
 import ImageResize from 'tiptap-extension-resize-image';
 
 export type ImageSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
@@ -42,18 +44,16 @@ interface ImageOptions {
 
 export const CustomImage = (options: ImageOptions = {}) => {
   const baseExtension = ImageResize.extend({
-    name: 'customImage',
-
     addAttributes() {
       return {
         ...this.parent?.(),
         width: {
           default: null,
-          parseHTML: (element) => {
+          parseHTML: (element: HTMLElement) => {
             const width = element.getAttribute('width');
-            return width ? parseInt(width, 10) : null;
+            return width ? Number.parseInt(width, 10) : null;
           },
-          renderHTML: (attributes) => {
+          renderHTML: (attributes: Record<string, unknown>) => {
             if (!attributes.width) {
               return {};
             }
@@ -64,9 +64,9 @@ export const CustomImage = (options: ImageOptions = {}) => {
         },
         'data-snapped': {
           default: 'false',
-          parseHTML: (element) =>
+          parseHTML: (element: HTMLElement) =>
             element.getAttribute('data-snapped') || 'false',
-          renderHTML: (attributes) => ({
+          renderHTML: (attributes: Record<string, unknown>) => ({
             'data-snapped': attributes['data-snapped'],
           }),
         },
@@ -80,22 +80,24 @@ export const CustomImage = (options: ImageOptions = {}) => {
       return [
         ...parentPlugins,
         // Image resize snap plugin
-        new (require('prosemirror-state').Plugin)({
-          key: new (require('prosemirror-state').PluginKey)(
-            'imageResizeSnapPlugin'
-          ),
+        new Plugin({
+          key: new PluginKey('imageResizeSnapPlugin'),
 
           view() {
             return {
-              update: (view: any) => {
-                // Find all image nodes
-                view.state.doc.descendants((node: any, pos: number) => {
-                  if (node.type.name !== 'customImage') return;
+              update: (view: EditorView) => {
+                // Find all image nodes (check both imageResize and image for compatibility)
+                view.state.doc.descendants((node, pos) => {
+                  if (
+                    node.type.name !== 'imageResize' &&
+                    node.type.name !== 'image'
+                  )
+                    return;
 
                   // Skip if already snapped in this cycle
                   if (node.attrs['data-snapped'] === 'true') return;
 
-                  const width = node.attrs.width;
+                  const width = node.attrs.width as number | null;
                   if (!width) return;
 
                   // Get the editor's content width
@@ -129,30 +131,31 @@ export const CustomImage = (options: ImageOptions = {}) => {
           },
         }),
         // Image drop plugin with upload
-        new (require('prosemirror-state').Plugin)({
-          key: new (require('prosemirror-state').PluginKey)('imageDropPlugin'),
+        new Plugin({
+          key: new PluginKey('imageDropPlugin'),
 
           props: {
             handleDOMEvents: {
-              drop: (view: any, event: DragEvent) => {
+              drop: (view: EditorView, event: Event) => {
+                const dragEvent = event as DragEvent;
                 if (!onImageUpload) return false;
 
                 const { schema } = view.state;
-                const hasFiles = event.dataTransfer?.files?.length;
+                const hasFiles = dragEvent.dataTransfer?.files?.length;
 
                 if (!hasFiles) return false;
 
-                const images = Array.from(event.dataTransfer.files).filter(
-                  (file) => /image/i.test(file.type)
-                );
+                const images = Array.from(
+                  dragEvent.dataTransfer?.files || []
+                ).filter((file) => /image/i.test(file.type));
 
                 if (images.length === 0) return false;
 
-                event.preventDefault();
+                dragEvent.preventDefault();
 
                 const coordinates = view.posAtCoords({
-                  left: event.clientX,
-                  top: event.clientY,
+                  left: dragEvent.clientX,
+                  top: dragEvent.clientY,
                 });
 
                 if (!coordinates || typeof coordinates.pos !== 'number') {
@@ -185,11 +188,18 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       // Upload the image
                       const url = await onImageUpload(image);
 
-                      const node = schema.nodes.customImage?.create({
+                      // Try imageResize first (custom), fallback to image (base)
+                      const nodeType =
+                        schema.nodes.imageResize || schema.nodes.image;
+                      if (!nodeType) {
+                        console.error('No image node type found in schema');
+                        continue;
+                      }
+
+                      const node = nodeType.create({
                         src: url,
                         width: defaultWidth,
                       });
-                      if (!node) continue;
 
                       // Create fresh transaction from current view state
                       const tr = view.state.tr.insert(currentPos, node);
