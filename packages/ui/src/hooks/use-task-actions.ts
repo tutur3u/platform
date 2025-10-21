@@ -288,12 +288,12 @@ export function useTaskActions({
               ? `${taskCount} tasks moved to ${targetList?.name || 'selected list'}`
               : `Task moved to ${targetList?.name || 'selected list'}`,
         });
-        
+
         // Clear selection after bulk move
         if (shouldBulkMove && onClearSelection) {
           onClearSelection();
         }
-        
+
         onUpdate();
       } catch (error) {
         console.error('Failed to move task:', error);
