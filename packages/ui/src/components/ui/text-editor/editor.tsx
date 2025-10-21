@@ -368,72 +368,48 @@ export function RichTextEditor({
           }
         }
 
-        // Handle Tab to convert paragraph to bullet list or indent list items
-        if (event.key === 'Tab' && !event.shiftKey) {
+        // Handle Tab for list indentation while maintaining focus
+        if (event.key === 'Tab') {
+          // Always prevent default Tab behavior to avoid focus loss
+          event.preventDefault();
+          event.stopPropagation();
+
           const { $from } = selection;
-          const node = $from.node();
 
-          // If we're in a list item, let default TipTap behavior handle indentation
-          if (
-            node.type.name === 'listItem' ||
-            $from.parent.type.name === 'listItem'
-          ) {
-            return false;
-          }
+          // Check if we're in a regular list item (bullet or ordered)
+          const isInListItem =
+            $from.node(-1)?.type.name === 'listItem' ||
+            $from.node(-2)?.type.name === 'listItem';
 
-          // If we're in a paragraph, convert to bullet list
-          if (
-            node.type.name === 'paragraph' ||
-            $from.parent.type.name === 'paragraph'
-          ) {
-            event.preventDefault();
+          // Check if we're in a task item (checkbox)
+          const isInTaskItem =
+            $from.node(-1)?.type.name === 'taskItem' ||
+            $from.node(-2)?.type.name === 'taskItem';
 
-            // Manually create bullet list
-            const { schema } = state;
-            const bulletList = schema.nodes.bulletList;
-            const listItem = schema.nodes.listItem;
-            const paragraph = schema.nodes.paragraph;
-
-            if (bulletList && listItem && paragraph) {
-              const tr = state.tr;
-
-              // Find the position of the paragraph we want to replace
-              const paragraphDepth = $from.depth;
-              const paragraphPos = $from.before(paragraphDepth);
-              const paragraphEndPos = $from.after(paragraphDepth);
-
-              // Create a new paragraph with the current paragraph's content
-              const paragraphNode = paragraph.create(
-                null,
-                $from.parent.content
-              );
-
-              // Wrap the paragraph in a list item
-              const listItemNode = listItem.create(null, [paragraphNode]);
-
-              // Wrap the list item in a bullet list
-              const bulletListNode = bulletList.create(null, [listItemNode]);
-
-              // Replace the paragraph with the bullet list
-              tr.replaceWith(paragraphPos, paragraphEndPos, bulletListNode);
-
-              // Calculate new cursor position
-              // The structure is: bulletList (pos) + listItem (pos+1) + paragraph (pos+2) + content
-              const cursorOffset = selection.from - (paragraphPos + 1); // Offset from start of paragraph content
-              const newPos = paragraphPos + 3 + cursorOffset;
-
-              tr.setSelection(TextSelection.near(tr.doc.resolve(newPos)));
-
-              dispatch(tr);
-
-              // Manually trigger onChange if needed
-              if (!readOnly && onChangeRef.current) {
-                const newJson = tr.doc.toJSON();
-                onChangeRef.current(hasContent(newJson) ? newJson : null);
-              }
+          if (isInListItem) {
+            if (event.shiftKey) {
+              // Shift+Tab: Outdent (lift) the list item
+              editor?.chain().focus().liftListItem('listItem').run();
+            } else {
+              // Tab: Indent (sink) the list item
+              editor?.chain().focus().sinkListItem('listItem').run();
             }
-            return true;
+          } else if (isInTaskItem) {
+            if (event.shiftKey) {
+              // Shift+Tab: Outdent (lift) the task item
+              editor?.chain().focus().liftListItem('taskItem').run();
+            } else {
+              // Tab: Indent (sink) the task item
+              editor?.chain().focus().sinkListItem('taskItem').run();
+            }
           }
+
+          // Ensure focus stays in the editor
+          setTimeout(() => {
+            view.focus();
+          }, 0);
+
+          return true; // We handled the event
         }
 
         return false;

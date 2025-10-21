@@ -19,6 +19,7 @@ import {
   Link,
   List,
   ListOrdered,
+  ListTodo,
   Loader2,
   Rows2,
   Strikethrough,
@@ -213,6 +214,12 @@ export function ToolBar({
       icon: <ListOrdered className="size-4" />,
       onClick: () => editor?.chain().focus().toggleOrderedList().run(),
       pressed: editor?.isActive('orderedList'),
+    },
+    {
+      key: 'task-list',
+      icon: <ListTodo className="size-4" />,
+      onClick: () => editor?.chain().focus().toggleTaskList().run(),
+      pressed: editor?.isActive('taskList'),
     },
     {
       key: 'table',
