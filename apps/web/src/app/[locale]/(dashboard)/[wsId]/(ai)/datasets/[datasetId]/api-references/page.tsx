@@ -1,3 +1,4 @@
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   Card,
@@ -10,7 +11,6 @@ import { CodeBlock } from '@tuturuuu/ui/codeblock';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import EnvironmentSetup from './environment-setup';
 
 export const metadata: Metadata = {
@@ -44,7 +44,12 @@ export default async function ApiReferencesPage({ params }: Props) {
         const headersList = await headers();
         const host = headersList.get('host');
 
-        const apiKeys = await getApiKeys(wsId);
+        const rawApiKeys = await getApiKeys(wsId);
+        const apiKeys = rawApiKeys.map((key) => ({
+          id: key.id,
+          name: key.name,
+          value: key.key_prefix ? `${key.key_prefix}...` : 'your_api_key_here',
+        }));
 
         const pythonSetupCode = `import os
 from dotenv import load_dotenv

@@ -62,19 +62,22 @@ export const apiKeyColumns = (
     ),
   },
   {
-    accessorKey: 'value',
+    accessorKey: 'key_prefix',
     header: ({ column }) => (
       <DataTableColumnHeader
         t={t}
         column={column}
-        title={t(`${namespace}.value`)}
+        title={t(`${namespace}.key_prefix`)}
       />
     ),
-    cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-32 break-all">
-        {row.getValue('value') || '-'}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const prefix = row.getValue('key_prefix') as string | null;
+      return (
+        <div className="line-clamp-1 max-w-32 break-all font-mono text-xs">
+          {prefix ? `${prefix}...` : '-'}
+        </div>
+      );
+    },
   },
   {
     accessorKey: 'created_at',
