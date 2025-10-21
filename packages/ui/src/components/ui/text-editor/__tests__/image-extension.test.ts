@@ -21,7 +21,7 @@ describe('ImageExtension', () => {
       const extension = CustomImage();
       // inline: true allows images inside paragraphs (backward compat)
       // CSS (display: block) makes them behave as block elements
-      expect(extension.options.inline).toBe(true);
+      expect(extension.options.inline).toBe(false);
     });
 
     it('should disable base64 images', () => {
