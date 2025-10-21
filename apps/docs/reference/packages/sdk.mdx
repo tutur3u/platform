@@ -1,0 +1,486 @@
+---
+title: 'tuturuuu'
+description: 'Official TypeScript/JavaScript SDK for the Tuturuuu platform'
+updatedAt: '2025-10-21'
+---
+
+# Tuturuuu SDK
+
+Official TypeScript/JavaScript SDK for interacting with the Tuturuuu platform. Provides type-safe access to workspace storage, files, and documents via API keys.
+
+## Installation
+
+<CodeGroup>
+
+```bash npm
+npm install tuturuuu
+```
+
+```bash yarn
+yarn add tuturuuu
+```
+
+```bash pnpm
+pnpm add tuturuuu
+```
+
+```bash bun
+bun add tuturuuu
+```
+
+</CodeGroup>
+
+## Quick Start
+
+```typescript
+import { TuturuuuClient } from 'tuturuuu';
+
+// Initialize the client with your API key
+const client = new TuturuuuClient('ttr_your_api_key');
+
+// List files in workspace
+const files = await client.storage.list({
+  path: 'documents',
+  limit: 50
+});
+
+// Upload a file
+const file = new File(['content'], 'example.txt');
+const result = await client.storage.upload(file, {
+  path: 'documents'
+});
+
+// Create a document
+const doc = await client.documents.create({
+  name: 'My Document',
+  content: { text: 'Hello World' }
+});
+```
+
+## Features
+
+<CardGroup cols={2}>
+  <Card title="Storage Operations" icon="folder">
+    Upload, download, list, and delete files and folders
+  </Card>
+  <Card title="Document Management" icon="file-alt">
+    Create, read, update, and delete workspace documents
+  </Card>
+  <Card title="Signed URLs" icon="link">
+    Generate temporary shareable links for files
+  </Card>
+  <Card title="Analytics" icon="chart-bar">
+    Track storage usage, file counts, and limits
+  </Card>
+</CardGroup>
+
+## Client Initialization
+
+### Basic Usage
+
+```typescript
+const client = new TuturuuuClient('ttr_your_api_key');
+```
+
+### With Custom Configuration
+
+```typescript
+const client = new TuturuuuClient({
+  apiKey: 'ttr_your_api_key',
+  baseUrl: 'https://tuturuuu.com/api/v1', // optional
+  timeout: 30000 // optional, default 30s
+});
+```
+
+## Storage API
+
+### List Files
+
+Lists files and folders in the workspace drive.
+
+```typescript
+const files = await client.storage.list({
+  path: 'documents',          // folder path (optional)
+  search: 'report',           // search term (optional)
+  limit: 50,                  // max results (optional, default 100)
+  offset: 0,                  // pagination offset (optional)
+  sortBy: 'created_at',       // sort field (optional)
+  sortOrder: 'desc'           // sort direction (optional)
+});
+
+console.log(files.data);       // Array of StorageObject
+console.log(files.pagination); // Pagination info
+```
+
+### Upload File
+
+Uploads a file to the workspace drive.
+
+```typescript
+const file = new File(['content'], 'document.pdf');
+
+const result = await client.storage.upload(file, {
+  path: 'documents',  // destination folder (optional)
+  upsert: true        // overwrite if exists (optional)
+});
+
+console.log(result.data.path);     // Relative path
+console.log(result.data.fullPath); // Full storage path
+```
+
+### Download File
+
+Downloads a file as a Blob.
+
+```typescript
+const blob = await client.storage.download('documents/report.pdf');
+
+// Save to disk (Node.js)
+const buffer = Buffer.from(await blob.arrayBuffer());
+await fs.writeFile('report.pdf', buffer);
+
+// Create download link (Browser)
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download = 'report.pdf';
+a.click();
+```
+
+### Delete Files
+
+Deletes one or more files or folders.
+
+```typescript
+const result = await client.storage.delete([
+  'documents/old-report.pdf',
+  'images/screenshot.png'
+]);
+
+console.log(result.data.deleted); // Number of files deleted
+console.log(result.data.paths);   // Array of deleted paths
+```
+
+### Create Folder
+
+Creates a new folder in the workspace drive.
+
+```typescript
+const result = await client.storage.createFolder(
+  'documents',  // parent path
+  'reports'     // folder name
+);
+
+console.log(result.data.path); // "documents/reports"
+```
+
+### Share File
+
+Generates a signed URL for temporary file sharing.
+
+```typescript
+const result = await client.storage.share('documents/report.pdf', {
+  expiresIn: 3600 // 1 hour in seconds (default 3600, max 604800)
+});
+
+console.log(result.data.signedUrl);  // Temporary URL
+console.log(result.data.expiresAt);  // ISO timestamp
+console.log(result.data.expiresIn);  // Seconds until expiration
+```
+
+### Get Analytics
+
+Retrieves storage usage statistics for the workspace.
+
+```typescript
+const analytics = await client.storage.getAnalytics();
+
+console.log(analytics.data.totalSize);       // Total bytes used
+console.log(analytics.data.fileCount);       // Number of files
+console.log(analytics.data.storageLimit);    // Storage limit in bytes
+console.log(analytics.data.usagePercentage); // Usage percentage
+console.log(analytics.data.largestFile);     // Largest file info
+console.log(analytics.data.smallestFile);    // Smallest file info
+```
+
+## Documents API
+
+### List Documents
+
+Lists documents in the workspace with optional filters.
+
+```typescript
+const docs = await client.documents.list({
+  search: 'meeting',    // search in names (optional)
+  limit: 20,            // max results (optional, default 50)
+  offset: 0,            // pagination offset (optional)
+  isPublic: false       // filter by visibility (optional)
+});
+
+console.log(docs.data);       // Array of Document
+console.log(docs.pagination); // Pagination info
+```
+
+### Create Document
+
+Creates a new document in the workspace.
+
+```typescript
+const doc = await client.documents.create({
+  name: 'Meeting Notes',
+  content: {
+    text: 'Discussion points...',
+    attendees: ['Alice', 'Bob']
+  },
+  isPublic: false // optional, default false
+});
+
+console.log(doc.data.id);      // Document ID
+console.log(doc.data.name);    // Document name
+console.log(doc.data.content); // JSONB content
+```
+
+### Get Document
+
+Retrieves a document by its ID.
+
+```typescript
+const doc = await client.documents.get('document-id-123');
+
+console.log(doc.data.name);
+console.log(doc.data.content);
+console.log(doc.data.created_at);
+```
+
+### Update Document
+
+Updates an existing document.
+
+```typescript
+const doc = await client.documents.update('document-id-123', {
+  name: 'Updated Meeting Notes',     // optional
+  content: { text: 'New content' },  // optional
+  isPublic: true                     // optional
+});
+
+console.log(doc.data); // Updated document
+```
+
+### Delete Document
+
+Deletes a document permanently.
+
+```typescript
+await client.documents.delete('document-id-123');
+```
+
+### Search Documents
+
+Searches documents by name (alias for `list()` with search).
+
+```typescript
+const results = await client.documents.search('meeting notes', {
+  limit: 10,
+  isPublic: false
+});
+
+console.log(results.data); // Matching documents
+```
+
+## Error Handling
+
+The SDK provides specific error classes for different scenarios:
+
+```typescript
+import {
+  AuthenticationError,
+  AuthorizationError,
+  NotFoundError,
+  ConflictError,
+  RateLimitError,
+  NetworkError,
+  ValidationError
+} from 'tuturuuu';
+
+try {
+  await client.storage.upload(file);
+} catch (error) {
+  if (error instanceof AuthenticationError) {
+    // Invalid or expired API key
+    console.error('Authentication failed:', error.message);
+  } else if (error instanceof AuthorizationError) {
+    // Insufficient permissions
+    console.error('Forbidden:', error.message);
+  } else if (error instanceof NotFoundError) {
+    // Resource not found
+    console.error('Not found:', error.message);
+  } else if (error instanceof ConflictError) {
+    // Resource already exists
+    console.error('Conflict:', error.message);
+  } else if (error instanceof RateLimitError) {
+    // Rate limit exceeded
+    console.error('Rate limited:', error.message);
+  } else if (error instanceof NetworkError) {
+    // Network or timeout error
+    console.error('Network error:', error.message);
+  } else if (error instanceof ValidationError) {
+    // Invalid input
+    console.error('Validation error:', error.message);
+  }
+}
+```
+
+### Error Properties
+
+All error classes include:
+
+- `message` - Human-readable error description
+- `code` - Machine-readable error code
+- `statusCode` - HTTP status code
+- `name` - Error class name
+
+```typescript
+try {
+  await client.storage.delete([]);
+} catch (error) {
+  if (error instanceof ValidationError) {
+    console.log(error.message);    // "At least one path is required"
+    console.log(error.code);       // "VALIDATION_ERROR"
+    console.log(error.statusCode); // 400
+    console.log(error.name);       // "ValidationError"
+  }
+}
+```
+
+## TypeScript Support
+
+The SDK is fully typed with TypeScript:
+
+```typescript
+import type {
+  StorageObject,
+  Document,
+  ListStorageOptions,
+  UploadOptions,
+  ShareOptions,
+  CreateDocumentData,
+  UpdateDocumentData,
+  ListDocumentsOptions
+} from 'tuturuuu';
+
+// Type-safe options
+const options: ListStorageOptions = {
+  path: 'documents',
+  sortBy: 'created_at',
+  sortOrder: 'desc'
+};
+
+// Type-safe document data
+const docData: CreateDocumentData = {
+  name: 'My Doc',
+  content: { text: 'Content' },
+  isPublic: false
+};
+```
+
+## API Key Management
+
+### Creating an API Key
+
+1. Log in to your Tuturuuu workspace
+2. Navigate to **Settings** → **API Keys**
+3. Click **"Create API Key"**
+4. Set a descriptive name
+5. Assign a **Workspace Role** (determines permissions)
+6. Optionally set an expiration date
+7. Copy the generated key (starts with `ttr_`)
+8. Store securely (you won't see it again)
+
+### Best Practices
+
+<Warning>
+  **Never commit API keys to version control!** Use environment variables or secret management services.
+</Warning>
+
+```bash
+# .env
+TUTURUUU_API_KEY=ttr_your_api_key_here
+```
+
+```typescript
+// app.ts
+const client = new TuturuuuClient(process.env.TUTURUUU_API_KEY!);
+```
+
+### Permissions
+
+API keys inherit permissions from their assigned **Workspace Role**. The role determines what operations the key can perform.
+
+**Required Permissions:**
+
+| Operation | Required Role Permission |
+|-----------|-------------------------|
+| Storage Operations (list, upload, download, delete, folders, share, analytics) | `manage_drive` |
+| Document Operations (list, create, get, update, delete, search) | `manage_documents` |
+| API Key Management | `manage_api_keys` (Owner/Admin only) |
+
+**Note:** Permissions are managed through workspace roles, not individual API keys. To modify what an API key can do, update its assigned role's permissions in **Settings** → **Roles**.
+
+## Rate Limiting
+
+The API enforces rate limits per API key:
+
+- **Default:** 100 requests per minute
+- **Rate limit headers:** Check `X-RateLimit-*` response headers
+- **429 Response:** Thrown as `RateLimitError` when exceeded
+
+```typescript
+try {
+  await client.storage.list();
+} catch (error) {
+  if (error instanceof RateLimitError) {
+    console.log('Rate limited! Try again later.');
+    // Implement exponential backoff
+  }
+}
+```
+
+## Examples
+
+<CardGroup cols={2}>
+  <Card title="Basic Usage" icon="play" href="https://github.com/tutur3u/platform/blob/main/packages/sdk/examples/basic-usage.ts">
+    Complete example of all SDK operations
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="https://github.com/tutur3u/platform/blob/main/packages/sdk/examples/error-handling.ts">
+    Comprehensive error handling patterns
+  </Card>
+</CardGroup>
+
+## Support
+
+<CardGroup cols={3}>
+  <Card title="GitHub" icon="github" href="https://github.com/tutur3u/platform">
+    Source code and issues
+  </Card>
+  <Card title="Discord" icon="discord" href="https://discord.gg/tuturuuu">
+    Community support
+  </Card>
+  <Card title="Docs" icon="book" href="https://docs.tuturuuu.com">
+    Full documentation
+  </Card>
+</CardGroup>
+
+## Changelog
+
+### v0.1.0 (2025-10-21)
+
+- Initial release
+- Storage operations (list, upload, download, delete, folders, share, analytics)
+- Document operations (CRUD, search)
+- Comprehensive error handling
+- Full TypeScript support
+- Zod validation
+
+## License
+
+MIT
