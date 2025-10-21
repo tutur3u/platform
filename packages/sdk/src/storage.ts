@@ -25,6 +25,7 @@
  * ```
  */
 
+import packageJson from '../package.json';
 import {
   createErrorFromResponse,
   isApiErrorResponse,
@@ -186,16 +187,42 @@ export class StorageClient {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${this.client.apiKey}`,
+          'X-SDK-Client': `tuturuuu/${packageJson.version || '0.0.1'}`,
         },
       }
     );
 
     if (!response.ok) {
-      const errorData = await response.json();
-      if (isApiErrorResponse(errorData)) {
-        throw createErrorFromResponse(errorData, response.status);
+      // Check if response is JSON before attempting to parse
+      const contentType = response.headers.get('content-type');
+      const isJson = contentType?.toLowerCase().includes('application/json');
+
+      if (isJson) {
+        try {
+          const errorData = await response.json();
+          if (isApiErrorResponse(errorData)) {
+            throw createErrorFromResponse(errorData, response.status);
+          }
+          throw new NetworkError(
+            `HTTP ${response.status}: ${response.statusText}`
+          );
+        } catch (error) {
+          // If JSON parsing fails, fall back to text
+          if (error instanceof SyntaxError) {
+            const text = await response.text();
+            throw new NetworkError(
+              `HTTP ${response.status}: ${response.statusText} - ${text.substring(0, 200)}`
+            );
+          }
+          throw error;
+        }
+      } else {
+        // Non-JSON response
+        const text = await response.text();
+        throw new NetworkError(
+          `HTTP ${response.status}: ${response.statusText} - ${text.substring(0, 200)}`
+        );
       }
-      throw new NetworkError(`HTTP ${response.status}: ${response.statusText}`);
     }
 
     return response.blob();
@@ -530,6 +557,7 @@ export class TuturuuuClient {
 
     const headers: Record<string, string> = {
       Authorization: `Bearer ${this.apiKey}`,
+      'X-SDK-Client': `tuturuuu/${packageJson.version || '0.0.1'}`,
     };
 
     // Only set Content-Type for JSON bodies
@@ -551,12 +579,46 @@ export class TuturuuuClient {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const errorData = await response.json();
-        if (isApiErrorResponse(errorData)) {
-          throw createErrorFromResponse(errorData, response.status);
+        // Check if response is JSON before attempting to parse
+        const contentType = response.headers.get('content-type');
+        const isJson = contentType?.toLowerCase().includes('application/json');
+
+        if (isJson) {
+          try {
+            const errorData = await response.json();
+            if (isApiErrorResponse(errorData)) {
+              throw createErrorFromResponse(errorData, response.status);
+            }
+            throw new NetworkError(
+              `HTTP ${response.status}: ${response.statusText}`
+            );
+          } catch (error) {
+            // If JSON parsing fails, fall back to text
+            if (error instanceof SyntaxError) {
+              const text = await response.text();
+              throw new NetworkError(
+                `HTTP ${response.status}: ${response.statusText} - ${text.substring(0, 200)}`
+              );
+            }
+            throw error;
+          }
+        } else {
+          // Non-JSON response
+          const text = await response.text();
+          throw new NetworkError(
+            `HTTP ${response.status}: ${response.statusText} - ${text.substring(0, 200)}`
+          );
         }
+      }
+
+      // Check if success response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      const isJson = contentType?.toLowerCase().includes('application/json');
+
+      if (!isJson) {
+        const text = await response.text();
         throw new NetworkError(
-          `HTTP ${response.status}: ${response.statusText}`
+          `Expected JSON response but received ${contentType || 'unknown content type'} - ${text.substring(0, 200)}`
         );
       }
 

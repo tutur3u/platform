@@ -11,8 +11,8 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import type React from 'react';
 import { useState } from 'react';
 import type * as z from 'zod';
@@ -50,12 +50,16 @@ export default function ApiKeyEditDialog({
         method: data.id ? 'PUT' : 'POST',
         body: JSON.stringify({
           ...values,
-          value: data.id
-            ? values.value
-            : `${generateRandomUUID() + generateRandomUUID()}`.replace(
-                /-/g,
-                ''
-              ),
+          // For new keys, use key_hash (new schema); for existing keys, keep value if present
+          ...(data.id
+            ? { value: values.value }
+            : {
+                key_hash:
+                  `${generateRandomUUID() + generateRandomUUID()}`.replace(
+                    /-/g,
+                    ''
+                  ),
+              }),
         }),
       }
     );

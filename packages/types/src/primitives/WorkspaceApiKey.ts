@@ -2,6 +2,8 @@ export interface WorkspaceApiKey {
   id?: string;
   ws_id?: string;
   name?: string;
+  // Legacy field - kept during migration period, will be removed in future
+  value?: string;
   key_hash?: string;
   key_prefix?: string | null;
   description?: string | null;

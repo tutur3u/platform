@@ -8908,13 +8908,14 @@ export type Database = {
           description?: null | string;
           expires_at?: null | string;
           id?: string;
-          key_hash: string;
+          key_hash?: null | string;
           key_prefix?: null | string;
           last_used_at?: null | string;
           name: string;
           role_id?: null | string;
           scopes?: Database['public']['Enums']['workspace_api_key_scope'][];
           updated_at?: string;
+          value: string;
           ws_id: string;
         };
         Relationships: [
@@ -8946,13 +8947,14 @@ export type Database = {
           description: null | string;
           expires_at: null | string;
           id: string;
-          key_hash: string;
+          key_hash: null | string;
           key_prefix: null | string;
           last_used_at: null | string;
           name: string;
           role_id: null | string;
           scopes: Database['public']['Enums']['workspace_api_key_scope'][];
           updated_at: string;
+          value: string;
           ws_id: string;
         };
         Update: {
@@ -8961,13 +8963,14 @@ export type Database = {
           description?: null | string;
           expires_at?: null | string;
           id?: string;
-          key_hash?: string;
+          key_hash?: null | string;
           key_prefix?: null | string;
           last_used_at?: null | string;
           name?: string;
           role_id?: null | string;
           scopes?: Database['public']['Enums']['workspace_api_key_scope'][];
           updated_at?: string;
+          value?: string;
           ws_id?: string;
         };
       };

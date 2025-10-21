@@ -68,15 +68,25 @@ export interface ListStorageResponse {
 }
 
 /**
+ * Path data returned by storage operations
+ */
+export interface PathData {
+  path: string;
+  fullPath: string;
+}
+
+/**
+ * Generic path response for operations that return path information
+ */
+export interface PathResponse {
+  message: string;
+  data: PathData;
+}
+
+/**
  * Response for upload operation
  */
-export interface UploadResponse {
-  message: string;
-  data: {
-    path: string;
-    fullPath: string;
-  };
-}
+export type UploadResponse = PathResponse;
 
 /**
  * Response for delete operation
@@ -92,13 +102,7 @@ export interface DeleteResponse {
 /**
  * Response for create folder operation
  */
-export interface CreateFolderResponse {
-  message: string;
-  data: {
-    path: string;
-    fullPath: string;
-  };
-}
+export type CreateFolderResponse = PathResponse;
 
 /**
  * Response for share operation
@@ -146,7 +150,7 @@ export interface Document {
   id: string;
   name: string;
   content: string;
-  is_public: boolean;
+  isPublic: boolean;
   created_at: string;
 }
 
@@ -190,7 +194,7 @@ export interface ListDocumentsResponse {
  * Response for document operation
  */
 export interface DocumentResponse {
-  message?: string;
+  message: string;
   data: Document;
 }
 

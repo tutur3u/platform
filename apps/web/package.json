@@ -70,6 +70,7 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/vercel": "workspace:*",
+    "tuturuuu": "workspace:*",
     "@upstash/qstash": "^2.8.4",
     "ai": "^5.0.76",
     "canvas-confetti": "^1.9.3",

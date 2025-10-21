@@ -129,6 +129,11 @@ export async function validateApiKey(
 
     // Find matching key by validating hash
     for (const keyRecord of keys) {
+      // Skip keys without a hash (legacy keys during migration)
+      if (!keyRecord.key_hash) {
+        continue;
+      }
+
       const isValid = await validateApiKeyHash(apiKey, keyRecord.key_hash);
 
       if (isValid) {

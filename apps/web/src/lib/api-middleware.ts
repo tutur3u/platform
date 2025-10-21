@@ -149,7 +149,7 @@ export function withApiAuth<T = unknown>(
   handler: (
     request: NextRequest,
     context: {
-      params?: T;
+      params: T;
       context: WorkspaceContext;
     }
   ) => Promise<NextResponse> | NextResponse,
@@ -159,14 +159,22 @@ export function withApiAuth<T = unknown>(
   }
 ): (
   request: NextRequest,
-  routeContext?: { params?: T }
+  routeContext?: { params?: Promise<T> | T }
 ) => Promise<NextResponse> {
-  return async (request: NextRequest, routeContext?: { params?: T }) => {
+  return async (
+    request: NextRequest,
+    routeContext?: { params?: Promise<T> | T }
+  ) => {
     // Authenticate the request
     const authResult = await authenticateRequest(request);
 
     if ('context' in authResult) {
       const { context } = authResult;
+
+      // Await params if it's a Promise (Next.js 15 behavior)
+      const params = routeContext?.params
+        ? await Promise.resolve(routeContext.params)
+        : ({} as T);
 
       // Check permissions if specified
       if (options?.permissions && options.permissions.length > 0) {
@@ -179,7 +187,7 @@ export function withApiAuth<T = unknown>(
         if ('authorized' in permissionCheck) {
           // Permissions are valid, call the handler
           return handler(request, {
-            params: routeContext?.params,
+            params,
             context,
           });
         }
@@ -190,7 +198,7 @@ export function withApiAuth<T = unknown>(
 
       // No permissions required, call the handler
       return handler(request, {
-        params: routeContext?.params,
+        params,
         context,
       });
     }

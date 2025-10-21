@@ -5,10 +5,25 @@
 -- NOTE: This migration depends on 20251021000000_add_api_key_permissions.sql
 -- which adds the required enum values
 
--- Rename 'value' column to 'key_hash' to better reflect its purpose
--- Note: This will break existing API keys, so coordinate with users
+-- Step 1: Add new key_hash column (additive migration)
+-- This is a non-destructive additive migration that allows gradual migration
+-- Old 'value' column will be maintained until all keys are migrated
+--
+-- Deployment sequence:
+-- 1. Apply this migration (adds key_hash column)
+-- 2. Deploy application that writes to both value and key_hash
+-- 3. Backfill existing rows: UPDATE workspace_api_keys SET key_hash = value WHERE key_hash IS NULL;
+-- 4. Deploy application that reads from key_hash (falling back to value if needed)
+-- 5. Verify all traffic uses key_hash via metrics/logs
+-- 6. In a future reversible migration, drop the value column
+--
+-- Rollback notes:
+-- To rollback, simply continue using the 'value' column in the application
+-- The key_hash column can be dropped in a separate migration if needed: ALTER TABLE workspace_api_keys DROP COLUMN key_hash;
+
+-- Add key_hash column alongside existing value column
 ALTER TABLE "public"."workspace_api_keys"
-  RENAME COLUMN "value" TO "key_hash";
+  ADD COLUMN IF NOT EXISTS "key_hash" TEXT;
 
 -- Add new columns to workspace_api_keys
 ALTER TABLE "public"."workspace_api_keys"
@@ -24,6 +39,12 @@ ALTER TABLE "public"."workspace_api_keys"
 CREATE INDEX IF NOT EXISTS idx_workspace_api_keys_key_hash ON "public"."workspace_api_keys"(key_hash);
 CREATE INDEX IF NOT EXISTS idx_workspace_api_keys_expires_at ON "public"."workspace_api_keys"(expires_at) WHERE expires_at IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_workspace_api_keys_role_id ON "public"."workspace_api_keys"(role_id);
+
+-- Add partial unique index to enforce uniqueness of key_prefix within a workspace
+-- and speed up lookups by key_prefix
+CREATE UNIQUE INDEX IF NOT EXISTS idx_workspace_api_keys_ws_id_key_prefix
+  ON "public"."workspace_api_keys"(ws_id, key_prefix)
+  WHERE key_prefix IS NOT NULL;
 
 -- Add trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_workspace_api_keys_updated_at()

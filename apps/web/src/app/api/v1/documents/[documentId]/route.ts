@@ -12,19 +12,12 @@ import {
 } from '@/lib/api-middleware';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
+import { updateDocumentDataSchema } from 'tuturuuu';
 
-// Request body schema for updating
-const updateDocumentSchema = z.object({
-  name: z.string().min(1).max(255).optional(),
-  content: z.string().optional(),
-  isPublic: z.boolean().optional(),
-});
-
-export const GET = withApiAuth(
+export const GET = withApiAuth<{ documentId: string }>(
   async (_, { params, context }) => {
     const { wsId } = context;
-    const { documentId } = (await params) as unknown as { documentId: string };
+    const { documentId } = params;
 
     try {
       const supabase = await createClient();
@@ -46,7 +39,11 @@ export const GET = withApiAuth(
         );
       }
 
-      return NextResponse.json({ data: document });
+      // Map database snake_case to SDK camelCase
+      const { is_public, ...rest } = document;
+      return NextResponse.json({
+        data: { ...rest, isPublic: is_public },
+      });
     } catch (error) {
       console.error('Unexpected error fetching document:', error);
       return createErrorResponse(
@@ -60,13 +57,16 @@ export const GET = withApiAuth(
   { permissions: ['manage_documents'] }
 );
 
-export const PATCH = withApiAuth(
+export const PATCH = withApiAuth<{ documentId: string }>(
   async (request, { params, context }) => {
     const { wsId } = context;
-    const { documentId } = (await params) as unknown as { documentId: string };
+    const { documentId } = params;
 
     // Validate request body
-    const bodyResult = await validateRequestBody(request, updateDocumentSchema);
+    const bodyResult = await validateRequestBody(
+      request,
+      updateDocumentDataSchema
+    );
     if (bodyResult instanceof NextResponse) {
       return bodyResult;
     }
@@ -120,9 +120,11 @@ export const PATCH = withApiAuth(
         );
       }
 
+      // Map database snake_case to SDK camelCase
+      const { is_public, ...rest } = document;
       return NextResponse.json({
         message: 'Document updated successfully',
-        data: document,
+        data: { ...rest, isPublic: is_public },
       });
     } catch (error) {
       console.error('Unexpected error updating document:', error);
@@ -137,10 +139,10 @@ export const PATCH = withApiAuth(
   { permissions: ['manage_documents'] }
 );
 
-export const DELETE = withApiAuth(
+export const DELETE = withApiAuth<{ documentId: string }>(
   async (_, { params, context }) => {
     const { wsId } = context;
-    const { documentId } = (await params) as unknown as { documentId: string };
+    const { documentId } = params;
 
     try {
       const supabase = await createClient();

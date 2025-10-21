@@ -12,11 +12,14 @@ import {
 } from '@/lib/api-middleware';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import {
+  createDocumentDataSchema,
+  listDocumentsOptionsSchema,
+} from 'tuturuuu/types';
 import { z } from 'zod';
 
-// Query parameters schema for listing
-const listQuerySchema = z.object({
-  search: z.string().optional(),
+// Query parameters schema for listing (extends SDK schema with query string transformations)
+const listQuerySchema = listDocumentsOptionsSchema.extend({
   limit: z.coerce.number().int().min(1).max(100).optional().default(50),
   offset: z.coerce.number().int().min(0).optional().default(0),
   isPublic: z
@@ -25,13 +28,6 @@ const listQuerySchema = z.object({
     .transform((val) =>
       val === 'true' ? true : val === 'false' ? false : undefined
     ),
-});
-
-// Request body schema for creating
-const createDocumentSchema = z.object({
-  name: z.string().min(1).max(255),
-  content: z.string().optional(),
-  isPublic: z.boolean().optional().default(false),
 });
 
 export const GET = withApiAuth(
@@ -78,8 +74,16 @@ export const GET = withApiAuth(
         );
       }
 
+      // Map database snake_case to SDK camelCase
+      const mappedDocuments = (documents || []).map(
+        ({ is_public, ...rest }) => ({
+          ...rest,
+          isPublic: is_public,
+        })
+      );
+
       return NextResponse.json({
-        data: documents || [],
+        data: mappedDocuments,
         pagination: {
           limit,
           offset,
@@ -104,7 +108,10 @@ export const POST = withApiAuth(
     const { wsId } = context;
 
     // Validate request body
-    const bodyResult = await validateRequestBody(request, createDocumentSchema);
+    const bodyResult = await validateRequestBody(
+      request,
+      createDocumentDataSchema
+    );
     if (bodyResult instanceof NextResponse) {
       return bodyResult;
     }
@@ -125,7 +132,7 @@ export const POST = withApiAuth(
         .select('id, name, content, is_public, created_at')
         .single();
 
-      if (error) {
+      if (error || !document) {
         console.error('Error creating document:', error);
         return createErrorResponse(
           'Internal Server Error',
@@ -135,9 +142,11 @@ export const POST = withApiAuth(
         );
       }
 
+      // Map database snake_case to SDK camelCase
+      const { is_public, ...rest } = document;
       return NextResponse.json({
         message: 'Document created successfully',
-        data: document,
+        data: { ...rest, isPublic: is_public },
       });
     } catch (error) {
       console.error('Unexpected error creating document:', error);
