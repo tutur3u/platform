@@ -101,14 +101,12 @@ export const CustomImage = (options: ImageOptions = {}) => {
                   // Get the editor's content width
                   const editorElement = view.dom as HTMLElement;
                   const containerWidth =
-                    editorElement.querySelector('.ProseMirror')
-                      ?.clientWidth || editorElement.clientWidth || 800;
+                    editorElement.querySelector('.ProseMirror')?.clientWidth ||
+                    editorElement.clientWidth ||
+                    800;
 
                   // Snap to nearest preset
-                  const snappedWidth = snapToNearestSize(
-                    width,
-                    containerWidth
-                  );
+                  const snappedWidth = snapToNearestSize(width, containerWidth);
 
                   // Only update if different
                   if (Math.abs(width - snappedWidth) > 5) {
@@ -169,7 +167,8 @@ export const CustomImage = (options: ImageOptions = {}) => {
                   editorElement.querySelector('.ProseMirror')?.clientWidth ||
                   editorElement.clientWidth ||
                   800;
-                const defaultWidth = (SIZE_PERCENTAGES.md / 100) * containerWidth;
+                const defaultWidth =
+                  (SIZE_PERCENTAGES.md / 100) * containerWidth;
 
                 // Process files sequentially to avoid transaction conflicts
                 (async () => {
