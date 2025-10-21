@@ -464,8 +464,8 @@ export function RichTextEditor({
                 const { from } = state.selection;
 
                 if (isImage) {
-                  // CustomImage extension uses 'customImage' node name
-                  const imageNode = state.schema.nodes.customImage;
+                  // CustomImage extension uses 'imageResize' node name
+                  const imageNode = state.schema.nodes.imageResize;
                   if (imageNode) {
                     // Get container width for default size (60%)
                     const editorElement = view.dom as HTMLElement;

@@ -321,7 +321,7 @@ export function ToolBar({
         // Use direct node insertion for ImageResize extension
         const { state } = editor.view;
         const { from } = state.selection;
-        const imageNode = state.schema.nodes.customImage;
+        const imageNode = state.schema.nodes.imageResize;
 
         if (imageNode) {
           // Get container width for default size (60%)
