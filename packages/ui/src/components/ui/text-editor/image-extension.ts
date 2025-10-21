@@ -45,30 +45,16 @@ interface ImageOptions {
 export const CustomImage = (options: ImageOptions = {}) => {
   const baseExtension = ImageResize.extend({
     addAttributes() {
+      const parentAttrs = this.parent?.() || {};
+
       return {
-        ...this.parent?.(),
-        width: {
+        ...parentAttrs,
+        // Only add legacy attributes that aren't handled by parent
+        containerStyle: {
           default: null,
-          parseHTML: (element: HTMLElement) => {
-            const width = element.getAttribute('width');
-            return width ? Number.parseInt(width, 10) : null;
-          },
-          renderHTML: (attributes: Record<string, unknown>) => {
-            if (!attributes.width) {
-              return {};
-            }
-            return {
-              width: attributes.width,
-            };
-          },
         },
-        'data-snapped': {
-          default: 'false',
-          parseHTML: (element: HTMLElement) =>
-            element.getAttribute('data-snapped') || 'false',
-          renderHTML: (attributes: Record<string, unknown>) => ({
-            'data-snapped': attributes['data-snapped'],
-          }),
+        wrapperStyle: {
+          default: null,
         },
       };
     },
@@ -83,51 +69,75 @@ export const CustomImage = (options: ImageOptions = {}) => {
         new Plugin({
           key: new PluginKey('imageResizeSnapPlugin'),
 
-          view() {
-            return {
-              update: (view: EditorView) => {
-                // Find all image nodes (check both imageResize and image for compatibility)
-                view.state.doc.descendants((node, pos) => {
-                  if (
-                    node.type.name !== 'imageResize' &&
-                    node.type.name !== 'image'
-                  )
-                    return;
+          appendTransaction(_transactions, oldState, newState) {
+            const tr = newState.tr;
+            let modified = false;
 
-                  // Skip if already snapped in this cycle
-                  if (node.attrs['data-snapped'] === 'true') return;
+            // Get container width from the DOM
+            const editorElement = document.querySelector(
+              '.ProseMirror'
+            ) as HTMLElement;
+            const containerWidth = editorElement?.clientWidth || 800;
 
-                  const width = node.attrs.width as number | null;
-                  if (!width) return;
+            // Check each node for resize changes
+            newState.doc.descendants((node, pos) => {
+              if (
+                node.type.name !== 'imageResize' &&
+                node.type.name !== 'image'
+              )
+                return;
 
-                  // Get the editor's content width
-                  const editorElement = view.dom as HTMLElement;
-                  const containerWidth =
-                    editorElement.querySelector('.ProseMirror')?.clientWidth ||
-                    editorElement.clientWidth ||
-                    800;
+              const width = node.attrs.width as number | null;
+              if (!width) return;
 
-                  // Snap to nearest preset
-                  const snappedWidth = snapToNearestSize(width, containerWidth);
+              // Calculate all preset widths
+              const presetWidths = Object.values(SIZE_PERCENTAGES).map(
+                (percent) => (percent / 100) * containerWidth
+              );
 
-                  // Only update if different
-                  if (Math.abs(width - snappedWidth) > 5) {
-                    const tr = view.state.tr.setNodeMarkup(pos, undefined, {
-                      ...node.attrs,
-                      width: snappedWidth,
-                      'data-snapped': 'true',
-                    });
+              // Check if already at a preset (within 10px tolerance for stability)
+              const isAtPreset = presetWidths.some(
+                (presetWidth) => Math.abs(width - presetWidth) <= 10
+              );
 
-                    // Dispatch after a short delay to avoid conflicts
-                    setTimeout(() => {
-                      if (view.state) {
-                        view.dispatch(tr);
-                      }
-                    }, 100);
-                  }
-                });
-              },
-            };
+              if (isAtPreset) return;
+
+              // Check if width changed in this transaction
+              // Validate position exists in oldState before accessing
+              if (pos < 0 || pos >= oldState.doc.content.size) {
+                // Position doesn't exist in old state (e.g., new node), skip
+                return;
+              }
+
+              const oldNode = oldState.doc.nodeAt(pos);
+
+              // If node didn't exist in old state or isn't an image, skip
+              if (
+                !oldNode ||
+                (oldNode.type.name !== 'imageResize' &&
+                  oldNode.type.name !== 'image')
+              ) {
+                return;
+              }
+
+              const widthChanged = oldNode.attrs.width !== width;
+
+              if (widthChanged) {
+                // Snap to nearest preset
+                const snappedWidth = snapToNearestSize(width, containerWidth);
+
+                // Only snap if the change is significant
+                if (Math.abs(width - snappedWidth) > 10) {
+                  tr.setNodeMarkup(pos, undefined, {
+                    ...node.attrs,
+                    width: snappedWidth,
+                  });
+                  modified = true;
+                }
+              }
+            });
+
+            return modified ? tr : null;
           },
         }),
         // Image drop plugin with upload
@@ -223,10 +233,10 @@ export const CustomImage = (options: ImageOptions = {}) => {
   });
 
   return baseExtension.configure({
-    inline: false,
+    inline: false, // Make images block-level to prevent text wrapping
     allowBase64: false,
     HTMLAttributes: {
-      class: 'rounded-md my-4',
+      class: 'rounded-md my-4 block w-full',
     },
   });
 };
