@@ -68,6 +68,7 @@ import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { TaskViewerProvider } from '../../providers/task-viewer-provider';
+import type { ListStatusFilter } from '../../shared/board-header';
 import { CursorOverlayWrapper } from '../../shared/cursor-overlay';
 import {
   buildEstimationIndices,
@@ -93,6 +94,7 @@ interface Props {
   lists: TaskList[];
   isLoading: boolean;
   disableSort?: boolean; // When true, skip internal sort_key sorting (parent already sorted)
+  listStatusFilter?: ListStatusFilter;
   filters?: TaskFilters;
 }
 
@@ -103,6 +105,7 @@ export function KanbanBoard({
   lists,
   isLoading,
   disableSort = false,
+  listStatusFilter = 'all',
   filters,
 }: Props) {
   const [activeColumn, setActiveColumn] = useState<TaskList | null>(null);
@@ -2036,6 +2039,8 @@ export function KanbanBoard({
                 <CursorOverlayWrapper
                   channelName={`board-cursor-${boardId}`}
                   containerRef={boardRef}
+                  listStatusFilter={listStatusFilter}
+                  filters={filters}
                 />
               )}
             </div>
