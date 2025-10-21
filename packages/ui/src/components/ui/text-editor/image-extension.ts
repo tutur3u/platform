@@ -233,7 +233,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
   });
 
   return baseExtension.configure({
-    inline: false, // Make images block-level to prevent text wrapping
+    inline: true, // Make images block-level to prevent text wrapping
     allowBase64: false,
     HTMLAttributes: {
       class: 'rounded-md my-4 block w-full',
