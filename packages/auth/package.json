@@ -9,7 +9,8 @@
     "./cross-app": "./src/cross-app/index.ts",
     "./cross-app/server": "./src/cross-app/server.ts",
     "./cross-app/token-verifier": "./src/cross-app/token-verifier.tsx",
-    "./identity-linking": "./src/identity-linking.ts"
+    "./identity-linking": "./src/identity-linking.ts",
+    "./api-keys": "./src/api-keys.ts"
   },
   "license": "MIT",
   "dependencies": {

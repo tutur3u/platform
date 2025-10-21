@@ -92,6 +92,7 @@ export type Database = {
         | 'delete_users'
         | 'export_finance_data'
         | 'export_users_data'
+        | 'manage_api_keys'
         | 'manage_calendar'
         | 'manage_documents'
         | 'manage_drive'
@@ -8903,13 +8904,27 @@ export type Database = {
       workspace_api_keys: {
         Insert: {
           created_at?: string;
+          created_by?: null | string;
+          description?: null | string;
+          expires_at?: null | string;
           id?: string;
+          key_hash: string;
+          key_prefix?: null | string;
+          last_used_at?: null | string;
           name: string;
+          role_id?: null | string;
           scopes?: Database['public']['Enums']['workspace_api_key_scope'][];
-          value: string;
+          updated_at?: string;
           ws_id: string;
         };
         Relationships: [
+          {
+            columns: ['role_id'];
+            foreignKeyName: 'workspace_api_keys_role_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_roles';
+          },
           {
             columns: ['ws_id'];
             foreignKeyName: 'workspace_api_keys_ws_id_fkey';
@@ -8927,18 +8942,32 @@ export type Database = {
         ];
         Row: {
           created_at: string;
+          created_by: null | string;
+          description: null | string;
+          expires_at: null | string;
           id: string;
+          key_hash: string;
+          key_prefix: null | string;
+          last_used_at: null | string;
           name: string;
+          role_id: null | string;
           scopes: Database['public']['Enums']['workspace_api_key_scope'][];
-          value: string;
+          updated_at: string;
           ws_id: string;
         };
         Update: {
           created_at?: string;
+          created_by?: null | string;
+          description?: null | string;
+          expires_at?: null | string;
           id?: string;
+          key_hash?: string;
+          key_prefix?: null | string;
+          last_used_at?: null | string;
           name?: string;
+          role_id?: null | string;
           scopes?: Database['public']['Enums']['workspace_api_key_scope'][];
-          value?: string;
+          updated_at?: string;
           ws_id?: string;
         };
       };
@@ -13553,6 +13582,7 @@ export const Constants = {
         'delete_users',
         'export_finance_data',
         'export_users_data',
+        'manage_api_keys',
         'manage_calendar',
         'manage_documents',
         'manage_drive',

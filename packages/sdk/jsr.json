@@ -1,0 +1,13 @@
+{
+  "$schema": "https://jsr.io/schema/config-file.v1.json",
+  "name": "tuturuuu",
+  "version": "0.0.1",
+  "description": "Official TypeScript/JavaScript SDK for the Tuturuuu platform",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts",
+    "./storage": "./src/storage.ts",
+    "./types": "./src/types.ts",
+    "./errors": "./src/errors.ts"
+  }
+}
