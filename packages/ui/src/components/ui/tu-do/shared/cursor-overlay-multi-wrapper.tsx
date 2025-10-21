@@ -17,6 +17,17 @@ export interface CursorViewMetadata {
 }
 
 /**
+ * Efficiently compares two sorted arrays of primitive values
+ */
+function arraysEqual<T extends string | number>(arr1: T[], arr2: T[]): boolean {
+  if (arr1.length !== arr2.length) return false;
+  for (let i = 0; i < arr1.length; i++) {
+    if (arr1[i] !== arr2[i]) return false;
+  }
+  return true;
+}
+
+/**
  * Checks if two cursor metadata objects represent the same view configuration
  */
 function isMatchingView(
@@ -37,22 +48,22 @@ function isMatchingView(
   // Check label filters (compare IDs)
   const labels1 = f1.labels.map((l) => l.id).sort();
   const labels2 = f2.labels.map((l) => l.id).sort();
-  if (JSON.stringify(labels1) !== JSON.stringify(labels2)) return false;
+  if (!arraysEqual(labels1, labels2)) return false;
 
   // Check assignee filters (compare IDs)
   const assignees1 = f1.assignees.map((a) => a.id).sort();
   const assignees2 = f2.assignees.map((a) => a.id).sort();
-  if (JSON.stringify(assignees1) !== JSON.stringify(assignees2)) return false;
+  if (!arraysEqual(assignees1, assignees2)) return false;
 
   // Check project filters (compare IDs)
   const projects1 = f1.projects.map((p) => p.id).sort();
   const projects2 = f2.projects.map((p) => p.id).sort();
-  if (JSON.stringify(projects1) !== JSON.stringify(projects2)) return false;
+  if (!arraysEqual(projects1, projects2)) return false;
 
   // Check priority filters
   const priorities1 = [...f1.priorities].sort();
   const priorities2 = [...f2.priorities].sort();
-  if (JSON.stringify(priorities1) !== JSON.stringify(priorities2)) return false;
+  if (!arraysEqual(priorities1, priorities2)) return false;
 
   // Check due date range
   const date1From = f1.dueDateRange?.from?.getTime();
