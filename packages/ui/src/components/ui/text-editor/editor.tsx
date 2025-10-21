@@ -12,7 +12,7 @@ import type SupabaseProvider from '@tuturuuu/ui/hooks/supabase-provider';
 import { toast } from '@tuturuuu/ui/sonner';
 import { debounce } from 'lodash';
 import { TextSelection } from 'prosemirror-state';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type * as Y from 'yjs';
 import { getEditorExtensions } from './extensions';
 import { ToolBar } from './tool-bar';
@@ -51,12 +51,10 @@ interface RichTextEditorProps {
   className?: string;
   workspaceId?: string;
   onImageUpload?: (file: File) => Promise<string>;
-  flushPendingRef?: React.MutableRefObject<
-    (() => JSONContent | null) | undefined
-  >;
+  flushPendingRef?: { current: (() => JSONContent | null) | undefined };
   onArrowUp?: (cursorOffset?: number) => void;
   onArrowLeft?: () => void;
-  editorRef?: React.MutableRefObject<any>;
+  editorRef?: { current: Editor | null };
   initialCursorOffset?: number | null;
   onEditorReady?: (editor: Editor) => void;
   yjsDoc?: Y.Doc | null;
@@ -92,6 +90,8 @@ export function RichTextEditor({
   allowCollaboration = false,
 }: RichTextEditorProps) {
   const [isUploadingPastedImage, setIsUploadingPastedImage] = useState(false);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const dragCounterRef = useRef(0);
 
   // Use refs to ensure we have stable references for handlers
   const onImageUploadRef = useRef(onImageUpload);
@@ -145,15 +145,15 @@ export function RichTextEditor({
       '[&_h6]:text-base [&_h6]:font-semibold [&_h6]:text-foreground [&_h6]:mt-3 [&_h6]:mb-2',
       // Paragraphs
       '[&_p]:my-3 [&_p]:leading-7',
-      // Lists - general styling
-      '[&_ul]:my-3 [&_ul]:ml-6 [&_ul]:px-4 [&_ul]:mr-[0.4rem]',
-      '[&_ol]:my-3 [&_ol]:ml-6 [&_ol]:px-4 [&_ol]:mr-[0.4rem]',
+      // Lists - general styling with consistent spacing
+      '[&_ul]:my-3 [&_ul]:ml-6 [&_ul]:px-0 [&_ul]:mr-0',
+      '[&_ol]:my-3 [&_ol]:ml-6 [&_ol]:px-0 [&_ol]:mr-0',
       '[&_li]:my-1 [&_li]:leading-7',
       '[&_ul_li_p]:my-1',
       '[&_ol_li_p]:my-1',
       '[&_li_h1]:text-4xl [&_li_h2]:text-3xl [&_li_h3]:text-2xl',
-      // Task list specific styles
-      '[&_ul[data-type="taskList"]]:list-none [&_ul[data-type="taskList"]]:ml-6 [&_ul[data-type="taskList"]]:pl-0 [&_ul[data-type="taskList"]]:pr-4 [&_ul[data-type="taskList"]]:mr-[0.4rem] [&_ul[data-type="taskList"]]:my-3',
+      // Task list specific styles - match regular list spacing
+      '[&_ul[data-type="taskList"]]:list-none [&_ul[data-type="taskList"]]:ml-6 [&_ul[data-type="taskList"]]:pl-0 [&_ul[data-type="taskList"]]:pr-0 [&_ul[data-type="taskList"]]:mr-0 [&_ul[data-type="taskList"]]:my-3',
       '[&_ul[data-type="taskList"]_li]:flex [&_ul[data-type="taskList"]_li]:items-start [&_ul[data-type="taskList"]_li]:my-1',
       '[&_ul[data-type="taskList"]_li>label]:flex-[0_0_auto] [&_ul[data-type="taskList"]_li>label]:mr-2 [&_ul[data-type="taskList"]_li>label]:select-none [&_ul[data-type="taskList"]_li>label]:pt-[0.453rem]',
       '[&_ul[data-type="taskList"]_li>div]:flex-1 [&_ul[data-type="taskList"]_li>div]:min-w-0',
@@ -235,6 +235,7 @@ export function RichTextEditor({
       writePlaceholder,
       doc: allowCollaboration && yjsDoc ? yjsDoc : undefined,
       provider: allowCollaboration && yjsProvider ? yjsProvider : undefined,
+      onImageUpload: onImageUploadRef.current,
     }),
     content: allowCollaboration ? undefined : content,
     editable: !readOnly,
@@ -368,72 +369,48 @@ export function RichTextEditor({
           }
         }
 
-        // Handle Tab to convert paragraph to bullet list or indent list items
-        if (event.key === 'Tab' && !event.shiftKey) {
+        // Handle Tab for list indentation while maintaining focus
+        if (event.key === 'Tab') {
+          // Always prevent default Tab behavior to avoid focus loss
+          event.preventDefault();
+          event.stopPropagation();
+
           const { $from } = selection;
-          const node = $from.node();
 
-          // If we're in a list item, let default TipTap behavior handle indentation
-          if (
-            node.type.name === 'listItem' ||
-            $from.parent.type.name === 'listItem'
-          ) {
-            return false;
-          }
+          // Check if we're in a regular list item (bullet or ordered)
+          const isInListItem =
+            $from.node(-1)?.type.name === 'listItem' ||
+            $from.node(-2)?.type.name === 'listItem';
 
-          // If we're in a paragraph, convert to bullet list
-          if (
-            node.type.name === 'paragraph' ||
-            $from.parent.type.name === 'paragraph'
-          ) {
-            event.preventDefault();
+          // Check if we're in a task item (checkbox)
+          const isInTaskItem =
+            $from.node(-1)?.type.name === 'taskItem' ||
+            $from.node(-2)?.type.name === 'taskItem';
 
-            // Manually create bullet list
-            const { schema } = state;
-            const bulletList = schema.nodes.bulletList;
-            const listItem = schema.nodes.listItem;
-            const paragraph = schema.nodes.paragraph;
-
-            if (bulletList && listItem && paragraph) {
-              const tr = state.tr;
-
-              // Find the position of the paragraph we want to replace
-              const paragraphDepth = $from.depth;
-              const paragraphPos = $from.before(paragraphDepth);
-              const paragraphEndPos = $from.after(paragraphDepth);
-
-              // Create a new paragraph with the current paragraph's content
-              const paragraphNode = paragraph.create(
-                null,
-                $from.parent.content
-              );
-
-              // Wrap the paragraph in a list item
-              const listItemNode = listItem.create(null, [paragraphNode]);
-
-              // Wrap the list item in a bullet list
-              const bulletListNode = bulletList.create(null, [listItemNode]);
-
-              // Replace the paragraph with the bullet list
-              tr.replaceWith(paragraphPos, paragraphEndPos, bulletListNode);
-
-              // Calculate new cursor position
-              // The structure is: bulletList (pos) + listItem (pos+1) + paragraph (pos+2) + content
-              const cursorOffset = selection.from - (paragraphPos + 1); // Offset from start of paragraph content
-              const newPos = paragraphPos + 3 + cursorOffset;
-
-              tr.setSelection(TextSelection.near(tr.doc.resolve(newPos)));
-
-              dispatch(tr);
-
-              // Manually trigger onChange if needed
-              if (!readOnly && onChangeRef.current) {
-                const newJson = tr.doc.toJSON();
-                onChangeRef.current(hasContent(newJson) ? newJson : null);
-              }
+          if (isInListItem) {
+            if (event.shiftKey) {
+              // Shift+Tab: Outdent (lift) the list item
+              editor?.chain().focus().liftListItem('listItem').run();
+            } else {
+              // Tab: Indent (sink) the list item
+              editor?.chain().focus().sinkListItem('listItem').run();
             }
-            return true;
+          } else if (isInTaskItem) {
+            if (event.shiftKey) {
+              // Shift+Tab: Outdent (lift) the task item
+              editor?.chain().focus().liftListItem('taskItem').run();
+            } else {
+              // Tab: Indent (sink) the task item
+              editor?.chain().focus().sinkListItem('taskItem').run();
+            }
           }
+
+          // Ensure focus stays in the editor
+          setTimeout(() => {
+            view.focus();
+          }, 0);
+
+          return true; // We handled the event
         }
 
         return false;
@@ -487,13 +464,21 @@ export function RichTextEditor({
                 const { from } = state.selection;
 
                 if (isImage) {
-                  // ImageResize extension uses 'imageResize' node name
-                  const imageNode =
-                    state.schema.nodes.imageResize || state.schema.nodes.image;
+                  // CustomImage extension uses 'customImage' node name
+                  const imageNode = state.schema.nodes.customImage;
                   if (imageNode) {
+                    // Get container width for default size (60%)
+                    const editorElement = view.dom as HTMLElement;
+                    const containerWidth =
+                      editorElement.querySelector('.ProseMirror')
+                        ?.clientWidth ||
+                      editorElement.clientWidth ||
+                      800;
+                    const defaultWidth = (60 / 100) * containerWidth; // md = 60%
+
                     const transaction = state.tr.insert(
                       from,
-                      imageNode.create({ src: url })
+                      imageNode.create({ src: url, width: defaultWidth })
                     );
                     view.dispatch(transaction);
                     toast.success('Image uploaded successfully');
@@ -637,8 +622,51 @@ export function RichTextEditor({
     };
   }, [editor, flushPendingRef, allowCollaboration]);
 
+  // Drag and drop overlay handlers
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Check if dragging files
+    if (e.dataTransfer.types.includes('Files')) {
+      dragCounterRef.current += 1;
+      if (dragCounterRef.current === 1) {
+        setIsDraggingOver(true);
+      }
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current === 0) {
+      setIsDraggingOver(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    dragCounterRef.current = 0;
+    setIsDraggingOver(false);
+  }, []);
+
   return (
-    <div className="group relative h-full">
+    <div
+      className="group relative h-full"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       {!readOnly && (
         <ToolBar
           editor={editor}
@@ -657,6 +685,37 @@ export function RichTextEditor({
           <div className="flex items-center gap-2 rounded-lg border bg-background px-4 py-2 shadow-lg">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-dynamic-orange border-t-transparent" />
             <span className="text-sm">Uploading media...</span>
+          </div>
+        </div>
+      )}
+      {isDraggingOver && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center border-4 border-dynamic-blue border-dashed bg-dynamic-blue/10 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3 rounded-lg border-2 border-dynamic-blue bg-background/90 px-8 py-6 shadow-xl">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-dynamic-blue/20">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-8 w-8 text-dynamic-blue"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <title>Upload Icon</title>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                />
+              </svg>
+            </div>
+            <div className="text-center">
+              <p className="font-semibold text-dynamic-blue text-lg">
+                Drop files here
+              </p>
+              <p className="text-muted-foreground text-sm">
+                Images and videos will be uploaded
+              </p>
+            </div>
           </div>
         </div>
       )}

@@ -49,6 +49,7 @@ import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Switch } from '@tuturuuu/ui/switch';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -1106,6 +1107,17 @@ function TaskEditDialogComponent({
   const [isEstimationDropdownOpen, setIsEstimationDropdownOpen] =
     useState(false);
 
+  // Popover states for inline metadata badges
+  const [isPriorityPopoverOpen, setIsPriorityPopoverOpen] = useState(false);
+  const [isDueDatePopoverOpen, setIsDueDatePopoverOpen] = useState(false);
+  const [isEstimationPopoverOpen, setIsEstimationPopoverOpen] = useState(false);
+  const [isLabelsPopoverOpen, setIsLabelsPopoverOpen] = useState(false);
+  const [isProjectsPopoverOpen, setIsProjectsPopoverOpen] = useState(false);
+  const [isAssigneesPopoverOpen, setIsAssigneesPopoverOpen] = useState(false);
+
+  // Metadata section collapse state
+  const [isMetadataExpanded, setIsMetadataExpanded] = useState(true);
+
   const slashListRef = useRef<HTMLDivElement>(null);
   const mentionListRef = useRef<HTMLDivElement>(null);
   const previousMentionHighlightRef = useRef(0);
@@ -1175,7 +1187,7 @@ function TaskEditDialogComponent({
   // UI STATE - Dialog and options visibility
   // ============================================================================
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showOptionsSidebar, setShowOptionsSidebar] = useState(isCreateMode);
+  const [showOptionsSidebar, setShowOptionsSidebar] = useState(false);
   const [createMultiple, setCreateMultiple] = useState(false);
   const [showSyncWarning, setShowSyncWarning] = useState(false);
 
@@ -2596,7 +2608,7 @@ function TaskEditDialogComponent({
       setSelectedPeriod('PM');
     } else {
       if (isCreateMode && filters) {
-        setShowOptionsSidebar(true);
+        setShowOptionsSidebar(false);
 
         // Apply labels from filters
         if (filters.labels && filters.labels.length > 0) {
@@ -3699,7 +3711,7 @@ function TaskEditDialogComponent({
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                    onClick={() => setShowOptionsSidebar(!showOptionsSidebar)}
+                    onClick={() => setShowOptionsSidebar((open) => !open)}
                     title="Toggle options"
                   >
                     <Settings className="h-4 w-4" />
@@ -3753,7 +3765,7 @@ function TaskEditDialogComponent({
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() => {
-                            setShowOptionsSidebar(!showOptionsSidebar);
+                            setShowOptionsSidebar((open) => !open);
                             setIsMoreMenuOpen(false);
                           }}
                         >
@@ -3920,9 +3932,599 @@ function TaskEditDialogComponent({
                       }
                     }}
                     placeholder="What needs to be done?"
-                    className="h-auto border-0 bg-transparent p-4 pb-0 font-bold text-2xl text-foreground leading-tight tracking-tight shadow-none transition-colors placeholder:text-muted-foreground/30 focus-visible:outline-0 focus-visible:ring-0 md:px-8 md:pt-10 md:pb-6 md:text-2xl"
+                    className="h-auto border-0 bg-transparent p-4 pb-0 font-bold text-2xl text-foreground leading-tight tracking-tight shadow-none transition-colors placeholder:text-muted-foreground/30 focus-visible:outline-0 focus-visible:ring-0 md:px-8 md:pt-4 md:pb-2 md:text-2xl"
                     autoFocus
                   />
+                </div>
+
+                {/* Task Metadata Tags - Inline Bubble Pop-ups */}
+                <div>
+                  {/* Header with toggle button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsMetadataExpanded(!isMetadataExpanded)}
+                    className="flex w-full items-center justify-between px-4 py-2 text-left transition-colors hover:bg-muted/50 md:px-8"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ChevronDown
+                        className={cn(
+                          'h-4 w-4 text-muted-foreground transition-transform',
+                          !isMetadataExpanded && '-rotate-90'
+                        )}
+                      />
+                      <span className="font-medium text-muted-foreground text-sm">
+                        Task Details
+                      </span>
+                      {/* Summary badges when collapsed */}
+                      {!isMetadataExpanded && (
+                        <div className="ml-2 flex items-center gap-1.5">
+                          {priority && (
+                            <div
+                              className={cn(
+                                'h-2 w-2 rounded-full',
+                                priority === 'critical' && 'bg-dynamic-red',
+                                priority === 'high' && 'bg-dynamic-orange',
+                                priority === 'normal' && 'bg-dynamic-yellow',
+                                priority === 'low' && 'bg-dynamic-blue'
+                              )}
+                            />
+                          )}
+                          {endDate && (
+                            <Calendar className="h-3 w-3 text-muted-foreground" />
+                          )}
+                          {estimationPoints != null && (
+                            <Timer className="h-3 w-3 text-muted-foreground" />
+                          )}
+                          {selectedLabels.length > 0 && (
+                            <div className="flex items-center gap-0.5">
+                              <Tag className="h-3 w-3 text-muted-foreground" />
+                              {selectedLabels.length === 1 ? (
+                                <span className="text-muted-foreground text-xs">
+                                  {selectedLabels[0]?.name}
+                                </span>
+                              ) : (
+                                <Badge
+                                  variant="secondary"
+                                  className="h-4 shrink-0 px-1 text-[9px]"
+                                >
+                                  {selectedLabels.length}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                          {selectedProjects.length > 0 && (
+                            <div className="flex items-center gap-0.5">
+                              <Box className="h-3 w-3 text-muted-foreground" />
+                              {selectedProjects.length === 1 ? (
+                                <span className="text-muted-foreground text-xs">
+                                  {selectedProjects[0]?.name}
+                                </span>
+                              ) : (
+                                <Badge
+                                  variant="secondary"
+                                  className="h-4 shrink-0 px-1 text-[9px]"
+                                >
+                                  {selectedProjects.length}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                          {selectedAssignees.length > 0 && (
+                            <div className="flex items-center gap-0.5">
+                              <Users className="h-3 w-3 text-muted-foreground" />
+                              {selectedAssignees.length === 1 ? (
+                                <span className="text-muted-foreground text-xs">
+                                  {selectedAssignees[0]?.display_name ||
+                                    'Unknown'}
+                                </span>
+                              ) : (
+                                <Badge
+                                  variant="secondary"
+                                  className="h-4 shrink-0 px-1 text-[9px]"
+                                >
+                                  {selectedAssignees.length}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+
+                  {/* Expandable badges section */}
+                  {isMetadataExpanded && (
+                    <div className="scrollbar-none overflow-x-auto px-4 py-2 md:px-8">
+                      <div className="flex items-center gap-2">
+                        {/* Priority Badge */}
+                        <Popover
+                          open={isPriorityPopoverOpen}
+                          onOpenChange={setIsPriorityPopoverOpen}
+                        >
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className={cn(
+                                'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
+                                priority
+                                  ? priority === 'critical'
+                                    ? 'border-dynamic-red/30 bg-dynamic-red/15 font-semibold text-dynamic-red hover:bg-dynamic-red/25'
+                                    : priority === 'high'
+                                      ? 'border-dynamic-orange/30 bg-dynamic-orange/15 text-dynamic-orange hover:bg-dynamic-orange/25'
+                                      : priority === 'normal'
+                                        ? 'border-dynamic-yellow/30 bg-dynamic-yellow/15 text-dynamic-yellow hover:bg-dynamic-yellow/25'
+                                        : 'border-dynamic-blue/30 bg-dynamic-blue/15 text-dynamic-blue hover:bg-dynamic-blue/25'
+                                  : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
+                              )}
+                            >
+                              <Flag className="h-3 w-3" />
+                              <span>
+                                {priority
+                                  ? priority === 'critical'
+                                    ? '🔥 Urgent'
+                                    : priority === 'high'
+                                      ? 'High'
+                                      : priority === 'normal'
+                                        ? 'Medium'
+                                        : 'Low'
+                                  : 'Priority'}
+                              </span>
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-56 p-2">
+                            <div className="space-y-1">
+                              {[
+                                {
+                                  value: 'critical',
+                                  label: '🔥 Urgent',
+                                  color: 'text-dynamic-red',
+                                },
+                                {
+                                  value: 'high',
+                                  label: 'High',
+                                  color: 'text-dynamic-orange',
+                                },
+                                {
+                                  value: 'normal',
+                                  label: 'Medium',
+                                  color: 'text-dynamic-yellow',
+                                },
+                                {
+                                  value: 'low',
+                                  label: 'Low',
+                                  color: 'text-dynamic-blue',
+                                },
+                              ].map((opt) => (
+                                <button
+                                  key={opt.value}
+                                  type="button"
+                                  onClick={() => {
+                                    updatePriority(opt.value as TaskPriority);
+                                    setIsPriorityPopoverOpen(false);
+                                  }}
+                                  className={cn(
+                                    'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted',
+                                    opt.color,
+                                    priority === opt.value && 'bg-muted'
+                                  )}
+                                >
+                                  {opt.label}
+                                  {priority === opt.value && (
+                                    <Check className="ml-auto h-4 w-4" />
+                                  )}
+                                </button>
+                              ))}
+                              {priority && (
+                                <>
+                                  <div className="my-1 border-t" />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      updatePriority(null);
+                                      setIsPriorityPopoverOpen(false);
+                                    }}
+                                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-dynamic-red text-sm transition-colors hover:bg-dynamic-red/10"
+                                  >
+                                    <X className="h-4 w-4" />
+                                    Clear
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+
+                        {/* Due Date Badge */}
+                        <Popover
+                          open={isDueDatePopoverOpen}
+                          onOpenChange={setIsDueDatePopoverOpen}
+                        >
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className={cn(
+                                'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
+                                endDate
+                                  ? 'border-dynamic-green/30 bg-dynamic-green/15 text-dynamic-green hover:bg-dynamic-green/25'
+                                  : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
+                              )}
+                            >
+                              <Calendar className="h-3 w-3" />
+                              <span>
+                                {endDate
+                                  ? new Date(endDate).toLocaleDateString(
+                                      'en-US',
+                                      {
+                                        month: 'short',
+                                        day: 'numeric',
+                                      }
+                                    )
+                                  : 'Due date'}
+                              </span>
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-3">
+                            <div className="space-y-2">
+                              <Label className="text-xs">Due Date</Label>
+                              <DateTimePicker
+                                date={endDate}
+                                setDate={(date) => {
+                                  handleEndDateChange(date);
+                                  if (!date) setIsDueDatePopoverOpen(false);
+                                }}
+                                showTimeSelect={true}
+                                allowClear={true}
+                                showFooterControls={true}
+                                minDate={startDate}
+                              />
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+
+                        {/* Estimation Points Badge */}
+                        {boardConfig?.estimation_type && (
+                          <Popover
+                            open={isEstimationPopoverOpen}
+                            onOpenChange={setIsEstimationPopoverOpen}
+                          >
+                            <PopoverTrigger asChild>
+                              <button
+                                type="button"
+                                className={cn(
+                                  'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
+                                  estimationPoints != null
+                                    ? 'border-dynamic-purple/30 bg-dynamic-purple/15 text-dynamic-purple hover:bg-dynamic-purple/25'
+                                    : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
+                                )}
+                              >
+                                <Timer className="h-3 w-3" />
+                                <span>
+                                  {estimationPoints != null
+                                    ? mapEstimationPoints(
+                                        estimationPoints,
+                                        boardConfig.estimation_type
+                                      )
+                                    : 'Estimate'}
+                                </span>
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-56 p-2">
+                              <div className="space-y-1">
+                                {estimationIndices.map((idx) => (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => {
+                                      updateEstimation(idx);
+                                      setIsEstimationPopoverOpen(false);
+                                    }}
+                                    className={cn(
+                                      'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted',
+                                      estimationPoints === idx && 'bg-muted'
+                                    )}
+                                  >
+                                    {mapEstimationPoints(
+                                      idx,
+                                      boardConfig.estimation_type
+                                    )}
+                                    {estimationPoints === idx && (
+                                      <Check className="ml-auto h-4 w-4" />
+                                    )}
+                                  </button>
+                                ))}
+                                {estimationPoints != null && (
+                                  <>
+                                    <div className="my-1 border-t" />
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        updateEstimation(null);
+                                        setIsEstimationPopoverOpen(false);
+                                      }}
+                                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-dynamic-red text-sm transition-colors hover:bg-dynamic-red/10"
+                                    >
+                                      <X className="h-4 w-4" />
+                                      Clear
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        )}
+
+                        {/* Labels Badge */}
+                        <Popover
+                          open={isLabelsPopoverOpen}
+                          onOpenChange={setIsLabelsPopoverOpen}
+                        >
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className={cn(
+                                'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
+                                selectedLabels.length > 0
+                                  ? 'border-dynamic-indigo/30 bg-dynamic-indigo/15 text-dynamic-indigo hover:bg-dynamic-indigo/25'
+                                  : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
+                              )}
+                            >
+                              <Tag className="h-3 w-3" />
+                              <span>
+                                {selectedLabels.length === 0
+                                  ? 'Labels'
+                                  : selectedLabels.length === 1
+                                    ? selectedLabels[0]?.name
+                                    : `${selectedLabels.length} labels`}
+                              </span>
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-72 p-3">
+                            <div className="space-y-2">
+                              <Label className="text-xs">Labels</Label>
+                              {selectedLabels.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {selectedLabels.map((label) => {
+                                    const styles = computeAccessibleLabelStyles(
+                                      label.color
+                                    );
+                                    return (
+                                      <Badge
+                                        key={label.id}
+                                        variant="secondary"
+                                        className="h-6 cursor-pointer gap-1 px-2 text-xs transition-opacity hover:opacity-80"
+                                        style={
+                                          styles
+                                            ? {
+                                                backgroundColor: styles.bg,
+                                                borderColor: styles.border,
+                                                color: styles.text,
+                                              }
+                                            : undefined
+                                        }
+                                        onClick={() => toggleLabel(label)}
+                                      >
+                                        {label.name}
+                                        <X className="h-2.5 w-2.5" />
+                                      </Badge>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              <div
+                                className="max-h-72 overflow-y-auto overscroll-contain"
+                                onWheel={(e) => e.stopPropagation()}
+                              >
+                                <div className="space-y-1 pr-2">
+                                  {availableLabels
+                                    .filter(
+                                      (l) =>
+                                        !selectedLabels.some(
+                                          (sl) => sl.id === l.id
+                                        )
+                                    )
+                                    .map((label) => {
+                                      const styles =
+                                        computeAccessibleLabelStyles(
+                                          label.color
+                                        );
+                                      return (
+                                        <button
+                                          key={label.id}
+                                          type="button"
+                                          onClick={() => toggleLabel(label)}
+                                          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
+                                        >
+                                          <span
+                                            className="h-3 w-3 rounded-full"
+                                            style={{
+                                              backgroundColor:
+                                                styles?.bg || '#ccc',
+                                            }}
+                                          />
+                                          {label.name}
+                                          <Plus className="ml-auto h-4 w-4" />
+                                        </button>
+                                      );
+                                    })}
+                                </div>
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+
+                        {/* Projects Badge */}
+                        <Popover
+                          open={isProjectsPopoverOpen}
+                          onOpenChange={setIsProjectsPopoverOpen}
+                        >
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className={cn(
+                                'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
+                                selectedProjects.length > 0
+                                  ? 'border-dynamic-sky/30 bg-dynamic-sky/15 text-dynamic-sky hover:bg-dynamic-sky/25'
+                                  : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
+                              )}
+                            >
+                              <Box className="h-3 w-3" />
+                              <span>
+                                {selectedProjects.length === 0
+                                  ? 'Projects'
+                                  : selectedProjects.length === 1
+                                    ? selectedProjects[0]?.name
+                                    : `${selectedProjects.length} projects`}
+                              </span>
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-72 p-3">
+                            <div className="space-y-2">
+                              <Label className="text-xs">Projects</Label>
+                              {selectedProjects.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {selectedProjects.map((project) => (
+                                    <Badge
+                                      key={project.id}
+                                      variant="secondary"
+                                      className="h-6 cursor-pointer gap-1 border-dynamic-sky/30 bg-dynamic-sky/10 px-2 text-dynamic-sky text-xs transition-opacity hover:opacity-80"
+                                      onClick={() => toggleProject(project)}
+                                    >
+                                      {project.name}
+                                      <X className="h-2.5 w-2.5" />
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                              <div
+                                className="max-h-72 overflow-y-auto overscroll-contain"
+                                onWheel={(e) => e.stopPropagation()}
+                              >
+                                <div className="space-y-1 pr-2">
+                                  {taskProjects
+                                    .filter(
+                                      (p) =>
+                                        !selectedProjects.some(
+                                          (sp) => sp.id === p.id
+                                        )
+                                    )
+                                    .map((project) => (
+                                      <button
+                                        key={project.id}
+                                        type="button"
+                                        onClick={() => toggleProject(project)}
+                                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
+                                      >
+                                        {project.name}
+                                        <Plus className="ml-auto h-4 w-4" />
+                                      </button>
+                                    ))}
+                                </div>
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+
+                        {/* Assignees Badge */}
+                        <Popover
+                          open={isAssigneesPopoverOpen}
+                          onOpenChange={setIsAssigneesPopoverOpen}
+                        >
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className={cn(
+                                'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
+                                selectedAssignees.length > 0
+                                  ? 'border-dynamic-orange/30 bg-dynamic-orange/15 text-dynamic-orange hover:bg-dynamic-orange/25'
+                                  : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
+                              )}
+                            >
+                              <Users className="h-3 w-3" />
+                              <span>
+                                {selectedAssignees.length === 0
+                                  ? 'Assignees'
+                                  : selectedAssignees.length === 1
+                                    ? selectedAssignees[0]?.display_name ||
+                                      'Unknown'
+                                    : `${selectedAssignees.length} assignees`}
+                              </span>
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-72 p-3">
+                            <div className="space-y-2">
+                              <Label className="text-xs">Assignees</Label>
+                              {selectedAssignees.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {selectedAssignees.map((assignee) => (
+                                    <Badge
+                                      key={assignee.id || assignee.user_id}
+                                      variant="secondary"
+                                      className="h-6 cursor-pointer gap-1.5 px-2 text-xs transition-opacity hover:opacity-80"
+                                      onClick={() => toggleAssignee(assignee)}
+                                    >
+                                      <Avatar className="h-3.5 w-3.5">
+                                        <AvatarImage
+                                          src={assignee.avatar_url}
+                                          alt={
+                                            assignee.display_name || 'Unknown'
+                                          }
+                                        />
+                                        <AvatarFallback className="text-[8px]">
+                                          {(assignee.display_name ||
+                                            'Unknown')[0]?.toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      {assignee.display_name || 'Unknown'}
+                                      <X className="h-2.5 w-2.5" />
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                              <div
+                                className="max-h-72 overflow-y-auto overscroll-contain"
+                                onWheel={(e) => e.stopPropagation()}
+                              >
+                                <div className="space-y-1 pr-2">
+                                  {workspaceMembers
+                                    .filter(
+                                      (m) =>
+                                        !selectedAssignees.some(
+                                          (a) =>
+                                            (a.id || a.user_id) ===
+                                            (m.user_id || m.id)
+                                        )
+                                    )
+                                    .map((member) => (
+                                      <button
+                                        key={member.user_id}
+                                        type="button"
+                                        onClick={() => toggleAssignee(member)}
+                                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
+                                      >
+                                        <Avatar className="h-5 w-5">
+                                          <AvatarImage
+                                            src={member.avatar_url}
+                                            alt={
+                                              member.display_name || 'Unknown'
+                                            }
+                                          />
+                                          <AvatarFallback className="text-[9px]">
+                                            {(member.display_name ||
+                                              'Unknown')[0]?.toUpperCase()}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        {member.display_name || 'Unknown'}
+                                        <Plus className="ml-auto h-4 w-4" />
+                                      </button>
+                                    ))}
+                                </div>
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Task Description - Full editor experience with subtle border */}

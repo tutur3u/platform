@@ -19,6 +19,7 @@ import {
   Link,
   List,
   ListOrdered,
+  ListTodo,
   Loader2,
   Rows2,
   Strikethrough,
@@ -205,14 +206,20 @@ export function ToolBar({
     {
       key: 'bullet-list',
       icon: <List className="size-4" />,
-      onClick: () => editor?.chain().focus().toggleBulletList().run(),
+      onClick: () => editor?.chain().focus().toggleBulletListSmart().run(),
       pressed: editor?.isActive('bulletList'),
     },
     {
       key: 'ordered-list',
       icon: <ListOrdered className="size-4" />,
-      onClick: () => editor?.chain().focus().toggleOrderedList().run(),
+      onClick: () => editor?.chain().focus().toggleOrderedListSmart().run(),
       pressed: editor?.isActive('orderedList'),
+    },
+    {
+      key: 'task-list',
+      icon: <ListTodo className="size-4" />,
+      onClick: () => editor?.chain().focus().toggleTaskListSmart().run(),
+      pressed: editor?.isActive('taskList'),
     },
     {
       key: 'table',
@@ -314,13 +321,20 @@ export function ToolBar({
         // Use direct node insertion for ImageResize extension
         const { state } = editor.view;
         const { from } = state.selection;
-        const imageNode =
-          state.schema.nodes.imageResize || state.schema.nodes.image;
+        const imageNode = state.schema.nodes.customImage;
 
         if (imageNode) {
+          // Get container width for default size (60%)
+          const editorElement = editor.view.dom as HTMLElement;
+          const containerWidth =
+            editorElement.querySelector('.ProseMirror')?.clientWidth ||
+            editorElement.clientWidth ||
+            800;
+          const defaultWidth = (60 / 100) * containerWidth; // md = 60%
+
           const transaction = state.tr.insert(
             from,
-            imageNode.create({ src: url })
+            imageNode.create({ src: url, width: defaultWidth })
           );
           editor.view.dispatch(transaction);
           toast.success('Image uploaded successfully');
