@@ -21,7 +21,8 @@
     "rules": {
       "recommended": true,
       "a11y": {
-        "noLabelWithoutControl": "off"
+        "noLabelWithoutControl": "off",
+        "noStaticElementInteractions": "off"
       },
       "style": {
         "noNonNullAssertion": "off",
