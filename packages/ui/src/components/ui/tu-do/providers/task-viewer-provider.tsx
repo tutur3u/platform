@@ -42,9 +42,11 @@ const TaskViewerContext = createContext<TaskViewerContextValue | null>(null);
  */
 export function TaskViewerProvider({
   boardId,
+  enabled,
   children,
 }: {
   boardId: string;
+  enabled: boolean;
   children: ReactNode;
 }) {
   // Map structure: taskId -> RealtimePresenceState<TaskViewerPresenceState>
@@ -61,6 +63,8 @@ export function TaskViewerProvider({
 
   // Initialize channel once on mount
   useEffect(() => {
+    if (!enabled) return;
+
     const supabase = createClient();
     const channelName = `task-viewer:${boardId}`;
 
@@ -207,75 +211,78 @@ export function TaskViewerProvider({
         channelRef.current = null;
       }
     };
-  }, [boardId]);
+  }, [boardId, enabled]);
 
   // Function to start tracking a task
-  const viewTask = useCallback(async (taskId: string) => {
-    if (!channelRef.current || !userDataRef.current) {
-      if (DEV_MODE) {
-        console.warn('Channel or user data not ready yet');
-      }
-      return;
-    }
+  const viewTask = useCallback(
+    async (taskId: string) => {
+      if (!enabled || !channelRef.current || !userDataRef.current) return;
 
-    try {
-      const presenceTrackStatus = await channelRef.current.track({
-        user: userDataRef.current,
-        online_at: new Date().toISOString(),
-        taskId,
-      });
+      try {
+        const presenceTrackStatus = await channelRef.current.track({
+          user: userDataRef.current,
+          online_at: new Date().toISOString(),
+          taskId,
+        });
 
-      if (DEV_MODE) {
-        console.log(`👁️ Viewing task ${taskId}:`, presenceTrackStatus);
-      }
-
-      if (presenceTrackStatus === 'timed out') {
         if (DEV_MODE) {
-          console.warn(
-            `⚠️ Task ${taskId} presence tracking timed out, retrying...`
-          );
+          console.log(`👁️ Viewing task ${taskId}:`, presenceTrackStatus);
         }
-        // Retry once
-        setTimeout(async () => {
-          if (channelRef.current) {
-            await channelRef.current.track({
-              user: userDataRef.current,
-              online_at: new Date().toISOString(),
-              taskId,
-            });
+
+        if (presenceTrackStatus === 'timed out') {
+          if (DEV_MODE) {
+            console.warn(
+              `⚠️ Task ${taskId} presence tracking timed out, retrying...`
+            );
           }
-        }, 1000);
+          // Retry once
+          setTimeout(async () => {
+            if (channelRef.current) {
+              await channelRef.current.track({
+                user: userDataRef.current,
+                online_at: new Date().toISOString(),
+                taskId,
+              });
+            }
+          }, 1000);
+        }
+      } catch (error) {
+        if (DEV_MODE) {
+          console.error(`Error tracking task ${taskId}:`, error);
+        }
       }
-    } catch (error) {
-      if (DEV_MODE) {
-        console.error(`Error tracking task ${taskId}:`, error);
-      }
-    }
-  }, []);
+    },
+    [enabled]
+  );
 
   // Function to stop tracking
-  const unviewTask = useCallback(async (taskId: string): Promise<void> => {
-    if (!channelRef.current || !userDataRef.current) return;
+  const unviewTask = useCallback(
+    async (taskId: string): Promise<void> => {
+      if (!enabled || !channelRef.current || !userDataRef.current) return;
 
-    try {
-      await channelRef.current.untrack();
+      try {
+        await channelRef.current.untrack();
 
-      if (DEV_MODE) {
-        console.log(`👁️ Stopped viewing task ${taskId}`);
+        if (DEV_MODE) {
+          console.log(`👁️ Stopped viewing task ${taskId}`);
+        }
+      } catch (error) {
+        if (DEV_MODE) {
+          console.error('Error untracking task:', error);
+        }
       }
-    } catch (error) {
-      if (DEV_MODE) {
-        console.error('Error untracking task:', error);
-      }
-    }
-  }, []);
+    },
+    [enabled]
+  );
 
   // Function to get viewers for a task
   const getTaskViewers = useCallback(
     (taskId: string): RealtimePresenceState<TaskViewerPresenceState> => {
+      if (!enabled) return {};
+
       return taskViewersMap.get(taskId) || {};
     },
-    [taskViewersMap]
+    [taskViewersMap, enabled]
   );
 
   const value: TaskViewerContextValue = {
@@ -285,6 +292,8 @@ export function TaskViewerProvider({
     currentUserId,
     taskViewersMap,
   };
+
+  if (!enabled) return children;
 
   return (
     <TaskViewerContext.Provider value={value}>

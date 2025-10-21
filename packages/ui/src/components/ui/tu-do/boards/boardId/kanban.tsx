@@ -1912,7 +1912,7 @@ export function KanbanBoard({
       )}
 
       {/* Kanban Board */}
-      <TaskViewerProvider boardId={boardId ?? ''}>
+      <TaskViewerProvider boardId={boardId ?? ''} enabled={!workspace.personal}>
         <div className="flex-1 overflow-x-auto overflow-y-hidden">
           <DndContext
             sensors={sensors}
