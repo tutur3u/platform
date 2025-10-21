@@ -3932,13 +3932,13 @@ function TaskEditDialogComponent({
                       }
                     }}
                     placeholder="What needs to be done?"
-                    className="h-auto border-0 bg-transparent p-4 pb-0 font-bold text-2xl text-foreground leading-tight tracking-tight shadow-none transition-colors placeholder:text-muted-foreground/30 focus-visible:outline-0 focus-visible:ring-0 md:px-8 md:pt-10 md:pb-6 md:text-2xl"
+                    className="h-auto border-0 bg-transparent p-4 pb-0 font-bold text-2xl text-foreground leading-tight tracking-tight shadow-none transition-colors placeholder:text-muted-foreground/30 focus-visible:outline-0 focus-visible:ring-0 md:px-8 md:pt-4 md:pb-2 md:text-2xl"
                     autoFocus
                   />
                 </div>
 
                 {/* Task Metadata Tags - Inline Bubble Pop-ups */}
-                <div className="border-b">
+                <div>
                   {/* Header with toggle button */}
                   <button
                     type="button"
@@ -3985,7 +3985,7 @@ function TaskEditDialogComponent({
                               ) : (
                                 <Badge
                                   variant="secondary"
-                                  className="h-4 px-1 text-[9px]"
+                                  className="h-4 shrink-0 px-1 text-[9px]"
                                 >
                                   {selectedLabels.length}
                                 </Badge>
@@ -4002,7 +4002,7 @@ function TaskEditDialogComponent({
                               ) : (
                                 <Badge
                                   variant="secondary"
-                                  className="h-4 px-1 text-[9px]"
+                                  className="h-4 shrink-0 px-1 text-[9px]"
                                 >
                                   {selectedProjects.length}
                                 </Badge>
@@ -4020,7 +4020,7 @@ function TaskEditDialogComponent({
                               ) : (
                                 <Badge
                                   variant="secondary"
-                                  className="h-4 px-1 text-[9px]"
+                                  className="h-4 shrink-0 px-1 text-[9px]"
                                 >
                                   {selectedAssignees.length}
                                 </Badge>
@@ -4034,7 +4034,7 @@ function TaskEditDialogComponent({
 
                   {/* Expandable badges section */}
                   {isMetadataExpanded && (
-                    <div className="overflow-x-auto px-4 py-2 md:px-8">
+                    <div className="scrollbar-none overflow-x-auto px-4 py-2 md:px-8">
                       <div className="flex items-center gap-2">
                         {/* Priority Badge */}
                         <Popover
@@ -4045,7 +4045,7 @@ function TaskEditDialogComponent({
                             <button
                               type="button"
                               className={cn(
-                                'inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
+                                'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
                                 priority
                                   ? priority === 'critical'
                                     ? 'border-dynamic-red/30 bg-dynamic-red/15 font-semibold text-dynamic-red hover:bg-dynamic-red/25'
@@ -4143,7 +4143,7 @@ function TaskEditDialogComponent({
                             <button
                               type="button"
                               className={cn(
-                                'inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
+                                'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
                                 endDate
                                   ? 'border-dynamic-green/30 bg-dynamic-green/15 text-dynamic-green hover:bg-dynamic-green/25'
                                   : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
@@ -4191,7 +4191,7 @@ function TaskEditDialogComponent({
                               <button
                                 type="button"
                                 className={cn(
-                                  'inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
+                                  'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
                                   estimationPoints != null
                                     ? 'border-dynamic-purple/30 bg-dynamic-purple/15 text-dynamic-purple hover:bg-dynamic-purple/25'
                                     : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
@@ -4262,7 +4262,7 @@ function TaskEditDialogComponent({
                             <button
                               type="button"
                               className={cn(
-                                'inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
+                                'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
                                 selectedLabels.length > 0
                                   ? 'border-dynamic-indigo/30 bg-dynamic-indigo/15 text-dynamic-indigo hover:bg-dynamic-indigo/25'
                                   : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
@@ -4361,7 +4361,7 @@ function TaskEditDialogComponent({
                             <button
                               type="button"
                               className={cn(
-                                'inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
+                                'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
                                 selectedProjects.length > 0
                                   ? 'border-dynamic-sky/30 bg-dynamic-sky/15 text-dynamic-sky hover:bg-dynamic-sky/25'
                                   : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
@@ -4433,7 +4433,7 @@ function TaskEditDialogComponent({
                             <button
                               type="button"
                               className={cn(
-                                'inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
+                                'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
                                 selectedAssignees.length > 0
                                   ? 'border-dynamic-orange/30 bg-dynamic-orange/15 text-dynamic-orange hover:bg-dynamic-orange/25'
                                   : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
