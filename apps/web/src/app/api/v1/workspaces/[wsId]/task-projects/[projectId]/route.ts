@@ -90,7 +90,7 @@ async function updateProject(
 
     if (!validationResult.success) {
       return NextResponse.json(
-        { error: validationResult.error.errors[0]?.message || 'Invalid data' },
+        { error: validationResult.error.issues[0]?.message || 'Invalid data' },
         { status: 400 }
       );
     }
