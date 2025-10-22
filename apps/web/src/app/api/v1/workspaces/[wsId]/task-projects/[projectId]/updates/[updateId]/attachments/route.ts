@@ -44,10 +44,7 @@ export async function POST(
       .single();
 
     if (updateError || !updateRecord) {
-      return NextResponse.json(
-        { error: 'Update not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Update not found' }, { status: 404 });
     }
 
     // Verify the update's project matches the specified projectId

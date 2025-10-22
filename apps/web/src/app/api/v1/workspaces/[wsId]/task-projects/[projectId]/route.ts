@@ -145,10 +145,7 @@ async function updateProject(
     }
 
     // If lead_id is being set, verify the user belongs to the workspace
-    if (
-      validatedData.lead_id !== undefined &&
-      validatedData.lead_id !== null
-    ) {
+    if (validatedData.lead_id !== undefined && validatedData.lead_id !== null) {
       const { data: leadMembership } = await supabase
         .from('workspace_members')
         .select('user_id')

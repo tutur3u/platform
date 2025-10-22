@@ -61,7 +61,8 @@ interface UpdateWithRelations {
   attachments?: Attachment[];
 }
 
-interface MappedUpdate extends Omit<UpdateWithRelations, 'reactions' | 'comments'> {
+interface MappedUpdate
+  extends Omit<UpdateWithRelations, 'reactions' | 'comments'> {
   reactionGroups: ReactionGroup[];
   commentsCount: number;
   attachmentsCount: number;
@@ -260,34 +261,35 @@ export async function GET(
     }
 
     // Group reactions by emoji with counts
-    const updatesWithGroupedReactions: MappedUpdate[] = (updates as UpdateWithRelations[] | null)?.map((update) => {
-      const reactionGroups: Record<string, ReactionGroup> = {};
+    const updatesWithGroupedReactions: MappedUpdate[] =
+      (updates as UpdateWithRelations[] | null)?.map((update) => {
+        const reactionGroups: Record<string, ReactionGroup> = {};
 
-      update.reactions?.forEach((reaction) => {
-        if (!reactionGroups[reaction.emoji]) {
-          reactionGroups[reaction.emoji] = {
-            emoji: reaction.emoji,
-            count: 0,
-            users: [],
-            userReacted: false,
-          };
-        }
+        update.reactions?.forEach((reaction) => {
+          if (!reactionGroups[reaction.emoji]) {
+            reactionGroups[reaction.emoji] = {
+              emoji: reaction.emoji,
+              count: 0,
+              users: [],
+              userReacted: false,
+            };
+          }
 
-        if (reactionGroups[reaction.emoji] === undefined) return;
-        reactionGroups[reaction.emoji]!.count++;
-        reactionGroups[reaction.emoji]!.users.push(reaction.user);
-        if (reaction.user_id === user.id)
-          reactionGroups[reaction.emoji]!.userReacted = true;
-      });
+          if (reactionGroups[reaction.emoji] === undefined) return;
+          reactionGroups[reaction.emoji]!.count++;
+          reactionGroups[reaction.emoji]!.users.push(reaction.user);
+          if (reaction.user_id === user.id)
+            reactionGroups[reaction.emoji]!.userReacted = true;
+        });
 
-      return {
-        ...update,
-        reactionGroups: Object.values(reactionGroups),
-        commentsCount:
-          update.comments?.filter((c) => !c.deleted_at).length || 0,
-        attachmentsCount: update.attachments?.length || 0,
-      };
-    }) || [];
+        return {
+          ...update,
+          reactionGroups: Object.values(reactionGroups),
+          commentsCount:
+            update.comments?.filter((c) => !c.deleted_at).length || 0,
+          attachmentsCount: update.attachments?.length || 0,
+        };
+      }) || [];
 
     return NextResponse.json({
       updates: updatesWithGroupedReactions,
