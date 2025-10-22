@@ -189,6 +189,7 @@ bun trigger:deploy
 7. **Always** reference environment variables by name only (never echo values)
 8. **Always** add new documentation pages to `apps/docs/mint.json` navigation
 9. **Always** update main navigation (`apps/web/src/app/[locale]/(dashboard)/[wsId]/navigation.tsx`) when adding new routes - add to both `aliases` array and `children` navigation items with proper icons and permissions
+10. **Always** provide translations for both English AND Vietnamese when adding user-facing strings to `apps/web/messages/{locale}.json`
 
 ### Escalate When
 
@@ -316,6 +317,11 @@ Five seed accounts are available:
 - Uses `next-intl` for i18n
 - Messages are in `apps/web/messages/{locale}.json`
 - All routes are prefixed with locale: `/[locale]/...`
+- **CRITICAL**: Always provide translations for both English (`en.json`) AND Vietnamese (`vi.json`)
+- When adding new user-facing strings, add entries to both language files simultaneously
+- Never add translations only for English - Vietnamese translations are mandatory
+- Use consistent translation keys across both language files
+- For new features, ensure all UI text, error messages, and user communications are bilingual
 
 ### Code Style & Conventions
 
@@ -472,6 +478,7 @@ Before requesting review:
 8. ✅ No secrets, tokens, or API keys committed
 9. ✅ Edge runtime export added where required
 10. ✅ All external inputs validated with Zod
+11. ✅ All user-facing strings have both English and Vietnamese translations
 
 ## Reference
 
