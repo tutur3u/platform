@@ -7,6 +7,7 @@
 
 import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 
 export const GET = withApiAuth(
@@ -84,7 +85,7 @@ export const GET = withApiAuth(
 
       // Storage limits (from drive page logic)
       // ROOT_WORKSPACE_ID should be configured in environment variables
-      const rootWorkspaceId = process.env.ROOT_WORKSPACE_ID;
+      const rootWorkspaceId = ROOT_WORKSPACE_ID;
       if (!rootWorkspaceId) {
         console.error(
           'ROOT_WORKSPACE_ID environment variable is not configured'

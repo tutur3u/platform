@@ -99,7 +99,7 @@ describe('listStorageOptionsSchema', () => {
     }
   });
 
-  it('should reject NaN, null, and undefined for limit', () => {
+  it('should reject NaN and null for limit', () => {
     const resultNaN = listStorageOptionsSchema.safeParse({ limit: Number.NaN });
     expect(resultNaN.success).toBe(false);
     if (!resultNaN.success) {
@@ -111,17 +111,16 @@ describe('listStorageOptionsSchema', () => {
     if (!resultNull.success) {
       expect(resultNull.error.issues.length).toBeGreaterThan(0);
     }
-
-    const resultUndefined = listStorageOptionsSchema.safeParse({
-      limit: undefined,
-    });
-    expect(resultUndefined.success).toBe(false);
-    if (!resultUndefined.success) {
-      expect(resultUndefined.error.issues.length).toBeGreaterThan(0);
-    }
   });
 
-  it('should reject NaN, null, and undefined for offset', () => {
+  it('should accept undefined for limit (optional field)', () => {
+    const result = listStorageOptionsSchema.safeParse({
+      limit: undefined,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('should reject NaN and null for offset', () => {
     const resultNaN = listStorageOptionsSchema.safeParse({
       offset: Number.NaN,
     });
@@ -135,14 +134,13 @@ describe('listStorageOptionsSchema', () => {
     if (!resultNull.success) {
       expect(resultNull.error.issues.length).toBeGreaterThan(0);
     }
+  });
 
-    const resultUndefined = listStorageOptionsSchema.safeParse({
+  it('should accept undefined for offset (optional field)', () => {
+    const result = listStorageOptionsSchema.safeParse({
       offset: undefined,
     });
-    expect(resultUndefined.success).toBe(false);
-    if (!resultUndefined.success) {
-      expect(resultUndefined.error.issues.length).toBeGreaterThan(0);
-    }
+    expect(result.success).toBe(true);
   });
 
   it('should reject invalid sortBy', () => {
@@ -267,7 +265,7 @@ describe('shareOptionsSchema', () => {
     }
   });
 
-  it('should reject NaN, null, and undefined for expiresIn', () => {
+  it('should reject NaN and null for expiresIn', () => {
     const resultNaN = shareOptionsSchema.safeParse({
       expiresIn: Number.NaN,
     });
@@ -281,14 +279,13 @@ describe('shareOptionsSchema', () => {
     if (!resultNull.success) {
       expect(resultNull.error.issues.length).toBeGreaterThan(0);
     }
+  });
 
-    const resultUndefined = shareOptionsSchema.safeParse({
+  it('should accept undefined for expiresIn (optional field)', () => {
+    const result = shareOptionsSchema.safeParse({
       expiresIn: undefined,
     });
-    expect(resultUndefined.success).toBe(false);
-    if (!resultUndefined.success) {
-      expect(resultUndefined.error.issues.length).toBeGreaterThan(0);
-    }
+    expect(result.success).toBe(true);
   });
 });
 
@@ -378,7 +375,7 @@ describe('listDocumentsOptionsSchema', () => {
     }
   });
 
-  it('should reject NaN, null, and undefined for limit', () => {
+  it('should reject NaN and null for limit', () => {
     const resultNaN = listDocumentsOptionsSchema.safeParse({
       limit: Number.NaN,
     });
@@ -392,17 +389,16 @@ describe('listDocumentsOptionsSchema', () => {
     if (!resultNull.success) {
       expect(resultNull.error.issues.length).toBeGreaterThan(0);
     }
-
-    const resultUndefined = listDocumentsOptionsSchema.safeParse({
-      limit: undefined,
-    });
-    expect(resultUndefined.success).toBe(false);
-    if (!resultUndefined.success) {
-      expect(resultUndefined.error.issues.length).toBeGreaterThan(0);
-    }
   });
 
-  it('should reject NaN, null, and undefined for offset', () => {
+  it('should accept undefined for limit (optional field)', () => {
+    const result = listDocumentsOptionsSchema.safeParse({
+      limit: undefined,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('should reject NaN and null for offset', () => {
     const resultNaN = listDocumentsOptionsSchema.safeParse({
       offset: Number.NaN,
     });
@@ -416,14 +412,13 @@ describe('listDocumentsOptionsSchema', () => {
     if (!resultNull.success) {
       expect(resultNull.error.issues.length).toBeGreaterThan(0);
     }
+  });
 
-    const resultUndefined = listDocumentsOptionsSchema.safeParse({
+  it('should accept undefined for offset (optional field)', () => {
+    const result = listDocumentsOptionsSchema.safeParse({
       offset: undefined,
     });
-    expect(resultUndefined.success).toBe(false);
-    if (!resultUndefined.success) {
-      expect(resultUndefined.error.issues.length).toBeGreaterThan(0);
-    }
+    expect(result.success).toBe(true);
   });
 });
 
