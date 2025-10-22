@@ -1,0 +1,500 @@
+---
+title: 'Workspace ID Routing System'
+description: 'Comprehensive documentation of the workspace ID routing system, middleware handling, and URL patterns'
+updatedAt: '2025-09-27'
+---
+
+The workspace ID routing system provides a flexible and consistent way to handle workspace-scoped routes across the platform. This system supports multiple workspace identifier formats, automatic resolution, and intelligent middleware-based routing.
+
+## Overview
+
+The workspace routing system consists of several key components:
+
+1. **URL Pattern**: `[locale]/(dashboard)/[wsId]/*`
+2. **Middleware**: Handles workspace ID resolution and redirects
+3. **WorkspaceWrapper**: React component for workspace validation and context
+4. **API Routes**: `[wsId]` parameter for workspace-scoped API endpoints
+
+## Workspace Identifier Types
+
+The system supports multiple workspace identifier formats that are automatically resolved:
+
+### 1. UUID Format
+
+Standard UUID workspace identifiers:
+
+```
+550e8400-e29b-41d4-a716-446655440000
+```
+
+### 2. Personal Workspace
+
+The special identifier `'personal'` resolves to the user's personal workspace:
+
+```
+personal
+```
+
+### 3. Internal Workspace
+
+The special identifier `'internal'` resolves to the root workspace (system workspace):
+
+```
+internal
+```
+
+## URL Patterns
+
+### User-Facing URLs
+
+The actual URLs users see in their browser are clean and simple:
+
+```
+/[wsId]/...
+```
+
+**Examples (what users see and type in browser):**
+
+- `/personal/dashboard` → Personal workspace dashboard
+- `/550e8400-e29b-41d4-a716-446655440000/tasks` → Specific workspace tasks
+- `/internal/settings` → Internal workspace settings
+
+**Note**: Even if a user types `/en/personal/dashboard`, the middleware automatically normalizes this to `/personal/dashboard` for a cleaner URL experience.
+
+### File Structure vs. URLs
+
+The file structure uses `[locale]/(dashboard)/[wsId]/...` but both locale and route groups are implementation details:
+
+- **File structure**: `apps/web/src/app/[locale]/(dashboard)/[wsId]/...`
+- **Browser URL**: `/[wsId]/...` (both locale and route group handled transparently)
+- **URL normalization**: `/en/personal/dashboard` becomes `/personal/dashboard` in browser
+
+### How It Works
+
+1. User visits `/[wsId]/...` in browser (this is what they see and type)
+2. Middleware detects locale from cookie/browser preferences
+3. Next.js internally routes to `[locale]/(dashboard)/[wsId]/...` file structure
+4. Middleware normalizes `/en/[wsId]/...` → `/[wsId]/...` (transparent to user)
+
+### API Routes
+
+API routes follow the same clean URL pattern:
+
+```
+api/[wsId]/...
+```
+
+**Examples (what API clients request):**
+
+- `/api/550e8400-e29b-41d4-a716-446655440000/task/create`
+- `/api/personal/calendar/auto-schedule`
+- `/api/internal/workspace-settings`
+
+## Middleware Implementation
+
+The middleware in `apps/web/src/middleware.ts` handles workspace routing with the following logic:
+
+### 1. UUID Validation
+
+```typescript
+const uuidRegex =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+```
+
+### 2. Path Analysis
+
+The middleware analyzes the URL path to identify:
+
+- Presence of locale prefix
+- Position of workspace ID in path
+- Whether it's a special workspace identifier
+
+### 3. Root Workspace Remapping
+
+```typescript
+// Remap root workspace URL to the internal workspace slug for consistency
+if (potentialWorkspaceId === ROOT_WORKSPACE_ID) {
+  const wsIdIndex = hasLocaleInPath ? 1 : 0;
+  const newPathSegments = [...pathSegments];
+
+  if (newPathSegments[wsIdIndex] !== 'internal') {
+    newPathSegments[wsIdIndex] = 'internal';
+    const redirectUrl = new URL(`/${newPathSegments.join('/')}`, req.nextUrl);
+    redirectUrl.search = req.nextUrl.search;
+    return NextResponse.redirect(redirectUrl);
+  }
+}
+```
+
+### 4. Personal Workspace Detection
+
+```typescript
+// If we found a potential workspace ID, check if it's a personal workspace
+if (potentialWorkspaceId) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+      const isPersonal = await isPersonalWorkspace(potentialWorkspaceId);
+
+      if (isPersonal) {
+        // Construct the redirect URL replacing the workspace ID with 'personal'
+        const newPathSegments = [...pathSegments];
+        const wsIdIndex = hasLocaleInPath ? 1 : 0;
+        newPathSegments[wsIdIndex] = 'personal';
+
+        const redirectUrl = new URL(`/${newPathSegments.join('/')}`, req.nextUrl);
+        redirectUrl.search = req.nextUrl.search;
+        return NextResponse.redirect(redirectUrl);
+      }
+    }
+  } catch (error) {
+    console.error('Error checking personal workspace in middleware:', error);
+  }
+}
+```
+
+### 5. Default Workspace Redirect
+
+For authenticated users accessing root paths, the middleware automatically redirects to their default workspace:
+
+```typescript
+// Handle authenticated users accessing the root path or root with locale
+if (isRootPath || isLocaleRootPath) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+      const defaultWorkspace = await getUserDefaultWorkspace();
+
+      if (defaultWorkspace) {
+        const target = defaultWorkspace.personal
+          ? 'personal'
+          : defaultWorkspace.id === ROOT_WORKSPACE_ID
+            ? 'internal'
+            : defaultWorkspace.id;
+        const redirectUrl = new URL(`/${target}`, req.nextUrl);
+        return NextResponse.redirect(redirectUrl);
+      }
+    }
+  } catch (error) {
+    console.error('Error handling root path redirect:', error);
+  }
+}
+```
+
+## WorkspaceWrapper Component
+
+The `WorkspaceWrapper` component provides a standardized way to handle workspace ID resolution and validation:
+
+### Basic Usage
+
+```tsx
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+
+export default async function MyPage({
+  params,
+}: {
+  params: Promise<{ wsId: string }>;
+}) {
+  return (
+    <WorkspaceWrapper params={params}>
+      {({ workspace, wsId, isPersonal, isRoot }) => (
+        <div>
+          <h1>{workspace.name}</h1>
+          <p>Workspace UUID: {wsId}</p>
+          <p>Is Personal: {isPersonal ? 'Yes' : 'No'}</p>
+          <p>Is Root: {isRoot ? 'Yes' : 'No'}</p>
+        </div>
+      )}
+    </WorkspaceWrapper>
+  );
+}
+```
+
+### Component API
+
+```typescript
+interface WorkspaceWrapperProps<TParams extends BaseParams = BaseParams> {
+  params: Promise<TParams>;
+  children: (
+    props: {
+      workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
+      wsId: string; // The validated UUID from workspace.id
+      isPersonal: boolean;
+      isRoot: boolean;
+      // Additional params from the original params object
+    } & Omit<TParams, 'wsId'>
+  ) => ReactNode;
+  fallback?: ReactNode;
+}
+```
+
+### Features
+
+- **Automatic Resolution**: Converts legacy identifiers to validated UUIDs
+- **Type Safety**: Provides fully typed workspace objects
+- **Error Handling**: Automatically calls `notFound()` for invalid workspaces
+- **Loading States**: Built-in Suspense support
+- **Role Validation**: Includes user role and membership status
+
+## API Routes with [wsId]
+
+API routes use the `[wsId]` parameter to scope operations to specific workspaces:
+
+### Route Structure
+
+```
+app/api/[wsId]/
+├── calendar/
+│   └── auto-schedule/
+│       └── route.ts
+├── crawlers/
+│   ├── domains/
+│   ├── list/
+│   └── uncrawled/
+├── task/
+│   └── [taskId]/
+│       └── edit/
+```
+
+### Implementation Pattern
+
+```typescript
+// apps/web/src/app/api/[wsId]/task/create/route.ts
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ wsId: string }> }
+) {
+  const { wsId } = await params;
+  const supabase = await createClient();
+
+  // wsId is automatically validated by middleware
+  // Use wsId in your database queries
+  const { data, error } = await supabase
+    .from('tasks')
+    .insert({ ...taskData, ws_id: wsId });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json(data);
+}
+```
+
+### Security Considerations
+
+- **Authentication**: All workspace-scoped routes require authentication
+- **Authorization**: Use `getPermissions()` to check workspace access
+- **Validation**: Workspace ID is validated before reaching API handlers
+
+## Helper Functions
+
+### Workspace Resolution
+
+```typescript
+import { resolveWorkspaceId, toWorkspaceSlug } from '@tuturuuu/utils/constants';
+
+// Convert identifier to UUID
+const uuid = resolveWorkspaceId('personal'); // Returns user's personal workspace UUID
+const uuid = resolveWorkspaceId('internal'); // Returns ROOT_WORKSPACE_ID
+const uuid = resolveWorkspaceId('550e8400-e29b-41d4-a716-446655440000'); // Returns UUID as-is
+
+// Convert UUID to slug
+const slug = toWorkspaceSlug(workspaceId, { personal: true }); // Returns 'personal'
+const slug = toWorkspaceSlug(ROOT_WORKSPACE_ID); // Returns 'internal'
+```
+
+### Workspace Validation
+
+```typescript
+import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
+
+// Check if workspace is personal
+const isPersonal = await isPersonalWorkspace('personal'); // true
+const isPersonal = await isPersonalWorkspace('550e8400-e29b-41d4-a716-446655440000'); // boolean
+```
+
+### User Default Workspace
+
+```typescript
+import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
+
+// Get user's default workspace
+const defaultWorkspace = await getUserDefaultWorkspace();
+if (defaultWorkspace) {
+  const target = defaultWorkspace.personal ? 'personal' : defaultWorkspace.id;
+}
+```
+
+## Constants
+
+### Key Constants
+
+```typescript
+// Root workspace ID (system workspace)
+export const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
+
+// Workspace slugs
+export const INTERNAL_WORKSPACE_SLUG = 'internal';
+export const PERSONAL_WORKSPACE_SLUG = 'personal';
+```
+
+## Error Handling
+
+The workspace routing system includes comprehensive error handling:
+
+### Invalid Workspace ID
+
+- Returns `404 Not Found` for non-existent workspaces
+- Redirects to login for unauthenticated users
+
+### Permission Errors
+
+- Returns `404 Not Found` for workspaces user doesn't have access to
+- Use `getPermissions()` for fine-grained access control
+
+### Middleware Errors
+
+- Gracefully handles database connection errors
+- Continues with normal flow if workspace checks fail
+
+## Performance Considerations
+
+### Middleware Performance
+
+- Workspace validation happens at the edge
+- Database queries are optimized with single queries
+- Caching is handled by Supabase client
+
+### Component Performance
+
+- WorkspaceWrapper uses React Suspense for loading states
+- Workspace data is fetched once and passed to children
+- Consider using `fallback` prop for better UX
+
+## Migration Guide
+
+### Legacy URL Handling
+
+The system automatically handles legacy workspace URLs:
+
+- `/workspaces/550e8400-e29b-41d4-a716-446655440000` → `/550e8400-e29b-41d4-a716-446655440000`
+- `/personal` → `/personal` (already correct)
+- `/internal` → `/internal` (already correct)
+
+### Component Migration
+
+Replace manual workspace resolution with WorkspaceWrapper:
+
+```tsx
+// Before
+const { wsId: id } = await params;
+const workspace = await getWorkspace(id);
+if (!workspace) notFound();
+
+// After
+<WorkspaceWrapper params={params}>
+  {({ workspace, wsId }) => (
+    // Use workspace and wsId safely
+  )}
+</WorkspaceWrapper>
+```
+
+## Testing
+
+### Middleware Testing
+
+Test workspace routing with different identifier types:
+
+```typescript
+// Test UUID routing (what users actually request)
+GET /550e8400-e29b-41d4-a716-446655440000/dashboard
+
+// Test personal workspace
+GET /personal/dashboard
+
+// Test internal workspace
+GET /internal/dashboard
+
+// Note: /en/[wsId]/... URLs are automatically normalized to /[wsId]/...
+// by Next.js middleware while maintaining i18n support
+```
+
+### Component Testing
+
+Test WorkspaceWrapper with different scenarios:
+
+```tsx
+// Test with valid workspace
+const params = Promise.resolve({ wsId: '550e8400-e29b-41d4-a716-446655440000' });
+
+// Test with personal workspace
+const params = Promise.resolve({ wsId: 'personal' });
+
+// Test with invalid workspace
+const params = Promise.resolve({ wsId: 'invalid-id' });
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**Issue**: Workspace not found errors
+**Solution**: Verify the workspace ID is valid and user has access
+
+**Issue**: Personal workspace redirects incorrectly
+**Solution**: Check that user has a personal workspace configured
+
+**Issue**: Internal workspace access denied
+**Solution**: Ensure user has admin/owner role in root workspace
+
+### Debug Tips
+
+1. Check browser Network tab for failed workspace requests
+2. Verify workspace ID in URL is correct
+3. Ensure user is authenticated and has workspace access
+4. Check console for middleware error messages
+
+## Security
+
+### Authentication
+
+All workspace-scoped routes require authentication. Unauthenticated requests are redirected to login.
+
+### Authorization
+
+- Personal workspaces are only accessible to their owners
+- Internal workspace requires admin/owner permissions
+- Regular workspaces require membership
+
+### Data Isolation
+
+Each workspace's data is properly isolated through:
+
+- Database-level row-level security
+- API route parameter validation
+- Middleware workspace ID validation
+
+## Future Enhancements
+
+### Potential Improvements
+
+- Workspace invitation flow via URL parameters
+- Workspace-specific feature flags
+- Enhanced caching for workspace metadata
+- Workspace-specific theming and branding
+
+### Breaking Changes
+
+Any changes to workspace identifier formats or URL patterns should be:
+
+- Clearly documented in release notes
+- Include migration guides for existing URLs
+- Provide backward compatibility where possible

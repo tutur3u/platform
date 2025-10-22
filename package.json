@@ -14,6 +14,8 @@
     "devrs": "bun sb:stop && bun sb:start && bun sb:reset && bun dev",
     "devrs:web": "bun sb:stop && bun sb:start && bun sb:reset && bun dev:web",
     "devrs:ocr": "bun sb:stop && bun sb:start && bun sb:reset && bun dev:ocr",
+    "docs:dev": "cd apps/docs && mintlify dev --port 3333",
+    "docs:build": "cd apps/docs && mintlify build",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
@@ -37,15 +39,12 @@
     "ui:diff": "bun --filter ui ui:diff",
     "update-all": "bun ./scripts/package-update.js"
   },
-  "dependencies": {
-    "react-scan": "^0.3.6"
-  },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.37.0",
-    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@ncthub/eslint-config": "workspace:*",
     "@ncthub/typescript-config": "workspace:*",
+    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^9.37.0",
     "prettier": "^3.6.2",

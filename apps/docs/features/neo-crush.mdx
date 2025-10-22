@@ -1,0 +1,39 @@
+---
+title: Neo Crush
+description: Match-3 style game with drag-and-drop and scoring.
+---
+
+![Neo Crush](/logo/neocrush-logo.png)
+
+## Usage
+
+To play Neo Crush, start a new game from the Neo menu. Swap adjacent fruits to form a line of 3 or more of the same color. Matches score points and new fruits cascade into the board.
+
+## Saved Games
+
+If you are signed in, your game state and best scores can be saved. This lets you resume later and track personal bests over time.
+
+## Game Management
+
+Anyone with access to the device/session can continue the current run. You may reset the board or start a new run at any time from the game menu.
+
+Only share your device with people you trust if you care about preserving a run or a high score.
+
+## Limitations
+
+- Gameplay is single‑player only right now
+- No server‑side anti‑cheat yet
+- Scores persist per browser unless cleared
+
+## Where it lives (for developers)
+
+- Path: `apps/web/src/app/[locale]/(games)/neo-crush`
+- Key files:
+  - `page.tsx` – route entry
+  - `game.tsx` – main game component
+  - `use-game-logic.ts` – board state, matches, cascades
+  - `use-dnd.ts` – drag & drop swap interactions
+  - `fruit-grid.tsx` – grid rendering
+  - `game-stats.tsx` – score and stats UI
+  - `utils.ts` – helpers
+  - `types.ts` – types

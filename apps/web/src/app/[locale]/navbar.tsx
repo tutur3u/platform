@@ -1,6 +1,7 @@
 import LocalWorkspaceSelect from './local-workspace-select';
 import NavbarActions from './navbar-actions';
 import NavbarSeparator from './navbar-separator';
+import { MainNavigationMenu } from './navigation-menu';
 import ServerMenu from './server-menu';
 import { cn } from '@ncthub/utils/format';
 import Image from 'next/image';
@@ -21,7 +22,7 @@ export default function Navbar({
     >
       <div className="bg-background px-4 py-2 font-semibold md:px-8 lg:px-16 xl:px-32">
         <div className="relative flex items-center justify-between gap-2 md:gap-8">
-          <div className="flex flex-none items-center gap-2">
+          <div className="flex w-full items-center gap-2">
             <Link href="/" className="flex flex-none items-center gap-2">
               <Image
                 src="/media/logos/transparent.png"
@@ -39,9 +40,12 @@ export default function Navbar({
             >
               <LocalWorkspaceSelect />
             </Suspense>
-          </div>
 
-          <div className="flex w-full flex-row-reverse items-center gap-2 md:flex-row md:justify-between">
+            <div className="ml-4 hidden w-full md:block">
+              <MainNavigationMenu />
+            </div>
+          </div>
+          <div className="flex w-fit flex-row-reverse items-center gap-2 md:flex-row md:justify-between">
             <Suspense>
               <ServerMenu />
             </Suspense>

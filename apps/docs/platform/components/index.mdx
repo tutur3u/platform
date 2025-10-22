@@ -1,0 +1,76 @@
+---
+title: 'Components'
+description: 'Reusable UI components and utilities for the Tuturuuu platform'
+updatedAt: '2025-09-27'
+---
+
+# Components
+
+This section contains documentation for reusable components and utilities used across the Tuturuuu platform.
+
+## Available Components
+
+### WorkspaceWrapper
+
+A standardized component for handling workspace ID resolution and validation across the application.
+
+- [WorkspaceWrapper Guide](./workspace-wrapper) - Complete documentation with examples
+- [Quick Reference](./workspace-wrapper-quick-reference) - Quick reference guide
+
+## Component Guidelines
+
+### When to Create a Component
+
+Create a new component when:
+
+1. **Reusability**: The code is used in 2+ places
+2. **Complexity**: The logic is complex enough to warrant separation
+3. **Testing**: The component needs isolated testing
+4. **Maintenance**: The component has specific maintenance requirements
+
+### Component Structure
+
+All components should follow this structure:
+
+```
+components/
+├── component-name/
+│   ├── index.tsx          # Main component export
+│   ├── component-name.tsx # Component implementation
+│   ├── types.ts          # TypeScript types
+│   ├── hooks.ts          # Custom hooks (if needed)
+│   ├── utils.ts          # Utility functions
+│   └── __tests__/        # Test files
+```
+
+### Documentation Requirements
+
+Each component must include:
+
+1. **Purpose**: What the component does
+2. **Props**: Complete API reference
+3. **Examples**: Real-world usage examples
+4. **Migration Guide**: If replacing existing patterns
+5. **Best Practices**: Usage guidelines
+
+### Naming Conventions
+
+- **Components**: PascalCase (`WorkspaceWrapper`)
+- **Files**: kebab-case (`workspace-wrapper.mdx`)
+- **Props**: camelCase (`searchParams`)
+- **Types**: PascalCase with descriptive suffixes (`WorkspaceWrapperProps`)
+
+## Contributing
+
+When adding new components:
+
+1. Create the component in the appropriate app's `components/` directory
+2. Add comprehensive documentation
+3. Include TypeScript types
+4. Add tests
+5. Update this index page
+6. Follow the established patterns
+
+## Examples
+
+See the [Examples Library](/learn/examples/index) for practical implementation examples of all components.

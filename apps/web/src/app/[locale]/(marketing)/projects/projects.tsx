@@ -112,9 +112,13 @@ export default function Projects() {
   const openProjectModal = (project: Project) => {
     setProjectDetail(project);
     setIsModalOpen(true);
+    setIsAutoScrolling(false);
   };
 
-  const closeProjectModal = () => setIsModalOpen(false);
+  const closeProjectModal = () => {
+    setIsModalOpen(false);
+    setIsAutoScrolling(true);
+  };
 
   useEffect(() => {
     if (!emblaApi) return;
