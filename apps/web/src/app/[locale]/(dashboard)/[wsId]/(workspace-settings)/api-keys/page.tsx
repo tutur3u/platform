@@ -11,6 +11,7 @@ import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { apiKeyColumns } from './columns';
 import ApiKeyEditDialog from './edit-dialog';
+import SDKGuide from './sdk-guide';
 
 export const metadata: Metadata = {
   title: 'API Keys',
@@ -40,13 +41,12 @@ export default async function WorkspaceApiKeysPage({
           wsId,
         });
 
-        if (withoutPermission('manage_workspace_security'))
-          redirect(`/${wsId}/settings`);
+        if (withoutPermission('manage_api_keys')) redirect(`/${wsId}/settings`);
 
-        const { data: apiKeys, count } = await getApiKeys(
-          wsId,
-          await searchParams
-        );
+        const [{ data: apiKeys, count }, roles] = await Promise.all([
+          getApiKeys(wsId, await searchParams),
+          getWorkspaceRoles(wsId),
+        ]);
         const t = await getTranslations('ws-api-keys');
 
         return (
@@ -62,6 +62,7 @@ export default async function WorkspaceApiKeysPage({
                   data={{
                     ws_id: wsId,
                   }}
+                  roles={roles}
                   trigger={
                     <Button>
                       <Plus className="mr-2 h-5 w-5" />
@@ -83,6 +84,9 @@ export default async function WorkspaceApiKeysPage({
                 created_at: false,
               }}
             />
+            <div className="my-8">
+              <SDKGuide />
+            </div>
           </>
         );
       }}
@@ -122,4 +126,18 @@ async function getApiKeys(
   if (error) throw error;
 
   return { data, count } as { data: WorkspaceApiKey[]; count: number };
+}
+
+async function getWorkspaceRoles(wsId: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('workspace_roles')
+    .select('id, name')
+    .eq('ws_id', wsId)
+    .order('name', { ascending: true });
+
+  if (error) throw error;
+
+  return data || [];
 }

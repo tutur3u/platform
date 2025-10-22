@@ -150,7 +150,11 @@
         },
         {
           "group": "Packages",
-          "pages": ["reference/packages/supabase", "reference/packages/trigger"]
+          "pages": [
+            "reference/packages/sdk",
+            "reference/packages/supabase",
+            "reference/packages/trigger"
+          ]
         },
         {
           "group": "API Reference",

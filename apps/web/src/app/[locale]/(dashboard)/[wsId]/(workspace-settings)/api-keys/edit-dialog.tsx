@@ -16,9 +16,16 @@ import type React from 'react';
 import { useState } from 'react';
 import type * as z from 'zod';
 import ApiKeyForm, { type ApiConfigFormSchema } from './form';
+import KeyDisplayModal from './key-display-modal';
+
+interface Role {
+  id: string;
+  name: string;
+}
 
 interface Props {
   data: WorkspaceApiKey;
+  roles?: Role[];
   trigger?: React.ReactNode;
   open?: boolean;
   setOpen?: (open: boolean) => void;
@@ -27,6 +34,7 @@ interface Props {
 
 export default function ApiKeyEditDialog({
   data,
+  roles,
   trigger,
   open: externalOpen,
   setOpen: setExternalOpen,
@@ -36,6 +44,12 @@ export default function ApiKeyEditDialog({
   const t = useTranslations('ws-api-keys');
 
   const [internalOpen, setInternalOpen] = useState(false);
+  const [newKey, setNewKey] = useState<{
+    key: string;
+    prefix: string;
+    roleName?: string;
+    expiresAt?: string | null;
+  } | null>(null);
 
   const open = externalOpen ?? internalOpen;
   const setOpen = setExternalOpen ?? setInternalOpen;
@@ -55,45 +69,65 @@ export default function ApiKeyEditDialog({
       const responseData = await res.json();
 
       // For new keys, the server returns the generated key and prefix
-      // Show it to the user (they won't be able to see it again)
+      // Show it to the user in a modal (they won't be able to see it again)
       if (!data.id && responseData.key) {
-        toast.success('API key created successfully', {
-          description: `Key: ${responseData.key}`,
-          duration: 10000,
+        const roleName = roles?.find((r) => r.id === values.role_id)?.name;
+        setNewKey({
+          key: responseData.key,
+          prefix: responseData.prefix,
+          roleName,
+          expiresAt: values.expires_at,
         });
+        toast.success(t('key_created_successfully'));
+      } else {
+        toast.success(t('key_updated_successfully'));
       }
 
       setOpen(false);
       router.refresh();
     } else {
       const errorData = await res.json();
-      toast.error(`Failed to ${data.id ? 'edit' : 'create'} api key`, {
+      toast.error(t(`failed_to_${data.id ? 'edit' : 'create'}_key`), {
         description: errorData.message,
       });
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent
-        onOpenAutoFocus={(e) => (data.name ? e.preventDefault() : null)}
-      >
-        <DialogHeader>
-          <DialogTitle>{t('api_key')}</DialogTitle>
-          <DialogDescription>
-            {data.id
-              ? t('edit_existing_workspace_key')
-              : t('add_new_workspace_key')}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+        <DialogContent
+          onOpenAutoFocus={(e) => (data.name ? e.preventDefault() : null)}
+        >
+          <DialogHeader>
+            <DialogTitle>{t('api_key')}</DialogTitle>
+            <DialogDescription>
+              {data.id
+                ? t('edit_existing_workspace_key')
+                : t('add_new_workspace_key')}
+            </DialogDescription>
+          </DialogHeader>
 
-        <ApiKeyForm
-          data={data}
-          onSubmit={handleSubmit}
-          submitLabel={submitLabel}
+          <ApiKeyForm
+            data={data}
+            roles={roles}
+            onSubmit={handleSubmit}
+            submitLabel={submitLabel}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {newKey && (
+        <KeyDisplayModal
+          open={!!newKey}
+          onOpenChange={(open) => !open && setNewKey(null)}
+          apiKey={newKey.key}
+          keyPrefix={newKey.prefix}
+          roleName={newKey.roleName}
+          expiresAt={newKey.expiresAt}
         />
-      </DialogContent>
-    </Dialog>
+      )}
+    </>
   );
 }

@@ -1,5 +1,13 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import * as z from 'zod';
+
+const ApiKeyUpdateSchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().min(1).optional(),
+  role_id: z.string().nullable().optional(),
+  expires_at: z.string().nullable().optional(),
+});
 
 interface Params {
   params: Promise<{
@@ -11,7 +19,18 @@ export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient();
   const { keyId: id } = await params;
 
-  const data = await req.json();
+  // Parse and validate request body
+  const body = await req.json();
+  const validation = ApiKeyUpdateSchema.safeParse(body);
+
+  if (!validation.success) {
+    return NextResponse.json(
+      { message: 'Invalid request', errors: validation.error.issues },
+      { status: 400 }
+    );
+  }
+
+  const data = validation.data;
 
   const { error } = await supabase
     .from('workspace_api_keys')
@@ -19,9 +38,9 @@ export async function PUT(req: Request, { params }: Params) {
     .eq('id', id);
 
   if (error) {
-    console.log(error);
+    console.error('Error updating API key:', error);
     return NextResponse.json(
-      { message: 'Error updating workspace API config' },
+      { message: error.message || 'Error updating workspace API key' },
       { status: 500 }
     );
   }

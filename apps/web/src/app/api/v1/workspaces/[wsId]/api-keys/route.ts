@@ -1,6 +1,14 @@
 import { generateApiKey, hashApiKey } from '@tuturuuu/auth/api-keys';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import * as z from 'zod';
+
+const ApiKeyCreateSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().min(1),
+  role_id: z.string().nullable(),
+  expires_at: z.string().nullable(),
+});
 
 interface Params {
   params: Promise<{
@@ -33,24 +41,47 @@ export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId: id } = await params;
 
-  const data = await req.json();
+  // Get authenticated user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Parse and validate request body
+  const body = await req.json();
+  const validation = ApiKeyCreateSchema.safeParse(body);
+
+  if (!validation.success) {
+    return NextResponse.json(
+      { message: 'Invalid request', errors: validation.error.issues },
+      { status: 400 }
+    );
+  }
+
+  const data = validation.data;
 
   // Generate secure API key and hash server-side
   const { key, prefix } = generateApiKey();
   const keyHash = await hashApiKey(key);
 
   const { error } = await supabase.from('workspace_api_keys').insert({
-    ...data,
     ws_id: id,
+    name: data.name,
+    description: data.description,
+    role_id: data.role_id,
+    expires_at: data.expires_at,
     key_hash: keyHash,
     key_prefix: prefix,
-    // Don't store the plaintext key - it will only be returned once
+    created_by: user.id,
   });
 
   if (error) {
-    console.log(error);
+    console.error('Error creating API key:', error);
     return NextResponse.json(
-      { message: 'Error creating workspace API config' },
+      { message: error.message || 'Error creating workspace API key' },
       { status: 500 }
     );
   }

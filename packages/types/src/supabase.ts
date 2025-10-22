@@ -9242,7 +9242,6 @@ export type Database = {
           role_id?: null | string;
           scopes?: Database['public']['Enums']['workspace_api_key_scope'][];
           updated_at?: string;
-          value: string;
           ws_id: string;
         };
         Relationships: [
@@ -9281,7 +9280,6 @@ export type Database = {
           role_id: null | string;
           scopes: Database['public']['Enums']['workspace_api_key_scope'][];
           updated_at: string;
-          value: string;
           ws_id: string;
         };
         Update: {
@@ -9297,7 +9295,6 @@ export type Database = {
           role_id?: null | string;
           scopes?: Database['public']['Enums']['workspace_api_key_scope'][];
           updated_at?: string;
-          value?: string;
           ws_id?: string;
         };
       };
