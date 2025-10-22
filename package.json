@@ -39,12 +39,6 @@
     "ui:diff": "bun --filter ui ui:diff",
     "update-all": "bun ./scripts/package-update.js"
   },
-  "dependencies": {
-    "@hookform/resolvers": "^5.2.2",
-    "react-hook-form": "^7.65.0",
-    "react-scan": "^0.3.6",
-    "zod": "^4.1.12"
-  },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.37.0",
