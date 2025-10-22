@@ -31,11 +31,7 @@ const FormSchema = z.object({
   slug: workspaceSlugSchema.optional(),
 });
 
-export default function SlugInput({
-  wsId,
-  defaultValue,
-  disabled,
-}: Props) {
+export default function SlugInput({ wsId, defaultValue, disabled }: Props) {
   const t = useTranslations('ws-settings');
   const router = useRouter();
 
