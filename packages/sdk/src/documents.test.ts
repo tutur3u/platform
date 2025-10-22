@@ -207,9 +207,9 @@ describe('DocumentsClient', () => {
 
     it('should reject name longer than 255 characters', async () => {
       const longName = 'a'.repeat(256);
-      await expect(
-        client.documents.create({ name: longName })
-      ).rejects.toThrow(ValidationError);
+      await expect(client.documents.create({ name: longName })).rejects.toThrow(
+        ValidationError
+      );
     });
   });
 

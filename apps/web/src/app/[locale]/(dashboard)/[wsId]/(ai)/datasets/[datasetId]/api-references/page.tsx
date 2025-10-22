@@ -50,7 +50,9 @@ export default async function ApiReferencesPage({ params }: Props) {
           rawApiKeys.map((key: WorkspaceApiKey) => ({
             id: key.id!,
             name: key.name!,
-            value: key.key_prefix ? `${key.key_prefix}...` : 'your_api_key_here',
+            value: key.key_prefix
+              ? `${key.key_prefix}...`
+              : 'your_api_key_here',
           }));
 
         const pythonSetupCode = `import os
