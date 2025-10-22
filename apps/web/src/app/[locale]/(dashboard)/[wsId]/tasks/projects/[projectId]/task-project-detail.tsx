@@ -391,23 +391,23 @@ export function TaskProjectDetail({
   const [editedStartDate, setEditedStartDate] = useState(
     project.start_date
       ? (() => {
-        const date = new Date(project.start_date);
-        const year = date.getUTCFullYear();
-        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-        const day = String(date.getUTCDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      })()
+          const date = new Date(project.start_date);
+          const year = date.getUTCFullYear();
+          const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+          const day = String(date.getUTCDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        })()
       : ''
   );
   const [editedEndDate, setEditedEndDate] = useState(
     project.end_date
       ? (() => {
-        const date = new Date(project.end_date);
-        const year = date.getUTCFullYear();
-        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-        const day = String(date.getUTCDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      })()
+          const date = new Date(project.end_date);
+          const year = date.getUTCFullYear();
+          const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+          const day = String(date.getUTCDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        })()
       : ''
   );
 
@@ -531,15 +531,19 @@ export function TaskProjectDetail({
             lead_id: editedLeadId || null,
             start_date: editedStartDate
               ? (() => {
-                const [year, month, day] = editedStartDate.split('-').map(Number) as [number, number, number];
-                return new Date(Date.UTC(year, month - 1, day)).toISOString();
-              })()
+                  const [year, month, day] = editedStartDate
+                    .split('-')
+                    .map(Number) as [number, number, number];
+                  return new Date(Date.UTC(year, month - 1, day)).toISOString();
+                })()
               : null,
             end_date: editedEndDate
               ? (() => {
-                const [year, month, day] = editedEndDate.split('-').map(Number) as [number, number, number];
-                return new Date(Date.UTC(year, month - 1, day)).toISOString();
-              })()
+                  const [year, month, day] = editedEndDate
+                    .split('-')
+                    .map(Number) as [number, number, number];
+                  return new Date(Date.UTC(year, month - 1, day)).toISOString();
+                })()
               : null,
           }),
         }
@@ -576,23 +580,23 @@ export function TaskProjectDetail({
     setEditedStartDate(
       project.start_date
         ? (() => {
-          const date = new Date(project.start_date);
-          const year = date.getUTCFullYear();
-          const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-          const day = String(date.getUTCDate()).padStart(2, '0');
-          return `${year}-${month}-${day}`;
-        })()
+            const date = new Date(project.start_date);
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          })()
         : ''
     );
     setEditedEndDate(
       project.end_date
         ? (() => {
-          const date = new Date(project.end_date);
-          const year = date.getUTCFullYear();
-          const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-          const day = String(date.getUTCDate()).padStart(2, '0');
-          return `${year}-${month}-${day}`;
-        })()
+            const date = new Date(project.end_date);
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          })()
         : ''
     );
     setIsEditingName(false);
@@ -608,25 +612,25 @@ export function TaskProjectDetail({
     editedStatus !== project.status ||
     editedLeadId !== project.lead_id ||
     editedStartDate !==
-    (project.start_date
-      ? (() => {
-        const date = new Date(project.start_date);
-        const year = date.getUTCFullYear();
-        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-        const day = String(date.getUTCDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      })()
-      : '') ||
+      (project.start_date
+        ? (() => {
+            const date = new Date(project.start_date);
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          })()
+        : '') ||
     editedEndDate !==
-    (project.end_date
-      ? (() => {
-        const date = new Date(project.end_date);
-        const year = date.getUTCFullYear();
-        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-        const day = String(date.getUTCDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      })()
-      : '');
+      (project.end_date
+        ? (() => {
+            const date = new Date(project.end_date);
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          })()
+        : '');
 
   // Create virtual board object for BoardHeader
   const virtualBoard = {
