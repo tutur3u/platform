@@ -862,7 +862,7 @@ export default function MyTasksContent({
           ws_id: wsId,
           name: newLabelName.trim(),
           color: newLabelColor,
-        })
+        });
 
       if (error) throw error;
 
@@ -895,7 +895,7 @@ export default function MyTasksContent({
         .insert({
           ws_id: wsId,
           name: newProjectName.trim(),
-        })
+        });
 
       if (error) throw error;
 

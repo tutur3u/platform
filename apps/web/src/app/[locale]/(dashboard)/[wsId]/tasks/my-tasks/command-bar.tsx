@@ -178,7 +178,6 @@ export function CommandBar({
   // Calculate dynamic heights for scrollable sections
   // Each item is approximately 40px (py-2 = 8px top + 8px bottom + content ~24px)
   const ITEM_HEIGHT = 39;
-  const ASSIGNEE_ITEM_HEIGHT = 43;
   const MAX_VISIBLE_ITEMS = 7;
 
   const projectsScrollHeight = useMemo(() => {
