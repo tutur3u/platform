@@ -37,7 +37,7 @@ export async function PATCH(req: Request) {
       return NextResponse.json(
         {
           message: 'Validation error',
-          errors: validationResult.error.errors,
+          errors: validationResult.error.issues,
         },
         { status: 400 }
       );
