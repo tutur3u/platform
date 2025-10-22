@@ -3,35 +3,57 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-const updateProjectSchema = z.object({
-  name: z
-    .string()
-    .min(1, 'Project name is required')
-    .max(255, 'Project name too long')
-    .optional(),
-  description: z.string().nullable().optional(), // Plain text (TipTap handles conversion)
-  priority: z.enum(['critical', 'high', 'normal', 'low']).nullable().optional(),
-  lead_id: z.string().nullable().optional(),
-  start_date: z.iso.datetime().nullable().optional(),
-  end_date: z.iso.datetime().nullable().optional(),
-  health_status: z
-    .enum(['on_track', 'at_risk', 'off_track'])
-    .nullable()
-    .optional(),
-  status: z
-    .enum([
-      'backlog',
-      'planned',
-      'in_progress',
-      'in_review',
-      'in_testing',
-      'completed',
-      'cancelled',
-      'active',
-      'on_hold',
-    ])
-    .optional(),
-});
+const updateProjectSchema = z
+  .object({
+    name: z
+      .string()
+      .min(1, 'Project name is required')
+      .max(255, 'Project name too long')
+      .transform((val) => val.trim())
+      .refine((val) => val.length > 0, {
+        message: 'Project name cannot be empty or whitespace only',
+      })
+      .optional(),
+    description: z.string().nullable().optional(), // Plain text (TipTap handles conversion)
+    priority: z
+      .enum(['critical', 'high', 'normal', 'low'])
+      .nullable()
+      .optional(),
+    lead_id: z.string().nullable().optional(),
+    start_date: z.iso.datetime().nullable().optional(),
+    end_date: z.iso.datetime().nullable().optional(),
+    health_status: z
+      .enum(['on_track', 'at_risk', 'off_track'])
+      .nullable()
+      .optional(),
+    status: z
+      .enum([
+        'backlog',
+        'planned',
+        'in_progress',
+        'in_review',
+        'in_testing',
+        'completed',
+        'cancelled',
+        'active',
+        'on_hold',
+      ])
+      .optional(),
+  })
+  .superRefine((data, ctx) => {
+    // Validate that end_date is not before start_date when both are present
+    if (data.start_date && data.end_date) {
+      const startDate = new Date(data.start_date);
+      const endDate = new Date(data.end_date);
+      if (endDate < startDate) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'End date must be the same or after start date',
+          path: ['end_date'],
+        });
+      }
+    }
+  });
 
 async function updateProject(
   request: NextRequest,
@@ -64,10 +86,39 @@ async function updateProject(
 
     // Parse and validate request body
     const body = await request.json();
-    const validatedData = updateProjectSchema.parse(body);
+    const validationResult = updateProjectSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { error: validationResult.error.errors[0]?.message || 'Invalid data' },
+        { status: 400 }
+      );
+    }
+
+    const validatedData = validationResult.data;
 
     // Build update object with only provided fields
-    const updateData: Record<string, any> = {};
+    type UpdateData = Partial<{
+      name: string;
+      description: string | null;
+      priority: 'critical' | 'high' | 'normal' | 'low' | null;
+      lead_id: string | null;
+      start_date: string | null;
+      end_date: string | null;
+      health_status: 'on_track' | 'at_risk' | 'off_track' | null;
+      status:
+        | 'backlog'
+        | 'planned'
+        | 'in_progress'
+        | 'in_review'
+        | 'in_testing'
+        | 'completed'
+        | 'cancelled'
+        | 'active'
+        | 'on_hold';
+    }>;
+
+    const updateData: UpdateData = {};
     if (validatedData.name !== undefined) updateData.name = validatedData.name;
     if (validatedData.description !== undefined) {
       updateData.description = validatedData.description || null;
@@ -85,6 +136,34 @@ async function updateProject(
     if (validatedData.status !== undefined)
       updateData.status = validatedData.status;
 
+    // Reject empty updates
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { error: 'No valid fields provided to update' },
+        { status: 400 }
+      );
+    }
+
+    // If lead_id is being set, verify the user belongs to the workspace
+    if (
+      validatedData.lead_id !== undefined &&
+      validatedData.lead_id !== null
+    ) {
+      const { data: leadMembership } = await supabase
+        .from('workspace_members')
+        .select('user_id')
+        .eq('ws_id', wsId)
+        .eq('user_id', validatedData.lead_id)
+        .single();
+
+      if (!leadMembership) {
+        return NextResponse.json(
+          { error: 'Lead user is not a member of this workspace' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Update project
     const { data: updatedProject, error: updateError } = await supabase
       .from('task_projects')
@@ -93,11 +172,11 @@ async function updateProject(
       .eq('ws_id', wsId)
       .select(`
         *,
-        lead:users!task_projects_lead_id_fkey(
+        lead:workspace_members(...users(
           id,
           display_name,
           avatar_url
-        ),
+        )),
         task_project_tasks(
           task:tasks(
             id,

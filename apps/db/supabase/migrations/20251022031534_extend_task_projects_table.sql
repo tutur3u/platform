@@ -6,15 +6,35 @@
 ALTER TABLE "public"."task_projects"
   ADD COLUMN IF NOT EXISTS "description_yjs_state" bytea;
 
--- Add priority field with constraint
+-- Add priority field using existing task_priority enum
 ALTER TABLE "public"."task_projects"
-  ADD COLUMN IF NOT EXISTS "priority" text
-  CHECK ("priority" IN ('critical', 'high', 'normal', 'low'));
+  ADD COLUMN IF NOT EXISTS "priority" "public"."task_priority";
 
 -- Add project lead field
 ALTER TABLE "public"."task_projects"
-  ADD COLUMN IF NOT EXISTS "lead_id" uuid
-  REFERENCES "public"."users"("id") ON DELETE SET NULL;
+  ADD COLUMN IF NOT EXISTS "lead_id" uuid;
+
+-- Add foreign key to users table (for easy querying via Supabase relations)
+ALTER TABLE "public"."task_projects"
+  DROP CONSTRAINT IF EXISTS "task_projects_lead_id_fkey";
+
+ALTER TABLE "public"."task_projects"
+  ADD CONSTRAINT "task_projects_lead_id_fkey"
+  FOREIGN KEY ("lead_id")
+  REFERENCES "public"."users"("id")
+  ON DELETE SET NULL;
+
+-- Add composite foreign key to ensure lead is a workspace member
+-- Note: This works together with the users FK - both constraints are enforced
+-- workspace_members already has UNIQUE INDEX on (ws_id, user_id) as PRIMARY KEY
+ALTER TABLE "public"."task_projects"
+  DROP CONSTRAINT IF EXISTS "task_projects_lead_workspace_member_fkey";
+
+ALTER TABLE "public"."task_projects"
+  ADD CONSTRAINT "task_projects_lead_workspace_member_fkey"
+  FOREIGN KEY ("ws_id", "lead_id")
+  REFERENCES "public"."workspace_members"("ws_id", "user_id")
+  ON DELETE SET NULL;
 
 -- Add start and end date fields
 ALTER TABLE "public"."task_projects"
@@ -22,6 +42,11 @@ ALTER TABLE "public"."task_projects"
 
 ALTER TABLE "public"."task_projects"
   ADD COLUMN IF NOT EXISTS "end_date" timestamp with time zone;
+
+-- Add CHECK constraint to ensure start_date is not after end_date
+ALTER TABLE "public"."task_projects"
+  ADD CONSTRAINT "chk_task_projects_start_le_end"
+  CHECK (start_date IS NULL OR end_date IS NULL OR start_date <= end_date);
 
 -- Add health status field with constraint
 ALTER TABLE "public"."task_projects"

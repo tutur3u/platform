@@ -59,9 +59,35 @@ import {
 import type { ViewType } from '@tuturuuu/ui/tu-do/shared/board-views';
 import { ListView } from '@tuturuuu/ui/tu-do/shared/list-view';
 import { cn } from '@tuturuuu/utils/format';
+import type { Variants } from 'framer-motion';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+
+interface WorkspaceMember {
+  id: string;
+  display_name: string;
+  avatar_url?: string;
+  email?: string;
+}
+
+interface ProjectUpdate {
+  id: string;
+  content: string;
+  creator_id: string;
+  created_at: string | Date;
+  updated_at?: string | Date;
+  creator?: {
+    display_name?: string;
+    avatar_url?: string;
+  };
+  reactionGroups?: Array<{
+    emoji: string;
+    count: number;
+  }>;
+}
+
+type ActiveTab = 'overview' | 'updates' | 'tasks';
 
 interface TaskProjectDetailProps {
   workspace: Workspace;
@@ -74,7 +100,7 @@ interface TaskProjectDetailProps {
 
 // Update Card Component
 interface UpdateCardProps {
-  update: any;
+  update: ProjectUpdate;
   currentUserId: string;
   isEditing: boolean;
   isDeleting: boolean;
@@ -84,7 +110,7 @@ interface UpdateCardProps {
   onSave: () => void;
   onCancel: () => void;
   onContentChange: (content: string) => void;
-  fadeInVariant: any;
+  fadeInVariant: Variants;
 }
 
 function UpdateCard({
@@ -141,6 +167,7 @@ function UpdateCard({
                       size="icon"
                       className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
                       disabled={isDeleting}
+                      aria-label="Update actions"
                     >
                       <MoreVertical className="h-4 w-4" />
                     </Button>
@@ -228,7 +255,7 @@ function UpdateCard({
 // Project Lead Selector Component
 interface ProjectLeadSelectorProps {
   leadId: string | null;
-  workspaceMembers: any[];
+  workspaceMembers: WorkspaceMember[];
   isLoading: boolean;
   onChange: (value: string | null) => void;
   compact?: boolean;
@@ -363,12 +390,24 @@ export function TaskProjectDetail({
   const [editedLeadId, setEditedLeadId] = useState(project.lead_id);
   const [editedStartDate, setEditedStartDate] = useState(
     project.start_date
-      ? new Date(project.start_date).toISOString().split('T')[0]
+      ? (() => {
+          const date = new Date(project.start_date);
+          const year = date.getUTCFullYear();
+          const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+          const day = String(date.getUTCDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        })()
       : ''
   );
   const [editedEndDate, setEditedEndDate] = useState(
     project.end_date
-      ? new Date(project.end_date).toISOString().split('T')[0]
+      ? (() => {
+          const date = new Date(project.end_date);
+          const year = date.getUTCFullYear();
+          const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+          const day = String(date.getUTCDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        })()
       : ''
   );
 
@@ -491,10 +530,16 @@ export function TaskProjectDetail({
             status: editedStatus,
             lead_id: editedLeadId || null,
             start_date: editedStartDate
-              ? new Date(editedStartDate).toISOString()
+              ? (() => {
+                  const [year, month, day] = editedStartDate.split('-').map(Number);
+                  return new Date(Date.UTC(year, month - 1, day)).toISOString();
+                })()
               : null,
             end_date: editedEndDate
-              ? new Date(editedEndDate).toISOString()
+              ? (() => {
+                  const [year, month, day] = editedEndDate.split('-').map(Number);
+                  return new Date(Date.UTC(year, month - 1, day)).toISOString();
+                })()
               : null,
           }),
         }
@@ -530,12 +575,24 @@ export function TaskProjectDetail({
     setEditedLeadId(project.lead_id);
     setEditedStartDate(
       project.start_date
-        ? new Date(project.start_date).toISOString().split('T')[0]
+        ? (() => {
+            const date = new Date(project.start_date);
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          })()
         : ''
     );
     setEditedEndDate(
       project.end_date
-        ? new Date(project.end_date).toISOString().split('T')[0]
+        ? (() => {
+            const date = new Date(project.end_date);
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          })()
         : ''
     );
     setIsEditingName(false);
@@ -552,11 +609,23 @@ export function TaskProjectDetail({
     editedLeadId !== project.lead_id ||
     editedStartDate !==
       (project.start_date
-        ? new Date(project.start_date).toISOString().split('T')[0]
+        ? (() => {
+            const date = new Date(project.start_date);
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          })()
         : '') ||
     editedEndDate !==
       (project.end_date
-        ? new Date(project.end_date).toISOString().split('T')[0]
+        ? (() => {
+            const date = new Date(project.end_date);
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          })()
         : '');
 
   // Create virtual board object for BoardHeader
@@ -619,13 +688,13 @@ export function TaskProjectDetail({
     }
   };
 
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
   const [showConfiguration, setShowConfiguration] = useState(false);
 
   // Updates state
   const [newUpdateContent, setNewUpdateContent] = useState('');
   const [isPostingUpdate, setIsPostingUpdate] = useState(false);
-  const [updates, setUpdates] = useState<any[]>([]);
+  const [updates, setUpdates] = useState<ProjectUpdate[]>([]);
   const [isLoadingUpdates, setIsLoadingUpdates] = useState(false);
   const [editingUpdateId, setEditingUpdateId] = useState<string | null>(null);
   const [editingUpdateContent, setEditingUpdateContent] = useState('');
@@ -640,7 +709,7 @@ export function TaskProjectDetail({
   const recentTasks = useMemo(() => tasks.slice(0, 5), [tasks]);
 
   // Workspace members for lead selection
-  const [workspaceMembers, setWorkspaceMembers] = useState<any[]>([]);
+  const [workspaceMembers, setWorkspaceMembers] = useState<WorkspaceMember[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [showLeadSelector, setShowLeadSelector] = useState(false);
 
@@ -746,7 +815,7 @@ export function TaskProjectDetail({
   };
 
   // Start editing update
-  const startEditingUpdate = (update: any) => {
+  const startEditingUpdate = (update: ProjectUpdate) => {
     setEditingUpdateId(update.id);
     setEditingUpdateContent(update.content);
   };
@@ -906,6 +975,7 @@ export function TaskProjectDetail({
                     size="icon"
                     className="opacity-0 transition-opacity group-hover:opacity-100"
                     onClick={() => setIsEditingName(true)}
+                    aria-label="Edit project name"
                   >
                     <Edit2 className="h-4 w-4" />
                   </Button>
@@ -1026,6 +1096,7 @@ export function TaskProjectDetail({
                           size="icon"
                           className="opacity-0 transition-opacity group-hover:opacity-100"
                           onClick={() => setIsEditingDescription(true)}
+                          aria-label="Edit project description"
                         >
                           <Edit2 className="h-4 w-4" />
                         </Button>
@@ -1411,6 +1482,7 @@ export function TaskProjectDetail({
                         size="icon"
                         className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
                         onClick={() => setShowLeadSelector(!showLeadSelector)}
+                        aria-label="Edit project lead"
                       >
                         <Edit2 className="h-3 w-3" />
                       </Button>

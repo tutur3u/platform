@@ -3,6 +3,70 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
+// Type definitions for update responses
+interface User {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
+interface Reaction {
+  id: string;
+  emoji: string;
+  user_id: string;
+  created_at: string;
+  user: User;
+}
+
+interface Comment {
+  id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  parent_id: string | null;
+  deleted_at: string | null;
+  user: User;
+}
+
+interface Attachment {
+  id: string;
+  file_name: string;
+  file_path: string;
+  file_size: number | null;
+  mime_type: string | null;
+  created_at: string;
+  uploaded_by: string;
+  uploader: User;
+}
+
+interface ReactionGroup {
+  emoji: string;
+  count: number;
+  users: User[];
+  userReacted: boolean;
+}
+
+interface UpdateWithRelations {
+  id: string;
+  project_id: string;
+  creator_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string | null;
+  deleted_at: string | null;
+  creator: User;
+  reactions?: Reaction[];
+  comments?: Comment[];
+  attachments?: Attachment[];
+}
+
+interface MappedUpdate extends Omit<UpdateWithRelations, 'reactions' | 'comments'> {
+  reactionGroups: ReactionGroup[];
+  commentsCount: number;
+  attachmentsCount: number;
+}
+
 const createUpdateSchema = z.object({
   content: z.string(), // Plain text (TipTap handles JSONContent conversion)
 });
@@ -159,6 +223,7 @@ export async function GET(
           updated_at,
           user_id,
           parent_id,
+          deleted_at,
           user:users(
             id,
             display_name,
@@ -195,13 +260,10 @@ export async function GET(
     }
 
     // Group reactions by emoji with counts
-    const updatesWithGroupedReactions = updates?.map((update) => {
-      const reactionGroups: Record<
-        string,
-        { emoji: string; count: number; users: any[]; userReacted: boolean }
-      > = {};
+    const updatesWithGroupedReactions: MappedUpdate[] = (updates as UpdateWithRelations[] | null)?.map((update) => {
+      const reactionGroups: Record<string, ReactionGroup> = {};
 
-      update.reactions?.forEach((reaction: any) => {
+      update.reactions?.forEach((reaction) => {
         if (!reactionGroups[reaction.emoji]) {
           reactionGroups[reaction.emoji] = {
             emoji: reaction.emoji,
@@ -222,13 +284,13 @@ export async function GET(
         ...update,
         reactionGroups: Object.values(reactionGroups),
         commentsCount:
-          update.comments?.filter((c: any) => !c.deleted_at).length || 0,
+          update.comments?.filter((c) => !c.deleted_at).length || 0,
         attachmentsCount: update.attachments?.length || 0,
       };
-    });
+    }) || [];
 
     return NextResponse.json({
-      updates: updatesWithGroupedReactions || [],
+      updates: updatesWithGroupedReactions,
       hasMore: (updates?.length || 0) === limit,
     });
   } catch (error) {

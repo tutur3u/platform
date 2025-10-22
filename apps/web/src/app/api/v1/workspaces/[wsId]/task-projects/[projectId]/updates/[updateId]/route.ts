@@ -7,7 +7,10 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const updateUpdateSchema = z.object({
-  content: z.string(), // Plain text (TipTap handles JSONContent conversion)
+  content: z
+    .string()
+    .trim()
+    .min(1, 'Content cannot be empty'), // Plain text (TipTap handles JSONContent conversion)
 });
 
 export async function PATCH(
@@ -56,16 +59,12 @@ export async function PATCH(
       )
       .eq('id', updateId)
       .eq('project_id', projectId)
+      .eq('task_projects.ws_id', wsId)
       .is('deleted_at', null)
       .single();
 
     if (!existingUpdate) {
       return NextResponse.json({ error: 'Update not found' }, { status: 404 });
-    }
-
-    // Verify update belongs to the workspace
-    if ((existingUpdate as any).task_projects?.ws_id !== wsId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Only creator can edit
@@ -164,16 +163,12 @@ export async function DELETE(
       )
       .eq('id', updateId)
       .eq('project_id', projectId)
+      .eq('task_projects.ws_id', wsId)
       .is('deleted_at', null)
       .single();
 
     if (!existingUpdate) {
       return NextResponse.json({ error: 'Update not found' }, { status: 404 });
-    }
-
-    // Verify update belongs to the workspace
-    if ((existingUpdate as any).task_projects?.ws_id !== wsId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Only creator can delete

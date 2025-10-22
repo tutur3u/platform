@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const addReactionSchema = z.object({
-  emoji: z.string().min(1, 'Emoji is required'),
+  emoji: z.string().emoji('Must be a valid emoji'),
 });
 
 export async function POST(
@@ -128,16 +128,27 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Get emoji from query params
+    // Get emoji from query params and validate
     const { searchParams } = new URL(request.url);
-    const emoji = searchParams.get('emoji');
+    const emojiParam = searchParams.get('emoji');
 
-    if (!emoji) {
+    if (!emojiParam) {
       return NextResponse.json(
         { error: 'Emoji parameter is required' },
         { status: 400 }
       );
     }
+
+    // Validate emoji using same schema as POST
+    const validation = addReactionSchema.safeParse({ emoji: emojiParam });
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error.issues[0]?.message || 'Invalid emoji' },
+        { status: 400 }
+      );
+    }
+
+    const emoji = validation.data.emoji;
 
     // Delete reaction
     const { error: deleteError } = await supabase

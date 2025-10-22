@@ -1,10 +1,10 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { TaskProjectDetail } from './task-project-detail';
 
 export const metadata: Metadata = {
@@ -53,6 +53,7 @@ export default async function TaskProjectPage({ params }: Props) {
 
         // Get current user
         const currentUser = await getCurrentUser();
+
         if (!currentUser) {
           notFound();
         }
@@ -65,6 +66,8 @@ export default async function TaskProjectPage({ params }: Props) {
 
         // Fetch workspace data
         const workspace = await getWorkspace(wsId);
+
+
         if (!workspace) {
           notFound();
         }
@@ -75,16 +78,16 @@ export default async function TaskProjectPage({ params }: Props) {
           .select(
             `
             *,
-            creator:users!task_projects_creator_id_fkey(
+            creator:users(
               id,
               display_name,
               avatar_url
             ),
-            lead:users!task_projects_lead_id_fkey(
+            lead:workspace_members(...users(
               id,
               display_name,
               avatar_url
-            )
+            ))
           `
           )
           .eq('id', projectId)

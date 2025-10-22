@@ -41,14 +41,44 @@ CREATE POLICY "Users can create project updates in their workspaces"
 CREATE POLICY "Users can update their own project updates"
   ON "public"."task_project_updates"
   FOR UPDATE
-  USING (creator_id = auth.uid())
-  WITH CHECK (creator_id = auth.uid());
+  USING (
+    creator_id = auth.uid()
+    AND EXISTS (
+      SELECT 1
+      FROM "public"."task_projects" tp
+      INNER JOIN "public"."workspace_members" wm
+        ON wm.ws_id = tp.ws_id
+      WHERE tp.id = task_project_updates.project_id
+        AND wm.user_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    creator_id = auth.uid()
+    AND EXISTS (
+      SELECT 1
+      FROM "public"."task_projects" tp
+      INNER JOIN "public"."workspace_members" wm
+        ON wm.ws_id = tp.ws_id
+      WHERE tp.id = task_project_updates.project_id
+        AND wm.user_id = auth.uid()
+    )
+  );
 
 -- Users can delete their own updates (soft delete)
 CREATE POLICY "Users can delete their own project updates"
   ON "public"."task_project_updates"
   FOR DELETE
-  USING (creator_id = auth.uid());
+  USING (
+    creator_id = auth.uid()
+    AND EXISTS (
+      SELECT 1
+      FROM "public"."task_projects" tp
+      INNER JOIN "public"."workspace_members" wm
+        ON wm.ws_id = tp.ws_id
+      WHERE tp.id = task_project_updates.project_id
+        AND wm.user_id = auth.uid()
+    )
+  );
 
 -- ============================================================================
 -- RLS Policies for task_project_update_reactions
@@ -95,7 +125,19 @@ CREATE POLICY "Users can add reactions to project updates"
 CREATE POLICY "Users can delete their own reactions"
   ON "public"."task_project_update_reactions"
   FOR DELETE
-  USING (user_id = auth.uid());
+  USING (
+    user_id = auth.uid()
+    AND EXISTS (
+      SELECT 1
+      FROM "public"."task_project_updates" tpu
+      INNER JOIN "public"."task_projects" tp
+        ON tp.id = tpu.project_id
+      INNER JOIN "public"."workspace_members" wm
+        ON wm.ws_id = tp.ws_id
+      WHERE tpu.id = task_project_update_reactions.update_id
+        AND wm.user_id = auth.uid()
+    )
+  );
 
 -- ============================================================================
 -- RLS Policies for task_project_update_comments
@@ -143,14 +185,52 @@ CREATE POLICY "Users can create comments on project updates"
 CREATE POLICY "Users can update their own comments"
   ON "public"."task_project_update_comments"
   FOR UPDATE
-  USING (user_id = auth.uid())
-  WITH CHECK (user_id = auth.uid());
+  USING (
+    user_id = auth.uid()
+    AND EXISTS (
+      SELECT 1
+      FROM "public"."task_project_updates" tpu
+      INNER JOIN "public"."task_projects" tp
+        ON tp.id = tpu.project_id
+      INNER JOIN "public"."workspace_members" wm
+        ON wm.ws_id = tp.ws_id
+      WHERE tpu.id = task_project_update_comments.update_id
+        AND wm.user_id = auth.uid()
+        AND tpu.deleted_at IS NULL
+    )
+  )
+  WITH CHECK (
+    user_id = auth.uid()
+    AND EXISTS (
+      SELECT 1
+      FROM "public"."task_project_updates" tpu
+      INNER JOIN "public"."task_projects" tp
+        ON tp.id = tpu.project_id
+      INNER JOIN "public"."workspace_members" wm
+        ON wm.ws_id = tp.ws_id
+      WHERE tpu.id = task_project_update_comments.update_id
+        AND wm.user_id = auth.uid()
+        AND tpu.deleted_at IS NULL
+    )
+  );
 
 -- Users can delete their own comments (soft delete)
 CREATE POLICY "Users can delete their own comments"
   ON "public"."task_project_update_comments"
   FOR DELETE
-  USING (user_id = auth.uid());
+  USING (
+    user_id = auth.uid()
+    AND EXISTS (
+      SELECT 1
+      FROM "public"."task_project_updates" tpu
+      INNER JOIN "public"."task_projects" tp
+        ON tp.id = tpu.project_id
+      INNER JOIN "public"."workspace_members" wm
+        ON wm.ws_id = tp.ws_id
+      WHERE tpu.id = task_project_update_comments.update_id
+        AND wm.user_id = auth.uid()
+    )
+  );
 
 -- ============================================================================
 -- RLS Policies for task_project_update_attachments
@@ -197,4 +277,16 @@ CREATE POLICY "Users can add attachments to project updates"
 CREATE POLICY "Users can delete their own attachments"
   ON "public"."task_project_update_attachments"
   FOR DELETE
-  USING (uploaded_by = auth.uid());
+  USING (
+    uploaded_by = auth.uid()
+    AND EXISTS (
+      SELECT 1
+      FROM "public"."task_project_updates" tpu
+      INNER JOIN "public"."task_projects" tp
+        ON tp.id = tpu.project_id
+      INNER JOIN "public"."workspace_members" wm
+        ON wm.ws_id = tp.ws_id
+      WHERE tpu.id = task_project_update_attachments.update_id
+        AND wm.user_id = auth.uid()
+    )
+  );

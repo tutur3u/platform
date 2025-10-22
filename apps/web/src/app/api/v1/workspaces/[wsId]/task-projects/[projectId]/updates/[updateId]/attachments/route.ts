@@ -1,6 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { randomUUID } from 'crypto';
 
 export async function POST(
   request: NextRequest,
@@ -11,7 +12,7 @@ export async function POST(
   }
 ) {
   try {
-    const { wsId, updateId } = await params;
+    const { wsId, projectId, updateId } = await params;
     const supabase = await createClient();
 
     // Get current user
@@ -35,6 +36,43 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    // Verify the update belongs to the specified project and workspace
+    const { data: updateRecord, error: updateError } = await supabase
+      .from('task_project_updates')
+      .select('id, project_id')
+      .eq('id', updateId)
+      .single();
+
+    if (updateError || !updateRecord) {
+      return NextResponse.json(
+        { error: 'Update not found' },
+        { status: 404 }
+      );
+    }
+
+    // Verify the update's project matches the specified projectId
+    if (updateRecord.project_id !== projectId) {
+      return NextResponse.json(
+        { error: 'Update does not belong to the specified project' },
+        { status: 403 }
+      );
+    }
+
+    // Verify the project belongs to the specified workspace
+    const { data: projectRecord, error: projectError } = await supabase
+      .from('task_projects')
+      .select('ws_id')
+      .eq('id', projectId)
+      .eq('ws_id', wsId)
+      .single();
+
+    if (projectError || !projectRecord) {
+      return NextResponse.json(
+        { error: 'Project not found or does not belong to workspace' },
+        { status: 404 }
+      );
+    }
+
     // Parse form data
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -52,9 +90,14 @@ export async function POST(
       );
     }
 
-    // Generate unique file path
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    // Generate unique file path with UUID
+    const uuid = randomUUID();
+    const lastDotIndex = file.name.lastIndexOf('.');
+    const fileExt =
+      lastDotIndex !== -1
+        ? file.name.substring(lastDotIndex + 1).toLowerCase()
+        : null;
+    const fileName = fileExt ? `${uuid}.${fileExt}` : uuid;
     const filePath = `${wsId}/project-updates/${updateId}/${fileName}`;
 
     // Upload file to Supabase storage

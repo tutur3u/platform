@@ -4,7 +4,10 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const createCommentSchema = z.object({
-  content: z.string(), // Plain text (TipTap handles JSONContent conversion)
+  content: z
+    .string()
+    .trim()
+    .min(1, { message: 'Content cannot be empty' }), // Plain text (TipTap handles JSONContent conversion)
   parent_id: z.string().uuid().nullable().optional(),
 });
 
@@ -44,6 +47,27 @@ export async function POST(
     // Parse and validate request body
     const body = await request.json();
     const { content, parent_id } = createCommentSchema.parse(body);
+
+    // Validate parent comment if parent_id is provided
+    if (parent_id) {
+      const { data: parentComment } = await supabase
+        .from('task_project_update_comments')
+        .select('id')
+        .eq('id', parent_id)
+        .eq('update_id', updateId)
+        .is('deleted_at', null)
+        .single();
+
+      if (!parentComment) {
+        return NextResponse.json(
+          {
+            error:
+              'Parent comment not found, does not belong to this update, or has been deleted',
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     // Create comment
     const { data: newComment, error: createError } = await supabase
