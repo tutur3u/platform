@@ -1631,7 +1631,6 @@ export default function MyTasksContent({
                         </h3>
                         <p className="mt-1 text-muted-foreground text-sm">
                           Requires immediate attention
-                          {overdueTasks.length !== 1 ? 's' : ''}
                         </p>
                       </div>
                     </div>
@@ -1764,7 +1763,6 @@ export default function MyTasksContent({
                         </h3>
                         <p className="mt-1 text-muted-foreground text-sm">
                           Complete by end of day
-                          {todayTasks.length !== 1 ? 's' : ''}
                         </p>
                       </div>
                     </div>
@@ -1897,7 +1895,6 @@ export default function MyTasksContent({
                         </h3>
                         <p className="mt-1 text-muted-foreground text-sm">
                           Plan ahead and stay on track
-                          {upcomingTasks.length !== 1 ? 's' : ''}
                         </p>
                       </div>
                     </div>
