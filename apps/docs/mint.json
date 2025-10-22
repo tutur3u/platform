@@ -1,30 +1,33 @@
 {
   "$schema": "https://mintlify.com/schema.json",
-  "name": "Tuturuuu Docs",
+  "name": "NCT Docs",
   "logo": {
-    "dark": "/logo/dark.svg",
-    "light": "/logo/light.svg",
-    "href": "https://tuturuuu.com"
+    "dark": "https://rmitnct.club/media/logos/transparent.png",
+    "light": "https://rmitnct.club/media/logos/transparent.png",
+    "href": "https://rmitnct.club/"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/favicon.ico",
+  "css": "custom-styles.css",
+  "defaultTheme": "dark",
+  "toggleTheme": true,
   "colors": {
-    "primary": "#000000",
+    "primary": "#FBC721",
     "light": "#ffffff",
-    "dark": "#000000",
+    "dark": "#1a1f3a",
     "anchors": {
-      "from": "#000000",
-      "to": "#ffffff"
+      "from": "#5FC6E5",
+      "to": "#FBC721"
     }
   },
   "topbarLinks": [
     {
       "name": "Support",
-      "url": "mailto:contact@tuturuuu.com"
+      "url": "mailto:contact@rmitnct.club"
     }
   ],
   "topbarCtaButton": {
     "name": "Get Started",
-    "url": "https://tuturuuu.com/login"
+    "url": "https://rmitnct.club/login"
   },
   "tabs": [],
   "anchors": [
@@ -48,47 +51,55 @@
       ]
     },
     {
-      "group": "Features",
-      "pages": ["features/meet-together"]
-    },
-    {
-      "group": "AI Features",
-      "pages": ["ai-structured-data"]
-    },
-    {
-      "group": "Personalization",
-      "pages": ["personalization/themes", "personalization/language"]
-    },
-    {
-      "group": "Experiments",
+      "group": "Hub",
       "pages": [
-        "experiments/form-builder",
-        "experiments/calendar",
-        "experiments/finance",
-        "experiments/project-management",
-        "experiments/ai-chat"
+        "platform/index",
+        "platform/workspace-routing",
+        {
+          "group": "Features",
+          "pages": [
+            "platform/features/command-center-dashboard",
+            "platform/features/meet-together",
+            "platform/features/user-management"
+          ]
+        },
+        {
+          "group": "Architecture",
+          "pages": [
+            "platform/architecture/api-routes",
+            "platform/architecture/authentication",
+            "platform/architecture/authorization",
+            "platform/architecture/data-fetching",
+            "platform/architecture/routing",
+            "platform/architecture/trpc"
+          ]
+        },
+        {
+          "group": "Personalization",
+          "pages": [
+            "platform/personalization/themes",
+            "platform/personalization/language"
+          ]
+        },
+        {
+          "group": "Applications",
+          "pages": [
+            "platform/applications/neo-chess",
+            "platform/applications/neo-crush"
+          ]
+        }
       ]
     },
     {
-      "group": "Prompt Engineering",
-      "pages": [
-        "prompt-engineering/introduction",
-        "prompt-engineering/prompt-design-strategies/prompt-design-strategies",
-        "prompt-engineering/prompt-design-strategies/01-clear-instructions",
-        "prompt-engineering/prompt-design-strategies/02-few-shot-examples",
-        "prompt-engineering/prompt-design-strategies/03-context-strategies",
-        "prompt-engineering/prompt-design-strategies/04-prefixes-and-patterns",
-        "prompt-engineering/prompt-design-strategies/05-modular-prompts",
-        "prompt-engineering/prompt-design-strategies/06-parameters-and-iteration",
-        "prompt-engineering/prompt-design-strategies/07-fallback-caution"
-      ]
+      "group": "Learn",
+      "pages": ["learn/index", "learn/examples/index"]
     }
   ],
   "footerSocials": {
-    "facebook": "https://www.facebook.com/tuturuuu",
-    "x": "https://x.com/rmit-nct",
+    "facebook": "https://www.facebook.com/rmit.nct",
+    "instagram": "https://instagram.com/rmit.nct",
     "github": "https://github.com/rmit-nct",
-    "linkedin": "https://www.linkedin.com/company/tuturuuu"
+    "linkedin": "https://www.linkedin.com/company/rmit-nct"
   },
   "feedback": {
     "thumbsRating": true,

@@ -1,0 +1,178 @@
+---
+title: 'WorkspaceWrapper Quick Reference'
+description: 'Quick reference guide for the WorkspaceWrapper component'
+updatedAt: '2025-09-27'
+---
+
+## Quick Start
+
+```tsx
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+
+// Basic usage - for pages like /personal/dashboard, /550e8400-e29b-41d4-a716-446655440000/tasks
+<WorkspaceWrapper params={params}>
+  {({ workspace, wsId, isPersonal, isRoot }) => (
+    <div>{workspace.name} - {wsId}</div>
+  )}
+</WorkspaceWrapper>
+
+// With loading fallback
+<WorkspaceWrapper
+  params={params}
+  fallback={<LoadingSpinner />}
+>
+  {({ workspace, wsId, isPersonal, isRoot }) => <MyComponent />}
+</WorkspaceWrapper>
+
+// With additional params - for pages like /personal/datasets/123
+<WorkspaceWrapper params={params}>
+  {({ workspace, wsId, isPersonal, isRoot, datasetId }) => (
+    <div>{workspace.name} - Dataset {datasetId}</div>
+  )}
+</WorkspaceWrapper>
+```
+
+## withWorkspace Helper
+
+```tsx
+import { withWorkspace } from '@/components/workspace-wrapper';
+
+// For client components
+return withWorkspace(
+  (await params).wsId,
+  MyClientComponent,
+  { prop1: 'value' },
+  <LoadingSpinner />
+);
+```
+
+## Props Reference
+
+| Prop       | Type                        | Description                                        |
+| ---------- | --------------------------- | -------------------------------------------------- |
+| `params`   | `Promise<{ wsId: string }>` | Route params containing `wsId`                     |
+| `children` | `Function`                  | Receives `{ workspace, wsId, isPersonal, isRoot }` |
+| `fallback` | `ReactNode`                 | Loading fallback component                         |
+
+## Children Function
+
+```tsx
+{
+  ({ workspace, wsId, isPersonal, isRoot }) => {
+    // workspace: Workspace & { role: WorkspaceUserRole; joined: boolean }
+    // wsId: string (validated UUID)
+    // isPersonal: boolean
+    // isRoot: boolean
+  };
+}
+```
+
+## Common Patterns
+
+### Dashboard Page
+
+```tsx
+// File: apps/web/src/app/[locale]/(dashboard)/[wsId]/dashboard/page.tsx
+// URL: /personal/dashboard, /550e8400-e29b-41d4-a716-446655440000/dashboard
+export default async function Dashboard({ params }) {
+  return (
+    <WorkspaceWrapper params={params}>
+      {({ workspace, wsId, isPersonal, isRoot }) => (
+        <DashboardContent workspace={workspace} wsId={wsId} />
+      )}
+    </WorkspaceWrapper>
+  );
+}
+```
+
+### Settings Page
+
+```tsx
+// File: apps/web/src/app/[locale]/(workspace-settings)/[wsId]/settings/page.tsx
+// URL: /personal/settings, /550e8400-e29b-41d4-a716-446655440000/settings
+export default async function Settings({ params }) {
+  return (
+    <WorkspaceWrapper params={params}>
+      {({ workspace, wsId, isPersonal, isRoot }) => (
+        <SettingsForm workspace={workspace} wsId={wsId} onSave={handleSave} />
+      )}
+    </WorkspaceWrapper>
+  );
+}
+```
+
+### Dataset Page (with additional params)
+
+```tsx
+// File: apps/web/src/app/[locale]/(dashboard)/[wsId]/[datasetId]/page.tsx
+// URL: /personal/datasets/123, /550e8400-e29b-41d4-a716-446655440000/datasets/456
+export default async function DatasetPage({ params }) {
+  return (
+    <WorkspaceWrapper params={params}>
+      {({ workspace, wsId, isPersonal, isRoot, datasetId }) => (
+        <DatasetView workspace={workspace} wsId={wsId} datasetId={datasetId} />
+      )}
+    </WorkspaceWrapper>
+  );
+}
+```
+
+### Client Component Integration
+
+```tsx
+// Server component - apps/web/src/app/[locale]/(dashboard)/[wsId]/settings/page.tsx
+export default async function Page({ params }) {
+  return withWorkspace(
+    (await params).wsId,
+    WorkspaceSettings,
+    { theme: 'dark' },
+    <div>Loading...</div>
+  );
+}
+
+// Client component
+('use client');
+export function WorkspaceSettings({
+  workspace,
+  wsId,
+  isPersonal,
+  isRoot,
+  theme,
+}: {
+  workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
+  wsId: string;
+  isPersonal: boolean;
+  isRoot: boolean;
+  theme: string;
+}) {
+  return <div>{workspace.name}</div>;
+}
+```
+
+## Error Handling
+
+The wrapper automatically handles:
+
+- Invalid workspace ID → `notFound()`
+- User not authenticated → Redirects to login
+- Workspace not found → `notFound()`
+- User not a member → `notFound()`
+
+## Migration Checklist
+
+- [ ] Replace manual `getWorkspace()` calls
+- [ ] Update component props to use `searchParams`
+- [ ] Use validated `wsId` from wrapper
+- [ ] Add appropriate loading fallbacks
+- [ ] Update TypeScript types
+- [ ] Test error scenarios
+
+## Troubleshooting
+
+| Issue                  | Solution                                                                                  |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| `notFound()` called    | Check workspace access and ID validity (ensure URL like `/personal/dashboard` is correct) |
+| TypeScript errors      | Use workspace object from wrapper, not external imports                                   |
+| Loading never resolves | Check `getWorkspace` function and network connectivity                                    |
+| Props not passed       | Use `withWorkspace` helper for client components                                          |
+| Incorrect URL pattern  | Verify using `/[wsId]/...` pattern, not `/en/[wsId]/...`                                  |

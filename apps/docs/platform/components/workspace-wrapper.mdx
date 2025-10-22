@@ -1,0 +1,409 @@
+---
+title: 'WorkspaceWrapper Component'
+description: 'A standardized component for handling workspace ID resolution and validation across the application'
+updatedAt: '2025-09-27'
+---
+
+The `WorkspaceWrapper` component provides a centralized way to handle workspace ID resolution and validation across the application. It automatically converts legacy workspace identifiers to validated UUIDs and provides the full workspace object to child components.
+
+## Problem Solved
+
+Currently, workspace ID resolution is handled inconsistently across components:
+
+- `'personal'` → resolves to the user's personal workspace UUID
+- `'internal'` → resolves to `ROOT_WORKSPACE_ID`
+- UUID strings → validates and uses as-is
+
+The `WorkspaceWrapper` centralizes this logic and ensures that child components always receive a validated workspace UUID.
+
+## URL Context
+
+The `WorkspaceWrapper` is designed for use in Next.js App Router pages with dynamic segments:
+
+### Basic Pattern
+
+- **File structure**: `apps/web/src/app/[locale]/(dashboard)/[wsId]/page.tsx`
+- **User-facing URL**: `/[wsId]/...` (locale handled transparently by middleware)
+- **Route params**: `{ wsId: string }`
+
+### Advanced Pattern with Additional Params
+
+- **File structure**: `apps/web/src/app/[locale]/(dashboard)/[wsId]/[datasetId]/page.tsx`
+- **User-facing URL**: `/[wsId]/[datasetId]/...`
+- **Route params**: `{ wsId: string, datasetId: string }`
+
+The component automatically passes through any additional parameters beyond `wsId` to the children function.
+
+## Installation
+
+The `WorkspaceWrapper` is available in the web app at `@/components/workspace-wrapper`.
+
+```tsx
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+```
+
+## Basic Usage
+
+### Function Children Pattern
+
+```tsx
+export default async function MyPage({
+  params,
+}: {
+  params: Promise<{ wsId: string }>;
+}) {
+  return (
+    <WorkspaceWrapper params={params}>
+      {({ workspace, wsId, isPersonal, isRoot }) => (
+        <div>
+          <h1>{workspace.name}</h1>
+          <p>Workspace UUID: {wsId}</p>
+          <p>Is Personal: {isPersonal ? 'Yes' : 'No'}</p>
+          <p>Is Root: {isRoot ? 'Yes' : 'No'}</p>
+        </div>
+      )}
+    </WorkspaceWrapper>
+  );
+}
+```
+
+### With Loading Fallback
+
+```tsx
+import LoadingSpinner from '@/components/loading-spinner';
+
+export default async function MyPage({
+  params,
+}: {
+  params: Promise<{ wsId: string }>;
+}) {
+  return (
+    <WorkspaceWrapper params={params} fallback={<LoadingSpinner />}>
+      {({ workspace, wsId, isPersonal, isRoot }) => (
+        <MyWorkspaceContent workspace={workspace} wsId={wsId} />
+      )}
+    </WorkspaceWrapper>
+  );
+}
+```
+
+## Advanced Usage
+
+### With Additional Route Parameters
+
+For pages with additional dynamic segments beyond `wsId`:
+
+```tsx
+// File: apps/web/src/app/[locale]/(dashboard)/[wsId]/[datasetId]/page.tsx
+// URL: /personal/datasets/123, /550e8400-e29b-41d4-a716-446655440000/datasets/456
+export default async function DatasetPage({
+  params,
+}: {
+  params: Promise<{ wsId: string; datasetId: string }>;
+}) {
+  return (
+    <WorkspaceWrapper params={params}>
+      {({ workspace, wsId, isPersonal, isRoot, datasetId }) => (
+        <div>
+          <h1>
+            {workspace.name} - Dataset {datasetId}
+          </h1>
+          <p>Workspace UUID: {wsId}</p>
+          <p>Dataset ID: {datasetId}</p>
+          <p>Is Personal: {isPersonal ? 'Yes' : 'No'}</p>
+        </div>
+      )}
+    </WorkspaceWrapper>
+  );
+}
+```
+
+The `WorkspaceWrapper` automatically passes through `datasetId` (and any other additional params) to the children function.
+
+### Using withWorkspace Helper
+
+For client components that need workspace context, use the `withWorkspace` helper:
+
+```tsx
+import MyClientComponent from './my-client-component';
+import { withWorkspace } from '@/components/workspace-wrapper';
+
+export default async function MyPage({
+  params,
+}: {
+  params: Promise<{ wsId: string }>;
+}) {
+  const { wsId } = await params;
+
+  return withWorkspace(
+    wsId,
+    MyClientComponent,
+    {
+      someProp: 'value',
+      anotherProp: 42,
+    },
+    <div>Loading workspace...</div>
+  );
+}
+```
+
+### Client Component Receiving Workspace Props
+
+```tsx
+'use client';
+
+interface MyClientComponentProps {
+  workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
+  wsId: string; // Validated UUID
+  isPersonal: boolean;
+  isRoot: boolean;
+  someProp: string;
+  anotherProp: number;
+}
+
+export function MyClientComponent({
+  workspace,
+  wsId,
+  isPersonal,
+  isRoot,
+  someProp,
+  anotherProp,
+}: MyClientComponentProps) {
+  // Use workspace and wsId safely - they're guaranteed to be valid
+  return (
+    <div>
+      <h1>{workspace.name}</h1>
+      <p>Workspace ID: {wsId}</p>
+      <p>User Role: {workspace.role}</p>
+      <p>Personal: {isPersonal ? 'Yes' : 'No'}</p>
+      <p>Root: {isRoot ? 'Yes' : 'No'}</p>
+    </div>
+  );
+}
+```
+
+## API Reference
+
+### WorkspaceWrapper Props
+
+| Prop       | Type                                                  | Required | Description                                                                           |
+| ---------- | ----------------------------------------------------- | -------- | ------------------------------------------------------------------------------------- |
+| `params`   | `Promise<TParams>` where `TParams extends BaseParams` | Yes      | The route params containing `wsId` and any additional params                          |
+| `children` | `Function`                                            | Yes      | Function that receives `{ workspace, wsId, isPersonal, isRoot, ...additionalParams }` |
+| `fallback` | `ReactNode`                                           | No       | Loading fallback component                                                            |
+
+**Note**: The `params` type is generic and supports additional route parameters beyond the base `locale` and `wsId`.
+
+### withWorkspace Parameters
+
+| Parameter   | Type                  | Required | Description                               |
+| ----------- | --------------------- | -------- | ----------------------------------------- |
+| `wsId`      | `string`              | Yes      | The workspace identifier (legacy or UUID) |
+| `Component` | `React.ComponentType` | Yes      | Client component to render                |
+| `props`     | `T`                   | Yes      | Props to pass to the component            |
+| `fallback`  | `ReactNode`           | No       | Loading fallback component                |
+
+### Children Function Parameters
+
+| Parameter             | Type                                                       | Description                                                                 |
+| --------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `workspace`           | `Workspace & { role: WorkspaceUserRole; joined: boolean }` | Full workspace object with user role and joined status                      |
+| `wsId`                | `string`                                                   | Validated UUID from `workspace.id`                                          |
+| `isPersonal`          | `boolean`                                                  | Whether the workspace is a personal workspace                               |
+| `isRoot`              | `boolean`                                                  | Whether the workspace is the root/internal workspace                        |
+| `...additionalParams` | `TParams extends BaseParams`                               | Any additional route parameters beyond `wsId` (e.g., `datasetId`, `taskId`) |
+
+**Note**: Additional parameters are automatically passed through from the route params object.
+
+## Migration Guide
+
+### Before (Manual Resolution)
+
+```tsx
+export default async function MyPage({
+  params,
+}: {
+  params: Promise<{ wsId: string }>;
+}) {
+  const { wsId: id } = await params;
+
+  const workspace = await getWorkspace(id);
+  if (!workspace) notFound();
+
+  const wsId = workspace.id; // Manual extraction
+
+  return <MyComponent workspace={workspace} wsId={wsId} />;
+}
+```
+
+### After (With WorkspaceWrapper)
+
+```tsx
+export default async function MyPage({
+  params,
+}: {
+  params: Promise<{ wsId: string }>;
+}) {
+  return (
+    <WorkspaceWrapper params={params}>
+      {({ workspace, wsId }) => (
+        <MyComponent workspace={workspace} wsId={wsId} />
+      )}
+    </WorkspaceWrapper>
+  );
+}
+```
+
+## Real-World Example
+
+Here's how the dashboard page uses the WorkspaceWrapper:
+
+<CodeGroup>
+
+```tsx
+// Example 1: Basic Dashboard Page
+// File: apps/web/src/app/[locale]/(dashboard)/[wsId]/dashboard/page.tsx
+// URL: /personal/dashboard, /550e8400-e29b-41d4-a716-446655440000/dashboard
+export default async function DashboardPage({
+  params,
+}: {
+  params: Promise<{ wsId: string }>;
+}) {
+  return (
+    <WorkspaceWrapper params={params}>
+      {({ workspace, wsId, isPersonal, isRoot }) => (
+        <div className="p-6">
+          <h1 className="mb-4 text-2xl font-bold">
+            {workspace.name || 'Unnamed Workspace'}
+          </h1>
+          <div className="grid gap-4">
+            <div className="rounded bg-gray-100 p-4">
+              <h2 className="font-semibold">Workspace Details</h2>
+              <p>ID: {wsId}</p>
+              <p>Type: {isPersonal ? 'Personal' : 'Team'}</p>
+              <p>Role: {workspace.role}</p>
+              <p>Joined: {workspace.joined ? 'Yes' : 'No'}</p>
+              <p>Root: {isRoot ? 'Yes' : 'No'}</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </WorkspaceWrapper>
+  );
+}
+```
+
+```tsx
+// Example 2: Settings Page with Loading State
+// File: apps/web/src/app/[locale]/(workspace-settings)/[wsId]/settings/page.tsx
+// URL: /personal/settings, /550e8400-e29b-41d4-a716-446655440000/settings
+export default async function SettingsPage({
+  params,
+}: {
+  params: Promise<{ wsId: string }>;
+}) {
+  return (
+    <WorkspaceWrapper
+      params={params}
+      fallback={<div className="p-6">Loading workspace settings...</div>}
+    >
+      {async ({ workspace, wsId }) => {
+        const currentUser = await getCurrentUser();
+        const { withoutPermission } = await getPermissions({ wsId });
+
+        return (
+          <div className="p-6">
+            <h1 className="mb-4 text-2xl font-bold">Workspace Settings</h1>
+
+            {withoutPermission('manage_workspace') ? (
+              <div className="text-red-600">
+                You don't have permission to manage this workspace.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-2 block text-sm font-medium">
+                    Workspace Name
+                  </label>
+                  <input
+                    type="text"
+                    defaultValue={workspace.name || ''}
+                    className="w-full rounded border p-2"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium">
+                    Workspace ID (Read-only)
+                  </label>
+                  <input
+                    type="text"
+                    value={wsId}
+                    readOnly
+                    className="w-full rounded border bg-gray-100 p-2"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }}
+    </WorkspaceWrapper>
+  );
+}
+```
+
+</CodeGroup>
+
+## Benefits
+
+1. **Centralized Logic**: All workspace ID resolution logic is centralized
+2. **Type Safety**: TypeScript ensures proper workspace object structure
+3. **Error Handling**: Automatic `notFound()` when workspace doesn't exist
+4. **Loading States**: Built-in Suspense support with custom fallbacks
+5. **Cleaner Code**: Reduces boilerplate in page components
+6. **Future-Proof**: Easy to modify workspace resolution logic in one place
+
+## Error Handling
+
+The `WorkspaceWrapper` automatically handles common error cases:
+
+- Invalid workspace ID → `notFound()`
+- User not authenticated → Redirects to login (via `getWorkspace`)
+- Workspace not found → `notFound()`
+- User not a member → `notFound()`
+
+## Performance Considerations
+
+- The wrapper uses React Suspense for loading states
+- Workspace data is fetched once and passed down to children
+- Consider using `fallback` prop for better UX during loading
+- The component is optimized for server-side rendering
+
+## Best Practices
+
+1. **Always use the validated `wsId`** from the wrapper, not the original parameter
+2. **Provide meaningful fallbacks** for better user experience
+3. **Use the `withWorkspace` helper** for client components that need workspace context
+4. **Keep workspace logic centralized** - don't duplicate workspace resolution elsewhere
+5. **Handle loading states gracefully** with appropriate fallback components
+
+## Troubleshooting
+
+### Common Issues
+
+**Issue**: `notFound()` is called unexpectedly
+**Solution**: Ensure the user has access to the workspace and the workspace ID is valid
+
+**Issue**: TypeScript errors with workspace object
+**Solution**: Make sure you're using the workspace object provided by the wrapper, not importing it separately
+
+**Issue**: Loading state never resolves
+**Solution**: Check that the `getWorkspace` function is working correctly and not throwing errors
+
+### Debug Tips
+
+1. Check the browser's Network tab for failed workspace requests
+2. Verify the workspace ID in the URL is correct
+3. Ensure the user is authenticated and has workspace access
+4. Check the console for any error messages from `getWorkspace`

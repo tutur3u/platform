@@ -1,0 +1,705 @@
+---
+title: 'API Route Patterns'
+description: 'Implementing and organizing API routes in the NCT Hub platform'
+updated: '2025-01-10'
+---
+
+The NCT Hub platform uses Next.js App Router API routes with consistent patterns for versioning, authentication, error handling, and workspace isolation. The API is designed to support both club management operations and external integrations.
+
+## Route Organization
+
+### Directory Structure
+
+```
+apps/web/src/app/api/
+├── v1/                    # Versioned public API
+│   ├── aurora/            # Aurora AI system endpoints
+│   ├── calendar/          # Calendar integration
+│   ├── infrastructure/    # Infrastructure management
+│   ├── users/             # User management
+│   └── workspaces/        # Workspace operations
+├── ai/                    # AI-specific endpoints
+│   ├── chat/              # Multi-provider chat (Anthropic, OpenAI, Google)
+│   └── objects/           # AI object generation (flashcards, quizzes)
+├── auth/                  # Authentication endpoints
+│   ├── callback/          # OAuth callbacks
+│   ├── me/                # Current user info
+│   ├── otp/               # One-time passwords
+│   └── logout/            # Session management
+├── meet-together/         # Event scheduling
+│   └── plans/             # Meet Together plans
+├── students/              # Student management
+├── users/                 # User operations
+├── workspaces/            # Workspace management
+└── [wsId]/               # Workspace-scoped endpoints
+    ├── crawlers/          # Data crawling
+    ├── datasets/          # AI datasets
+    ├── finance/           # Financial tracking
+    ├── members/           # Member management
+    └── tasks/             # Task management
+```
+
+## Versioned Public API
+
+### Pattern: `/api/v1/*`
+
+Use for public-facing APIs that external clients consume.
+
+```typescript
+// app/api/v1/workspaces/route.ts
+import { createClient } from '@tuturuuu/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+// GET /api/v1/workspaces
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = createClient();
+
+    // Check authentication
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Fetch user's workspaces
+    const { data: workspaces, error } = await supabase
+      .from('workspace_members')
+      .select(
+        `
+        ws_id,
+        role,
+        workspaces (
+          id,
+          name,
+          logo_url
+        )
+      `
+      )
+      .eq('user_id', user.id)
+      .eq('pending', false);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      data: workspaces?.map((w) => w.workspaces),
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/v1/workspaces
+const createWorkspaceSchema = z.object({
+  name: z.string().min(1).max(100),
+  logo_url: z.string().url().optional(),
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Validate request body
+    const body = await request.json();
+    const parsed = createWorkspaceSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.errors },
+        { status: 400 }
+      );
+    }
+
+    // Create workspace
+    const { data: workspace, error } = await supabase
+      .from('workspaces')
+      .insert({
+        name: parsed.data.name,
+        logo_url: parsed.data.logo_url,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Add creator as owner
+    await supabase.from('workspace_members').insert({
+      ws_id: workspace.id,
+      user_id: user.id,
+      role: 'owner',
+    });
+
+    return NextResponse.json({ data: workspace }, { status: 201 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Workspace-Scoped API
+
+### Pattern: `/api/[wsId]/*`
+
+Use for workspace-specific operations with automatic workspace context.
+
+```typescript
+// app/api/[wsId]/tasks/route.ts
+import { hasPermission } from '@/lib/permissions';
+import { createClient } from '@tuturuuu/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+// GET /api/[wsId]/tasks
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { wsId: string } }
+) {
+  try {
+    const supabase = createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check workspace membership
+    const isMember = await isWorkspaceMember(user.id, params.wsId);
+    if (!isMember) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Parse query parameters
+    const searchParams = request.nextUrl.searchParams;
+    const listId = searchParams.get('listId');
+    const completed = searchParams.get('completed');
+
+    // Build query
+    let query = supabase
+      .from('workspace_tasks')
+      .select('*')
+      .eq('ws_id', params.wsId);
+
+    if (listId) query = query.eq('list_id', listId);
+    if (completed !== null) query = query.eq('completed', completed === 'true');
+
+    const { data: tasks, error } = await query;
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ data: tasks });
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/[wsId]/tasks
+const createTaskSchema = z.object({
+  name: z.string().min(1).max(255),
+  description: z.string().optional(),
+  listId: z.string(),
+  priority: z.number().int().min(0).max(5).optional(),
+  dueDate: z.string().datetime().optional(),
+});
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { wsId: string } }
+) {
+  try {
+    const supabase = createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check permission
+    const canCreate = await hasPermission(user.id, params.wsId, 'manage_tasks');
+    if (!canCreate) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Validate input
+    const body = await request.json();
+    const parsed = createTaskSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.errors },
+        { status: 400 }
+      );
+    }
+
+    // Create task
+    const { data: task, error } = await supabase
+      .from('workspace_tasks')
+      .insert({
+        ws_id: params.wsId,
+        name: parsed.data.name,
+        description: parsed.data.description,
+        list_id: parsed.data.listId,
+        priority: parsed.data.priority,
+        due_date: parsed.data.dueDate,
+        created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ data: task }, { status: 201 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/[wsId]/tasks/[taskId]
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { wsId: string; taskId: string } }
+) {
+  try {
+    const supabase = createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const canDelete = await hasPermission(user.id, params.wsId, 'manage_tasks');
+    if (!canDelete) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const { error } = await supabase
+      .from('workspace_tasks')
+      .delete()
+      .eq('id', params.taskId)
+      .eq('ws_id', params.wsId); // Ensure workspace isolation
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## AI Endpoints
+
+### Pattern: `/api/ai/*`
+
+Use for AI-specific operations with model selection and token tracking.
+
+```typescript
+// app/api/ai/chat/route.ts
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createClient } from '@tuturuuu/supabase/server';
+import { streamText } from 'ai';
+import { NextRequest } from 'next/server';
+import { z } from 'zod';
+
+export const runtime = 'edge';
+export const maxDuration = 60;
+
+const chatRequestSchema = z.object({
+  messages: z.array(
+    z.object({
+      role: z.enum(['user', 'assistant', 'system']),
+      content: z.string(),
+    })
+  ),
+  model: z.string().optional(),
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    // Validate input
+    const body = await request.json();
+    const parsed = chatRequestSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return new Response('Invalid input', { status: 400 });
+    }
+
+    // Check AI feature flag
+    const { data: workspace } = await supabase
+      .from('workspace_secrets')
+      .select('value')
+      .eq('ws_id', body.wsId)
+      .eq('name', 'ENABLE_AI')
+      .single();
+
+    if (workspace?.value !== 'true') {
+      return new Response('AI not enabled for workspace', { status: 403 });
+    }
+
+    const google = createGoogleGenerativeAI({
+      apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+    });
+
+    const model = parsed.data.model || 'gemini-2.0-flash-exp';
+
+    const result = streamText({
+      model: google(model),
+      messages: parsed.data.messages,
+      onFinish: async ({ usage }) => {
+        // Track token usage
+        await supabase.from('workspace_ai_executions').insert({
+          ws_id: body.wsId,
+          model,
+          input_tokens: usage.promptTokens,
+          output_tokens: usage.completionTokens,
+          total_cost: calculateCost(model, usage),
+        });
+      },
+    });
+
+    return result.toDataStreamResponse();
+  } catch (error) {
+    console.error('AI chat error:', error);
+    return new Response('Internal server error', { status: 500 });
+  }
+}
+
+function calculateCost(
+  model: string,
+  usage: { promptTokens: number; completionTokens: number }
+): number {
+  // Pricing per million tokens
+  const pricing: Record<string, { input: number; output: number }> = {
+    'gemini-2.0-flash-exp': { input: 0, output: 0 }, // Free tier
+    'gemini-2.0-pro-exp': { input: 0, output: 0 }, // Free tier
+  };
+
+  const price = pricing[model] || { input: 0, output: 0 };
+
+  return (
+    (usage.promptTokens / 1_000_000) * price.input +
+    (usage.completionTokens / 1_000_000) * price.output
+  );
+}
+```
+
+## Authentication Endpoints
+
+### Pattern: `/api/auth/*`
+
+Use edge runtime for auth endpoints.
+
+```typescript
+// app/api/auth/otp/route.ts
+import { createClient } from '@tuturuuu/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+export const runtime = 'edge';
+
+const otpRequestSchema = z.object({
+  email: z.string().email(),
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = createClient();
+
+    const body = await request.json();
+    const parsed = otpRequestSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid email' }, { status: 400 });
+    }
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email: parsed.data.email,
+      options: {
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Error Response Standards
+
+### Standard Error Format
+
+```typescript
+interface ErrorResponse {
+  error: string;
+  details?: any;
+  code?: string;
+}
+```
+
+### HTTP Status Codes
+
+- `200` - Success
+- `201` - Created
+- `204` - No Content
+- `400` - Bad Request (validation errors)
+- `401` - Unauthorized (not authenticated)
+- `403` - Forbidden (not authorized)
+- `404` - Not Found
+- `409` - Conflict
+- `422` - Unprocessable Entity
+- `429` - Too Many Requests
+- `500` - Internal Server Error
+
+### Error Handling Pattern
+
+```typescript
+export async function POST(request: NextRequest) {
+  try {
+    // Implementation
+  } catch (error) {
+    console.error('API error:', error);
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Middleware Pattern
+
+### Permission Middleware
+
+```typescript
+// lib/api/middleware.ts
+import { hasPermission } from '@/lib/permissions';
+import { createClient } from '@tuturuuu/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
+
+type Handler = (
+  req: NextRequest,
+  context: { params: any; user: any }
+) => Promise<NextResponse>;
+
+export function withAuth(handler: Handler) {
+  return async (req: NextRequest, context: any) => {
+    const supabase = createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    return handler(req, { ...context, user });
+  };
+}
+
+export function withPermission(permission: string, handler: Handler) {
+  return withAuth(async (req, context) => {
+    const wsId = context.params.wsId;
+
+    const allowed = await hasPermission(context.user.id, wsId, permission);
+
+    if (!allowed) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    return handler(req, context);
+  });
+}
+```
+
+### Usage
+
+```typescript
+// app/api/[wsId]/tasks/route.ts
+import { withPermission } from '@/lib/api/middleware';
+
+export const POST = withPermission(
+  'manage_tasks',
+  async (req, { params, user }) => {
+    // Implementation with guaranteed permission
+  }
+);
+```
+
+## CORS Configuration
+
+```typescript
+// app/api/v1/workspaces/route.ts
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN || '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}
+```
+
+## Rate Limiting
+
+```typescript
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(10, '10 s'), // 10 requests per 10 seconds
+});
+
+export async function POST(request: NextRequest) {
+  const identifier = request.headers.get('x-forwarded-for') || 'anonymous';
+  const { success } = await ratelimit.limit(identifier);
+
+  if (!success) {
+    return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+  }
+
+  // Continue with request
+}
+```
+
+## Best Practices
+
+### ✅ DO
+
+1. **Always validate input**
+
+   ```typescript
+   const parsed = schema.safeParse(body);
+   if (!parsed.success) return error(400);
+   ```
+
+2. **Check authentication first**
+
+   ```typescript
+   const { data: { user } } = await supabase.auth.getUser();
+   if (!user) return error(401);
+   ```
+
+3. **Verify workspace permissions**
+
+   ```typescript
+   const allowed = await hasPermission(user.id, wsId, 'manage_tasks');
+   if (!allowed) return error(403);
+   ```
+
+4. **Use edge runtime for auth**
+
+   ```typescript
+   export const runtime = 'edge';
+   ```
+
+5. **Set max duration for long operations**
+   ```typescript
+   export const maxDuration = 60; // seconds
+   ```
+
+### ❌ DON'T
+
+1. **Don't expose sensitive errors**
+
+   ```typescript
+   // ❌ Bad
+   return NextResponse.json({ error: error.stack });
+   ```
+
+2. **Don't skip workspace isolation**
+
+   ```typescript
+   // ❌ Bad: Can access any workspace
+   .delete().eq('id', taskId)
+
+   // ✅ Good: Workspace-scoped
+   .delete().eq('id', taskId).eq('ws_id', wsId)
+   ```
+
+3. **Don't use user client for mutations**
+   ```typescript
+   // ❌ Bad: Bypasses RLS
+   const supabase = createAdminClient();
+   ```
+
+## Related Documentation
+
+- [Authentication](/platform/architecture/authentication)
+- [Authorization](/platform/architecture/authorization)
+- [tRPC](/platform/architecture/trpc)
+- [Data Fetching](/platform/architecture/data-fetching)

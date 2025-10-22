@@ -1,5 +1,7 @@
 {
   "common": {
+    "games": "Trò chơi",
+    "utilities": "Công cụ",
     "alpha": "Alpha",
     "beta": "Beta",
     "and": "và",
@@ -26,7 +28,6 @@
     "back-to-home": "Quay lại trang chủ",
     "back-to-login": "Quay lại đăng nhập",
     "home": "Trang chủ",
-    "about": "Về chúng tôi",
     "projects": "Các dự án",
     "docs": "Tài liệu",
     "dashboard": "Bảng điều khiển",
