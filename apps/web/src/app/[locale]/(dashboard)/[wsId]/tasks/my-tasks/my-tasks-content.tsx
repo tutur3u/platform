@@ -55,6 +55,8 @@ import { TaskEstimationMenu } from '@tuturuuu/ui/tu-do/boards/boardId/menus/task
 import { TaskLabelsMenu } from '@tuturuuu/ui/tu-do/boards/boardId/menus/task-labels-menu';
 import { TaskPriorityMenu } from '@tuturuuu/ui/tu-do/boards/boardId/menus/task-priority-menu';
 import { TaskProjectsMenu } from '@tuturuuu/ui/tu-do/boards/boardId/menus/task-projects-menu';
+import { TaskNewLabelDialog } from '@tuturuuu/ui/tu-do/boards/boardId/task-dialogs/TaskNewLabelDialog';
+import { TaskNewProjectDialog } from '@tuturuuu/ui/tu-do/boards/boardId/task-dialogs/TaskNewProjectDialog';
 import { TaskBoardForm } from '@tuturuuu/ui/tu-do/boards/form';
 import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
 import { TaskEstimationDisplay } from '@tuturuuu/ui/tu-do/shared/task-estimation-display';
@@ -316,6 +318,17 @@ export default function MyTasksContent({
       [section]: !prev[section],
     }));
   };
+
+  // Label creation dialog state
+  const [newLabelDialogOpen, setNewLabelDialogOpen] = useState(false);
+  const [newLabelName, setNewLabelName] = useState('');
+  const [newLabelColor, setNewLabelColor] = useState('#3b82f6'); // Default blue
+  const [creatingLabel, setCreatingLabel] = useState(false);
+
+  // Project creation dialog state
+  const [newProjectDialogOpen, setNewProjectDialogOpen] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [creatingProject, setCreatingProject] = useState(false);
 
   const clientTimezone = useMemo(() => {
     try {
@@ -834,6 +847,74 @@ export default function MyTasksContent({
     setSelectedListId('');
     setPendingTaskTitle('');
     setTaskCreatorMode(null);
+  };
+
+  // Label creation handlers
+  const handleCreateNewLabel = async () => {
+    if (!newLabelName.trim()) return;
+
+    setCreatingLabel(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('workspace_task_labels')
+        .insert({
+          ws_id: wsId,
+          name: newLabelName.trim(),
+          color: newLabelColor,
+        })
+        .select('id, name, color, created_at')
+        .single();
+
+      if (error) throw error;
+
+      // Invalidate labels query to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['workspace', wsId, 'labels'] });
+
+      toast.success('Label created successfully!');
+      setNewLabelDialogOpen(false);
+      setNewLabelName('');
+      setNewLabelColor('#3b82f6');
+    } catch (error: any) {
+      console.error('Error creating label:', error);
+      toast.error(error.message || 'Failed to create label');
+    } finally {
+      setCreatingLabel(false);
+    }
+  };
+
+  // Project creation handlers
+  const handleCreateNewProject = async () => {
+    if (!newProjectName.trim()) return;
+
+    setCreatingProject(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('task_projects')
+        .insert({
+          ws_id: wsId,
+          name: newProjectName.trim(),
+        })
+        .select('id, name')
+        .single();
+
+      if (error) throw error;
+
+      // Invalidate projects query to refresh the list
+      queryClient.invalidateQueries({
+        queryKey: ['workspace', wsId, 'projects'],
+      });
+
+      toast.success('Project created successfully!');
+      setNewProjectDialogOpen(false);
+      setNewProjectName('');
+    } catch (error: any) {
+      console.error('Error creating project:', error);
+      toast.error(error.message || 'Failed to create project');
+    } finally {
+      setCreatingProject(false);
+    }
   };
 
   // Preview dialog handlers
@@ -1509,6 +1590,8 @@ export default function MyTasksContent({
               : null
           }
           wsId={wsId}
+          onCreateNewLabel={() => setNewLabelDialogOpen(true)}
+          onCreateNewProject={() => setNewProjectDialogOpen(true)}
         />
       </div>
 
@@ -2799,6 +2882,28 @@ export default function MyTasksContent({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Label Creation Dialog */}
+      <TaskNewLabelDialog
+        open={newLabelDialogOpen}
+        newLabelName={newLabelName}
+        newLabelColor={newLabelColor}
+        creatingLabel={creatingLabel}
+        onOpenChange={setNewLabelDialogOpen}
+        onNameChange={setNewLabelName}
+        onColorChange={setNewLabelColor}
+        onConfirm={handleCreateNewLabel}
+      />
+
+      {/* Project Creation Dialog */}
+      <TaskNewProjectDialog
+        open={newProjectDialogOpen}
+        newProjectName={newProjectName}
+        creatingProject={creatingProject}
+        onOpenChange={setNewProjectDialogOpen}
+        onNameChange={setNewProjectName}
+        onConfirm={handleCreateNewProject}
+      />
     </div>
   );
 }

@@ -11,17 +11,19 @@ import {
   ListTodo,
   MapPin,
   Plus,
+  Search,
   Settings,
   Sparkles,
   StickyNote,
   Tag,
   Timer,
+  UserMinus,
+  UserPlus,
   UserStar,
   X,
 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,9 +31,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { ScrollArea, ScrollBar } from '@tuturuuu/ui/scroll-area';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
@@ -103,6 +106,8 @@ interface CommandBarProps {
   workspaceMembers?: WorkspaceMember[];
   workspaceEstimationConfig?: WorkspaceEstimationConfig | null;
   wsId?: string;
+  onCreateNewLabel?: () => void;
+  onCreateNewProject?: () => void;
 }
 
 export function CommandBar({
@@ -125,6 +130,8 @@ export function CommandBar({
   workspaceProjects = [],
   workspaceMembers = [],
   workspaceEstimationConfig = null,
+  onCreateNewLabel,
+  onCreateNewProject,
 }: CommandBarProps) {
   const [internalMode, setInternalMode] = useState<CommandMode>('task');
   const [inputText, setInputText] = useState('');
@@ -151,6 +158,7 @@ export function CommandBar({
     | 'labels'
     | 'assignees'
   >('main');
+  const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
 
   // Use controlled mode if provided, otherwise use internal state
   const mode = controlledMode ?? internalMode;
@@ -169,8 +177,8 @@ export function CommandBar({
 
   // Calculate dynamic heights for scrollable sections
   // Each item is approximately 40px (py-2 = 8px top + 8px bottom + content ~24px)
-  const ITEM_HEIGHT = 41;
-  const ASSIGNEE_ITEM_HEIGHT = 46;
+  const ITEM_HEIGHT = 39;
+  const ASSIGNEE_ITEM_HEIGHT = 43;
   const MAX_VISIBLE_ITEMS = 7;
   
   const projectsScrollHeight = useMemo(() => {
@@ -328,7 +336,7 @@ export function CommandBar({
                 </PopoverTrigger>
                 <PopoverContent
                   align="start"
-                  side="top"
+                  side="bottom"
                   className="w-72 p-0"
                   sideOffset={8}
                 >
@@ -417,7 +425,7 @@ export function CommandBar({
                               className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                             >
                               <div className="flex items-center gap-2">
-                                <Flag className="h-4 w-4 text-muted-foreground" />
+                                <Flag className="h-4 w-4 text-dynamic-orange" />
                                 <span>Priority</span>
                               </div>
                               <div className="flex items-center gap-2">
@@ -447,7 +455,7 @@ export function CommandBar({
                               className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                             >
                               <div className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                <Calendar className="h-4 w-4 text-dynamic-purple" />
                                 <span>Due Date</span>
                               </div>
                               <div className="flex items-center gap-2">
@@ -472,7 +480,7 @@ export function CommandBar({
                                   className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                                 >
                                   <div className="flex items-center gap-2">
-                                    <Timer className="h-4 w-4 text-muted-foreground" />
+                                    <Timer className="h-4 w-4 text-dynamic-purple" />
                                     <span>Estimation</span>
                                   </div>
                                   <div className="flex items-center gap-2">
@@ -497,7 +505,7 @@ export function CommandBar({
                                 className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                               >
                                 <div className="flex items-center gap-2">
-                                  <Box className="h-4 w-4 text-muted-foreground" />
+                                  <Box className="h-4 w-4 text-dynamic-sky" />
                                   <span>Projects</span>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -517,7 +525,7 @@ export function CommandBar({
                                 className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                               >
                                 <div className="flex items-center gap-2">
-                                  <Tag className="h-4 w-4 text-muted-foreground" />
+                                  <Tag className="h-4 w-4 text-dynamic-cyan" />
                                   <span>Labels</span>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -539,7 +547,7 @@ export function CommandBar({
                                 className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                               >
                                 <div className="flex items-center gap-2">
-                                  <UserStar className="h-4 w-4 text-muted-foreground" />
+                                  <UserStar className="h-4 w-4 text-dynamic-indigo" />
                                   <span>Assignees</span>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -811,55 +819,54 @@ export function CommandBar({
                           </button>
                           <ScrollArea style={{ height: projectsScrollHeight }}>
                             <div className="space-y-0.5">
-                              {workspaceProjects.map((project) => (
-                                <div
-                                  key={project.id}
-                                  className="flex items-center gap-2 rounded-md p-2 hover:bg-muted"
-                                >
-                                  <Checkbox
-                                    id={`project-${project.id}`}
-                                    checked={selectedProjectIds.includes(
-                                      project.id
-                                    )}
-                                    onCheckedChange={(checked) => {
-                                      if (checked) {
-                                        setSelectedProjectIds([
-                                          ...selectedProjectIds,
-                                          project.id,
-                                        ]);
-                                      } else {
+                              {workspaceProjects.map((project) => {
+                                const isSelected = selectedProjectIds.includes(project.id);
+                                return (
+                                  <button
+                                    key={project.id}
+                                    type="button"
+                                    onClick={() => {
+                                      if (isSelected) {
                                         setSelectedProjectIds(
                                           selectedProjectIds.filter(
                                             (id) => id !== project.id
                                           )
                                         );
+                                      } else {
+                                        setSelectedProjectIds([
+                                          ...selectedProjectIds,
+                                          project.id,
+                                        ]);
                                       }
                                     }}
-                                  />
-                                  <Label
-                                    htmlFor={`project-${project.id}`}
-                                    className="flex flex-1 cursor-pointer items-center gap-2 text-sm"
+                                    className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                                   >
-                                    <Box className="h-3.5 w-3.5 text-dynamic-sky" />
-                                    <span className="line-clamp-1">
-                                      {project.name}
-                                    </span>
-                                  </Label>
-                                </div>
-                              ))}
+                                    <div className="flex items-center gap-2">
+                                      <Box className="h-3.5 w-3.5 text-dynamic-sky" />
+                                      <span className="line-clamp-1">
+                                        {project.name}
+                                      </span>
+                                    </div>
+                                    {isSelected && (
+                                      <Check className="h-4 w-4 shrink-0 text-dynamic-sky" />
+                                    )}
+                                  </button>
+                                );
+                              })}
                             </div>
                           </ScrollArea>
-                          {selectedProjectIds.length > 0 && (
+                          <div className="border-t pt-2">
                             <button
                               onClick={() => {
-                                setSelectedProjectIds([]);
+                                onCreateNewProject?.();
+                                setSettingsOpen(false);
                               }}
-                              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted"
+                              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                             >
-                              <X className="h-4 w-4" />
-                              <span>Clear all</span>
+                              <Plus className="h-4 w-4" />
+                              <span>Add New Project</span>
                             </button>
-                          )}
+                          </div>
                         </div>
                       ) : activeSettingsView === 'labels' ? (
                         // Labels selection view
@@ -873,127 +880,223 @@ export function CommandBar({
                           </button>
                           <ScrollArea style={{ height: labelsScrollHeight }}>
                             <div className="space-y-0.5">
-                              {workspaceLabels.map((label) => (
-                                <div
-                                  key={label.id}
-                                  className="flex items-center gap-2 rounded-md px-2 py-2 hover:bg-muted"
-                                >
-                                  <Checkbox
-                                    id={`label-${label.id}`}
-                                    checked={selectedLabelIds.includes(
-                                      label.id
-                                    )}
-                                    onCheckedChange={(checked) => {
-                                      if (checked) {
-                                        setSelectedLabelIds([
-                                          ...selectedLabelIds,
-                                          label.id,
-                                        ]);
-                                      } else {
+                              {workspaceLabels.map((label) => {
+                                const isSelected = selectedLabelIds.includes(label.id);
+                                return (
+                                  <button
+                                    key={label.id}
+                                    type="button"
+                                    onClick={() => {
+                                      if (isSelected) {
                                         setSelectedLabelIds(
                                           selectedLabelIds.filter(
                                             (id) => id !== label.id
                                           )
                                         );
+                                      } else {
+                                        setSelectedLabelIds([
+                                          ...selectedLabelIds,
+                                          label.id,
+                                        ]);
                                       }
                                     }}
-                                  />
-                                  <Label
-                                    htmlFor={`label-${label.id}`}
-                                    className="flex flex-1 cursor-pointer items-center gap-2 text-sm"
+                                    className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                                   >
-                                    <span
-                                      className="h-3 w-3 rounded-full"
-                                      style={{ backgroundColor: label.color }}
-                                    />
-                                    <span
-                                      className="line-clamp-1"
-                                      style={{ color: label.color }}
-                                    >
-                                      {label.name}
-                                    </span>
-                                  </Label>
-                                </div>
-                              ))}
+                                    <div className="flex items-center gap-2">
+                                      <span
+                                        className="h-3 w-3 rounded-full"
+                                        style={{ backgroundColor: label.color }}
+                                      />
+                                      <span
+                                        className="line-clamp-1"
+                                        style={{ color: label.color }}
+                                      >
+                                        {label.name}
+                                      </span>
+                                    </div>
+                                    {isSelected && (
+                                      <Check className="h-4 w-4 shrink-0" style={{ color: label.color }} />
+                                    )}
+                                  </button>
+                                );
+                              })}
                             </div>
                           </ScrollArea>
-                          {selectedLabelIds.length > 0 && (
+                          <div className="border-t pt-2">
                             <button
                               onClick={() => {
-                                setSelectedLabelIds([]);
+                                onCreateNewLabel?.();
+                                setSettingsOpen(false);
                               }}
-                              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted"
+                              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                             >
-                              <X className="h-4 w-4" />
-                              <span>Clear all</span>
+                              <Plus className="h-4 w-4" />
+                              <span>Add New Label</span>
                             </button>
-                          )}
+                          </div>
                         </div>
                       ) : activeSettingsView === 'assignees' ? (
-                        // Assignees selection view
-                        <div className="space-y-0.5 p-2">
+                        // Assignees selection view - matching kanban.tsx implementation
+                        <div className="p-3">
                           <button
-                            onClick={() => setActiveSettingsView('main')}
-                            className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                            onClick={() => {
+                              setActiveSettingsView('main');
+                              setAssigneeSearchQuery('');
+                            }}
+                            className="mb-3 flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                           >
                             <ArrowLeft className="h-4 w-4" />
                             <span className="font-semibold">Select Assignees</span>
                           </button>
-                          <ScrollArea style={{ height: assigneesScrollHeight }}>
-                            <div className="space-y-0.5 px-2">
-                              {workspaceMembers.map((member) => (
-                                <button
-                                  key={member.id}
-                                  type="button"
-                                  onClick={() => {
-                                    if (
-                                      selectedAssigneeIds.includes(member.id)
-                                    ) {
-                                      setSelectedAssigneeIds(
-                                        selectedAssigneeIds.filter(
-                                          (id) => id !== member.id
-                                        )
-                                      );
-                                    } else {
-                                      setSelectedAssigneeIds([
-                                        ...selectedAssigneeIds,
-                                        member.id,
-                                      ]);
-                                    }
-                                  }}
-                                  className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-muted"
-                                >
-                                  <Avatar className="h-6 w-6 shrink-0">
-                                    <AvatarImage src={member.avatar_url} />
-                                    <AvatarFallback className="text-xs">
-                                      {member.display_name?.[0] ||
-                                        member.email?.[0] ||
-                                        '?'}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <span className="flex-1 truncate text-sm">
-                                    {member.display_name ||
-                                      member.email ||
-                                      'Unknown User'}
-                                  </span>
-                                  {selectedAssigneeIds.includes(member.id) && (
-                                    <Check className="h-4 w-4 shrink-0" />
-                                  )}
-                                </button>
-                              ))}
+
+                          {/* Search Input */}
+                          <div className="relative mb-3">
+                            <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder="Search members..."
+                              value={assigneeSearchQuery}
+                              onChange={(e) => setAssigneeSearchQuery(e.target.value)}
+                              className="h-9 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
+                            />
+                          </div>
+
+                          <div className="space-y-3">
+                            {/* Assigned Members Section */}
+                            {(() => {
+                              const assignedMembers = workspaceMembers.filter(
+                                (member) => selectedAssigneeIds.includes(member.id)
+                              );
+
+                              if (assignedMembers.length > 0) {
+                                return (
+                                  <div className="space-y-1.5">
+                                    <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                      Assigned ({assignedMembers.length})
+                                    </p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {assignedMembers.map((member) => (
+                                        <Button
+                                          key={member.id}
+                                          type="button"
+                                          variant="default"
+                                          size="xs"
+                                          onClick={() => {
+                                            setSelectedAssigneeIds(
+                                              selectedAssigneeIds.filter(
+                                                (id) => id !== member.id
+                                              )
+                                            );
+                                          }}
+                                          className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
+                                        >
+                                          <Avatar className="h-4 w-4">
+                                            <AvatarImage src={member.avatar_url} />
+                                            <AvatarFallback className="bg-dynamic-orange/20 font-bold text-[9px]">
+                                              {member.display_name?.[0] || member.email?.[0] || '?'}
+                                            </AvatarFallback>
+                                          </Avatar>
+                                          {member.display_name || member.email}
+                                          <X className="h-3 w-3 opacity-70" />
+                                        </Button>
+                                      ))}
+                                    </div>
+                                    {assignedMembers.length > 1 && (
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="xs"
+                                        onClick={() => setSelectedAssigneeIds([])}
+                                        className="mt-1 h-6 w-full text-dynamic-red text-xs hover:bg-dynamic-red/10 hover:text-dynamic-red"
+                                      >
+                                        <UserMinus className="mr-1 h-3 w-3" />
+                                        Remove all
+                                      </Button>
+                                    )}
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })()}
+
+                            {/* Available Members Section */}
+                            <div className="space-y-1.5">
+                              {(() => {
+                                const unassignedMembers = workspaceMembers.filter(
+                                  (member) => !selectedAssigneeIds.includes(member.id)
+                                );
+
+                                const filteredMembers = unassignedMembers.filter(
+                                  (member) =>
+                                    !assigneeSearchQuery ||
+                                    (member.display_name || '')
+                                      .toLowerCase()
+                                      .includes(assigneeSearchQuery.toLowerCase()) ||
+                                    (member.email || '')
+                                      .toLowerCase()
+                                      .includes(assigneeSearchQuery.toLowerCase())
+                                );
+
+                                if (filteredMembers.length === 0) {
+                                  return assigneeSearchQuery ? (
+                                    <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
+                                      <UserPlus className="h-4 w-4 text-muted-foreground/40" />
+                                      <p className="text-center text-muted-foreground text-xs">
+                                        No members found
+                                      </p>
+                                    </div>
+                                  ) : selectedAssigneeIds.length > 0 ? (
+                                    <div className="rounded-lg bg-muted/30 py-3 text-center">
+                                      <p className="text-muted-foreground text-xs">
+                                        All members assigned
+                                      </p>
+                                    </div>
+                                  ) : (
+                                    <div className="rounded-lg bg-muted/30 py-3 text-center">
+                                      <p className="text-muted-foreground text-xs">
+                                        No members available
+                                      </p>
+                                    </div>
+                                  );
+                                }
+
+                                return (
+                                  <>
+                                    <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                      Available ({filteredMembers.length})
+                                    </p>
+                                    <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
+                                      {filteredMembers.map((member) => (
+                                        <button
+                                          key={member.id}
+                                          type="button"
+                                          onClick={() => {
+                                            setSelectedAssigneeIds([
+                                              ...selectedAssigneeIds,
+                                              member.id,
+                                            ]);
+                                          }}
+                                          className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
+                                        >
+                                          <Avatar className="h-7 w-7 shrink-0">
+                                            <AvatarImage src={member.avatar_url} />
+                                            <AvatarFallback className="bg-muted font-semibold text-muted-foreground text-xs group-hover:bg-dynamic-orange/20 group-hover:text-dynamic-orange">
+                                              {member.display_name?.[0] ||
+                                                member.email?.[0] ||
+                                                '?'}
+                                            </AvatarFallback>
+                                          </Avatar>
+                                          <span className="flex-1 truncate text-sm">
+                                            {member.display_name || member.email}
+                                          </span>
+                                          <UserPlus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </>
+                                );
+                              })()}
                             </div>
-                          </ScrollArea>
-                          {selectedAssigneeIds.length > 0 && (
-                            <button
-                              onClick={() => {
-                                setSelectedAssigneeIds([]);
-                              }}
-                              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted"
-                            >
-                              <X className="h-4 w-4" />
-                              <span>Clear all</span>
-                            </button>
-                          )}
+                          </div>
                         </div>
                       ) : null}
                     </div>
