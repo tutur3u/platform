@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Award,
   Bot,
   Calendar,
   Gamepad2,
@@ -32,6 +33,13 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
   ];
 
   const resources = [
+    {
+      href: '/achievements',
+      label: 'Hall of Fame',
+      description:
+        "Celebrating our teams' outstanding achievements in competitions, hackathons, and innovation challenges.",
+      icon: <Award />,
+    },
     {
       href: '/contributors',
       label: t('common.contributors'),
