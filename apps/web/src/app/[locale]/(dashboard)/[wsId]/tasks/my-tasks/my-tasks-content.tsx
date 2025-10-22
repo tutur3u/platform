@@ -856,13 +856,11 @@ export default function MyTasksContent({
     setCreatingLabel(true);
     try {
       const supabase = createClient();
-      const { error } = await supabase
-        .from('workspace_task_labels')
-        .insert({
-          ws_id: wsId,
-          name: newLabelName.trim(),
-          color: newLabelColor,
-        });
+      const { error } = await supabase.from('workspace_task_labels').insert({
+        ws_id: wsId,
+        name: newLabelName.trim(),
+        color: newLabelColor,
+      });
 
       if (error) throw error;
 
@@ -890,12 +888,10 @@ export default function MyTasksContent({
     setCreatingProject(true);
     try {
       const supabase = createClient();
-      const { error } = await supabase
-        .from('task_projects')
-        .insert({
-          ws_id: wsId,
-          name: newProjectName.trim(),
-        });
+      const { error } = await supabase.from('task_projects').insert({
+        ws_id: wsId,
+        name: newProjectName.trim(),
+      });
 
       if (error) throw error;
 
