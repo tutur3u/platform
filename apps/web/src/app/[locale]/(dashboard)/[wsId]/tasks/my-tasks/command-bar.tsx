@@ -1097,7 +1097,7 @@ export function CommandBar({
                                     <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
                                       Available ({filteredMembers.length})
                                     </p>
-                                    <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
+                                    <div className="flex max-h-60 flex-col gap-1 overflow-y-auto">
                                       {filteredMembers.map((member) => (
                                         <button
                                           key={member.id}
