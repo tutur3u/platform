@@ -11,6 +11,7 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
 } from '@ncthub/ui/navigation-menu';
 import { cn } from '@ncthub/utils/format';
 import { useTranslations } from 'next-intl';
@@ -21,15 +22,33 @@ export function MainNavigationMenu() {
   const t = useTranslations();
   const { categories } = useNavigation(t);
 
+  const mainLinks =
+    categories
+      .find((cat) => cat.title === 'main')
+      ?.items.filter((item) => item.href !== `/`) || [];
   const resources =
     categories.find((cat) => cat.title === 'resources')?.items || [];
-  const products =
-    categories.find((cat) => cat.title === 'products')?.items || [];
+  const utilities =
+    categories.find((cat) => cat.title === 'utilities')?.items || [];
   const games = categories.find((cat) => cat.title === 'games')?.items || [];
 
   return (
     <NavigationMenu className="flex w-full max-w-none">
       <NavigationMenuList className="flex w-full justify-between">
+        {mainLinks.map((item) => (
+          <NavigationMenuItem key={item.href}>
+            <NavigationMenuLink
+              href={item.href}
+              className={cn(
+                navigationMenuTriggerStyle(),
+                'bg-transparent px-6 font-semibold transition-all duration-300 hover:bg-foreground/5'
+              )}
+            >
+              <span className="flex items-center gap-2">{item.label}</span>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+        ))}
+
         <NavigationMenuItem>
           <NavigationMenuTrigger className="group bg-transparent font-semibold transition-all duration-300 hover:bg-foreground/5">
             {t('common.resources')}
@@ -58,25 +77,25 @@ export function MainNavigationMenu() {
 
         <NavigationMenuItem>
           <NavigationMenuTrigger className="group bg-transparent font-semibold transition-all duration-300 hover:bg-foreground/5">
-            {t('common.products')}
+            {t('common.utilities')}
           </NavigationMenuTrigger>
           <NavigationMenuContent>
             <ul className="grid w-[400px] gap-3 bg-linear-to-br from-background via-background/95 to-background/90 p-6 backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px] xl:w-[1000px] xl:grid-cols-3">
               <Card className="col-span-full mb-2 bg-primary/5 p-4">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <Zap className="h-4 w-4" />
-                  <span>Featured Products</span>
+                  <span>Utilities</span>
                 </div>
               </Card>
-              {products.map((product) => (
+              {utilities.map((utility) => (
                 <ListItem
-                  key={product.href}
-                  title={product.label}
-                  href={product.href}
-                  icon={product.icon}
-                  badge={product.badge}
+                  key={utility.href}
+                  title={utility.label}
+                  href={utility.href}
+                  icon={utility.icon}
+                  badge={utility.badge}
                 >
-                  {product.description}
+                  {utility.description}
                 </ListItem>
               ))}
             </ul>

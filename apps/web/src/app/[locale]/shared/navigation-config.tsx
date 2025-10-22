@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  Award,
   Bot,
   Calendar,
   Gamepad2,
@@ -27,14 +26,12 @@ export interface NavCategory {
 }
 
 export const useNavigation = (t: any): { categories: NavCategory[] } => {
+  const main = [
+    { href: '/', label: t('common.home'), description: '' },
+    { href: '/about', label: t('common.about'), description: '' },
+  ];
+
   const resources = [
-    {
-      href: '/about',
-      label: t('common.about'),
-      description:
-        "Learn about NEO Culture Tech's history, mission, and meet the passionate team members driving innovation.",
-      icon: <Award />,
-    },
     {
       href: '/contributors',
       label: t('common.contributors'),
@@ -51,7 +48,7 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
     },
   ] as NavItem[];
 
-  const products = [
+  const utilities = [
     {
       href: '/meet-together',
       label: t('common.meet-together'),
@@ -92,12 +89,9 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
 
   return {
     categories: [
-      {
-        title: 'main',
-        items: [{ href: '/', label: t('common.home') }],
-      },
+      { title: 'main', items: main },
       { title: 'resources', items: resources },
-      { title: 'products', items: products },
+      { title: 'utilities', items: utilities },
       { title: 'games', items: games },
     ],
   };

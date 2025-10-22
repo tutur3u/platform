@@ -41,7 +41,9 @@ export default function Navbar({
               <LocalWorkspaceSelect />
             </Suspense>
 
-            <MainNavigationMenu />
+            <div className="ml-4 hidden w-full md:block">
+              <MainNavigationMenu />
+            </div>
           </div>
           <div className="flex w-fit flex-row-reverse items-center gap-2 md:flex-row md:justify-between">
             <Suspense>
