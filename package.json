@@ -39,15 +39,12 @@
     "ui:diff": "bun --filter ui ui:diff",
     "update-all": "bun ./scripts/package-update.js"
   },
-  "dependencies": {
-    "react-scan": "^0.3.6"
-  },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.37.0",
-    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@ncthub/eslint-config": "workspace:*",
     "@ncthub/typescript-config": "workspace:*",
+    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^9.37.0",
     "prettier": "^3.6.2",

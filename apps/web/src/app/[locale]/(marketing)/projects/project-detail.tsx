@@ -1,6 +1,6 @@
 import { Project } from './data';
 import { motion } from 'framer-motion';
-import { Code, ExternalLink, Github, Play, X } from 'lucide-react';
+import { Calendar, Code, ExternalLink, Github, Play, X } from 'lucide-react';
 import Image from 'next/image';
 
 interface ProjectDetailProps {
@@ -55,6 +55,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
     manager,
     type,
     status,
+    semester,
     githubUrl,
     demoUrl,
     image,
@@ -107,14 +108,17 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
               >
                 {STATUS_CONFIG[status].label}
               </div>
-              <div className="rounded-full bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] px-3 py-1 text-sm font-medium text-black">
+              <div className="rounded-full border border-border bg-muted px-3 py-1 text-sm font-medium text-foreground">
                 {TYPE_LABELS[type]}
+              </div>
+              <div className="rounded-full border border-border bg-muted px-3 py-1 text-sm font-medium text-foreground">
+                {semester}
               </div>
             </div>
           </div>
 
           <div className="text-center">
-            <h1 className="mb-4 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text text-4xl font-bold text-transparent md:text-5xl">
+            <h1 className="mb-2 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text py-2 text-4xl leading-tight font-bold text-transparent md:text-5xl md:leading-tight">
               {name}
             </h1>
             {manager && (
@@ -147,7 +151,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                     rel="noopener noreferrer"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] px-6 py-3 font-medium text-black transition-all duration-200 hover:shadow-lg hover:shadow-[#F4B71A]/30"
+                    className="flex items-center gap-2 rounded-xl bg-foreground px-6 py-3 font-medium text-background transition-all duration-200 hover:bg-foreground/90"
                   >
                     <Play size={20} />
                     <span>View Demo</span>
@@ -161,7 +165,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
         {/* Content */}
         <div className="space-y-8 px-8 pb-8">
           {/* Project Stats */}
-          <div className="mb-8 grid grid-cols-3 gap-4">
+          <div className="mb-8 grid grid-cols-4 gap-4">
             {[
               {
                 label: 'Technologies',
@@ -177,6 +181,11 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                 label: 'Status',
                 value: STATUS_CONFIG[status].label,
                 icon: Play,
+              },
+              {
+                label: 'Semester',
+                value: semester,
+                icon: Calendar,
               },
             ].map((stat, index) => (
               <motion.div
@@ -234,7 +243,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.1 }}
-                    className="rounded-xl border border-border bg-gradient-to-r from-[#F4B71A]/20 to-[#1AF4E6]/20 px-4 py-2 backdrop-blur-sm"
+                    className="rounded-xl border border-border bg-muted px-4 py-2 backdrop-blur-sm"
                   >
                     <span className="font-medium text-foreground">{tech}</span>
                   </motion.div>
@@ -259,7 +268,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                     className="group flex items-center justify-between rounded-xl border border-border bg-muted/50 p-4 transition-colors hover:bg-muted"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] font-bold text-black">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground font-bold text-background">
                         {person.name
                           .split(' ')
                           .map((n) => n[0])
@@ -267,10 +276,10 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                           .slice(0, 2)}
                       </div>
                       <div>
-                        <p className="font-semibold text-foreground transition-colors group-hover:text-[#1AF4E6]">
+                        <p className="font-semibold text-foreground transition-colors group-hover:text-foreground">
                           {person.name}
                         </p>
-                        <p className="text-sm text-[#1AF4E6]">
+                        <p className="text-sm text-muted-foreground">
                           {person.role || 'Team Member'}
                         </p>
                       </div>
@@ -302,7 +311,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
               onClick={onClose}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="rounded-2xl bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] px-8 py-3 font-semibold text-black transition-all duration-200 hover:shadow-lg hover:shadow-[#F4B71A]/30"
+              className="rounded-2xl bg-foreground px-8 py-3 font-semibold text-background transition-all duration-200 hover:bg-foreground/90"
             >
               Close
             </motion.button>
