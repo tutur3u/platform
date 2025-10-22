@@ -19,10 +19,7 @@ export const resolveWorkspaceId = (identifier: string): string => {
 
 export const toWorkspaceSlug = (
   workspaceId: string,
-  {
-    personal = false,
-    slug,
-  }: { personal?: boolean; slug?: string | null } = {}
+  { personal = false, slug }: { personal?: boolean; slug?: string | null } = {}
 ): string => {
   if (personal) return PERSONAL_WORKSPACE_SLUG;
   if (workspaceId === ROOT_WORKSPACE_ID) return INTERNAL_WORKSPACE_SLUG;
