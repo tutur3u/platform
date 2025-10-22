@@ -30,7 +30,8 @@
     "@tuturuuu/utils": "workspace:*",
     "next": "^15.5.6",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "tuturuuu": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.15",
