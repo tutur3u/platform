@@ -16,7 +16,8 @@ export const workspaceSlugSchema = z
     'Slug must be lowercase alphanumeric with hyphens, and start/end with a letter or number'
   )
   .refine(
-    (slug) => !['personal', 'internal', 'admin', 'api', 'settings'].includes(slug),
+    (slug) =>
+      !['personal', 'internal', 'admin', 'api', 'settings'].includes(slug),
     'This slug is reserved and cannot be used'
   );
 
