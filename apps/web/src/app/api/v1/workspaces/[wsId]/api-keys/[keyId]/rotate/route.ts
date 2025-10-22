@@ -46,9 +46,10 @@ export const POST = withApiAuth(
     const supabase = await createClient();
 
     // Fetch the existing API key with workspace scoping
+    // SECURITY: Only select 'id' to verify existence, no need for sensitive fields
     const { data: existingKey, error: fetchError } = await supabase
       .from('workspace_api_keys')
-      .select('*')
+      .select('id')
       .eq('id', validatedKeyId)
       .eq('ws_id', wsId) // Ensure workspace scoping
       .single();

@@ -256,7 +256,27 @@ export const listDocumentsOptionsSchema = z
     offset: z.number().int().min(0).finite(),
     isPublic: z.boolean(),
   })
-  .partial();
+  .partial()
+  .superRefine((data, ctx) => {
+    if ('limit' in data && data.limit === undefined) {
+      ctx.addIssue({
+        code: 'invalid_type',
+        expected: 'number',
+        received: 'undefined',
+        path: ['limit'],
+        message: 'limit cannot be explicitly undefined',
+      });
+    }
+    if ('offset' in data && data.offset === undefined) {
+      ctx.addIssue({
+        code: 'invalid_type',
+        expected: 'number',
+        received: 'undefined',
+        path: ['offset'],
+        message: 'offset cannot be explicitly undefined',
+      });
+    }
+  });
 
 export const createDocumentDataSchema = z.object({
   name: z.string().min(1).max(255),

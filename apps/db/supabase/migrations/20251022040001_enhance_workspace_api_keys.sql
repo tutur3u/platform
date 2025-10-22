@@ -111,7 +111,6 @@ CREATE POLICY "Allow authorized members to view API keys"
           ON wrp.role_id = wrm.role_id
           AND wrp.ws_id = workspace_api_keys.ws_id
         WHERE wrm.user_id = auth.uid()
-          AND wrm.ws_id = workspace_api_keys.ws_id
           AND wr.ws_id = workspace_api_keys.ws_id
           AND wrp.permission = 'manage_api_keys'
           AND wrp.enabled = true
@@ -151,7 +150,6 @@ CREATE POLICY "Allow authorized members to create API keys"
           ON wrp.role_id = wrm.role_id
           AND wrp.ws_id = workspace_api_keys.ws_id
         WHERE wrm.user_id = auth.uid()
-          AND wrm.ws_id = workspace_api_keys.ws_id
           AND wr.ws_id = workspace_api_keys.ws_id
           AND wrp.permission = 'manage_api_keys'
           AND wrp.enabled = true
@@ -191,7 +189,6 @@ CREATE POLICY "Allow authorized members to update API keys"
           ON wrp.role_id = wrm.role_id
           AND wrp.ws_id = workspace_api_keys.ws_id
         WHERE wrm.user_id = auth.uid()
-          AND wrm.ws_id = workspace_api_keys.ws_id
           AND wr.ws_id = workspace_api_keys.ws_id
           AND wrp.permission = 'manage_api_keys'
           AND wrp.enabled = true
@@ -225,7 +222,6 @@ CREATE POLICY "Allow authorized members to update API keys"
           ON wrp.role_id = wrm.role_id
           AND wrp.ws_id = workspace_api_keys.ws_id
         WHERE wrm.user_id = auth.uid()
-          AND wrm.ws_id = workspace_api_keys.ws_id
           AND wr.ws_id = workspace_api_keys.ws_id
           AND wrp.permission = 'manage_api_keys'
           AND wrp.enabled = true
@@ -265,7 +261,6 @@ CREATE POLICY "Allow authorized members to delete API keys"
           ON wrp.role_id = wrm.role_id
           AND wrp.ws_id = workspace_api_keys.ws_id
         WHERE wrm.user_id = auth.uid()
-          AND wrm.ws_id = workspace_api_keys.ws_id
           AND wr.ws_id = workspace_api_keys.ws_id
           AND wrp.permission = 'manage_api_keys'
           AND wrp.enabled = true

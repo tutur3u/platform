@@ -35,9 +35,12 @@ export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId: id } = await params;
 
+  // SECURITY: Explicitly select only safe columns, excluding key_hash and value
   const { data, error } = await supabase
     .from('workspace_api_keys')
-    .select('*')
+    .select(
+      'id, ws_id, name, description, key_prefix, role_id, last_used_at, expires_at, created_at, updated_at, created_by'
+    )
     .eq('ws_id', id)
     .single();
 
