@@ -11,11 +11,15 @@ const paramsSchema = z.object({
 });
 
 export const POST = withApiAuth(
-  async (_, { context }) => {
-    const { wsId, keyId } = context;
+  async (_, { context, params }) => {
+    // Extract params from route
+    const { wsId: paramsWsId, keyId } = params as {
+      wsId: string;
+      keyId: string;
+    };
 
     // Validate params
-    const paramValidation = paramsSchema.safeParse({ wsId, keyId });
+    const paramValidation = paramsSchema.safeParse({ wsId: paramsWsId, keyId });
     if (!paramValidation.success) {
       return createErrorResponse(
         'Bad Request',
@@ -25,13 +29,27 @@ export const POST = withApiAuth(
       );
     }
 
+    const { wsId: validatedWsId, keyId: validatedKeyId } = paramValidation.data;
+
+    // Ensure the workspace ID from params matches the authenticated workspace ID from context
+    if (validatedWsId !== context.wsId) {
+      return createErrorResponse(
+        'Forbidden',
+        'Workspace ID mismatch',
+        403,
+        'WORKSPACE_MISMATCH'
+      );
+    }
+
+    const wsId = validatedWsId;
+
     const supabase = await createClient();
 
     // Fetch the existing API key with workspace scoping
     const { data: existingKey, error: fetchError } = await supabase
       .from('workspace_api_keys')
       .select('*')
-      .eq('id', keyId)
+      .eq('id', validatedKeyId)
       .eq('ws_id', wsId) // Ensure workspace scoping
       .single();
 
@@ -57,7 +75,7 @@ export const POST = withApiAuth(
         key_prefix: prefix,
         last_used_at: null, // Reset last used timestamp
       })
-      .eq('id', keyId)
+      .eq('id', validatedKeyId)
       .eq('ws_id', wsId); // Ensure workspace scoping
 
     if (updateError) {
@@ -71,11 +89,21 @@ export const POST = withApiAuth(
     }
 
     // Return the new plaintext key to the user (only time they'll see it)
-    return NextResponse.json({
-      message: 'API key rotated successfully',
-      key,
-      prefix,
-    });
+    return NextResponse.json(
+      {
+        message: 'API key rotated successfully',
+        key,
+        prefix,
+      },
+      {
+        headers: {
+          'Cache-Control':
+            'no-store, no-cache, must-revalidate, proxy-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+      }
+    );
   },
   { permissions: ['manage_api_keys'] }
 );

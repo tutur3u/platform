@@ -37,7 +37,7 @@ export function sanitizePath(path: string): string | null {
       return null;
     }
     // Reject segments with path traversal attempts
-    if (segment.includes('..') || segment.includes('./')) {
+    if (segment.includes('..')) {
       return null;
     }
   }
@@ -57,7 +57,7 @@ export function sanitizePath(path: string): string | null {
  * sanitizeFolderName('my-folder') // => 'my-folder'
  * sanitizeFolderName('folder/subfolder') // => null (contains slashes)
  * sanitizeFolderName('..') // => null (traversal attempt)
- * sanitizeFolderName('folder\\name') // => 'folder/name' (normalized, but rejected if contains slash)
+ * sanitizeFolderName('folder\\name') // => null (normalized to 'folder/name' which contains slash)
  * ```
  */
 export function sanitizeFolderName(name: string): string | null {

@@ -252,44 +252,11 @@ export const shareOptionsSchema = z
 export const listDocumentsOptionsSchema = z
   .object({
     search: z.string(),
-    limit: z.preprocess(
-      (val) => (val === undefined ? Symbol('invalid-undefined') : val),
-      z
-        .number()
-        .int()
-        .min(1)
-        .max(100)
-        .refine((n) => !Number.isNaN(n), { message: 'must be a valid number' })
-    ),
-    offset: z.preprocess(
-      (val) => (val === undefined ? Symbol('invalid-undefined') : val),
-      z
-        .number()
-        .int()
-        .min(0)
-        .refine((n) => !Number.isNaN(n), { message: 'must be a valid number' })
-    ),
+    limit: z.number().int().min(1).max(100).finite(),
+    offset: z.number().int().min(0).finite(),
     isPublic: z.boolean(),
   })
-  .partial()
-  .superRefine((data, ctx) => {
-    // Reject explicit undefined for limit
-    if ('limit' in data && data.limit === undefined) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'limit cannot be explicitly undefined',
-        path: ['limit'],
-      });
-    }
-    // Reject explicit undefined for offset
-    if ('offset' in data && data.offset === undefined) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'offset cannot be explicitly undefined',
-        path: ['offset'],
-      });
-    }
-  });
+  .partial();
 
 export const createDocumentDataSchema = z.object({
   name: z.string().min(1).max(255),

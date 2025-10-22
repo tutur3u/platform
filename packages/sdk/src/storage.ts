@@ -20,7 +20,7 @@
  * // Create a document
  * const doc = await client.documents.create({
  *   name: 'My Document',
- *   content: { text: 'Hello World' }
+ *   content: 'Hello World'
  * });
  * ```
  */
@@ -252,6 +252,7 @@ export class StorageClient {
         headers: {
           Authorization: `Bearer ${this.client.apiKey}`,
           'X-SDK-Client': `tuturuuu/${packageJson.version || '0.0.1'}`,
+          Accept: 'application/octet-stream, */*',
         },
       }
     );
@@ -453,7 +454,7 @@ export class DocumentsClient {
    * ```typescript
    * const doc = await client.documents.create({
    *   name: 'Meeting Notes',
-   *   content: { text: 'Discussion points...' },
+   *   content: 'Discussion points...',
    *   isPublic: false
    * });
    * ```
@@ -498,7 +499,7 @@ export class DocumentsClient {
    * ```typescript
    * const doc = await client.documents.update('doc-id-123', {
    *   name: 'Updated Meeting Notes',
-   *   content: { text: 'New content...' }
+   *   content: 'New content...'
    * });
    * ```
    */

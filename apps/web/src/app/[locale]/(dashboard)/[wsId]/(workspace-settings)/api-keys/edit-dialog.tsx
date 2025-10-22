@@ -77,9 +77,11 @@ export default function ApiKeyEditDialog({
         // Show it to the user in a modal (they won't be able to see it again)
         if (!data.id && responseData.key) {
           const roleName = roles?.find((r) => r.id === values.role_id)?.name;
+          const prefix =
+            responseData.prefix ?? responseData.key?.slice(0, 8) ?? '';
           setNewKey({
             key: responseData.key,
-            prefix: responseData.prefix,
+            prefix,
             roleName,
             expiresAt: values.expires_at,
           });

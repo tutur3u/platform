@@ -12,14 +12,12 @@ import {
 } from '@/lib/api-middleware';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import {
-  createDocumentDataSchema,
-  listDocumentsOptionsSchema,
-} from 'tuturuuu/types';
+import { createDocumentDataSchema } from 'tuturuuu/types';
 import { z } from 'zod';
 
-// Query parameters schema for listing (extends SDK schema with query string transformations)
-const listQuerySchema = listDocumentsOptionsSchema.extend({
+// Query parameters schema for listing (query string transformations)
+const listQuerySchema = z.object({
+  search: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(100).optional().default(50),
   offset: z.coerce.number().int().min(0).optional().default(0),
   isPublic: z

@@ -37,10 +37,10 @@ interface Props {
 
 const FormSchema = z.object({
   name: z.string().min(1),
-  description: z.string().min(1),
+  description: z.string().optional(),
   role_id: z.string().nullable(),
   expires_at: z.string().nullable(),
-  expires_preset: z.string(), // Stable preset value: '30', '90', '365', or 'none'
+  expires_preset: z.enum(['30', '90', '365', 'none']),
 });
 
 export const ApiConfigFormSchema = FormSchema;
@@ -54,7 +54,7 @@ export default function ApiKeyForm({
   const t = useTranslations('ws-api-keys');
 
   // Determine the initial preset value based on expires_at
-  const getInitialPreset = (expiresAt: string | null | undefined): string => {
+  const getInitialPreset = (expiresAt: string | null | undefined): 'none' => {
     if (!expiresAt) return 'none';
     // For existing keys, we can't reliably reverse-calculate the preset
     // So we'll default to 'none' and let the user see/change it if needed

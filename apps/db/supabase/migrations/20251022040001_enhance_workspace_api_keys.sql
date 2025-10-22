@@ -57,8 +57,7 @@ ALTER TABLE "public"."workspace_api_keys"
   ADD COLUMN IF NOT EXISTS "created_by" UUID REFERENCES "auth"."users"(id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS "updated_at" TIMESTAMPTZ NOT NULL DEFAULT now();
 
--- Add index on key_hash for fast lookups
-CREATE INDEX IF NOT EXISTS idx_workspace_api_keys_key_hash ON "public"."workspace_api_keys"(key_hash);
+-- Add indexes for fast lookups
 CREATE INDEX IF NOT EXISTS idx_workspace_api_keys_expires_at ON "public"."workspace_api_keys"(expires_at) WHERE expires_at IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_workspace_api_keys_role_id ON "public"."workspace_api_keys"(role_id);
 
@@ -112,6 +111,7 @@ CREATE POLICY "Allow authorized members to view API keys"
           ON wrp.role_id = wrm.role_id
           AND wrp.ws_id = workspace_api_keys.ws_id
         WHERE wrm.user_id = auth.uid()
+          AND wrm.ws_id = workspace_api_keys.ws_id
           AND wr.ws_id = workspace_api_keys.ws_id
           AND wrp.permission = 'manage_api_keys'
           AND wrp.enabled = true
@@ -151,6 +151,7 @@ CREATE POLICY "Allow authorized members to create API keys"
           ON wrp.role_id = wrm.role_id
           AND wrp.ws_id = workspace_api_keys.ws_id
         WHERE wrm.user_id = auth.uid()
+          AND wrm.ws_id = workspace_api_keys.ws_id
           AND wr.ws_id = workspace_api_keys.ws_id
           AND wrp.permission = 'manage_api_keys'
           AND wrp.enabled = true
@@ -190,6 +191,7 @@ CREATE POLICY "Allow authorized members to update API keys"
           ON wrp.role_id = wrm.role_id
           AND wrp.ws_id = workspace_api_keys.ws_id
         WHERE wrm.user_id = auth.uid()
+          AND wrm.ws_id = workspace_api_keys.ws_id
           AND wr.ws_id = workspace_api_keys.ws_id
           AND wrp.permission = 'manage_api_keys'
           AND wrp.enabled = true
@@ -223,6 +225,7 @@ CREATE POLICY "Allow authorized members to update API keys"
           ON wrp.role_id = wrm.role_id
           AND wrp.ws_id = workspace_api_keys.ws_id
         WHERE wrm.user_id = auth.uid()
+          AND wrm.ws_id = workspace_api_keys.ws_id
           AND wr.ws_id = workspace_api_keys.ws_id
           AND wrp.permission = 'manage_api_keys'
           AND wrp.enabled = true
@@ -262,6 +265,7 @@ CREATE POLICY "Allow authorized members to delete API keys"
           ON wrp.role_id = wrm.role_id
           AND wrp.ws_id = workspace_api_keys.ws_id
         WHERE wrm.user_id = auth.uid()
+          AND wrm.ws_id = workspace_api_keys.ws_id
           AND wr.ws_id = workspace_api_keys.ws_id
           AND wrp.permission = 'manage_api_keys'
           AND wrp.enabled = true

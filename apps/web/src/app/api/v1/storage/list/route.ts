@@ -78,12 +78,50 @@ export const GET = withApiAuth(
         (file) => file.name !== '.emptyFolderPlaceholder'
       );
 
+      // Get total count of matching records from storage.objects table
+      let totalCount = 0;
+      try {
+        // Build count query with same filters
+        let countQuery = supabase
+          .from('objects')
+          .select('*', { count: 'exact', head: true })
+          .eq('bucket_id', 'workspaces');
+
+        // Apply path filter (match the folder path)
+        if (storagePath) {
+          countQuery = countQuery.like('name', `${storagePath}/%`);
+        }
+
+        // Apply search filter if provided
+        if (search) {
+          countQuery = countQuery.ilike('name', `%${search}%`);
+        }
+
+        const { count, error: countError } = await countQuery;
+
+        if (countError) {
+          console.error('Error counting files:', countError);
+          // Fallback to current page count if count query fails
+          totalCount = filteredFiles?.length || 0;
+        } else {
+          // Subtract .emptyFolderPlaceholder files from count
+          totalCount = Math.max(
+            0,
+            (count || 0) - (files?.length || 0) + (filteredFiles?.length || 0)
+          );
+        }
+      } catch (countErr) {
+        console.error('Unexpected error counting files:', countErr);
+        // Fallback to current page count
+        totalCount = filteredFiles?.length || 0;
+      }
+
       return NextResponse.json({
         data: filteredFiles || [],
         pagination: {
           limit,
           offset,
-          total: filteredFiles?.length || 0,
+          total: totalCount,
         },
       });
     } catch (error) {

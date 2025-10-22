@@ -192,11 +192,16 @@ export const POST = withApiAuth(
         );
       }
 
+      // Strip workspace ID prefix from path to return relative path
+      const relativePath = data.path.startsWith(`${wsId}/`)
+        ? data.path.substring(`${wsId}/`.length)
+        : data.path;
+
       return NextResponse.json({
         message: 'File uploaded successfully',
         data: {
-          path: data.path,
-          fullPath: data.fullPath,
+          path: relativePath,
+          fullPath: data.fullPath ?? storagePath,
         },
       });
     } catch (error) {
