@@ -14,7 +14,10 @@ interface RouteParams {
 const createGitHubIssueSchema = z.object({
   owner: z.string().min(1, 'Owner is required'),
   repo: z.string().min(1, 'Repository is required'),
-  issue_number: z.number().int().positive('Issue number must be a positive integer'),
+  issue_number: z
+    .number()
+    .int()
+    .positive('Issue number must be a positive integer'),
   github_url: z.string().url('Invalid GitHub URL'),
   github_title: z.string().optional(),
   github_state: z.enum(['open', 'closed']).optional(),

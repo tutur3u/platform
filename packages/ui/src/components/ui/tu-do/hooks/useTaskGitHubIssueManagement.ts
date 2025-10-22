@@ -30,7 +30,8 @@ export function useTaskGitHubIssueManagement({
   initialIssues = [],
 }: UseTaskGitHubIssueManagementProps) {
   const queryClient = useQueryClient();
-  const [linkedIssues, setLinkedIssues] = useState<GitHubIssue[]>(initialIssues);
+  const [linkedIssues, setLinkedIssues] =
+    useState<GitHubIssue[]>(initialIssues);
   const [isLoading, setIsLoading] = useState(false);
 
   /**
