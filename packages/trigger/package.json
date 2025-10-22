@@ -8,19 +8,25 @@
     "./calendar-sync-coordination": "./src/calendar-sync-coordination.ts",
     "./google-calendar-sync": "./src/google-calendar-sync.ts",
     "./google-calendar-full-sync": "./src/google-calendar-full-sync.ts",
-    "./google-calendar-incremental-sync": "./src/google-calendar-incremental-sync.ts"
+    "./google-calendar-incremental-sync": "./src/google-calendar-incremental-sync.ts",
+    "./task-assignment-notification": "./src/task-assignment-notification.ts"
   },
   "scripts": {
     "trigger:dev": "bunx trigger.dev@latest dev",
     "trigger:deploy": "bunx trigger.dev@latest deploy"
   },
   "dependencies": {
+    "@aws-sdk/client-ses": "^3.701.0",
+    "@react-email/components": "^0.5.7",
     "@trigger.dev/sdk": "^4.0.4",
-    "@tuturuuu/supabase": "workspace:*",
-    "@tuturuuu/utils": "workspace:*",
-    "@tuturuuu/types": "workspace:*",
     "@tuturuuu/google": "workspace:*",
-    "dayjs": "^1.11.18"
+    "@tuturuuu/supabase": "workspace:*",
+    "@tuturuuu/transactional": "workspace:*",
+    "@tuturuuu/types": "workspace:*",
+    "@tuturuuu/utils": "workspace:*",
+    "dayjs": "^1.11.18",
+    "isomorphic-dompurify": "^2.19.0",
+    "juice": "^11.0.1"
   },
   "devDependencies": {
     "@trigger.dev/build": "^4.0.4",

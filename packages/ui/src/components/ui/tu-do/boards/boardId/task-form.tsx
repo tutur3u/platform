@@ -146,6 +146,20 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
               task_id: newTask.id,
               user_id: userId,
             });
+
+            // Trigger email notification (non-blocking)
+            fetch(`/api/v1/tasks/${newTask.id}/notify-assignment`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                assignee_user_id: userId,
+                ws_id: wsId,
+              }),
+            }).catch((error) => {
+              console.error('Failed to trigger notification:', error);
+            });
           })
         );
       }

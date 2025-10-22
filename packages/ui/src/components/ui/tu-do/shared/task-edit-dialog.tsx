@@ -1778,6 +1778,35 @@ function TaskEditDialogComponent({
             .insert({ task_id: task.id, user_id: userId });
           if (error) throw error;
           setSelectedAssignees((prev) => [...prev, member]);
+
+          // Trigger email notification (non-blocking)
+          try {
+            let wsId: string | undefined = (boardConfig as any)?.ws_id;
+            if (!wsId) {
+              const { data: board } = await supabase
+                .from('workspace_boards')
+                .select('ws_id')
+                .eq('id', boardId)
+                .single();
+              wsId = (board as any)?.ws_id;
+            }
+            if (wsId) {
+              fetch(`/api/v1/tasks/${task.id}/notify-assignment`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  assignee_user_id: userId,
+                  ws_id: wsId,
+                }),
+              }).catch((error) => {
+                console.error('Failed to trigger notification:', error);
+              });
+            }
+          } catch (notifError) {
+            console.error('Failed to trigger notification:', notifError);
+          }
         }
         await invalidateTaskCaches(queryClient, boardId);
         onUpdate();
