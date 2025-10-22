@@ -35,7 +35,7 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
   const resources = [
     {
       href: '/achievements',
-      label: 'Hall of Fame',
+      label: t('common.hall-of-fame'),
       description:
         "Celebrating our teams' outstanding achievements in competitions, hackathons, and innovation challenges.",
       icon: <Award />,
