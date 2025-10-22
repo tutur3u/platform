@@ -1,4 +1,12 @@
-import { ExternalLink, Github, Loader2, Plus, RefreshCw, Trash2, X } from '@tuturuuu/icons';
+import {
+  ExternalLink,
+  Github,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Trash2,
+  X,
+} from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
@@ -167,7 +175,8 @@ export const TaskEditGitHubIssueSection = memo(
                             >
                               {issue.github_title || (
                                 <span className="text-muted-foreground">
-                                  {issue.owner}/{issue.repo}#{issue.issue_number}
+                                  {issue.owner}/{issue.repo}#
+                                  {issue.issue_number}
                                 </span>
                               )}
                               <ExternalLink className="ml-1 inline h-3 w-3" />
@@ -196,17 +205,22 @@ export const TaskEditGitHubIssueSection = memo(
                             {issue.github_labels &&
                               issue.github_labels.length > 0 && (
                                 <div className="flex flex-wrap gap-1">
-                                  {issue.github_labels.slice(0, 3).map((label) => (
+                                  {issue.github_labels
+                                    .slice(0, 3)
+                                    .map((label) => (
+                                      <Badge
+                                        key={label}
+                                        variant="outline"
+                                        className="h-5 text-xs"
+                                      >
+                                        {label}
+                                      </Badge>
+                                    ))}
+                                  {issue.github_labels.length > 3 && (
                                     <Badge
-                                      key={label}
                                       variant="outline"
                                       className="h-5 text-xs"
                                     >
-                                      {label}
-                                    </Badge>
-                                  ))}
-                                  {issue.github_labels.length > 3 && (
-                                    <Badge variant="outline" className="h-5 text-xs">
                                       +{issue.github_labels.length - 3}
                                     </Badge>
                                   )}
@@ -218,12 +232,15 @@ export const TaskEditGitHubIssueSection = memo(
                           {issue.synced_at && (
                             <p className="text-muted-foreground text-xs">
                               Synced{' '}
-                              {new Date(issue.synced_at).toLocaleString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit',
-                              })}
+                              {new Date(issue.synced_at).toLocaleString(
+                                'en-US',
+                                {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: 'numeric',
+                                  minute: '2-digit',
+                                }
+                              )}
                             </p>
                           )}
                         </div>
