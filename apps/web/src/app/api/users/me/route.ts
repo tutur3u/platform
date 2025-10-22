@@ -11,7 +11,8 @@ const UpdateUserSchema = z.object({
     .min(3, { message: 'Username must be at least 3 characters' })
     .max(30, { message: 'Username must be at most 30 characters' })
     .regex(/^[a-zA-Z0-9_-]+$/, {
-      message: 'Username can only contain letters, numbers, hyphens, and underscores',
+      message:
+        'Username can only contain letters, numbers, hyphens, and underscores',
     })
     .optional(),
 });
