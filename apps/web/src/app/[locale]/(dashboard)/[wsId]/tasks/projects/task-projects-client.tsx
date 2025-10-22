@@ -4,15 +4,23 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   Archive,
   Calendar,
+  ChevronDown,
   Edit3,
   ExternalLink,
+  Filter,
+  Grid3x3,
   Link,
+  List,
   Loader2,
   MoreVertical,
   Plus,
+  Target,
   Trash2,
+  TrendingUp,
   User,
+  X,
 } from '@tuturuuu/icons';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -35,6 +43,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -47,6 +57,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import NextLink from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -55,6 +66,7 @@ interface LinkedTask {
   id: string;
   name: string;
   completed_at: string | null;
+  priority: string | null;
   listName: string | null;
 }
 
@@ -62,6 +74,17 @@ interface TaskProject {
   id: string;
   name: string;
   description: string | null;
+  status: string | null;
+  priority: string | null;
+  health_status: string | null;
+  lead_id: string | null;
+  lead?: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null;
+  start_date: string | null;
+  end_date: string | null;
   created_at: string;
   creator_id: string;
   creator?: {
@@ -70,6 +93,7 @@ interface TaskProject {
     avatar_url: string | null;
   } | null;
   tasksCount: number;
+  completedTasksCount: number;
   linkedTasks: LinkedTask[];
 }
 
@@ -86,12 +110,34 @@ interface TaskOption {
   listName: string | null;
 }
 
+type ViewMode = 'grid' | 'list';
+type SortBy =
+  | 'created_at'
+  | 'name'
+  | 'status'
+  | 'priority'
+  | 'health_status'
+  | 'tasks_count';
+type SortOrder = 'asc' | 'desc';
+
 export function TaskProjectsClient({
   wsId,
   initialProjects,
 }: TaskProjectsClientProps) {
   const t = useTranslations('dashboard.bucket_dump');
 
+  // View state
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [sortBy, setSortBy] = useState<SortBy>('created_at');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter state
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [priorityFilter, setPriorityFilter] = useState<string[]>([]);
+  const [healthFilter, setHealthFilter] = useState<string[]>([]);
+
+  // Dialog state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<TaskProject | null>(
@@ -178,6 +224,103 @@ export function TaskProjectsClient({
       setTaskToLink('');
     }
   }, [availableTaskOptions.length]);
+
+  // Filtered and sorted projects
+  const filteredProjects = useMemo(() => {
+    let result = projects;
+
+    // Search filter
+    if (searchQuery) {
+      result = result.filter(
+        (project) =>
+          project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          project.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Status filter
+    if (statusFilter.length > 0) {
+      result = result.filter((project) =>
+        project.status ? statusFilter.includes(project.status) : false
+      );
+    }
+
+    // Priority filter
+    if (priorityFilter.length > 0) {
+      result = result.filter((project) =>
+        project.priority ? priorityFilter.includes(project.priority) : false
+      );
+    }
+
+    // Health filter
+    if (healthFilter.length > 0) {
+      result = result.filter((project) =>
+        project.health_status
+          ? healthFilter.includes(project.health_status)
+          : false
+      );
+    }
+
+    // Sort
+    result = [...result].sort((a, b) => {
+      let aVal: any;
+      let bVal: any;
+
+      switch (sortBy) {
+        case 'name':
+          aVal = a.name.toLowerCase();
+          bVal = b.name.toLowerCase();
+          break;
+        case 'status':
+          aVal = a.status ?? '';
+          bVal = b.status ?? '';
+          break;
+        case 'priority':
+          const priorityOrder = { critical: 4, high: 3, normal: 2, low: 1 };
+          aVal = a.priority
+            ? priorityOrder[a.priority as keyof typeof priorityOrder] ?? 0
+            : 0;
+          bVal = b.priority
+            ? priorityOrder[b.priority as keyof typeof priorityOrder] ?? 0
+            : 0;
+          break;
+        case 'health_status':
+          const healthOrder = { off_track: 3, at_risk: 2, on_track: 1 };
+          aVal = a.health_status
+            ? healthOrder[a.health_status as keyof typeof healthOrder] ?? 0
+            : 0;
+          bVal = b.health_status
+            ? healthOrder[b.health_status as keyof typeof healthOrder] ?? 0
+            : 0;
+          break;
+        case 'tasks_count':
+          aVal = a.tasksCount;
+          bVal = b.tasksCount;
+          break;
+        case 'created_at':
+        default:
+          aVal = new Date(a.created_at).getTime();
+          bVal = new Date(b.created_at).getTime();
+          break;
+      }
+
+      if (sortOrder === 'asc') {
+        return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+      } else {
+        return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+      }
+    });
+
+    return result;
+  }, [
+    projects,
+    searchQuery,
+    statusFilter,
+    priorityFilter,
+    healthFilter,
+    sortBy,
+    sortOrder,
+  ]);
 
   const createProjectMutation = useMutation({
     mutationFn: async ({
@@ -434,45 +577,478 @@ export function TaskProjectsClient({
     return availableTaskOptions.filter((task) => !linkedIds.has(task.id));
   }, [availableTaskOptions, managingProject]);
 
+  const getHealthStatusBadge = (health: string | null) => {
+    if (!health) return null;
+    const config = {
+      on_track: {
+        label: 'On Track',
+        className:
+          'border-dynamic-green/40 bg-dynamic-green/10 text-dynamic-green',
+        icon: '🟢',
+      },
+      at_risk: {
+        label: 'At Risk',
+        className:
+          'border-dynamic-yellow/40 bg-dynamic-yellow/10 text-dynamic-yellow',
+        icon: '🟡',
+      },
+      off_track: {
+        label: 'Off Track',
+        className: 'border-dynamic-red/40 bg-dynamic-red/10 text-dynamic-red',
+        icon: '🔴',
+      },
+    };
+    const { label, className, icon } =
+      config[health as keyof typeof config] || config.on_track;
+    return (
+      <Badge variant="outline" className={cn('text-xs', className)}>
+        <TrendingUp className="mr-1 h-3 w-3" />
+        {icon} {label}
+      </Badge>
+    );
+  };
+
+  const getPriorityBadge = (priority: string | null) => {
+    if (!priority) return null;
+    const config = {
+      critical: {
+        label: 'Critical',
+        className: 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red',
+      },
+      high: {
+        label: 'High',
+        className:
+          'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange',
+      },
+      normal: {
+        label: 'Normal',
+        className:
+          'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow',
+      },
+      low: {
+        label: 'Low',
+        className: 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue',
+      },
+    };
+    const { label, className } =
+      config[priority as keyof typeof config] || config.normal;
+    return (
+      <Badge variant="outline" className={cn('text-xs', className)}>
+        {label}
+      </Badge>
+    );
+  };
+
+  const getStatusBadge = (status: string | null) => {
+    if (!status) return null;
+    return (
+      <Badge variant="secondary" className="text-xs">
+        <Target className="mr-1 h-3 w-3" />
+        {status.replace('_', ' ').toUpperCase()}
+      </Badge>
+    );
+  };
+
+  const hasActiveFilters =
+    statusFilter.length > 0 ||
+    priorityFilter.length > 0 ||
+    healthFilter.length > 0;
+
+  const clearFilters = () => {
+    setStatusFilter([]);
+    setPriorityFilter([]);
+    setHealthFilter([]);
+  };
+
   return (
     <>
-      <div className="flex items-center justify-between">
+      {/* Header with controls */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="font-semibold text-lg">All Projects</h2>
           <p className="text-muted-foreground text-sm">
-            {projects.length} project{projects.length === 1 ? '' : 's'} total
+            {filteredProjects.length} of {projects.length} project
+            {projects.length === 1 ? '' : 's'}
           </p>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Project
-        </Button>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Search */}
+          <div className="relative">
+            <Input
+              placeholder="Search projects..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full md:w-64"
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2"
+                onClick={() => setSearchQuery('')}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+
+          {/* Filters */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  hasActiveFilters &&
+                    'border-dynamic-purple/50 bg-dynamic-purple/10'
+                )}
+              >
+                <Filter className="mr-2 h-4 w-4" />
+                Filters
+                {hasActiveFilters && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-2 h-5 w-5 rounded-full p-0 text-xs"
+                  >
+                    {statusFilter.length +
+                      priorityFilter.length +
+                      healthFilter.length}
+                  </Badge>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              {/* Status Filter */}
+              <div className="px-2 py-1.5">
+                <p className="mb-2 font-medium text-sm">Status</p>
+                {[
+                  'backlog',
+                  'planned',
+                  'in_progress',
+                  'in_review',
+                  'completed',
+                  'cancelled',
+                  'active',
+                  'on_hold',
+                ].map((status) => (
+                  <DropdownMenuCheckboxItem
+                    key={status}
+                    checked={statusFilter.includes(status)}
+                    onCheckedChange={(checked) => {
+                      setStatusFilter((prev) =>
+                        checked
+                          ? [...prev, status]
+                          : prev.filter((s) => s !== status)
+                      );
+                    }}
+                  >
+                    {status.replace('_', ' ').toUpperCase()}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </div>
+
+              <DropdownMenuSeparator />
+
+              {/* Priority Filter */}
+              <div className="px-2 py-1.5">
+                <p className="mb-2 font-medium text-sm">Priority</p>
+                {['critical', 'high', 'normal', 'low'].map((priority) => (
+                  <DropdownMenuCheckboxItem
+                    key={priority}
+                    checked={priorityFilter.includes(priority)}
+                    onCheckedChange={(checked) => {
+                      setPriorityFilter((prev) =>
+                        checked
+                          ? [...prev, priority]
+                          : prev.filter((p) => p !== priority)
+                      );
+                    }}
+                  >
+                    {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </div>
+
+              <DropdownMenuSeparator />
+
+              {/* Health Filter */}
+              <div className="px-2 py-1.5">
+                <p className="mb-2 font-medium text-sm">Health</p>
+                {['on_track', 'at_risk', 'off_track'].map((health) => (
+                  <DropdownMenuCheckboxItem
+                    key={health}
+                    checked={healthFilter.includes(health)}
+                    onCheckedChange={(checked) => {
+                      setHealthFilter((prev) =>
+                        checked
+                          ? [...prev, health]
+                          : prev.filter((h) => h !== health)
+                      );
+                    }}
+                  >
+                    {health === 'on_track'
+                      ? '🟢 On Track'
+                      : health === 'at_risk'
+                        ? '🟡 At Risk'
+                        : '🔴 Off Track'}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </div>
+
+              {hasActiveFilters && (
+                <>
+                  <DropdownMenuSeparator />
+                  <div className="px-2 py-1.5">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full"
+                      onClick={clearFilters}
+                    >
+                      Clear all filters
+                    </Button>
+                  </div>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Sort */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <ChevronDown className="mr-2 h-4 w-4" />
+                Sort
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setSortBy('created_at')}>
+                <Calendar className="mr-2 h-4 w-4" />
+                Created Date
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy('name')}>
+                Name
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy('status')}>
+                Status
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy('priority')}>
+                Priority
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy('health_status')}>
+                Health Status
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy('tasks_count')}>
+                Task Count
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() =>
+                  setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+                }
+              >
+                {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* View Mode Toggle */}
+          <div className="flex rounded-md border">
+            <Button
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              size="sm"
+              className="rounded-r-none"
+              onClick={() => setViewMode('list')}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+              size="sm"
+              className="rounded-l-none"
+              onClick={() => setViewMode('grid')}
+            >
+              <Grid3x3 className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Project
+          </Button>
+        </div>
       </div>
 
       {projectsLoading ? (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-dynamic-purple" />
         </div>
-      ) : projects.length === 0 ? (
+      ) : filteredProjects.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Archive className="h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 font-semibold text-lg">No projects yet</h3>
+            <h3 className="mt-4 font-semibold text-lg">
+              {searchQuery || hasActiveFilters
+                ? 'No projects found'
+                : 'No projects yet'}
+            </h3>
             <p className="text-center text-muted-foreground">
-              Create your first project to start organizing tasks across boards.
+              {searchQuery || hasActiveFilters
+                ? 'Try adjusting your search or filters'
+                : 'Create your first project to start organizing tasks across boards.'}
             </p>
-            <Button
-              className="mt-4"
-              onClick={() => setIsCreateDialogOpen(true)}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Create Project
-            </Button>
+            {!searchQuery && !hasActiveFilters && (
+              <Button
+                className="mt-4"
+                onClick={() => setIsCreateDialogOpen(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create Project
+              </Button>
+            )}
           </CardContent>
         </Card>
+      ) : viewMode === 'list' ? (
+        <div className="space-y-2">
+          {filteredProjects.map((project) => (
+            <Card
+              key={project.id}
+              className="group hover:-translate-y-0.5 transition-all hover:shadow-md"
+            >
+              <CardContent className="p-4">
+                <div className="flex items-start gap-4">
+                  {/* Project Info */}
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <NextLink
+                          href={`/${wsId}/tasks/projects/${project.id}`}
+                          className="group/link inline-flex items-center gap-2 hover:text-dynamic-purple"
+                        >
+                          <h3 className="font-semibold text-base">
+                            {project.name}
+                          </h3>
+                          <ExternalLink className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover/link:opacity-100" />
+                        </NextLink>
+                        {project.description && (
+                          <p className="mt-1 line-clamp-1 text-muted-foreground text-sm">
+                            {project.description}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={isUpdating || isDeleting}
+                            className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => handleEditProject(project)}
+                            disabled={isUpdating}
+                          >
+                            <Edit3 className="mr-2 h-4 w-4 text-dynamic-blue" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteProject(project.id)}
+                            disabled={isDeleting}
+                            className="text-dynamic-red focus:text-dynamic-red"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    {/* Metadata Row */}
+                    <div className="flex flex-wrap items-center gap-3">
+                      {/* Status */}
+                      {getStatusBadge(project.status)}
+
+                      {/* Priority */}
+                      {getPriorityBadge(project.priority)}
+
+                      {/* Health */}
+                      {getHealthStatusBadge(project.health_status)}
+
+                      {/* Lead */}
+                      {project.lead && (
+                        <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
+                          <User className="h-3.5 w-3.5" />
+                          <span>{project.lead.display_name || 'Unknown'}</span>
+                        </div>
+                      )}
+
+                      {/* Dates */}
+                      {(project.start_date || project.end_date) && (
+                        <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {project.start_date && (
+                            <span>
+                              {new Date(project.start_date).toLocaleDateString(
+                                'en-US',
+                                {
+                                  month: 'short',
+                                  day: 'numeric',
+                                }
+                              )}
+                            </span>
+                          )}
+                          {project.start_date && project.end_date && (
+                            <span>→</span>
+                          )}
+                          {project.end_date && (
+                            <span>
+                              {new Date(project.end_date).toLocaleDateString(
+                                'en-US',
+                                {
+                                  month: 'short',
+                                  day: 'numeric',
+                                }
+                              )}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Task Count */}
+                      <Badge variant="outline" className="text-xs">
+                        {project.completedTasksCount}/{project.tasksCount} tasks
+                        completed
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleOpenManageTasks(project)}
+                      disabled={isLinking || isUnlinking}
+                    >
+                      <Link className="mr-2 h-4 w-4" />
+                      Link Tasks
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {projects.map((project) => (
+          {filteredProjects.map((project) => (
             <Card key={project.id} className="group">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -516,24 +1092,53 @@ export function TaskProjectsClient({
                 </div>
               </CardHeader>
               <CardContent className="space-y-3 pt-0">
+                {/* Badges */}
+                <div className="flex flex-wrap gap-2">
+                  {getStatusBadge(project.status)}
+                  {getPriorityBadge(project.priority)}
+                  {getHealthStatusBadge(project.health_status)}
+                </div>
+
+                {/* Metadata */}
                 <div className="flex flex-wrap items-center gap-4 text-muted-foreground text-sm">
-                  <div className="flex items-center gap-1">
-                    <User className="h-3 w-3" />
-                    <span>{project.creator?.display_name || 'Unknown'}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    <span>
-                      {new Date(project.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
+                  {project.lead && (
+                    <div className="flex items-center gap-1">
+                      <Avatar className="h-5 w-5">
+                        <AvatarImage src={project.lead.avatar_url || undefined} />
+                        <AvatarFallback className="text-xs">
+                          {project.lead.display_name?.[0]?.toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="truncate">
+                        {project.lead.display_name || 'Unknown'}
+                      </span>
+                    </div>
+                  )}
+                  {(project.start_date || project.end_date) && (
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      <span className="text-xs">
+                        {project.start_date &&
+                          new Date(project.start_date).toLocaleDateString(
+                            'en-US',
+                            { month: 'short', day: 'numeric' }
+                          )}
+                        {project.start_date && project.end_date && ' → '}
+                        {project.end_date &&
+                          new Date(project.end_date).toLocaleDateString(
+                            'en-US',
+                            { month: 'short', day: 'numeric' }
+                          )}
+                      </span>
+                    </div>
+                  )}
                   <Badge variant="outline" className="text-xs">
-                    {project.tasksCount} linked task
-                    {project.tasksCount === 1 ? '' : 's'}
+                    {project.completedTasksCount}/{project.tasksCount} done
                   </Badge>
                 </div>
 
-                {project.linkedTasks.length > 0 ? (
+                {/* Linked Tasks Preview */}
+                {project.linkedTasks.length > 0 && (
                   <div className="space-y-2">
                     <p className="text-muted-foreground text-xs">
                       {project.linkedTasks.length > 3
@@ -542,11 +1147,7 @@ export function TaskProjectsClient({
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {project.linkedTasks.slice(0, 3).map((task) => (
-                        <Badge
-                          key={task.id}
-                          variant="outline"
-                          className="text-xs"
-                        >
+                        <Badge key={task.id} variant="outline" className="text-xs">
                           {task.name}
                         </Badge>
                       ))}
@@ -557,12 +1158,9 @@ export function TaskProjectsClient({
                       )}
                     </div>
                   </div>
-                ) : (
-                  <p className="text-muted-foreground text-sm">
-                    No tasks linked yet.
-                  </p>
                 )}
 
+                {/* Actions */}
                 <div className="flex gap-2">
                   <NextLink
                     href={`/${wsId}/tasks/projects/${project.id}`}
@@ -580,7 +1178,7 @@ export function TaskProjectsClient({
                     disabled={isLinking || isUnlinking}
                   >
                     <Link className="mr-2 h-4 w-4" />
-                    Link Tasks
+                    Link
                   </Button>
                 </div>
               </CardContent>
@@ -589,6 +1187,7 @@ export function TaskProjectsClient({
         </div>
       )}
 
+      {/* Create Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -652,6 +1251,7 @@ export function TaskProjectsClient({
         </DialogContent>
       </Dialog>
 
+      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -715,6 +1315,7 @@ export function TaskProjectsClient({
         </DialogContent>
       </Dialog>
 
+      {/* Manage Tasks Dialog */}
       <Dialog
         open={Boolean(managingProject)}
         onOpenChange={(open) => {

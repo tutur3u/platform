@@ -35,7 +35,7 @@ export default async function TaskProjectsPage({ params }: Props) {
           notFound();
         }
 
-        // Fetch task projects
+        // Fetch task projects with all fields
         const { data: projects, error: projectsError } = await supabase
           .from('task_projects')
           .select(`
@@ -45,12 +45,18 @@ export default async function TaskProjectsPage({ params }: Props) {
               display_name,
               avatar_url
             ),
+            lead:workspace_members(...users(
+              id,
+              display_name,
+              avatar_url
+            )),
             task_project_tasks(
               task:tasks!inner(
                 id,
                 name,
                 completed_at,
                 deleted_at,
+                priority,
                 task_lists(
                   name
                 )
@@ -77,10 +83,20 @@ export default async function TaskProjectsPage({ params }: Props) {
             id: project.id,
             name: project.name,
             description: project.description,
+            status: project.status,
+            priority: project.priority,
+            health_status: project.health_status,
+            lead_id: project.lead_id,
+            lead: project.lead,
+            start_date: project.start_date,
+            end_date: project.end_date,
             created_at: project.created_at ?? new Date().toISOString(),
             creator_id: project.creator_id,
             creator: project.creator,
             tasksCount: activeTasks.length,
+            completedTasksCount: activeTasks.filter(
+              (link) => link.task?.completed_at
+            ).length,
             linkedTasks: activeTasks.flatMap((link) =>
               link.task
                 ? [
@@ -88,6 +104,7 @@ export default async function TaskProjectsPage({ params }: Props) {
                       id: link.task.id,
                       name: link.task.name,
                       completed_at: link.task.completed_at,
+                      priority: link.task.priority,
                       listName: link.task.task_lists?.name ?? null,
                     },
                   ]
