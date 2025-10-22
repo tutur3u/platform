@@ -10,9 +10,9 @@ import { z } from 'zod';
 export interface StorageObject {
   id?: string;
   name: string;
-  created_at?: string;
-  updated_at?: string;
-  last_accessed_at?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  lastAccessedAt?: string;
   metadata?: {
     eTag?: string;
     size?: number;

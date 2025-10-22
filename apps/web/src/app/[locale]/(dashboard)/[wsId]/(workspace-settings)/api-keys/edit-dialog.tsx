@@ -1,6 +1,6 @@
 'use client';
 
-import type { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
+import type { WorkspaceApiKey } from '@tuturuuu/types/db';
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,7 @@ interface Role {
 }
 
 interface Props {
-  data: WorkspaceApiKey;
+  data: Partial<WorkspaceApiKey> & { ws_id: string };
   roles?: Role[];
   trigger?: React.ReactNode;
   open?: boolean;

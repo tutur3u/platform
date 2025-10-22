@@ -2,7 +2,7 @@
 
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis, RefreshCcw, Trash2 } from '@tuturuuu/icons';
-import type { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
+import type { WorkspaceApiKey } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,

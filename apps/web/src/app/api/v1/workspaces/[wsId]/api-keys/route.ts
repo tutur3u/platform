@@ -5,9 +5,24 @@ import * as z from 'zod';
 
 const ApiKeyCreateSchema = z.object({
   name: z.string().min(1),
-  description: z.string().min(1),
+  description: z.string().optional(), // Description is optional
   role_id: z.string().nullable(),
-  expires_at: z.string().nullable(),
+  expires_at: z
+    .string()
+    .refine(
+      (val) => {
+        if (!val) return true; // null/empty is okay
+        try {
+          const date = new Date(val);
+          // Validate it's a proper ISO 8601 datetime
+          return date.toISOString() === val;
+        } catch {
+          return false;
+        }
+      },
+      { message: 'expires_at must be a valid ISO 8601 datetime' }
+    )
+    .nullable(),
 });
 
 interface Params {
@@ -81,7 +96,7 @@ export async function POST(req: Request, { params }: Params) {
   if (error) {
     console.error('Error creating API key:', error);
     return NextResponse.json(
-      { message: error.message || 'Error creating workspace API key' },
+      { message: 'Error creating workspace API key' },
       { status: 500 }
     );
   }

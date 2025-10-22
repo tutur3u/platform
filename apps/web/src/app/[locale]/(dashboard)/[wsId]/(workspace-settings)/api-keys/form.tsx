@@ -1,4 +1,4 @@
-import type { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
+import type { WorkspaceApiKey } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -29,7 +29,7 @@ interface Role {
 }
 
 interface Props {
-  data: WorkspaceApiKey;
+  data: Partial<WorkspaceApiKey> & { ws_id: string };
   roles?: Role[];
   submitLabel?: string;
   onSubmit: (values: z.infer<typeof FormSchema>) => void;
@@ -40,6 +40,7 @@ const FormSchema = z.object({
   description: z.string().min(1),
   role_id: z.string().nullable(),
   expires_at: z.string().nullable(),
+  expires_preset: z.string(), // Stable preset value: '30', '90', '365', or 'none'
 });
 
 export const ApiConfigFormSchema = FormSchema;
@@ -52,6 +53,14 @@ export default function ApiKeyForm({
 }: Props) {
   const t = useTranslations('ws-api-keys');
 
+  // Determine the initial preset value based on expires_at
+  const getInitialPreset = (expiresAt: string | null | undefined): string => {
+    if (!expiresAt) return 'none';
+    // For existing keys, we can't reliably reverse-calculate the preset
+    // So we'll default to 'none' and let the user see/change it if needed
+    return 'none';
+  };
+
   const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
@@ -59,6 +68,7 @@ export default function ApiKeyForm({
       description: data.description || '',
       role_id: data.role_id || null,
       expires_at: data.expires_at || null,
+      expires_preset: getInitialPreset(data.expires_at),
     },
   });
 
@@ -153,29 +163,25 @@ export default function ApiKeyForm({
 
         <FormField
           control={form.control}
-          name="expires_at"
+          name="expires_preset"
           render={({ field }) => (
             <FormItem>
               <FormLabel>{t('expiration_label')}</FormLabel>
               <Select
                 onValueChange={(value) => {
+                  // Update the preset field
+                  field.onChange(value);
+                  // Update the expires_at field based on the preset
                   if (value === 'none') {
-                    field.onChange(null);
+                    form.setValue('expires_at', null);
                   } else {
                     const days = parseInt(value, 10);
                     const expirationDate = new Date();
                     expirationDate.setDate(expirationDate.getDate() + days);
-                    field.onChange(expirationDate.toISOString());
+                    form.setValue('expires_at', expirationDate.toISOString());
                   }
                 }}
-                value={
-                  field.value
-                    ? Math.round(
-                        (new Date(field.value).getTime() - Date.now()) /
-                          (1000 * 60 * 60 * 24)
-                      ).toString()
-                    : 'none'
-                }
+                value={field.value}
               >
                 <FormControl>
                   <SelectTrigger>

@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertTriangle, Trash2 } from '@tuturuuu/icons';
-import type { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
+import type { WorkspaceApiKey } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -43,9 +43,21 @@ export default function DeleteDialog({ apiKey, open, onOpenChange }: Props) {
         onOpenChange(false);
         router.refresh();
       } else {
-        const errorData = await res.json();
+        let errorMessage = t('common.error');
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          // If JSON parsing fails, try to get text response
+          try {
+            const errorText = await res.text();
+            errorMessage = errorText.trim() || `HTTP ${res.status}`;
+          } catch {
+            errorMessage = `HTTP ${res.status}`;
+          }
+        }
         toast.error(t('delete_failed'), {
-          description: errorData.message,
+          description: errorMessage,
         });
       }
     } catch (_) {

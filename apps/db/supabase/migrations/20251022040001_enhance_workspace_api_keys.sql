@@ -68,6 +68,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_workspace_api_keys_ws_id_key_prefix
   ON "public"."workspace_api_keys"(ws_id, key_prefix)
   WHERE key_prefix IS NOT NULL;
 
+-- Add partial unique index to enforce uniqueness of key_hash within a workspace
+-- Prevents duplicate key hashes which could indicate a security issue
+CREATE UNIQUE INDEX IF NOT EXISTS idx_workspace_api_keys_ws_id_key_hash
+  ON "public"."workspace_api_keys"(ws_id, key_hash)
+  WHERE key_hash IS NOT NULL;
+
 -- Add trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_workspace_api_keys_updated_at()
 RETURNS TRIGGER AS $$
@@ -95,30 +101,35 @@ CREATE POLICY "Allow authorized members to view API keys"
   TO authenticated
   USING (
     is_org_member(auth.uid(), ws_id) AND
-    EXISTS (
+    (
       -- Check if user has manage_api_keys permission via role membership
-      SELECT wrp.ws_id
-      FROM workspace_role_members wrm
-      JOIN workspace_role_permissions wrp
-        ON wrp.role_id = wrm.role_id
-        AND wrp.ws_id = workspace_api_keys.ws_id
-      WHERE wrm.user_id = auth.uid()
-        AND wrp.permission = 'manage_api_keys'
-        AND wrp.enabled = true
-
-      UNION
-
+      EXISTS (
+        SELECT 1
+        FROM workspace_role_members wrm
+        JOIN workspace_roles wr
+          ON wr.id = wrm.role_id
+        JOIN workspace_role_permissions wrp
+          ON wrp.role_id = wrm.role_id
+          AND wrp.ws_id = workspace_api_keys.ws_id
+        WHERE wrm.user_id = auth.uid()
+          AND wr.ws_id = workspace_api_keys.ws_id
+          AND wrp.permission = 'manage_api_keys'
+          AND wrp.enabled = true
+      )
+      OR
       -- Also check workspace-wide default permissions
-      SELECT wdp.ws_id
-      FROM workspace_default_permissions wdp
-      WHERE wdp.ws_id = workspace_api_keys.ws_id
-        AND wdp.permission = 'manage_api_keys'
-        AND wdp.enabled = true
-        AND EXISTS (
-          SELECT 1 FROM workspace_members wm
-          WHERE wm.ws_id = workspace_api_keys.ws_id
-          AND wm.user_id = auth.uid()
-        )
+      EXISTS (
+        SELECT 1
+        FROM workspace_default_permissions wdp
+        WHERE wdp.ws_id = workspace_api_keys.ws_id
+          AND wdp.permission = 'manage_api_keys'
+          AND wdp.enabled = true
+          AND EXISTS (
+            SELECT 1 FROM workspace_members wm
+            WHERE wm.ws_id = workspace_api_keys.ws_id
+            AND wm.user_id = auth.uid()
+          )
+      )
     )
   );
 
@@ -129,30 +140,35 @@ CREATE POLICY "Allow authorized members to create API keys"
   TO authenticated
   WITH CHECK (
     is_org_member(auth.uid(), ws_id) AND
-    EXISTS (
+    (
       -- Check if user has manage_api_keys permission via role membership
-      SELECT wrp.ws_id
-      FROM workspace_role_members wrm
-      JOIN workspace_role_permissions wrp
-        ON wrp.role_id = wrm.role_id
-        AND wrp.ws_id = workspace_api_keys.ws_id
-      WHERE wrm.user_id = auth.uid()
-        AND wrp.permission = 'manage_api_keys'
-        AND wrp.enabled = true
-
-      UNION
-
+      EXISTS (
+        SELECT 1
+        FROM workspace_role_members wrm
+        JOIN workspace_roles wr
+          ON wr.id = wrm.role_id
+        JOIN workspace_role_permissions wrp
+          ON wrp.role_id = wrm.role_id
+          AND wrp.ws_id = workspace_api_keys.ws_id
+        WHERE wrm.user_id = auth.uid()
+          AND wr.ws_id = workspace_api_keys.ws_id
+          AND wrp.permission = 'manage_api_keys'
+          AND wrp.enabled = true
+      )
+      OR
       -- Also check workspace-wide default permissions
-      SELECT wdp.ws_id
-      FROM workspace_default_permissions wdp
-      WHERE wdp.ws_id = workspace_api_keys.ws_id
-        AND wdp.permission = 'manage_api_keys'
-        AND wdp.enabled = true
-        AND EXISTS (
-          SELECT 1 FROM workspace_members wm
-          WHERE wm.ws_id = workspace_api_keys.ws_id
-          AND wm.user_id = auth.uid()
-        )
+      EXISTS (
+        SELECT 1
+        FROM workspace_default_permissions wdp
+        WHERE wdp.ws_id = workspace_api_keys.ws_id
+          AND wdp.permission = 'manage_api_keys'
+          AND wdp.enabled = true
+          AND EXISTS (
+            SELECT 1 FROM workspace_members wm
+            WHERE wm.ws_id = workspace_api_keys.ws_id
+            AND wm.user_id = auth.uid()
+          )
+      )
     )
   );
 
@@ -163,58 +179,68 @@ CREATE POLICY "Allow authorized members to update API keys"
   TO authenticated
   USING (
     is_org_member(auth.uid(), ws_id) AND
-    EXISTS (
+    (
       -- Check if user has manage_api_keys permission via role membership
-      SELECT wrp.ws_id
-      FROM workspace_role_members wrm
-      JOIN workspace_role_permissions wrp
-        ON wrp.role_id = wrm.role_id
-        AND wrp.ws_id = workspace_api_keys.ws_id
-      WHERE wrm.user_id = auth.uid()
-        AND wrp.permission = 'manage_api_keys'
-        AND wrp.enabled = true
-
-      UNION
-
+      EXISTS (
+        SELECT 1
+        FROM workspace_role_members wrm
+        JOIN workspace_roles wr
+          ON wr.id = wrm.role_id
+        JOIN workspace_role_permissions wrp
+          ON wrp.role_id = wrm.role_id
+          AND wrp.ws_id = workspace_api_keys.ws_id
+        WHERE wrm.user_id = auth.uid()
+          AND wr.ws_id = workspace_api_keys.ws_id
+          AND wrp.permission = 'manage_api_keys'
+          AND wrp.enabled = true
+      )
+      OR
       -- Also check workspace-wide default permissions
-      SELECT wdp.ws_id
-      FROM workspace_default_permissions wdp
-      WHERE wdp.ws_id = workspace_api_keys.ws_id
-        AND wdp.permission = 'manage_api_keys'
-        AND wdp.enabled = true
-        AND EXISTS (
-          SELECT 1 FROM workspace_members wm
-          WHERE wm.ws_id = workspace_api_keys.ws_id
-          AND wm.user_id = auth.uid()
-        )
+      EXISTS (
+        SELECT 1
+        FROM workspace_default_permissions wdp
+        WHERE wdp.ws_id = workspace_api_keys.ws_id
+          AND wdp.permission = 'manage_api_keys'
+          AND wdp.enabled = true
+          AND EXISTS (
+            SELECT 1 FROM workspace_members wm
+            WHERE wm.ws_id = workspace_api_keys.ws_id
+            AND wm.user_id = auth.uid()
+          )
+      )
     )
   )
   WITH CHECK (
     is_org_member(auth.uid(), ws_id) AND
-    EXISTS (
+    (
       -- Check if user has manage_api_keys permission via role membership
-      SELECT wrp.ws_id
-      FROM workspace_role_members wrm
-      JOIN workspace_role_permissions wrp
-        ON wrp.role_id = wrm.role_id
-        AND wrp.ws_id = workspace_api_keys.ws_id
-      WHERE wrm.user_id = auth.uid()
-        AND wrp.permission = 'manage_api_keys'
-        AND wrp.enabled = true
-
-      UNION
-
+      EXISTS (
+        SELECT 1
+        FROM workspace_role_members wrm
+        JOIN workspace_roles wr
+          ON wr.id = wrm.role_id
+        JOIN workspace_role_permissions wrp
+          ON wrp.role_id = wrm.role_id
+          AND wrp.ws_id = workspace_api_keys.ws_id
+        WHERE wrm.user_id = auth.uid()
+          AND wr.ws_id = workspace_api_keys.ws_id
+          AND wrp.permission = 'manage_api_keys'
+          AND wrp.enabled = true
+      )
+      OR
       -- Also check workspace-wide default permissions
-      SELECT wdp.ws_id
-      FROM workspace_default_permissions wdp
-      WHERE wdp.ws_id = workspace_api_keys.ws_id
-        AND wdp.permission = 'manage_api_keys'
-        AND wdp.enabled = true
-        AND EXISTS (
-          SELECT 1 FROM workspace_members wm
-          WHERE wm.ws_id = workspace_api_keys.ws_id
-          AND wm.user_id = auth.uid()
-        )
+      EXISTS (
+        SELECT 1
+        FROM workspace_default_permissions wdp
+        WHERE wdp.ws_id = workspace_api_keys.ws_id
+          AND wdp.permission = 'manage_api_keys'
+          AND wdp.enabled = true
+          AND EXISTS (
+            SELECT 1 FROM workspace_members wm
+            WHERE wm.ws_id = workspace_api_keys.ws_id
+            AND wm.user_id = auth.uid()
+          )
+      )
     )
   );
 
@@ -225,30 +251,35 @@ CREATE POLICY "Allow authorized members to delete API keys"
   TO authenticated
   USING (
     is_org_member(auth.uid(), ws_id) AND
-    EXISTS (
+    (
       -- Check if user has manage_api_keys permission via role membership
-      SELECT wrp.ws_id
-      FROM workspace_role_members wrm
-      JOIN workspace_role_permissions wrp
-        ON wrp.role_id = wrm.role_id
-        AND wrp.ws_id = workspace_api_keys.ws_id
-      WHERE wrm.user_id = auth.uid()
-        AND wrp.permission = 'manage_api_keys'
-        AND wrp.enabled = true
-
-      UNION
-
+      EXISTS (
+        SELECT 1
+        FROM workspace_role_members wrm
+        JOIN workspace_roles wr
+          ON wr.id = wrm.role_id
+        JOIN workspace_role_permissions wrp
+          ON wrp.role_id = wrm.role_id
+          AND wrp.ws_id = workspace_api_keys.ws_id
+        WHERE wrm.user_id = auth.uid()
+          AND wr.ws_id = workspace_api_keys.ws_id
+          AND wrp.permission = 'manage_api_keys'
+          AND wrp.enabled = true
+      )
+      OR
       -- Also check workspace-wide default permissions
-      SELECT wdp.ws_id
-      FROM workspace_default_permissions wdp
-      WHERE wdp.ws_id = workspace_api_keys.ws_id
-        AND wdp.permission = 'manage_api_keys'
-        AND wdp.enabled = true
-        AND EXISTS (
-          SELECT 1 FROM workspace_members wm
-          WHERE wm.ws_id = workspace_api_keys.ws_id
-          AND wm.user_id = auth.uid()
-        )
+      EXISTS (
+        SELECT 1
+        FROM workspace_default_permissions wdp
+        WHERE wdp.ws_id = workspace_api_keys.ws_id
+          AND wdp.permission = 'manage_api_keys'
+          AND wdp.enabled = true
+          AND EXISTS (
+            SELECT 1 FROM workspace_members wm
+            WHERE wm.ws_id = workspace_api_keys.ws_id
+            AND wm.user_id = auth.uid()
+          )
+      )
     )
   );
 

@@ -103,12 +103,20 @@ export const GET = withApiAuth(
         ? 100 * 1024 * 1024 * 1024 // 100 GB for root workspace
         : 50 * 1024 * 1024; // 50 MB for regular workspaces
 
+      // Calculate usage percentage with proper handling of edge cases
+      let usagePercentage = 0;
+      if (storageLimit > 0) {
+        const rawPercentage = (totalSize / storageLimit) * 100;
+        // Round to 2 decimal places and clamp to 0-100 range
+        usagePercentage = Math.min(100, Math.round(rawPercentage * 100) / 100);
+      }
+
       return NextResponse.json({
         data: {
           totalSize,
           fileCount,
           storageLimit,
-          usagePercentage: (totalSize / storageLimit) * 100,
+          usagePercentage,
           largestFile: largestFile
             ? {
                 name: largestFile.name,

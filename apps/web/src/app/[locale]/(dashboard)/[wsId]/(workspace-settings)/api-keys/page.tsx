@@ -1,10 +1,11 @@
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { Plus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
+import type { WorkspaceApiKey } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
+import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
@@ -74,16 +75,18 @@ export default async function WorkspaceApiKeysPage({
               </div>
             </div>
             <Separator className="my-4" />
-            <CustomDataTable
-              columnGenerator={apiKeyColumns}
-              namespace="api-key-data-table"
-              data={apiKeys}
-              count={count}
-              defaultVisibility={{
-                id: false,
-                created_at: false,
-              }}
-            />
+            <TooltipProvider>
+              <CustomDataTable
+                columnGenerator={apiKeyColumns}
+                namespace="api-key-data-table"
+                data={apiKeys}
+                count={count}
+                defaultVisibility={{
+                  id: false,
+                  created_at: false,
+                }}
+              />
+            </TooltipProvider>
             <div className="my-8">
               <SDKGuide />
             </div>

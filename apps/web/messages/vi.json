@@ -2508,7 +2508,7 @@
     "manage_workspace_secrets": "Quản lý mã bí mật",
     "manage_workspace_secrets_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa mã bí mật không gian làm việc.",
     "manage_api_keys": "Quản lý khóa API",
-    "manage_api_keys_description": "Cho phép thành viên xem, tạo và xóa khóa API của không gian làm việc.",
+    "manage_api_keys_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa khóa API của không gian làm việc.",
     "manage_external_migrations": "Quản lý chuyển dữ liệu từ bên ngoài",
     "manage_external_migrations_description": "Cho phép thành viên xem và thực thi chuyển dữ liệu từ bên ngoài.",
     "workspace": "Không gian làm việc",

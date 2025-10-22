@@ -1973,7 +1973,7 @@
     "name_placeholder": "e.g., Production API Key",
     "name_description": "A friendly name to identify this API key",
     "value": "Value",
-    "key_prefix": "Key prefix",
+    "key_prefix": "Key Prefix",
     "created_at": "Created at",
     "create_key": "Create API Key",
     "edit_key": "Edit API Key",
@@ -2056,7 +2056,7 @@
     "sdk_full_documentation_description": "View complete SDK reference and advanced examples",
     "sdk_view_docs": "View Documentation",
     "common": {
-      "error": "An error has occured.",
+      "error": "An error has occurred.",
       "cancel": "Cancel",
       "close": "Close"
     }

@@ -2,19 +2,48 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import { Check, Copy } from '@tuturuuu/icons';
-import type { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
+import type { WorkspaceApiKey } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@tuturuuu/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import moment from 'moment';
 import { useState } from 'react';
 import { ApiKeyRowActions } from './row-actions';
+
+// Separate component for key prefix cell to handle React hooks correctly
+function KeyPrefixCell({ t, prefix }: { t: any; prefix: string | null }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    if (prefix) {
+      await navigator.clipboard.writeText(prefix);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  if (!prefix) return <span className="text-muted-foreground">-</span>;
+
+  return (
+    <div className="flex items-center gap-2">
+      <code className="font-mono text-xs">{prefix}...</code>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-6 w-6"
+        onClick={handleCopy}
+        aria-label={t('ws-api-keys.copy_prefix')}
+      >
+        {copied ? (
+          <Check className="h-3 w-3 text-dynamic-green" />
+        ) : (
+          <Copy className="h-3 w-3" />
+        )}
+      </Button>
+    </div>
+  );
+}
 
 export const apiKeyColumns = (
   t: any,
@@ -84,18 +113,16 @@ export const apiKeyColumns = (
       const description = row.original.description;
       if (!description) return <span className="text-muted-foreground">-</span>;
       return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="max-w-48 cursor-help truncate text-muted-foreground text-sm">
-                {description}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-80">
-              <p>{description}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="max-w-48 cursor-help truncate text-muted-foreground text-sm">
+              {description}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-80">
+            <p>{description}</p>
+          </TooltipContent>
+        </Tooltip>
       );
     },
   },
@@ -109,36 +136,8 @@ export const apiKeyColumns = (
       />
     ),
     cell: ({ row }) => {
-      const [copied, setCopied] = useState(false);
       const prefix = row.getValue('key_prefix') as string | null;
-
-      const handleCopy = async () => {
-        if (prefix) {
-          await navigator.clipboard.writeText(prefix);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 2000);
-        }
-      };
-
-      if (!prefix) return <span className="text-muted-foreground">-</span>;
-
-      return (
-        <div className="flex items-center gap-2">
-          <code className="font-mono text-xs">{prefix}...</code>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            onClick={handleCopy}
-          >
-            {copied ? (
-              <Check className="h-3 w-3 text-dynamic-green" />
-            ) : (
-              <Copy className="h-3 w-3" />
-            )}
-          </Button>
-        </div>
-      );
+      return <KeyPrefixCell t={t} prefix={prefix} />;
     },
   },
   {
@@ -221,18 +220,16 @@ export const apiKeyColumns = (
         );
       }
       return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="cursor-help text-sm">
-                {moment(lastUsed).fromNow()}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{moment(lastUsed).format('DD/MM/YYYY, HH:mm:ss')}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="cursor-help text-sm">
+              {moment(lastUsed).fromNow()}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{moment(lastUsed).format('DD/MM/YYYY, HH:mm:ss')}</p>
+          </TooltipContent>
+        </Tooltip>
       );
     },
   },
@@ -261,20 +258,18 @@ export const apiKeyColumns = (
       );
 
       return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="cursor-help text-sm">
-                {daysUntilExpiry < 0
-                  ? t(`${namespace}.expired`)
-                  : t(`${namespace}.expires_in`, { days: daysUntilExpiry })}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{moment(expiresAt).format('DD/MM/YYYY, HH:mm:ss')}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="cursor-help text-sm">
+              {daysUntilExpiry < 0
+                ? t(`${namespace}.expired`)
+                : t(`${namespace}.expires_in`, { days: daysUntilExpiry })}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{moment(expiresAt).format('DD/MM/YYYY, HH:mm:ss')}</p>
+          </TooltipContent>
+        </Tooltip>
       );
     },
   },

@@ -83,8 +83,8 @@ describe('listStorageOptionsSchema', () => {
     }
   });
 
-  it('should reject limit greater than 1000', () => {
-    const result = listStorageOptionsSchema.safeParse({ limit: 1001 });
+  it('should reject limit greater than 100', () => {
+    const result = listStorageOptionsSchema.safeParse({ limit: 101 });
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.issues.length).toBeGreaterThan(0);
@@ -99,17 +99,11 @@ describe('listStorageOptionsSchema', () => {
     }
   });
 
-  it('should reject NaN and null for limit', () => {
-    const resultNaN = listStorageOptionsSchema.safeParse({ limit: Number.NaN });
-    expect(resultNaN.success).toBe(false);
-    if (!resultNaN.success) {
-      expect(resultNaN.error.issues.length).toBeGreaterThan(0);
-    }
-
-    const resultNull = listStorageOptionsSchema.safeParse({ limit: null });
-    expect(resultNull.success).toBe(false);
-    if (!resultNull.success) {
-      expect(resultNull.error.issues.length).toBeGreaterThan(0);
+  it.each([Number.NaN, null])('should reject %p for limit', (value) => {
+    const result = listStorageOptionsSchema.safeParse({ limit: value });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
     }
   });
 
@@ -120,19 +114,11 @@ describe('listStorageOptionsSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should reject NaN and null for offset', () => {
-    const resultNaN = listStorageOptionsSchema.safeParse({
-      offset: Number.NaN,
-    });
-    expect(resultNaN.success).toBe(false);
-    if (!resultNaN.success) {
-      expect(resultNaN.error.issues.length).toBeGreaterThan(0);
-    }
-
-    const resultNull = listStorageOptionsSchema.safeParse({ offset: null });
-    expect(resultNull.success).toBe(false);
-    if (!resultNull.success) {
-      expect(resultNull.error.issues.length).toBeGreaterThan(0);
+  it.each([Number.NaN, null])('should reject %p for offset', (value) => {
+    const result = listStorageOptionsSchema.safeParse({ offset: value });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
     }
   });
 
@@ -265,19 +251,11 @@ describe('shareOptionsSchema', () => {
     }
   });
 
-  it('should reject NaN and null for expiresIn', () => {
-    const resultNaN = shareOptionsSchema.safeParse({
-      expiresIn: Number.NaN,
-    });
-    expect(resultNaN.success).toBe(false);
-    if (!resultNaN.success) {
-      expect(resultNaN.error.issues.length).toBeGreaterThan(0);
-    }
-
-    const resultNull = shareOptionsSchema.safeParse({ expiresIn: null });
-    expect(resultNull.success).toBe(false);
-    if (!resultNull.success) {
-      expect(resultNull.error.issues.length).toBeGreaterThan(0);
+  it.each([Number.NaN, null])('should reject %p for expiresIn', (value) => {
+    const result = shareOptionsSchema.safeParse({ expiresIn: value });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
     }
   });
 
@@ -375,19 +353,11 @@ describe('listDocumentsOptionsSchema', () => {
     }
   });
 
-  it('should reject NaN and null for limit', () => {
-    const resultNaN = listDocumentsOptionsSchema.safeParse({
-      limit: Number.NaN,
-    });
-    expect(resultNaN.success).toBe(false);
-    if (!resultNaN.success) {
-      expect(resultNaN.error.issues.length).toBeGreaterThan(0);
-    }
-
-    const resultNull = listDocumentsOptionsSchema.safeParse({ limit: null });
-    expect(resultNull.success).toBe(false);
-    if (!resultNull.success) {
-      expect(resultNull.error.issues.length).toBeGreaterThan(0);
+  it.each([Number.NaN, null])('should reject %p for limit', (value) => {
+    const result = listDocumentsOptionsSchema.safeParse({ limit: value });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
     }
   });
 
@@ -401,19 +371,11 @@ describe('listDocumentsOptionsSchema', () => {
     }
   });
 
-  it('should reject NaN and null for offset', () => {
-    const resultNaN = listDocumentsOptionsSchema.safeParse({
-      offset: Number.NaN,
-    });
-    expect(resultNaN.success).toBe(false);
-    if (!resultNaN.success) {
-      expect(resultNaN.error.issues.length).toBeGreaterThan(0);
-    }
-
-    const resultNull = listDocumentsOptionsSchema.safeParse({ offset: null });
-    expect(resultNull.success).toBe(false);
-    if (!resultNull.success) {
-      expect(resultNull.error.issues.length).toBeGreaterThan(0);
+  it.each([Number.NaN, null])('should reject %p for offset', (value) => {
+    const result = listDocumentsOptionsSchema.safeParse({ offset: value });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
     }
   });
 

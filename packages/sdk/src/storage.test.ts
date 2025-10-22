@@ -259,7 +259,7 @@ describe('StorageClient', () => {
 
   describe('list', () => {
     it('should list files with default options', async () => {
-      const mockResponse: ListStorageResponse = {
+      const mockApiResponse = {
         data: [
           {
             name: 'file.txt',
@@ -270,11 +270,22 @@ describe('StorageClient', () => {
         pagination: { limit: 50, offset: 0, total: 1 },
       };
 
-      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
+      const expectedResponse: ListStorageResponse = {
+        data: [
+          {
+            name: 'file.txt',
+            id: '1',
+            createdAt: '2024-01-01',
+          },
+        ],
+        pagination: { limit: 50, offset: 0, total: 1 },
+      };
+
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockApiResponse));
 
       const result = await client.storage.list();
 
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual(expectedResponse);
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/storage/list?'),
         expect.any(Object)

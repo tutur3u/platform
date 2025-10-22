@@ -47,6 +47,7 @@ import type {
   ListStorageResponse,
   ShareOptions,
   ShareResponse,
+  StorageObject,
   UpdateDocumentData,
   UploadOptions,
   UploadResponse,
@@ -59,6 +60,20 @@ import {
   updateDocumentDataSchema,
   uploadOptionsSchema,
 } from './types';
+
+/**
+ * Transform snake_case API response to camelCase SDK format
+ */
+function transformStorageObject(apiObject: any): StorageObject {
+  return {
+    id: apiObject.id,
+    name: apiObject.name,
+    createdAt: apiObject.created_at,
+    updatedAt: apiObject.updated_at,
+    lastAccessedAt: apiObject.last_accessed_at,
+    metadata: apiObject.metadata,
+  };
+}
 
 /**
  * Helper function to validate data with Zod schema and convert errors to ValidationError
@@ -139,9 +154,15 @@ export class StorageClient {
     if (validatedOptions.sortOrder)
       params.set('sortOrder', validatedOptions.sortOrder);
 
-    return this.client.request<ListStorageResponse>(
+    const response = await this.client.request<any>(
       `/storage/list?${params.toString()}`
     );
+
+    // Transform snake_case API response to camelCase SDK format
+    return {
+      data: response.data.map(transformStorageObject),
+      pagination: response.pagination,
+    };
   }
 
   /**

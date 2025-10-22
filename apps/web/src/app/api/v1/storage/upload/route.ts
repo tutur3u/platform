@@ -7,8 +7,9 @@
 
 import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
-import { basename, posix } from 'node:path';
+import { posix } from 'node:path';
 
 // Configurable allowlist of acceptable MIME types and extensions
 const ALLOWED_MIME_TYPES = new Set([
@@ -64,50 +65,6 @@ const ALLOWED_EXTENSIONS = new Set([
   '.json',
 ]);
 
-/**
- * Sanitizes a path component to prevent directory traversal
- */
-function sanitizePath(path: string): string | null {
-  if (!path) return '';
-
-  // Trim and remove leading/trailing slashes
-  const sanitized = path.trim().replace(/^\/+|\/+$/g, '');
-
-  // Split into segments and validate each
-  const segments = sanitized.split('/').filter(Boolean);
-
-  for (const segment of segments) {
-    // Reject any segment that is '..' or '.'
-    if (segment === '..' || segment === '.') {
-      return null;
-    }
-    // Reject segments with path traversal attempts
-    if (segment.includes('..') || segment.includes('./')) {
-      return null;
-    }
-  }
-
-  // Rejoin with forward slashes
-  return segments.join('/');
-}
-
-/**
- * Sanitizes a filename to prevent directory traversal and invalid characters
- */
-function sanitizeFilename(filename: string): string | null {
-  if (!filename) return null;
-
-  // Get the basename to remove any path components
-  const base = basename(filename);
-
-  // Reject if basename differs from original (indicates path traversal attempt)
-  if (base !== filename) {
-    return null;
-  }
-
-  return base;
-}
-
 export const POST = withApiAuth(
   async (request, { context }) => {
     const { wsId } = context;
@@ -139,9 +96,11 @@ export const POST = withApiAuth(
       }
 
       // Validate file type with stricter checks
-      const fileExtension = file.name
-        .substring(file.name.lastIndexOf('.'))
-        .toLowerCase();
+      const lastDotIndex = file.name.lastIndexOf('.');
+      const fileExtension =
+        lastDotIndex === -1
+          ? '' // No extension found
+          : file.name.substring(lastDotIndex).toLowerCase();
 
       // Perform conditional validation based on available information
       let isValid = false;
@@ -152,11 +111,14 @@ export const POST = withApiAuth(
           ALLOWED_MIME_TYPES.has(file.type) &&
           ALLOWED_EXTENSIONS.has(fileExtension);
       } else if (file.type) {
-        // Only MIME type present
+        // Only MIME type present (or no extension)
         isValid = ALLOWED_MIME_TYPES.has(file.type);
-      } else {
-        // Only extension present (or no MIME type)
+      } else if (fileExtension) {
+        // Only extension present (no MIME type)
         isValid = ALLOWED_EXTENSIONS.has(fileExtension);
+      } else {
+        // No MIME type and no extension - reject
+        isValid = false;
       }
 
       if (!isValid) {

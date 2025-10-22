@@ -1,63 +1,81 @@
+import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
 import { generateApiKey, hashApiKey } from '@tuturuuu/auth/api-keys';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import * as z from 'zod';
 
-interface Params {
-  params: Promise<{
-    keyId: string;
-  }>;
-}
+// Schema for validating route params
+const paramsSchema = z.object({
+  wsId: z.string().uuid(),
+  keyId: z.string().uuid(),
+});
 
-export async function POST(_: Request, { params }: Params) {
-  const supabase = await createClient();
-  const { keyId: id } = await params;
+export const POST = withApiAuth(
+  async (_, { context }) => {
+    const { wsId, keyId } = context;
 
-  // Get authenticated user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    // Validate params
+    const paramValidation = paramsSchema.safeParse({ wsId, keyId });
+    if (!paramValidation.success) {
+      return createErrorResponse(
+        'Bad Request',
+        'Invalid workspace ID or key ID',
+        400,
+        'INVALID_PARAMS'
+      );
+    }
 
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
+    const supabase = await createClient();
 
-  // Fetch the existing API key
-  const { data: existingKey, error: fetchError } = await supabase
-    .from('workspace_api_keys')
-    .select('*')
-    .eq('id', id)
-    .single();
+    // Fetch the existing API key with workspace scoping
+    const { data: existingKey, error: fetchError } = await supabase
+      .from('workspace_api_keys')
+      .select('*')
+      .eq('id', keyId)
+      .eq('ws_id', wsId) // Ensure workspace scoping
+      .single();
 
-  if (fetchError || !existingKey) {
-    return NextResponse.json({ message: 'API key not found' }, { status: 404 });
-  }
+    if (fetchError || !existingKey) {
+      console.error('Error fetching API key for rotation:', fetchError);
+      return createErrorResponse(
+        'Not Found',
+        'API key not found',
+        404,
+        'API_KEY_NOT_FOUND'
+      );
+    }
 
-  // Generate new API key and hash
-  const { key, prefix } = generateApiKey();
-  const keyHash = await hashApiKey(key);
+    // Generate new API key and hash
+    const { key, prefix } = generateApiKey();
+    const keyHash = await hashApiKey(key);
 
-  // Update the existing key record with new hash and prefix
-  const { error: updateError } = await supabase
-    .from('workspace_api_keys')
-    .update({
-      key_hash: keyHash,
-      key_prefix: prefix,
-      last_used_at: null, // Reset last used timestamp
-    })
-    .eq('id', id);
+    // Update the existing key record with new hash and prefix
+    const { error: updateError } = await supabase
+      .from('workspace_api_keys')
+      .update({
+        key_hash: keyHash,
+        key_prefix: prefix,
+        last_used_at: null, // Reset last used timestamp
+      })
+      .eq('id', keyId)
+      .eq('ws_id', wsId); // Ensure workspace scoping
 
-  if (updateError) {
-    console.error('Error rotating API key:', updateError);
-    return NextResponse.json(
-      { message: updateError.message || 'Error rotating API key' },
-      { status: 500 }
-    );
-  }
+    if (updateError) {
+      console.error('Error rotating API key:', updateError);
+      return createErrorResponse(
+        'Internal Server Error',
+        'Error rotating API key',
+        500,
+        'API_KEY_ROTATION_ERROR'
+      );
+    }
 
-  // Return the new plaintext key to the user (only time they'll see it)
-  return NextResponse.json({
-    message: 'API key rotated successfully',
-    key,
-    prefix,
-  });
-}
+    // Return the new plaintext key to the user (only time they'll see it)
+    return NextResponse.json({
+      message: 'API key rotated successfully',
+      key,
+      prefix,
+    });
+  },
+  { permissions: ['manage_api_keys'] }
+);

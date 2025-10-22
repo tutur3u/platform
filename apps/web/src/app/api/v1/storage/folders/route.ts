@@ -11,6 +11,7 @@ import {
   withApiAuth,
 } from '@/lib/api-middleware';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { sanitizeFolderName, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { posix } from 'node:path';
 import { z } from 'zod';
@@ -29,61 +30,6 @@ const createFolderSchema = z.object({
 });
 
 const EMPTY_FOLDER_PLACEHOLDER = '.emptyFolderPlaceholder';
-
-/**
- * Sanitizes a path component to prevent directory traversal
- */
-function sanitizePath(path: string): string | null {
-  if (!path) return '';
-
-  // Trim and remove leading/trailing slashes
-  let sanitized = path.trim().replace(/^\/+|\/+$/g, '');
-
-  // Replace backslashes with forward slashes
-  sanitized = sanitized.replace(/\\/g, '/');
-
-  // Split into segments and validate each
-  const segments = sanitized.split('/').filter(Boolean);
-
-  for (const segment of segments) {
-    // Reject any segment that is '..' or '.' or empty
-    if (segment === '..' || segment === '.' || segment === '') {
-      return null;
-    }
-    // Reject segments with path traversal attempts
-    if (segment.includes('..') || segment.includes('./')) {
-      return null;
-    }
-  }
-
-  // Rejoin with forward slashes
-  return segments.join('/');
-}
-
-/**
- * Sanitizes a folder name to prevent directory traversal
- */
-function sanitizeFolderName(name: string): string | null {
-  if (!name) return null;
-
-  // Trim and remove leading/trailing slashes
-  const trimmed = name.trim().replace(/^\/+|\/+$/g, '');
-
-  // Replace backslashes with forward slashes
-  const normalized = trimmed.replace(/\\/g, '/');
-
-  // Reject if it contains slashes (should be a single name, not a path)
-  if (normalized.includes('/')) {
-    return null;
-  }
-
-  // Reject path traversal attempts
-  if (normalized === '..' || normalized === '.' || normalized.includes('..')) {
-    return null;
-  }
-
-  return normalized;
-}
 
 export const POST = withApiAuth(
   async (request, { context }) => {
