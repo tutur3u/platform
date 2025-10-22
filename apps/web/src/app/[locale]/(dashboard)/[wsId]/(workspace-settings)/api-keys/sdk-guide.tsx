@@ -206,17 +206,18 @@ try {
           <h3 className="font-semibold text-lg">{t('sdk_initialization')}</h3>
           <div className="space-y-2 text-muted-foreground text-sm">
             <p>{t('sdk_initialization_description')}</p>
-            <div className="rounded-lg border border-dynamic-orange/20 bg-dynamic-orange/5 p-3 text-xs">
+            <div className="space-y-2 rounded-lg border border-dynamic-orange/20 bg-dynamic-orange/5 p-3 text-xs">
               <strong className="text-dynamic-orange">
                 ⚠️ Security Best Practice:
               </strong>
-              <p className="mt-1 text-foreground/80">
+              <p className="text-foreground/80">
                 Never hardcode API keys in your source code. Use environment
                 variables or secret management services:
               </p>
-              <code className="mt-2 block rounded bg-muted p-2 font-mono text-xs">
-                const client = new TuturuuuClient(process.env.TUTURUUU_API_KEY);
-              </code>
+              <CodeBlock
+                language="typescript"
+                value="const client = new TuturuuuClient(process.env.TUTURUUU_API_KEY);"
+              />
             </div>
           </div>
           <CodeBlock language="typescript" value={initCode} />
