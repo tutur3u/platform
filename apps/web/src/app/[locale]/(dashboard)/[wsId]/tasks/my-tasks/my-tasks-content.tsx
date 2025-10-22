@@ -869,7 +869,9 @@ export default function MyTasksContent({
       if (error) throw error;
 
       // Invalidate labels query to refresh the list
-      queryClient.invalidateQueries({ queryKey: ['workspace', wsId, 'labels'] });
+      queryClient.invalidateQueries({
+        queryKey: ['workspace', wsId, 'labels'],
+      });
 
       toast.success('Label created successfully!');
       setNewLabelDialogOpen(false);
@@ -1654,90 +1656,90 @@ export default function MyTasksContent({
                 {/* Task List - Grouped by Priority */}
                 {!collapsedSections.overdue && (
                   <div className="space-y-6">
-                  {(() => {
-                    const grouped = groupTasksByPriority(overdueTasks);
-                    return (
-                      <>
-                        {/* Critical Priority */}
-                        {grouped.critical.length > 0 && (
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2 px-2">
-                              <div className="h-2 w-2 rounded-full bg-dynamic-red" />
-                              <span className="font-bold text-dynamic-red text-xs uppercase tracking-wider">
-                                Critical Priority ({grouped.critical.length})
-                              </span>
-                              <div className="h-px flex-1 bg-gradient-to-r from-dynamic-red/30 to-transparent" />
+                    {(() => {
+                      const grouped = groupTasksByPriority(overdueTasks);
+                      return (
+                        <>
+                          {/* Critical Priority */}
+                          {grouped.critical.length > 0 && (
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2 px-2">
+                                <div className="h-2 w-2 rounded-full bg-dynamic-red" />
+                                <span className="font-bold text-dynamic-red text-xs uppercase tracking-wider">
+                                  Critical Priority ({grouped.critical.length})
+                                </span>
+                                <div className="h-px flex-1 bg-gradient-to-r from-dynamic-red/30 to-transparent" />
+                              </div>
+                              <TaskListWithCompletion
+                                tasks={grouped.critical}
+                                isPersonal={isPersonal}
+                                initialLimit={10}
+                                onTaskUpdate={handleUpdate}
+                              />
                             </div>
-                            <TaskListWithCompletion
-                              tasks={grouped.critical}
-                              isPersonal={isPersonal}
-                              initialLimit={10}
-                              onTaskUpdate={handleUpdate}
-                            />
-                          </div>
-                        )}
+                          )}
 
-                        {/* High Priority */}
-                        {grouped.high.length > 0 && (
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2 px-2">
-                              <div className="h-2 w-2 rounded-full bg-dynamic-orange" />
-                              <span className="font-bold text-dynamic-orange text-xs uppercase tracking-wider">
-                                High Priority ({grouped.high.length})
-                              </span>
-                              <div className="h-px flex-1 bg-gradient-to-r from-dynamic-orange/30 to-transparent" />
+                          {/* High Priority */}
+                          {grouped.high.length > 0 && (
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2 px-2">
+                                <div className="h-2 w-2 rounded-full bg-dynamic-orange" />
+                                <span className="font-bold text-dynamic-orange text-xs uppercase tracking-wider">
+                                  High Priority ({grouped.high.length})
+                                </span>
+                                <div className="h-px flex-1 bg-gradient-to-r from-dynamic-orange/30 to-transparent" />
+                              </div>
+                              <TaskListWithCompletion
+                                tasks={grouped.high}
+                                isPersonal={isPersonal}
+                                initialLimit={10}
+                                onTaskUpdate={handleUpdate}
+                              />
                             </div>
-                            <TaskListWithCompletion
-                              tasks={grouped.high}
-                              isPersonal={isPersonal}
-                              initialLimit={10}
-                              onTaskUpdate={handleUpdate}
-                            />
-                          </div>
-                        )}
+                          )}
 
-                        {/* Normal Priority */}
-                        {grouped.normal.length > 0 && (
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2 px-2">
-                              <div className="h-2 w-2 rounded-full bg-dynamic-blue" />
-                              <span className="font-bold text-dynamic-blue text-xs uppercase tracking-wider">
-                                Normal Priority ({grouped.normal.length})
-                              </span>
-                              <div className="h-px flex-1 bg-gradient-to-r from-dynamic-blue/30 to-transparent" />
+                          {/* Normal Priority */}
+                          {grouped.normal.length > 0 && (
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2 px-2">
+                                <div className="h-2 w-2 rounded-full bg-dynamic-blue" />
+                                <span className="font-bold text-dynamic-blue text-xs uppercase tracking-wider">
+                                  Normal Priority ({grouped.normal.length})
+                                </span>
+                                <div className="h-px flex-1 bg-gradient-to-r from-dynamic-blue/30 to-transparent" />
+                              </div>
+                              <TaskListWithCompletion
+                                tasks={grouped.normal}
+                                isPersonal={isPersonal}
+                                initialLimit={10}
+                                onTaskUpdate={handleUpdate}
+                              />
                             </div>
-                            <TaskListWithCompletion
-                              tasks={grouped.normal}
-                              isPersonal={isPersonal}
-                              initialLimit={10}
-                              onTaskUpdate={handleUpdate}
-                            />
-                          </div>
-                        )}
+                          )}
 
-                        {/* Low Priority + No Priority */}
-                        {(grouped.low.length > 0 ||
-                          grouped.none.length > 0) && (
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2 px-2">
-                              <div className="h-2 w-2 rounded-full bg-muted-foreground" />
-                              <span className="font-bold text-muted-foreground text-xs uppercase tracking-wider">
-                                Low Priority (
-                                {grouped.low.length + grouped.none.length})
-                              </span>
-                              <div className="h-px flex-1 bg-gradient-to-r from-muted-foreground/30 to-transparent" />
+                          {/* Low Priority + No Priority */}
+                          {(grouped.low.length > 0 ||
+                            grouped.none.length > 0) && (
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2 px-2">
+                                <div className="h-2 w-2 rounded-full bg-muted-foreground" />
+                                <span className="font-bold text-muted-foreground text-xs uppercase tracking-wider">
+                                  Low Priority (
+                                  {grouped.low.length + grouped.none.length})
+                                </span>
+                                <div className="h-px flex-1 bg-gradient-to-r from-muted-foreground/30 to-transparent" />
+                              </div>
+                              <TaskListWithCompletion
+                                tasks={[...grouped.low, ...grouped.none]}
+                                isPersonal={isPersonal}
+                                initialLimit={10}
+                                onTaskUpdate={handleUpdate}
+                              />
                             </div>
-                            <TaskListWithCompletion
-                              tasks={[...grouped.low, ...grouped.none]}
-                              isPersonal={isPersonal}
-                              initialLimit={10}
-                              onTaskUpdate={handleUpdate}
-                            />
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
@@ -1786,90 +1788,90 @@ export default function MyTasksContent({
                 {/* Task List - Grouped by Priority */}
                 {!collapsedSections.today && (
                   <div className="space-y-6">
-                  {(() => {
-                    const grouped = groupTasksByPriority(todayTasks);
-                    return (
-                      <>
-                        {/* Critical Priority */}
-                        {grouped.critical.length > 0 && (
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2 px-2">
-                              <div className="h-2 w-2 rounded-full bg-dynamic-red" />
-                              <span className="font-bold text-dynamic-red text-xs uppercase tracking-wider">
-                                Critical Priority ({grouped.critical.length})
-                              </span>
-                              <div className="h-px flex-1 bg-gradient-to-r from-dynamic-red/30 to-transparent" />
+                    {(() => {
+                      const grouped = groupTasksByPriority(todayTasks);
+                      return (
+                        <>
+                          {/* Critical Priority */}
+                          {grouped.critical.length > 0 && (
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2 px-2">
+                                <div className="h-2 w-2 rounded-full bg-dynamic-red" />
+                                <span className="font-bold text-dynamic-red text-xs uppercase tracking-wider">
+                                  Critical Priority ({grouped.critical.length})
+                                </span>
+                                <div className="h-px flex-1 bg-gradient-to-r from-dynamic-red/30 to-transparent" />
+                              </div>
+                              <TaskListWithCompletion
+                                tasks={grouped.critical}
+                                isPersonal={isPersonal}
+                                initialLimit={10}
+                                onTaskUpdate={handleUpdate}
+                              />
                             </div>
-                            <TaskListWithCompletion
-                              tasks={grouped.critical}
-                              isPersonal={isPersonal}
-                              initialLimit={10}
-                              onTaskUpdate={handleUpdate}
-                            />
-                          </div>
-                        )}
+                          )}
 
-                        {/* High Priority */}
-                        {grouped.high.length > 0 && (
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2 px-2">
-                              <div className="h-2 w-2 rounded-full bg-dynamic-orange" />
-                              <span className="font-bold text-dynamic-orange text-xs uppercase tracking-wider">
-                                High Priority ({grouped.high.length})
-                              </span>
-                              <div className="h-px flex-1 bg-gradient-to-r from-dynamic-orange/30 to-transparent" />
+                          {/* High Priority */}
+                          {grouped.high.length > 0 && (
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2 px-2">
+                                <div className="h-2 w-2 rounded-full bg-dynamic-orange" />
+                                <span className="font-bold text-dynamic-orange text-xs uppercase tracking-wider">
+                                  High Priority ({grouped.high.length})
+                                </span>
+                                <div className="h-px flex-1 bg-gradient-to-r from-dynamic-orange/30 to-transparent" />
+                              </div>
+                              <TaskListWithCompletion
+                                tasks={grouped.high}
+                                isPersonal={isPersonal}
+                                initialLimit={10}
+                                onTaskUpdate={handleUpdate}
+                              />
                             </div>
-                            <TaskListWithCompletion
-                              tasks={grouped.high}
-                              isPersonal={isPersonal}
-                              initialLimit={10}
-                              onTaskUpdate={handleUpdate}
-                            />
-                          </div>
-                        )}
+                          )}
 
-                        {/* Normal Priority */}
-                        {grouped.normal.length > 0 && (
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2 px-2">
-                              <div className="h-2 w-2 rounded-full bg-dynamic-blue" />
-                              <span className="font-bold text-dynamic-blue text-xs uppercase tracking-wider">
-                                Normal Priority ({grouped.normal.length})
-                              </span>
-                              <div className="h-px flex-1 bg-gradient-to-r from-dynamic-blue/30 to-transparent" />
+                          {/* Normal Priority */}
+                          {grouped.normal.length > 0 && (
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2 px-2">
+                                <div className="h-2 w-2 rounded-full bg-dynamic-blue" />
+                                <span className="font-bold text-dynamic-blue text-xs uppercase tracking-wider">
+                                  Normal Priority ({grouped.normal.length})
+                                </span>
+                                <div className="h-px flex-1 bg-gradient-to-r from-dynamic-blue/30 to-transparent" />
+                              </div>
+                              <TaskListWithCompletion
+                                tasks={grouped.normal}
+                                isPersonal={isPersonal}
+                                initialLimit={10}
+                                onTaskUpdate={handleUpdate}
+                              />
                             </div>
-                            <TaskListWithCompletion
-                              tasks={grouped.normal}
-                              isPersonal={isPersonal}
-                              initialLimit={10}
-                              onTaskUpdate={handleUpdate}
-                            />
-                          </div>
-                        )}
+                          )}
 
-                        {/* Low Priority + No Priority */}
-                        {(grouped.low.length > 0 ||
-                          grouped.none.length > 0) && (
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2 px-2">
-                              <div className="h-2 w-2 rounded-full bg-muted-foreground" />
-                              <span className="font-bold text-muted-foreground text-xs uppercase tracking-wider">
-                                Low Priority (
-                                {grouped.low.length + grouped.none.length})
-                              </span>
-                              <div className="h-px flex-1 bg-gradient-to-r from-muted-foreground/30 to-transparent" />
+                          {/* Low Priority + No Priority */}
+                          {(grouped.low.length > 0 ||
+                            grouped.none.length > 0) && (
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2 px-2">
+                                <div className="h-2 w-2 rounded-full bg-muted-foreground" />
+                                <span className="font-bold text-muted-foreground text-xs uppercase tracking-wider">
+                                  Low Priority (
+                                  {grouped.low.length + grouped.none.length})
+                                </span>
+                                <div className="h-px flex-1 bg-gradient-to-r from-muted-foreground/30 to-transparent" />
+                              </div>
+                              <TaskListWithCompletion
+                                tasks={[...grouped.low, ...grouped.none]}
+                                isPersonal={isPersonal}
+                                initialLimit={10}
+                                onTaskUpdate={handleUpdate}
+                              />
                             </div>
-                            <TaskListWithCompletion
-                              tasks={[...grouped.low, ...grouped.none]}
-                              isPersonal={isPersonal}
-                              initialLimit={10}
-                              onTaskUpdate={handleUpdate}
-                            />
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
@@ -1918,90 +1920,90 @@ export default function MyTasksContent({
                 {/* Task List - Grouped by Priority */}
                 {!collapsedSections.upcoming && (
                   <div className="space-y-6">
-                  {(() => {
-                    const grouped = groupTasksByPriority(upcomingTasks);
-                    return (
-                      <>
-                        {/* Critical Priority */}
-                        {grouped.critical.length > 0 && (
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2 px-2">
-                              <div className="h-2 w-2 rounded-full bg-dynamic-red" />
-                              <span className="font-bold text-dynamic-red text-xs uppercase tracking-wider">
-                                Critical Priority ({grouped.critical.length})
-                              </span>
-                              <div className="h-px flex-1 bg-gradient-to-r from-dynamic-red/30 to-transparent" />
+                    {(() => {
+                      const grouped = groupTasksByPriority(upcomingTasks);
+                      return (
+                        <>
+                          {/* Critical Priority */}
+                          {grouped.critical.length > 0 && (
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2 px-2">
+                                <div className="h-2 w-2 rounded-full bg-dynamic-red" />
+                                <span className="font-bold text-dynamic-red text-xs uppercase tracking-wider">
+                                  Critical Priority ({grouped.critical.length})
+                                </span>
+                                <div className="h-px flex-1 bg-gradient-to-r from-dynamic-red/30 to-transparent" />
+                              </div>
+                              <TaskListWithCompletion
+                                tasks={grouped.critical}
+                                isPersonal={isPersonal}
+                                initialLimit={10}
+                                onTaskUpdate={handleUpdate}
+                              />
                             </div>
-                            <TaskListWithCompletion
-                              tasks={grouped.critical}
-                              isPersonal={isPersonal}
-                              initialLimit={10}
-                              onTaskUpdate={handleUpdate}
-                            />
-                          </div>
-                        )}
+                          )}
 
-                        {/* High Priority */}
-                        {grouped.high.length > 0 && (
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2 px-2">
-                              <div className="h-2 w-2 rounded-full bg-dynamic-orange" />
-                              <span className="font-bold text-dynamic-orange text-xs uppercase tracking-wider">
-                                High Priority ({grouped.high.length})
-                              </span>
-                              <div className="h-px flex-1 bg-gradient-to-r from-dynamic-orange/30 to-transparent" />
+                          {/* High Priority */}
+                          {grouped.high.length > 0 && (
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2 px-2">
+                                <div className="h-2 w-2 rounded-full bg-dynamic-orange" />
+                                <span className="font-bold text-dynamic-orange text-xs uppercase tracking-wider">
+                                  High Priority ({grouped.high.length})
+                                </span>
+                                <div className="h-px flex-1 bg-gradient-to-r from-dynamic-orange/30 to-transparent" />
+                              </div>
+                              <TaskListWithCompletion
+                                tasks={grouped.high}
+                                isPersonal={isPersonal}
+                                initialLimit={10}
+                                onTaskUpdate={handleUpdate}
+                              />
                             </div>
-                            <TaskListWithCompletion
-                              tasks={grouped.high}
-                              isPersonal={isPersonal}
-                              initialLimit={10}
-                              onTaskUpdate={handleUpdate}
-                            />
-                          </div>
-                        )}
+                          )}
 
-                        {/* Normal Priority */}
-                        {grouped.normal.length > 0 && (
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2 px-2">
-                              <div className="h-2 w-2 rounded-full bg-dynamic-blue" />
-                              <span className="font-bold text-dynamic-blue text-xs uppercase tracking-wider">
-                                Normal Priority ({grouped.normal.length})
-                              </span>
-                              <div className="h-px flex-1 bg-gradient-to-r from-dynamic-blue/30 to-transparent" />
+                          {/* Normal Priority */}
+                          {grouped.normal.length > 0 && (
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2 px-2">
+                                <div className="h-2 w-2 rounded-full bg-dynamic-blue" />
+                                <span className="font-bold text-dynamic-blue text-xs uppercase tracking-wider">
+                                  Normal Priority ({grouped.normal.length})
+                                </span>
+                                <div className="h-px flex-1 bg-gradient-to-r from-dynamic-blue/30 to-transparent" />
+                              </div>
+                              <TaskListWithCompletion
+                                tasks={grouped.normal}
+                                isPersonal={isPersonal}
+                                initialLimit={10}
+                                onTaskUpdate={handleUpdate}
+                              />
                             </div>
-                            <TaskListWithCompletion
-                              tasks={grouped.normal}
-                              isPersonal={isPersonal}
-                              initialLimit={10}
-                              onTaskUpdate={handleUpdate}
-                            />
-                          </div>
-                        )}
+                          )}
 
-                        {/* Low Priority + No Priority */}
-                        {(grouped.low.length > 0 ||
-                          grouped.none.length > 0) && (
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2 px-2">
-                              <div className="h-2 w-2 rounded-full bg-muted-foreground" />
-                              <span className="font-bold text-muted-foreground text-xs uppercase tracking-wider">
-                                Low Priority (
-                                {grouped.low.length + grouped.none.length})
-                              </span>
-                              <div className="h-px flex-1 bg-gradient-to-r from-muted-foreground/30 to-transparent" />
+                          {/* Low Priority + No Priority */}
+                          {(grouped.low.length > 0 ||
+                            grouped.none.length > 0) && (
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2 px-2">
+                                <div className="h-2 w-2 rounded-full bg-muted-foreground" />
+                                <span className="font-bold text-muted-foreground text-xs uppercase tracking-wider">
+                                  Low Priority (
+                                  {grouped.low.length + grouped.none.length})
+                                </span>
+                                <div className="h-px flex-1 bg-gradient-to-r from-muted-foreground/30 to-transparent" />
+                              </div>
+                              <TaskListWithCompletion
+                                tasks={[...grouped.low, ...grouped.none]}
+                                isPersonal={isPersonal}
+                                initialLimit={10}
+                                onTaskUpdate={handleUpdate}
+                              />
                             </div>
-                            <TaskListWithCompletion
-                              tasks={[...grouped.low, ...grouped.none]}
-                              isPersonal={isPersonal}
-                              initialLimit={10}
-                              onTaskUpdate={handleUpdate}
-                            />
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
               </div>

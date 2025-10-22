@@ -180,7 +180,7 @@ export function CommandBar({
   const ITEM_HEIGHT = 39;
   const ASSIGNEE_ITEM_HEIGHT = 43;
   const MAX_VISIBLE_ITEMS = 7;
-  
+
   const projectsScrollHeight = useMemo(() => {
     const itemCount = Math.min(workspaceProjects.length, MAX_VISIBLE_ITEMS);
     return itemCount > 0 ? `${itemCount * ITEM_HEIGHT}px` : 'auto';
@@ -571,7 +571,9 @@ export function CommandBar({
                               className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                             >
                               <ArrowLeft className="h-4 w-4" />
-                              <span className="font-semibold">Select Priority</span>
+                              <span className="font-semibold">
+                                Select Priority
+                              </span>
                             </button>
                             <button
                               onClick={() => {
@@ -664,7 +666,9 @@ export function CommandBar({
                               className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                             >
                               <ArrowLeft className="h-4 w-4" />
-                              <span className="font-semibold">Select Due Date</span>
+                              <span className="font-semibold">
+                                Select Due Date
+                              </span>
                             </button>
                             <button
                               onClick={() => {
@@ -753,7 +757,9 @@ export function CommandBar({
                               className="flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors hover:bg-muted"
                             >
                               <ArrowLeft className="h-4 w-4" />
-                              <span className="font-semibold">Select Estimation</span>
+                              <span className="font-semibold">
+                                Select Estimation
+                              </span>
                             </button>
                             {availableEstimationIndices.map((index) => {
                               const isExtended = index > 5;
@@ -815,12 +821,16 @@ export function CommandBar({
                             className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                           >
                             <ArrowLeft className="h-4 w-4" />
-                            <span className="font-semibold">Select Projects</span>
+                            <span className="font-semibold">
+                              Select Projects
+                            </span>
                           </button>
                           <ScrollArea style={{ height: projectsScrollHeight }}>
                             <div className="space-y-0.5">
                               {workspaceProjects.map((project) => {
-                                const isSelected = selectedProjectIds.includes(project.id);
+                                const isSelected = selectedProjectIds.includes(
+                                  project.id
+                                );
                                 return (
                                   <button
                                     key={project.id}
@@ -881,7 +891,9 @@ export function CommandBar({
                           <ScrollArea style={{ height: labelsScrollHeight }}>
                             <div className="space-y-0.5">
                               {workspaceLabels.map((label) => {
-                                const isSelected = selectedLabelIds.includes(label.id);
+                                const isSelected = selectedLabelIds.includes(
+                                  label.id
+                                );
                                 return (
                                   <button
                                     key={label.id}
@@ -915,7 +927,10 @@ export function CommandBar({
                                       </span>
                                     </div>
                                     {isSelected && (
-                                      <Check className="h-4 w-4 shrink-0" style={{ color: label.color }} />
+                                      <Check
+                                        className="h-4 w-4 shrink-0"
+                                        style={{ color: label.color }}
+                                      />
                                     )}
                                   </button>
                                 );
@@ -946,7 +961,9 @@ export function CommandBar({
                             className="mb-3 flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                           >
                             <ArrowLeft className="h-4 w-4" />
-                            <span className="font-semibold">Select Assignees</span>
+                            <span className="font-semibold">
+                              Select Assignees
+                            </span>
                           </button>
 
                           {/* Search Input */}
@@ -955,7 +972,9 @@ export function CommandBar({
                             <Input
                               placeholder="Search members..."
                               value={assigneeSearchQuery}
-                              onChange={(e) => setAssigneeSearchQuery(e.target.value)}
+                              onChange={(e) =>
+                                setAssigneeSearchQuery(e.target.value)
+                              }
                               className="h-9 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
                             />
                           </div>
@@ -964,7 +983,8 @@ export function CommandBar({
                             {/* Assigned Members Section */}
                             {(() => {
                               const assignedMembers = workspaceMembers.filter(
-                                (member) => selectedAssigneeIds.includes(member.id)
+                                (member) =>
+                                  selectedAssigneeIds.includes(member.id)
                               );
 
                               if (assignedMembers.length > 0) {
@@ -990,9 +1010,13 @@ export function CommandBar({
                                           className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
                                         >
                                           <Avatar className="h-4 w-4">
-                                            <AvatarImage src={member.avatar_url} />
+                                            <AvatarImage
+                                              src={member.avatar_url}
+                                            />
                                             <AvatarFallback className="bg-dynamic-orange/20 font-bold text-[9px]">
-                                              {member.display_name?.[0] || member.email?.[0] || '?'}
+                                              {member.display_name?.[0] ||
+                                                member.email?.[0] ||
+                                                '?'}
                                             </AvatarFallback>
                                           </Avatar>
                                           {member.display_name || member.email}
@@ -1005,7 +1029,9 @@ export function CommandBar({
                                         type="button"
                                         variant="ghost"
                                         size="xs"
-                                        onClick={() => setSelectedAssigneeIds([])}
+                                        onClick={() =>
+                                          setSelectedAssigneeIds([])
+                                        }
                                         className="mt-1 h-6 w-full text-dynamic-red text-xs hover:bg-dynamic-red/10 hover:text-dynamic-red"
                                       >
                                         <UserMinus className="mr-1 h-3 w-3" />
@@ -1021,20 +1047,27 @@ export function CommandBar({
                             {/* Available Members Section */}
                             <div className="space-y-1.5">
                               {(() => {
-                                const unassignedMembers = workspaceMembers.filter(
-                                  (member) => !selectedAssigneeIds.includes(member.id)
-                                );
+                                const unassignedMembers =
+                                  workspaceMembers.filter(
+                                    (member) =>
+                                      !selectedAssigneeIds.includes(member.id)
+                                  );
 
-                                const filteredMembers = unassignedMembers.filter(
-                                  (member) =>
-                                    !assigneeSearchQuery ||
-                                    (member.display_name || '')
-                                      .toLowerCase()
-                                      .includes(assigneeSearchQuery.toLowerCase()) ||
-                                    (member.email || '')
-                                      .toLowerCase()
-                                      .includes(assigneeSearchQuery.toLowerCase())
-                                );
+                                const filteredMembers =
+                                  unassignedMembers.filter(
+                                    (member) =>
+                                      !assigneeSearchQuery ||
+                                      (member.display_name || '')
+                                        .toLowerCase()
+                                        .includes(
+                                          assigneeSearchQuery.toLowerCase()
+                                        ) ||
+                                      (member.email || '')
+                                        .toLowerCase()
+                                        .includes(
+                                          assigneeSearchQuery.toLowerCase()
+                                        )
+                                  );
 
                                 if (filteredMembers.length === 0) {
                                   return assigneeSearchQuery ? (
@@ -1078,7 +1111,9 @@ export function CommandBar({
                                           className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
                                         >
                                           <Avatar className="h-7 w-7 shrink-0">
-                                            <AvatarImage src={member.avatar_url} />
+                                            <AvatarImage
+                                              src={member.avatar_url}
+                                            />
                                             <AvatarFallback className="bg-muted font-semibold text-muted-foreground text-xs group-hover:bg-dynamic-orange/20 group-hover:text-dynamic-orange">
                                               {member.display_name?.[0] ||
                                                 member.email?.[0] ||
@@ -1086,7 +1121,8 @@ export function CommandBar({
                                             </AvatarFallback>
                                           </Avatar>
                                           <span className="flex-1 truncate text-sm">
-                                            {member.display_name || member.email}
+                                            {member.display_name ||
+                                              member.email}
                                           </span>
                                           <UserPlus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
                                         </button>
@@ -1131,7 +1167,8 @@ export function CommandBar({
             {mode === 'task' && hasDestination && selectedDestination && (
               <div className="group/destination relative hidden items-center rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 transition-all hover:bg-dynamic-blue/10 md:inline-flex">
                 <span className="text-dynamic-blue px-2.5 py-1.5 text-xs md:px-3 md:py-2 md:text-sm">
-                  {selectedDestination.boardName} / {selectedDestination.listName}
+                  {selectedDestination.boardName} /{' '}
+                  {selectedDestination.listName}
                 </span>
                 <button
                   onClick={onClearDestination}
