@@ -5,9 +5,9 @@ import type { Workspace } from '@tuturuuu/types/db';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { useSemanticTaskSearch } from '@tuturuuu/ui/hooks/use-semantic-task-search';
 import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSemanticTaskSearch } from '../../../../hooks/use-semantic-task-search';
 import { KanbanBoard } from '../boards/boardId/kanban';
 import type { TaskFilters } from '../boards/boardId/task-filter';
 import { TimelineBoard } from '../boards/boardId/timeline-board';
@@ -394,6 +394,7 @@ export function BoardViews({
             lists={filteredLists}
             isLoading={false}
             disableSort={!!filters.sortBy}
+            listStatusFilter={listStatusFilter}
             filters={filters}
           />
         );
@@ -424,6 +425,7 @@ export function BoardViews({
             lists={filteredLists}
             isLoading={false}
             disableSort={!!filters.sortBy}
+            listStatusFilter={listStatusFilter}
             filters={filters}
           />
         );
