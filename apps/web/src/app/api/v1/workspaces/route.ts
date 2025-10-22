@@ -19,7 +19,7 @@ export async function GET() {
     // Get all workspaces the user has access to
     const { data: workspaces, error } = await supabase
       .from('workspaces')
-      .select('id, name, personal, workspace_members!inner(role)')
+      .select('id, name, slug, personal, workspace_members!inner(role)')
       .eq('workspace_members.user_id', user.id)
       .order('name');
 
@@ -35,6 +35,7 @@ export async function GET() {
     const transformedWorkspaces = workspaces.map((ws) => ({
       id: ws.id,
       name: ws.name,
+      slug: ws.slug,
       personal: ws.personal,
       role: ws.workspace_members[0]?.role,
     }));
@@ -79,14 +80,18 @@ export async function POST(req: Request) {
     );
   }
 
-  const { name } = await req.json();
+  const { name, slug } = await req.json();
+
+  // Build insert object
+  const insertData: { name?: string; slug?: string; creator_id: string } = {
+    creator_id: user.id,
+  };
+  if (name !== undefined) insertData.name = name;
+  if (slug !== undefined) insertData.slug = slug;
 
   const { data, error } = await supabase
     .from('workspaces')
-    .insert({
-      name,
-      creator_id: user.id,
-    })
+    .insert(insertData)
     .select('id')
     .single();
 

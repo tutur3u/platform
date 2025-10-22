@@ -4,6 +4,7 @@ import type { Workspace } from '@tuturuuu/types/db';
 import { useTranslations } from 'next-intl';
 import WorkspaceIDCopy from './id-copy';
 import NameInput from './name-input';
+import SlugInput from './slug-input';
 
 interface Props {
   workspace?: Workspace | null;
@@ -25,11 +26,18 @@ export default function BasicInfo({ workspace, allowEdit, isPersonal }: Props) {
 
       <div className="grid gap-4">
         {isPersonal || (
-          <NameInput
-            wsId={workspace.id}
-            defaultValue={workspace.name}
-            disabled={!workspace || !allowEdit}
-          />
+          <>
+            <NameInput
+              wsId={workspace.id}
+              defaultValue={workspace.name}
+              disabled={!workspace || !allowEdit}
+            />
+            <SlugInput
+              wsId={workspace.id}
+              defaultValue={workspace.slug}
+              disabled={!workspace || !allowEdit}
+            />
+          </>
         )}
         <WorkspaceIDCopy wsId={workspace.id} />
       </div>

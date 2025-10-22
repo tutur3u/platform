@@ -78,13 +78,25 @@ export async function getWorkspace(
   const queryBuilder = supabase
     .from('workspaces')
     .select(
-      'id, name, avatar_url, logo_url, personal, created_at, workspace_members(role)'
+      'id, name, slug, avatar_url, logo_url, personal, created_at, workspace_members(role)'
     );
 
   const resolvedWorkspaceId = resolveWorkspaceId(id);
 
-  if (id.toUpperCase() === 'PERSONAL') queryBuilder.eq('personal', true);
-  else queryBuilder.eq('id', resolvedWorkspaceId);
+  // Check if it's a UUID or a special slug
+  const isUuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      resolvedWorkspaceId
+    );
+
+  if (id.toUpperCase() === 'PERSONAL') {
+    queryBuilder.eq('personal', true);
+  } else if (isUuid) {
+    queryBuilder.eq('id', resolvedWorkspaceId);
+  } else {
+    // It's a slug
+    queryBuilder.eq('slug', resolvedWorkspaceId.toLowerCase());
+  }
 
   if (requireUserRole) queryBuilder.eq('workspace_members.user_id', user.id);
   const { data, error } = await queryBuilder.single();
@@ -131,7 +143,7 @@ export async function getWorkspaces() {
   const { data, error } = await supabase
     .from('workspaces')
     .select(
-      'id, name, avatar_url, logo_url, personal, created_at, workspace_members!inner(role)'
+      'id, name, slug, avatar_url, logo_url, personal, created_at, workspace_members!inner(role)'
     )
     .eq('workspace_members.user_id', user.id);
 
