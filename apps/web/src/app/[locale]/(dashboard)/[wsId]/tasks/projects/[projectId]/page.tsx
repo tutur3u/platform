@@ -67,7 +67,6 @@ export default async function TaskProjectPage({ params }: Props) {
         // Fetch workspace data
         const workspace = await getWorkspace(wsId);
 
-
         if (!workspace) {
           notFound();
         }

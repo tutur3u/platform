@@ -531,13 +531,17 @@ export function TaskProjectDetail({
             lead_id: editedLeadId || null,
             start_date: editedStartDate
               ? (() => {
-                  const [year, month, day] = editedStartDate.split('-').map(Number);
+                  const [year, month, day] = editedStartDate
+                    .split('-')
+                    .map(Number);
                   return new Date(Date.UTC(year, month - 1, day)).toISOString();
                 })()
               : null,
             end_date: editedEndDate
               ? (() => {
-                  const [year, month, day] = editedEndDate.split('-').map(Number);
+                  const [year, month, day] = editedEndDate
+                    .split('-')
+                    .map(Number);
                   return new Date(Date.UTC(year, month - 1, day)).toISOString();
                 })()
               : null,
@@ -709,7 +713,9 @@ export function TaskProjectDetail({
   const recentTasks = useMemo(() => tasks.slice(0, 5), [tasks]);
 
   // Workspace members for lead selection
-  const [workspaceMembers, setWorkspaceMembers] = useState<WorkspaceMember[]>([]);
+  const [workspaceMembers, setWorkspaceMembers] = useState<WorkspaceMember[]>(
+    []
+  );
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [showLeadSelector, setShowLeadSelector] = useState(false);
 
