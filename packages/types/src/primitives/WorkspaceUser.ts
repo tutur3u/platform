@@ -20,6 +20,7 @@ export interface WorkspaceUser {
   note?: string | null;
   ws_id?: string | null;
   default_workspace_id?: string | null;
+  first_day_of_week?: 'sunday' | 'monday' | 'saturday' | null;
   linked_users?: {
     id: string;
     display_name: string | null;

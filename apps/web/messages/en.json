@@ -2991,7 +2991,15 @@
     "use-strong-passwords-tip": "Use strong, unique passwords for all accounts",
     "avoid-public-wifi-tip": "Avoid accessing sensitive information on public WiFi",
     "regular-logout-tip": "Log out from devices you no longer use",
-    "monitor-account-activity-tip": "Regularly monitor your account activity"
+    "monitor-account-activity-tip": "Regularly monitor your account activity",
+    "preferences": "Preferences",
+    "preferences-description": "Customize your calendar and display preferences",
+    "first-day-of-week": "First day of week",
+    "first-day-of-week-description": "Choose which day your calendar week starts on",
+    "first-day-of-week-placeholder": "Select first day of week",
+    "sunday": "Sunday",
+    "monday": "Monday",
+    "saturday": "Saturday"
   },
   "settings-appearance": {
     "appearance": "Appearance",

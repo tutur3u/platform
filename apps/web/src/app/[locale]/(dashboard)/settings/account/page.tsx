@@ -1,6 +1,7 @@
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import type { Metadata } from 'next';
 import ContactInformationCard from './contact-information-card';
+import PreferencesCard from './preferences-card';
 import ProfileInformationCard from './profile-information-card';
 
 export const metadata: Metadata = {
@@ -16,6 +17,7 @@ export default async function AccountSettingsPage() {
     <div className="space-y-6">
       <ProfileInformationCard user={user} />
       <ContactInformationCard user={user} />
+      <PreferencesCard user={user} />
     </div>
   );
 }

@@ -14,7 +14,7 @@ export async function PATCH(req: Request) {
   try {
     const payload = await req.json();
 
-    const allowedFields = ['full_name'];
+    const allowedFields = ['full_name', 'first_day_of_week'];
 
     const sanitizedPayload = Object.keys(payload)
       .filter((key) => allowedFields.includes(key))
