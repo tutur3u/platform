@@ -28,12 +28,12 @@ interface Props {
 }
 
 const FormSchema = z.object({
-  slug: workspaceSlugSchema,
+  slug: workspaceSlugSchema.optional(),
 });
 
 export default function SlugInput({
   wsId,
-  defaultValue = '',
+  defaultValue,
   disabled,
 }: Props) {
   const t = useTranslations('ws-settings');
@@ -44,7 +44,7 @@ export default function SlugInput({
   const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      slug: defaultValue ?? undefined,
+      slug: defaultValue || undefined,
     },
   });
 
