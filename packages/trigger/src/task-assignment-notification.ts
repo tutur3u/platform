@@ -76,7 +76,10 @@ export const sendTaskAssignmentNotification = task({
 
       // Check if assignee has email
       if (!assignee.email) {
-        console.log('[Task Assignment] Assignee has no email:', payload.assignee_user_id);
+        console.log(
+          '[Task Assignment] Assignee has no email:',
+          payload.assignee_user_id
+        );
         return {
           success: false,
           error: 'Assignee has no email',
@@ -85,7 +88,10 @@ export const sendTaskAssignmentNotification = task({
 
       // Check if email is blacklisted
       if (domainBlacklist.some((domain) => assignee.email.includes(domain))) {
-        console.log('[Task Assignment] Email domain is blacklisted:', assignee.email);
+        console.log(
+          '[Task Assignment] Email domain is blacklisted:',
+          assignee.email
+        );
         return {
           success: false,
           error: 'Email domain is blacklisted',
@@ -100,7 +106,10 @@ export const sendTaskAssignmentNotification = task({
         .single();
 
       if (assignedByError || !assignedBy) {
-        console.error('[Task Assignment] Assigned by user not found:', assignedByError);
+        console.error(
+          '[Task Assignment] Assigned by user not found:',
+          assignedByError
+        );
         return {
           success: false,
           error: 'Assigned by user not found',
@@ -130,7 +139,10 @@ export const sendTaskAssignmentNotification = task({
         .maybeSingle();
 
       if (credentialsError) {
-        console.error('[Task Assignment] Error fetching credentials:', credentialsError);
+        console.error(
+          '[Task Assignment] Error fetching credentials:',
+          credentialsError
+        );
         return {
           success: false,
           error: 'Error fetching email credentials',
@@ -138,7 +150,9 @@ export const sendTaskAssignmentNotification = task({
       }
 
       if (!credentials) {
-        console.log('[Task Assignment] No email credentials configured for workspace');
+        console.log(
+          '[Task Assignment] No email credentials configured for workspace'
+        );
         return {
           success: false,
           error: 'No email credentials configured',
@@ -201,7 +215,9 @@ export const sendTaskAssignmentNotification = task({
           Subject: { Data: subject },
           Body: {
             Html: { Data: inlinedHtml },
-            Text: { Data: `${assignedBy.display_name} assigned you a task: ${task.name}\n\nView task: ${taskUrl}` },
+            Text: {
+              Data: `${assignedBy.display_name} assigned you a task: ${task.name}\n\nView task: ${taskUrl}`,
+            },
           },
         },
       });
@@ -216,7 +232,10 @@ export const sendTaskAssignmentNotification = task({
         };
       }
 
-      console.log('[Task Assignment] Email sent successfully to:', assignee.email);
+      console.log(
+        '[Task Assignment] Email sent successfully to:',
+        assignee.email
+      );
 
       // Log sent email to database
       await supabase.from('sent_emails').insert({
