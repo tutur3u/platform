@@ -19,7 +19,9 @@ import {
 } from '@tuturuuu/icons';
 import type { TaskProjectWithRelations, Workspace } from '@tuturuuu/types/db';
 import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import type { Database } from '@tuturuuu/types/supabase';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -59,7 +61,7 @@ import {
 import type { ViewType } from '@tuturuuu/ui/tu-do/shared/board-views';
 import { ListView } from '@tuturuuu/ui/tu-do/shared/list-view';
 import { cn } from '@tuturuuu/utils/format';
-import type { Variants } from 'framer-motion';
+import type { MotionProps } from 'framer-motion';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -89,6 +91,9 @@ interface ProjectUpdate {
 
 type ActiveTab = 'overview' | 'updates' | 'tasks';
 
+type TaskPriority = Database['public']['Enums']['task_priority'];
+type HealthStatus = 'on_track' | 'at_risk' | 'off_track';
+
 interface TaskProjectDetailProps {
   workspace: Workspace;
   project: TaskProjectWithRelations;
@@ -110,7 +115,7 @@ interface UpdateCardProps {
   onSave: () => void;
   onCancel: () => void;
   onContentChange: (content: string) => void;
-  fadeInVariant: Variants;
+  fadeInVariant: MotionProps;
 }
 
 function UpdateCard({
@@ -633,9 +638,11 @@ export function TaskProjectDetail({
         : '');
 
   // Create virtual board object for BoardHeader
-  const virtualBoard = {
+  // BoardHeader requires: id, name, and ws_id
+  const virtualBoard: Pick<TaskBoard, 'id' | 'name' | 'ws_id'> = {
     id: project.id,
     name: project.name,
+    ws_id: wsId,
   };
 
   const renderView = () => {
@@ -1204,7 +1211,7 @@ export function TaskProjectDetail({
                           <Select
                             value={editedPriority || undefined}
                             onValueChange={(value) =>
-                              setEditedPriority(value as any)
+                              setEditedPriority(value as TaskPriority)
                             }
                           >
                             <SelectTrigger className="border-dynamic-purple/30 bg-background/50">
@@ -1247,7 +1254,7 @@ export function TaskProjectDetail({
                           <Select
                             value={editedHealthStatus || undefined}
                             onValueChange={(value) =>
-                              setEditedHealthStatus(value as any)
+                              setEditedHealthStatus(value as HealthStatus)
                             }
                           >
                             <SelectTrigger className="border-dynamic-purple/30 bg-background/50">
@@ -1758,7 +1765,7 @@ export function TaskProjectDetail({
               <div className="flex items-center gap-2 border-b px-6 py-3">
                 <div className="flex-1">
                   <BoardHeader
-                    board={virtualBoard as any}
+                    board={virtualBoard}
                     currentView={currentView}
                     currentUserId={currentUserId}
                     onViewChange={setCurrentView}

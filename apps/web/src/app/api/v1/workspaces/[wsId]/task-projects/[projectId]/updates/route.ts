@@ -69,7 +69,7 @@ interface MappedUpdate
 }
 
 const createUpdateSchema = z.object({
-  content: z.string(), // Plain text (TipTap handles JSONContent conversion)
+  content: z.string().trim().min(1, { message: 'Content cannot be empty' }), // Plain text (TipTap handles JSONContent conversion)
 });
 
 export async function POST(

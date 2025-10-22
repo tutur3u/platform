@@ -7197,6 +7197,7 @@ export type Database = {
       task_project_update_attachments: {
         Insert: {
           created_at?: string;
+          deleted_at?: null | string;
           file_name: string;
           file_path: string;
           file_size: number;
@@ -7244,6 +7245,7 @@ export type Database = {
         ];
         Row: {
           created_at: string;
+          deleted_at: null | string;
           file_name: string;
           file_path: string;
           file_size: number;
@@ -7254,6 +7256,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          deleted_at?: null | string;
           file_name?: string;
           file_path?: string;
           file_size?: number;
@@ -7610,7 +7613,7 @@ export type Database = {
           creator_id?: null | string;
           deleted_at?: null | string;
           description?: null | string;
-          description_yjs_state?: null | number[];
+          description_yjs_state?: null | string;
           embedding?: null | string;
           end_date?: null | string;
           estimation_points?: null | number;
@@ -7672,7 +7675,7 @@ export type Database = {
           creator_id: null | string;
           deleted_at: null | string;
           description: null | string;
-          description_yjs_state: null | number[];
+          description_yjs_state: null | string;
           embedding: null | string;
           end_date: null | string;
           estimation_points: null | number;
@@ -7697,7 +7700,7 @@ export type Database = {
           creator_id?: null | string;
           deleted_at?: null | string;
           description?: null | string;
-          description_yjs_state?: null | number[];
+          description_yjs_state?: null | string;
           embedding?: null | string;
           end_date?: null | string;
           estimation_points?: null | number;

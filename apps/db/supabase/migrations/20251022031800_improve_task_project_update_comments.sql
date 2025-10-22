@@ -26,23 +26,15 @@ ALTER TABLE "public"."task_project_update_comments"
   REFERENCES "public"."task_project_updates"("id")
   ON DELETE CASCADE;
 
--- Create trigger function to auto-update updated_at
-CREATE OR REPLACE FUNCTION "public"."update_task_project_update_comments_updated_at"()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
 -- Create trigger for auto-updating updated_at on UPDATE
+-- Reuses the shared update_updated_at_column() function from 20251022031655_create_project_updates_tables.sql
 DROP TRIGGER IF EXISTS "set_task_project_update_comments_updated_at"
   ON "public"."task_project_update_comments";
 
 CREATE TRIGGER "set_task_project_update_comments_updated_at"
   BEFORE UPDATE ON "public"."task_project_update_comments"
   FOR EACH ROW
-  EXECUTE FUNCTION "public"."update_task_project_update_comments_updated_at"();
+  EXECUTE FUNCTION "public"."update_updated_at_column"();
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS "idx_task_project_update_comments_update_created"
@@ -53,4 +45,4 @@ CREATE INDEX IF NOT EXISTS "idx_task_project_update_comments_parent_id"
 
 COMMENT ON TRIGGER "set_task_project_update_comments_updated_at"
   ON "public"."task_project_update_comments" IS
-  'Automatically updates updated_at timestamp when comment is modified';
+  'Automatically updates updated_at timestamp when comment is modified (uses shared update_updated_at_column function)';

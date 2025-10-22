@@ -48,9 +48,17 @@ ALTER TABLE "public"."task_projects"
   ADD CONSTRAINT "chk_task_projects_start_le_end"
   CHECK (start_date IS NULL OR end_date IS NULL OR start_date <= end_date);
 
--- Add health status field with constraint
+-- Add health status field
 ALTER TABLE "public"."task_projects"
-  ADD COLUMN IF NOT EXISTS "health_status" text
+  ADD COLUMN IF NOT EXISTS "health_status" text;
+
+-- Drop any existing inline check constraint on health_status (if present)
+ALTER TABLE "public"."task_projects"
+  DROP CONSTRAINT IF EXISTS "task_projects_health_status_check";
+
+-- Add named constraint for health status
+ALTER TABLE "public"."task_projects"
+  ADD CONSTRAINT "chk_task_projects_health_status"
   CHECK ("health_status" IN ('on_track', 'at_risk', 'off_track'));
 
 -- Update existing status constraint to include new statuses

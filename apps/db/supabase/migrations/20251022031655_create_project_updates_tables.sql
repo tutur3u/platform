@@ -31,6 +31,9 @@ CREATE INDEX "idx_task_project_updates_deleted_at"
   ON "public"."task_project_updates" USING btree ("deleted_at")
   WHERE "deleted_at" IS NULL;
 
+CREATE INDEX "idx_task_project_updates_project_created"
+  ON "public"."task_project_updates" USING btree ("project_id", "created_at" DESC);
+
 -- ============================================================================
 -- task_project_update_reactions: Emoji reactions on updates
 -- ============================================================================
@@ -99,7 +102,8 @@ CREATE TABLE "public"."task_project_update_attachments" (
   "file_size" bigint NOT NULL, -- File size in bytes
   "mime_type" text NOT NULL, -- MIME type (e.g., image/png, application/pdf)
   "uploaded_by" uuid NOT NULL REFERENCES "public"."users"("id") ON DELETE CASCADE,
-  "created_at" timestamp with time zone DEFAULT now() NOT NULL
+  "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+  "deleted_at" timestamp with time zone DEFAULT NULL -- Soft delete for audit trail
 );
 
 -- Enable RLS
@@ -111,6 +115,11 @@ CREATE INDEX "idx_task_project_update_attachments_update_id"
 
 CREATE INDEX "idx_task_project_update_attachments_uploaded_by"
   ON "public"."task_project_update_attachments" USING btree ("uploaded_by");
+
+-- Sparse index for non-deleted attachments (for efficient queries on active attachments)
+CREATE INDEX "idx_task_project_update_attachments_deleted_at"
+  ON "public"."task_project_update_attachments" USING btree ("deleted_at")
+  WHERE "deleted_at" IS NULL;
 
 -- ============================================================================
 -- Comments and documentation

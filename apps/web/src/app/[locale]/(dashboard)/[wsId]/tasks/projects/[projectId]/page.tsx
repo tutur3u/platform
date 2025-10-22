@@ -1,10 +1,10 @@
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { TaskProjectDetail } from './task-project-detail';
 
 export const metadata: Metadata = {
@@ -47,27 +47,15 @@ interface TaskAssigneeEntry {
 export default async function TaskProjectPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
-      {async ({ wsId }) => {
+      {async ({ wsId, workspace }) => {
         const { projectId } = await params;
         const supabase = await createClient();
 
-        // Get current user
-        const currentUser = await getCurrentUser();
-
-        if (!currentUser) {
-          notFound();
-        }
+        const user = await getCurrentSupabaseUser();
 
         // Check workspace permissions
         const { withoutPermission } = await getPermissions({ wsId });
         if (withoutPermission('manage_projects')) {
-          notFound();
-        }
-
-        // Fetch workspace data
-        const workspace = await getWorkspace(wsId);
-
-        if (!workspace) {
           notFound();
         }
 
@@ -77,7 +65,7 @@ export default async function TaskProjectPage({ params }: Props) {
           .select(
             `
             *,
-            creator:users(
+            creator:users!task_projects_creator_id_fkey(
               id,
               display_name,
               avatar_url
@@ -94,6 +82,7 @@ export default async function TaskProjectPage({ params }: Props) {
           .single();
 
         if (projectError || !project) {
+          console.error('Error fetching project:', projectError);
           notFound();
         }
 
@@ -213,7 +202,7 @@ export default async function TaskProjectPage({ params }: Props) {
               status: list.status ?? 'active',
               color: (list.color as any) ?? 'gray',
             }))}
-            currentUserId={currentUser.id}
+            currentUserId={user?.id!}
             wsId={wsId}
           />
         );

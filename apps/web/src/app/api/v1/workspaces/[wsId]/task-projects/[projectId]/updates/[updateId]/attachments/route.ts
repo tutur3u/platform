@@ -1,7 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { randomUUID } from 'crypto';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { randomUUID } from 'crypto';
 
 export async function POST(
   request: NextRequest,
@@ -184,7 +184,7 @@ export async function DELETE(
   }
 ) {
   try {
-    const { wsId } = await params;
+    const { wsId, projectId, updateId } = await params;
     const supabase = await createClient();
 
     // Get current user
@@ -219,17 +219,73 @@ export async function DELETE(
       );
     }
 
-    // Verify attachment exists and user is the uploader
-    const { data: existingAttachment } = await supabase
+    // Validate attachmentId format (UUID)
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(attachmentId)) {
+      return NextResponse.json(
+        { error: 'Invalid attachment ID format' },
+        { status: 400 }
+      );
+    }
+
+    // Load attachment and verify it exists
+    const { data: existingAttachment, error: attachmentError } = await supabase
       .from('task_project_update_attachments')
-      .select('id, file_path, uploaded_by')
+      .select('id, file_path, uploaded_by, update_id')
       .eq('id', attachmentId)
       .single();
 
-    if (!existingAttachment) {
+    if (attachmentError || !existingAttachment) {
       return NextResponse.json(
         { error: 'Attachment not found' },
         { status: 404 }
+      );
+    }
+
+    // Verify attachment belongs to the specified update
+    if (existingAttachment.update_id !== updateId) {
+      return NextResponse.json(
+        { error: 'Attachment does not belong to the specified update' },
+        { status: 403 }
+      );
+    }
+
+    // Load update and verify it exists
+    const { data: updateRecord, error: updateError } = await supabase
+      .from('task_project_updates')
+      .select('id, project_id')
+      .eq('id', updateId)
+      .single();
+
+    if (updateError || !updateRecord) {
+      return NextResponse.json({ error: 'Update not found' }, { status: 404 });
+    }
+
+    // Verify update belongs to the specified project
+    if (updateRecord.project_id !== projectId) {
+      return NextResponse.json(
+        { error: 'Update does not belong to the specified project' },
+        { status: 403 }
+      );
+    }
+
+    // Load project and verify it exists
+    const { data: projectRecord, error: projectError } = await supabase
+      .from('task_projects')
+      .select('id, ws_id')
+      .eq('id', projectId)
+      .single();
+
+    if (projectError || !projectRecord) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    // Verify project belongs to the specified workspace
+    if (projectRecord.ws_id !== wsId) {
+      return NextResponse.json(
+        { error: 'Project does not belong to the specified workspace' },
+        { status: 403 }
       );
     }
 
