@@ -1,0 +1,172 @@
+---
+title: 'Examples'
+description: 'Practical examples and code samples for the NCT Hub platform'
+updatedAt: '2025-01-10'
+---
+
+This section contains practical examples and code samples demonstrating how to use various components and features of the NCT Hub platform for club management, AI integration, and student development.
+
+## Component Examples
+
+### WorkspaceWrapper
+
+Examples showing how to use the WorkspaceWrapper component in different scenarios.
+
+The main [WorkspaceWrapper documentation](/platform/components/workspace-wrapper) includes comprehensive code examples demonstrating various usage patterns.
+
+## Usage Patterns
+
+### Server Components
+
+```tsx
+// Basic server component with WorkspaceWrapper
+export default async function MyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ wsId: string }>;
+}) {
+  return (
+    <WorkspaceWrapper searchParams={searchParams}>
+      {({ workspace, wsId }) => <div>{workspace.name}</div>}
+    </WorkspaceWrapper>
+  );
+}
+```
+
+### Client Components
+
+```tsx
+'use client';
+
+interface MyComponentProps {
+  workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
+  wsId: string;
+}
+
+export function MyComponent({ workspace, wsId }: MyComponentProps) {
+  return <div>{workspace.name}</div>;
+}
+```
+
+### API Routes
+
+```tsx
+// API route with workspace validation
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ wsId: string }> }
+) {
+  const { wsId } = await params;
+  const workspace = await getWorkspace(wsId);
+
+  if (!workspace) {
+    return Response.json({ error: 'Workspace not found' }, { status: 404 });
+  }
+
+  return Response.json({ workspace });
+}
+```
+
+## Best Practices
+
+### Error Handling
+
+```tsx
+// Proper error handling in components
+export default async function MyPage({ searchParams }) {
+  return (
+    <WorkspaceWrapper searchParams={searchParams} fallback={<ErrorBoundary />}>
+      {({ workspace, wsId }) => {
+        try {
+          return <MyComponent workspace={workspace} wsId={wsId} />;
+        } catch (error) {
+          return <ErrorMessage error={error} />;
+        }
+      }}
+    </WorkspaceWrapper>
+  );
+}
+```
+
+### Loading States
+
+```tsx
+// Proper loading state handling
+export default async function MyPage({ searchParams }) {
+  return (
+    <WorkspaceWrapper
+      searchParams={searchParams}
+      fallback={<LoadingSkeleton />}
+    >
+      {({ workspace, wsId }) => (
+        <Suspense fallback={<LoadingSpinner />}>
+          <AsyncContent workspace={workspace} wsId={wsId} />
+        </Suspense>
+      )}
+    </WorkspaceWrapper>
+  );
+}
+```
+
+### Type Safety
+
+```tsx
+// Proper TypeScript usage
+interface PageProps {
+  searchParams: Promise<{ wsId: string }>;
+}
+
+interface WorkspaceData {
+  workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
+  wsId: string;
+}
+
+export default async function MyPage({ searchParams }: PageProps) {
+  return (
+    <WorkspaceWrapper searchParams={searchParams}>
+      {({ workspace, wsId }: WorkspaceData) => (
+        <MyComponent workspace={workspace} wsId={wsId} />
+      )}
+    </WorkspaceWrapper>
+  );
+}
+```
+
+## Common Patterns
+
+### Dashboard Pages
+
+Most dashboard pages follow this pattern:
+
+1. Use WorkspaceWrapper for workspace resolution
+2. Fetch additional data based on workspace
+3. Render components with proper loading states
+4. Handle permissions and access control
+
+### Settings Pages
+
+Settings pages typically:
+
+1. Validate user permissions
+2. Show different UI based on user role
+3. Handle form submissions with proper validation
+4. Provide clear feedback to users
+
+### API Endpoints
+
+API endpoints should:
+
+1. Validate workspace access
+2. Handle errors gracefully
+3. Return appropriate HTTP status codes
+4. Include proper error messages
+
+## Contributing Examples
+
+When adding new examples:
+
+1. Use realistic, practical scenarios
+2. Include proper TypeScript types
+3. Show error handling
+4. Include both server and client examples
+5. Update this index page

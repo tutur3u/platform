@@ -1,6 +1,5 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "ui": "tui",
   "globalDependencies": ["**/.env.*local"],
   "globalEnv": [
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
