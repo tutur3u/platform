@@ -12,6 +12,7 @@ import {
 } from '@/lib/api-middleware';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { posix } from 'node:path';
 import { z } from 'zod';
 
 // Request body schema
@@ -29,6 +30,61 @@ const createFolderSchema = z.object({
 
 const EMPTY_FOLDER_PLACEHOLDER = '.emptyFolderPlaceholder';
 
+/**
+ * Sanitizes a path component to prevent directory traversal
+ */
+function sanitizePath(path: string): string | null {
+  if (!path) return '';
+
+  // Trim and remove leading/trailing slashes
+  let sanitized = path.trim().replace(/^\/+|\/+$/g, '');
+
+  // Replace backslashes with forward slashes
+  sanitized = sanitized.replace(/\\/g, '/');
+
+  // Split into segments and validate each
+  const segments = sanitized.split('/').filter(Boolean);
+
+  for (const segment of segments) {
+    // Reject any segment that is '..' or '.' or empty
+    if (segment === '..' || segment === '.' || segment === '') {
+      return null;
+    }
+    // Reject segments with path traversal attempts
+    if (segment.includes('..') || segment.includes('./')) {
+      return null;
+    }
+  }
+
+  // Rejoin with forward slashes
+  return segments.join('/');
+}
+
+/**
+ * Sanitizes a folder name to prevent directory traversal
+ */
+function sanitizeFolderName(name: string): string | null {
+  if (!name) return null;
+
+  // Trim and remove leading/trailing slashes
+  const trimmed = name.trim().replace(/^\/+|\/+$/g, '');
+
+  // Replace backslashes with forward slashes
+  const normalized = trimmed.replace(/\\/g, '/');
+
+  // Reject if it contains slashes (should be a single name, not a path)
+  if (normalized.includes('/')) {
+    return null;
+  }
+
+  // Reject path traversal attempts
+  if (normalized === '..' || normalized === '.' || normalized.includes('..')) {
+    return null;
+  }
+
+  return normalized;
+}
+
 export const POST = withApiAuth(
   async (request, { context }) => {
     const { wsId } = context;
@@ -42,12 +98,44 @@ export const POST = withApiAuth(
     const { path, name } = bodyResult.data;
 
     try {
+      // Sanitize the parent path
+      const sanitizedPath = sanitizePath(path);
+      if (sanitizedPath === null) {
+        return createErrorResponse(
+          'Bad Request',
+          'Invalid path: path contains illegal characters or directory traversal attempts',
+          400,
+          'INVALID_PATH'
+        );
+      }
+
+      // Sanitize the folder name
+      const sanitizedName = sanitizeFolderName(name);
+      if (!sanitizedName) {
+        return createErrorResponse(
+          'Bad Request',
+          'Invalid folder name: name contains illegal characters or directory traversal attempts',
+          400,
+          'INVALID_FOLDER_NAME'
+        );
+      }
+
       const supabase = await createClient();
 
-      // Construct the full folder path
-      const folderPath = path
-        ? `${wsId}/${path}/${name}/${EMPTY_FOLDER_PLACEHOLDER}`
-        : `${wsId}/${name}/${EMPTY_FOLDER_PLACEHOLDER}`;
+      // Construct the full folder path using posix.join to prevent traversal
+      const folderPath = sanitizedPath
+        ? posix.join(
+            wsId,
+            sanitizedPath,
+            sanitizedName,
+            EMPTY_FOLDER_PLACEHOLDER
+          )
+        : posix.join(wsId, sanitizedName, EMPTY_FOLDER_PLACEHOLDER);
+
+      // Build the relative path for the response (without workspace ID)
+      const relativePath = sanitizedPath
+        ? posix.join(sanitizedPath, sanitizedName)
+        : sanitizedName;
 
       // Create an empty placeholder file to represent the folder
       // Supabase Storage doesn't support empty folders, so we use a placeholder
@@ -81,7 +169,7 @@ export const POST = withApiAuth(
       return NextResponse.json({
         message: 'Folder created successfully',
         data: {
-          path: path ? `${path}/${name}` : name,
+          path: relativePath,
           fullPath: data.path,
         },
       });

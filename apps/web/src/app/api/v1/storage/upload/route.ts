@@ -5,9 +5,9 @@
  * Uploads a file to the workspace drive
  */
 
+import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
 import { basename, posix } from 'node:path';
 
 // Configurable allowlist of acceptable MIME types and extensions
@@ -71,7 +71,7 @@ function sanitizePath(path: string): string | null {
   if (!path) return '';
 
   // Trim and remove leading/trailing slashes
-  let sanitized = path.trim().replace(/^\/+|\/+$/g, '');
+  const sanitized = path.trim().replace(/^\/+|\/+$/g, '');
 
   // Split into segments and validate each
   const segments = sanitized.split('/').filter(Boolean);
@@ -105,11 +105,6 @@ function sanitizeFilename(filename: string): string | null {
     return null;
   }
 
-  // Reject filenames with dangerous characters
-  if (/[<>:"|?*\x00-\x1F]/.test(base)) {
-    return null;
-  }
-
   return base;
 }
 
@@ -136,25 +131,38 @@ export const POST = withApiAuth(
       const maxSize = 100 * 1024 * 1024; // 100 MB
       if (file.size > maxSize) {
         return createErrorResponse(
-          'Bad Request',
+          'Payload Too Large',
           'File size exceeds 100 MB limit',
           413,
           'FILE_TOO_LARGE'
         );
       }
 
-      // Validate file type
+      // Validate file type with stricter checks
       const fileExtension = file.name
         .substring(file.name.lastIndexOf('.'))
         .toLowerCase();
 
-      if (
-        !ALLOWED_MIME_TYPES.has(file.type) &&
-        !ALLOWED_EXTENSIONS.has(fileExtension)
-      ) {
+      // Perform conditional validation based on available information
+      let isValid = false;
+
+      if (file.type && fileExtension) {
+        // Both MIME type and extension present - require both to pass
+        isValid =
+          ALLOWED_MIME_TYPES.has(file.type) &&
+          ALLOWED_EXTENSIONS.has(fileExtension);
+      } else if (file.type) {
+        // Only MIME type present
+        isValid = ALLOWED_MIME_TYPES.has(file.type);
+      } else {
+        // Only extension present (or no MIME type)
+        isValid = ALLOWED_EXTENSIONS.has(fileExtension);
+      }
+
+      if (!isValid) {
         return createErrorResponse(
           'Unsupported Media Type',
-          `File type not allowed. Supported types: ${Array.from(ALLOWED_EXTENSIONS).join(', ')}`,
+          `File type not allowed. Both MIME type and file extension must be valid. Supported types: ${Array.from(ALLOWED_EXTENSIONS).join(', ')}`,
           415,
           'FILE_TYPE_NOT_ALLOWED'
         );

@@ -44,7 +44,12 @@ export const GET = withApiAuth(
       const supabase = await createClient();
 
       // List files from Supabase Storage
-      const storagePath = path ? `${wsId}/${path}` : wsId;
+      // Normalize path to prevent double slashes
+      const trimmedWsId = wsId.replace(/^\/+|\/+$/g, '');
+      const trimmedPath = path.replace(/^\/+|\/+$/g, '');
+      const storagePath = trimmedPath
+        ? `${trimmedWsId}/${trimmedPath}`
+        : trimmedWsId;
 
       const { data: files, error } = await supabase.storage
         .from('workspaces')
@@ -78,7 +83,7 @@ export const GET = withApiAuth(
         pagination: {
           limit,
           offset,
-          filteredTotal: filteredFiles?.length || 0,
+          total: filteredFiles?.length || 0,
         },
       });
     } catch (error) {

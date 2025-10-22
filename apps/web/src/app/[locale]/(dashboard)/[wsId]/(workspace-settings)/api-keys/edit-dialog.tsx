@@ -61,35 +61,58 @@ export default function ApiKeyEditDialog({
         : `/api/v1/workspaces/${data.ws_id}/api-keys`,
       {
         method: data.id ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
         body: JSON.stringify(values),
       }
     );
 
     if (res.ok) {
-      const responseData = await res.json();
+      try {
+        const responseData = await res.json();
 
-      // For new keys, the server returns the generated key and prefix
-      // Show it to the user in a modal (they won't be able to see it again)
-      if (!data.id && responseData.key) {
-        const roleName = roles?.find((r) => r.id === values.role_id)?.name;
-        setNewKey({
-          key: responseData.key,
-          prefix: responseData.prefix,
-          roleName,
-          expiresAt: values.expires_at,
-        });
-        toast.success(t('key_created_successfully'));
-      } else {
-        toast.success(t('key_updated_successfully'));
+        // For new keys, the server returns the generated key and prefix
+        // Show it to the user in a modal (they won't be able to see it again)
+        if (!data.id && responseData.key) {
+          const roleName = roles?.find((r) => r.id === values.role_id)?.name;
+          setNewKey({
+            key: responseData.key,
+            prefix: responseData.prefix,
+            roleName,
+            expiresAt: values.expires_at,
+          });
+          toast.success(t('key_created_successfully'));
+        } else {
+          toast.success(t('key_updated_successfully'));
+        }
+
+        setOpen(false);
+        router.refresh();
+      } catch (_) {
+        // Handle non-JSON response
+        toast.success(
+          t(data.id ? 'key_updated_successfully' : 'key_created_successfully')
+        );
+        setOpen(false);
+        router.refresh();
       }
-
-      setOpen(false);
-      router.refresh();
     } else {
-      const errorData = await res.json();
-      toast.error(t(`failed_to_${data.id ? 'edit' : 'create'}_key`), {
-        description: errorData.message,
-      });
+      try {
+        const errorData = await res.json();
+        toast.error(t(`failed_to_${data.id ? 'edit' : 'create'}_key`), {
+          description: errorData.message,
+        });
+      } catch (_) {
+        // Fallback to status text if JSON parsing fails
+        const fallbackMessage = await res
+          .text()
+          .catch(() => `${res.status} ${res.statusText || 'Request failed'}`);
+        toast.error(t(`failed_to_${data.id ? 'edit' : 'create'}_key`), {
+          description: fallbackMessage,
+        });
+      }
     }
   };
 

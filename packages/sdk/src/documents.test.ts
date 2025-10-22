@@ -18,6 +18,8 @@ const createMockResponse = (data: unknown, status = 200) => ({
   status,
   headers: new Headers({ 'content-type': 'application/json' }),
   json: async () => data,
+  text: async () => (typeof data === 'string' ? data : JSON.stringify(data)),
+  blob: async () => (data instanceof Blob ? data : new Blob()),
 });
 
 describe('DocumentsClient', () => {
@@ -38,7 +40,7 @@ describe('DocumentsClient', () => {
     name: 'Test Document',
     content: 'Test content',
     isPublic: false,
-    created_at: '2024-01-01T00:00:00Z',
+    createdAt: '2024-01-01T00:00:00Z',
   };
 
   describe('list', () => {
@@ -53,10 +55,28 @@ describe('DocumentsClient', () => {
       const result = await client.documents.list();
 
       expect(result).toEqual(mockResponse);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/documents?'),
         expect.any(Object)
       );
+
+      // Verify request details
+      const callOptions = mockFetch.mock.calls[0]?.[1];
+      expect(callOptions?.method).toBe('GET');
+
+      const headers = callOptions?.headers;
+      const authHeader =
+        headers instanceof Headers
+          ? headers.get('Authorization')
+          : headers?.Authorization;
+      expect(authHeader).toBe('Bearer ttr_test_key');
+
+      const contentType =
+        headers instanceof Headers
+          ? headers.get('Content-Type')
+          : headers?.['Content-Type'];
+      expect(contentType).toBeUndefined();
     });
 
     it('should list documents with search query', async () => {
@@ -180,6 +200,26 @@ describe('DocumentsClient', () => {
           method: 'POST',
         })
       );
+
+      // Verify request body and headers
+      const callOptions = mockFetch.mock.calls[0]?.[1];
+      expect(callOptions?.method).toBe('POST');
+
+      const headers = callOptions?.headers;
+      const contentType =
+        headers instanceof Headers
+          ? headers.get('Content-Type')
+          : headers?.['Content-Type'];
+      expect(contentType).toBe('application/json');
+
+      const authHeader =
+        headers instanceof Headers
+          ? headers.get('Authorization')
+          : headers?.Authorization;
+      expect(authHeader).toBe('Bearer ttr_test_key');
+
+      const requestBody = JSON.parse(callOptions?.body as string);
+      expect(requestBody).toMatchObject({ name: 'Test Document' });
     });
 
     it('should create document with all fields', async () => {
@@ -197,6 +237,24 @@ describe('DocumentsClient', () => {
       });
 
       expect(result).toEqual(mockResponse);
+
+      // Assert request body contains only provided fields
+      const callOptions = mockFetch.mock.calls[0]?.[1];
+      const requestBody = JSON.parse(callOptions?.body as string);
+      expect(requestBody).toStrictEqual({
+        name: 'Test Document',
+        content: 'Test content',
+        isPublic: false,
+      });
+
+      // Verify headers
+      const headers = callOptions?.headers;
+      const contentType =
+        headers instanceof Headers
+          ? headers.get('Content-Type')
+          : headers?.['Content-Type'];
+      expect(contentType).toBe('application/json');
+      expect(callOptions?.method).toBe('POST');
     });
 
     it('should reject empty name', async () => {
@@ -375,6 +433,30 @@ describe('DocumentsClient', () => {
     it('should throw ValidationError for empty ID', async () => {
       await expect(client.documents.delete('')).rejects.toThrow(
         ValidationError
+      );
+    });
+
+    it('should throw NotFoundError when server returns 404', async () => {
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse(
+          {
+            error: 'Not Found',
+            message: 'Document not found',
+            code: 'DOCUMENT_NOT_FOUND',
+          },
+          404
+        )
+      );
+
+      await expect(client.documents.delete('doc-123')).rejects.toThrow(
+        NotFoundError
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/documents/doc-123'),
+        expect.objectContaining({
+          method: 'DELETE',
+        })
       );
     });
   });

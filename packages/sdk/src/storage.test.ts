@@ -181,7 +181,8 @@ describe('TuturuuuClient', () => {
           : headers?.['Content-Type'];
       expect(authHeader).toBe('Bearer ttr_test_key');
       // Content-Type should not be set for FormData (browser sets it with boundary)
-      expect(contentType).toBeUndefined();
+      // Accept both null (Headers.get) and undefined (plain object)
+      expect(contentType == null).toBe(true);
     });
 
     it('should throw error for API error response', async () => {
@@ -266,7 +267,7 @@ describe('StorageClient', () => {
             created_at: '2024-01-01',
           },
         ],
-        pagination: { limit: 50, offset: 0, filteredTotal: 1 },
+        pagination: { limit: 50, offset: 0, total: 1 },
       };
 
       mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
@@ -283,7 +284,7 @@ describe('StorageClient', () => {
     it('should list files with all options', async () => {
       const mockResponse: ListStorageResponse = {
         data: [],
-        pagination: { limit: 10, offset: 5, filteredTotal: 0 },
+        pagination: { limit: 10, offset: 5, total: 0 },
       };
 
       mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));

@@ -361,7 +361,10 @@ function checkRateLimitMemory(
 export async function checkRateLimit(
   keyId: string,
   config: RateLimitConfig = { windowMs: 60000, maxRequests: 100 }
-): Promise<{ allowed: true } | NextResponse<ApiErrorResponse>> {
+): Promise<
+  | { allowed: true; headers: Record<string, string> }
+  | NextResponse<ApiErrorResponse>
+> {
   const result = await checkRateLimitRedis(keyId, config);
 
   // Prepare rate limit headers
@@ -383,9 +386,8 @@ export async function checkRateLimit(
     );
   }
 
-  // For successful requests, headers should be added by the caller
-  // Return allowed with rate limit info for informational purposes
-  return { allowed: true };
+  // Return allowed with headers for successful requests
+  return { allowed: true, headers };
 }
 
 /**

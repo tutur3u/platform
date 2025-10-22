@@ -391,11 +391,14 @@ describe('listDocumentsOptionsSchema', () => {
     }
   });
 
-  it('should accept undefined for limit (optional field)', () => {
+  it('should reject explicit undefined for limit', () => {
     const result = listDocumentsOptionsSchema.safeParse({
       limit: undefined,
     });
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
+    }
   });
 
   it('should reject NaN and null for offset', () => {
@@ -414,9 +417,19 @@ describe('listDocumentsOptionsSchema', () => {
     }
   });
 
-  it('should accept undefined for offset (optional field)', () => {
+  it('should reject explicit undefined for offset', () => {
     const result = listDocumentsOptionsSchema.safeParse({
       offset: undefined,
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('should accept omitted limit and offset fields', () => {
+    const result = listDocumentsOptionsSchema.safeParse({
+      search: 'test',
     });
     expect(result.success).toBe(true);
   });

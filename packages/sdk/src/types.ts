@@ -56,7 +56,7 @@ export interface ShareOptions {
 export interface Pagination {
   limit: number;
   offset: number;
-  filteredTotal: number; // Total count after filters are applied
+  total: number; // Total count after filters are applied
 }
 
 /**
@@ -225,30 +225,71 @@ export interface ApiErrorResponse {
  * Zod schemas for validation
  */
 
-export const listStorageOptionsSchema = z.object({
-  path: z.string().optional(),
-  search: z.string().optional(),
-  limit: z.number().int().min(1).max(100).optional(),
-  offset: z.number().int().min(0).optional(),
-  sortBy: z.enum(['name', 'created_at', 'updated_at', 'size']).optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
-});
+export const listStorageOptionsSchema = z
+  .object({
+    path: z.string(),
+    search: z.string(),
+    limit: z.number().int().min(1).max(100).finite(),
+    offset: z.number().int().min(0).finite(),
+    sortBy: z.enum(['name', 'created_at', 'updated_at', 'size']),
+    sortOrder: z.enum(['asc', 'desc']),
+  })
+  .partial();
 
-export const uploadOptionsSchema = z.object({
-  path: z.string().optional(),
-  upsert: z.boolean().optional(),
-});
+export const uploadOptionsSchema = z
+  .object({
+    path: z.string(),
+    upsert: z.boolean(),
+  })
+  .partial();
 
-export const shareOptionsSchema = z.object({
-  expiresIn: z.number().int().min(60).max(604800).optional(),
-});
+export const shareOptionsSchema = z
+  .object({
+    expiresIn: z.number().int().min(60).max(604800).finite(),
+  })
+  .partial();
 
-export const listDocumentsOptionsSchema = z.object({
-  search: z.string().optional(),
-  limit: z.number().int().min(1).max(100).optional(),
-  offset: z.number().int().min(0).optional(),
-  isPublic: z.boolean().optional(),
-});
+export const listDocumentsOptionsSchema = z
+  .object({
+    search: z.string(),
+    limit: z.preprocess(
+      (val) => (val === undefined ? Symbol('invalid-undefined') : val),
+      z
+        .number()
+        .int()
+        .min(1)
+        .max(100)
+        .refine((n) => !Number.isNaN(n), { message: 'must be a valid number' })
+    ),
+    offset: z.preprocess(
+      (val) => (val === undefined ? Symbol('invalid-undefined') : val),
+      z
+        .number()
+        .int()
+        .min(0)
+        .refine((n) => !Number.isNaN(n), { message: 'must be a valid number' })
+    ),
+    isPublic: z.boolean(),
+  })
+  .partial()
+  .superRefine((data, ctx) => {
+    // Reject explicit undefined for limit
+    if ('limit' in data && data.limit === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'limit cannot be explicitly undefined',
+        path: ['limit'],
+      });
+    }
+    // Reject explicit undefined for offset
+    if ('offset' in data && data.offset === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'offset cannot be explicitly undefined',
+        path: ['offset'],
+      });
+    }
+  });
 
 export const createDocumentDataSchema = z.object({
   name: z.string().min(1).max(255),
