@@ -10,7 +10,10 @@ export type EmailHistoryEntry = Tables<'sent_emails'>;
 export type Invoice = Tables<'finance_invoices'>;
 export type InvoiceProduct = Tables<'finance_invoice_products'>;
 export type InvoicePromotion = Tables<'finance_invoice_promotions'>;
-export type Workspace = Tables<'workspaces'>;
+// Temporarily extend Workspace type to include slug field until migration is applied
+export type Workspace = Tables<'workspaces'> & {
+  slug?: string | null;
+};
 export type WorkspaceUser = Tables<'workspace_users'>;
 export type WorkspaceUserRole = 'MEMBER' | 'ADMIN' | 'OWNER';
 export type WorkspaceFlashcard = Tables<'workspace_flashcards'>;
