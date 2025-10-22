@@ -7,10 +7,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const updateUpdateSchema = z.object({
-  content: z
-    .string()
-    .trim()
-    .min(1, 'Content cannot be empty'), // Plain text (TipTap handles JSONContent conversion)
+  content: z.string().trim().min(1, 'Content cannot be empty'), // Plain text (TipTap handles JSONContent conversion)
 });
 
 export async function PATCH(

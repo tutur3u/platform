@@ -709,7 +709,9 @@ export function TaskProjectDetail({
   const recentTasks = useMemo(() => tasks.slice(0, 5), [tasks]);
 
   // Workspace members for lead selection
-  const [workspaceMembers, setWorkspaceMembers] = useState<WorkspaceMember[]>([]);
+  const [workspaceMembers, setWorkspaceMembers] = useState<WorkspaceMember[]>(
+    []
+  );
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [showLeadSelector, setShowLeadSelector] = useState(false);
 
