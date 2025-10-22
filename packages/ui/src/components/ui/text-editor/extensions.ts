@@ -2,7 +2,6 @@ import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import Highlight from '@tiptap/extension-highlight';
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
-import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import { TaskItem, TaskList } from '@tiptap/extension-list';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -18,8 +17,9 @@ import Youtube from '@tiptap/extension-youtube';
 import type { Extensions } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import type SupabaseProvider from '@tuturuuu/ui/hooks/supabase-provider';
-import ImageResize from 'tiptap-extension-resize-image';
 import type * as Y from 'yjs';
+import { CustomImage } from './image-extension';
+import { ListConverter } from './list-converter-extension';
 import { Mention } from './mention-extension';
 import { Video } from './video-extension';
 
@@ -28,6 +28,7 @@ interface EditorExtensionsOptions {
   writePlaceholder?: string;
   doc?: Y.Doc | null;
   provider?: SupabaseProvider | null;
+  onImageUpload?: (file: File) => Promise<string>;
 }
 
 export function getEditorExtensions({
@@ -35,6 +36,7 @@ export function getEditorExtensions({
   writePlaceholder = 'Write something...',
   doc = null,
   provider = null,
+  onImageUpload,
 }: EditorExtensionsOptions = {}): Extensions {
   return [
     ...(doc
@@ -133,6 +135,7 @@ export function getEditorExtensions({
       nested: true,
     }),
     TaskList,
+    ListConverter,
     Table.configure({
       resizable: true,
       lastColumnResizable: true,
@@ -159,20 +162,7 @@ export function getEditorExtensions({
           'relative border-r border-dynamic-border px-4 py-3 last:border-r-0 [&>p]:my-0 hover:bg-dynamic-surface/50 focus:bg-dynamic-surface/70 focus:outline-none focus:ring-2 focus:ring-dynamic-blue/50 focus:ring-inset',
       },
     }),
-    Image.configure({
-      inline: true,
-      allowBase64: false,
-      HTMLAttributes: {
-        class: 'rounded-md',
-      },
-    }),
-    ImageResize.configure({
-      inline: true,
-      allowBase64: false,
-      HTMLAttributes: {
-        class: 'rounded-md',
-      },
-    }),
+    CustomImage({ onImageUpload }),
     Youtube.configure({
       controls: true,
       nocookie: true,
