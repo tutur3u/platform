@@ -12,12 +12,46 @@ import {
 } from '@/lib/api-middleware';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { posix } from 'node:path';
 import { z } from 'zod';
 
 // Request body schema
 const deleteBodySchema = z.object({
   paths: z.array(z.string()).min(1).max(100), // Allow batch delete up to 100 files
 });
+
+/**
+ * Sanitizes and validates a path to prevent path traversal attacks
+ * @param path - The user-provided path
+ * @returns Sanitized path or null if invalid
+ */
+function sanitizePath(path: string): string | null {
+  // Trim whitespace
+  const trimmed = path.trim();
+
+  // Reject empty paths
+  if (!trimmed) {
+    return null;
+  }
+
+  // Remove leading slashes (prevent absolute paths)
+  const withoutLeadingSlash = trimmed.replace(/^\/+/, '');
+
+  // Normalize the path using POSIX normalization
+  const normalized = posix.normalize(withoutLeadingSlash);
+
+  // Reject paths that contain '..' or start with '../'
+  if (normalized.includes('..') || normalized.startsWith('../')) {
+    return null;
+  }
+
+  // Reject paths that try to escape the workspace root
+  if (normalized.startsWith('/') || posix.isAbsolute(normalized)) {
+    return null;
+  }
+
+  return normalized;
+}
 
 export const DELETE = withApiAuth(
   async (request, { context }) => {
@@ -34,8 +68,23 @@ export const DELETE = withApiAuth(
     try {
       const supabase = await createClient();
 
-      // Construct full storage paths
-      const storagePaths = paths.map((path) => `${wsId}/${path}`);
+      // Sanitize and validate all paths
+      const sanitizedPaths: string[] = [];
+      for (const path of paths) {
+        const sanitized = sanitizePath(path);
+        if (!sanitized) {
+          return createErrorResponse(
+            'Bad Request',
+            `Invalid path: ${path}. Paths cannot contain '..' or be absolute paths.`,
+            400,
+            'INVALID_PATH'
+          );
+        }
+        sanitizedPaths.push(sanitized);
+      }
+
+      // Construct full storage paths with sanitized paths
+      const storagePaths = sanitizedPaths.map((path) => `${wsId}/${path}`);
 
       // Delete files from Supabase Storage
       const { data, error } = await supabase.storage
@@ -56,7 +105,7 @@ export const DELETE = withApiAuth(
         message: `Successfully deleted ${data.length} file(s)`,
         data: {
           deleted: data.length,
-          paths: data.map((item) => item.name),
+          paths: sanitizedPaths, // Return the original requested paths that were deleted
         },
       });
     } catch (error) {

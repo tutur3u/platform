@@ -11,11 +11,33 @@
 --
 -- Deployment sequence:
 -- 1. Apply this migration (adds key_hash column)
--- 2. Deploy application that writes to both value and key_hash
--- 3. Backfill existing rows: UPDATE workspace_api_keys SET key_hash = value WHERE key_hash IS NULL;
--- 4. Deploy application that reads from key_hash (falling back to value if needed)
--- 5. Verify all traffic uses key_hash via metrics/logs
--- 6. In a future reversible migration, drop the value column
+-- 2. Deploy application that writes to both value (plaintext, deprecated) and key_hash (scrypt hash)
+-- 3. Backfill existing rows with proper hashing:
+--    CRITICAL: Do NOT simply copy plaintext values to key_hash!
+--    Instead, run a one-off application job that:
+--    a. Reads each plaintext 'value' from the database
+--    b. Hashes it using the same scrypt parameters the application uses:
+--       - N=16384 (CPU/memory cost factor)
+--       - r=8 (block size)
+--       - p=1 (parallelization factor)
+--       - keylen=64 (output key length)
+--       - salt=16-byte random salt (generated per-key or from workspace ID)
+--    c. Writes the resulting hash to 'key_hash' column
+--    d. Implements error handling: if hashing fails, log the error and skip that row
+--    e. After backfill completes, verify all rows have non-null key_hash before proceeding
+--    Example (pseudocode):
+--      FOR EACH row IN workspace_api_keys WHERE key_hash IS NULL:
+--        TRY:
+--          hashed = scrypt(row.value, salt, {N:16384, r:8, p:1, keylen:64})
+--          UPDATE workspace_api_keys SET key_hash = hashed WHERE id = row.id
+--        CATCH error:
+--          LOG("Failed to hash key_id=" + row.id + ": " + error)
+--          CONTINUE
+-- 4. Deploy application that reads from key_hash (falling back to value if needed for safety)
+-- 5. Verify all traffic uses key_hash via metrics/logs (no fallback to value in production)
+-- 6. In a future reversible migration, drop the value column ONLY after verification that:
+--    - All keys are hashed (SELECT COUNT(*) FROM workspace_api_keys WHERE key_hash IS NULL should be 0)
+--    - All API authentication traffic uses key_hash (confirmed via logs/metrics)
 --
 -- Rollback notes:
 -- To rollback, simply continue using the 'value' column in the application

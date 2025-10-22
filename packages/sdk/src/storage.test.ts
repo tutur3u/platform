@@ -102,13 +102,17 @@ describe('TuturuuuClient', () => {
       expect(result).toEqual(mockResponse);
       expect(mockFetch).toHaveBeenCalledWith(
         'https://tuturuuu.com/api/v1/test',
-        expect.objectContaining({
-          method: 'GET',
-          headers: expect.objectContaining({
-            Authorization: 'Bearer ttr_test_key',
-          }),
-        })
+        expect.any(Object)
       );
+
+      // Inspect headers from the actual call
+      const callOptions = mockFetch.mock.calls[0][1];
+      const headers = callOptions.headers;
+      const authHeader =
+        headers instanceof Headers
+          ? headers.get('Authorization')
+          : headers.Authorization;
+      expect(authHeader).toBe('Bearer ttr_test_key');
     });
 
     it('should make successful POST request with JSON body', async () => {
@@ -124,13 +128,23 @@ describe('TuturuuuClient', () => {
         'https://tuturuuu.com/api/v1/test',
         expect.objectContaining({
           method: 'POST',
-          headers: expect.objectContaining({
-            Authorization: 'Bearer ttr_test_key',
-            'Content-Type': 'application/json',
-          }),
           body,
         })
       );
+
+      // Inspect headers from the actual call
+      const callOptions = mockFetch.mock.calls[0][1];
+      const headers = callOptions.headers;
+      const authHeader =
+        headers instanceof Headers
+          ? headers.get('Authorization')
+          : headers.Authorization;
+      const contentType =
+        headers instanceof Headers
+          ? headers.get('Content-Type')
+          : headers['Content-Type'];
+      expect(authHeader).toBe('Bearer ttr_test_key');
+      expect(contentType).toBe('application/json');
     });
 
     it('should skip Content-Type for FormData', async () => {
@@ -150,12 +164,24 @@ describe('TuturuuuClient', () => {
         'https://tuturuuu.com/api/v1/test',
         expect.objectContaining({
           method: 'POST',
-          headers: expect.objectContaining({
-            Authorization: 'Bearer ttr_test_key',
-          }),
           body: formData,
         })
       );
+
+      // Inspect headers from the actual call
+      const callOptions = mockFetch.mock.calls[0][1];
+      const headers = callOptions.headers;
+      const authHeader =
+        headers instanceof Headers
+          ? headers.get('Authorization')
+          : headers.Authorization;
+      const contentType =
+        headers instanceof Headers
+          ? headers.get('Content-Type')
+          : headers['Content-Type'];
+      expect(authHeader).toBe('Bearer ttr_test_key');
+      // Content-Type should not be set for FormData (browser sets it with boundary)
+      expect(contentType).toBeNull();
     });
 
     it('should throw error for API error response', async () => {

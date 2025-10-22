@@ -70,36 +70,113 @@ describe('listStorageOptionsSchema', () => {
   });
 
   it('should reject limit less than 1', () => {
-    expect(() => listStorageOptionsSchema.parse({ limit: 0 })).toThrow();
-    expect(() => listStorageOptionsSchema.parse({ limit: -1 })).toThrow();
+    const result1 = listStorageOptionsSchema.safeParse({ limit: 0 });
+    expect(result1.success).toBe(false);
+    if (!result1.success) {
+      expect(result1.error.issues.length).toBeGreaterThan(0);
+    }
+
+    const result2 = listStorageOptionsSchema.safeParse({ limit: -1 });
+    expect(result2.success).toBe(false);
+    if (!result2.success) {
+      expect(result2.error.issues.length).toBeGreaterThan(0);
+    }
   });
 
   it('should reject limit greater than 1000', () => {
-    expect(() => listStorageOptionsSchema.parse({ limit: 1001 })).toThrow();
+    const result = listStorageOptionsSchema.safeParse({ limit: 1001 });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
+    }
   });
 
   it('should reject negative offset', () => {
-    expect(() => listStorageOptionsSchema.parse({ offset: -1 })).toThrow();
+    const result = listStorageOptionsSchema.safeParse({ offset: -1 });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('should reject NaN, null, and undefined for limit', () => {
+    const resultNaN = listStorageOptionsSchema.safeParse({ limit: Number.NaN });
+    expect(resultNaN.success).toBe(false);
+    if (!resultNaN.success) {
+      expect(resultNaN.error.issues.length).toBeGreaterThan(0);
+    }
+
+    const resultNull = listStorageOptionsSchema.safeParse({ limit: null });
+    expect(resultNull.success).toBe(false);
+    if (!resultNull.success) {
+      expect(resultNull.error.issues.length).toBeGreaterThan(0);
+    }
+
+    const resultUndefined = listStorageOptionsSchema.safeParse({
+      limit: undefined,
+    });
+    expect(resultUndefined.success).toBe(false);
+    if (!resultUndefined.success) {
+      expect(resultUndefined.error.issues.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('should reject NaN, null, and undefined for offset', () => {
+    const resultNaN = listStorageOptionsSchema.safeParse({
+      offset: Number.NaN,
+    });
+    expect(resultNaN.success).toBe(false);
+    if (!resultNaN.success) {
+      expect(resultNaN.error.issues.length).toBeGreaterThan(0);
+    }
+
+    const resultNull = listStorageOptionsSchema.safeParse({ offset: null });
+    expect(resultNull.success).toBe(false);
+    if (!resultNull.success) {
+      expect(resultNull.error.issues.length).toBeGreaterThan(0);
+    }
+
+    const resultUndefined = listStorageOptionsSchema.safeParse({
+      offset: undefined,
+    });
+    expect(resultUndefined.success).toBe(false);
+    if (!resultUndefined.success) {
+      expect(resultUndefined.error.issues.length).toBeGreaterThan(0);
+    }
   });
 
   it('should reject invalid sortBy', () => {
-    expect(() =>
-      listStorageOptionsSchema.parse({ sortBy: 'invalid' })
-    ).toThrow();
+    const result = listStorageOptionsSchema.safeParse({ sortBy: 'invalid' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
+    }
   });
 
   it('should reject invalid sortOrder', () => {
-    expect(() =>
-      listStorageOptionsSchema.parse({ sortOrder: 'invalid' })
-    ).toThrow();
+    const result = listStorageOptionsSchema.safeParse({
+      sortOrder: 'invalid',
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
+    }
   });
 
   it('should reject non-integer limit', () => {
-    expect(() => listStorageOptionsSchema.parse({ limit: 10.5 })).toThrow();
+    const result = listStorageOptionsSchema.safeParse({ limit: 10.5 });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
+    }
   });
 
   it('should reject non-integer offset', () => {
-    expect(() => listStorageOptionsSchema.parse({ offset: 5.5 })).toThrow();
+    const result = listStorageOptionsSchema.safeParse({ offset: 5.5 });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
+    }
   });
 });
 
@@ -161,16 +238,57 @@ describe('shareOptionsSchema', () => {
   });
 
   it('should reject expiresIn less than 60', () => {
-    expect(() => shareOptionsSchema.parse({ expiresIn: 59 })).toThrow();
-    expect(() => shareOptionsSchema.parse({ expiresIn: 0 })).toThrow();
+    const result1 = shareOptionsSchema.safeParse({ expiresIn: 59 });
+    expect(result1.success).toBe(false);
+    if (!result1.success) {
+      expect(result1.error.issues.length).toBeGreaterThan(0);
+    }
+
+    const result2 = shareOptionsSchema.safeParse({ expiresIn: 0 });
+    expect(result2.success).toBe(false);
+    if (!result2.success) {
+      expect(result2.error.issues.length).toBeGreaterThan(0);
+    }
   });
 
   it('should reject expiresIn greater than 604800', () => {
-    expect(() => shareOptionsSchema.parse({ expiresIn: 604801 })).toThrow();
+    const result = shareOptionsSchema.safeParse({ expiresIn: 604801 });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
+    }
   });
 
   it('should reject non-integer expiresIn', () => {
-    expect(() => shareOptionsSchema.parse({ expiresIn: 60.5 })).toThrow();
+    const result = shareOptionsSchema.safeParse({ expiresIn: 60.5 });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('should reject NaN, null, and undefined for expiresIn', () => {
+    const resultNaN = shareOptionsSchema.safeParse({
+      expiresIn: Number.NaN,
+    });
+    expect(resultNaN.success).toBe(false);
+    if (!resultNaN.success) {
+      expect(resultNaN.error.issues.length).toBeGreaterThan(0);
+    }
+
+    const resultNull = shareOptionsSchema.safeParse({ expiresIn: null });
+    expect(resultNull.success).toBe(false);
+    if (!resultNull.success) {
+      expect(resultNull.error.issues.length).toBeGreaterThan(0);
+    }
+
+    const resultUndefined = shareOptionsSchema.safeParse({
+      expiresIn: undefined,
+    });
+    expect(resultUndefined.success).toBe(false);
+    if (!resultUndefined.success) {
+      expect(resultUndefined.error.issues.length).toBeGreaterThan(0);
+    }
   });
 });
 
@@ -221,23 +339,91 @@ describe('listDocumentsOptionsSchema', () => {
   });
 
   it('should reject limit less than 1', () => {
-    expect(() => listDocumentsOptionsSchema.parse({ limit: 0 })).toThrow();
+    const result = listDocumentsOptionsSchema.safeParse({ limit: 0 });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
+    }
   });
 
   it('should reject limit greater than 100', () => {
-    expect(() => listDocumentsOptionsSchema.parse({ limit: 101 })).toThrow();
+    const result = listDocumentsOptionsSchema.safeParse({ limit: 101 });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
+    }
   });
 
   it('should reject negative offset', () => {
-    expect(() => listDocumentsOptionsSchema.parse({ offset: -1 })).toThrow();
+    const result = listDocumentsOptionsSchema.safeParse({ offset: -1 });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
+    }
   });
 
   it('should reject non-integer limit', () => {
-    expect(() => listDocumentsOptionsSchema.parse({ limit: 10.5 })).toThrow();
+    const result = listDocumentsOptionsSchema.safeParse({ limit: 10.5 });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
+    }
   });
 
   it('should reject non-integer offset', () => {
-    expect(() => listDocumentsOptionsSchema.parse({ offset: 5.5 })).toThrow();
+    const result = listDocumentsOptionsSchema.safeParse({ offset: 5.5 });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('should reject NaN, null, and undefined for limit', () => {
+    const resultNaN = listDocumentsOptionsSchema.safeParse({
+      limit: Number.NaN,
+    });
+    expect(resultNaN.success).toBe(false);
+    if (!resultNaN.success) {
+      expect(resultNaN.error.issues.length).toBeGreaterThan(0);
+    }
+
+    const resultNull = listDocumentsOptionsSchema.safeParse({ limit: null });
+    expect(resultNull.success).toBe(false);
+    if (!resultNull.success) {
+      expect(resultNull.error.issues.length).toBeGreaterThan(0);
+    }
+
+    const resultUndefined = listDocumentsOptionsSchema.safeParse({
+      limit: undefined,
+    });
+    expect(resultUndefined.success).toBe(false);
+    if (!resultUndefined.success) {
+      expect(resultUndefined.error.issues.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('should reject NaN, null, and undefined for offset', () => {
+    const resultNaN = listDocumentsOptionsSchema.safeParse({
+      offset: Number.NaN,
+    });
+    expect(resultNaN.success).toBe(false);
+    if (!resultNaN.success) {
+      expect(resultNaN.error.issues.length).toBeGreaterThan(0);
+    }
+
+    const resultNull = listDocumentsOptionsSchema.safeParse({ offset: null });
+    expect(resultNull.success).toBe(false);
+    if (!resultNull.success) {
+      expect(resultNull.error.issues.length).toBeGreaterThan(0);
+    }
+
+    const resultUndefined = listDocumentsOptionsSchema.safeParse({
+      offset: undefined,
+    });
+    expect(resultUndefined.success).toBe(false);
+    if (!resultUndefined.success) {
+      expect(resultUndefined.error.issues.length).toBeGreaterThan(0);
+    }
   });
 });
 
@@ -287,12 +473,20 @@ describe('createDocumentDataSchema', () => {
   });
 
   it('should reject empty name', () => {
-    expect(() => createDocumentDataSchema.parse({ name: '' })).toThrow();
+    const result = createDocumentDataSchema.safeParse({ name: '' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
+    }
   });
 
   it('should reject name longer than 255 characters', () => {
     const longName = 'a'.repeat(256);
-    expect(() => createDocumentDataSchema.parse({ name: longName })).toThrow();
+    const result = createDocumentDataSchema.safeParse({ name: longName });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
+    }
   });
 
   it('should accept name at maximum length (255 characters)', () => {
@@ -302,7 +496,11 @@ describe('createDocumentDataSchema', () => {
   });
 
   it('should reject missing name', () => {
-    expect(() => createDocumentDataSchema.parse({})).toThrow();
+    const result = createDocumentDataSchema.safeParse({});
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
+    }
   });
 
   it('should accept empty content', () => {
@@ -351,12 +549,20 @@ describe('updateDocumentDataSchema', () => {
   });
 
   it('should reject empty name', () => {
-    expect(() => updateDocumentDataSchema.parse({ name: '' })).toThrow();
+    const result = updateDocumentDataSchema.safeParse({ name: '' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
+    }
   });
 
   it('should reject name longer than 255 characters', () => {
     const longName = 'a'.repeat(256);
-    expect(() => updateDocumentDataSchema.parse({ name: longName })).toThrow();
+    const result = updateDocumentDataSchema.safeParse({ name: longName });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.length).toBeGreaterThan(0);
+    }
   });
 
   it('should accept name at maximum length (255 characters)', () => {

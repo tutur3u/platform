@@ -213,8 +213,19 @@ export class StorageClient {
       throw new ValidationError('Path is required');
     }
 
+    // Properly encode path to handle spaces and special characters
+    // Normalize backslashes to forward slashes
+    const normalizedPath = path.replace(/\\/g, '/');
+
+    // Split path into segments, encode each segment, and rejoin
+    const segments = normalizedPath.split('/').filter((s) => s.length > 0);
+    const encodedPath = segments.map((s) => encodeURIComponent(s)).join('/');
+
+    // Ensure baseUrl doesn't end with slash to avoid double slashes
+    const baseUrl = this.client.baseUrl.replace(/\/$/, '');
+
     const response = await this.client.fetch(
-      `${this.client.baseUrl}/storage/download/${path}`,
+      `${baseUrl}/storage/download/${encodedPath}`,
       {
         method: 'GET',
         headers: {
@@ -545,7 +556,7 @@ export class TuturuuuClient {
    * ```typescript
    * const client = new TuturuuuClient({
    *   apiKey: 'ttr_your_api_key',
-   *   baseUrl: 'https://api.tuturuuu.com', // optional
+   *   baseUrl: 'https://tuturuuu.com/api/v1', // optional, this is the default
    *   timeout: 30000 // optional, default 30s
    * });
    * ```
@@ -593,6 +604,7 @@ export class TuturuuuClient {
     const headers: Record<string, string> = {
       Authorization: `Bearer ${this.apiKey}`,
       'X-SDK-Client': `tuturuuu/${packageJson.version || '0.0.1'}`,
+      Accept: 'application/json',
     };
 
     // Only set Content-Type for JSON bodies

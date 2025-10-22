@@ -47,7 +47,7 @@ export const GET = withApiAuth(
 
       let query = supabase
         .from('workspace_documents')
-        .select('id, name, content, is_public, created_at', { count: 'exact' })
+        .select('id, name, is_public, created_at', { count: 'exact' })
         .eq('ws_id', wsId)
         .range(offset, offset + limit - 1)
         .order('created_at', { ascending: false });
@@ -76,9 +76,10 @@ export const GET = withApiAuth(
 
       // Map database snake_case to SDK camelCase
       const mappedDocuments = (documents || []).map(
-        ({ is_public, ...rest }) => ({
+        ({ is_public, created_at, ...rest }) => ({
           ...rest,
           isPublic: is_public,
+          createdAt: created_at,
         })
       );
 
@@ -87,7 +88,7 @@ export const GET = withApiAuth(
         pagination: {
           limit,
           offset,
-          total: count || 0,
+          filteredTotal: count || 0, // Count after filters are applied
         },
       });
     } catch (error) {
@@ -143,10 +144,10 @@ export const POST = withApiAuth(
       }
 
       // Map database snake_case to SDK camelCase
-      const { is_public, ...rest } = document;
+      const { is_public, created_at, ...rest } = document;
       return NextResponse.json({
         message: 'Document created successfully',
-        data: { ...rest, isPublic: is_public },
+        data: { ...rest, isPublic: is_public, createdAt: created_at },
       });
     } catch (error) {
       console.error('Unexpected error creating document:', error);

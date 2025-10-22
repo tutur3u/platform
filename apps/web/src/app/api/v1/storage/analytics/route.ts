@@ -52,7 +52,7 @@ export const GET = withApiAuth(
 
       // Filter out placeholder files and calculate statistics
       const realFiles = files?.filter(
-        (file) => file.name !== '.emptyFolderPlaceholder' && !file.id
+        (file) => file.name !== '.emptyFolderPlaceholder'
       );
 
       const fileCount = realFiles?.length || 0;
@@ -83,10 +83,24 @@ export const GET = withApiAuth(
       }
 
       // Storage limits (from drive page logic)
-      const isRootWorkspace = wsId === '00000000-0000-0000-0000-000000000000'; // Adjust based on your root workspace ID logic
+      // ROOT_WORKSPACE_ID should be configured in environment variables
+      const rootWorkspaceId = process.env.ROOT_WORKSPACE_ID;
+      if (!rootWorkspaceId) {
+        console.error(
+          'ROOT_WORKSPACE_ID environment variable is not configured'
+        );
+        return createErrorResponse(
+          'Internal Server Error',
+          'Server configuration error',
+          500,
+          'MISSING_CONFIG'
+        );
+      }
+
+      const isRootWorkspace = wsId === rootWorkspaceId;
       const storageLimit = isRootWorkspace
-        ? 100 * 1024 * 1024 * 1024 // 100 GB
-        : 50 * 1024 * 1024; // 50 MB
+        ? 100 * 1024 * 1024 * 1024 // 100 GB for root workspace
+        : 50 * 1024 * 1024; // 50 MB for regular workspaces
 
       return NextResponse.json({
         data: {

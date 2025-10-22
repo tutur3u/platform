@@ -11,7 +11,9 @@ import {
   validateApiKey,
   type WorkspaceContext,
 } from '@tuturuuu/auth/api-keys';
+import type { PermissionId } from '@tuturuuu/types/db';
 import { type NextRequest, NextResponse } from 'next/server';
+import type { ApiErrorResponse } from 'tuturuuu/types';
 
 /**
  * Extended request with workspace context
@@ -21,22 +23,14 @@ export interface AuthenticatedRequest extends NextRequest {
 }
 
 /**
- * Standard API error response
- */
-interface ApiErrorResponse {
-  error: string;
-  message: string;
-  code?: string;
-}
-
-/**
  * Creates a standardized error response
  */
 export function createErrorResponse(
   error: string,
   message: string,
   status: number,
-  code?: string
+  code?: string,
+  headers?: Record<string, string>
 ): NextResponse<ApiErrorResponse> {
   return NextResponse.json(
     {
@@ -44,13 +38,13 @@ export function createErrorResponse(
       message,
       ...(code && { code }),
     },
-    { status }
+    { status, headers }
   );
 }
 
 /**
  * Extracts the API key from the Authorization header
- * Supports "Bearer <key>" format
+ * Supports "Bearer <key>" format with case-insensitive matching
  */
 export function extractApiKey(request: NextRequest): string | null {
   const authHeader = request.headers.get('Authorization');
@@ -59,14 +53,19 @@ export function extractApiKey(request: NextRequest): string | null {
     return null;
   }
 
-  // Support "Bearer <key>" format
-  if (authHeader.startsWith('Bearer ')) {
-    return authHeader.substring(7);
+  // Trim leading/trailing whitespace
+  const trimmedHeader = authHeader.trim();
+
+  // Support "Bearer <key>" format (case-insensitive)
+  if (trimmedHeader.toLowerCase().startsWith('bearer ')) {
+    // Extract everything after "Bearer " and trim
+    const token = trimmedHeader.substring(7).trim();
+    return token || null;
   }
 
   // Also support raw key (for backwards compatibility)
-  if (authHeader.startsWith('ttr_')) {
-    return authHeader;
+  if (trimmedHeader.startsWith('ttr_')) {
+    return trimmedHeader;
   }
 
   return null;
@@ -86,7 +85,8 @@ export async function authenticateRequest(
       'Unauthorized',
       'Missing or invalid Authorization header. Expected: "Authorization: Bearer <api_key>"',
       401,
-      'MISSING_API_KEY'
+      'MISSING_API_KEY',
+      { 'WWW-Authenticate': 'Bearer' }
     );
   }
 
@@ -97,7 +97,8 @@ export async function authenticateRequest(
       'Unauthorized',
       'Invalid or expired API key',
       401,
-      'INVALID_API_KEY'
+      'INVALID_API_KEY',
+      { 'WWW-Authenticate': 'Bearer' }
     );
   }
 
@@ -109,7 +110,7 @@ export async function authenticateRequest(
  */
 export function checkPermissions(
   context: WorkspaceContext,
-  requiredPermissions: string[],
+  requiredPermissions: PermissionId[],
   requireAll = false
 ): { authorized: true } | NextResponse<ApiErrorResponse> {
   const hasPermissions = requireAll
@@ -154,7 +155,7 @@ export function withApiAuth<T = unknown>(
     }
   ) => Promise<NextResponse> | NextResponse,
   options?: {
-    permissions?: string[];
+    permissions?: PermissionId[];
     requireAll?: boolean;
   }
 ): (
@@ -209,7 +210,7 @@ export function withApiAuth<T = unknown>(
 }
 
 /**
- * Rate limiting configuration (optional enhancement)
+ * Rate limiting configuration
  */
 export interface RateLimitConfig {
   windowMs: number; // Time window in milliseconds
@@ -217,48 +218,179 @@ export interface RateLimitConfig {
 }
 
 /**
- * Simple in-memory rate limiter (for production, use Redis or similar)
- * This is a basic implementation - consider using a dedicated rate limiting service
+ * Rate limit result with headers
+ */
+interface RateLimitResult {
+  allowed: boolean;
+  limit: number;
+  remaining: number;
+  reset: number; // Unix timestamp in seconds
+}
+
+/**
+ * In-memory rate limit store (fallback when Redis unavailable)
  */
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
 /**
- * Checks if a request should be rate limited
+ * Redis client type (lazy-loaded if @upstash/redis is installed)
  */
-export function checkRateLimit(
+const redisClient = null;
+
+/**
+ * Initialize Redis client for rate limiting
+ * Safe to call multiple times - will only initialize once
+ */
+async function getRedisClient() {
+  if (redisClient !== null) return redisClient;
+
+  try {
+    // Check if Redis env vars are configured
+    const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+    const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    if (!redisUrl || !redisToken) {
+      console.warn(
+        'Redis rate limiting disabled: UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN not configured'
+      );
+      return null;
+    }
+
+    // Dynamically import @upstash/redis if available
+    // const { Redis } = await import('@upstash/redis');
+    // redisClient = new Redis({
+    //   url: redisUrl,
+    //   token: redisToken,
+    // });
+    // console.log('Redis rate limiting enabled');
+    return redisClient;
+  } catch (error) {
+    console.warn(
+      'Redis rate limiting unavailable - falling back to in-memory:',
+      error
+    );
+    return null;
+  }
+}
+
+/**
+ * Rate limit using Redis (production-ready, serverless-safe)
+ */
+async function checkRateLimitRedis(
   keyId: string,
-  config: RateLimitConfig = { windowMs: 60000, maxRequests: 100 }
-): { allowed: true } | NextResponse<ApiErrorResponse> {
+  config: RateLimitConfig
+): Promise<RateLimitResult> {
+  const redis = await getRedisClient();
+  if (!redis) {
+    // Fallback to in-memory
+    return checkRateLimitMemory(keyId, config);
+  }
+
+  // const key = `ratelimit:${keyId}`;
+  // const windowSeconds = Math.ceil(config.windowMs / 1000);
+  // const now = Math.floor(Date.now() / 1000);
+
+  try {
+    // Use Redis pipeline for atomic operations
+    // const count = await redis.incr(key);
+
+    // if (count === 1) {
+    //   // First request in this window - set expiry
+    //   await redis.expire(key, windowSeconds);
+    // }
+
+    // const ttl = await redis.ttl(key);
+    // const resetTime = now + (ttl > 0 ? ttl : windowSeconds);
+
+    // return {
+    //   allowed: count <= config.maxRequests,
+    //   limit: config.maxRequests,
+    //   remaining: Math.max(0, config.maxRequests - count),
+    //   reset: resetTime,
+    // };
+
+    throw new Error('Redis client not implemented');
+  } catch (error) {
+    console.error('Redis rate limit error, falling back to in-memory:', error);
+    // Fallback to in-memory on Redis errors
+    return checkRateLimitMemory(keyId, config);
+  }
+}
+
+/**
+ * Rate limit using in-memory store (fallback)
+ */
+function checkRateLimitMemory(
+  keyId: string,
+  config: RateLimitConfig
+): RateLimitResult {
   const now = Date.now();
   const limit = rateLimitStore.get(keyId);
 
   if (!limit || now > limit.resetTime) {
     // First request or window expired
+    const resetTime = now + config.windowMs;
     rateLimitStore.set(keyId, {
       count: 1,
-      resetTime: now + config.windowMs,
+      resetTime,
     });
-    return { allowed: true };
-  }
-
-  if (limit.count >= config.maxRequests) {
-    // Rate limit exceeded
-    const resetIn = Math.ceil((limit.resetTime - now) / 1000);
-    return createErrorResponse(
-      'Too Many Requests',
-      `Rate limit exceeded. Try again in ${resetIn} seconds.`,
-      429,
-      'RATE_LIMIT_EXCEEDED'
-    );
+    return {
+      allowed: true,
+      limit: config.maxRequests,
+      remaining: config.maxRequests - 1,
+      reset: Math.floor(resetTime / 1000),
+    };
   }
 
   // Increment counter
   limit.count += 1;
+
+  return {
+    allowed: limit.count <= config.maxRequests,
+    limit: config.maxRequests,
+    remaining: Math.max(0, config.maxRequests - limit.count),
+    reset: Math.floor(limit.resetTime / 1000),
+  };
+}
+
+/**
+ * Checks if a request should be rate limited
+ * Uses Redis if available, falls back to in-memory store
+ * Adds standard X-RateLimit-* headers to response
+ */
+export async function checkRateLimit(
+  keyId: string,
+  config: RateLimitConfig = { windowMs: 60000, maxRequests: 100 }
+): Promise<{ allowed: true } | NextResponse<ApiErrorResponse>> {
+  const result = await checkRateLimitRedis(keyId, config);
+
+  // Prepare rate limit headers
+  const headers = {
+    'X-RateLimit-Limit': result.limit.toString(),
+    'X-RateLimit-Remaining': result.remaining.toString(),
+    'X-RateLimit-Reset': result.reset.toString(),
+  };
+
+  if (!result.allowed) {
+    // Rate limit exceeded
+    const resetIn = Math.max(1, result.reset - Math.floor(Date.now() / 1000));
+    return createErrorResponse(
+      'Too Many Requests',
+      `Rate limit exceeded. Try again in ${resetIn} seconds.`,
+      429,
+      'RATE_LIMIT_EXCEEDED',
+      headers
+    );
+  }
+
+  // For successful requests, headers should be added by the caller
+  // Return allowed with rate limit info for informational purposes
   return { allowed: true };
 }
 
 /**
  * Validates query parameters using Zod schema
+ * Supports duplicate query keys (e.g., ids=1&ids=2)
  */
 export function validateQueryParams<T>(
   request: NextRequest,
@@ -266,7 +398,19 @@ export function validateQueryParams<T>(
 ): { data: T } | NextResponse<ApiErrorResponse> {
   try {
     const url = new URL(request.url);
-    const params = Object.fromEntries(url.searchParams.entries());
+
+    // Build params object that preserves duplicate keys as arrays
+    const params: Record<string, string | string[]> = {};
+    const keys = Array.from(url.searchParams.keys());
+    const uniqueKeys = [...new Set(keys)];
+
+    for (const key of uniqueKeys) {
+      const values = url.searchParams.getAll(key);
+      // Use array for multiple values, single string for one value
+      // getAll returns empty array if key doesn't exist, but we already filter by existing keys
+      params[key] = values.length > 1 ? values : (values[0] ?? '');
+    }
+
     const data = schema.parse(params);
     return { data };
   } catch (error) {

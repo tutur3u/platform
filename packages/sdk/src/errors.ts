@@ -154,6 +154,8 @@ export function isApiErrorResponse(obj: unknown): obj is ApiErrorResponse {
     typeof obj === 'object' &&
     obj !== null &&
     'error' in obj &&
-    'message' in obj
+    'message' in obj &&
+    typeof (obj as any).error === 'string' &&
+    typeof (obj as any).message === 'string'
   );
 }

@@ -56,7 +56,7 @@ export interface ShareOptions {
 export interface Pagination {
   limit: number;
   offset: number;
-  total: number;
+  filteredTotal: number; // Total count after filters are applied
 }
 
 /**
@@ -151,7 +151,7 @@ export interface Document {
   name: string;
   content: string;
   isPublic: boolean;
-  created_at: string;
+  createdAt: string;
 }
 
 /**
@@ -228,7 +228,7 @@ export interface ApiErrorResponse {
 export const listStorageOptionsSchema = z.object({
   path: z.string().optional(),
   search: z.string().optional(),
-  limit: z.number().int().min(1).max(1000).optional(),
+  limit: z.number().int().min(1).max(100).optional(),
   offset: z.number().int().min(0).optional(),
   sortBy: z.enum(['name', 'created_at', 'updated_at', 'size']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
@@ -252,12 +252,12 @@ export const listDocumentsOptionsSchema = z.object({
 
 export const createDocumentDataSchema = z.object({
   name: z.string().min(1).max(255),
-  content: z.string().optional(),
+  content: z.string().max(100000).optional(),
   isPublic: z.boolean().optional(),
 });
 
 export const updateDocumentDataSchema = z.object({
   name: z.string().min(1).max(255).optional(),
-  content: z.string().optional(),
+  content: z.string().max(100000).optional(),
   isPublic: z.boolean().optional(),
 });

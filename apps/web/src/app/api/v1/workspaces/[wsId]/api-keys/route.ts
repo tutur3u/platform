@@ -1,3 +1,4 @@
+import { generateApiKey, hashApiKey } from '@tuturuuu/auth/api-keys';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
@@ -34,9 +35,16 @@ export async function POST(req: Request, { params }: Params) {
 
   const data = await req.json();
 
+  // Generate secure API key and hash server-side
+  const { key, prefix } = generateApiKey();
+  const keyHash = await hashApiKey(key);
+
   const { error } = await supabase.from('workspace_api_keys').insert({
     ...data,
     ws_id: id,
+    key_hash: keyHash,
+    key_prefix: prefix,
+    // Don't store the plaintext key - it will only be returned once
   });
 
   if (error) {
@@ -47,5 +55,10 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json({ message: 'success' });
+  // Return the plaintext key to the user (only time they'll see it)
+  return NextResponse.json({
+    message: 'API key created successfully',
+    key,
+    prefix,
+  });
 }

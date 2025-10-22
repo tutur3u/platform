@@ -9,8 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import type React from 'react';
@@ -48,30 +47,28 @@ export default function ApiKeyEditDialog({
         : `/api/v1/workspaces/${data.ws_id}/api-keys`,
       {
         method: data.id ? 'PUT' : 'POST',
-        body: JSON.stringify({
-          ...values,
-          // For new keys, use key_hash (new schema); for existing keys, keep value if present
-          ...(data.id
-            ? { value: values.value }
-            : {
-                key_hash:
-                  `${generateRandomUUID() + generateRandomUUID()}`.replace(
-                    /-/g,
-                    ''
-                  ),
-              }),
-        }),
+        body: JSON.stringify(values),
       }
     );
 
     if (res.ok) {
+      const responseData = await res.json();
+
+      // For new keys, the server returns the generated key and prefix
+      // Show it to the user (they won't be able to see it again)
+      if (!data.id && responseData.key) {
+        toast.success('API key created successfully', {
+          description: `Key: ${responseData.key}`,
+          duration: 10000,
+        });
+      }
+
       setOpen(false);
       router.refresh();
     } else {
-      const data = await res.json();
-      toast({
-        title: `Failed to ${data.id ? 'edit' : 'create'} api key`,
-        description: data.message,
+      const errorData = await res.json();
+      toast.error(`Failed to ${data.id ? 'edit' : 'create'} api key`, {
+        description: errorData.message,
       });
     }
   };

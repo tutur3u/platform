@@ -18,7 +18,7 @@ import { z } from 'zod';
 const listQuerySchema = z.object({
   path: z.string().optional().default(''),
   search: z.string().optional(),
-  limit: z.coerce.number().int().min(1).max(1000).optional().default(100),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(50),
   offset: z.coerce.number().int().min(0).optional().default(0),
   sortBy: z
     .enum(['name', 'created_at', 'updated_at', 'size'])
@@ -78,7 +78,7 @@ export const GET = withApiAuth(
         pagination: {
           limit,
           offset,
-          total: filteredFiles?.length || 0,
+          filteredTotal: filteredFiles?.length || 0,
         },
       });
     } catch (error) {

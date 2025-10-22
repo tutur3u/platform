@@ -17,7 +17,14 @@ import { z } from 'zod';
 // Request body schema
 const createFolderSchema = z.object({
   path: z.string(), // Parent path where folder should be created
-  name: z.string().min(1).max(255), // Folder name
+  name: z
+    .string()
+    .min(1)
+    .max(255)
+    .regex(
+      /^[a-zA-Z0-9-_\s]+$/,
+      'Folder name can only contain letters, numbers, spaces, hyphens, and underscores'
+    ), // Folder name with validation
 });
 
 const EMPTY_FOLDER_PLACEHOLDER = '.emptyFolderPlaceholder';
@@ -33,16 +40,6 @@ export const POST = withApiAuth(
     }
 
     const { path, name } = bodyResult.data;
-
-    // Validate folder name (no special characters except - and _)
-    if (!/^[a-zA-Z0-9-_\s]+$/.test(name)) {
-      return createErrorResponse(
-        'Bad Request',
-        'Folder name can only contain letters, numbers, spaces, hyphens, and underscores',
-        400,
-        'INVALID_FOLDER_NAME'
-      );
-    }
 
     try {
       const supabase = await createClient();

@@ -5,7 +5,8 @@
  * for external SDK authentication. Uses workspace role-based permissions.
  */
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { PermissionId } from '@tuturuuu/types/db';
 import { randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 
@@ -22,14 +23,14 @@ const KEY_DERIVATION_LENGTH = 64;
  * @returns Object containing the raw key and its prefix for display
  * @example
  * const { key, prefix } = generateApiKey();
- * // key: "ttr_1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h"
- * // prefix: "ttr_1a2b"
+ * // key: "ttr_<64-hex-chars>"
+ * // prefix: "ttr_<8-hex>"
  */
 export function generateApiKey(): { key: string; prefix: string } {
   const randomBuffer = randomBytes(KEY_LENGTH);
   const keyBody = randomBuffer.toString('hex');
   const key = `${KEY_PREFIX}${keyBody}`;
-  const prefix = key.substring(0, 12); // "ttr_" + first 8 chars
+  const prefix = key.substring(0, 12); // "ttr_" (4 chars) + first 8 hex chars = 12 total
 
   return { key, prefix };
 }
@@ -81,8 +82,9 @@ export async function validateApiKeyHash(
 
     // Use timing-safe comparison to prevent timing attacks
     return timingSafeEqual(derivedKey, storedHashBuffer);
-  } catch (error) {
-    console.error('Error validating API key:', error);
+  } catch (_) {
+    // Silently fail - do not log crypto errors as they may contain sensitive information
+    // The caller will receive false and can handle accordingly
     return false;
   }
 }
@@ -94,7 +96,7 @@ export interface WorkspaceContext {
   wsId: string;
   keyId: string;
   roleId: string | null;
-  permissions: string[]; // List of workspace_role_permission values
+  permissions: PermissionId[];
 }
 
 /**
@@ -103,6 +105,11 @@ export interface WorkspaceContext {
  *
  * @param apiKey - The raw API key from the Authorization header
  * @returns WorkspaceContext if valid, null if invalid or expired
+ *
+ * @remarks
+ * This function uses an admin client to bypass RLS policies.
+ * Requires a unique index on key_prefix for optimal performance:
+ * CREATE UNIQUE INDEX IF NOT EXISTS idx_workspace_api_keys_key_prefix ON workspace_api_keys(key_prefix);
  */
 export async function validateApiKey(
   apiKey: string
@@ -113,15 +120,18 @@ export async function validateApiKey(
       return null;
     }
 
-    const supabase = await createClient();
+    // Extract key_prefix for efficient lookup (first 12 characters)
+    const keyPrefix = apiKey.substring(0, 12);
 
-    // Get all API keys and validate against each hash
-    // We can't query by hash directly since we need to compare with scrypt
+    const supabase = await createAdminClient();
+
+    // Query by key_prefix to fetch only the candidate row
+    // This assumes a unique index exists on key_prefix for single-row matches
     const { data: keys, error } = await supabase
       .from('workspace_api_keys')
       .select('id, ws_id, key_hash, role_id, expires_at')
-      .is('expires_at', null)
-      .or(`expires_at.gt.${new Date().toISOString()}`);
+      .eq('key_prefix', keyPrefix)
+      .or('expires_at.is.null,expires_at.gt.now()');
 
     if (error || !keys || keys.length === 0) {
       return null;
@@ -146,7 +156,7 @@ export async function validateApiKey(
         }
 
         // Get permissions for this role
-        const permissions: string[] = [];
+        const permissions: PermissionId[] = [];
 
         if (keyRecord.role_id) {
           const { data: rolePermissions } = await supabase
@@ -157,16 +167,17 @@ export async function validateApiKey(
             .eq('enabled', true);
 
           if (rolePermissions) {
-            permissions.push(...rolePermissions.map((p) => p.permission));
+            permissions.push(
+              ...(rolePermissions.map((p) => p.permission) as PermissionId[])
+            );
           }
         }
 
-        // Update last_used_at timestamp (fire and forget)
-        supabase
+        // Update last_used_at timestamp — fire-and-forget, intentionally not awaiting
+        void supabase
           .from('workspace_api_keys')
           .update({ last_used_at: new Date().toISOString() })
-          .eq('id', keyRecord.id)
-          .then();
+          .eq('id', keyRecord.id);
 
         return {
           wsId: keyRecord.ws_id,
@@ -178,8 +189,9 @@ export async function validateApiKey(
     }
 
     return null;
-  } catch (error) {
-    console.error('Error validating API key:', error);
+  } catch (_) {
+    // Silently fail - do not log validation errors as they may contain sensitive information
+    // The caller will receive null and can handle accordingly
     return null;
   }
 }
@@ -193,7 +205,7 @@ export async function validateApiKey(
  */
 export function hasPermission(
   context: WorkspaceContext,
-  permission: string
+  permission: PermissionId
 ): boolean {
   return context.permissions.includes(permission);
 }
@@ -207,7 +219,7 @@ export function hasPermission(
  */
 export function hasAnyPermission(
   context: WorkspaceContext,
-  requiredPermissions: string[]
+  requiredPermissions: PermissionId[]
 ): boolean {
   return requiredPermissions.some((perm) => hasPermission(context, perm));
 }
@@ -221,7 +233,7 @@ export function hasAnyPermission(
  */
 export function hasAllPermissions(
   context: WorkspaceContext,
-  requiredPermissions: string[]
+  requiredPermissions: PermissionId[]
 ): boolean {
   return requiredPermissions.every((perm) => hasPermission(context, perm));
 }

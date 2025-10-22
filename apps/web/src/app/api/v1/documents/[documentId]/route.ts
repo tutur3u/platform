@@ -30,7 +30,35 @@ export const GET = withApiAuth<{ documentId: string }>(
         .single();
 
       if (error || !document) {
-        console.error('Error fetching document:', error);
+        // Log error details for debugging (defensively check for error existence)
+        if (error) {
+          console.error('Error fetching document:', {
+            message: error.message,
+            code: error?.code,
+            details: error?.details,
+            hint: error?.hint,
+          });
+
+          // Check if this is a true "not found" error (PGRST116 = no rows returned)
+          if (error.code === 'PGRST116' || !document) {
+            return createErrorResponse(
+              'Not Found',
+              'Document not found',
+              404,
+              'DOCUMENT_NOT_FOUND'
+            );
+          }
+
+          // Other database errors
+          return createErrorResponse(
+            'Internal Server Error',
+            'Failed to fetch document',
+            500,
+            'DOCUMENT_FETCH_ERROR'
+          );
+        }
+
+        // No error but no document - treat as not found
         return createErrorResponse(
           'Not Found',
           'Document not found',
@@ -40,9 +68,9 @@ export const GET = withApiAuth<{ documentId: string }>(
       }
 
       // Map database snake_case to SDK camelCase
-      const { is_public, ...rest } = document;
+      const { is_public, created_at, ...rest } = document;
       return NextResponse.json({
-        data: { ...rest, isPublic: is_public },
+        data: { ...rest, isPublic: is_public, createdAt: created_at },
       });
     } catch (error) {
       console.error('Unexpected error fetching document:', error);
@@ -101,30 +129,48 @@ export const PATCH = withApiAuth<{ documentId: string }>(
         .single();
 
       if (error || !document) {
-        console.error('Error updating document:', error);
+        // Log error details for debugging (defensively check for error existence)
+        if (error) {
+          console.error('Error updating document:', {
+            message: error.message,
+            code: error?.code,
+            details: error?.details,
+            hint: error?.hint,
+          });
 
-        if (error?.code === 'PGRST116') {
+          // Check if this is a true "not found" error (PGRST116 = no rows returned)
+          if (error.code === 'PGRST116' || !document) {
+            return createErrorResponse(
+              'Not Found',
+              'Document not found',
+              404,
+              'DOCUMENT_NOT_FOUND'
+            );
+          }
+
+          // Other database errors
           return createErrorResponse(
-            'Not Found',
-            'Document not found',
-            404,
-            'DOCUMENT_NOT_FOUND'
+            'Internal Server Error',
+            'Failed to update document',
+            500,
+            'DOCUMENTS_UPDATE_ERROR'
           );
         }
 
+        // No error but no document - treat as not found
         return createErrorResponse(
-          'Internal Server Error',
-          'Failed to update document',
-          500,
-          'DOCUMENTS_UPDATE_ERROR'
+          'Not Found',
+          'Document not found',
+          404,
+          'DOCUMENT_NOT_FOUND'
         );
       }
 
       // Map database snake_case to SDK camelCase
-      const { is_public, ...rest } = document;
+      const { is_public, created_at, ...rest } = document;
       return NextResponse.json({
         message: 'Document updated successfully',
-        data: { ...rest, isPublic: is_public },
+        data: { ...rest, isPublic: is_public, createdAt: created_at },
       });
     } catch (error) {
       console.error('Unexpected error updating document:', error);
@@ -147,29 +193,38 @@ export const DELETE = withApiAuth<{ documentId: string }>(
     try {
       const supabase = await createClient();
 
-      const { error } = await supabase
+      // Request the deleted id to check if row was actually deleted
+      const { data, error } = await supabase
         .from('workspace_documents')
         .delete()
         .eq('id', documentId)
-        .eq('ws_id', wsId);
+        .eq('ws_id', wsId)
+        .select('id');
 
       if (error) {
-        console.error('Error deleting document:', error);
-
-        if (error.code === 'PGRST116') {
-          return createErrorResponse(
-            'Not Found',
-            'Document not found',
-            404,
-            'DOCUMENT_NOT_FOUND'
-          );
-        }
+        // Log error details for debugging
+        console.error('Error deleting document:', {
+          message: error.message,
+          code: error?.code,
+          details: error?.details,
+          hint: error?.hint,
+        });
 
         return createErrorResponse(
           'Internal Server Error',
           'Failed to delete document',
           500,
           'DOCUMENTS_DELETE_ERROR'
+        );
+      }
+
+      // Check if any row was deleted
+      if (!data || data.length === 0) {
+        return createErrorResponse(
+          'Not Found',
+          'Document not found',
+          404,
+          'DOCUMENT_NOT_FOUND'
         );
       }
 
