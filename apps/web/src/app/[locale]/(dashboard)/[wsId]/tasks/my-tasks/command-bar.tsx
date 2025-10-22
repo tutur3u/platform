@@ -191,11 +191,6 @@ export function CommandBar({
     return itemCount > 0 ? `${itemCount * ITEM_HEIGHT}px` : 'auto';
   }, [workspaceLabels.length]);
 
-  const assigneesScrollHeight = useMemo(() => {
-    const itemCount = Math.min(workspaceMembers.length, MAX_VISIBLE_ITEMS);
-    return itemCount > 0 ? `${itemCount * ASSIGNEE_ITEM_HEIGHT}px` : 'auto';
-  }, [workspaceMembers.length]);
-
   const modeConfig = useMemo(
     () => ({
       note: {
