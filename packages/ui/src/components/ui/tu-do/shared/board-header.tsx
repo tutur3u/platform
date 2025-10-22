@@ -58,11 +58,12 @@ import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { TaskFilter, type TaskFilters } from '../boards/boardId/task-filter';
 import { BoardLayoutSettings } from './board-layout-settings';
+import { BoardUserPresenceAvatarsComponent } from './board-user-presence-avatars';
 import type { ViewType } from './board-views';
-import { UserPresenceAvatarsComponent } from './user-presence-avatars';
+import type { BoardFiltersMetadata } from './task-filter.types';
 
 export type ListStatusFilter = 'all' | 'active' | 'not_started';
 
@@ -340,6 +341,15 @@ export function BoardHeader({
     },
   };
 
+  // Create metadata for presence tracking (excludes search query for stability)
+  const presenceMetadata: BoardFiltersMetadata = useMemo(() => {
+    const { searchQuery: _, ...filtersWithoutSearch } = filters;
+    return {
+      filters: filtersWithoutSearch,
+      listStatusFilter,
+    };
+  }, [filters, listStatusFilter]);
+
   return (
     <div className="-mt-2 border-b p-1.5 md:px-4 md:py-2">
       <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
@@ -388,8 +398,11 @@ export function BoardHeader({
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Online Users */}
           {!isPersonalWorkspace && (
-            <UserPresenceAvatarsComponent
+            <BoardUserPresenceAvatarsComponent
               channelName={`board_presence_${board.id}`}
+              currentMetadata={presenceMetadata}
+              onFiltersChange={onFiltersChange}
+              onListStatusFilterChange={onListStatusFilterChange}
             />
           )}
 
