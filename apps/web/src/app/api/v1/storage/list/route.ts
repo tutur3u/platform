@@ -10,7 +10,7 @@ import {
   validateQueryParams,
   withApiAuth,
 } from '@/lib/api-middleware';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createDynamicClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -41,7 +41,7 @@ export const GET = withApiAuth(
       paramsResult.data;
 
     try {
-      const supabase = await createClient();
+      const supabase = await createDynamicClient();
 
       // List files from Supabase Storage
       // Normalize path to prevent double slashes
