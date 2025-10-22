@@ -531,13 +531,13 @@ export function TaskProjectDetail({
             lead_id: editedLeadId || null,
             start_date: editedStartDate
               ? (() => {
-                  const [year, month, day] = editedStartDate.split('-').map(Number);
+                  const [year, month, day] = editedStartDate.split('-').map(Number) as [number, number, number];
                   return new Date(Date.UTC(year, month - 1, day)).toISOString();
                 })()
               : null,
             end_date: editedEndDate
               ? (() => {
-                  const [year, month, day] = editedEndDate.split('-').map(Number);
+                  const [year, month, day] = editedEndDate.split('-').map(Number) as [number, number, number];
                   return new Date(Date.UTC(year, month - 1, day)).toISOString();
                 })()
               : null,

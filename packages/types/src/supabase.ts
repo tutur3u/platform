@@ -7514,6 +7514,34 @@ export type Database = {
             referencedRelation: 'users';
           },
           {
+            columns: ['lead_id'];
+            foreignKeyName: 'task_projects_lead_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['lead_id'];
+            foreignKeyName: 'task_projects_lead_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['lead_id'];
+            foreignKeyName: 'task_projects_lead_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['lead_id'];
+            foreignKeyName: 'task_projects_lead_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
+          },
+          {
             columns: ['ws_id', 'lead_id'];
             foreignKeyName: 'task_projects_lead_workspace_member_fkey';
             isOneToOne: false;

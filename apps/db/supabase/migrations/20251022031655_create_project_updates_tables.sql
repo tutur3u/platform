@@ -153,8 +153,5 @@ CREATE TRIGGER update_task_project_updates_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
--- Apply trigger to comments table
-CREATE TRIGGER update_task_project_update_comments_updated_at
-  BEFORE UPDATE ON "public"."task_project_update_comments"
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+-- Note: Trigger for task_project_update_comments is created in migration
+-- 20251022031800_improve_task_project_update_comments.sql with CASCADE behavior
