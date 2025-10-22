@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  AlertCircle,
   Calendar,
   CheckCircle2,
   ChevronDown,
@@ -256,15 +255,6 @@ export default function TaskListWithCompletion({
                   : 'border-border/50 bg-gradient-to-br from-card via-card/95 to-card/90 hover:border-primary/30 hover:shadow-lg'
             )}
           >
-            {/* Overdue indicator
-            {taskOverdue && !task.archived && !isCompleted && (
-              <div className="absolute top-4 right-4 flex animate-pulse items-center gap-1.5 rounded-full bg-dynamic-red px-3 py-1.5 shadow-lg ring-2 ring-dynamic-red/30">
-                <AlertCircle className="h-3.5 w-3.5 text-white" />
-                <span className="font-bold text-[10px] text-white tracking-widest">
-                  OVERDUE
-                </span>
-              </div>
-            )} */}
 
             {/* Main content area */}
             <div className="flex items-start gap-4">
