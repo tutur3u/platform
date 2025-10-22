@@ -255,7 +255,6 @@ export default function TaskListWithCompletion({
                   : 'border-border/50 bg-gradient-to-br from-card via-card/95 to-card/90 hover:border-primary/30 hover:shadow-lg'
             )}
           >
-
             {/* Main content area */}
             <div className="flex items-start gap-4">
               {/* Checkbox for completion */}
