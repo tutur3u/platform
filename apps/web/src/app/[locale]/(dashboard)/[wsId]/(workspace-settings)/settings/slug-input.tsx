@@ -112,7 +112,13 @@ export default function SlugInput({
             type="submit"
             size="icon"
             onClick={form.handleSubmit(onSubmit)}
-            disabled={!slug || slug === defaultValue || saving}
+            disabled={
+              !slug ||
+              slug.trim() === '' ||
+              slug === defaultValue ||
+              saving ||
+              !form.formState.isValid
+            }
           >
             {saving ? (
               <Loader2 className="h-5 w-5 animate-spin" />
