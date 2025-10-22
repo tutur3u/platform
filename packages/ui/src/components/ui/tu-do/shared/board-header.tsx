@@ -152,7 +152,7 @@ function saveBoardConfig(boardId: string, config: BoardViewConfig): void {
 }
 
 interface Props {
-  board: TaskBoard;
+  board: Pick<TaskBoard, 'id' | 'name' | 'ws_id'>;
   currentUserId?: string;
   currentView: ViewType;
   onViewChange: (view: ViewType) => void;
@@ -407,7 +407,7 @@ export function BoardHeader({
           )}
 
           {/* List Status Filter Tabs */}
-          <div className="flex items-center gap-[0.1875rem] rounded-md border bg-background/80 p-[0.1875rem] backdrop-blur-sm">
+          <div className="flex items-center rounded-md border bg-background/80 p-[0.1875rem] backdrop-blur-sm">
             <Button
               variant="ghost"
               size="xs"

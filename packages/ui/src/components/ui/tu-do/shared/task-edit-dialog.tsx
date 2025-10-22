@@ -3587,7 +3587,7 @@ function TaskEditDialogComponent({
       >
         <DialogContent
           showCloseButton={false}
-          className="!inset-0 !top-0 !left-0 !max-w-none !translate-x-0 !translate-y-0 !rounded-none data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2 flex h-screen max-h-screen w-screen gap-0 border-0 p-0"
+          className="data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2 inset-0 top-0 left-0 flex h-screen max-h-screen w-screen max-w-none translate-x-0 translate-y-0 gap-0 rounded-none border-0 p-0"
           onContextMenu={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -4617,9 +4617,9 @@ function TaskEditDialogComponent({
 
           {/* Simplified Right sidebar - toggleable */}
           {showOptionsSidebar && (
-            <div className="fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l bg-background shadow-lg transition-all duration-300 sm:w-[380px] md:relative md:z-auto md:w-[380px] md:bg-gradient-to-b md:from-muted/20 md:to-muted/5 md:shadow-none">
+            <div className="fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l bg-background shadow-lg transition-all duration-300 sm:w-[380px] md:relative md:z-auto md:w-[380px] md:bg-linear-to-b md:from-muted/20 md:to-muted/5 md:shadow-none">
               {/* Sidebar header with icon */}
-              <div className="border-border/50 border-b bg-gradient-to-b from-background/95 to-background/80 px-6 py-4 backdrop-blur-md">
+              <div className="border-border/50 border-b bg-linear-to-b from-background/95 to-background/80 px-6 py-4 backdrop-blur-md">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/10">
@@ -4651,7 +4651,7 @@ function TaskEditDialogComponent({
                 <div className="space-y-4 p-4 md:space-y-5 md:p-6">
                   {/* Essential Options - Always Visible */}
                   {/* List Selection */}
-                  <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
+                  <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
                     <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
                       <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
                         <ListTodo className="h-3.5 w-3.5 text-dynamic-orange" />
@@ -4705,7 +4705,7 @@ function TaskEditDialogComponent({
                   </div>
 
                   {/* Priority (Dropdown) */}
-                  <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
+                  <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
                     <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
                       <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
                         <Flag className="h-3.5 w-3.5 text-dynamic-orange" />
@@ -4808,7 +4808,7 @@ function TaskEditDialogComponent({
 
                   {/* Estimation (Dropdown) */}
                   {boardConfig?.estimation_type && (
-                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
+                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
                       <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
                         <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
                           <Timer className="h-3.5 w-3.5 text-dynamic-orange" />
@@ -4872,7 +4872,7 @@ function TaskEditDialogComponent({
                   )}
 
                   {/* Dates Module - Combined Start Date, Due Date, and Quick Actions */}
-                  <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
+                  <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
                     <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
                       <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
                         <Calendar className="h-3.5 w-3.5 text-dynamic-orange" />
@@ -4913,7 +4913,7 @@ function TaskEditDialogComponent({
                         {/* Date Range Warning */}
                         {startDate && endDate && startDate > endDate && (
                           <div className="flex items-center gap-2 rounded-md border border-dynamic-orange/30 bg-dynamic-orange/10 px-3 py-2 text-xs">
-                            <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 text-dynamic-orange" />
+                            <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-dynamic-orange" />
                             <span className="text-dynamic-orange">
                               Start date is after due date
                             </span>
@@ -4982,7 +4982,7 @@ function TaskEditDialogComponent({
                   {/* Advanced Options */}
                   <div className="space-y-4">
                     {/* Labels Section */}
-                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
                       <Label className="flex items-center justify-between gap-2">
                         <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
                           <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
@@ -5099,7 +5099,7 @@ function TaskEditDialogComponent({
                     </div>
 
                     {/* Projects Section */}
-                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
                       <Label className="flex items-center justify-between gap-2">
                         <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
                           <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
@@ -5255,7 +5255,7 @@ function TaskEditDialogComponent({
                     </div>
 
                     {/* Assignees Section */}
-                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
                       <Label className="flex items-center justify-between gap-2">
                         <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
                           <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
