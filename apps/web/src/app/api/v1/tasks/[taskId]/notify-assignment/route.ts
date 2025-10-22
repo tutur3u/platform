@@ -1,6 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
-import { notifyTaskAssignment } from '@tuturuuu/utils/notifications/task-assignment';
+import { sendTaskAssignmentNotification } from '@tuturuuu/trigger/task-assignment-notification';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -77,12 +77,18 @@ export async function POST(
     }
 
     // 6. Trigger the notification asynchronously
-    await notifyTaskAssignment({
-      taskId,
-      assigneeUserId: assignee_user_id,
-      assignedByUserId: user.id,
-      wsId: ws_id,
-    });
+    await sendTaskAssignmentNotification.trigger(
+      {
+        task_id: taskId,
+        assignee_user_id,
+        assigned_by_user_id: user.id,
+        ws_id,
+      },
+      {
+        // Use a unique idempotency key to prevent duplicate notifications
+        idempotencyKey: `task-assignment-${taskId}-${assignee_user_id}-${Date.now()}`,
+      }
+    );
 
     return NextResponse.json(
       {
