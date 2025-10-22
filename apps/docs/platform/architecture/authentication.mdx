@@ -1,0 +1,684 @@
+---
+title: 'Authentication Patterns'
+description: 'Authentication implementation patterns in the NCT Hub platform'
+updated: '2025-01-10'
+---
+
+The NCT Hub platform uses Supabase Auth for user authentication with support for email/password, OAuth providers, one-time passwords (OTP), and session management. The system is designed to handle club member authentication, external integrations, and secure API access.
+
+## Authentication Flow
+
+```
+┌──────────────┐      ┌──────────────┐      ┌──────────────┐
+│   Client     │──1──>│  Supabase    │──2──>│  Database    │
+│ (Browser/App)│      │  Auth        │      │  (RLS)       │
+└──────────────┘      └──────────────┘      └──────────────┘
+       │                      │                      │
+       │<─────────3───────────│                      │
+       │  Session Token       │                      │
+       │                      │                      │
+       │──────4──────────────────────────────────────>│
+       │  Authenticated Request (w/ session)          │
+       │<─────────────────────────────────────────────│
+       │  Data (filtered by RLS)                      │
+```
+
+1. User signs in via Supabase Auth
+2. Supabase validates credentials against database
+3. Client receives session token
+4. Subsequent requests include session token for RLS
+
+## Sign Up
+
+### Basic Email/Password Sign Up
+
+```typescript
+'use server';
+
+import { createClient } from '@ncthub/supabase/next/server';
+import { redirect } from 'next/navigation';
+
+export async function signUp(formData: FormData) {
+  const supabase = await createClient();
+
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+  const displayName = formData.get('displayName') as string;
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        display_name: displayName,
+      },
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+    },
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  redirect('/onboarding');
+}
+```
+
+### Client Component
+
+```tsx
+'use client';
+
+import { signUp } from './actions';
+import { useState } from 'react';
+
+export function SignUpForm() {
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(formData: FormData) {
+    const result = await signUp(formData);
+    if (result?.error) {
+      setError(result.error);
+    }
+  }
+
+  return (
+    <form action={handleSubmit}>
+      <input name="displayName" placeholder="Display Name" required />
+      <input name="email" type="email" placeholder="Email" required />
+      <input name="password" type="password" placeholder="Password" required />
+      {error && <p className="text-dynamic-red">{error}</p>}
+      <button type="submit">Sign Up</button>
+    </form>
+  );
+}
+```
+
+## Sign In
+
+### Email/Password Sign In
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/server';
+import { redirect } from 'next/navigation';
+
+export async function signIn(formData: FormData) {
+  const supabase = createClient();
+
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  redirect('/dashboard');
+}
+```
+
+### OAuth Sign In
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function signInWithOAuth(provider: 'google' | 'github') {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+    },
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return { url: data.url };
+}
+```
+
+Client Component:
+
+```tsx
+'use client';
+
+import { signInWithOAuth } from './actions';
+
+export function OAuthButtons() {
+  async function handleOAuthSignIn(provider: 'google' | 'github') {
+    const result = await signInWithOAuth(provider);
+    if (result.url) {
+      window.location.href = result.url;
+    }
+  }
+
+  return (
+    <div>
+      <button onClick={() => handleOAuthSignIn('google')}>
+        Sign in with Google
+      </button>
+      <button onClick={() => handleOAuthSignIn('github')}>
+        Sign in with GitHub
+      </button>
+    </div>
+  );
+}
+```
+
+## Sign Out
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/server';
+import { redirect } from 'next/navigation';
+
+export async function signOut() {
+  const supabase = createClient();
+  await supabase.auth.signOut();
+  redirect('/login');
+}
+```
+
+## Multi-Factor Authentication (MFA)
+
+### Enable TOTP MFA
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function enableMFA() {
+  const supabase = createClient();
+
+  // Enroll in MFA
+  const { data, error } = await supabase.auth.mfa.enroll({
+    factorType: 'totp',
+  });
+
+  if (error) throw error;
+
+  return {
+    qrCode: data.totp.qr_code, // Display to user
+    secret: data.totp.secret, // For manual entry
+    factorId: data.id,
+  };
+}
+```
+
+### Verify MFA Enrollment
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function verifyMFAEnrollment(factorId: string, code: string) {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.auth.mfa.challengeAndVerify({
+    factorId,
+    code,
+  });
+
+  if (error) throw error;
+  return { success: true };
+}
+```
+
+### MFA Challenge During Sign In
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function signInWithMFA(email: string, password: string) {
+  const supabase = createClient();
+
+  // Initial sign in
+  const { data: signInData, error: signInError } =
+    await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+  if (signInError) throw signInError;
+
+  // Check if MFA is required
+  const { data: factors } = await supabase.auth.mfa.listFactors();
+
+  if (factors && factors.totp.length > 0) {
+    const factorId = factors.totp[0].id;
+
+    // Create MFA challenge
+    const { data: challengeData, error: challengeError } =
+      await supabase.auth.mfa.challenge({ factorId });
+
+    if (challengeError) throw challengeError;
+
+    return {
+      requiresMFA: true,
+      challengeId: challengeData.id,
+      factorId,
+    };
+  }
+
+  return { requiresMFA: false };
+}
+```
+
+### Verify MFA Code
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function verifyMFACode(
+  factorId: string,
+  challengeId: string,
+  code: string
+) {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.auth.mfa.verify({
+    factorId,
+    challengeId,
+    code,
+  });
+
+  if (error) throw error;
+  return { success: true };
+}
+```
+
+## Session Management
+
+### Get Current Session
+
+```typescript
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function getSession() {
+  const supabase = createClient();
+
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
+  if (error) throw error;
+  return session;
+}
+```
+
+### Get Current User
+
+```typescript
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function getCurrentUser() {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    return null;
+  }
+
+  return user;
+}
+```
+
+### Refresh Session
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function refreshSession() {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.auth.refreshSession();
+
+  if (error) throw error;
+  return data.session;
+}
+```
+
+## Password Reset
+
+### Request Password Reset
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function requestPasswordReset(email: string) {
+  const supabase = createClient();
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password`,
+  });
+
+  if (error) throw error;
+  return { success: true };
+}
+```
+
+### Reset Password
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function resetPassword(newPassword: string) {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
+
+  if (error) throw error;
+  return { success: true };
+}
+```
+
+## Email Verification
+
+### Resend Verification Email
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function resendVerificationEmail() {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.email) {
+    throw new Error('No user email found');
+  }
+
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email: user.email,
+  });
+
+  if (error) throw error;
+  return { success: true };
+}
+```
+
+## Cross-App Authentication
+
+The platform supports token-based authentication across different apps using `@tuturuuu/auth/cross-app`.
+
+### Generate Cross-App Token
+
+```typescript
+import { generateCrossAppToken } from '@tuturuuu/auth/cross-app';
+
+export async function createShortenerLink(userId: string) {
+  // Generate token that shortener app can verify
+  const token = await generateCrossAppToken(userId, {
+    expiresIn: '1h',
+    app: 'shortener',
+  });
+
+  return {
+    url: `${process.env.SHORTENER_APP_URL}/create?token=${token}`,
+  };
+}
+```
+
+### Verify Cross-App Token
+
+```typescript
+import { verifyCrossAppToken } from '@tuturuuu/auth/cross-app';
+
+export async function handleCrossAppRequest(token: string) {
+  const payload = await verifyCrossAppToken(token);
+
+  if (!payload) {
+    throw new Error('Invalid token');
+  }
+
+  // payload contains: { userId, app, exp, iat }
+  return payload;
+}
+```
+
+## Middleware Authentication
+
+Protect routes using Next.js middleware:
+
+```typescript
+// middleware.ts
+import { createDynamicClient } from '@tuturuuu/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function middleware(request: NextRequest) {
+  const supabase = createDynamicClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Protect dashboard routes
+  if (request.nextUrl.pathname.startsWith('/dashboard') && !user) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // Redirect authenticated users from auth pages
+  if (request.nextUrl.pathname.startsWith('/login') && user) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ['/dashboard/:path*', '/login', '/signup'],
+};
+```
+
+## Protected Server Component
+
+```typescript
+import { createClient } from '@tuturuuu/supabase/server';
+import { redirect } from 'next/navigation';
+
+export default async function ProtectedPage() {
+  const supabase = createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/login');
+  }
+
+  return (
+    <div>
+      <h1>Welcome, {user.email}</h1>
+    </div>
+  );
+}
+```
+
+## Client-Side Authentication
+
+### useUser Hook
+
+```tsx
+'use client';
+
+import type { User } from '@supabase/supabase-js';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { useEffect, useState } from 'react';
+
+export function useUser() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  return { user, loading };
+}
+```
+
+### Usage
+
+```tsx
+'use client';
+
+import { useUser } from '@/hooks/useUser';
+
+export function UserProfile() {
+  const { user, loading } = useUser();
+
+  if (loading) return <div>Loading...</div>;
+  if (!user) return <div>Not authenticated</div>;
+
+  return <div>Logged in as {user.email}</div>;
+}
+```
+
+## Identity Linking
+
+Link multiple auth providers to same account:
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function linkIdentity(provider: 'google' | 'github') {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.auth.linkIdentity({
+    provider,
+  });
+
+  if (error) throw error;
+  return { url: data.url };
+}
+```
+
+## Best Practices
+
+### ✅ DO
+
+1. **Always check authentication server-side**
+
+   ```typescript
+   const {
+     data: { user },
+   } = await supabase.auth.getUser();
+   if (!user) throw new Error('Unauthorized');
+   ```
+
+2. **Use edge runtime for auth routes**
+
+   ```typescript
+   // app/api/auth/otp/route.ts
+   export const runtime = 'edge';
+   ```
+
+3. **Redirect after authentication**
+
+   ```typescript
+   redirect('/dashboard'); // Don't return sensitive data
+   ```
+
+4. **Handle errors gracefully**
+
+   ```typescript
+   if (error) return { error: error.message };
+   ```
+
+5. **Implement MFA for sensitive operations**
+   ```typescript
+   const mfaRequired = await checkMFAEnabled(userId);
+   ```
+
+### ❌ DON'T
+
+1. **Don't trust client-side auth state alone**
+
+   ```typescript
+   // ❌ Bad
+   if (localStorage.getItem('user')) {
+     /* ... */
+   }
+   ```
+
+2. **Don't expose sensitive data in auth redirects**
+
+   ```typescript
+   // ❌ Bad
+   redirect(`/dashboard?apiKey=${apiKey}`);
+   ```
+
+3. **Don't store passwords**
+
+   ```typescript
+   // ❌ Bad: Let Supabase handle password storage
+   ```
+
+4. **Don't use `createAdminClient()` for auth operations**
+   ```typescript
+   // ❌ Bad: Use regular client
+   const supabase = createAdminClient();
+   await supabase.auth.signUp({ ... });
+   ```
+
+## Related Documentation
+
+- [Authorization](/platform/architecture/authorization) - Permission system
+- [Supabase Client](/reference/packages/supabase) - Client creation patterns
+- [RLS Policies](/reference/database/rls-policies) - Database security
+
+## External Resources
+
+- [Supabase Auth Documentation](https://supabase.com/docs/guides/auth)
+- [Next.js Authentication](https://nextjs.org/docs/authentication)

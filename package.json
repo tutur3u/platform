@@ -14,6 +14,8 @@
     "devrs": "bun sb:stop && bun sb:start && bun sb:reset && bun dev",
     "devrs:web": "bun sb:stop && bun sb:start && bun sb:reset && bun dev:web",
     "devrs:ocr": "bun sb:stop && bun sb:start && bun sb:reset && bun dev:ocr",
+    "docs:dev": "cd apps/docs && mintlify dev --port 3333",
+    "docs:build": "cd apps/docs && mintlify build",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
