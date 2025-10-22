@@ -172,7 +172,7 @@ export function CommandBar({
   const ITEM_HEIGHT = 41;
   const ASSIGNEE_ITEM_HEIGHT = 46;
   const MAX_VISIBLE_ITEMS = 7;
-  
+
   const projectsScrollHeight = useMemo(() => {
     const itemCount = Math.min(workspaceProjects.length, MAX_VISIBLE_ITEMS);
     return itemCount > 0 ? `${itemCount * ITEM_HEIGHT}px` : 'auto';
@@ -563,7 +563,9 @@ export function CommandBar({
                               className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                             >
                               <ArrowLeft className="h-4 w-4" />
-                              <span className="font-semibold">Select Priority</span>
+                              <span className="font-semibold">
+                                Select Priority
+                              </span>
                             </button>
                             <button
                               onClick={() => {
@@ -656,7 +658,9 @@ export function CommandBar({
                               className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                             >
                               <ArrowLeft className="h-4 w-4" />
-                              <span className="font-semibold">Select Due Date</span>
+                              <span className="font-semibold">
+                                Select Due Date
+                              </span>
                             </button>
                             <button
                               onClick={() => {
@@ -745,7 +749,9 @@ export function CommandBar({
                               className="flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors hover:bg-muted"
                             >
                               <ArrowLeft className="h-4 w-4" />
-                              <span className="font-semibold">Select Estimation</span>
+                              <span className="font-semibold">
+                                Select Estimation
+                              </span>
                             </button>
                             {availableEstimationIndices.map((index) => {
                               const isExtended = index > 5;
@@ -807,7 +813,9 @@ export function CommandBar({
                             className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                           >
                             <ArrowLeft className="h-4 w-4" />
-                            <span className="font-semibold">Select Projects</span>
+                            <span className="font-semibold">
+                              Select Projects
+                            </span>
                           </button>
                           <ScrollArea style={{ height: projectsScrollHeight }}>
                             <div className="space-y-0.5">
@@ -937,7 +945,9 @@ export function CommandBar({
                             className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                           >
                             <ArrowLeft className="h-4 w-4" />
-                            <span className="font-semibold">Select Assignees</span>
+                            <span className="font-semibold">
+                              Select Assignees
+                            </span>
                           </button>
                           <ScrollArea style={{ height: assigneesScrollHeight }}>
                             <div className="space-y-0.5 px-2">
@@ -1028,7 +1038,8 @@ export function CommandBar({
             {mode === 'task' && hasDestination && selectedDestination && (
               <div className="group/destination relative hidden items-center rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 transition-all hover:bg-dynamic-blue/10 md:inline-flex">
                 <span className="text-dynamic-blue px-2.5 py-1.5 text-xs md:px-3 md:py-2 md:text-sm">
-                  {selectedDestination.boardName} / {selectedDestination.listName}
+                  {selectedDestination.boardName} /{' '}
+                  {selectedDestination.listName}
                 </span>
                 <button
                   onClick={onClearDestination}
