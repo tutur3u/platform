@@ -1,0 +1,43 @@
+---
+title: Neo Chess
+description: Fast, interactive chess game built into the web app.
+---
+
+# Neo Chess
+
+An interactive chess experience available under `(games)/neo-chess`.
+
+<Warning>This page is under construction.</Warning>
+
+## Where it lives
+
+- Path: `apps/web/src/app/[locale]/(games)/neo-chess`
+- Key files:
+  - `page.tsx` – route entry
+  - `chessboard.tsx` – board rendering
+  - `piece.tsx` – piece component
+  - `pieceSetup.ts` – initial setup
+  - `promotion.tsx` – pawn promotion UI
+  - `referee.ts` – move validation / checkmate logic
+  - `use-dnd.ts` – drag & drop interactions
+
+## How to run
+
+```bash
+bun sb:start # if not running
+cd apps/web
+bun dev
+# http://localhost:7803/[locale]/(games)/neo-chess
+```
+
+## Notable implementation details
+
+- Move rules and checkmate detection handled in `referee.ts`
+- DnD built with a custom hook `use-dnd.ts`
+- Promotion handled via `promotion.tsx`
+
+## Future ideas
+
+- Timers and ELO
+- Multiplayer lobby
+- Puzzles

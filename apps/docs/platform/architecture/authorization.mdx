@@ -1,0 +1,732 @@
+---
+title: 'Authorization & Permissions'
+description: 'Permission system and authorization patterns in the NCT Hub platform'
+updated: '2025-01-10'
+---
+
+The NCT Hub platform implements a sophisticated role-based access control (RBAC) system with granular workspace-scoped permissions designed for club management, member roles, and department-specific access control.
+
+## Permission Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Workspace                             │
+│  ┌────────────────────────────────────────────────────┐ │
+│  │  Workspace Member (User + Role)                    │ │
+│  │  ┌──────────────────────────────────────────────┐  │ │
+│  │  │  Role Permissions                            │  │ │
+│  │  │  ├─ manage_workspace_settings                │  │ │
+│  │  │  ├─ manage_users                             │  │ │
+│  │  │  ├─ manage_finance                           │  │ │
+│  │  │  └─ ...                                      │  │ │
+│  │  └──────────────────────────────────────────────┘  │ │
+│  └────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────┘
+```
+
+## Permission System
+
+### Available Permissions
+
+The platform defines 30+ workspace permissions organized into groups:
+
+#### Infrastructure
+
+- `manage_infrastructure_settings` - Manage infrastructure-level settings
+
+#### Workspace
+
+- `manage_workspace_settings` - Manage workspace configuration
+- `manage_workspace_security` - Manage security settings
+
+#### Users
+
+- `manage_users` - Create, update, delete users
+- `manage_user_groups` - Manage user groups and tags
+- `manage_user_roles` - Assign and modify user roles
+- `view_disabled_users` - View disabled user accounts
+- `disable_user` - Disable/enable user accounts
+
+#### Finance
+
+- `manage_finance` - Manage financial resources
+- `ai_lab_assistant` - Access AI lab features
+
+#### Calendar
+
+- `manage_calendar` - Manage calendar events
+- `manage_external_users` - Manage external/guest users
+
+#### Content
+
+- `manage_documents` - Manage document resources
+
+#### Inventory
+
+- `manage_inventory` - Manage inventory resources
+
+### Permission Groups
+
+Defined in `@tuturuuu/utils/permissions`:
+
+```typescript
+export const permissionGroups = {
+  INFRASTRUCTURE: ['manage_infrastructure_settings'],
+  WORKSPACE: ['manage_workspace_settings', 'manage_workspace_security'],
+  USERS: [
+    'manage_users',
+    'manage_user_groups',
+    'manage_user_roles',
+    'view_disabled_users',
+    'disable_user',
+  ],
+  FINANCE: ['manage_finance', 'ai_lab_assistant'],
+  CALENDAR: ['manage_calendar', 'manage_external_users'],
+  DOCUMENTS: ['manage_documents'],
+  INVENTORY: ['manage_inventory'],
+};
+```
+
+## Database Schema
+
+### `workspace_role_permissions`
+
+```sql
+CREATE TABLE workspace_role_permissions (
+  ws_id text REFERENCES workspaces(id) ON DELETE CASCADE,
+  role_id text NOT NULL,
+  permission workspace_role_permission NOT NULL,
+  created_at timestamptz DEFAULT now(),
+  PRIMARY KEY (ws_id, role_id, permission)
+);
+```
+
+### `workspace_members`
+
+```sql
+CREATE TABLE workspace_members (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  ws_id text REFERENCES workspaces(id) ON DELETE CASCADE,
+  user_id uuid REFERENCES workspace_users(id) ON DELETE CASCADE,
+  role text NOT NULL,
+  pending boolean DEFAULT false,
+  created_at timestamptz DEFAULT now()
+);
+```
+
+## Checking Permissions
+
+### Server-Side Permission Check
+
+```typescript
+import { createClient } from '@tuturuuu/supabase/server';
+import type { Database } from '@tuturuuu/types';
+
+type Permission = Database['public']['Enums']['workspace_role_permission'];
+
+export async function hasPermission(
+  userId: string,
+  wsId: string,
+  permission: Permission
+): Promise<boolean> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('workspace_members')
+    .select(
+      `
+      role,
+      workspace_role_permissions!inner (
+        permission
+      )
+    `
+    )
+    .eq('user_id', userId)
+    .eq('ws_id', wsId)
+    .eq('workspace_role_permissions.permission', permission)
+    .limit(1);
+
+  if (error) return false;
+  return (data?.length || 0) > 0;
+}
+```
+
+### Usage in Server Actions
+
+```typescript
+'use server';
+
+import { hasPermission } from '@/lib/permissions';
+import { createClient } from '@tuturuuu/supabase/server';
+import { redirect } from 'next/navigation';
+
+export async function deleteUser(wsId: string, userId: string) {
+  const supabase = createClient();
+
+  // Get current user
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
+  if (!currentUser) {
+    throw new Error('Unauthorized');
+  }
+
+  // Check permission
+  const canManageUsers = await hasPermission(
+    currentUser.id,
+    wsId,
+    'manage_users'
+  );
+
+  if (!canManageUsers) {
+    throw new Error('Forbidden: You do not have permission to manage users');
+  }
+
+  // Perform operation
+  const { error } = await supabase
+    .from('workspace_members')
+    .delete()
+    .eq('user_id', userId)
+    .eq('ws_id', wsId);
+
+  if (error) throw error;
+
+  redirect(`/${wsId}/users`);
+}
+```
+
+### Usage in API Routes
+
+```typescript
+// app/api/[wsId]/users/route.ts
+import { hasPermission } from '@/lib/permissions';
+import { createClient } from '@tuturuuu/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { wsId: string } }
+) {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const canManageUsers = await hasPermission(
+    user.id,
+    params.wsId,
+    'manage_users'
+  );
+
+  if (!canManageUsers) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  const body = await request.json();
+
+  const { error } = await supabase
+    .from('workspace_members')
+    .delete()
+    .eq('user_id', body.userId)
+    .eq('ws_id', params.wsId);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}
+```
+
+### Check Multiple Permissions
+
+```typescript
+export async function hasAnyPermission(
+  userId: string,
+  wsId: string,
+  permissions: Permission[]
+): Promise<boolean> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('workspace_members')
+    .select(
+      `
+      role,
+      workspace_role_permissions!inner (
+        permission
+      )
+    `
+    )
+    .eq('user_id', userId)
+    .eq('ws_id', wsId)
+    .in('workspace_role_permissions.permission', permissions)
+    .limit(1);
+
+  if (error) return false;
+  return (data?.length || 0) > 0;
+}
+```
+
+```typescript
+export async function hasAllPermissions(
+  userId: string,
+  wsId: string,
+  permissions: Permission[]
+): Promise<boolean> {
+  const results = await Promise.all(
+    permissions.map((p) => hasPermission(userId, wsId, p))
+  );
+
+  return results.every((result) => result === true);
+}
+```
+
+## Permission Utilities
+
+### Get User Permissions
+
+```typescript
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function getUserPermissions(
+  userId: string,
+  wsId: string
+): Promise<string[]> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('workspace_members')
+    .select(
+      `
+      role,
+      workspace_role_permissions (
+        permission
+      )
+    `
+    )
+    .eq('user_id', userId)
+    .eq('ws_id', wsId)
+    .single();
+
+  if (error || !data) return [];
+
+  return data.workspace_role_permissions.map((p) => p.permission);
+}
+```
+
+### Get User Role
+
+```typescript
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function getUserRole(
+  userId: string,
+  wsId: string
+): Promise<string | null> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('workspace_members')
+    .select('role')
+    .eq('user_id', userId)
+    .eq('ws_id', wsId)
+    .single();
+
+  if (error || !data) return null;
+  return data.role;
+}
+```
+
+## Assigning Permissions
+
+### Create Role with Permissions
+
+```typescript
+'use server';
+
+import { hasPermission } from '@/lib/permissions';
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function createRole(
+  wsId: string,
+  roleId: string,
+  permissions: string[]
+) {
+  const supabase = createClient();
+
+  // Check if user can manage roles
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Unauthorized');
+
+  const canManageRoles = await hasPermission(
+    user.id,
+    wsId,
+    'manage_user_roles'
+  );
+
+  if (!canManageRoles) {
+    throw new Error('Forbidden');
+  }
+
+  // Insert permissions
+  const permissionRows = permissions.map((permission) => ({
+    ws_id: wsId,
+    role_id: roleId,
+    permission,
+  }));
+
+  const { error } = await supabase
+    .from('workspace_role_permissions')
+    .insert(permissionRows);
+
+  if (error) throw error;
+
+  return { success: true };
+}
+```
+
+### Assign Role to User
+
+```typescript
+'use server';
+
+import { hasPermission } from '@/lib/permissions';
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function assignRole(wsId: string, userId: string, roleId: string) {
+  const supabase = createClient();
+
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
+  if (!currentUser) throw new Error('Unauthorized');
+
+  const canManageRoles = await hasPermission(
+    currentUser.id,
+    wsId,
+    'manage_user_roles'
+  );
+
+  if (!canManageRoles) {
+    throw new Error('Forbidden');
+  }
+
+  const { error } = await supabase
+    .from('workspace_members')
+    .update({ role: roleId })
+    .eq('user_id', userId)
+    .eq('ws_id', wsId);
+
+  if (error) throw error;
+
+  return { success: true };
+}
+```
+
+## Client-Side Permission Checks
+
+### usePermissions Hook
+
+```tsx
+'use client';
+
+import { getUserPermissions } from '@/lib/permissions';
+import { useEffect, useState } from 'react';
+
+export function usePermissions(wsId: string, userId: string) {
+  const [permissions, setPermissions] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getUserPermissions(userId, wsId)
+      .then(setPermissions)
+      .finally(() => setLoading(false));
+  }, [wsId, userId]);
+
+  const hasPermission = (permission: string) =>
+    permissions.includes(permission);
+
+  return { permissions, hasPermission, loading };
+}
+```
+
+### Usage
+
+```tsx
+'use client';
+
+import { usePermissions } from '@/hooks/usePermissions';
+import { useUser } from '@/hooks/useUser';
+
+export function UserManagementPanel({ wsId }: { wsId: string }) {
+  const { user } = useUser();
+  const { hasPermission, loading } = usePermissions(wsId, user?.id || '');
+
+  if (loading) return <div>Loading...</div>;
+
+  const canManageUsers = hasPermission('manage_users');
+  const canManageRoles = hasPermission('manage_user_roles');
+
+  return (
+    <div>
+      {canManageUsers && <button>Create User</button>}
+      {canManageRoles && <button>Manage Roles</button>}
+      {!canManageUsers && !canManageRoles && (
+        <p>You do not have permission to manage users</p>
+      )}
+    </div>
+  );
+}
+```
+
+### Conditional Rendering
+
+```tsx
+'use client';
+
+import { usePermissions } from '@/hooks/usePermissions';
+
+export function PermissionGate({
+  wsId,
+  userId,
+  permission,
+  children,
+  fallback = null,
+}: {
+  wsId: string;
+  userId: string;
+  permission: string;
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}) {
+  const { hasPermission, loading } = usePermissions(wsId, userId);
+
+  if (loading) return fallback;
+  if (!hasPermission(permission)) return fallback;
+
+  return <>{children}</>;
+}
+```
+
+Usage:
+
+```tsx
+<PermissionGate
+  wsId={wsId}
+  userId={user.id}
+  permission="manage_finance"
+  fallback={<p>Access denied</p>}
+>
+  <FinancePanel />
+</PermissionGate>
+```
+
+## Common Permission Patterns
+
+### Admin Check
+
+```typescript
+export async function isWorkspaceAdmin(
+  userId: string,
+  wsId: string
+): Promise<boolean> {
+  return hasPermission(userId, wsId, 'manage_infrastructure_settings');
+}
+```
+
+### Owner Check
+
+```typescript
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function isWorkspaceOwner(
+  userId: string,
+  wsId: string
+): Promise<boolean> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('workspace_members')
+    .select('role')
+    .eq('user_id', userId)
+    .eq('ws_id', wsId)
+    .eq('role', 'owner')
+    .limit(1);
+
+  if (error) return false;
+  return (data?.length || 0) > 0;
+}
+```
+
+### Member Check
+
+```typescript
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function isWorkspaceMember(
+  userId: string,
+  wsId: string
+): Promise<boolean> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('workspace_members')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('ws_id', wsId)
+    .eq('pending', false)
+    .limit(1);
+
+  if (error) return false;
+  return (data?.length || 0) > 0;
+}
+```
+
+## Permission Middleware
+
+Create reusable permission middleware for API routes:
+
+```typescript
+// lib/middleware/permissions.ts
+import { hasPermission } from '@/lib/permissions';
+import { createClient } from '@tuturuuu/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
+
+export function withPermission(
+  permission: string,
+  handler: (req: NextRequest, context: any) => Promise<NextResponse>
+) {
+  return async (req: NextRequest, context: any) => {
+    const supabase = createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const wsId = context.params.wsId;
+    const allowed = await hasPermission(user.id, wsId, permission);
+
+    if (!allowed) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    return handler(req, context);
+  };
+}
+```
+
+Usage:
+
+```typescript
+// app/api/[wsId]/users/route.ts
+import { withPermission } from '@/lib/middleware/permissions';
+
+export const DELETE = withPermission(
+  'manage_users',
+  async (req, { params }) => {
+    // Implementation
+    return NextResponse.json({ success: true });
+  }
+);
+```
+
+## Best Practices
+
+### ✅ DO
+
+1. **Always check permissions server-side**
+
+   ```typescript
+   const allowed = await hasPermission(userId, wsId, 'manage_users');
+   if (!allowed) throw new Error('Forbidden');
+   ```
+
+2. **Use granular permissions**
+
+   ```typescript
+   // ✅ Good: Specific permission
+   hasPermission(userId, wsId, 'manage_finance');
+
+   // ❌ Bad: Too broad
+   hasPermission(userId, wsId, 'admin');
+   ```
+
+3. **Check permissions before operations**
+
+   ```typescript
+   // Check first
+   if (!(await hasPermission(userId, wsId, 'manage_users'))) {
+     throw new Error('Forbidden');
+   }
+   // Then perform operation
+   await deleteUser(userId);
+   ```
+
+4. **Return appropriate HTTP status codes**
+
+   ```typescript
+   if (!user) return 401; // Unauthorized
+   if (!hasPermission) return 403; // Forbidden
+   ```
+
+5. **Cache permission checks when appropriate**
+   ```typescript
+   const permissions = await getUserPermissions(userId, wsId);
+   const canManageUsers = permissions.includes('manage_users');
+   const canManageRoles = permissions.includes('manage_user_roles');
+   ```
+
+### ❌ DON'T
+
+1. **Don't rely only on client-side permission checks**
+
+   ```typescript
+   // ❌ Bad: Client can bypass this
+   if (!hasPermission) return;
+   ```
+
+2. **Don't expose permission logic in URLs**
+
+   ```typescript
+   // ❌ Bad
+   /api/admin/delete-user?isAdmin=true
+   ```
+
+3. **Don't hard-code permission checks**
+
+   ```typescript
+   // ❌ Bad
+   if (user.role === 'admin') { ... }
+
+   // ✅ Good
+   if (await hasPermission(userId, wsId, 'manage_users')) { ... }
+   ```
+
+4. **Don't skip permission checks for "trusted" operations**
+   ```typescript
+   // ❌ Bad: Always check permissions
+   async function internalDeleteUser(userId: string) {
+     await supabase.from('users').delete().eq('id', userId);
+   }
+   ```
+
+## Related Documentation
+
+- [Authentication](/platform/architecture/authentication) - User authentication
+- [RLS Policies](/reference/database/rls-policies) - Database-level security
+- [Supabase Client](/reference/packages/supabase) - Client usage patterns
+
+## External Resources
+
+- [Row-Level Security](https://supabase.com/docs/guides/auth/row-level-security)
+- [RBAC Patterns](https://www.osohq.com/academy/role-based-access-control-rbac)

@@ -1,5 +1,7 @@
 {
   "common": {
+    "games": "Games",
+    "utilities": "Utilities",
     "alpha": "Alpha",
     "beta": "Beta",
     "and": "and",
@@ -171,7 +173,6 @@
     "products": "Products",
     "solutions": "Solutions",
     "pricing": "Pricing",
-    "about": "About",
     "contact": "Contact",
     "ai-assistant": "AI Assistant",
     "lms": "LMS",

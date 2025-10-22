@@ -1,0 +1,10 @@
+{
+  "name": "@ncthub/docs",
+  "private": true,
+  "scripts": {
+    "docs:dev": "mint dev --port 3333"
+  },
+  "devDependencies": {
+    "mintlify": "^3.0.0"
+  }
+}

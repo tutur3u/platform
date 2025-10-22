@@ -1,13 +1,49 @@
 ---
 title: Introduction
-description: 'Welcome to the home of Tuturuuu Documentation.'
+description: 'Welcome to the home of NCTHub Documentation.'
 ---
 
-<img src="/images/hero.png" alt="Hero" />
+<img src="/images/nct_hero.png" alt="Hero" />
+
+<p
+  style={{
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    margin: 0,
+    color: 'var(--mint-muted)',
+    fontSize: 14,
+    lineHeight: 1,
+  }}
+>
+  <a
+    href="https://tuturuuu.com/"
+    target="_blank"
+    rel="noopener noreferrer"
+    style={{
+      color: 'inherit',
+      fontWeight: 500,
+      textDecoration: 'none',
+      transition: 'color 120ms ease, text-decoration-color 120ms ease',
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.color = 'var(--mint-foreground)';
+      e.currentTarget.style.textDecoration = 'underline';
+      e.currentTarget.style.textDecorationColor = 'currentColor';
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.color = 'inherit';
+      e.currentTarget.style.textDecoration = 'none';
+    }}
+  >
+    Powered by Tuturuuu
+  </a>
+</p>
 
 ## Setting up
 
-The first step to getting started with Tuturuuu is to set up your development environment.
+The first step to getting started with NCTHub is to set up your development environment.
 
 <CardGroup cols={1}>
   <Card title="Development Setup" icon="gear" href="/development">

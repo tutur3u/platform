@@ -1,0 +1,745 @@
+---
+title: 'Data Fetching Strategies'
+description: 'When and how to fetch data using RSC, Server Actions, React Query, and tRPC in NCT Hub'
+updated: '2025-01-10'
+---
+
+The NCT Hub platform uses a layered approach to data fetching, choosing the right strategy based on use case, caching requirements, and user experience needs. This ensures optimal performance for club management operations, real-time features, and member interactions.
+
+## Strategy Preference Order
+
+Choose the earliest applicable strategy:
+
+1. **Pure Server Component (RSC)** - Read-only, cacheable, SEO-critical data
+2. **Server Action** - Mutations returning updated state to RSC
+3. **RSC + Client Hydration** - When background refresh needed
+4. **React Query (Client-Side)** - Interactive, rapidly changing state
+5. **Realtime Subscriptions** - Live updates materially improve UX
+
+## 1. Pure Server Component (RSC)
+
+### When to Use
+
+✅ **Best For:**
+
+- Initial page load data
+- SEO-critical content
+- Rarely changing data
+- Read-only operations
+- Database queries that don't need real-time updates
+
+❌ **Not For:**
+
+- Interactive forms
+- Frequent updates
+- Client-side state
+- Real-time data
+
+### Implementation
+
+```typescript
+// app/[locale]/(dashboard)/[wsId]/tasks/page.tsx
+import { createClient } from '@ncthub/supabase/next/server';
+
+export default async function TasksPage({
+  params,
+}: {
+  params: { wsId: string };
+}) {
+  const supabase = await createClient();
+
+  // Direct database query in Server Component
+  const { data: tasks } = await supabase
+    .from('workspace_tasks')
+    .select('*')
+    .eq('ws_id', params.wsId)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  return (
+    <div>
+      <h1>Tasks</h1>
+      <TaskList tasks={tasks || []} />
+    </div>
+  );
+}
+```
+
+### Caching Strategy
+
+```typescript
+// app/[locale]/(dashboard)/[wsId]/tasks/page.tsx
+
+// Revalidate every hour
+export const revalidate = 3600;
+
+// OR generate static params
+export async function generateStaticParams() {
+  const supabase = createClient();
+  const { data: workspaces } = await supabase.from('workspaces').select('id');
+
+  return workspaces?.map((ws) => ({ wsId: ws.id })) || [];
+}
+```
+
+### Loading States
+
+```typescript
+// app/[locale]/(dashboard)/[wsId]/tasks/loading.tsx
+export default function Loading() {
+  return <TasksSkeleton />;
+}
+```
+
+### Error Handling
+
+```typescript
+// app/[locale]/(dashboard)/[wsId]/tasks/error.tsx
+'use client';
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error;
+  reset: () => void;
+}) {
+  return (
+    <div>
+      <h2>Something went wrong!</h2>
+      <button onClick={reset}>Try again</button>
+    </div>
+  );
+}
+```
+
+## 2. Server Actions
+
+### When to Use
+
+✅ **Best For:**
+
+- Form submissions
+- Mutations with server-side validation
+- Operations requiring auth checks
+- Redirects after mutations
+- Progressive enhancement
+
+❌ **Not For:**
+
+- Read operations (use RSC instead)
+- Complex client-side state management
+- Real-time updates
+
+### Implementation
+
+```typescript
+// app/[locale]/(dashboard)/[wsId]/tasks/actions.ts
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/server';
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+import { z } from 'zod';
+
+const createTaskSchema = z.object({
+  name: z.string().min(1).max(255),
+  description: z.string().optional(),
+  listId: z.string(),
+});
+
+export async function createTask(formData: FormData) {
+  const supabase = createClient();
+
+  // Check authentication
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('Unauthorized');
+  }
+
+  // Validate input
+  const parsed = createTaskSchema.safeParse({
+    name: formData.get('name'),
+    description: formData.get('description'),
+    listId: formData.get('listId'),
+  });
+
+  if (!parsed.success) {
+    return { error: 'Invalid input' };
+  }
+
+  // Perform mutation
+  const { data, error } = await supabase
+    .from('workspace_tasks')
+    .insert({
+      name: parsed.data.name,
+      description: parsed.data.description,
+      list_id: parsed.data.listId,
+      created_by: user.id,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  // Revalidate cache
+  revalidatePath(`/[locale]/(dashboard)/[wsId]/tasks`);
+
+  return { success: true, task: data };
+}
+
+export async function deleteTask(taskId: string, wsId: string) {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from('workspace_tasks')
+    .delete()
+    .eq('id', taskId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath(`/[locale]/(dashboard)/${wsId}/tasks`);
+  redirect(`/${wsId}/tasks`);
+}
+```
+
+### Client Usage
+
+```tsx
+'use client';
+
+import { createTask } from './actions';
+import { useFormStatus } from 'react-dom';
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button type="submit" disabled={pending}>
+      {pending ? 'Creating...' : 'Create Task'}
+    </button>
+  );
+}
+
+export function CreateTaskForm({ listId }: { listId: string }) {
+  async function handleSubmit(formData: FormData) {
+    const result = await createTask(formData);
+    if (result.error) {
+      console.error(result.error);
+    }
+  }
+
+  return (
+    <form action={handleSubmit}>
+      <input type="hidden" name="listId" value={listId} />
+      <input name="name" placeholder="Task name" required />
+      <textarea name="description" placeholder="Description" />
+      <SubmitButton />
+    </form>
+  );
+}
+```
+
+## 3. RSC + Client Hydration
+
+### When to Use
+
+✅ **Best For:**
+
+- Initial server render with client updates
+- Data that changes frequently
+- Combining SEO with interactivity
+- Background refresh patterns
+
+### Implementation
+
+```typescript
+// app/[locale]/(dashboard)/[wsId]/tasks/page.tsx
+import { createClient } from '@tuturuuu/supabase/server';
+import { TaskListClient } from './TaskListClient';
+
+export default async function TasksPage({
+  params,
+}: {
+  params: { wsId: string };
+}) {
+  const supabase = createClient();
+
+  const { data: initialTasks } = await supabase
+    .from('workspace_tasks')
+    .select('*')
+    .eq('ws_id', params.wsId);
+
+  return <TaskListClient initialTasks={initialTasks || []} wsId={params.wsId} />;
+}
+```
+
+```tsx
+// app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
+'use client';
+
+import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Database } from '@tuturuuu/types';
+import { useEffect, useState } from 'react';
+
+// app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
+
+// app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
+
+// app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
+
+// app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
+
+// app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
+
+// app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
+
+// app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
+
+// app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
+
+// app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
+
+// app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
+
+// app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
+
+// app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
+
+// app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
+
+type Task = Database['public']['Tables']['workspace_tasks']['Row'];
+
+export function TaskListClient({
+  initialTasks,
+  wsId,
+}: {
+  initialTasks: Task[];
+  wsId: string;
+}) {
+  const [tasks, setTasks] = useState(initialTasks);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    // Background refresh every 30 seconds
+    const interval = setInterval(async () => {
+      const { data } = await supabase
+        .from('workspace_tasks')
+        .select('*')
+        .eq('ws_id', wsId);
+
+      if (data) setTasks(data);
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [wsId]);
+
+  return (
+    <div>
+      {tasks.map((task) => (
+        <div key={task.id}>{task.name}</div>
+      ))}
+    </div>
+  );
+}
+```
+
+## 4. React Query (Client-Side)
+
+### When to Use
+
+✅ **Best For:**
+
+- Interactive dashboards
+- Rapidly changing data
+- Complex client-side state
+- Optimistic updates
+- Automatic background refetching
+
+❌ **Not For:**
+
+- SEO-critical content
+- Initial page load (prefer RSC)
+
+### Implementation with tRPC
+
+```tsx
+'use client';
+
+import { trpc } from '@/trpc/client';
+
+export function TaskList({ wsId }: { wsId: string }) {
+  const {
+    data: tasks,
+    isLoading,
+    error,
+  } = trpc.tasks.list.useQuery(
+    { wsId },
+    {
+      staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+      refetchOnWindowFocus: true,
+      refetchInterval: 30000, // Refetch every 30 seconds
+    }
+  );
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <div>
+      {tasks?.map((task) => (
+        <TaskCard key={task.id} task={task} />
+      ))}
+    </div>
+  );
+}
+```
+
+### Query Key Conventions
+
+Use stable array query keys:
+
+```typescript
+// ✅ Good: Specific, cacheable
+['tasks', wsId, { listId, completed: false }][
+  // ❌ Bad: Too generic
+  'tasks'
+];
+```
+
+### Optimistic Updates
+
+```tsx
+'use client';
+
+import { trpc } from '@/trpc/client';
+
+export function TaskCheckbox({ task }: { task: Task }) {
+  const utils = trpc.useContext();
+
+  const toggleComplete = trpc.tasks.update.useMutation({
+    // Optimistically update before server responds
+    onMutate: async (newData) => {
+      await utils.tasks.get.cancel({ taskId: task.id });
+
+      const previous = utils.tasks.get.getData({ taskId: task.id });
+
+      utils.tasks.get.setData({ taskId: task.id }, (old) => ({
+        ...old!,
+        completed: !old!.completed,
+      }));
+
+      return { previous };
+    },
+
+    // Rollback on error
+    onError: (err, newData, context) => {
+      if (context?.previous) {
+        utils.tasks.get.setData({ taskId: task.id }, context.previous);
+      }
+    },
+
+    // Refetch after success or error
+    onSettled: () => {
+      utils.tasks.get.invalidate({ taskId: task.id });
+      utils.tasks.list.invalidate();
+    },
+  });
+
+  return (
+    <input
+      type="checkbox"
+      checked={task.completed}
+      onChange={() =>
+        toggleComplete.mutate({
+          taskId: task.id,
+          completed: !task.completed,
+        })
+      }
+    />
+  );
+}
+```
+
+### Cache Invalidation
+
+```typescript
+const utils = trpc.useContext();
+
+// Invalidate specific query
+utils.tasks.get.invalidate({ taskId: '123' });
+
+// Invalidate all tasks.list queries
+utils.tasks.list.invalidate();
+
+// Invalidate all tasks queries
+utils.tasks.invalidate();
+
+// Reset to initial state
+utils.tasks.list.reset({ wsId });
+
+// Refetch immediately
+utils.tasks.list.refetch({ wsId });
+```
+
+## 5. Realtime Subscriptions
+
+### When to Use
+
+✅ **Best For:**
+
+- Collaborative features
+- Chat applications
+- Live dashboards
+- Multiplayer features
+- Notification systems
+
+❌ **Not For:**
+
+- Infrequent updates
+- Static content
+- SEO-critical data
+
+### Implementation
+
+```tsx
+'use client';
+
+import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Database } from '@tuturuuu/types';
+import { useEffect, useState } from 'react';
+
+type Task = Database['public']['Tables']['workspace_tasks']['Row'];
+
+export function RealtimeTaskList({ wsId }: { wsId: string }) {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const supabase = createClient();
+
+  useEffect(() => {
+    // Initial fetch
+    supabase
+      .from('workspace_tasks')
+      .select('*')
+      .eq('ws_id', wsId)
+      .then(({ data }) => setTasks(data || []));
+
+    // Subscribe to changes
+    const channel = supabase
+      .channel(`workspace_tasks:${wsId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'workspace_tasks',
+          filter: `ws_id=eq.${wsId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setTasks((prev) => [...prev, payload.new as Task]);
+          } else if (payload.eventType === 'UPDATE') {
+            setTasks((prev) =>
+              prev.map((task) =>
+                task.id === payload.new.id ? (payload.new as Task) : task
+              )
+            );
+          } else if (payload.eventType === 'DELETE') {
+            setTasks((prev) =>
+              prev.filter((task) => task.id !== payload.old.id)
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [wsId]);
+
+  return (
+    <div>
+      {tasks.map((task) => (
+        <div key={task.id}>{task.name}</div>
+      ))}
+    </div>
+  );
+}
+```
+
+## React Query Guidelines
+
+### Query Configuration
+
+```typescript
+const { data } = trpc.tasks.list.useQuery(
+  { wsId },
+  {
+    // How long data is considered fresh
+    staleTime: 5 * 60 * 1000, // 5 minutes
+
+    // Cache time after component unmounts
+    cacheTime: 10 * 60 * 1000, // 10 minutes
+
+    // Refetch on window focus
+    refetchOnWindowFocus: true,
+
+    // Refetch on network reconnect
+    refetchOnReconnect: true,
+
+    // Background refetch interval
+    refetchInterval: false, // or number in ms
+
+    // Retry failed requests
+    retry: 3,
+
+    // Only run if condition is true
+    enabled: !!wsId,
+  }
+);
+```
+
+### Prefetching
+
+```typescript
+// In parent component or on hover
+const utils = trpc.useContext();
+
+await utils.tasks.get.prefetch({ taskId: '123' });
+```
+
+### Parallel Queries
+
+```typescript
+'use client';
+
+import { trpc } from '@/trpc/client';
+
+export function Dashboard({ wsId }: { wsId: string }) {
+  const tasks = trpc.tasks.list.useQuery({ wsId });
+  const boards = trpc.boards.list.useQuery({ wsId });
+  const members = trpc.workspace.members.useQuery({ wsId });
+
+  // All three queries run in parallel
+  const isLoading = tasks.isLoading || boards.isLoading || members.isLoading;
+
+  if (isLoading) return <div>Loading...</div>;
+
+  return <div>{/* Render dashboard */}</div>;
+}
+```
+
+### Dependent Queries
+
+```typescript
+'use client';
+
+import { trpc } from '@/trpc/client';
+
+export function TaskDetails({ taskId }: { taskId: string }) {
+  const { data: task } = trpc.tasks.get.useQuery({ taskId });
+
+  const { data: assignees } = trpc.tasks.assignees.useQuery(
+    { taskId },
+    {
+      enabled: !!task, // Only run after task is fetched
+    }
+  );
+
+  return <div>{/* Render task details */}</div>;
+}
+```
+
+## Decision Matrix
+
+| Use Case                 | Strategy                 | Why                           |
+| ------------------------ | ------------------------ | ----------------------------- |
+| Blog posts               | RSC                      | SEO, rarely changes           |
+| Task list (initial load) | RSC                      | Fast initial render           |
+| Create task form         | Server Action            | Mutation, redirect            |
+| Dashboard metrics        | React Query              | Frequent updates              |
+| Real-time chat           | Realtime Subscription    | Collaboration                 |
+| Task toggle              | React Query (optimistic) | Interactive, instant feedback |
+| User profile (view)      | RSC                      | Rarely changes                |
+| User profile (edit)      | Server Action            | Mutation with validation      |
+| Workspace members        | RSC + hydration          | SEO + background refresh      |
+| Live notifications       | Realtime Subscription    | Real-time updates critical    |
+
+## Best Practices
+
+### ✅ DO
+
+1. **Start with RSC**
+
+   ```typescript
+   // Default to server components
+   export default async function Page() { ... }
+   ```
+
+2. **Use specific query keys**
+
+   ```typescript
+   ['tasks', wsId, { listId, status: 'active' }];
+   ```
+
+3. **Set appropriate staleTime**
+
+   ```typescript
+   staleTime: 5 * 60 * 1000; // 5 minutes for user profiles
+   ```
+
+4. **Implement optimistic updates for better UX**
+
+   ```typescript
+   onMutate: async (newData) => {
+     /* optimistic update */
+   };
+   ```
+
+5. **Invalidate narrowly**
+   ```typescript
+   utils.tasks.get.invalidate({ taskId }); // Not utils.tasks.invalidate()
+   ```
+
+### ❌ DON'T
+
+1. **Don't use client fetching for SEO content**
+
+   ```typescript
+   // ❌ Bad: Client-side fetch for blog
+   useEffect(() => fetchBlogPosts(), []);
+   ```
+
+2. **Don't skip staleTime**
+
+   ```typescript
+   // ❌ Bad: Refetches too often
+   useQuery({ ... }) // defaults to 0ms staleTime
+   ```
+
+3. **Don't invalidate globally**
+
+   ```typescript
+   // ❌ Bad: Refetches everything
+   queryClient.invalidateQueries();
+   ```
+
+4. **Don't use Realtime for infrequent updates**
+   ```typescript
+   // ❌ Bad: Waste of resources
+   supabase.channel('user_profiles:changes');
+   ```
+
+## Related Documentation
+
+- [tRPC Implementation](/platform/architecture/trpc)
+- [Supabase Client](/reference/packages/supabase)
+- [Server Components](https://nextjs.org/docs/app/building-your-application/rendering/server-components)
+- [React Query](https://tanstack.com/query/latest)
