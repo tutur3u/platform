@@ -23,8 +23,7 @@ interface BoardUserPresenceAvatarsProps {
   currentMetadata?: BoardFiltersMetadata;
   maxDisplay?: number;
   avatarClassName?: string;
-  onListStatusFilterChange: (filter: ListStatusFilter) => void;
-  onFiltersChange: (filters: TaskFilters) => void;
+  applyUserBoardView: (metadata: BoardFiltersMetadata) => void;
 }
 
 /**
@@ -95,25 +94,6 @@ function isMatchingFilters(
 }
 
 /**
- * Applies a user's board view configuration to the current view
- */
-function applyUserBoardView(
-  metadata: BoardFiltersMetadata,
-  onFiltersChange: (filters: TaskFilters) => void,
-  onListStatusFilterChange: (filter: ListStatusFilter) => void
-): void {
-  // Apply list status filter
-  if (metadata.listStatusFilter) {
-    onListStatusFilterChange(metadata.listStatusFilter as ListStatusFilter);
-  }
-
-  // Apply filters
-  if (metadata.filters) {
-    onFiltersChange(metadata.filters);
-  }
-}
-
-/**
  * Component for board-specific presence avatars with navigation functionality.
  * Uses composition pattern to extend base avatar behavior without modifying shared components.
  */
@@ -133,14 +113,32 @@ export function BoardUserPresenceAvatarsComponent({
     currentMetadata
   );
 
+  const applyUserBoardView = (metadata: BoardFiltersMetadata) => {
+    // Apply list status filter
+    if (metadata?.listStatusFilter) {
+      onListStatusFilterChange(metadata.listStatusFilter as ListStatusFilter);
+    }
+
+    const shouldIncludeMyTasks =
+      metadata?.filters?.assignees?.some((a) => a.id === currentUserId) ||
+      false;
+
+    // Apply filters
+    if (metadata?.filters) {
+      onFiltersChange({
+        ...metadata.filters,
+        includeMyTasks: shouldIncludeMyTasks,
+      });
+    }
+  };
+
   return (
     <BoardUserPresenceAvatars
       presenceState={presenceState}
       currentUserId={currentUserId}
       currentMetadata={currentMetadata}
       maxDisplay={5}
-      onFiltersChange={onFiltersChange}
-      onListStatusFilterChange={onListStatusFilterChange}
+      applyUserBoardView={applyUserBoardView}
     />
   );
 }
@@ -151,8 +149,7 @@ export function BoardUserPresenceAvatars({
   currentMetadata,
   maxDisplay = 5,
   avatarClassName,
-  onFiltersChange,
-  onListStatusFilterChange,
+  applyUserBoardView,
 }: BoardUserPresenceAvatarsProps) {
   const uniqueUsers = Object.entries(presenceState)
     .map(([, presences]) => presences[0])
@@ -284,13 +281,7 @@ export function BoardUserPresenceAvatars({
                     size="sm"
                     variant="outline"
                     className="w-full gap-2 text-xs"
-                    onClick={() =>
-                      applyUserBoardView(
-                        userMetadata,
-                        onFiltersChange,
-                        onListStatusFilterChange
-                      )
-                    }
+                    onClick={() => applyUserBoardView(userMetadata)}
                   >
                     <Eye className="h-3.5 w-3.5" />
                     View their board filters
