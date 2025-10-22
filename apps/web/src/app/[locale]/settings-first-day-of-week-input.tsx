@@ -45,7 +45,10 @@ export default function FirstDayOfWeekInput({
   const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      first_day_of_week: (defaultValue || 'monday') as 'sunday' | 'monday' | 'saturday',
+      first_day_of_week: (defaultValue || 'monday') as
+        | 'sunday'
+        | 'monday'
+        | 'saturday',
     },
   });
 
@@ -96,7 +99,9 @@ export default function FirstDayOfWeekInput({
                     disabled={disabled}
                   >
                     <SelectTrigger id="first-day-of-week" className="w-full">
-                      <SelectValue placeholder={t('first-day-of-week-placeholder')} />
+                      <SelectValue
+                        placeholder={t('first-day-of-week-placeholder')}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="sunday">{t('sunday')}</SelectItem>
