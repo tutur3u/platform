@@ -148,7 +148,10 @@ export const POST = withApiAuth(
         .substring(file.name.lastIndexOf('.'))
         .toLowerCase();
 
-      if (!ALLOWED_MIME_TYPES.has(file.type) && !ALLOWED_EXTENSIONS.has(fileExtension)) {
+      if (
+        !ALLOWED_MIME_TYPES.has(file.type) &&
+        !ALLOWED_EXTENSIONS.has(fileExtension)
+      ) {
         return createErrorResponse(
           'Unsupported Media Type',
           `File type not allowed. Supported types: ${Array.from(ALLOWED_EXTENSIONS).join(', ')}`,
