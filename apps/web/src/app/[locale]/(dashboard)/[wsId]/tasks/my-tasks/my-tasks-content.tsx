@@ -863,8 +863,6 @@ export default function MyTasksContent({
           name: newLabelName.trim(),
           color: newLabelColor,
         })
-        .select('id, name, color, created_at')
-        .single();
 
       if (error) throw error;
 
@@ -898,8 +896,6 @@ export default function MyTasksContent({
           ws_id: wsId,
           name: newProjectName.trim(),
         })
-        .select('id, name')
-        .single();
 
       if (error) throw error;
 
