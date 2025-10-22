@@ -11,6 +11,7 @@ export type Project = {
   githubUrl?: string;
   demoUrl?: string;
   image?: string;
+  modelFile?: string;
 };
 
 const NCT_REPO_URL = 'https://github.com/rmit-nct/hub';
@@ -402,6 +403,7 @@ export const projects: Project[] = [
     githubUrl: 'https://github.com/rmit-nct/remote-car-three-dudes-one-car',
     demoUrl: 'https://www.youtube.com/watch?v=myx7Zmuy4rU',
     image: '/media/projects/remote-car-1.jpg',
+    modelFile: '/media/glbmodel/three-dude-one-car.glb',
   },
   {
     name: 'NCT Krypto',
