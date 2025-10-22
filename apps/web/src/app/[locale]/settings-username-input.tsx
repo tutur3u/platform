@@ -29,15 +29,13 @@ const FormSchema = z.object({
     .min(3, { message: 'Username must be at least 3 characters' })
     .max(30, { message: 'Username must be at most 30 characters' })
     .regex(/^[a-zA-Z0-9_-]+$/, {
-      message: 'Username can only contain letters, numbers, hyphens, and underscores',
+      message:
+        'Username can only contain letters, numbers, hyphens, and underscores',
     })
     .optional(),
 });
 
-export default function UsernameInput({
-  defaultValue = '',
-  disabled,
-}: Props) {
+export default function UsernameInput({ defaultValue = '', disabled }: Props) {
   const t = useTranslations('settings-account');
   const router = useRouter();
 
@@ -76,7 +74,10 @@ export default function UsernameInput({
         const errorData = await res.json().catch(() => ({}));
 
         // Check for duplicate handle error
-        if (errorData.message?.includes('already taken') || errorData.message?.includes('Handle already taken')) {
+        if (
+          errorData.message?.includes('already taken') ||
+          errorData.message?.includes('Handle already taken')
+        ) {
           toast({
             title: t('error-occurred'),
             description: t('username-taken'),
