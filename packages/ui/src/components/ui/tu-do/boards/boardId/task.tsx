@@ -874,13 +874,15 @@ function TaskCardInner({
                 )}
             </div>
             <div className="flex items-center gap-2">
-              <TaskViewerAvatarsComponent
-                taskId={task.id}
-                isViewing={
-                  dialogStateFromProvider.isOpen &&
-                  dialogStateFromProvider.task?.id === task.id
-                }
-              />
+              {!isPersonalWorkspace && (
+                <TaskViewerAvatarsComponent
+                  taskId={task.id}
+                  isViewing={
+                    dialogStateFromProvider.isOpen &&
+                    dialogStateFromProvider.task?.id === task.id
+                  }
+                />
+              )}
 
               {/* Checkbox: always at far right */}
               <Checkbox

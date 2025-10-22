@@ -104,11 +104,13 @@ export function useTaskDialogContext() {
 interface TaskDialogProviderProps {
   children: ReactNode;
   onUpdate?: () => void;
+  isPersonalWorkspace: boolean;
 }
 
 export function TaskDialogProvider({
   children,
   onUpdate: externalOnUpdate,
+  isPersonalWorkspace,
 }: TaskDialogProviderProps) {
   const [state, setState] = useState<TaskDialogState>({
     isOpen: false,
@@ -127,21 +129,22 @@ export function TaskDialogProvider({
         boardId,
         mode: 'edit',
         availableLists,
-        collaborationMode: true,
+        collaborationMode: !isPersonalWorkspace,
       });
     },
-    []
+    [isPersonalWorkspace]
   );
 
-  const openTaskById = useCallback(async (taskId: string) => {
-    try {
-      const supabase = createClient();
+  const openTaskById = useCallback(
+    async (taskId: string) => {
+      try {
+        const supabase = createClient();
 
-      // Fetch task with all related data
-      const { data: task, error } = await supabase
-        .from('tasks')
-        .select(
-          `
+        // Fetch task with all related data
+        const { data: task, error } = await supabase
+          .from('tasks')
+          .select(
+            `
           *,
           list:task_lists!inner(id, name, board_id),
           assignees:task_assignees(
@@ -157,55 +160,57 @@ export function TaskDialogProvider({
             task_projects(id, name, status)
           )
         `
-        )
-        .eq('id', taskId)
-        .single();
+          )
+          .eq('id', taskId)
+          .single();
 
-      if (error || !task) {
-        console.error('Failed to fetch task:', error);
-        return;
+        if (error || !task) {
+          console.error('Failed to fetch task:', error);
+          return;
+        }
+
+        // Fetch available lists for this board
+        const { data: lists } = await supabase
+          .from('task_lists')
+          .select('*')
+          .eq('board_id', task.list?.board_id)
+          .eq('deleted', false)
+          .order('position')
+          .order('created_at');
+
+        // Transform the data to match expected structure
+        // Type narrowing: Supabase returns join rows; extract nested data
+        const transformedTask = {
+          ...task,
+          assignees: task.assignees?.map((a: TaskAssigneeJoinRow) => ({
+            id: a.users?.id || a.user_id,
+            user_id: a.user_id,
+            display_name: a.users?.display_name,
+            avatar_url: a.users?.avatar_url,
+          })),
+          labels: task.labels
+            ?.map((l: TaskLabelJoinRow) => l.workspace_task_labels)
+            .filter(Boolean),
+          projects: task.projects
+            ?.map((p: TaskProjectJoinRow) => p.task_projects)
+            .filter(Boolean),
+        };
+
+        // Open the task in edit mode
+        setState({
+          isOpen: true,
+          task: transformedTask as Task,
+          boardId: task.list?.board_id,
+          mode: 'edit',
+          availableLists: (lists as TaskList[]) || undefined,
+          collaborationMode: !isPersonalWorkspace,
+        });
+      } catch (error) {
+        console.error('Failed to open task:', error);
       }
-
-      // Fetch available lists for this board
-      const { data: lists } = await supabase
-        .from('task_lists')
-        .select('*')
-        .eq('board_id', task.list?.board_id)
-        .eq('deleted', false)
-        .order('position')
-        .order('created_at');
-
-      // Transform the data to match expected structure
-      // Type narrowing: Supabase returns join rows; extract nested data
-      const transformedTask = {
-        ...task,
-        assignees: task.assignees?.map((a: TaskAssigneeJoinRow) => ({
-          id: a.users?.id || a.user_id,
-          user_id: a.user_id,
-          display_name: a.users?.display_name,
-          avatar_url: a.users?.avatar_url,
-        })),
-        labels: task.labels
-          ?.map((l: TaskLabelJoinRow) => l.workspace_task_labels)
-          .filter(Boolean),
-        projects: task.projects
-          ?.map((p: TaskProjectJoinRow) => p.task_projects)
-          .filter(Boolean),
-      };
-
-      // Open the task in edit mode
-      setState({
-        isOpen: true,
-        task: transformedTask as Task,
-        boardId: task.list?.board_id,
-        mode: 'edit',
-        availableLists: (lists as TaskList[]) || undefined,
-        collaborationMode: true,
-      });
-    } catch (error) {
-      console.error('Failed to open task:', error);
-    }
-  }, []);
+    },
+    [isPersonalWorkspace]
+  );
 
   const createTask = useCallback(
     (

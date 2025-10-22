@@ -170,11 +170,11 @@ export async function WorkspaceNavigationLinks({
           icon: <Box className="h-4 w-4" />,
         },
         null,
-        {
-          title: t('sidebar_tabs.cycles'),
-          href: `/${personalOrWsId}/tasks/cycles`,
-          icon: <RotateCcw className="h-4 w-4" />,
-        },
+        // {
+        //   title: t('sidebar_tabs.cycles'),
+        //   href: `/${personalOrWsId}/tasks/cycles`,
+        //   icon: <RotateCcw className="h-4 w-4" />,
+        // },
         {
           title: t('sidebar_tabs.labels'),
           href: `/${personalOrWsId}/tasks/labels`,
@@ -185,19 +185,19 @@ export async function WorkspaceNavigationLinks({
           icon: <Icon iconNode={hexagons3} className="h-4 w-4" />,
           href: `/${personalOrWsId}/tasks/estimates`,
         },
-        null,
-        {
-          title: t('sidebar_tabs.teams'),
-          icon: <SquareUserRound className="h-4 w-4" />,
-          tempDisabled: true,
-          matchExact: true,
-        },
-        {
-          title: t('sidebar_tabs.members'),
-          icon: <Users className="h-4 w-4" />,
-          tempDisabled: true,
-          matchExact: true,
-        },
+        // null,
+        // {
+        //   title: t('sidebar_tabs.teams'),
+        //   icon: <SquareUserRound className="h-4 w-4" />,
+        //   tempDisabled: true,
+        //   matchExact: true,
+        // },
+        // {
+        //   title: t('sidebar_tabs.members'),
+        //   icon: <Users className="h-4 w-4" />,
+        //   tempDisabled: true,
+        //   matchExact: true,
+        // },
       ],
     },
     {
