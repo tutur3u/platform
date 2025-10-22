@@ -278,19 +278,19 @@ export function TaskProjectsClient({
         case 'priority':
           const priorityOrder = { critical: 4, high: 3, normal: 2, low: 1 };
           aVal = a.priority
-            ? priorityOrder[a.priority as keyof typeof priorityOrder] ?? 0
+            ? (priorityOrder[a.priority as keyof typeof priorityOrder] ?? 0)
             : 0;
           bVal = b.priority
-            ? priorityOrder[b.priority as keyof typeof priorityOrder] ?? 0
+            ? (priorityOrder[b.priority as keyof typeof priorityOrder] ?? 0)
             : 0;
           break;
         case 'health_status':
           const healthOrder = { off_track: 3, at_risk: 2, on_track: 1 };
           aVal = a.health_status
-            ? healthOrder[a.health_status as keyof typeof healthOrder] ?? 0
+            ? (healthOrder[a.health_status as keyof typeof healthOrder] ?? 0)
             : 0;
           bVal = b.health_status
-            ? healthOrder[b.health_status as keyof typeof healthOrder] ?? 0
+            ? (healthOrder[b.health_status as keyof typeof healthOrder] ?? 0)
             : 0;
           break;
         case 'tasks_count':
@@ -627,7 +627,8 @@ export function TaskProjectsClient({
       },
       low: {
         label: 'Low',
-        className: 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue',
+        className:
+          'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue',
       },
     };
     const { label, className } =
@@ -1104,7 +1105,9 @@ export function TaskProjectsClient({
                   {project.lead && (
                     <div className="flex items-center gap-1">
                       <Avatar className="h-5 w-5">
-                        <AvatarImage src={project.lead.avatar_url || undefined} />
+                        <AvatarImage
+                          src={project.lead.avatar_url || undefined}
+                        />
                         <AvatarFallback className="text-xs">
                           {project.lead.display_name?.[0]?.toUpperCase() || 'U'}
                         </AvatarFallback>
@@ -1147,7 +1150,11 @@ export function TaskProjectsClient({
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {project.linkedTasks.slice(0, 3).map((task) => (
-                        <Badge key={task.id} variant="outline" className="text-xs">
+                        <Badge
+                          key={task.id}
+                          variant="outline"
+                          className="text-xs"
+                        >
                           {task.name}
                         </Badge>
                       ))}
