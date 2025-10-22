@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Clock,
   Flag,
   LayoutDashboard,
@@ -301,6 +302,20 @@ export default function MyTasksContent({
   const [editingTaskDescription, setEditingTaskDescription] = useState<
     number | null
   >(null);
+
+  // Collapsible sections state
+  const [collapsedSections, setCollapsedSections] = useState({
+    overdue: false,
+    today: false,
+    upcoming: false,
+  });
+
+  const toggleSection = (section: 'overdue' | 'today' | 'upcoming') => {
+    setCollapsedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
 
   const clientTimezone = useMemo(() => {
     try {
@@ -1416,7 +1431,7 @@ export default function MyTasksContent({
   ]);
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-6">
       {/* Header with stats - Fixed height for both modes */}
       <div className="flex min-h-[72px] items-center justify-between px-1">
         {activeMode === 'task' ? (
@@ -1432,6 +1447,7 @@ export default function MyTasksContent({
                 className="gap-1.5 rounded-full px-3 py-1.5 font-semibold shadow-sm"
               >
                 <Clock className="h-3.5 w-3.5" />
+                <span className="hidden text-sm lg:inline">Overdue: </span>
                 <span className="text-sm">{overdueCount}</span>
               </Badge>
               <Badge
@@ -1439,6 +1455,7 @@ export default function MyTasksContent({
                 className="gap-1.5 rounded-full bg-dynamic-orange/10 px-3 py-1.5 font-semibold text-dynamic-orange shadow-sm"
               >
                 <Calendar className="h-3.5 w-3.5" />
+                <span className="hidden text-sm lg:inline">Today: </span>
                 <span className="text-sm">{todayCount}</span>
               </Badge>
               <Badge
@@ -1446,6 +1463,7 @@ export default function MyTasksContent({
                 className="gap-1.5 rounded-full bg-dynamic-blue/10 px-3 py-1.5 font-semibold text-dynamic-blue shadow-sm"
               >
                 <Flag className="h-3.5 w-3.5" />
+                <span className="hidden text-sm lg:inline">Upcoming: </span>
                 <span className="text-sm">{upcomingCount}</span>
               </Badge>
             </div>
@@ -1459,9 +1477,6 @@ export default function MyTasksContent({
           </div>
         )}
       </div>
-
-      {/* Spacer for breathing room */}
-      <div className="h-8" />
 
       {/* Command Bar - The single entry point for creation */}
       <div className="mx-auto max-w-5xl">
@@ -1498,71 +1513,7 @@ export default function MyTasksContent({
       </div>
 
       {/* Spacer for breathing room */}
-      <div className="h-16" />
-
-      {/* Insights Section - Mode-specific insights */}
-      {activeMode === 'task' && totalActiveTasks > 0 && (
-        <div className="fade-in slide-in-from-bottom-2 mx-auto max-w-5xl animate-in duration-500">
-          <div className="grid grid-cols-3 gap-4">
-            <Card className="overflow-hidden border-dynamic-red/20 bg-gradient-to-br from-dynamic-red/5 to-background">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-dynamic-red/15">
-                    <Clock className="h-6 w-6 text-dynamic-red" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-muted-foreground text-xs uppercase tracking-wider">
-                      Overdue
-                    </p>
-                    <p className="mt-1 font-bold text-2xl">{overdueCount}</p>
-                    <p className="mt-0.5 text-muted-foreground text-xs">
-                      Need attention now
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="overflow-hidden border-dynamic-orange/20 bg-gradient-to-br from-dynamic-orange/5 to-background">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-dynamic-orange/15">
-                    <Calendar className="h-6 w-6 text-dynamic-orange" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-muted-foreground text-xs uppercase tracking-wider">
-                      Due Today
-                    </p>
-                    <p className="mt-1 font-bold text-2xl">{todayCount}</p>
-                    <p className="mt-0.5 text-muted-foreground text-xs">
-                      Complete by end of day
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="overflow-hidden border-dynamic-blue/20 bg-gradient-to-br from-dynamic-blue/5 to-background">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-dynamic-blue/15">
-                    <Flag className="h-6 w-6 text-dynamic-blue" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-muted-foreground text-xs uppercase tracking-wider">
-                      Upcoming
-                    </p>
-                    <p className="mt-1 font-bold text-2xl">{upcomingCount}</p>
-                    <p className="mt-0.5 text-muted-foreground text-xs">
-                      Plan ahead
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      )}
+      <div className="h-4" />
 
       {/* Content Area - Controlled by Command Bar mode */}
       <div className="w-full">
@@ -1581,32 +1532,46 @@ export default function MyTasksContent({
             {overdueTasks && overdueTasks.length > 0 ? (
               <div className="space-y-4">
                 {/* Section Header */}
-                <div className="flex items-center justify-between rounded-2xl border border-dynamic-red/30 bg-gradient-to-br from-dynamic-red/10 via-dynamic-red/5 to-background p-6 shadow-lg">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-red/20 shadow-inner">
-                      <Clock className="h-6 w-6 text-dynamic-red" />
+                <button
+                  type="button"
+                  onClick={() => toggleSection('overdue')}
+                  className="w-full text-left transition-all hover:opacity-90"
+                >
+                  <div className="flex items-center justify-between rounded-2xl border border-dynamic-red/30 bg-gradient-to-br from-dynamic-red/10 via-dynamic-red/5 to-background p-6 shadow-lg">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-red/20 shadow-inner">
+                        <Clock className="h-6 w-6 text-dynamic-red" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-2xl text-dynamic-red">
+                          {t('ws-tasks.overdue')}
+                        </h3>
+                        <p className="mt-1 text-muted-foreground text-sm">
+                          Requires immediate attention
+                          {overdueTasks.length !== 1 ? 's' : ''}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-bold text-2xl text-dynamic-red">
-                        {t('ws-tasks.overdue')}
-                      </h3>
-                      <p className="mt-1 text-muted-foreground text-sm">
-                        Requires immediate attention • {overdueTasks.length}{' '}
-                        task
-                        {overdueTasks.length !== 1 ? 's' : ''}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <Badge
+                        variant="secondary"
+                        className="h-10 rounded-xl bg-dynamic-red/20 px-4 font-bold text-dynamic-red text-lg shadow-md"
+                      >
+                        {overdueTasks.length}
+                      </Badge>
+                      <ChevronUp
+                        className={cn(
+                          'h-6 w-6 text-dynamic-red transition-transform duration-300',
+                          !collapsedSections.overdue && 'rotate-180'
+                        )}
+                      />
                     </div>
                   </div>
-                  <Badge
-                    variant="secondary"
-                    className="h-10 rounded-xl bg-dynamic-red/20 px-4 font-bold text-dynamic-red text-lg shadow-md"
-                  >
-                    {overdueTasks.length}
-                  </Badge>
-                </div>
+                </button>
 
                 {/* Task List - Grouped by Priority */}
-                <div className="space-y-6">
+                {!collapsedSections.overdue && (
+                  <div className="space-y-6">
                   {(() => {
                     const grouped = groupTasksByPriority(overdueTasks);
                     return (
@@ -1691,7 +1656,8 @@ export default function MyTasksContent({
                       </>
                     );
                   })()}
-                </div>
+                  </div>
+                )}
               </div>
             ) : null}
 
@@ -1699,31 +1665,46 @@ export default function MyTasksContent({
             {todayTasks && todayTasks.length > 0 ? (
               <div className="space-y-4">
                 {/* Section Header */}
-                <div className="flex items-center justify-between rounded-2xl border border-dynamic-orange/30 bg-gradient-to-br from-dynamic-orange/10 via-dynamic-orange/5 to-background p-6 shadow-lg">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-orange/20 shadow-inner">
-                      <Calendar className="h-6 w-6 text-dynamic-orange" />
+                <button
+                  type="button"
+                  onClick={() => toggleSection('today')}
+                  className="w-full text-left transition-all hover:opacity-90"
+                >
+                  <div className="flex items-center justify-between rounded-2xl border border-dynamic-orange/30 bg-gradient-to-br from-dynamic-orange/10 via-dynamic-orange/5 to-background p-6 shadow-lg">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-orange/20 shadow-inner">
+                        <Calendar className="h-6 w-6 text-dynamic-orange" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-2xl text-dynamic-orange">
+                          {t('ws-tasks.due_today')}
+                        </h3>
+                        <p className="mt-1 text-muted-foreground text-sm">
+                          Complete by end of day
+                          {todayTasks.length !== 1 ? 's' : ''}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-bold text-2xl text-dynamic-orange">
-                        {t('ws-tasks.due_today')}
-                      </h3>
-                      <p className="mt-1 text-muted-foreground text-sm">
-                        Complete by end of day • {todayTasks.length} task
-                        {todayTasks.length !== 1 ? 's' : ''}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <Badge
+                        variant="secondary"
+                        className="h-10 rounded-xl bg-dynamic-orange/20 px-4 font-bold text-dynamic-orange text-lg shadow-md"
+                      >
+                        {todayTasks.length}
+                      </Badge>
+                      <ChevronUp
+                        className={cn(
+                          'h-6 w-6 text-dynamic-orange transition-transform duration-300',
+                          !collapsedSections.today && 'rotate-180'
+                        )}
+                      />
                     </div>
                   </div>
-                  <Badge
-                    variant="secondary"
-                    className="h-10 rounded-xl bg-dynamic-orange/20 px-4 font-bold text-dynamic-orange text-lg shadow-md"
-                  >
-                    {todayTasks.length}
-                  </Badge>
-                </div>
+                </button>
 
                 {/* Task List - Grouped by Priority */}
-                <div className="space-y-6">
+                {!collapsedSections.today && (
+                  <div className="space-y-6">
                   {(() => {
                     const grouped = groupTasksByPriority(todayTasks);
                     return (
@@ -1808,7 +1789,8 @@ export default function MyTasksContent({
                       </>
                     );
                   })()}
-                </div>
+                  </div>
+                )}
               </div>
             ) : null}
 
@@ -1816,32 +1798,46 @@ export default function MyTasksContent({
             {upcomingTasks && upcomingTasks.length > 0 ? (
               <div className="space-y-4">
                 {/* Section Header */}
-                <div className="flex items-center justify-between rounded-2xl border border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/10 via-dynamic-blue/5 to-background p-6 shadow-lg">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-blue/20 shadow-inner">
-                      <Flag className="h-6 w-6 text-dynamic-blue" />
+                <button
+                  type="button"
+                  onClick={() => toggleSection('upcoming')}
+                  className="w-full text-left transition-all hover:opacity-90"
+                >
+                  <div className="flex items-center justify-between rounded-2xl border border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/10 via-dynamic-blue/5 to-background p-6 shadow-lg">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-blue/20 shadow-inner">
+                        <Flag className="h-6 w-6 text-dynamic-blue" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-2xl text-dynamic-blue">
+                          {t('ws-tasks.upcoming')}
+                        </h3>
+                        <p className="mt-1 text-muted-foreground text-sm">
+                          Plan ahead and stay on track
+                          {upcomingTasks.length !== 1 ? 's' : ''}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-bold text-2xl text-dynamic-blue">
-                        {t('ws-tasks.upcoming')}
-                      </h3>
-                      <p className="mt-1 text-muted-foreground text-sm">
-                        Plan ahead and stay on track • {upcomingTasks.length}{' '}
-                        task
-                        {upcomingTasks.length !== 1 ? 's' : ''}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <Badge
+                        variant="secondary"
+                        className="h-10 rounded-xl bg-dynamic-blue/20 px-4 font-bold text-dynamic-blue text-lg shadow-md"
+                      >
+                        {upcomingTasks.length}
+                      </Badge>
+                      <ChevronUp
+                        className={cn(
+                          'h-6 w-6 text-dynamic-blue transition-transform duration-300',
+                          !collapsedSections.upcoming && 'rotate-180'
+                        )}
+                      />
                     </div>
                   </div>
-                  <Badge
-                    variant="secondary"
-                    className="h-10 rounded-xl bg-dynamic-blue/20 px-4 font-bold text-dynamic-blue text-lg shadow-md"
-                  >
-                    {upcomingTasks.length}
-                  </Badge>
-                </div>
+                </button>
 
                 {/* Task List - Grouped by Priority */}
-                <div className="space-y-6">
+                {!collapsedSections.upcoming && (
+                  <div className="space-y-6">
                   {(() => {
                     const grouped = groupTasksByPriority(upcomingTasks);
                     return (
@@ -1926,7 +1922,8 @@ export default function MyTasksContent({
                       </>
                     );
                   })()}
-                </div>
+                  </div>
+                )}
               </div>
             ) : null}
 
@@ -1974,45 +1971,6 @@ export default function MyTasksContent({
                   </div>
                 </CardContent>
               </Card>
-            )}
-
-            {/* Quick tips when there are tasks */}
-            {totalActiveTasks > 0 && (
-              <div className="mt-8 rounded-xl border bg-muted/30 p-6">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                    <Flag className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    <h4 className="font-semibold text-sm">Pro Tips</h4>
-                    <ul className="space-y-1.5 text-muted-foreground text-sm">
-                      <li className="flex items-start gap-2">
-                        <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                        <span>
-                          Click any task to view details and add descriptions
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                        <span>
-                          Use AI generation to break down complex tasks
-                          automatically
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                        <span>
-                          Press{' '}
-                          <kbd className="rounded border bg-background px-1.5 py-0.5 font-mono text-xs">
-                            ⌘K
-                          </kbd>{' '}
-                          to quickly search and create
-                        </span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
             )}
           </div>
         )}
@@ -2388,7 +2346,7 @@ export default function MyTasksContent({
                                   onClick={() =>
                                     handleStartEditTitle(originalIndex)
                                   }
-                                  className="line-clamp-2 flex-1 cursor-text break-all rounded px-2 py-1 text-left font-medium text-foreground text-sm transition hover:bg-muted/50"
+                                  className="line-clamp-2 flex-1 cursor-text break-words rounded px-2 py-1 text-left font-medium text-foreground text-sm transition hover:bg-muted/50"
                                   disabled={isCreating}
                                 >
                                   {displayIndex + 1}. {currentName}
@@ -2634,7 +2592,7 @@ export default function MyTasksContent({
                                   onClick={() =>
                                     handleStartEditDescription(originalIndex)
                                   }
-                                  className="line-clamp-3 w-full cursor-text break-all rounded px-2 py-1 text-left text-foreground text-sm leading-relaxed opacity-90 transition hover:bg-muted/50"
+                                  className="line-clamp-3 w-full cursor-text break-words rounded px-2 py-1 text-left text-foreground text-sm leading-relaxed opacity-90 transition hover:bg-muted/50"
                                   disabled={isCreating}
                                 >
                                   {currentDescription || 'No description'}

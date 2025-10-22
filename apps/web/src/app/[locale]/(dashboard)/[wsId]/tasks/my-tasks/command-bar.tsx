@@ -1,30 +1,38 @@
 'use client';
 
 import {
-  ArrowRight,
+  ArrowLeft,
   Box,
   Calendar,
+  Check,
+  ChevronDown,
+  ChevronRight,
   Flag,
-  LayoutDashboard,
   ListTodo,
   MapPin,
   Plus,
   Settings,
   Sparkles,
+  StickyNote,
   Tag,
   Timer,
-  UserMinus,
-  UserPlus,
   UserStar,
   X,
 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@tuturuuu/ui/scroll-area';
+import { Separator } from '@tuturuuu/ui/separator';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import {
@@ -132,13 +140,17 @@ export function CommandBar({
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
   const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<string[]>([]);
 
-  // Popover open states
-  const [priorityOpen, setPriorityOpen] = useState(false);
-  const [dueDateOpen, setDueDateOpen] = useState(false);
-  const [estimationOpen, setEstimationOpen] = useState(false);
-  const [projectsOpen, setProjectsOpen] = useState(false);
-  const [labelsOpen, setLabelsOpen] = useState(false);
-  const [assigneesOpen, setAssigneesOpen] = useState(false);
+  // Popover states
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [activeSettingsView, setActiveSettingsView] = useState<
+    | 'main'
+    | 'priority'
+    | 'dueDate'
+    | 'estimation'
+    | 'projects'
+    | 'labels'
+    | 'assignees'
+  >('main');
 
   // Use controlled mode if provided, otherwise use internal state
   const mode = controlledMode ?? internalMode;
@@ -147,33 +159,6 @@ export function CommandBar({
     onModeChange?.(newMode);
   };
 
-  // Calculate dynamic height for projects popover
-  // Each item is roughly 36px (with line-clamp-1), show max 4.5 items
-  const projectsScrollHeight = useMemo(() => {
-    const ITEM_HEIGHT = 36; // approximate height per project item
-    const MAX_VISIBLE_ITEMS = 4.5; // show 4 full items + partial 5th
-    const calculatedHeight = Math.min(
-      workspaceProjects.length * ITEM_HEIGHT,
-      MAX_VISIBLE_ITEMS * ITEM_HEIGHT
-    );
-    return calculatedHeight;
-  }, [workspaceProjects.length]);
-
-  // Calculate dynamic height for assignees popover
-  // Each item is roughly 48px (avatar + padding), show max 4.5 items
-  const assigneesScrollHeight = useMemo(() => {
-    const availableMembers = workspaceMembers.filter(
-      (member) => !selectedAssigneeIds.includes(member.id)
-    );
-    const ITEM_HEIGHT = 50; // approximate height per assignee item
-    const MAX_VISIBLE_ITEMS = 4.5; // show 4 full items + partial 5th
-    const calculatedHeight = Math.min(
-      availableMembers.length * ITEM_HEIGHT,
-      MAX_VISIBLE_ITEMS * ITEM_HEIGHT
-    );
-    return calculatedHeight;
-  }, [workspaceMembers, selectedAssigneeIds]);
-
   // Calculate available estimation indices based on board config
   const availableEstimationIndices = useMemo(() => {
     return buildEstimationIndices({
@@ -181,6 +166,27 @@ export function CommandBar({
       allowZero: workspaceEstimationConfig?.allow_zero_estimates,
     });
   }, [workspaceEstimationConfig]);
+
+  // Calculate dynamic heights for scrollable sections
+  // Each item is approximately 40px (py-2 = 8px top + 8px bottom + content ~24px)
+  const ITEM_HEIGHT = 41;
+  const ASSIGNEE_ITEM_HEIGHT = 46;
+  const MAX_VISIBLE_ITEMS = 7;
+  
+  const projectsScrollHeight = useMemo(() => {
+    const itemCount = Math.min(workspaceProjects.length, MAX_VISIBLE_ITEMS);
+    return itemCount > 0 ? `${itemCount * ITEM_HEIGHT}px` : 'auto';
+  }, [workspaceProjects.length]);
+
+  const labelsScrollHeight = useMemo(() => {
+    const itemCount = Math.min(workspaceLabels.length, MAX_VISIBLE_ITEMS);
+    return itemCount > 0 ? `${itemCount * ITEM_HEIGHT}px` : 'auto';
+  }, [workspaceLabels.length]);
+
+  const assigneesScrollHeight = useMemo(() => {
+    const itemCount = Math.min(workspaceMembers.length, MAX_VISIBLE_ITEMS);
+    return itemCount > 0 ? `${itemCount * ASSIGNEE_ITEM_HEIGHT}px` : 'auto';
+  }, [workspaceMembers.length]);
 
   const modeConfig = useMemo(
     () => ({
@@ -199,7 +205,6 @@ export function CommandBar({
   );
 
   const currentConfig = modeConfig[mode];
-  const needsDestination = mode === 'task';
   const hasDestination = Boolean(
     selectedDestination?.boardName && selectedDestination?.listName
   );
@@ -257,448 +262,491 @@ export function CommandBar({
     }
   };
 
+  const handleSettingsOpenChange = (open: boolean) => {
+    setSettingsOpen(open);
+    if (!open) {
+      // Reset to main view when closing
+      setTimeout(() => setActiveSettingsView('main'), 200);
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Context Bar - Mode Selection and Filters */}
-      <div className="group/bar relative overflow-hidden rounded-2xl border border-primary/30 p-5 shadow-2xl backdrop-blur-sm transition-all duration-500 hover:border-primary/50 hover:shadow-[0_20px_70px_-15px_rgba(var(--primary)_/_0.3)]">
-        {/* Multi-layered animated gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.12] via-dynamic-purple/[0.10] to-dynamic-blue/[0.12] transition-opacity duration-700 group-hover/bar:opacity-80" />
-        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-dynamic-pink/[0.08] to-dynamic-cyan/[0.06] transition-opacity duration-700" />
-        <div className="absolute inset-0 bg-gradient-to-bl from-dynamic-orange/[0.05] via-transparent to-dynamic-green/[0.05] opacity-60 transition-opacity duration-700" />
-        {/* Animated glow effect */}
-        <div className="-inset-[100px] pointer-events-none absolute opacity-0 transition-opacity duration-1000 group-hover/bar:opacity-20">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary via-dynamic-purple to-dynamic-blue blur-3xl" />
-        </div>
+    <div className="relative">
+      {/* Subtle glow effect */}
+      <div className="-z-10 absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/8 to-dynamic-purple/6 opacity-0 blur-2xl transition-opacity duration-500 group-focus-within:opacity-100 md:rounded-3xl" />
+      {/* Main Input Area */}
+      <div className="group relative">
+        <Textarea
+          id="my-tasks-command-bar-textarea"
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={currentConfig.placeholder}
+          className="max-h-[280px] min-h-[150px] resize-none rounded-2xl border border-border/0 bg-linear-to-br from-background to-primary/15 px-4 pb-14 pt-4 text-base leading-relaxed transition-all duration-300 placeholder:text-muted-foreground/40 hover:shadow-xl focus-visible:shadow-[0_20px_50px_-15px_rgba(var(--primary)_/_0.15)] focus-visible:border-white/10 focus-visible:ring-0 sm:px-6 md:min-h-[200px] md:rounded-3xl md:px-8 md:pb-16 md:pt-6 md:text-lg lg:text-xl"
+          disabled={isLoading}
+        />
 
-        <div className="relative flex items-center justify-between gap-4">
-          {/* Left: Mode + Destination */}
-          <div className="flex flex-1 items-center gap-3">
-            {/* Mode Selector (Task/Note) */}
-            <div className="flex items-center gap-1 rounded-lg border bg-background p-1 shadow-sm">
+        {/* Bottom Action Bar */}
+        <div className="absolute right-3 bottom-3 left-3 flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap md:right-4 md:bottom-4 md:left-4">
+          {/* Left Side: Location + Settings + AI + Destination Display */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Location Button - Only for Tasks */}
+            {mode === 'task' && (
               <Button
-                variant={mode === 'task' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                onClick={() => setMode('task')}
+                onClick={onOpenBoardSelector}
                 disabled={isLoading}
-                className="h-8 gap-2 px-4"
-              >
-                <ListTodo className="h-4 w-4" />
-                <span className="font-semibold text-xs">Task</span>
-              </Button>
-              <Button
-                variant={mode === 'note' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setMode('note')}
-                disabled={isLoading}
-                className="h-8 gap-2 px-4"
-              >
-                <Plus className="h-4 w-4" />
-                <span className="font-semibold text-xs">Note</span>
-              </Button>
-            </div>
-
-            {/* Where (Board/List Selector) - Only for Tasks */}
-            {needsDestination && (
-              <>
-                <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                {hasDestination && selectedDestination ? (
-                  <Badge
-                    variant="outline"
-                    className="h-10 gap-2 rounded-lg bg-background pr-1.5 pl-3 font-normal shadow-sm"
-                  >
-                    <LayoutDashboard className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="max-w-[200px] truncate font-medium text-xs">
-                      {selectedDestination.boardName} /{' '}
-                      {selectedDestination.listName}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={onClearDestination}
-                      disabled={isLoading}
-                      className="h-5 w-5 rounded p-0 hover:bg-muted"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </Badge>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onOpenBoardSelector}
-                    disabled={isLoading}
-                    className="h-10 gap-2 rounded-lg bg-background px-3 shadow-sm"
-                  >
-                    <MapPin className="h-3.5 w-3.5" />
-                    <span className="font-semibold text-xs">Select board</span>
-                  </Button>
+                className={cn(
+                  'h-8 w-8 rounded-lg border p-0 transition-all md:h-9 md:w-9',
+                  hasDestination
+                    ? 'border-dynamic-blue/20 bg-dynamic-blue/5 text-dynamic-blue shadow-lg hover:bg-dynamic-blue/10 hover:shadow-xl md:border-border md:bg-transparent md:text-foreground md:shadow-none md:hover:bg-muted md:hover:shadow-none'
+                    : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
-              </>
+                title="Select destination"
+              >
+                <MapPin className="h-3.5 w-3.5 md:h-4 md:w-4" />
+              </Button>
             )}
-          </div>
 
-          {/* Right: AI Toggle */}
-          <div className="flex items-center gap-2">
-            {/* AI Settings - Only visible when AI is enabled */}
-            {aiEnabled && mode === 'task' && (
-              <Popover>
+            {/* Settings Button - AI settings when AI on, Task options when AI off */}
+            {mode === 'task' && hasDestination && (
+              <Popover
+                open={settingsOpen}
+                onOpenChange={handleSettingsOpenChange}
+              >
                 <PopoverTrigger asChild>
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     disabled={isLoading}
-                    className="h-8 w-8 rounded-lg bg-background p-0 shadow-sm"
-                    title="AI Configuration"
+                    className="h-8 w-8 rounded-lg border border-border p-0 transition-colors hover:bg-muted md:h-9 md:w-9"
+                    title={aiEnabled ? 'AI Settings' : 'Task Options'}
                   >
-                    <Settings className="h-3.5 w-3.5" />
+                    <Settings className="h-3.5 w-3.5 md:h-4 md:w-4" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent align="end" className="w-80">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2.5 border-b pb-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                        <Sparkles className="h-4 w-4 text-primary" />
-                      </div>
-                      <h4 className="font-semibold text-sm">
-                        AI Configuration
-                      </h4>
-                    </div>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label
-                            htmlFor="ai-descriptions"
-                            className="font-medium text-sm"
-                          >
-                            Generate descriptions
-                          </Label>
-                          <p className="text-muted-foreground text-xs">
-                            Add detailed context
-                          </p>
-                        </div>
-                        <Switch
-                          id="ai-descriptions"
-                          checked={aiGenerateDescriptions}
-                          onCheckedChange={onAiGenerateDescriptionsChange}
-                          disabled={isLoading}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label
-                            htmlFor="ai-priority"
-                            className="font-medium text-sm"
-                          >
-                            Set priority
-                          </Label>
-                          <p className="text-muted-foreground text-xs">
-                            Auto-assign importance
-                          </p>
-                        </div>
-                        <Switch
-                          id="ai-priority"
-                          checked={aiGeneratePriority}
-                          onCheckedChange={onAiGeneratePriorityChange}
-                          disabled={isLoading}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label
-                            htmlFor="ai-labels"
-                            className="font-medium text-sm"
-                          >
-                            Suggest labels
-                          </Label>
-                          <p className="text-muted-foreground text-xs">
-                            Categorize automatically
-                          </p>
-                        </div>
-                        <Switch
-                          id="ai-labels"
-                          checked={aiGenerateLabels}
-                          onCheckedChange={onAiGenerateLabelsChange}
-                          disabled={isLoading}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
-
-            <div className="flex items-center gap-2.5 rounded-lg border bg-background px-3.5 py-2 shadow-sm">
-              <Sparkles
-                className={`h-4 w-4 transition-colors ${aiEnabled ? 'text-primary' : 'text-muted-foreground'}`}
-              />
-              <span className="font-medium text-muted-foreground text-xs">
-                AI
-              </span>
-              <Switch
-                checked={aiEnabled}
-                onCheckedChange={setAiEnabled}
-                disabled={isLoading}
-                className="scale-90"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Input Area - Takes Center Stage */}
-      <div className="relative">
-        {/* Colorful inspirational glow effect behind textarea */}
-        <div className="-z-10 absolute inset-0 rounded-3xl bg-gradient-to-br from-primary/10 via-dynamic-purple/8 to-dynamic-cyan/12 opacity-0 blur-3xl transition-opacity duration-700 group-focus-within:opacity-100" />
-        <div className="-z-10 absolute inset-0 rounded-3xl bg-gradient-to-tr from-dynamic-pink/8 via-dynamic-orange/6 to-dynamic-blue/10 opacity-0 blur-2xl transition-opacity duration-700 group-focus-within:opacity-80" />
-
-        <div className="group relative">
-          <Textarea
-            id="my-tasks-command-bar-textarea"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={currentConfig.placeholder}
-            className="min-h-[200px] resize-none rounded-3xl border border-border/40 bg-gradient-to-br from-background via-primary/5 to-dynamic-purple/8 px-8 pt-8 font-medium text-2xl leading-relaxed shadow-lg transition-all duration-300 placeholder:text-muted-foreground/40 hover:border-border/60 hover:shadow-xl focus-visible:border-primary/40 focus-visible:shadow-[0_20px_50px_-15px_rgba(var(--primary)_/_0.2)] focus-visible:ring-1 focus-visible:ring-primary/20"
-            style={{
-              paddingBottom:
-                mode === 'task' && hasDestination && !aiEnabled
-                  ? '80px'
-                  : '80px',
-            }}
-            disabled={isLoading}
-          />
-
-          {/* Bottom Action Bar */}
-          <div className="absolute right-6 bottom-6 flex items-center gap-2">
-            {/* Option Buttons - Only for task mode with destination and AI disabled */}
-            {mode === 'task' && hasDestination && !aiEnabled && (
-              <>
-                {/* Priority Popover */}
-                <Popover
-                  open={priorityOpen}
-                  onOpenChange={setPriorityOpen}
-                  modal={true}
+                <PopoverContent
+                  align="start"
+                  side="top"
+                  className="w-72 p-0"
+                  sideOffset={8}
                 >
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className={cn(
-                        'h-10 w-10 rounded-lg transition-all',
-                        priority
-                          ? 'border-dynamic-red/50 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
-                          : 'border-border/50 hover:bg-muted'
-                      )}
-                    >
-                      <Flag className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className="w-44 p-2"
-                    align="end"
-                    sideOffset={5}
-                  >
-                    <ScrollArea className="max-h-64">
-                      <div className="space-y-1">
-                        <Button
-                          variant={
-                            priority === 'critical' ? 'default' : 'ghost'
-                          }
-                          size="sm"
-                          className="w-full justify-start gap-2 text-dynamic-red"
-                          onClick={() => {
-                            setPriority('critical');
-                            setPriorityOpen(false);
-                          }}
-                        >
-                          <Flag className="h-3.5 w-3.5" />
-                          Critical
-                        </Button>
-                        <Button
-                          variant={priority === 'high' ? 'default' : 'ghost'}
-                          size="sm"
-                          className="w-full justify-start gap-2 text-dynamic-orange"
-                          onClick={() => {
-                            setPriority('high');
-                            setPriorityOpen(false);
-                          }}
-                        >
-                          <Flag className="h-3.5 w-3.5" />
-                          High
-                        </Button>
-                        <Button
-                          variant={priority === 'normal' ? 'default' : 'ghost'}
-                          size="sm"
-                          className="w-full justify-start gap-2 text-dynamic-blue"
-                          onClick={() => {
-                            setPriority('normal');
-                            setPriorityOpen(false);
-                          }}
-                        >
-                          <Flag className="h-3.5 w-3.5" />
-                          Normal
-                        </Button>
-                        <Button
-                          variant={priority === 'low' ? 'default' : 'ghost'}
-                          size="sm"
-                          className="w-full justify-start gap-2 text-dynamic-gray"
-                          onClick={() => {
-                            setPriority('low');
-                            setPriorityOpen(false);
-                          }}
-                        >
-                          <Flag className="h-3.5 w-3.5" />
-                          Low
-                        </Button>
-                        {priority && (
-                          <>
-                            <div className="my-1 h-px bg-border" />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full justify-start gap-2 text-muted-foreground"
-                              onClick={() => {
-                                setPriority(null);
-                                setPriorityOpen(false);
-                              }}
-                            >
-                              <X className="h-3.5 w-3.5" />
-                              Clear
-                            </Button>
-                          </>
-                        )}
+                  {aiEnabled ? (
+                    // AI Settings (unchanged)
+                    <div className="space-y-3 p-4">
+                      <div className="flex items-center gap-2 border-b pb-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                          <Sparkles className="h-4 w-4 text-primary" />
+                        </div>
+                        <h4 className="font-semibold text-sm">
+                          AI Configuration
+                        </h4>
                       </div>
-                    </ScrollArea>
-                  </PopoverContent>
-                </Popover>
-
-                {/* Due Date Popover */}
-                <Popover
-                  open={dueDateOpen}
-                  onOpenChange={setDueDateOpen}
-                  modal={true}
-                >
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className={cn(
-                        'h-10 w-10 rounded-lg transition-all',
-                        dueDate
-                          ? 'border-dynamic-orange/50 bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/20'
-                          : 'border-border/50 hover:bg-muted'
-                      )}
-                    >
-                      <Calendar className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className="w-44 p-2"
-                    align="end"
-                    sideOffset={5}
-                  >
-                    <ScrollArea className="max-h-64">
-                      <div className="space-y-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setDueDate(new Date());
-                            setDueDateOpen(false);
-                          }}
-                          className="w-full justify-start gap-2 text-dynamic-green"
-                        >
-                          <Calendar className="h-3.5 w-3.5" />
-                          Today
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            const tomorrow = new Date();
-                            tomorrow.setDate(tomorrow.getDate() + 1);
-                            setDueDate(tomorrow);
-                            setDueDateOpen(false);
-                          }}
-                          className="w-full justify-start gap-2 text-dynamic-blue"
-                        >
-                          <Calendar className="h-3.5 w-3.5" />
-                          Tomorrow
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            const nextWeek = new Date();
-                            nextWeek.setDate(nextWeek.getDate() + 7);
-                            setDueDate(nextWeek);
-                            setDueDateOpen(false);
-                          }}
-                          className="w-full justify-start gap-2 text-dynamic-purple"
-                        >
-                          <Calendar className="h-3.5 w-3.5" />
-                          Next Week
-                        </Button>
-                        {dueDate && (
-                          <>
-                            <div className="my-1 h-px bg-border" />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full justify-start gap-2 text-muted-foreground"
-                              onClick={() => {
-                                setDueDate(null);
-                                setDueDateOpen(false);
-                              }}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label
+                              htmlFor="ai-descriptions"
+                              className="font-medium text-sm"
                             >
-                              <X className="h-3.5 w-3.5" />
-                              Clear
-                            </Button>
-                          </>
-                        )}
+                              Generate descriptions
+                            </Label>
+                            <p className="text-muted-foreground text-xs">
+                              Add detailed context
+                            </p>
+                          </div>
+                          <Switch
+                            id="ai-descriptions"
+                            checked={aiGenerateDescriptions}
+                            onCheckedChange={onAiGenerateDescriptionsChange}
+                            disabled={isLoading}
+                          />
+                        </div>
+                        <Separator />
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label
+                              htmlFor="ai-priority"
+                              className="font-medium text-sm"
+                            >
+                              Set priority
+                            </Label>
+                            <p className="text-muted-foreground text-xs">
+                              Auto-assign importance
+                            </p>
+                          </div>
+                          <Switch
+                            id="ai-priority"
+                            checked={aiGeneratePriority}
+                            onCheckedChange={onAiGeneratePriorityChange}
+                            disabled={isLoading}
+                          />
+                        </div>
+                        <Separator />
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label
+                              htmlFor="ai-labels"
+                              className="font-medium text-sm"
+                            >
+                              Suggest labels
+                            </Label>
+                            <p className="text-muted-foreground text-xs">
+                              Categorize automatically
+                            </p>
+                          </div>
+                          <Switch
+                            id="ai-labels"
+                            checked={aiGenerateLabels}
+                            onCheckedChange={onAiGenerateLabelsChange}
+                            disabled={isLoading}
+                          />
+                        </div>
                       </div>
-                    </ScrollArea>
-                  </PopoverContent>
-                </Popover>
+                    </div>
+                  ) : (
+                    // Task Options - Two-level navigation
+                    <div>
+                      {activeSettingsView === 'main' ? (
+                        // Main menu - List of options
+                        <div className="py-1">
+                          <div className="space-y-0.5 p-2">
+                            <button
+                              onClick={() => setActiveSettingsView('priority')}
+                              className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Flag className="h-4 w-4 text-muted-foreground" />
+                                <span>Priority</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {priority && (
+                                  <span
+                                    className={cn(
+                                      'text-xs font-medium',
+                                      priority === 'critical' &&
+                                        'text-dynamic-red',
+                                      priority === 'high' &&
+                                        'text-dynamic-orange',
+                                      priority === 'normal' &&
+                                        'text-dynamic-blue',
+                                      priority === 'low' && 'text-dynamic-gray'
+                                    )}
+                                  >
+                                    {priority.charAt(0).toUpperCase() +
+                                      priority.slice(1)}
+                                  </span>
+                                )}
+                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            </button>
 
-                {/* Estimation Popover */}
-                {workspaceEstimationConfig?.estimation_type &&
-                  availableEstimationIndices.length > 0 && (
-                    <Popover
-                      open={estimationOpen}
-                      onOpenChange={setEstimationOpen}
-                      modal={true}
-                    >
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className={cn(
-                            'h-10 rounded-lg transition-all',
-                            estimationPoints !== null
-                              ? 'border-dynamic-blue/50 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
-                              : 'border-border/50 hover:bg-muted',
-                            estimationPoints !== null ? 'w-auto px-3' : 'w-10'
-                          )}
-                        >
-                          <Timer className="h-4 w-4" />
-                          {estimationPoints !== null && (
-                            <span className="ml-1.5 font-semibold text-xs">
-                              {mapEstimationPoints(
-                                estimationPoints,
-                                workspaceEstimationConfig?.estimation_type
+                            <button
+                              onClick={() => setActiveSettingsView('dueDate')}
+                              className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                <span>Due Date</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {dueDate && (
+                                  <span className="text-xs font-medium text-muted-foreground">
+                                    {dueDate.toLocaleDateString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                    })}
+                                  </span>
+                                )}
+                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            </button>
+
+                            {workspaceEstimationConfig?.estimation_type &&
+                              availableEstimationIndices.length > 0 && (
+                                <button
+                                  onClick={() =>
+                                    setActiveSettingsView('estimation')
+                                  }
+                                  className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Timer className="h-4 w-4 text-muted-foreground" />
+                                    <span>Estimation</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {estimationPoints !== null && (
+                                      <span className="text-xs font-medium text-muted-foreground">
+                                        {mapEstimationPoints(
+                                          estimationPoints,
+                                          workspaceEstimationConfig?.estimation_type
+                                        )}
+                                      </span>
+                                    )}
+                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                  </div>
+                                </button>
                               )}
-                            </span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        className="w-44 p-2"
-                        align="end"
-                        sideOffset={5}
-                      >
-                        <ScrollArea className="max-h-64">
-                          <div className="grid grid-cols-3 gap-1">
+
+                            {workspaceProjects.length > 0 && (
+                              <button
+                                onClick={() =>
+                                  setActiveSettingsView('projects')
+                                }
+                                className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <Box className="h-4 w-4 text-muted-foreground" />
+                                  <span>Projects</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {selectedProjectIds.length > 0 && (
+                                    <span className="text-xs font-medium text-muted-foreground">
+                                      {selectedProjectIds.length}
+                                    </span>
+                                  )}
+                                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              </button>
+                            )}
+
+                            {workspaceLabels.length > 0 && (
+                              <button
+                                onClick={() => setActiveSettingsView('labels')}
+                                className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <Tag className="h-4 w-4 text-muted-foreground" />
+                                  <span>Labels</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {selectedLabelIds.length > 0 && (
+                                    <span className="text-xs font-medium text-muted-foreground">
+                                      {selectedLabelIds.length}
+                                    </span>
+                                  )}
+                                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              </button>
+                            )}
+
+                            {workspaceMembers.length > 0 && (
+                              <button
+                                onClick={() =>
+                                  setActiveSettingsView('assignees')
+                                }
+                                className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <UserStar className="h-4 w-4 text-muted-foreground" />
+                                  <span>Assignees</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {selectedAssigneeIds.length > 0 && (
+                                    <span className="text-xs font-medium text-muted-foreground">
+                                      {selectedAssigneeIds.length}
+                                    </span>
+                                  )}
+                                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ) : activeSettingsView === 'priority' ? (
+                        // Priority selection view
+                        <div>
+                          <div className="space-y-0.5 p-2">
+                            <button
+                              onClick={() => setActiveSettingsView('main')}
+                              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                            >
+                              <ArrowLeft className="h-4 w-4" />
+                              <span className="font-semibold">Select Priority</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setPriority('critical');
+                                setActiveSettingsView('main');
+                              }}
+                              className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Flag className="h-4 w-4 text-dynamic-red" />
+                                <span className="text-dynamic-red">
+                                  Critical
+                                </span>
+                              </div>
+                              {priority === 'critical' && (
+                                <Check className="h-4 w-4 text-dynamic-red" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setPriority('high');
+                                setActiveSettingsView('main');
+                              }}
+                              className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Flag className="h-4 w-4 text-dynamic-orange" />
+                                <span className="text-dynamic-orange">
+                                  High
+                                </span>
+                              </div>
+                              {priority === 'high' && (
+                                <Check className="h-4 w-4 text-dynamic-orange" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setPriority('normal');
+                                setActiveSettingsView('main');
+                              }}
+                              className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Flag className="h-4 w-4 text-dynamic-blue" />
+                                <span className="text-dynamic-blue">
+                                  Normal
+                                </span>
+                              </div>
+                              {priority === 'normal' && (
+                                <Check className="h-4 w-4 text-dynamic-blue" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setPriority('low');
+                                setActiveSettingsView('main');
+                              }}
+                              className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Flag className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-muted-foreground">
+                                  Low
+                                </span>
+                              </div>
+                              {priority === 'low' && (
+                                <Check className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </button>
+                            {priority && (
+                              <button
+                                onClick={() => {
+                                  setPriority(null);
+                                  setActiveSettingsView('main');
+                                }}
+                                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted"
+                              >
+                                <X className="h-4 w-4" />
+                                <span>Clear</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ) : activeSettingsView === 'dueDate' ? (
+                        // Due Date selection view
+                        <div>
+                          <div className="space-y-0.5 p-2">
+                            <button
+                              onClick={() => setActiveSettingsView('main')}
+                              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                            >
+                              <ArrowLeft className="h-4 w-4" />
+                              <span className="font-semibold">Select Due Date</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setDueDate(new Date());
+                                setActiveSettingsView('main');
+                              }}
+                              className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-dynamic-green" />
+                                <span>Today</span>
+                              </div>
+                              {dueDate?.toDateString() ===
+                                new Date().toDateString() && (
+                                <Check className="h-4 w-4" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => {
+                                const tomorrow = new Date();
+                                tomorrow.setDate(tomorrow.getDate() + 1);
+                                setDueDate(tomorrow);
+                                setActiveSettingsView('main');
+                              }}
+                              className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-dynamic-blue" />
+                                <span>Tomorrow</span>
+                              </div>
+                              {(() => {
+                                const tomorrow = new Date();
+                                tomorrow.setDate(tomorrow.getDate() + 1);
+                                return (
+                                  dueDate?.toDateString() ===
+                                    tomorrow.toDateString() && (
+                                    <Check className="h-4 w-4" />
+                                  )
+                                );
+                              })()}
+                            </button>
+                            <button
+                              onClick={() => {
+                                const nextWeek = new Date();
+                                nextWeek.setDate(nextWeek.getDate() + 7);
+                                setDueDate(nextWeek);
+                                setActiveSettingsView('main');
+                              }}
+                              className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-dynamic-purple" />
+                                <span>Next Week</span>
+                              </div>
+                              {(() => {
+                                const nextWeek = new Date();
+                                nextWeek.setDate(nextWeek.getDate() + 7);
+                                return (
+                                  dueDate?.toDateString() ===
+                                    nextWeek.toDateString() && (
+                                    <Check className="h-4 w-4" />
+                                  )
+                                );
+                              })()}
+                            </button>
+                            {dueDate && (
+                              <button
+                                onClick={() => {
+                                  setDueDate(null);
+                                  setActiveSettingsView('main');
+                                }}
+                                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted"
+                              >
+                                <X className="h-4 w-4" />
+                                <span>Clear</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ) : activeSettingsView === 'estimation' ? (
+                        // Estimation selection view
+                        <div>
+                          <div className="space-y-0.5 p-2">
+                            <button
+                              onClick={() => setActiveSettingsView('main')}
+                              className="flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors hover:bg-muted"
+                            >
+                              <ArrowLeft className="h-4 w-4" />
+                              <span className="font-semibold">Select Estimation</span>
+                            </button>
                             {availableEstimationIndices.map((index) => {
                               const isExtended = index > 5;
                               const isDisabled =
@@ -706,452 +754,366 @@ export function CommandBar({
                                 !workspaceEstimationConfig?.extended_estimation;
 
                               return (
-                                <Button
+                                <button
                                   key={index}
-                                  variant={
-                                    estimationPoints === index
-                                      ? 'default'
-                                      : 'ghost'
-                                  }
-                                  size="sm"
                                   onClick={() => {
                                     if (!isDisabled) {
                                       setEstimationPoints(index);
-                                      setEstimationOpen(false);
+                                      setActiveSettingsView('main');
                                     }
                                   }}
                                   disabled={isDisabled}
-                                  className="h-9 text-dynamic-purple"
+                                  className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                                   title={
                                     isDisabled
                                       ? 'Upgrade to use this value'
                                       : ''
                                   }
                                 >
-                                  {mapEstimationPoints(
-                                    index,
-                                    workspaceEstimationConfig?.estimation_type
+                                  <div className="flex items-center gap-2">
+                                    <Timer className="h-4 w-4 text-muted-foreground" />
+                                    <span>
+                                      {mapEstimationPoints(
+                                        index,
+                                        workspaceEstimationConfig?.estimation_type
+                                      )}
+                                    </span>
+                                  </div>
+                                  {estimationPoints === index && (
+                                    <Check className="h-4 w-4" />
                                   )}
-                                </Button>
+                                </button>
                               );
                             })}
-                          </div>
-                          {estimationPoints !== null && (
-                            <>
-                              <div className="my-2 h-px bg-border" />
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="w-full justify-start gap-2 text-muted-foreground"
+                            {estimationPoints !== null && (
+                              <button
                                 onClick={() => {
                                   setEstimationPoints(null);
-                                  setEstimationOpen(false);
+                                  setActiveSettingsView('main');
                                 }}
+                                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted"
                               >
-                                <X className="h-3.5 w-3.5" />
-                                Clear
-                              </Button>
-                            </>
-                          )}
-                        </ScrollArea>
-                      </PopoverContent>
-                    </Popover>
-                  )}
-
-                {/* Projects Popover */}
-                {workspaceProjects.length > 0 && (
-                  <Popover
-                    open={projectsOpen}
-                    onOpenChange={setProjectsOpen}
-                    modal={true}
-                  >
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className={cn(
-                          'h-10 w-10 rounded-lg transition-all',
-                          selectedProjectIds.length > 0
-                            ? 'border-dynamic-sky/50 bg-dynamic-sky/10 text-dynamic-sky hover:bg-dynamic-sky/20'
-                            : 'border-border/50 hover:bg-muted'
-                        )}
-                      >
-                        <Box className="h-4 w-4" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-64 p-0"
-                      align="end"
-                      sideOffset={5}
-                    >
-                      <div className="p-2">
-                        <ScrollArea
-                          className="w-full"
-                          style={{ height: `${projectsScrollHeight}px` }}
-                        >
-                          <div className="space-y-1 pr-3">
-                            {workspaceProjects.map((project) => (
-                              <div
-                                key={project.id}
-                                className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted"
-                              >
-                                <Checkbox
-                                  id={`cb-project-${project.id}`}
-                                  checked={selectedProjectIds.includes(
-                                    project.id
-                                  )}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      setSelectedProjectIds([
-                                        ...selectedProjectIds,
-                                        project.id,
-                                      ]);
-                                    } else {
-                                      setSelectedProjectIds(
-                                        selectedProjectIds.filter(
-                                          (id) => id !== project.id
-                                        )
-                                      );
-                                    }
-                                  }}
-                                />
-                                <Label
-                                  htmlFor={`cb-project-${project.id}`}
-                                  className="flex flex-1 cursor-pointer items-center gap-2 font-normal text-dynamic-sky text-xs"
-                                >
-                                  <Box className="h-3 w-3 shrink-0" />
-                                  <span className="line-clamp-1">
-                                    {project.name}
-                                  </span>
-                                </Label>
-                              </div>
-                            ))}
+                                <X className="h-4 w-4" />
+                                <span>Clear</span>
+                              </button>
+                            )}
                           </div>
-                        </ScrollArea>
-                      </div>
-                      {selectedProjectIds.length > 0 && (
-                        <>
-                          <div className="h-px bg-border" />
-                          <div className="p-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full justify-start gap-2 text-muted-foreground"
+                        </div>
+                      ) : activeSettingsView === 'projects' ? (
+                        // Projects selection view
+                        <div className="space-y-0.5 p-2">
+                          <button
+                            onClick={() => setActiveSettingsView('main')}
+                            className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                          >
+                            <ArrowLeft className="h-4 w-4" />
+                            <span className="font-semibold">Select Projects</span>
+                          </button>
+                          <ScrollArea style={{ height: projectsScrollHeight }}>
+                            <div className="space-y-0.5">
+                              {workspaceProjects.map((project) => (
+                                <div
+                                  key={project.id}
+                                  className="flex items-center gap-2 rounded-md p-2 hover:bg-muted"
+                                >
+                                  <Checkbox
+                                    id={`project-${project.id}`}
+                                    checked={selectedProjectIds.includes(
+                                      project.id
+                                    )}
+                                    onCheckedChange={(checked) => {
+                                      if (checked) {
+                                        setSelectedProjectIds([
+                                          ...selectedProjectIds,
+                                          project.id,
+                                        ]);
+                                      } else {
+                                        setSelectedProjectIds(
+                                          selectedProjectIds.filter(
+                                            (id) => id !== project.id
+                                          )
+                                        );
+                                      }
+                                    }}
+                                  />
+                                  <Label
+                                    htmlFor={`project-${project.id}`}
+                                    className="flex flex-1 cursor-pointer items-center gap-2 text-sm"
+                                  >
+                                    <Box className="h-3.5 w-3.5 text-dynamic-sky" />
+                                    <span className="line-clamp-1">
+                                      {project.name}
+                                    </span>
+                                  </Label>
+                                </div>
+                              ))}
+                            </div>
+                          </ScrollArea>
+                          {selectedProjectIds.length > 0 && (
+                            <button
                               onClick={() => {
                                 setSelectedProjectIds([]);
-                                setProjectsOpen(false);
                               }}
+                              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted"
                             >
-                              <X className="h-3.5 w-3.5" />
-                              Clear all
-                            </Button>
-                          </div>
-                        </>
-                      )}
-                    </PopoverContent>
-                  </Popover>
-                )}
-
-                {/* Labels Popover */}
-                {workspaceLabels.length > 0 && (
-                  <Popover
-                    open={labelsOpen}
-                    onOpenChange={setLabelsOpen}
-                    modal={true}
-                  >
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className={cn(
-                          'h-10 w-10 rounded-lg transition-all',
-                          selectedLabelIds.length > 0
-                            ? 'border-dynamic-purple/50 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
-                            : 'border-border/50 hover:bg-muted'
-                        )}
-                      >
-                        <Tag className="h-4 w-4" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-64 p-0"
-                      align="end"
-                      sideOffset={5}
-                    >
-                      <div className="p-2">
-                        <ScrollArea className="h-64">
-                          <div className="space-y-1 pr-3">
-                            {workspaceLabels.map((label) => (
-                              <div
-                                key={label.id}
-                                className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted"
-                              >
-                                <Checkbox
-                                  id={`cb-label-${label.id}`}
-                                  checked={selectedLabelIds.includes(label.id)}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      setSelectedLabelIds([
-                                        ...selectedLabelIds,
-                                        label.id,
-                                      ]);
-                                    } else {
-                                      setSelectedLabelIds(
-                                        selectedLabelIds.filter(
-                                          (id) => id !== label.id
-                                        )
-                                      );
-                                    }
-                                  }}
-                                />
-                                <Label
-                                  htmlFor={`cb-label-${label.id}`}
-                                  className="flex flex-1 cursor-pointer items-center gap-2 font-normal text-xs"
-                                  style={{ color: label.color }}
+                              <X className="h-4 w-4" />
+                              <span>Clear all</span>
+                            </button>
+                          )}
+                        </div>
+                      ) : activeSettingsView === 'labels' ? (
+                        // Labels selection view
+                        <div className="space-y-0.5 p-2">
+                          <button
+                            onClick={() => setActiveSettingsView('main')}
+                            className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                          >
+                            <ArrowLeft className="h-4 w-4" />
+                            <span className="font-semibold">Select Labels</span>
+                          </button>
+                          <ScrollArea style={{ height: labelsScrollHeight }}>
+                            <div className="space-y-0.5">
+                              {workspaceLabels.map((label) => (
+                                <div
+                                  key={label.id}
+                                  className="flex items-center gap-2 rounded-md px-2 py-2 hover:bg-muted"
                                 >
-                                  <span
-                                    className="h-3 w-3 rounded-full"
-                                    style={{ backgroundColor: label.color }}
+                                  <Checkbox
+                                    id={`label-${label.id}`}
+                                    checked={selectedLabelIds.includes(
+                                      label.id
+                                    )}
+                                    onCheckedChange={(checked) => {
+                                      if (checked) {
+                                        setSelectedLabelIds([
+                                          ...selectedLabelIds,
+                                          label.id,
+                                        ]);
+                                      } else {
+                                        setSelectedLabelIds(
+                                          selectedLabelIds.filter(
+                                            (id) => id !== label.id
+                                          )
+                                        );
+                                      }
+                                    }}
                                   />
-                                  {label.name}
-                                </Label>
-                              </div>
-                            ))}
-                          </div>
-                        </ScrollArea>
-                      </div>
-                      {selectedLabelIds.length > 0 && (
-                        <>
-                          <div className="h-px bg-border" />
-                          <div className="p-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full justify-start gap-2 text-muted-foreground"
+                                  <Label
+                                    htmlFor={`label-${label.id}`}
+                                    className="flex flex-1 cursor-pointer items-center gap-2 text-sm"
+                                  >
+                                    <span
+                                      className="h-3 w-3 rounded-full"
+                                      style={{ backgroundColor: label.color }}
+                                    />
+                                    <span
+                                      className="line-clamp-1"
+                                      style={{ color: label.color }}
+                                    >
+                                      {label.name}
+                                    </span>
+                                  </Label>
+                                </div>
+                              ))}
+                            </div>
+                          </ScrollArea>
+                          {selectedLabelIds.length > 0 && (
+                            <button
                               onClick={() => {
                                 setSelectedLabelIds([]);
-                                setLabelsOpen(false);
                               }}
+                              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted"
                             >
-                              <X className="h-3.5 w-3.5" />
-                              Clear all
-                            </Button>
-                          </div>
-                        </>
-                      )}
-                    </PopoverContent>
-                  </Popover>
-                )}
-
-                {/* Assignees Popover */}
-                {workspaceMembers.length > 0 && (
-                  <Popover
-                    open={assigneesOpen}
-                    onOpenChange={setAssigneesOpen}
-                    modal={true}
-                  >
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className={cn(
-                          'h-10 w-10 rounded-lg transition-all',
-                          selectedAssigneeIds.length > 0
-                            ? 'border-dynamic-orange/50 bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/20'
-                            : 'border-border/50 hover:bg-muted'
-                        )}
-                      >
-                        <UserStar className="h-4 w-4" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-80 border p-3 shadow-lg"
-                      align="end"
-                      sideOffset={5}
-                    >
-                      <div className="space-y-3">
-                        {/* Selected Assignees */}
-                        {selectedAssigneeIds.length > 0 && (
-                          <div className="space-y-1.5">
-                            <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                              Assigned ({selectedAssigneeIds.length})
-                            </p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {workspaceMembers
-                                .filter((member) =>
-                                  selectedAssigneeIds.includes(member.id)
-                                )
-                                .map((member) => (
-                                  <Button
-                                    key={member.id}
-                                    type="button"
-                                    variant="default"
-                                    size="xs"
-                                    onClick={() => {
+                              <X className="h-4 w-4" />
+                              <span>Clear all</span>
+                            </button>
+                          )}
+                        </div>
+                      ) : activeSettingsView === 'assignees' ? (
+                        // Assignees selection view
+                        <div className="space-y-0.5 p-2">
+                          <button
+                            onClick={() => setActiveSettingsView('main')}
+                            className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                          >
+                            <ArrowLeft className="h-4 w-4" />
+                            <span className="font-semibold">Select Assignees</span>
+                          </button>
+                          <ScrollArea style={{ height: assigneesScrollHeight }}>
+                            <div className="space-y-0.5 px-2">
+                              {workspaceMembers.map((member) => (
+                                <button
+                                  key={member.id}
+                                  type="button"
+                                  onClick={() => {
+                                    if (
+                                      selectedAssigneeIds.includes(member.id)
+                                    ) {
                                       setSelectedAssigneeIds(
                                         selectedAssigneeIds.filter(
                                           (id) => id !== member.id
                                         )
                                       );
-                                    }}
-                                    className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
-                                  >
-                                    <Avatar className="h-4 w-4">
-                                      <AvatarImage src={member.avatar_url} />
-                                      <AvatarFallback className="bg-dynamic-orange/20 font-bold text-[9px]">
-                                        {member.display_name?.[0] ||
-                                          member.email?.[0] ||
-                                          '?'}
-                                      </AvatarFallback>
-                                    </Avatar>
+                                    } else {
+                                      setSelectedAssigneeIds([
+                                        ...selectedAssigneeIds,
+                                        member.id,
+                                      ]);
+                                    }
+                                  }}
+                                  className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-muted"
+                                >
+                                  <Avatar className="h-6 w-6 shrink-0">
+                                    <AvatarImage src={member.avatar_url} />
+                                    <AvatarFallback className="text-xs">
+                                      {member.display_name?.[0] ||
+                                        member.email?.[0] ||
+                                        '?'}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="flex-1 truncate text-sm">
                                     {member.display_name ||
                                       member.email ||
                                       'Unknown User'}
-                                    <X className="h-3 w-3 opacity-70" />
-                                  </Button>
-                                ))}
+                                  </span>
+                                  {selectedAssigneeIds.includes(member.id) && (
+                                    <Check className="h-4 w-4 shrink-0" />
+                                  )}
+                                </button>
+                              ))}
                             </div>
-                            {selectedAssigneeIds.length > 1 && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="xs"
-                                onClick={() => {
-                                  setSelectedAssigneeIds([]);
-                                }}
-                                className="mt-1 h-6 w-full text-dynamic-red text-xs hover:bg-dynamic-red/10 hover:text-dynamic-red"
-                              >
-                                <UserMinus className="mr-1 h-3 w-3" />
-                                Remove all
-                              </Button>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Available Members */}
-                        <div className="space-y-1.5">
-                          {(() => {
-                            const availableMembers = workspaceMembers.filter(
-                              (member) =>
-                                !selectedAssigneeIds.includes(member.id)
-                            );
-
-                            if (availableMembers.length === 0) {
-                              return selectedAssigneeIds.length > 0 ? (
-                                <div className="rounded-lg bg-muted/30 py-3 text-center">
-                                  <p className="text-muted-foreground text-xs">
-                                    All members assigned
-                                  </p>
-                                </div>
-                              ) : (
-                                <div className="rounded-lg bg-muted/30 py-3 text-center">
-                                  <p className="text-muted-foreground text-xs">
-                                    No members available
-                                  </p>
-                                </div>
-                              );
-                            }
-
-                            return (
-                              <>
-                                <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                                  Available ({availableMembers.length})
-                                </p>
-                                <div
-                                  className="flex flex-col gap-1 overflow-y-auto"
-                                  style={{
-                                    maxHeight: `${assigneesScrollHeight}px`,
-                                  }}
-                                >
-                                  {availableMembers.map((member) => (
-                                    <button
-                                      key={member.id}
-                                      type="button"
-                                      onClick={() => {
-                                        setSelectedAssigneeIds([
-                                          ...selectedAssigneeIds,
-                                          member.id,
-                                        ]);
-                                      }}
-                                      className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
-                                    >
-                                      <Avatar className="h-7 w-7 shrink-0">
-                                        <AvatarImage src={member.avatar_url} />
-                                        <AvatarFallback className="bg-muted font-semibold text-muted-foreground text-xs group-hover:bg-dynamic-orange/20 group-hover:text-dynamic-orange">
-                                          {member.display_name?.[0] ||
-                                            member.email?.[0] ||
-                                            '?'}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <span className="flex-1 truncate text-sm">
-                                        {member.display_name ||
-                                          member.email ||
-                                          'Unknown User'}
-                                      </span>
-                                      <UserPlus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                                    </button>
-                                  ))}
-                                </div>
-                              </>
-                            );
-                          })()}
+                          </ScrollArea>
+                          {selectedAssigneeIds.length > 0 && (
+                            <button
+                              onClick={() => {
+                                setSelectedAssigneeIds([]);
+                              }}
+                              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted"
+                            >
+                              <X className="h-4 w-4" />
+                              <span>Clear all</span>
+                            </button>
+                          )}
                         </div>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                )}
-              </>
+                      ) : null}
+                    </div>
+                  )}
+                </PopoverContent>
+              </Popover>
             )}
 
-            {/* Create Button */}
+            {/* AI Toggle Button (like Claude's extended thinking) */}
+            <Button
+              variant={aiEnabled ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setAiEnabled(!aiEnabled)}
+              disabled={isLoading}
+              className={cn(
+                'h-8 gap-1.5 rounded-lg border px-2.5 transition-all md:h-9 md:gap-2 md:px-3',
+                aiEnabled
+                  ? 'border-dynamic-blue/20 bg-dynamic-blue/5 text-dynamic-blue shadow-lg hover:bg-dynamic-blue/10 hover:shadow-xl'
+                  : 'border-border'
+              )}
+            >
+              <Sparkles
+                className={cn(
+                  'h-3.5 w-3.5 md:h-4 md:w-4',
+                  aiEnabled ? 'animate-pulse' : ''
+                )}
+              />
+              <span className="text-xs md:text-sm">AI</span>
+            </Button>
+
+            {/* Destination Display - Shows selected board/list */}
+            {mode === 'task' && hasDestination && selectedDestination && (
+              <div className="group/destination relative hidden items-center rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 transition-all hover:bg-dynamic-blue/10 md:inline-flex">
+                <span className="text-dynamic-blue px-2.5 py-1.5 text-xs md:px-3 md:py-2 md:text-sm">
+                  {selectedDestination.boardName} / {selectedDestination.listName}
+                </span>
+                <button
+                  onClick={onClearDestination}
+                  className="h-full w-0 overflow-hidden pr-0 opacity-0 transition-all group-hover/destination:w-6 group-hover/destination:pr-2.5 group-hover/destination:opacity-100 md:group-hover/destination:w-7 md:group-hover/destination:pr-3"
+                  title="Clear destination"
+                  type="button"
+                >
+                  <X className="h-3 w-3 text-dynamic-blue hover:text-dynamic-blue/80 md:h-3.5 md:w-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Right Side: Mode Selector + Create Button */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Mode Selector Dropdown (like Claude's model selector) */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={isLoading}
+                  className="h-8 gap-1 rounded-lg px-2 transition-colors hover:bg-muted sm:gap-1.5 sm:px-2.5 md:h-9 md:px-3"
+                >
+                  {mode === 'task' ? (
+                    <ListTodo className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                  ) : (
+                    <StickyNote className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                  )}
+                  <span className="text-xs capitalize md:text-sm">{mode}</span>
+                  <ChevronDown className="h-3 w-3 opacity-50 md:h-3.5 md:w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem
+                  onClick={() => setMode('task')}
+                  className="flex items-center justify-between gap-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <ListTodo className="h-4 w-4" />
+                    <span>Task</span>
+                  </div>
+                  {mode === 'task' && <Check className="h-4 w-4" />}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setMode('note')}
+                  className="flex items-center justify-between gap-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <StickyNote className="h-4 w-4" />
+                    <span>Note</span>
+                  </div>
+                  {mode === 'note' && <Check className="h-4 w-4" />}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Create/Generate Button */}
             <Button
               onClick={handleAction}
               disabled={!canExecute || isLoading}
-              size="lg"
-              className="h-10 gap-2 rounded-lg bg-gradient-to-r from-primary to-primary/90 px-6 font-semibold shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98]"
+              size="sm"
+              className="h-8 shrink-0 gap-1.5 rounded-lg bg-gradient-to-r from-primary to-primary/90 px-3 text-xs font-semibold shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] disabled:opacity-50 sm:gap-2 sm:px-4 md:h-9 md:text-sm"
             >
               {isLoading ? (
                 <>
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  <span className="text-sm">Creating...</span>
+                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent md:h-4 md:w-4" />
+                  <span className="hidden sm:inline">Creating...</span>
                 </>
               ) : aiEnabled ? (
                 <>
-                  <Sparkles className="h-4 w-4" />
-                  <span className="text-sm">Generate</span>
+                  <Sparkles className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                  <span>Generate</span>
                 </>
               ) : (
                 <>
-                  <Plus className="h-4 w-4" />
-                  <span className="text-sm">Create</span>
+                  <Plus className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                  <span>Create</span>
                 </>
               )}
             </Button>
           </div>
         </div>
       </div>
-
-      {/* Helper Text / AI Info */}
-      {aiEnabled && mode === 'task' && (
-        <div className="relative overflow-hidden rounded-2xl border border-primary/40 shadow-lg">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-dynamic-purple/8 to-primary/12" />
-          <div className="relative flex items-start gap-4 p-5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/30 shadow-inner">
-              <Sparkles className="h-5 w-5 text-primary" />
-            </div>
-            <div className="space-y-1.5">
-              <p className="font-semibold text-base">
-                AI-Powered Task Generation
-              </p>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                AI will analyze your input and intelligently create tasks with
-                descriptions, priorities, and labels based on context and
-                patterns.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
