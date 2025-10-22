@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ValidationError } from './errors';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { NotFoundError, ValidationError } from './errors';
 import { TuturuuuClient } from './storage';
 import type {
   DeleteDocumentResponse,
@@ -11,21 +11,33 @@ import type {
 
 // Mock fetch globally
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+
+// Helper to create mock response with proper headers
+const createMockResponse = (data: unknown, status = 200) => ({
+  ok: status >= 200 && status < 300,
+  status,
+  headers: new Headers({ 'content-type': 'application/json' }),
+  json: async () => data,
+});
 
 describe('DocumentsClient', () => {
   let client: TuturuuuClient;
 
   beforeEach(() => {
+    vi.stubGlobal('fetch', mockFetch);
     mockFetch.mockClear();
     client = new TuturuuuClient('ttr_test_key');
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   const mockDocument: Document = {
     id: 'doc-123',
     name: 'Test Document',
     content: 'Test content',
-    is_public: false,
+    isPublic: false,
     created_at: '2024-01-01T00:00:00Z',
   };
 
@@ -36,10 +48,7 @@ describe('DocumentsClient', () => {
         pagination: { limit: 50, offset: 0, total: 1 },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const result = await client.documents.list();
 
@@ -56,10 +65,7 @@ describe('DocumentsClient', () => {
         pagination: { limit: 50, offset: 0, total: 1 },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       await client.documents.list({ search: 'test' });
 
@@ -75,10 +81,7 @@ describe('DocumentsClient', () => {
         pagination: { limit: 20, offset: 10, total: 0 },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       await client.documents.list({ limit: 20, offset: 10 });
 
@@ -98,10 +101,7 @@ describe('DocumentsClient', () => {
         pagination: { limit: 50, offset: 0, total: 1 },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       await client.documents.list({ isPublic: true });
 
@@ -117,10 +117,7 @@ describe('DocumentsClient', () => {
         pagination: { limit: 10, offset: 5, total: 0 },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       await client.documents.list({
         search: 'meeting',
@@ -148,12 +145,18 @@ describe('DocumentsClient', () => {
     });
 
     it('should reject invalid limit', async () => {
-      await expect(client.documents.list({ limit: 0 })).rejects.toThrow();
-      await expect(client.documents.list({ limit: 101 })).rejects.toThrow();
+      await expect(client.documents.list({ limit: 0 })).rejects.toThrow(
+        ValidationError
+      );
+      await expect(client.documents.list({ limit: 101 })).rejects.toThrow(
+        ValidationError
+      );
     });
 
     it('should reject invalid offset', async () => {
-      await expect(client.documents.list({ offset: -1 })).rejects.toThrow();
+      await expect(client.documents.list({ offset: -1 })).rejects.toThrow(
+        ValidationError
+      );
     });
   });
 
@@ -164,10 +167,7 @@ describe('DocumentsClient', () => {
         data: mockDocument,
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const result = await client.documents.create({
         name: 'Test Document',
@@ -188,10 +188,7 @@ describe('DocumentsClient', () => {
         data: mockDocument,
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const result = await client.documents.create({
         name: 'Test Document',
@@ -203,14 +200,16 @@ describe('DocumentsClient', () => {
     });
 
     it('should reject empty name', async () => {
-      await expect(client.documents.create({ name: '' })).rejects.toThrow();
+      await expect(client.documents.create({ name: '' })).rejects.toThrow(
+        ValidationError
+      );
     });
 
     it('should reject name longer than 255 characters', async () => {
       const longName = 'a'.repeat(256);
       await expect(
         client.documents.create({ name: longName })
-      ).rejects.toThrow();
+      ).rejects.toThrow(ValidationError);
     });
   });
 
@@ -220,10 +219,7 @@ describe('DocumentsClient', () => {
         data: mockDocument,
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const result = await client.documents.get('doc-123');
 
@@ -237,6 +233,30 @@ describe('DocumentsClient', () => {
     it('should throw ValidationError for empty ID', async () => {
       await expect(client.documents.get('')).rejects.toThrow(ValidationError);
     });
+
+    it('should throw NotFoundError when server returns 404', async () => {
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse(
+          {
+            error: 'Not Found',
+            message: 'Document not found',
+            code: 'DOCUMENT_NOT_FOUND',
+          },
+          404
+        )
+      );
+
+      await expect(client.documents.get('doc-123')).rejects.toThrow(
+        NotFoundError
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/documents/doc-123'),
+        expect.objectContaining({
+          method: 'GET',
+        })
+      );
+    });
   });
 
   describe('update', () => {
@@ -246,10 +266,7 @@ describe('DocumentsClient', () => {
         data: { ...mockDocument, name: 'Updated Name' },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const result = await client.documents.update('doc-123', {
         name: 'Updated Name',
@@ -270,10 +287,7 @@ describe('DocumentsClient', () => {
         data: { ...mockDocument, content: 'New content' },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       await client.documents.update('doc-123', {
         content: 'New content',
@@ -285,13 +299,10 @@ describe('DocumentsClient', () => {
     it('should update document visibility', async () => {
       const mockResponse: DocumentResponse = {
         message: 'Document updated',
-        data: { ...mockDocument, is_public: true },
+        data: { ...mockDocument, isPublic: true },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       await client.documents.update('doc-123', {
         isPublic: true,
@@ -307,14 +318,11 @@ describe('DocumentsClient', () => {
           ...mockDocument,
           name: 'New Name',
           content: 'New content',
-          is_public: true,
+          isPublic: true,
         },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       await client.documents.update('doc-123', {
         name: 'New Name',
@@ -334,14 +342,14 @@ describe('DocumentsClient', () => {
     it('should reject empty name', async () => {
       await expect(
         client.documents.update('doc-123', { name: '' })
-      ).rejects.toThrow();
+      ).rejects.toThrow(ValidationError);
     });
 
     it('should reject name longer than 255 characters', async () => {
       const longName = 'a'.repeat(256);
       await expect(
         client.documents.update('doc-123', { name: longName })
-      ).rejects.toThrow();
+      ).rejects.toThrow(ValidationError);
     });
   });
 
@@ -351,10 +359,7 @@ describe('DocumentsClient', () => {
         message: 'Document deleted',
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const result = await client.documents.delete('doc-123');
 
@@ -381,10 +386,7 @@ describe('DocumentsClient', () => {
         pagination: { limit: 50, offset: 0, total: 1 },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const result = await client.documents.search('test query');
 
@@ -401,10 +403,7 @@ describe('DocumentsClient', () => {
         pagination: { limit: 10, offset: 0, total: 1 },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       await client.documents.search('test', {
         limit: 10,
@@ -431,10 +430,7 @@ describe('DocumentsClient', () => {
         pagination: { limit: 50, offset: 0, total: 0 },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const result = await client.documents.search('');
 

@@ -8,7 +8,7 @@ export interface WorkspaceApiKey {
   key_prefix?: string | null;
   description?: string | null;
   role_id?: string | null;
-  scopes?: string[];
+  scopes?: string[] | null;
   expires_at?: string | null;
   last_used_at?: string | null;
   created_at?: string;

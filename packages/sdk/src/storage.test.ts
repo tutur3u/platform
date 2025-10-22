@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   AuthenticationError,
   NetworkError,
@@ -17,11 +17,24 @@ import type {
 
 // Mock fetch globally
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+
+// Helper to create mock response with proper headers
+const createMockResponse = (data: unknown, status = 200) => ({
+  ok: status >= 200 && status < 300,
+  status,
+  headers: new Headers({ 'content-type': 'application/json' }),
+  json: async () => data,
+  blob: async () => (data instanceof Blob ? data : new Blob()),
+});
 
 describe('TuturuuuClient', () => {
   beforeEach(() => {
+    vi.stubGlobal('fetch', mockFetch);
     mockFetch.mockClear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   describe('constructor', () => {
@@ -81,10 +94,7 @@ describe('TuturuuuClient', () => {
   describe('request', () => {
     it('should make successful GET request', async () => {
       const mockResponse = { data: 'test' };
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const client = new TuturuuuClient('ttr_test_key');
       const result = await client.request('/test');
@@ -94,9 +104,9 @@ describe('TuturuuuClient', () => {
         'https://tuturuuu.com/api/v1/test',
         expect.objectContaining({
           method: 'GET',
-          headers: {
+          headers: expect.objectContaining({
             Authorization: 'Bearer ttr_test_key',
-          },
+          }),
         })
       );
     });
@@ -105,10 +115,7 @@ describe('TuturuuuClient', () => {
       const mockResponse = { data: 'test' };
       const body = JSON.stringify({ key: 'value' });
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const client = new TuturuuuClient('ttr_test_key');
       await client.request('/test', { method: 'POST', body });
@@ -117,10 +124,10 @@ describe('TuturuuuClient', () => {
         'https://tuturuuu.com/api/v1/test',
         expect.objectContaining({
           method: 'POST',
-          headers: {
+          headers: expect.objectContaining({
             Authorization: 'Bearer ttr_test_key',
             'Content-Type': 'application/json',
-          },
+          }),
           body,
         })
       );
@@ -130,10 +137,7 @@ describe('TuturuuuClient', () => {
       const mockResponse = { data: 'test' };
       const formData = new FormData();
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const client = new TuturuuuClient('ttr_test_key');
       await client.request('/test', {
@@ -145,23 +149,25 @@ describe('TuturuuuClient', () => {
       expect(mockFetch).toHaveBeenCalledWith(
         'https://tuturuuu.com/api/v1/test',
         expect.objectContaining({
-          headers: {
+          method: 'POST',
+          headers: expect.objectContaining({
             Authorization: 'Bearer ttr_test_key',
-          },
+          }),
           body: formData,
         })
       );
     });
 
     it('should throw error for API error response', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-        json: async () => ({
-          error: 'Unauthorized',
-          message: 'Invalid API key',
-        }),
-      });
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse(
+          {
+            error: 'Unauthorized',
+            message: 'Invalid API key',
+          },
+          401
+        )
+      );
 
       const client = new TuturuuuClient('ttr_test_key');
       await expect(client.request('/test')).rejects.toThrow(
@@ -174,6 +180,7 @@ describe('TuturuuuClient', () => {
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
+        headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => ({}),
       });
 
@@ -214,8 +221,13 @@ describe('StorageClient', () => {
   let client: TuturuuuClient;
 
   beforeEach(() => {
+    vi.stubGlobal('fetch', mockFetch);
     mockFetch.mockClear();
     client = new TuturuuuClient('ttr_test_key');
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   describe('list', () => {
@@ -231,10 +243,7 @@ describe('StorageClient', () => {
         pagination: { limit: 50, offset: 0, total: 1 },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const result = await client.storage.list();
 
@@ -251,10 +260,7 @@ describe('StorageClient', () => {
         pagination: { limit: 10, offset: 5, total: 0 },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       await client.storage.list({
         path: 'documents',
@@ -307,10 +313,7 @@ describe('StorageClient', () => {
         data: { path: 'test.txt', fullPath: 'workspace/test.txt' },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const file = new File(['content'], 'test.txt');
       const result = await client.storage.upload(file, { path: 'documents' });
@@ -330,10 +333,7 @@ describe('StorageClient', () => {
         data: { path: 'file', fullPath: 'workspace/file' },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const blob = new Blob(['content']);
       const result = await client.storage.upload(blob);
@@ -347,10 +347,7 @@ describe('StorageClient', () => {
         data: { path: 'test.txt', fullPath: 'workspace/test.txt' },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const file = new File(['content'], 'test.txt');
       await client.storage.upload(file, { upsert: true });
@@ -383,14 +380,15 @@ describe('StorageClient', () => {
     });
 
     it('should throw error for API error response', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        json: async () => ({
-          error: 'Not Found',
-          message: 'File not found',
-        }),
-      });
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse(
+          {
+            error: 'Not Found',
+            message: 'File not found',
+          },
+          404
+        )
+      );
 
       await expect(client.storage.download('missing.txt')).rejects.toThrow(
         NotFoundError
@@ -405,10 +403,7 @@ describe('StorageClient', () => {
         data: { deleted: 2, paths: ['file1.txt', 'file2.txt'] },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const result = await client.storage.delete(['file1.txt', 'file2.txt']);
 
@@ -446,10 +441,7 @@ describe('StorageClient', () => {
         data: { path: 'reports', fullPath: 'documents/reports' },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const result = await client.storage.createFolder('documents', 'reports');
 
@@ -480,10 +472,7 @@ describe('StorageClient', () => {
         },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const result = await client.storage.share('file.txt');
 
@@ -500,10 +489,7 @@ describe('StorageClient', () => {
         },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       await client.storage.share('file.txt', { expiresIn: 7200 });
 
@@ -546,10 +532,7 @@ describe('StorageClient', () => {
         },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const result = await client.storage.getAnalytics();
 
@@ -572,10 +555,7 @@ describe('StorageClient', () => {
         },
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
 
       const result = await client.storage.getAnalytics();
 

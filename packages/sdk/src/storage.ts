@@ -25,6 +25,7 @@
  * ```
  */
 
+import type { ZodSchema } from 'zod';
 import packageJson from '../package.json';
 import {
   createErrorFromResponse,
@@ -58,6 +59,34 @@ import {
   updateDocumentDataSchema,
   uploadOptionsSchema,
 } from './types';
+
+/**
+ * Helper function to validate data with Zod schema and convert errors to ValidationError
+ */
+function validateWithSchema<T>(schema: ZodSchema<T>, data: unknown): T {
+  try {
+    return schema.parse(data);
+  } catch (error) {
+    // Check if it's a Zod error by presence of errors array
+    if (
+      error &&
+      typeof error === 'object' &&
+      'issues' in error &&
+      Array.isArray((error as any).issues)
+    ) {
+      const zodError = error as any;
+      const message = zodError.issues
+        .map((e: any) => {
+          const path =
+            e.path && e.path.length > 0 ? `${e.path.join('.')}: ` : '';
+          return `${path}${e.message}`;
+        })
+        .join(', ');
+      throw new ValidationError(message);
+    }
+    throw error;
+  }
+}
 
 /**
  * Configuration options for the Tuturuuu client
@@ -94,7 +123,10 @@ export class StorageClient {
    */
   async list(options: ListStorageOptions = {}): Promise<ListStorageResponse> {
     // Validate options
-    const validatedOptions = listStorageOptionsSchema.parse(options);
+    const validatedOptions = validateWithSchema(
+      listStorageOptionsSchema,
+      options
+    );
 
     const params = new URLSearchParams();
     if (validatedOptions.path) params.set('path', validatedOptions.path);
@@ -138,7 +170,7 @@ export class StorageClient {
     options: UploadOptions = {}
   ): Promise<UploadResponse> {
     // Validate options
-    const validatedOptions = uploadOptionsSchema.parse(options);
+    const validatedOptions = validateWithSchema(uploadOptionsSchema, options);
 
     const formData = new FormData();
 
@@ -307,7 +339,7 @@ export class StorageClient {
     }
 
     // Validate options
-    const validatedOptions = shareOptionsSchema.parse(options);
+    const validatedOptions = validateWithSchema(shareOptionsSchema, options);
 
     return this.client.request<ShareResponse>('/storage/share', {
       method: 'POST',
@@ -360,7 +392,10 @@ export class DocumentsClient {
     options: ListDocumentsOptions = {}
   ): Promise<ListDocumentsResponse> {
     // Validate options
-    const validatedOptions = listDocumentsOptionsSchema.parse(options);
+    const validatedOptions = validateWithSchema(
+      listDocumentsOptionsSchema,
+      options
+    );
 
     const params = new URLSearchParams();
     if (validatedOptions.search) params.set('search', validatedOptions.search);
@@ -393,7 +428,7 @@ export class DocumentsClient {
    */
   async create(data: CreateDocumentData): Promise<DocumentResponse> {
     // Validate data
-    const validatedData = createDocumentDataSchema.parse(data);
+    const validatedData = validateWithSchema(createDocumentDataSchema, data);
 
     return this.client.request<DocumentResponse>('/documents', {
       method: 'POST',
@@ -444,7 +479,7 @@ export class DocumentsClient {
     }
 
     // Validate data
-    const validatedData = updateDocumentDataSchema.parse(data);
+    const validatedData = validateWithSchema(updateDocumentDataSchema, data);
 
     return this.client.request<DocumentResponse>(`/documents/${id}`, {
       method: 'PATCH',
