@@ -1936,7 +1936,13 @@
     "leave_workspace_warning": "Once you leave this workspace, you will need to be re-invited by an admin to rejoin.",
     "danger_zone": "Danger Zone",
     "leave_workspace_description": "Remove yourself from this workspace. You will lose access to all data and need to be re-invited to rejoin.",
-    "delete_workspace_warning": "Once you delete a workspace, there is no going back. Please be certain."
+    "delete_workspace_warning": "Once you delete a workspace, there is no going back. Please be certain.",
+    "task_settings": "Task Settings",
+    "task_settings_description": "Manage task-related settings for your workspace.",
+    "auto_assign_task_creator": "Auto-assign tasks to creator",
+    "auto_assign_task_creator_description": "Automatically assign new tasks to the person who creates them.",
+    "task_settings_updated": "Task settings updated successfully",
+    "task_settings_update_failed": "Failed to update task settings"
   },
   "ws-secrets": {
     "secrets": "Secrets",

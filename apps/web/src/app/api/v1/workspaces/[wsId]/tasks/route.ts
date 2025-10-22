@@ -1,5 +1,6 @@
 import { generateTaskEmbedding } from '@/lib/embeddings/generate-task-embedding';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
 // Type interfaces for better type safety
@@ -291,6 +292,27 @@ export async function POST(
       .single();
 
     if (error) throw error;
+
+    // Check if auto-assign is enabled for this workspace
+    const autoAssignConfig = await getWorkspaceConfig(
+      wsId,
+      'auto_assign_task_creator'
+    );
+    const shouldAutoAssign = autoAssignConfig?.toLowerCase() === 'true';
+
+    // Auto-assign the task to the creator if enabled
+    if (shouldAutoAssign) {
+      const { error: assignError } = await supabase
+        .from('task_assignees')
+        .insert({
+          task_id: data.id,
+          user_id: user.id,
+        });
+
+      if (assignError) {
+        console.error('Error auto-assigning task to creator:', assignError);
+      }
+    }
 
     // Generate embedding (non-blocking)
     generateTaskEmbedding({

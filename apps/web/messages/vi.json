@@ -2021,7 +2021,13 @@
     "leave_workspace_warning": "Một khi bạn rời khỏi không gian làm việc này, bạn sẽ cần phải được quản trị viên mời lại.",
     "danger_zone": "Vùng nguy hiểm",
     "leave_workspace_description": "Loại bỏ bản thân khỏi không gian làm việc này. \nBạn sẽ mất quyền truy cập vào tất cả dữ liệu và cần được mời lại để gia nhập lại.",
-    "delete_workspace_warning": "Khi bạn xóa một không gian làm việc, sẽ không thể hoàn tác. Xin hãy cẩn thận."
+    "delete_workspace_warning": "Khi bạn xóa một không gian làm việc, sẽ không thể hoàn tác. Xin hãy cẩn thận.",
+    "task_settings": "Thiết lập công việc",
+    "task_settings_description": "Quản lý các thiết lập liên quan đến công việc cho không gian làm việc của bạn.",
+    "auto_assign_task_creator": "Tự động gán công việc cho người tạo",
+    "auto_assign_task_creator_description": "Tự động gán các công việc mới cho người tạo ra chúng.",
+    "task_settings_updated": "Cập nhật thiết lập công việc thành công",
+    "task_settings_update_failed": "Không thể cập nhật thiết lập công việc"
   },
   "ws-secrets": {
     "secrets": "Mã bí mật",

@@ -489,3 +489,32 @@ export async function isPersonalWorkspace(
 
   return data?.personal === true;
 }
+
+/**
+ * Get a workspace configuration value
+ * @param wsId - The workspace ID
+ * @param configId - The configuration ID
+ * @returns The configuration value or null if not found
+ */
+export async function getWorkspaceConfig(
+  wsId: string,
+  configId: string
+): Promise<string | null> {
+  const supabase = await createClient();
+
+  const resolvedWorkspaceId = resolveWorkspaceId(wsId);
+
+  const { data, error } = await supabase
+    .from('workspace_configs')
+    .select('value')
+    .eq('ws_id', resolvedWorkspaceId)
+    .eq('id', configId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching workspace config:', error);
+    return null;
+  }
+
+  return data?.value || null;
+}
