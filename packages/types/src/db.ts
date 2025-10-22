@@ -22,6 +22,24 @@ export type WorkspaceTaskList = Tables<'task_lists'> & {
   tasks?: Partial<WorkspaceTask>[];
 };
 export type WorkspaceTask = Tables<'tasks'>;
+export type TaskProject = Tables<'task_projects'>;
+
+/**
+ * Task project with nested relations as returned from database queries
+ * Used in project detail pages with full context
+ */
+export type TaskProjectWithRelations = TaskProject & {
+  creator?: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null;
+  lead?: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null;
+};
 
 /**
  * Task with nested relations as returned from database queries

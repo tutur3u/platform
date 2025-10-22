@@ -69,13 +69,18 @@ export default async function TaskProjectPage({ params }: Props) {
           notFound();
         }
 
-        // Fetch task project details
+        // Fetch task project details with extended metadata
         const { data: project, error: projectError } = await supabase
           .from('task_projects')
           .select(
             `
             *,
             creator:users!task_projects_creator_id_fkey(
+              id,
+              display_name,
+              avatar_url
+            ),
+            lead:users!task_projects_lead_id_fkey(
               id,
               display_name,
               avatar_url
