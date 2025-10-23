@@ -10,7 +10,7 @@ import {
   validateQueryParams,
   withApiAuth,
 } from '@/lib/api-middleware';
-import { createDynamicClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -41,7 +41,8 @@ export const GET = withApiAuth(
       paramsResult.data;
 
     try {
-      const supabase = await createDynamicClient();
+      // Use admin client to bypass RLS policies when using API key authentication
+      const supabase = await createAdminClient();
 
       // List files from Supabase Storage
       // Normalize path to prevent double slashes
@@ -83,6 +84,7 @@ export const GET = withApiAuth(
       try {
         // Build count query with same filters
         let countQuery = supabase
+          .schema('storage')
           .from('objects')
           .select('*', { count: 'exact', head: true })
           .eq('bucket_id', 'workspaces');

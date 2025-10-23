@@ -31,7 +31,7 @@ import {
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { storageObjectsColumns } from './columns';
 import { FilePreviewDialog } from './file-preview-dialog';
 import { StorageObjectRowActions } from './row-actions';
@@ -53,10 +53,19 @@ export default function StorageObjectsTable({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [storageObj, setStorageObject] = useState<StorageObject | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [deleteTarget, setDeleteTarget] = useState<StorageObject | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Fade-in animation on mount and path change
+  useEffect(() => {
+    setIsVisible(false);
+    const timer = setTimeout(() => setIsVisible(true), 50);
+    return () => clearTimeout(timer);
+  }, [path]);
 
   // Wrapper function to handle type mismatch
   const handleSetStorageObject = (value: StorageObject | undefined) => {
@@ -76,17 +85,18 @@ export default function StorageObjectsTable({
       const basePath = searchParams.get('path') ?? '';
       const newPath =
         row.name === '...' ? popPath(basePath) : joinPath(basePath, row.name);
-      // Debug
-      // eslint-disable-next-line no-console
-      console.log('Navigating to:', newPath);
-      // Navigate to the new path
-      const url = new URL(pathname, window.location.origin);
-      if (!newPath || newPath === '/' || newPath === '') {
-        url.searchParams.delete('path');
-      } else {
-        url.searchParams.set('path', newPath);
-      }
-      window.location.href = url.toString();
+
+      // Navigate using startTransition for smooth UI updates
+      startTransition(() => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (!newPath || newPath === '/' || newPath === '') {
+          params.delete('path');
+        } else {
+          params.set('path', newPath);
+        }
+        const queryString = params.toString();
+        router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false });
+      });
     }
   };
 
@@ -102,17 +112,18 @@ export default function StorageObjectsTable({
     if (item.name) {
       const basePath = searchParams.get('path') ?? '';
       const newPath = joinPath(basePath, item.name);
-      // Debug
-      // eslint-disable-next-line no-console
-      console.log('Navigating to:', newPath);
-      // Navigate to the new path
-      const url = new URL(pathname, window.location.origin);
-      if (!newPath || newPath === '/' || newPath === '') {
-        url.searchParams.delete('path');
-      } else {
-        url.searchParams.set('path', newPath);
-      }
-      window.location.href = url.toString();
+
+      // Navigate using startTransition for smooth UI updates
+      startTransition(() => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (!newPath || newPath === '/' || newPath === '') {
+          params.delete('path');
+        } else {
+          params.set('path', newPath);
+        }
+        const queryString = params.toString();
+        router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false });
+      });
     }
   };
 
@@ -191,7 +202,17 @@ export default function StorageObjectsTable({
   };
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+      {/* Loading overlay */}
+      {isPending && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/50 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-dynamic-blue border-t-transparent" />
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      )}
+
       {/* View Mode Toggle */}
       <div className="flex items-center justify-between">
         <div className="text-muted-foreground text-sm">
@@ -253,12 +274,16 @@ export default function StorageObjectsTable({
                   key={row.key}
                   className="cursor-pointer hover:bg-muted/40"
                   onClick={() => {
-                    const searchParams = new URLSearchParams(
-                      window.location.search
-                    );
                     const basePath = searchParams.get('path') ?? '';
                     const nextPath = popPath(basePath);
-                    window.location.href = `/${wsId}/drive?path=${encodeURIComponent(nextPath)}`;
+                    const params = new URLSearchParams(searchParams.toString());
+                    if (!nextPath || nextPath === '/' || nextPath === '') {
+                      params.delete('path');
+                    } else {
+                      params.set('path', nextPath);
+                    }
+                    const queryString = params.toString();
+                    router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false });
                   }}
                 >
                   {/* biome-ignore lint/suspicious/noExplicitAny: <there can be any children> */}
@@ -274,12 +299,16 @@ export default function StorageObjectsTable({
                     <tr
                       className="cursor-pointer hover:bg-muted/40"
                       onClick={() => {
-                        const searchParams = new URLSearchParams(
-                          window.location.search
-                        );
                         const basePath = searchParams.get('path') ?? '';
                         const nextPath = joinPath(basePath, rowData.name || '');
-                        window.location.href = `/${wsId}/drive?path=${encodeURIComponent(nextPath)}`;
+                        const params = new URLSearchParams(searchParams.toString());
+                        if (!nextPath || nextPath === '/' || nextPath === '') {
+                          params.delete('path');
+                        } else {
+                          params.set('path', nextPath);
+                        }
+                        const queryString = params.toString();
+                        router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false });
                       }}
                     >
                       {/* biome-ignore lint/suspicious/noExplicitAny: <there can be any children> */}
@@ -346,16 +375,14 @@ export default function StorageObjectsTable({
               onClick={() => {
                 const basePath = searchParams.get('path') ?? '';
                 const newPath = popPath(basePath);
-                // Debug
-                // eslint-disable-next-line no-console
-                console.log('Back button navigating to:', newPath);
-                const url = new URL(pathname, window.location.origin);
+                const params = new URLSearchParams(searchParams.toString());
                 if (!newPath || newPath === '/' || newPath === '') {
-                  url.searchParams.delete('path');
+                  params.delete('path');
                 } else {
-                  url.searchParams.set('path', newPath);
+                  params.set('path', newPath);
                 }
-                window.location.href = url.toString();
+                const queryString = params.toString();
+                router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false });
               }}
             >
               <div className="mb-3 flex aspect-square items-center justify-center rounded-lg bg-muted/50">

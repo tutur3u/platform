@@ -6,7 +6,7 @@
  */
 
 import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { posix } from 'node:path';
@@ -152,7 +152,7 @@ export const POST = withApiAuth(
         );
       }
 
-      const supabase = await createClient();
+      const supabase = await createAdminClient();
 
       // Construct the full storage path using safe joining
       const storagePath = sanitizedPath

@@ -1,7 +1,6 @@
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { formatBytes } from '@/utils/file-helper';
 import { joinPath } from '@/utils/path-helper';
-import { Folder } from '@tuturuuu/icons';
 import {
   createClient,
   createDynamicClient,
@@ -10,34 +9,14 @@ import {
   EMPTY_FOLDER_PLACEHOLDER_NAME,
   type StorageObject,
 } from '@tuturuuu/types/primitives/StorageObject';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@tuturuuu/ui/breadcrumb';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
 import { Separator } from '@tuturuuu/ui/separator';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@tuturuuu/ui/tooltip';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import DriveBreadcrumbs from './breadcrumbs';
 import NewActions from './new-actions';
 import StorageObjectsTable from './table';
 
@@ -91,124 +70,10 @@ export default async function WorkspaceStorageObjectsPage({
         );
         const storageLimitDisplay = isRootWorkspace ? '100 GB' : '50 MB';
 
-        // Build breadcrumb navigation
-        const pathSegments = path ? path.split('/').filter(Boolean) : [];
-        const breadcrumbItems = [
-          {
-            label: t('ws-storage-objects.name'),
-            href: `/${wsId}/drive`,
-            isRoot: true,
-          },
-          ...pathSegments.map((segment, index) => {
-            const currentPath = pathSegments.slice(0, index + 1).join('/');
-            return {
-              label: decodeURIComponent(segment),
-              href: `/${wsId}/drive?path=${currentPath}`,
-              isRoot: false,
-            };
-          }),
-        ];
-
-        // Ellipsis logic: show first, last, and up to 2 in the middle; collapse the rest
-        let visibleItems = breadcrumbItems;
-        let collapsedItems: typeof breadcrumbItems = [];
-        if (breadcrumbItems.length > 5) {
-          visibleItems = [];
-          if (breadcrumbItems[0]) visibleItems.push(breadcrumbItems[0]);
-          if (breadcrumbItems[1]) visibleItems.push(breadcrumbItems[1]);
-          visibleItems.push(...breadcrumbItems.slice(-3));
-          collapsedItems = breadcrumbItems.slice(2, -3);
-        }
-
         return (
           <>
             {/* Breadcrumb Navigation */}
-            <Breadcrumb>
-              <BreadcrumbList className="flex items-center gap-1 overflow-x-auto whitespace-nowrap rounded-lg border border-dynamic-border bg-muted/40 px-1 py-2">
-                {visibleItems.map((item, index) => (
-                  <div key={item.href} className="flex items-center">
-                    <BreadcrumbItem>
-                      {item.isRoot ? (
-                        <BreadcrumbLink asChild>
-                          <Link
-                            href={item.href}
-                            className="flex items-center gap-1 rounded px-2 py-1 font-semibold text-dynamic-blue transition-colors hover:text-dynamic-blue/80 focus:outline-none focus:ring-2 focus:ring-dynamic-blue/30"
-                          >
-                            <Folder className="mr-1 h-4 w-4 text-dynamic-blue/70" />
-                            {item.label}
-                          </Link>
-                        </BreadcrumbLink>
-                      ) : index === visibleItems.length - 1 ? (
-                        <BreadcrumbPage className="flex items-center gap-1 rounded px-2 py-1 font-semibold text-dynamic-blue">
-                          <Folder className="mr-1 h-4 w-4 text-dynamic-blue/70" />
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="inline-block max-w-[120px] truncate align-middle">
-                                  {item.label}
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>{item.label}</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </BreadcrumbPage>
-                      ) : (
-                        <BreadcrumbLink asChild>
-                          <Link
-                            href={item.href}
-                            className="flex items-center gap-1 rounded px-2 py-1 transition-colors hover:text-dynamic-blue focus:outline-none focus:ring-2 focus:ring-dynamic-blue/30"
-                          >
-                            <Folder className="mr-1 h-4 w-4 text-dynamic-blue/70" />
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="inline-block max-w-[120px] truncate align-middle">
-                                    {item.label}
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>{item.label}</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </Link>
-                        </BreadcrumbLink>
-                      )}
-                    </BreadcrumbItem>
-                    {/* Ellipsis for collapsed items */}
-                    {index === 1 && collapsedItems.length > 0 && (
-                      <>
-                        <BreadcrumbSeparator />
-                        <BreadcrumbItem>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button
-                                type="button"
-                                className="rounded px-2 py-1 text-muted-foreground hover:bg-muted/60 focus:outline-none focus:ring-2 focus:ring-dynamic-blue/30"
-                              >
-                                …
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start">
-                              {collapsedItems.map((collapsed) => (
-                                <DropdownMenuItem key={collapsed.href} asChild>
-                                  <Link
-                                    href={collapsed.href}
-                                    className="flex items-center gap-1"
-                                  >
-                                    <Folder className="mr-1 h-4 w-4 text-dynamic-blue/70" />
-                                    <span>{collapsed.label}</span>
-                                  </Link>
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </BreadcrumbItem>
-                      </>
-                    )}
-                    {index < visibleItems.length - 1 && <BreadcrumbSeparator />}
-                  </div>
-                ))}
-              </BreadcrumbList>
-            </Breadcrumb>
+            <DriveBreadcrumbs wsId={wsId} path={path} />
 
             <FeatureSummary
               pluralTitle={t('ws-storage-objects.plural')}
@@ -366,8 +231,8 @@ async function getData(
       search: `%${q ?? ''}%`,
     });
 
-  console.error('Error fetching storage objects:', error);
   if (error) {
+    console.error('Error fetching storage objects:', error);
     throw error;
   }
 

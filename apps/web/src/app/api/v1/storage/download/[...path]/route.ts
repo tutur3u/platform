@@ -6,7 +6,7 @@
  */
 
 import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 export const GET = withApiAuth(
@@ -24,7 +24,7 @@ export const GET = withApiAuth(
     }
 
     try {
-      const supabase = await createClient();
+      const supabase = await createAdminClient();
 
       // Construct the full storage path
       const filePath = path.join('/');

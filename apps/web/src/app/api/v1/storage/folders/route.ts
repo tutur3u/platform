@@ -10,7 +10,7 @@ import {
   validateRequestBody,
   withApiAuth,
 } from '@/lib/api-middleware';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { sanitizeFolderName, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { posix } from 'node:path';
@@ -66,7 +66,7 @@ export const POST = withApiAuth(
         );
       }
 
-      const supabase = await createClient();
+      const supabase = await createAdminClient();
 
       // Construct the full folder path using posix.join to prevent traversal
       const folderPath = sanitizedPath

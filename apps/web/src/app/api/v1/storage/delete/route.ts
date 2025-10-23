@@ -10,7 +10,7 @@ import {
   validateRequestBody,
   withApiAuth,
 } from '@/lib/api-middleware';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { posix } from 'node:path';
 import { z } from 'zod';
@@ -66,7 +66,7 @@ export const DELETE = withApiAuth(
     const { paths } = bodyResult.data;
 
     try {
-      const supabase = await createClient();
+      const supabase = await createAdminClient();
 
       // Sanitize and validate all paths
       const sanitizedPaths: string[] = [];
