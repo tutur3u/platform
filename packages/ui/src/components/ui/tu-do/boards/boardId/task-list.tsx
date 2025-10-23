@@ -52,6 +52,7 @@ interface BoardColumnProps {
   isMultiSelectMode?: boolean;
   isPersonalWorkspace?: boolean;
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
+  onClearSelection?: () => void;
   onAddTask?: (list: TaskList) => void;
   dragPreviewPosition?: {
     listId: string;
@@ -73,6 +74,7 @@ function BoardColumnInner({
   onUpdate,
   selectedTasks,
   onTaskSelect,
+  onClearSelection,
   isMultiSelectMode,
   isPersonalWorkspace,
   onAddTask,
@@ -212,6 +214,7 @@ function BoardColumnInner({
         selectedTasks={selectedTasks}
         isPersonalWorkspace={isPersonalWorkspace}
         onTaskSelect={onTaskSelect}
+        onClearSelection={onClearSelection}
         dragPreviewPosition={dragPreviewPosition}
         taskHeightsRef={taskHeightsRef}
         optimisticUpdateInProgress={optimisticUpdateInProgress}
@@ -258,6 +261,7 @@ interface VirtualizedTaskListProps {
   selectedTasks?: Set<string>;
   isPersonalWorkspace?: boolean;
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
+  onClearSelection?: () => void;
   dragPreviewPosition?: {
     listId: string;
     overTaskId: string | null;
@@ -278,6 +282,7 @@ function VirtualizedTaskListInner({
   selectedTasks,
   isPersonalWorkspace,
   onTaskSelect,
+  onClearSelection,
   dragPreviewPosition,
   taskHeightsRef: externalTaskHeightsRef,
   optimisticUpdateInProgress,
@@ -533,8 +538,10 @@ function VirtualizedTaskListInner({
                     isMultiSelectMode={isMultiSelectMode}
                     isPersonalWorkspace={isPersonalWorkspace}
                     onSelect={onTaskSelect}
+                    onClearSelection={onClearSelection}
                     onHeight={(h) => updateSize(task.id, h)}
                     optimisticUpdateInProgress={optimisticUpdateInProgress}
+                    selectedTasks={selectedTasks}
                   />
 
                   {/* Preview at end of list - when dropping on column surface */}
@@ -600,8 +607,10 @@ function VirtualizedTaskListInner({
                 isMultiSelectMode={isMultiSelectMode}
                 isPersonalWorkspace={isPersonalWorkspace}
                 onSelect={onTaskSelect}
+                onClearSelection={onClearSelection}
                 onHeight={(h) => updateSize(task.id, h)}
                 optimisticUpdateInProgress={optimisticUpdateInProgress}
+                selectedTasks={selectedTasks}
               />
 
               {/* Preview at end of list - when dropping on column surface */}
