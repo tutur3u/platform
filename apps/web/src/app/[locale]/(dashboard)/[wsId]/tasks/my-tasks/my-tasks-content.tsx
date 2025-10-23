@@ -59,6 +59,7 @@ import { TaskNewLabelDialog } from '@tuturuuu/ui/tu-do/boards/boardId/task-dialo
 import { TaskNewProjectDialog } from '@tuturuuu/ui/tu-do/boards/boardId/task-dialogs/TaskNewProjectDialog';
 import { TaskBoardForm } from '@tuturuuu/ui/tu-do/boards/form';
 import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
+import { CreateListDialog } from '@tuturuuu/ui/tu-do/shared/create-list-dialog';
 import { TaskEstimationDisplay } from '@tuturuuu/ui/tu-do/shared/task-estimation-display';
 import { cn } from '@tuturuuu/utils/format';
 import { useBoardConfig } from '@tuturuuu/utils/task-helper';
@@ -246,6 +247,8 @@ export default function MyTasksContent({
   const [selectedListId, setSelectedListId] = useState<string>('');
   const [newBoardDialogOpen, setNewBoardDialogOpen] = useState(false);
   const [newBoardName, setNewBoardName] = useState<string>('');
+  const [newListDialogOpen, setNewListDialogOpen] = useState(false);
+  const [newListName, setNewListName] = useState<string>('');
   const [commandBarLoading, setCommandBarLoading] = useState(false);
 
   // Task creation state
@@ -2134,35 +2137,27 @@ export default function MyTasksContent({
                 <ListTodo className="h-4 w-4 text-muted-foreground" />
                 List
               </Label>
-              <Select
-                value={selectedListId}
-                onValueChange={setSelectedListId}
-                disabled={!selectedBoardId || availableLists.length === 0}
-              >
-                <SelectTrigger id="list-select">
-                  <SelectValue
-                    placeholder={
-                      !selectedBoardId
-                        ? 'Select a board first'
-                        : availableLists.length === 0
-                          ? 'No lists available'
-                          : 'Select a list'
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableLists.map((list: any) => (
-                    <SelectItem key={list.id} value={list.id}>
-                      {list.name || 'Unnamed List'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedBoardId && availableLists.length === 0 && (
-                <p className="text-muted-foreground text-xs">
-                  This board has no available lists. Create a list first.
-                </p>
-              )}
+              <Combobox
+                t={t}
+                mode="single"
+                options={availableLists.map((list: any) => ({
+                  value: list.id,
+                  label: list.name || 'Unnamed List',
+                }))}
+                placeholder={
+                  !selectedBoardId
+                    ? 'Select a board first'
+                    : 'Select or create a list'
+                }
+                selected={selectedListId}
+                onChange={(value) => setSelectedListId(value as string)}
+                onCreate={(name) => {
+                  setNewListName(name);
+                  setNewListDialogOpen(true);
+                }}
+                disabled={!selectedBoardId}
+                className="w-full"
+              />
             </div>
           </div>
 
@@ -2214,6 +2209,21 @@ export default function MyTasksContent({
           />
         </DialogContent>
       </Dialog>
+
+      {/* List Creation Dialog */}
+      {selectedBoardId && (
+        <CreateListDialog
+          open={newListDialogOpen}
+          onOpenChange={setNewListDialogOpen}
+          boardId={selectedBoardId}
+          wsId={selectedWorkspaceId}
+          initialName={newListName}
+          onSuccess={(listId) => {
+            setSelectedListId(listId);
+            setNewListName('');
+          }}
+        />
+      )}
 
       {/* AI Preview Dialog */}
       <Dialog
