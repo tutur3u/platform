@@ -2014,6 +2014,7 @@ export function KanbanBoard({
                           selectedTasks={selectedTasks}
                           isMultiSelectMode={isMultiSelectMode}
                           onTaskSelect={handleTaskSelect}
+                          onClearSelection={clearSelection}
                           dragPreviewPosition={
                             dragPreviewPosition?.listId === String(list.id)
                               ? dragPreviewPosition
