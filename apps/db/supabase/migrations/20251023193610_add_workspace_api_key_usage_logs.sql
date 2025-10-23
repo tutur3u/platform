@@ -81,7 +81,7 @@ CREATE POLICY "Allow system to insert usage logs"
   ON "public"."workspace_api_key_usage_logs"
   FOR INSERT
   TO authenticated
-  WITH CHECK (true);
+  WITH CHECK (false);
 
 -- Create function to clean up old logs (>90 days)
 CREATE OR REPLACE FUNCTION cleanup_old_api_key_usage_logs()
