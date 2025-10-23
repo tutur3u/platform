@@ -8,6 +8,7 @@
 import {
   hasAllPermissions,
   hasAnyPermission,
+  logApiKeyUsage,
   validateApiKey,
   type WorkspaceContext,
 } from '@tuturuuu/auth/api-keys';
@@ -166,6 +167,18 @@ export function withApiAuth<T = unknown>(
     request: NextRequest,
     routeContext?: { params?: Promise<T> | T }
   ) => {
+    const startTime = Date.now();
+    const url = new URL(request.url);
+    const endpoint = url.pathname;
+    const method = request.method;
+
+    // Extract IP and User-Agent
+    const ipAddress =
+      request.headers.get('x-forwarded-for') ||
+      request.headers.get('x-real-ip') ||
+      null;
+    const userAgent = request.headers.get('user-agent') || null;
+
     // Authenticate the request
     const authResult = await authenticateRequest(request);
 
@@ -187,24 +200,115 @@ export function withApiAuth<T = unknown>(
 
         if ('authorized' in permissionCheck) {
           // Permissions are valid, call the handler
-          return handler(request, {
-            params,
-            context,
-          });
+          try {
+            const response = await handler(request, {
+              params,
+              context,
+            });
+
+            // Log successful request
+            const responseTimeMs = Date.now() - startTime;
+            void logApiKeyUsage({
+              apiKeyId: context.keyId,
+              wsId: context.wsId,
+              endpoint,
+              method,
+              statusCode: response.status,
+              ipAddress,
+              userAgent,
+              responseTimeMs,
+              requestParams: Object.fromEntries(url.searchParams),
+            });
+
+            return response;
+          } catch (error) {
+            // Log failed request
+            const responseTimeMs = Date.now() - startTime;
+            const errorMessage =
+              error instanceof Error ? error.message : 'Unknown error';
+
+            void logApiKeyUsage({
+              apiKeyId: context.keyId,
+              wsId: context.wsId,
+              endpoint,
+              method,
+              statusCode: 500,
+              ipAddress,
+              userAgent,
+              responseTimeMs,
+              requestParams: Object.fromEntries(url.searchParams),
+              errorMessage,
+            });
+
+            throw error;
+          }
         }
+
+        // Log permission error
+        const responseTimeMs = Date.now() - startTime;
+        void logApiKeyUsage({
+          apiKeyId: context.keyId,
+          wsId: context.wsId,
+          endpoint,
+          method,
+          statusCode: 403,
+          ipAddress,
+          userAgent,
+          responseTimeMs,
+          requestParams: Object.fromEntries(url.searchParams),
+          errorMessage: 'Insufficient permissions',
+        });
 
         // Return permission error
         return permissionCheck;
       }
 
       // No permissions required, call the handler
-      return handler(request, {
-        params,
-        context,
-      });
+      try {
+        const response = await handler(request, {
+          params,
+          context,
+        });
+
+        // Log successful request
+        const responseTimeMs = Date.now() - startTime;
+        void logApiKeyUsage({
+          apiKeyId: context.keyId,
+          wsId: context.wsId,
+          endpoint,
+          method,
+          statusCode: response.status,
+          ipAddress,
+          userAgent,
+          responseTimeMs,
+          requestParams: Object.fromEntries(url.searchParams),
+        });
+
+        return response;
+      } catch (error) {
+        // Log failed request
+        const responseTimeMs = Date.now() - startTime;
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
+
+        void logApiKeyUsage({
+          apiKeyId: context.keyId,
+          wsId: context.wsId,
+          endpoint,
+          method,
+          statusCode: 500,
+          ipAddress,
+          userAgent,
+          responseTimeMs,
+          requestParams: Object.fromEntries(url.searchParams),
+          errorMessage,
+        });
+
+        throw error;
+      }
     }
 
-    // Return authentication error
+    // Return authentication error (no logging for invalid auth)
     return authResult;
   };
 }

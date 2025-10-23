@@ -8,11 +8,6 @@ export type Json =
   | number
   | string;
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '13.0.5';
-  };
   public: {
     CompositeTypes: {
       [_ in never]: never;
@@ -190,6 +185,10 @@ export type Database = {
         Returns: boolean;
       };
       cleanup_expired_cross_app_tokens: {
+        Args: never;
+        Returns: undefined;
+      };
+      cleanup_old_api_key_usage_logs: {
         Args: never;
         Returns: undefined;
       };
@@ -9195,6 +9194,73 @@ export type Database = {
           ws_id?: null | string;
         };
       };
+      workspace_api_key_usage_logs: {
+        Insert: {
+          api_key_id: string;
+          created_at?: string;
+          endpoint: string;
+          error_message?: null | string;
+          id?: string;
+          ip_address?: null | string;
+          method: string;
+          request_params?: Json | null;
+          response_time_ms?: null | number;
+          status_code: number;
+          user_agent?: null | string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['api_key_id'];
+            foreignKeyName: 'workspace_api_key_usage_logs_api_key_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_api_keys';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'workspace_api_key_usage_logs_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'workspace_api_key_usage_logs_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          api_key_id: string;
+          created_at: string;
+          endpoint: string;
+          error_message: null | string;
+          id: string;
+          ip_address: null | string;
+          method: string;
+          request_params: Json | null;
+          response_time_ms: null | number;
+          status_code: number;
+          user_agent: null | string;
+          ws_id: string;
+        };
+        Update: {
+          api_key_id?: string;
+          created_at?: string;
+          endpoint?: string;
+          error_message?: null | string;
+          id?: string;
+          ip_address?: null | string;
+          method?: string;
+          request_params?: Json | null;
+          response_time_ms?: null | number;
+          status_code?: number;
+          user_agent?: null | string;
+          ws_id?: string;
+        };
+      };
       workspace_api_keys: {
         Insert: {
           created_at?: string;
@@ -12657,7 +12723,36 @@ export type Database = {
           ts?: null | string;
           ws_id?: never;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            columns: ['auth_uid'];
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['auth_uid'];
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['auth_uid'];
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['auth_uid'];
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
+          },
+        ];
         Row: {
           auth_role: null | string;
           auth_uid: null | string;

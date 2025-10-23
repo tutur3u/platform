@@ -197,6 +197,56 @@ export async function validateApiKey(
 }
 
 /**
+ * Logs API key usage for detailed tracking and analytics
+ *
+ * @param params - Usage log parameters
+ * @returns Promise that resolves when the log is inserted (fire-and-forget)
+ *
+ * @remarks
+ * This function intentionally does not await or throw errors.
+ * Logging failures should not impact the API request flow.
+ */
+export async function logApiKeyUsage(params: {
+  apiKeyId: string;
+  wsId: string;
+  endpoint: string;
+  method: string;
+  statusCode: number;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  responseTimeMs?: number | null;
+  requestParams?: Record<string, unknown> | null;
+  errorMessage?: string | null;
+}): Promise<void> {
+  try {
+    const supabase = await createAdminClient();
+
+    // Insert the usage log - fire-and-forget with proper execution
+    // Call .then() to actually execute the query without blocking
+    supabase
+      .from('workspace_api_key_usage_logs')
+      .insert({
+        api_key_id: params.apiKeyId,
+        ws_id: params.wsId,
+        endpoint: params.endpoint,
+        method: params.method,
+        status_code: params.statusCode,
+        ip_address: params.ipAddress || null,
+        user_agent: params.userAgent || null,
+        response_time_ms: params.responseTimeMs || null,
+        request_params: (params.requestParams || null) as never,
+        error_message: params.errorMessage || null,
+      })
+      .then(
+        () => {}, // Success - do nothing
+        () => {} // Error - silently ignore
+      );
+  } catch {
+    // Silently fail - logging should never break the API request
+  }
+}
+
+/**
  * Checks if the workspace context has a specific permission
  *
  * @param context - The workspace context from validateApiKey

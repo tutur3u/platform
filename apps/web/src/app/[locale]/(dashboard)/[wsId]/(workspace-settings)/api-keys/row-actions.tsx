@@ -1,7 +1,13 @@
 'use client';
 
 import type { Row } from '@tanstack/react-table';
-import { Ellipsis, RefreshCcw, Trash2 } from '@tuturuuu/icons';
+import {
+  BarChart,
+  Ellipsis,
+  Pencil,
+  RefreshCcw,
+  Trash2,
+} from '@tuturuuu/icons';
 import type { WorkspaceApiKey } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -12,6 +18,8 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import DeleteDialog from './delete-dialog';
 import ApiKeyEditDialog from './edit-dialog';
@@ -23,6 +31,8 @@ interface ApiKeyRowActionsProps {
 
 export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
   const t = useTranslations();
+  const params = useParams();
+  const wsId = params?.wsId as string;
 
   const apiKey = row.original;
 
@@ -44,12 +54,20 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[160px]">
+        <DropdownMenuContent align="end" className="w-[180px]">
+          <DropdownMenuItem asChild>
+            <Link href={`/${wsId}/api-keys/${apiKey.id}/usage-logs`}>
+              <BarChart className="h-4 w-4" />
+              {t('ws-api-keys.view_usage_logs')}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+            <Pencil className="h-4 w-4" />
             {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setShowRotateDialog(true)}>
-            <RefreshCcw className="mr-2 h-4 w-4" />
+            <RefreshCcw className="h-4 w-4" />
             {t('ws-api-keys.rotate_key')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -57,7 +75,7 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
             onClick={() => setShowDeleteDialog(true)}
             className="text-dynamic-red focus:text-dynamic-red"
           >
-            <Trash2 className="mr-2 h-4 w-4" />
+            <Trash2 className="h-4 w-4" />
             {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
