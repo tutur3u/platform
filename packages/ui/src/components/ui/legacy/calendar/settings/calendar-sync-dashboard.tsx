@@ -158,7 +158,7 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
       <header className="sticky top-0 z-10 rounded-lg border-b bg-foreground/10 backdrop-blur-sm">
         <div className="flex h-16 items-center px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-dynamic-blue to-dynamic-blue/80">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-dynamic-blue to-dynamic-blue/80">
               <Calendar className="h-5 w-5 text-white" />
             </div>
             <div>

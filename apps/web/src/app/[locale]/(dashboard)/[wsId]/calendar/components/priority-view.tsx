@@ -229,7 +229,7 @@ export default function PriorityView({
 
               {tasks.length > 0 ? (
                 <div
-                  className={`overflow-hidden rounded-xl border bg-gradient-to-br ${colorClasses} shadow-sm transition-all duration-300 hover:shadow-md`}
+                  className={`overflow-hidden rounded-xl border bg-linear-to-br ${colorClasses} shadow-sm transition-all duration-300 hover:shadow-md`}
                 >
                   <div className="bg-background/80 p-4 backdrop-blur-sm">
                     <div className="mb-3 flex items-center justify-between">

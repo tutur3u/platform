@@ -44,7 +44,7 @@ export function CommandHeader({
                 <ArrowLeft className="h-4 w-4 text-dynamic-gray" />
               </button>
             ) : (
-              <div className="mr-3 rounded-lg bg-gradient-to-br from-dynamic-purple/10 to-dynamic-pink/10 p-2">
+              <div className="mr-3 rounded-lg bg-linear-to-br from-dynamic-purple/10 to-dynamic-pink/10 p-2">
                 <Sparkles className="h-4 w-4 text-dynamic-purple" />
               </div>
             )}

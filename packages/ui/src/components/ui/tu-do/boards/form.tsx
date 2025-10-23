@@ -415,7 +415,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
 
                       {/* Template Preview */}
                       {selectedTemplate && (
-                        <div className="rounded-xl border-2 border-primary/20 border-dashed bg-gradient-to-br from-primary/5 to-muted/30 p-4 sm:p-6">
+                        <div className="rounded-xl border-2 border-primary/20 border-dashed bg-linear-to-br from-primary/5 to-muted/30 p-4 sm:p-6">
                           <div className="mb-3 flex items-center gap-2 sm:mb-4">
                             <span className="text-base sm:text-lg">✨</span>
                             <h4 className="font-medium text-sm sm:text-base">

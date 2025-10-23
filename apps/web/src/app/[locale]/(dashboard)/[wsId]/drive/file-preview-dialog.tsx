@@ -249,10 +249,10 @@ export function FilePreviewDialog({
         <div className={previewAreaClass}>
           {/* Skeleton for image/pdf */}
           {fileType === 'image' && (
-            <div className="absolute inset-0 animate-pulse rounded-lg bg-gradient-to-br from-muted/40 to-muted/10" />
+            <div className="absolute inset-0 animate-pulse rounded-lg bg-linear-to-br from-muted/40 to-muted/10" />
           )}
           {fileType === 'pdf' && (
-            <div className="absolute inset-0 flex animate-pulse items-center justify-center rounded-lg bg-gradient-to-br from-muted/40 to-muted/10">
+            <div className="absolute inset-0 flex animate-pulse items-center justify-center rounded-lg bg-linear-to-br from-muted/40 to-muted/10">
               <FileText className="h-16 w-16 text-muted-foreground/30" />
             </div>
           )}

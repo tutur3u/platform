@@ -2732,18 +2732,6 @@ values
         'Pharmacy Office'
     );
 
--- Populate workspace_api_keys
-insert into
-    public.workspace_api_keys (
-        id,
-        ws_id,
-        value,
-        name,
-        scopes
-    )
-values
-    ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'api-key', 'API Key', '{"gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.0-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"}');
-
 -- Populate time_tracking_categories
 INSERT INTO public.time_tracking_categories (id, ws_id, name, color, created_at) VALUES
     ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'Development', 'BLUE', NOW()),

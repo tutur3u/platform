@@ -92,6 +92,7 @@ export type Database = {
         | 'delete_users'
         | 'export_finance_data'
         | 'export_users_data'
+        | 'manage_api_keys'
         | 'manage_calendar'
         | 'manage_documents'
         | 'manage_drive'
@@ -189,15 +190,19 @@ export type Database = {
         Returns: boolean;
       };
       cleanup_expired_cross_app_tokens: {
-        Args: Record<PropertyKey, never>;
+        Args: never;
+        Returns: undefined;
+      };
+      cleanup_old_api_key_usage_logs: {
+        Args: never;
         Returns: undefined;
       };
       cleanup_old_typing_indicators: {
-        Args: Record<PropertyKey, never>;
+        Args: never;
         Returns: undefined;
       };
       cleanup_role_inconsistencies: {
-        Args: Record<PropertyKey, never>;
+        Args: never;
         Returns: undefined;
       };
       compute_ai_cost_usd: {
@@ -258,23 +263,26 @@ export type Database = {
         };
         Returns: string;
       };
-      generate_cross_app_token: {
-        Args:
-          | {
+      generate_cross_app_token:
+        | {
+            Args: {
               p_expiry_seconds?: number;
               p_origin_app: string;
               p_session_data?: Json;
               p_target_app: string;
               p_user_id: string;
-            }
-          | {
+            };
+            Returns: string;
+          }
+        | {
+            Args: {
               p_expiry_seconds?: number;
               p_origin_app: string;
               p_target_app: string;
               p_user_id: string;
             };
-        Returns: string;
-      };
+            Returns: string;
+          };
       get_ai_execution_daily_stats_v2: {
         Args: {
           p_end_date?: string;
@@ -457,7 +465,7 @@ export type Database = {
         }[];
       };
       get_default_ai_pricing: {
-        Args: Record<PropertyKey, never>;
+        Args: never;
         Returns: Json;
       };
       get_device_types: {
@@ -700,7 +708,7 @@ export type Database = {
         }[];
       };
       get_session_statistics: {
-        Args: Record<PropertyKey, never>;
+        Args: never;
         Returns: {
           active_count: number;
           completed_count: number;
@@ -730,7 +738,7 @@ export type Database = {
         }[];
       };
       get_submission_statistics: {
-        Args: Record<PropertyKey, never>;
+        Args: never;
         Returns: {
           latest_submission_date: string;
           total_count: number;
@@ -1037,36 +1045,6 @@ export type Database = {
         };
         Returns: number;
       };
-      gtrgm_compress: {
-        Args: {
-          '': unknown;
-        };
-        Returns: unknown;
-      };
-      gtrgm_decompress: {
-        Args: {
-          '': unknown;
-        };
-        Returns: unknown;
-      };
-      gtrgm_in: {
-        Args: {
-          '': unknown;
-        };
-        Returns: unknown;
-      };
-      gtrgm_options: {
-        Args: {
-          '': unknown;
-        };
-        Returns: undefined;
-      };
-      gtrgm_out: {
-        Args: {
-          '': unknown;
-        };
-        Returns: unknown;
-      };
       has_other_owner: {
         Args: {
           _user_id: string;
@@ -1096,11 +1074,11 @@ export type Database = {
         Returns: boolean;
       };
       is_nova_challenge_manager: {
-        Args: Record<PropertyKey, never>;
+        Args: never;
         Returns: boolean;
       };
       is_nova_role_manager: {
-        Args: Record<PropertyKey, never>;
+        Args: never;
         Returns: boolean;
       };
       is_nova_user_email_in_team: {
@@ -1203,7 +1181,7 @@ export type Database = {
         }[];
       };
       normalize_task_sort_keys: {
-        Args: Record<PropertyKey, never>;
+        Args: never;
         Returns: undefined;
       };
       nova_get_all_challenges_with_user_stats: {
@@ -1244,7 +1222,7 @@ export type Database = {
         }[];
       };
       process_recurring_transactions: {
-        Args: Record<PropertyKey, never>;
+        Args: never;
         Returns: {
           processed_count: number;
           recurring_id: string;
@@ -1312,14 +1290,8 @@ export type Database = {
           relevance: number;
         }[];
       };
-      set_limit: {
-        Args: {
-          '': number;
-        };
-        Returns: number;
-      };
       show_limit: {
-        Args: Record<PropertyKey, never>;
+        Args: never;
         Returns: number;
       };
       show_trgm: {
@@ -1351,7 +1323,7 @@ export type Database = {
         Returns: boolean;
       };
       update_expired_sessions: {
-        Args: Record<PropertyKey, never>;
+        Args: never;
         Returns: undefined;
       };
       update_many_tasks: {
@@ -4498,7 +4470,7 @@ export type Database = {
           created_at?: string;
           device_type?: null | string;
           id?: string;
-          ip_address?: null | unknown;
+          ip_address?: unknown;
           latitude?: null | number;
           link_id: string;
           longitude?: null | number;
@@ -4550,7 +4522,7 @@ export type Database = {
           created_at: string;
           device_type: null | string;
           id: string;
-          ip_address: null | unknown;
+          ip_address: unknown;
           latitude: null | number;
           link_id: string;
           longitude: null | number;
@@ -4572,7 +4544,7 @@ export type Database = {
           created_at?: string;
           device_type?: null | string;
           id?: string;
-          ip_address?: null | unknown;
+          ip_address?: unknown;
           latitude?: null | number;
           link_id?: string;
           longitude?: null | number;
@@ -7617,7 +7589,7 @@ export type Database = {
           embedding?: null | string;
           end_date?: null | string;
           estimation_points?: null | number;
-          fts?: null | unknown;
+          fts?: unknown;
           id?: string;
           is_splittable?: boolean | null;
           list_id?: null | string;
@@ -7679,7 +7651,7 @@ export type Database = {
           embedding: null | string;
           end_date: null | string;
           estimation_points: null | number;
-          fts: null | unknown;
+          fts: unknown;
           id: string;
           is_splittable: boolean | null;
           list_id: null | string;
@@ -7704,7 +7676,7 @@ export type Database = {
           embedding?: null | string;
           end_date?: null | string;
           estimation_points?: null | number;
-          fts?: null | unknown;
+          fts?: unknown;
           id?: string;
           is_splittable?: boolean | null;
           list_id?: null | string;
@@ -9227,16 +9199,97 @@ export type Database = {
           ws_id?: null | string;
         };
       };
-      workspace_api_keys: {
+      workspace_api_key_usage_logs: {
         Insert: {
+          api_key_id: string;
           created_at?: string;
+          endpoint: string;
+          error_message?: null | string;
           id?: string;
-          name: string;
-          scopes?: Database['public']['Enums']['workspace_api_key_scope'][];
-          value: string;
+          ip_address?: null | string;
+          method: string;
+          request_params?: Json | null;
+          response_time_ms?: null | number;
+          status_code: number;
+          user_agent?: null | string;
           ws_id: string;
         };
         Relationships: [
+          {
+            columns: ['api_key_id'];
+            foreignKeyName: 'workspace_api_key_usage_logs_api_key_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_api_keys';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'workspace_api_key_usage_logs_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'workspace_api_key_usage_logs_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          api_key_id: string;
+          created_at: string;
+          endpoint: string;
+          error_message: null | string;
+          id: string;
+          ip_address: null | string;
+          method: string;
+          request_params: Json | null;
+          response_time_ms: null | number;
+          status_code: number;
+          user_agent: null | string;
+          ws_id: string;
+        };
+        Update: {
+          api_key_id?: string;
+          created_at?: string;
+          endpoint?: string;
+          error_message?: null | string;
+          id?: string;
+          ip_address?: null | string;
+          method?: string;
+          request_params?: Json | null;
+          response_time_ms?: null | number;
+          status_code?: number;
+          user_agent?: null | string;
+          ws_id?: string;
+        };
+      };
+      workspace_api_keys: {
+        Insert: {
+          created_at?: string;
+          created_by?: null | string;
+          description?: null | string;
+          expires_at?: null | string;
+          id?: string;
+          key_hash?: null | string;
+          key_prefix?: null | string;
+          last_used_at?: null | string;
+          name: string;
+          role_id?: null | string;
+          scopes?: Database['public']['Enums']['workspace_api_key_scope'][];
+          updated_at?: string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['role_id'];
+            foreignKeyName: 'workspace_api_keys_role_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_roles';
+          },
           {
             columns: ['ws_id'];
             foreignKeyName: 'workspace_api_keys_ws_id_fkey';
@@ -9254,18 +9307,32 @@ export type Database = {
         ];
         Row: {
           created_at: string;
+          created_by: null | string;
+          description: null | string;
+          expires_at: null | string;
           id: string;
+          key_hash: null | string;
+          key_prefix: null | string;
+          last_used_at: null | string;
           name: string;
+          role_id: null | string;
           scopes: Database['public']['Enums']['workspace_api_key_scope'][];
-          value: string;
+          updated_at: string;
           ws_id: string;
         };
         Update: {
           created_at?: string;
+          created_by?: null | string;
+          description?: null | string;
+          expires_at?: null | string;
           id?: string;
+          key_hash?: null | string;
+          key_prefix?: null | string;
+          last_used_at?: null | string;
           name?: string;
+          role_id?: null | string;
           scopes?: Database['public']['Enums']['workspace_api_key_scope'][];
-          value?: string;
+          updated_at?: string;
           ws_id?: string;
         };
       };
@@ -12657,7 +12724,7 @@ export type Database = {
           op?: 'DELETE' | 'INSERT' | 'TRUNCATE' | 'UPDATE' | null;
           record?: Json | null;
           record_id?: null | string;
-          table_name?: null | unknown;
+          table_name?: unknown;
           ts?: null | string;
           ws_id?: never;
         };
@@ -12671,7 +12738,7 @@ export type Database = {
           op: 'DELETE' | 'INSERT' | 'TRUNCATE' | 'UPDATE' | null;
           record: Json | null;
           record_id: null | string;
-          table_name: null | unknown;
+          table_name: unknown;
           ts: null | string;
           ws_id: null | string;
         };
@@ -12684,7 +12751,7 @@ export type Database = {
           op?: 'DELETE' | 'INSERT' | 'TRUNCATE' | 'UPDATE' | null;
           record?: Json | null;
           record_id?: null | string;
-          table_name?: null | unknown;
+          table_name?: unknown;
           ts?: null | string;
           ws_id?: never;
         };
@@ -13880,6 +13947,7 @@ export const Constants = {
         'delete_users',
         'export_finance_data',
         'export_users_data',
+        'manage_api_keys',
         'manage_calendar',
         'manage_documents',
         'manage_drive',

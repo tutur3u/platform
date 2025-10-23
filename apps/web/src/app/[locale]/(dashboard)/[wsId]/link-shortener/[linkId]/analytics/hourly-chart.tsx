@@ -137,7 +137,7 @@ export function HourlyChart({ clicksByHour }: HourlyChartProps) {
 
           return (
             <>
-              <div className="rounded-lg bg-gradient-to-br from-dynamic-blue/5 to-dynamic-blue/10 p-3 text-center">
+              <div className="rounded-lg bg-linear-to-br from-dynamic-blue/5 to-dynamic-blue/10 p-3 text-center">
                 <div className="font-bold text-dynamic-blue text-lg">
                   {peakClicks}
                 </div>
@@ -145,7 +145,7 @@ export function HourlyChart({ clicksByHour }: HourlyChartProps) {
                   {t('link-shortener.analytics.peak_hour')}
                 </div>
               </div>
-              <div className="rounded-lg bg-gradient-to-br from-dynamic-green/5 to-dynamic-green/10 p-3 text-center">
+              <div className="rounded-lg bg-linear-to-br from-dynamic-green/5 to-dynamic-green/10 p-3 text-center">
                 <div className="font-bold text-dynamic-green text-lg">
                   {avgClicks}
                 </div>
@@ -153,7 +153,7 @@ export function HourlyChart({ clicksByHour }: HourlyChartProps) {
                   {t('link-shortener.analytics.avg_per_hour')}
                 </div>
               </div>
-              <div className="rounded-lg bg-gradient-to-br from-dynamic-orange/5 to-dynamic-orange/10 p-3 text-center">
+              <div className="rounded-lg bg-linear-to-br from-dynamic-orange/5 to-dynamic-orange/10 p-3 text-center">
                 <div className="font-bold text-dynamic-orange text-lg">
                   {activeHours}
                 </div>
@@ -161,7 +161,7 @@ export function HourlyChart({ clicksByHour }: HourlyChartProps) {
                   {t('link-shortener.analytics.active_hours')}
                 </div>
               </div>
-              <div className="rounded-lg bg-gradient-to-br from-dynamic-purple/5 to-dynamic-purple/10 p-3 text-center">
+              <div className="rounded-lg bg-linear-to-br from-dynamic-purple/5 to-dynamic-purple/10 p-3 text-center">
                 <div className="font-bold text-dynamic-purple text-lg">
                   {totalClicks}
                 </div>

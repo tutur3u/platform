@@ -66,8 +66,8 @@ import { useBoardConfig } from '@tuturuuu/utils/task-helper';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import TaskListWithCompletion from '../../(dashboard)/tasks/task-list-with-completion';
 import { CommandBar, type CommandMode, type TaskOptions } from './command-bar';
@@ -1602,7 +1602,7 @@ export default function MyTasksContent({
           <div className="fade-in mt-6 animate-in space-y-6 duration-300">
             {/* Success message when tasks are created */}
             {commandBarLoading && (
-              <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10 p-4 shadow-sm">
+              <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-linear-to-br from-primary/5 to-primary/10 p-4 shadow-sm">
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                 <p className="font-medium text-sm">Creating your task...</p>
               </div>
@@ -1617,7 +1617,7 @@ export default function MyTasksContent({
                   onClick={() => toggleSection('overdue')}
                   className="w-full text-left transition-all hover:opacity-90"
                 >
-                  <div className="flex items-center justify-between rounded-2xl border border-dynamic-red/30 bg-gradient-to-br from-dynamic-red/10 via-dynamic-red/5 to-background p-6 shadow-lg">
+                  <div className="flex items-center justify-between rounded-2xl border border-dynamic-red/30 bg-linear-to-br from-dynamic-red/10 via-dynamic-red/5 to-background p-6 shadow-lg">
                     <div className="flex items-center gap-4">
                       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-red/20 shadow-inner">
                         <Clock className="h-6 w-6 text-dynamic-red" />
@@ -1749,7 +1749,7 @@ export default function MyTasksContent({
                   onClick={() => toggleSection('today')}
                   className="w-full text-left transition-all hover:opacity-90"
                 >
-                  <div className="flex items-center justify-between rounded-2xl border border-dynamic-orange/30 bg-gradient-to-br from-dynamic-orange/10 via-dynamic-orange/5 to-background p-6 shadow-lg">
+                  <div className="flex items-center justify-between rounded-2xl border border-dynamic-orange/30 bg-linear-to-br from-dynamic-orange/10 via-dynamic-orange/5 to-background p-6 shadow-lg">
                     <div className="flex items-center gap-4">
                       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-orange/20 shadow-inner">
                         <Calendar className="h-6 w-6 text-dynamic-orange" />
@@ -1881,7 +1881,7 @@ export default function MyTasksContent({
                   onClick={() => toggleSection('upcoming')}
                   className="w-full text-left transition-all hover:opacity-90"
                 >
-                  <div className="flex items-center justify-between rounded-2xl border border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/10 via-dynamic-blue/5 to-background p-6 shadow-lg">
+                  <div className="flex items-center justify-between rounded-2xl border border-dynamic-blue/30 bg-linear-to-br from-dynamic-blue/10 via-dynamic-blue/5 to-background p-6 shadow-lg">
                     <div className="flex items-center gap-4">
                       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-blue/20 shadow-inner">
                         <Flag className="h-6 w-6 text-dynamic-blue" />
@@ -2006,7 +2006,7 @@ export default function MyTasksContent({
 
             {/* All Caught Up State */}
             {totalActiveTasks === 0 && !commandBarLoading && (
-              <Card className="overflow-hidden border-dynamic-green/30 bg-gradient-to-br from-dynamic-green/5 to-background shadow-sm">
+              <Card className="overflow-hidden border-dynamic-green/30 bg-linear-to-br from-dynamic-green/5 to-background shadow-sm">
                 <CardContent className="flex flex-col items-center justify-center gap-6 p-12 text-center">
                   <div className="flex h-20 w-20 items-center justify-center rounded-full bg-dynamic-green/15">
                     <CheckCircle2 className="h-10 w-10 text-dynamic-green" />

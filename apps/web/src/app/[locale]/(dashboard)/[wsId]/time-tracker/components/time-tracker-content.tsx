@@ -619,7 +619,7 @@ export default function TimeTrackerContent({
             <CardHeader>
               {/* Header Section */}
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-indigo-600 shadow-lg">
                   <CheckCircle className="h-5 w-5 text-white" />
                 </div>
                 <div>
@@ -933,7 +933,7 @@ export default function TimeTrackerContent({
                                 'group cursor-grab rounded-lg border p-4 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow-md active:cursor-grabbing',
                                 // Enhanced styling for assigned tasks
                                 task.is_assigned_to_current_user
-                                  ? 'border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100 ring-1 ring-blue-200 dark:border-blue-700 dark:from-blue-950/30 dark:to-blue-900/30 dark:ring-blue-800'
+                                  ? 'border-blue-300 bg-linear-to-br from-blue-50 to-blue-100 ring-1 ring-blue-200 dark:border-blue-700 dark:from-blue-950/30 dark:to-blue-900/30 dark:ring-blue-800'
                                   : '/60 bg-white dark:border-gray-700/60 dark:bg-gray-800/80',
                                 isDraggingTask &&
                                   'shadow-blue-500/10 shadow-md ring-1 ring-blue-400/30'
@@ -958,8 +958,8 @@ export default function TimeTrackerContent({
                                   className={cn(
                                     'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border',
                                     task.is_assigned_to_current_user
-                                      ? 'border-blue-300 bg-gradient-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700'
-                                      : 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100 dark:border-blue-700/60 dark:from-blue-900/50 dark:to-blue-800/50'
+                                      ? 'border-blue-300 bg-linear-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700'
+                                      : 'border-blue-200/60 bg-linear-to-br from-blue-50 to-blue-100 dark:border-blue-700/60 dark:from-blue-900/50 dark:to-blue-800/50'
                                   )}
                                 >
                                   <CheckCircle
@@ -1005,7 +1005,7 @@ export default function TimeTrackerContent({
                                             .map((assignee) => (
                                               <div
                                                 key={assignee.id}
-                                                className="h-5 w-5 rounded-full border-2 border-white bg-gradient-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
+                                                className="h-5 w-5 rounded-full border-2 border-white bg-linear-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
                                                 title={
                                                   assignee.display_name ||
                                                   assignee.email

@@ -36,7 +36,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.15",
+    "@tailwindcss/postcss": "^4.1.16",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.9.1",
     "@types/react": "^19.2.2",

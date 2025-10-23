@@ -255,7 +255,7 @@ export default function CareersPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl sm:h-[40rem] sm:w-[40rem]"
+          className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl sm:h-[40rem] sm:w-[40rem]"
         />
         <motion.div
           animate={{
@@ -267,7 +267,7 @@ export default function CareersPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-right-32 sm:-right-64 absolute top-[40%] h-80 w-80 rounded-full bg-gradient-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl sm:h-[35rem] sm:w-[35rem]"
+          className="-right-32 sm:-right-64 absolute top-[40%] h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl sm:h-[35rem] sm:w-[35rem]"
         />
         <motion.div
           animate={{
@@ -279,7 +279,7 @@ export default function CareersPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-green/30 via-dynamic-emerald/20 to-transparent blur-3xl sm:h-[45rem] sm:w-[45rem]"
+          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-green/30 via-dynamic-emerald/20 to-transparent blur-3xl sm:h-[45rem] sm:w-[45rem]"
         />
       </div>
 
@@ -414,7 +414,7 @@ export default function CareersPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <Card className="overflow-hidden border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-8 md:p-12">
+            <Card className="overflow-hidden border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-8 md:p-12">
               <div className="grid gap-8 lg:grid-cols-2">
                 <div>
                   <h2 className="mb-4 font-bold text-3xl sm:text-4xl">
@@ -513,7 +513,7 @@ export default function CareersPage() {
                 <Card
                   className={cn(
                     'group h-full p-6 transition-all hover:shadow-lg',
-                    `border-dynamic-${value.color}/30 bg-gradient-to-br from-dynamic-${value.color}/5 via-background to-background hover:border-dynamic-${value.color}/50 hover:shadow-dynamic-${value.color}/10`
+                    `border-dynamic-${value.color}/30 bg-linear-to-br from-dynamic-${value.color}/5 via-background to-background hover:border-dynamic-${value.color}/50 hover:shadow-dynamic-${value.color}/10`
                   )}
                 >
                   <div
@@ -656,7 +656,7 @@ export default function CareersPage() {
                 <Card
                   className={cn(
                     'group h-full p-6 transition-all hover:shadow-lg',
-                    `border-dynamic-${product.color}/30 bg-gradient-to-br from-dynamic-${product.color}/5 via-background to-background hover:border-dynamic-${product.color}/50 hover:shadow-dynamic-${product.color}/10`
+                    `border-dynamic-${product.color}/30 bg-linear-to-br from-dynamic-${product.color}/5 via-background to-background hover:border-dynamic-${product.color}/50 hover:shadow-dynamic-${product.color}/10`
                   )}
                 >
                   <div
@@ -733,7 +733,7 @@ export default function CareersPage() {
                 <Card
                   className={cn(
                     'group h-full p-8 transition-all hover:shadow-lg',
-                    `border-dynamic-${role.color}/30 bg-gradient-to-br from-dynamic-${role.color}/5 via-background to-background hover:border-dynamic-${role.color}/50 hover:shadow-dynamic-${role.color}/10`
+                    `border-dynamic-${role.color}/30 bg-linear-to-br from-dynamic-${role.color}/5 via-background to-background hover:border-dynamic-${role.color}/50 hover:shadow-dynamic-${role.color}/10`
                   )}
                 >
                   <div className="mb-6 flex items-start gap-4">
@@ -789,7 +789,7 @@ export default function CareersPage() {
             viewport={{ once: true }}
             className="mt-12 text-center"
           >
-            <Card className="border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/5 via-background to-background p-8">
+            <Card className="border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/5 via-background to-background p-8">
               <MessageSquare className="mx-auto mb-4 h-12 w-12 text-dynamic-purple" />
               <h3 className="mb-3 font-bold text-2xl">Don't See Your Role?</h3>
               <p className="mx-auto mb-6 max-w-2xl text-foreground/70 leading-relaxed">
@@ -840,7 +840,7 @@ export default function CareersPage() {
                 <Card
                   className={cn(
                     'group h-full p-6 transition-all hover:shadow-lg',
-                    `border-dynamic-${item.color}/30 bg-gradient-to-br from-dynamic-${item.color}/5 via-background to-background hover:border-dynamic-${item.color}/50 hover:shadow-dynamic-${item.color}/10`
+                    `border-dynamic-${item.color}/30 bg-linear-to-br from-dynamic-${item.color}/5 via-background to-background hover:border-dynamic-${item.color}/50 hover:shadow-dynamic-${item.color}/10`
                   )}
                 >
                   <div
@@ -948,7 +948,7 @@ export default function CareersPage() {
                 <Card
                   className={cn(
                     'group h-full p-6 transition-all hover:shadow-lg',
-                    `border-dynamic-${stack.color}/30 bg-gradient-to-br from-dynamic-${stack.color}/5 via-background to-background hover:border-dynamic-${stack.color}/50 hover:shadow-dynamic-${stack.color}/10`
+                    `border-dynamic-${stack.color}/30 bg-linear-to-br from-dynamic-${stack.color}/5 via-background to-background hover:border-dynamic-${stack.color}/50 hover:shadow-dynamic-${stack.color}/10`
                   )}
                 >
                   <div
@@ -993,7 +993,7 @@ export default function CareersPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <Card className="relative overflow-hidden border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-12">
+            <Card className="relative overflow-hidden border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-12">
               {/* Decorative Elements */}
               <div className="absolute inset-0 overflow-hidden opacity-10">
                 <div className="absolute top-10 left-10 h-40 w-40 rounded-full bg-dynamic-purple blur-3xl" />

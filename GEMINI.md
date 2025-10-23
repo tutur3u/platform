@@ -68,6 +68,7 @@ The frontend is built with React, Next.js, and Tailwind CSS, with a component li
 -   **Testing:** Tests are written with Vitest. Run all tests with `bun test`.
 -   **Commits:** Commits should follow the Conventional Commits specification.
 -   **Environment Variables:** Global environment variables are defined in `turbo.json`. Each application can also have its own `.env.local` file for local development.
+-   **Internationalization:** The project supports multiple languages via `next-intl`. **CRITICAL**: Always provide translations for both English (`en.json`) AND Vietnamese (`vi.json`) when adding user-facing strings to `apps/web/messages/{locale}.json`. Never add translations only for English - Vietnamese translations are mandatory.
 
 ## Agent Operating Instructions
 
@@ -97,7 +98,7 @@ This section summarizes the key operating procedures for AI agents working in th
     3.  Ask the user to apply the migration (`bun sb:push`) and regenerate types (`bun sb:typegen`).
     4.  Incorporate the newly generated types from `packages/types` into your changes.
 -   **Adding API Routes:** Create new routes in `apps/<app>/src/app/api/...`. Use Supabase client wrappers for authentication and Zod for input validation.
--   **Navigation Updates (CRITICAL):** When adding new pages or routes, **ALWAYS** update the main navigation file (`apps/web/src/app/[locale]/(dashboard)/[wsId]/navigation.tsx` for web app). Add routes to both the `aliases` array and `children` navigation items. Include proper icons, permission checks, and translation keys. Navigation updates are mandatory, not optional.
+-   **Navigation Updates (CRITICAL):** When adding new pages or routes, **ALWAYS** update the main navigation file (`apps/web/src/app/[locale]/(dashboard)/[wsId]/navigation.tsx` for web app). Add routes to both the `aliases` array and `children` navigation items. Include proper icons, permission checks, and translation keys. **CRITICAL**: Ensure translation keys have entries in both `en.json` AND `vi.json`. Navigation updates are mandatory, not optional.
 -   **Documentation:** When adding a new feature or changing an existing one, update the corresponding documentation in `apps/docs`. **Crucially, add any new page to `apps/docs/mint.json` to make it visible.**
 -   **Styling:** Follow the **Tailwind Dynamic Color Policy**. Never use hard-coded color classes like `text-blue-500`. Instead, use the `dynamic-*` tokens, e.g., `text-dynamic-blue`.
 -   **UI Components:**

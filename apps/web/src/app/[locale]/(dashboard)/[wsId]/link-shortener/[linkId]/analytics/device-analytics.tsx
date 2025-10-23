@@ -24,8 +24,8 @@ export function DeviceAnalytics({
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       {/* Device Types */}
-      <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+      <Card className="relative overflow-hidden border-0 bg-linear-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
+        <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent" />
         <CardHeader className="relative">
           <CardTitle className="flex items-center gap-3">
             <div className="rounded-lg bg-dynamic-purple/10 p-2">
@@ -93,8 +93,8 @@ export function DeviceAnalytics({
       </Card>
 
       {/* Top Browsers */}
-      <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+      <Card className="relative overflow-hidden border-0 bg-linear-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
+        <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent" />
         <CardHeader className="relative">
           <CardTitle className="flex items-center gap-3">
             <div className="rounded-lg bg-dynamic-blue/10 p-2">
@@ -165,8 +165,8 @@ export function DeviceAnalytics({
       </Card>
 
       {/* Operating Systems */}
-      <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+      <Card className="relative overflow-hidden border-0 bg-linear-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
+        <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent" />
         <CardHeader className="relative">
           <CardTitle className="flex items-center gap-3">
             <div className="rounded-lg bg-dynamic-orange/10 p-2">

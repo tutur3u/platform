@@ -70,3 +70,16 @@ export async function createDynamicClient(): Promise<SupabaseClient<any>> {
     cookies: createCookieHandler(cookieStore),
   });
 }
+
+export async function createDynamicAdminClient(): Promise<SupabaseClient<any>> {
+  const { url, key } = checkEnvVariables({ useSecretKey: true });
+  return createServerClient(url, key, {
+    cookies: {
+      getAll() {
+        return [] as SupabaseCookie[];
+      },
+      // eslint-disable-next-line no-unused-vars
+      setAll(_: SupabaseCookie[]) {},
+    },
+  });
+}

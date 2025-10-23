@@ -93,7 +93,7 @@ export default async function SecuritySettingsCard({
         {/* Security Overview */}
         <div className="grid gap-4 sm:grid-cols-3">
           {/* Email Verification */}
-          <div className="rounded-lg border bg-gradient-to-br from-dynamic-blue/5 to-dynamic-cyan/5 p-4">
+          <div className="rounded-lg border bg-linear-to-br from-dynamic-blue/5 to-dynamic-cyan/5 p-4">
             <div className="flex items-center gap-3">
               <div className="rounded-full bg-dynamic-blue/10 p-2">
                 <Mail className="h-4 w-4 text-dynamic-blue" />
@@ -122,7 +122,7 @@ export default async function SecuritySettingsCard({
           </div>
 
           {/* Password Protection */}
-          <div className="rounded-lg border bg-gradient-to-br from-dynamic-indigo/5 to-dynamic-purple/5 p-4">
+          <div className="rounded-lg border bg-linear-to-br from-dynamic-indigo/5 to-dynamic-purple/5 p-4">
             <div className="flex items-center gap-3">
               <div className="rounded-full bg-dynamic-blue/10 p-2">
                 <Lock className="h-4 w-4 text-dynamic-blue" />
@@ -153,7 +153,7 @@ export default async function SecuritySettingsCard({
           </div>
 
           {/* Account Age */}
-          <div className="rounded-lg border bg-gradient-to-br from-dynamic-blue/5 to-dynamic-cyan/5 p-4">
+          <div className="rounded-lg border bg-linear-to-br from-dynamic-blue/5 to-dynamic-cyan/5 p-4">
             <div className="flex items-center gap-3">
               <div className="rounded-full bg-dynamic-blue/10 p-2">
                 <Calendar className="h-4 w-4 text-dynamic-blue" />

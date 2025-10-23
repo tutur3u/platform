@@ -18,8 +18,8 @@ export function AnalyticsCards({ analytics }: AnalyticsCardsProps) {
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-blue/5 via-dynamic-blue/10 to-dynamic-blue/5 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-dynamic-blue/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      <Card className="group relative overflow-hidden border-0 bg-linear-to-br from-dynamic-blue/5 via-dynamic-blue/10 to-dynamic-blue/5 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+        <div className="absolute inset-0 bg-linear-to-br from-dynamic-blue/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         <CardHeader className="relative pb-3">
           <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
             <div className="rounded-md bg-dynamic-blue/10 p-1.5 transition-colors group-hover:bg-dynamic-blue/20">
@@ -38,8 +38,8 @@ export function AnalyticsCards({ analytics }: AnalyticsCardsProps) {
         </CardContent>
       </Card>
 
-      <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-green/5 via-dynamic-green/10 to-dynamic-green/5 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-dynamic-green/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      <Card className="group relative overflow-hidden border-0 bg-linear-to-br from-dynamic-green/5 via-dynamic-green/10 to-dynamic-green/5 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+        <div className="absolute inset-0 bg-linear-to-br from-dynamic-green/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         <CardHeader className="relative pb-3">
           <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
             <div className="rounded-md bg-dynamic-green/10 p-1.5 transition-colors group-hover:bg-dynamic-green/20">
@@ -58,8 +58,8 @@ export function AnalyticsCards({ analytics }: AnalyticsCardsProps) {
         </CardContent>
       </Card>
 
-      <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-orange/5 via-dynamic-orange/10 to-dynamic-orange/5 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-dynamic-orange/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      <Card className="group relative overflow-hidden border-0 bg-linear-to-br from-dynamic-orange/5 via-dynamic-orange/10 to-dynamic-orange/5 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+        <div className="absolute inset-0 bg-linear-to-br from-dynamic-orange/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         <CardHeader className="relative pb-3">
           <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
             <div className="rounded-md bg-dynamic-orange/10 p-1.5 transition-colors group-hover:bg-dynamic-orange/20">
@@ -78,8 +78,8 @@ export function AnalyticsCards({ analytics }: AnalyticsCardsProps) {
         </CardContent>
       </Card>
 
-      <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-purple/5 via-dynamic-purple/10 to-dynamic-purple/5 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-dynamic-purple/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      <Card className="group relative overflow-hidden border-0 bg-linear-to-br from-dynamic-purple/5 via-dynamic-purple/10 to-dynamic-purple/5 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+        <div className="absolute inset-0 bg-linear-to-br from-dynamic-purple/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         <CardHeader className="relative pb-3">
           <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
             <div className="rounded-md bg-dynamic-purple/10 p-1.5 transition-colors group-hover:bg-dynamic-purple/20">

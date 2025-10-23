@@ -74,7 +74,7 @@ export default async function UpcomingCalendarEvents({
             {upcomingEvents.map((event) => (
               <div
                 key={event.id}
-                className="group rounded-xl border border-dynamic-cyan/10 bg-gradient-to-br from-dynamic-cyan/5 to-dynamic-blue/5 p-4 transition-all duration-300"
+                className="group rounded-xl border border-dynamic-cyan/10 bg-linear-to-br from-dynamic-cyan/5 to-dynamic-blue/5 p-4 transition-all duration-300"
               >
                 <div className="flex items-start gap-3">
                   <div className="flex-1 space-y-2">
@@ -107,7 +107,7 @@ export default async function UpcomingCalendarEvents({
           </div>
         ) : (
           <div className="py-8 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-dynamic-gray/20 bg-gradient-to-br from-dynamic-gray/10 to-dynamic-slate/10">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-dynamic-gray/20 bg-linear-to-br from-dynamic-gray/10 to-dynamic-slate/10">
               <Calendar className="h-8 w-8 text-dynamic-gray/60" />
             </div>
             <div className="space-y-2">
