@@ -127,6 +127,26 @@ export interface ShareResponse {
 }
 
 /**
+ * Signed URL data for a single file
+ */
+export interface SignedUrlData {
+  path: string;
+  signedUrl: string;
+  expiresAt?: string;
+  expiresIn?: number;
+  error?: string;
+}
+
+/**
+ * Response for batch share operation
+ */
+export interface BatchShareResponse {
+  message: string;
+  data: SignedUrlData[];
+  errors?: Array<{ path: string; error: string }>;
+}
+
+/**
  * Storage analytics data
  */
 export interface StorageAnalytics {

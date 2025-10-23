@@ -35,6 +35,7 @@ import {
 } from './errors';
 import type {
   AnalyticsResponse,
+  BatchShareResponse,
   CreateDocumentData,
   CreateFolderResponse,
   DeleteDocumentResponse,
@@ -107,7 +108,7 @@ function validateWithSchema<T>(schema: ZodSchema<T>, data: unknown): T {
  * Configuration options for the Tuturuuu client
  */
 export interface TuturuuuClientConfig {
-  apiKey: string;
+  apiKey?: string;
   baseUrl?: string;
   timeout?: number;
   fetch?: typeof fetch;
@@ -422,6 +423,50 @@ export class StorageClient {
   }
 
   /**
+   * Generates signed URLs for multiple files at once (batch operation)
+   *
+   * @param paths - Array of file paths (max 100)
+   * @param expiresIn - Expiration time in seconds (default 3600)
+   * @returns Array of signed URL data with path, signedUrl, and optional error
+   *
+   * @example
+   * ```typescript
+   * const result = await client.storage.createSignedUrls(
+   *   ['folder/avatar1.png', 'folder/avatar2.png'],
+   *   3600
+   * );
+   *
+   * // Access successful URLs
+   * result.data.forEach(item => {
+   *   if (!item.error) {
+   *     console.log(`${item.path}: ${item.signedUrl}`);
+   *   } else {
+   *     console.error(`${item.path} failed: ${item.error}`);
+   *   }
+   * });
+   * ```
+   */
+  async createSignedUrls(
+    paths: string[],
+    expiresIn = 3600
+  ): Promise<BatchShareResponse> {
+    if (!Array.isArray(paths) || paths.length === 0) {
+      throw new ValidationError(
+        'Paths array is required and must not be empty'
+      );
+    }
+
+    if (paths.length > 100) {
+      throw new ValidationError('Maximum 100 paths can be processed at once');
+    }
+
+    return this.client.request<BatchShareResponse>('/storage/share-batch', {
+      method: 'POST',
+      body: JSON.stringify({ paths, expiresIn }),
+    });
+  }
+
+  /**
    * Retrieves storage analytics for the workspace
    *
    * @returns Storage usage statistics
@@ -610,35 +655,49 @@ export class TuturuuuClient {
   /**
    * Creates a new Tuturuuu client instance
    *
-   * @param config - Client configuration
+   * @param config - Client configuration (optional, will auto-load from environment variables)
    *
    * @example
    * ```typescript
+   * // Explicit configuration
    * const client = new TuturuuuClient({
    *   apiKey: 'ttr_your_api_key',
    *   baseUrl: 'https://tuturuuu.com/api/v1', // optional, this is the default
    *   timeout: 30000 // optional, default 30s
    * });
+   *
+   * // Auto-load from environment variables (TUTURUUU_API_KEY, TUTURUUU_BASE_URL)
+   * const client = new TuturuuuClient();
    * ```
    */
-  constructor(config: string | TuturuuuClientConfig) {
+  constructor(config?: string | TuturuuuClientConfig) {
     // Support both string API key and config object
     if (typeof config === 'string') {
       this.apiKey = config;
       this.baseUrl = 'https://tuturuuu.com/api/v1';
       this.timeout = 30000;
       this.fetch = globalThis.fetch;
-    } else {
-      this.apiKey = config.apiKey;
-      this.baseUrl = config.baseUrl || 'https://tuturuuu.com/api/v1';
+    } else if (config) {
+      this.apiKey = config.apiKey || process.env.TUTURUUU_API_KEY || '';
+      this.baseUrl =
+        config.baseUrl ||
+        process.env.TUTURUUU_BASE_URL ||
+        'https://tuturuuu.com/api/v1';
       this.timeout = config.timeout || 30000;
       this.fetch = config.fetch || globalThis.fetch;
+    } else {
+      // Auto-load from environment variables
+      this.apiKey = process.env.TUTURUUU_API_KEY || '';
+      this.baseUrl =
+        process.env.TUTURUUU_BASE_URL || 'https://tuturuuu.com/api/v1';
+      this.timeout = 30000;
+      this.fetch = globalThis.fetch;
     }
 
     // Validate API key
     if (!this.apiKey || !this.apiKey.startsWith('ttr_')) {
       throw new ValidationError(
-        'Invalid API key format. Expected key to start with "ttr_"'
+        'Invalid API key format. Expected key to start with "ttr_" or set TUTURUUU_API_KEY environment variable'
       );
     }
 
@@ -752,3 +811,36 @@ export class TuturuuuClient {
     }
   }
 }
+
+/**
+ * Default singleton instance of TuturuuuClient with auto-configured credentials
+ *
+ * This instance automatically loads credentials from environment variables:
+ * - TUTURUUU_API_KEY (required)
+ * - TUTURUUU_BASE_URL (optional, defaults to https://tuturuuu.com/api/v1)
+ *
+ * Uses lazy initialization to avoid validation errors during module imports.
+ * The client is only instantiated when first accessed.
+ *
+ * @example
+ * ```typescript
+ * import { tuturuuu } from 'tuturuuu';
+ *
+ * // Use storage operations
+ * const analytics = await tuturuuu.storage.getAnalytics();
+ * const files = await tuturuuu.storage.list({ path: 'documents' });
+ *
+ * // Use document operations
+ * const docs = await tuturuuu.documents.list();
+ * ```
+ */
+let _tuturuuuInstance: TuturuuuClient | undefined;
+
+export const tuturuuu: TuturuuuClient = new Proxy({} as TuturuuuClient, {
+  get(_targett, prop) {
+    if (!_tuturuuuInstance) {
+      _tuturuuuInstance = new TuturuuuClient();
+    }
+    return _tuturuuuInstance[prop as keyof TuturuuuClient];
+  },
+});
