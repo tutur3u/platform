@@ -14,10 +14,7 @@ export async function GET(
     const { path } = await params;
 
     if (!path || path.length === 0) {
-      return NextResponse.json(
-        { error: 'Missing file path' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing file path' }, { status: 400 });
     }
 
     const filePath = path.join('/');
@@ -33,7 +30,10 @@ export async function GET(
   } catch (error) {
     console.error('Error downloading file:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to download file' },
+      {
+        error:
+          error instanceof Error ? error.message : 'Failed to download file',
+      },
       { status: 500 }
     );
   }

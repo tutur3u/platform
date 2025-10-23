@@ -221,7 +221,8 @@ export class StorageClient {
         method: 'PUT',
         body: file,
         headers: {
-          'Content-Type': file instanceof File ? file.type : 'application/octet-stream',
+          'Content-Type':
+            file instanceof File ? file.type : 'application/octet-stream',
           'x-upsert': validatedOptions.upsert ? 'true' : 'false',
         },
       });

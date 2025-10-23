@@ -13,7 +13,10 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching analytics:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch analytics' },
+      {
+        error:
+          error instanceof Error ? error.message : 'Failed to fetch analytics',
+      },
       { status: 500 }
     );
   }

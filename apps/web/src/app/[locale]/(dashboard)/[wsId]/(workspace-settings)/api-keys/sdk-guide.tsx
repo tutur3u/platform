@@ -168,8 +168,8 @@ try {
                     all operations
                   </li>
                   <li>
-                    <strong>Direct uploads</strong>: Files upload directly to Supabase
-                    Storage using signed URLs for optimal performance
+                    <strong>Direct uploads</strong>: Files upload directly to
+                    Supabase Storage using signed URLs for optimal performance
                   </li>
                   <li>
                     <strong>Error handling</strong>: Specific error classes for
@@ -264,7 +264,8 @@ try {
                 <div className="text-left">
                   <p className="font-medium">{t('sdk_storage_operations')}</p>
                   <p className="text-muted-foreground text-sm">
-                    Upload, download, list, share files, and monitor storage usage
+                    Upload, download, list, share files, and monitor storage
+                    usage
                   </p>
                 </div>
               </div>
@@ -277,21 +278,24 @@ try {
               <div className="space-y-2">
                 <p className="font-medium text-sm">{t('sdk_upload_file')}</p>
                 <p className="text-muted-foreground text-xs">
-                  Files are uploaded directly to Supabase Storage using signed URLs for better performance.
+                  Files are uploaded directly to Supabase Storage using signed
+                  URLs for better performance.
                 </p>
                 <CodeBlock language="typescript" value={storageUploadCode} />
               </div>
               <div className="space-y-2">
                 <p className="font-medium text-sm">Download Files</p>
                 <p className="text-muted-foreground text-xs">
-                  Download files as Blob objects for client-side processing or browser downloads.
+                  Download files as Blob objects for client-side processing or
+                  browser downloads.
                 </p>
                 <CodeBlock language="typescript" value={storageDownloadCode} />
               </div>
               <div className="space-y-2">
                 <p className="font-medium text-sm">{t('sdk_share_file')}</p>
                 <p className="text-muted-foreground text-xs">
-                  Generate temporary signed URLs for secure file sharing without exposing your API key.
+                  Generate temporary signed URLs for secure file sharing without
+                  exposing your API key.
                 </p>
                 <CodeBlock language="typescript" value={storageShareCode} />
               </div>
@@ -365,22 +369,31 @@ try {
           </p>
           <ul className="mt-2 ml-4 list-disc space-y-1 text-sm">
             <li>
-              <strong>Storage Operations:</strong> Requires <code className="rounded bg-background px-1 py-0.5 font-mono text-xs">manage_drive</code> permission
+              <strong>Storage Operations:</strong> Requires{' '}
+              <code className="rounded bg-background px-1 py-0.5 font-mono text-xs">
+                manage_drive
+              </code>{' '}
+              permission
             </li>
             <li>
-              <strong>Document Operations:</strong> Requires <code className="rounded bg-background px-1 py-0.5 font-mono text-xs">manage_documents</code> permission
+              <strong>Document Operations:</strong> Requires{' '}
+              <code className="rounded bg-background px-1 py-0.5 font-mono text-xs">
+                manage_documents
+              </code>{' '}
+              permission
             </li>
           </ul>
         </div>
 
         {/* Storage Limits Note */}
         <div className="rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/10 p-4">
-          <h4 className="mb-2 font-semibold text-sm">
-            💾 Storage Limits
-          </h4>
+          <h4 className="mb-2 font-semibold text-sm">💾 Storage Limits</h4>
           <p className="text-sm leading-relaxed">
-            Workspace storage limits are configurable and default to 100MB per workspace.
-            You can customize limits by setting the <code className="rounded bg-background px-1 py-0.5 font-mono text-xs">STORAGE_LIMIT_BYTES</code>
+            Workspace storage limits are configurable and default to 100MB per
+            workspace. You can customize limits by setting the{' '}
+            <code className="rounded bg-background px-1 py-0.5 font-mono text-xs">
+              STORAGE_LIMIT_BYTES
+            </code>
             value in your workspace secrets.
           </p>
           <div className="mt-2 space-y-1 text-sm">
@@ -388,7 +401,9 @@ try {
             <ul className="ml-4 list-disc space-y-0.5 text-muted-foreground">
               <li>Default: 100 MB per workspace</li>
               <li>File size limit: 100 MB per file</li>
-              <li>Supported formats: Images, Documents, Text, Archives, JSON</li>
+              <li>
+                Supported formats: Images, Documents, Text, Archives, JSON
+              </li>
             </ul>
           </div>
         </div>

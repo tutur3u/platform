@@ -14,10 +14,7 @@ export async function POST(request: NextRequest) {
     const upsert = formData.get('upsert') === 'true';
 
     if (!file) {
-      return NextResponse.json(
-        { error: 'No file provided' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
     // The SDK now uses signed upload URLs internally
@@ -31,7 +28,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error uploading file:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to upload file' },
+      {
+        error: error instanceof Error ? error.message : 'Failed to upload file',
+      },
       { status: 500 }
     );
   }

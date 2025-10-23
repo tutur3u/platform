@@ -30,7 +30,10 @@ export const POST = withApiAuth(
     const { wsId } = context;
 
     // Validate request body
-    const bodyResult = await validateRequestBody(request, uploadUrlRequestSchema);
+    const bodyResult = await validateRequestBody(
+      request,
+      uploadUrlRequestSchema
+    );
     if (bodyResult instanceof NextResponse) {
       return bodyResult;
     }

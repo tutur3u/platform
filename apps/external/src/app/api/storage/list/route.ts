@@ -21,7 +21,9 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error listing files:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to list files' },
+      {
+        error: error instanceof Error ? error.message : 'Failed to list files',
+      },
       { status: 500 }
     );
   }
