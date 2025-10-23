@@ -63,7 +63,7 @@ export function LiveScoresDisplay({
         <div
           className={cn(
             'relative overflow-hidden rounded-xl border-2 p-6 shadow-lg transition-all duration-500',
-            'bg-gradient-to-br from-dynamic-purple/5 via-dynamic-purple/8 to-dynamic-purple/10',
+            'bg-linear-to-br from-dynamic-purple/5 via-dynamic-purple/8 to-dynamic-purple/10',
             'border-dynamic-purple/30 hover:border-dynamic-purple/40 hover:shadow-dynamic-purple/20',
             scoreAnimation && 'scale-[1.02]'
           )}

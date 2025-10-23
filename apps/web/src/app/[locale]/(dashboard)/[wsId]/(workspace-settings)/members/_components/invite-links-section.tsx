@@ -237,7 +237,7 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
   return (
     <div className="space-y-6">
       {/* Modern Header Section */}
-      <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-background via-background to-foreground/[0.02] p-6 shadow-sm">
+      <div className="relative overflow-hidden rounded-xl border border-border bg-linear-to-br from-background via-background to-foreground/[0.02] p-6 shadow-sm">
         {/* Decorative elements */}
         <div className="-right-4 -top-4 pointer-events-none absolute h-24 w-24 rounded-full bg-dynamic-purple/5 blur-2xl" />
         <div className="-bottom-4 -left-4 pointer-events-none absolute h-24 w-24 rounded-full bg-dynamic-blue/5 blur-2xl" />
@@ -245,10 +245,10 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
         <div className="relative flex flex-col justify-between gap-4 md:flex-row md:items-start">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-dynamic-purple to-dynamic-blue shadow-md">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-dynamic-purple to-dynamic-blue shadow-md">
                 <Link2 className="h-5 w-5 text-background" />
               </div>
-              <h3 className="bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text font-semibold text-2xl text-transparent">
+              <h3 className="bg-linear-to-br from-foreground to-foreground/70 bg-clip-text font-semibold text-2xl text-transparent">
                 {t('ws-invite-links.title')}
               </h3>
             </div>
@@ -369,7 +369,7 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
         </div>
       ) : links.length === 0 ? (
         <div className="rounded-xl border border-foreground/20 border-dashed bg-foreground/[0.02] p-12 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-dynamic-purple/10 to-dynamic-blue/10">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-dynamic-purple/10 to-dynamic-blue/10">
             <Link2 className="h-8 w-8 text-foreground/40" />
           </div>
           <h4 className="mb-2 font-semibold text-foreground text-lg">
@@ -387,7 +387,7 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
               className="group relative overflow-hidden rounded-xl border border-border bg-background p-5 shadow-sm transition-all hover:border-foreground/20 hover:shadow-md"
             >
               {/* Subtle gradient background on hover */}
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-dynamic-blue/0 via-dynamic-purple/0 to-dynamic-pink/0 opacity-0 transition-opacity group-hover:opacity-[0.03]" />
+              <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-dynamic-blue/0 via-dynamic-purple/0 to-dynamic-pink/0 opacity-0 transition-opacity group-hover:opacity-[0.03]" />
 
               <div className="relative space-y-4">
                 {/* Header with status and role */}
@@ -515,7 +515,7 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-dynamic-blue to-dynamic-purple">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-dynamic-blue to-dynamic-purple">
                 <Users2 className="h-4 w-4 text-background" />
               </div>
               {t('ws-invite-links.users-joined-title')}
@@ -537,7 +537,7 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
           ) : viewingLink ? (
             <div className="space-y-6">
               {/* Link Info Card */}
-              <div className="rounded-xl border border-border bg-gradient-to-br from-foreground/[0.02] to-foreground/[0.05] p-5">
+              <div className="rounded-xl border border-border bg-linear-to-br from-foreground/[0.02] to-foreground/[0.05] p-5">
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="space-y-1">
                     <p className="text-foreground/60 text-xs uppercase tracking-wide">
@@ -600,7 +600,7 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
                                   'User'
                                 }
                               />
-                              <AvatarFallback className="bg-gradient-to-br from-dynamic-blue to-dynamic-purple font-semibold text-background">
+                              <AvatarFallback className="bg-linear-to-br from-dynamic-blue to-dynamic-purple font-semibold text-background">
                                 {(
                                   use.users.display_name ||
                                   use.users.handle ||
@@ -640,7 +640,7 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
                 </div>
               ) : (
                 <div className="rounded-xl border border-foreground/20 border-dashed bg-foreground/[0.02] p-12 text-center">
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-dynamic-purple/10 to-dynamic-blue/10">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-dynamic-purple/10 to-dynamic-blue/10">
                     <Users2 className="h-8 w-8 text-foreground/40" />
                   </div>
                   <h4 className="mb-2 font-semibold text-base text-foreground">

@@ -38,7 +38,7 @@ Choose the earliest applicable strategy:
 
 ```typescript
 // app/[locale]/(dashboard)/[wsId]/tasks/page.tsx
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export default async function TasksPage({
   params,
@@ -134,7 +134,7 @@ export default function Error({
 // app/[locale]/(dashboard)/[wsId]/tasks/actions.ts
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -257,7 +257,7 @@ export function CreateTaskForm({ listId }: { listId: string }) {
 
 ```typescript
 // app/[locale]/(dashboard)/[wsId]/tasks/page.tsx
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { TaskListClient } from './TaskListClient';
 
 export default async function TasksPage({

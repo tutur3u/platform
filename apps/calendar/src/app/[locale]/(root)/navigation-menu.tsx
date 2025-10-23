@@ -157,7 +157,7 @@ const ListItem = React.forwardRef<
           ref={ref}
           className={cn(
             'group relative block h-full select-none space-y-2 rounded-lg p-4 leading-none no-underline outline-hidden transition-all duration-200',
-            'bg-white/50 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:bg-gray-800/50 dark:hover:from-blue-950/20 dark:hover:to-purple-950/20',
+            'bg-white/50 hover:bg-linear-to-br hover:from-blue-50 hover:to-purple-50 dark:bg-gray-800/50 dark:hover:from-blue-950/20 dark:hover:to-purple-950/20',
             'border border-gray-200/50 hover:border-blue-200 dark:border-gray-700/50 dark:hover:border-blue-700',
             'opacity-90 hover:opacity-100',
             'hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]',
@@ -168,7 +168,7 @@ const ListItem = React.forwardRef<
         >
           <div className="relative">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white transition-all duration-200 group-hover:rotate-3 group-hover:scale-110">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-blue-500 to-purple-600 text-white transition-all duration-200 group-hover:rotate-3 group-hover:scale-110">
                 {icon}
               </div>
               <div className="flex-1">

@@ -911,7 +911,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                   <CardContent className="space-y-4">
                     {currentSession ? (
                       <div className="space-y-4 text-center">
-                        <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-red-50 to-red-100 @lg:p-6 p-4 dark:from-red-950/20 dark:to-red-900/20">
+                        <div className="relative overflow-hidden rounded-lg bg-linear-to-br from-red-50 to-red-100 @lg:p-6 p-4 dark:from-red-950/20 dark:to-red-900/20">
                           <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-red-500/10 to-transparent opacity-30"></div>
                           <div className="relative">
                             <div className="font-bold font-mono @lg:text-4xl text-3xl text-red-600 transition-all duration-300 dark:text-red-400">
@@ -1073,7 +1073,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                                       className="p-0"
                                     >
                                       <div className="flex w-full items-start gap-3 p-3">
-                                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/20 to-dynamic-blue/10">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-dynamic-blue/30 bg-linear-to-br from-dynamic-blue/20 to-dynamic-blue/10">
                                           <CheckCircle className="h-4 w-4 text-dynamic-blue" />
                                         </div>
                                         <div className="min-w-0 flex-1">
@@ -1224,7 +1224,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                               {selectedTaskId && !showTaskSuggestion && (
                                 <div className="rounded-lg border border-dynamic-green/30 bg-gradient-to-r from-dynamic-green/5 to-dynamic-green/3 p-4 shadow-sm">
                                   <div className="flex items-start gap-3">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-dynamic-green/30 bg-gradient-to-br from-dynamic-green/20 to-dynamic-green/10">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-dynamic-green/30 bg-linear-to-br from-dynamic-green/20 to-dynamic-green/10">
                                       <CheckCircle className="h-5 w-5 text-dynamic-green" />
                                     </div>
                                     <div className="min-w-0 flex-1">

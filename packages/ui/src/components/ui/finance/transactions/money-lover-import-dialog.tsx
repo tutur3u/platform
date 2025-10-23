@@ -457,13 +457,13 @@ export default function MoneyLoverImportDialog({
           {previewData.length > 0 && (
             <div className="space-y-4">
               {/* Statistics */}
-              <div className="grid gap-3 rounded-lg border bg-gradient-to-br from-primary/5 to-primary/10 p-4 md:grid-cols-3">
+              <div className="grid gap-3 rounded-lg border bg-linear-to-br from-primary/5 to-primary/10 p-4 md:grid-cols-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-background shadow-sm">
                     <FileSpreadsheet className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-xs font-medium">
+                    <p className="font-medium text-muted-foreground text-xs">
                       {t('money-lover-import.transactions')}
                     </p>
                     <p className="font-bold text-xl tabular-nums">
@@ -476,7 +476,7 @@ export default function MoneyLoverImportDialog({
                     <FolderOpen className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-xs font-medium">
+                    <p className="font-medium text-muted-foreground text-xs">
                       {t('money-lover-import.categories')}
                     </p>
                     <p className="font-bold text-xl tabular-nums">
@@ -489,7 +489,7 @@ export default function MoneyLoverImportDialog({
                     <Wallet className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-xs font-medium">
+                    <p className="font-medium text-muted-foreground text-xs">
                       {t('money-lover-import.wallets')}
                     </p>
                     <p className="font-bold text-xl tabular-nums">
@@ -584,7 +584,7 @@ export default function MoneyLoverImportDialog({
 
           {/* Progress Display */}
           {progress && (
-            <div className="space-y-4 rounded-lg border bg-gradient-to-br from-muted/50 to-muted/30 p-5 shadow-sm">
+            <div className="space-y-4 rounded-lg border bg-linear-to-br from-muted/50 to-muted/30 p-5 shadow-sm">
               <div className="flex items-start gap-4">
                 <div className="mt-0.5">
                   {progress.status === 'processing' && (
@@ -615,7 +615,7 @@ export default function MoneyLoverImportDialog({
                         / {progress.total.toLocaleString()}{' '}
                         {t('money-lover-import.transactions').toLowerCase()}
                       </span>
-                      <span className="text-muted-foreground ml-auto text-xs">
+                      <span className="ml-auto text-muted-foreground text-xs">
                         {Math.round((progress.current / progress.total) * 100)}%
                       </span>
                     </div>
@@ -633,7 +633,7 @@ export default function MoneyLoverImportDialog({
               {progress.status === 'success' && (
                 <div className="flex items-center gap-2 rounded-md border-dynamic-green/20 bg-dynamic-green/10 px-3 py-2">
                   <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
-                  <p className="text-dynamic-green text-xs font-medium">
+                  <p className="font-medium text-dynamic-green text-xs">
                     {t('money-lover-import.import_successful')}
                   </p>
                 </div>

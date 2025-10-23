@@ -249,10 +249,10 @@ export default function TaskListWithCompletion({
             className={cn(
               'group relative overflow-hidden rounded-xl border p-5 shadow-sm transition-all duration-300',
               taskOverdue && !task.archived && !isCompleted
-                ? 'border-dynamic-red/30 bg-gradient-to-br from-dynamic-red/5 via-dynamic-red/3 to-transparent'
+                ? 'border-dynamic-red/30 bg-linear-to-br from-dynamic-red/5 via-dynamic-red/3 to-transparent'
                 : isCompleted
                   ? 'border-dynamic-green/20 bg-dynamic-green/5 opacity-70'
-                  : 'border-border/50 bg-gradient-to-br from-card via-card/95 to-card/90 hover:border-primary/30 hover:shadow-lg'
+                  : 'border-border/50 bg-linear-to-br from-card via-card/95 to-card/90 hover:border-primary/30 hover:shadow-lg'
             )}
           >
             {/* Main content area */}
@@ -423,7 +423,7 @@ export default function TaskListWithCompletion({
                         </Avatar>
                       ))}
                       {task.assignees.length > 3 && (
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-gradient-to-br from-primary/20 to-primary/10 font-bold text-[10px] text-primary shadow-md ring-1 ring-border/50">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-linear-to-br from-primary/20 to-primary/10 font-bold text-[10px] text-primary shadow-md ring-1 ring-border/50">
                           +{task.assignees.length - 3}
                         </div>
                       )}

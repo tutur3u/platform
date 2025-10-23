@@ -152,7 +152,7 @@ const StatisticCard = ({
     >
       <div className="p-6">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="mb-2 font-medium text-muted-foreground text-sm">
               {title}
             </p>
@@ -163,7 +163,7 @@ const StatisticCard = ({
                     <TooltipTrigger asChild>
                       <p
                         className={cn(
-                          'font-bold text-foreground tracking-tight break-words min-w-0 cursor-help',
+                          'min-w-0 cursor-help break-words font-bold text-foreground tracking-tight',
                           getFontSizeClass(displayValue)
                         )}
                       >
@@ -178,7 +178,7 @@ const StatisticCard = ({
               ) : (
                 <p
                   className={cn(
-                    'font-bold text-foreground tracking-tight break-words min-w-0',
+                    'min-w-0 break-words font-bold text-foreground tracking-tight',
                     getFontSizeClass(displayValue)
                   )}
                 >
@@ -188,7 +188,7 @@ const StatisticCard = ({
               {trend && (
                 <span
                   className={cn(
-                    'font-medium text-xs whitespace-nowrap',
+                    'whitespace-nowrap font-medium text-xs',
                     trend.isPositive
                       ? 'text-green-600 dark:text-green-400'
                       : 'text-red-600 dark:text-red-400'
@@ -209,7 +209,7 @@ const StatisticCard = ({
 
       {/* Hover effect gradient */}
       {(onClick || href) && (
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-foreground/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+        <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-transparent via-transparent to-foreground/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
       )}
     </Card>
   );

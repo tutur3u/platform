@@ -28,7 +28,7 @@ import {
   ContextMenuContent,
   ContextMenuTrigger,
 } from '@tuturuuu/ui/context-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
@@ -76,17 +76,18 @@ export default function StorageObjectsTable({
       const basePath = searchParams.get('path') ?? '';
       const newPath =
         row.name === '...' ? popPath(basePath) : joinPath(basePath, row.name);
-      // Debug
-      // eslint-disable-next-line no-console
-      console.log('Navigating to:', newPath);
+
       // Navigate to the new path
-      const url = new URL(pathname, window.location.origin);
+      const params = new URLSearchParams(searchParams.toString());
       if (!newPath || newPath === '/' || newPath === '') {
-        url.searchParams.delete('path');
+        params.delete('path');
       } else {
-        url.searchParams.set('path', newPath);
+        params.set('path', newPath);
       }
-      window.location.href = url.toString();
+      const queryString = params.toString();
+      router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, {
+        scroll: false,
+      });
     }
   };
 
@@ -102,17 +103,18 @@ export default function StorageObjectsTable({
     if (item.name) {
       const basePath = searchParams.get('path') ?? '';
       const newPath = joinPath(basePath, item.name);
-      // Debug
-      // eslint-disable-next-line no-console
-      console.log('Navigating to:', newPath);
+
       // Navigate to the new path
-      const url = new URL(pathname, window.location.origin);
+      const params = new URLSearchParams(searchParams.toString());
       if (!newPath || newPath === '/' || newPath === '') {
-        url.searchParams.delete('path');
+        params.delete('path');
       } else {
-        url.searchParams.set('path', newPath);
+        params.set('path', newPath);
       }
-      window.location.href = url.toString();
+      const queryString = params.toString();
+      router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, {
+        scroll: false,
+      });
     }
   };
 
@@ -134,16 +136,9 @@ export default function StorageObjectsTable({
           .remove([filePath]);
         if (!error) {
           router.refresh();
-          toast({
-            title: t('common.success'),
-            description: t('ws-storage-objects.file_deleted'),
-          });
+          toast.success(t('ws-storage-objects.file_deleted'));
         } else {
-          toast({
-            title: t('common.error'),
-            description: error.message,
-            variant: 'destructive',
-          });
+          toast.error(error.message);
         }
       } else {
         // Folder
@@ -157,11 +152,7 @@ export default function StorageObjectsTable({
           .select()
           .ilike('name', folderPath);
         if (objects.error) {
-          toast({
-            title: t('common.error'),
-            description: objects.error.message,
-            variant: 'destructive',
-          });
+          toast.error(objects.error.message);
           return;
         }
         const { error } = await supabase.storage
@@ -169,24 +160,13 @@ export default function StorageObjectsTable({
           .remove(objects.data.map((object: { name: string }) => object.name));
         if (!error) {
           router.refresh();
-          toast({
-            title: t('common.success'),
-            description: t('ws-storage-objects.folder_deleted'),
-          });
+          toast.success(t('ws-storage-objects.folder_deleted'));
         } else {
-          toast({
-            title: t('common.error'),
-            description: error.message,
-            variant: 'destructive',
-          });
+          toast.error(error.message);
         }
       }
     } catch {
-      toast({
-        title: t('common.error'),
-        description: 'Failed to delete file or folder',
-        variant: 'destructive',
-      });
+      toast.error('Failed to delete file or folder');
     }
   };
 
@@ -253,12 +233,19 @@ export default function StorageObjectsTable({
                   key={row.key}
                   className="cursor-pointer hover:bg-muted/40"
                   onClick={() => {
-                    const searchParams = new URLSearchParams(
-                      window.location.search
-                    );
                     const basePath = searchParams.get('path') ?? '';
                     const nextPath = popPath(basePath);
-                    window.location.href = `/${wsId}/drive?path=${encodeURIComponent(nextPath)}`;
+                    const params = new URLSearchParams(searchParams.toString());
+                    if (!nextPath || nextPath === '/' || nextPath === '') {
+                      params.delete('path');
+                    } else {
+                      params.set('path', nextPath);
+                    }
+                    const queryString = params.toString();
+                    router.push(
+                      `${pathname}${queryString ? `?${queryString}` : ''}`,
+                      { scroll: false }
+                    );
                   }}
                 >
                   {/* biome-ignore lint/suspicious/noExplicitAny: <there can be any children> */}
@@ -274,12 +261,21 @@ export default function StorageObjectsTable({
                     <tr
                       className="cursor-pointer hover:bg-muted/40"
                       onClick={() => {
-                        const searchParams = new URLSearchParams(
-                          window.location.search
-                        );
                         const basePath = searchParams.get('path') ?? '';
                         const nextPath = joinPath(basePath, rowData.name || '');
-                        window.location.href = `/${wsId}/drive?path=${encodeURIComponent(nextPath)}`;
+                        const params = new URLSearchParams(
+                          searchParams.toString()
+                        );
+                        if (!nextPath || nextPath === '/' || nextPath === '') {
+                          params.delete('path');
+                        } else {
+                          params.set('path', nextPath);
+                        }
+                        const queryString = params.toString();
+                        router.push(
+                          `${pathname}${queryString ? `?${queryString}` : ''}`,
+                          { scroll: false }
+                        );
                       }}
                     >
                       {/* biome-ignore lint/suspicious/noExplicitAny: <there can be any children> */}
@@ -346,16 +342,17 @@ export default function StorageObjectsTable({
               onClick={() => {
                 const basePath = searchParams.get('path') ?? '';
                 const newPath = popPath(basePath);
-                // Debug
-                // eslint-disable-next-line no-console
-                console.log('Back button navigating to:', newPath);
-                const url = new URL(pathname, window.location.origin);
+                const params = new URLSearchParams(searchParams.toString());
                 if (!newPath || newPath === '/' || newPath === '') {
-                  url.searchParams.delete('path');
+                  params.delete('path');
                 } else {
-                  url.searchParams.set('path', newPath);
+                  params.set('path', newPath);
                 }
-                window.location.href = url.toString();
+                const queryString = params.toString();
+                router.push(
+                  `${pathname}${queryString ? `?${queryString}` : ''}`,
+                  { scroll: false }
+                );
               }}
             >
               <div className="mb-3 flex aspect-square items-center justify-center rounded-lg bg-muted/50">

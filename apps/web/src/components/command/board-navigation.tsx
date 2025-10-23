@@ -36,7 +36,7 @@ function BoardItem({ board, onSelect, getBoardColor }: BoardItemProps) {
     >
       <div className="flex w-full items-center gap-4">
         <div className="relative">
-          <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-dynamic-blue/20 to-dynamic-purple/20 blur-sm transition-all group-hover:blur-md" />
+          <div className="absolute inset-0 rounded-lg bg-linear-to-br from-dynamic-blue/20 to-dynamic-purple/20 blur-sm transition-all group-hover:blur-md" />
           <div
             className={`relative rounded-lg border border-dynamic-blue/20 p-2.5 ${getBoardColor(board.id)}`}
           >

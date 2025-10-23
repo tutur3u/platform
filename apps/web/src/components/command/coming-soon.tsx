@@ -39,7 +39,7 @@ export function ComingSoonSection() {
         <CommandGroup>
           <CommandItem className="group cursor-pointer opacity-60" disabled>
             <div className="flex w-full items-center gap-4">
-              <div className="rounded-lg border border-dynamic-blue/20 bg-gradient-to-br from-dynamic-blue/10 to-dynamic-purple/10 p-2.5">
+              <div className="rounded-lg border border-dynamic-blue/20 bg-linear-to-br from-dynamic-blue/10 to-dynamic-purple/10 p-2.5">
                 <Search className="h-5 w-5 text-dynamic-blue" />
               </div>
               <div className="flex flex-1 flex-col">
@@ -57,7 +57,7 @@ export function ComingSoonSection() {
           </CommandItem>
           <CommandItem className="group cursor-pointer opacity-60" disabled>
             <div className="flex w-full items-center gap-4">
-              <div className="rounded-lg border border-dynamic-purple/20 bg-gradient-to-br from-dynamic-purple/10 to-dynamic-pink/10 p-2.5">
+              <div className="rounded-lg border border-dynamic-purple/20 bg-linear-to-br from-dynamic-purple/10 to-dynamic-pink/10 p-2.5">
                 <Zap className="h-5 w-5 text-dynamic-purple" />
               </div>
               <div className="flex flex-1 flex-col">

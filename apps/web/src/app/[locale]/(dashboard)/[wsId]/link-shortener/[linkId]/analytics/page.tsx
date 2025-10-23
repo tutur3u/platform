@@ -68,7 +68,7 @@ export default async function LinkAnalyticsPage({ params }: Props) {
           <div className="text-center">
             <div className="relative mx-auto mb-6 h-24 w-24">
               <div className="absolute inset-0 rounded-full bg-dynamic-red/20 blur-xl" />
-              <div className="relative rounded-full border border-dynamic-red/20 bg-gradient-to-br from-dynamic-red/10 to-dynamic-red/5 p-6">
+              <div className="relative rounded-full border border-dynamic-red/20 bg-linear-to-br from-dynamic-red/10 to-dynamic-red/5 p-6">
                 <Activity className="h-12 w-12 text-dynamic-red" />
               </div>
             </div>
@@ -127,8 +127,8 @@ export default async function LinkAnalyticsPage({ params }: Props) {
         {/* Time-based Analytics */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Activity by Hour */}
-          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+          <Card className="relative overflow-hidden border-0 bg-linear-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
+            <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent" />
             <CardHeader className="relative">
               <CardTitle className="flex items-center gap-3">
                 <div className="rounded-lg bg-dynamic-blue/10 p-2">

@@ -275,7 +275,7 @@ export function CommandBar({
   return (
     <div className="relative">
       {/* Subtle glow effect */}
-      <div className="-z-10 absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/8 to-dynamic-purple/6 opacity-0 blur-2xl transition-opacity duration-500 group-focus-within:opacity-100 md:rounded-3xl" />
+      <div className="-z-10 absolute inset-0 rounded-2xl bg-linear-to-br from-primary/8 to-dynamic-purple/6 opacity-0 blur-2xl transition-opacity duration-500 group-focus-within:opacity-100 md:rounded-3xl" />
       {/* Main Input Area */}
       <div className="group relative">
         <Textarea
@@ -284,7 +284,7 @@ export function CommandBar({
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={currentConfig.placeholder}
-          className="max-h-[280px] min-h-[150px] resize-none rounded-2xl border border-border/0 bg-linear-to-br from-background to-primary/15 px-4 pb-14 pt-4 text-base leading-relaxed transition-all duration-300 placeholder:text-muted-foreground/40 hover:shadow-xl focus-visible:shadow-[0_20px_50px_-15px_rgba(var(--primary)_/_0.15)] focus-visible:border-white/10 focus-visible:ring-0 sm:px-6 md:min-h-[200px] md:rounded-3xl md:px-8 md:pb-16 md:pt-6 md:text-lg lg:text-xl"
+          className="max-h-[280px] min-h-[150px] resize-none rounded-2xl border border-border/0 bg-linear-to-br from-background to-primary/15 px-4 pt-4 pb-14 text-base leading-relaxed transition-all duration-300 placeholder:text-muted-foreground/40 hover:shadow-xl focus-visible:border-white/10 focus-visible:shadow-[0_20px_50px_-15px_rgba(var(--primary)_/_0.15)] focus-visible:ring-0 sm:px-6 md:min-h-[200px] md:rounded-3xl md:px-8 md:pt-6 md:pb-16 md:text-lg lg:text-xl"
           disabled={isLoading}
         />
 
@@ -426,7 +426,7 @@ export function CommandBar({
                                 {priority && (
                                   <span
                                     className={cn(
-                                      'text-xs font-medium',
+                                      'font-medium text-xs',
                                       priority === 'critical' &&
                                         'text-dynamic-red',
                                       priority === 'high' &&
@@ -454,7 +454,7 @@ export function CommandBar({
                               </div>
                               <div className="flex items-center gap-2">
                                 {dueDate && (
-                                  <span className="text-xs font-medium text-muted-foreground">
+                                  <span className="font-medium text-muted-foreground text-xs">
                                     {dueDate.toLocaleDateString('en-US', {
                                       month: 'short',
                                       day: 'numeric',
@@ -479,7 +479,7 @@ export function CommandBar({
                                   </div>
                                   <div className="flex items-center gap-2">
                                     {estimationPoints !== null && (
-                                      <span className="text-xs font-medium text-muted-foreground">
+                                      <span className="font-medium text-muted-foreground text-xs">
                                         {mapEstimationPoints(
                                           estimationPoints,
                                           workspaceEstimationConfig?.estimation_type
@@ -504,7 +504,7 @@ export function CommandBar({
                                 </div>
                                 <div className="flex items-center gap-2">
                                   {selectedProjectIds.length > 0 && (
-                                    <span className="text-xs font-medium text-muted-foreground">
+                                    <span className="font-medium text-muted-foreground text-xs">
                                       {selectedProjectIds.length}
                                     </span>
                                   )}
@@ -524,7 +524,7 @@ export function CommandBar({
                                 </div>
                                 <div className="flex items-center gap-2">
                                   {selectedLabelIds.length > 0 && (
-                                    <span className="text-xs font-medium text-muted-foreground">
+                                    <span className="font-medium text-muted-foreground text-xs">
                                       {selectedLabelIds.length}
                                     </span>
                                   )}
@@ -546,7 +546,7 @@ export function CommandBar({
                                 </div>
                                 <div className="flex items-center gap-2">
                                   {selectedAssigneeIds.length > 0 && (
-                                    <span className="text-xs font-medium text-muted-foreground">
+                                    <span className="font-medium text-muted-foreground text-xs">
                                       {selectedAssigneeIds.length}
                                     </span>
                                   )}
@@ -643,7 +643,7 @@ export function CommandBar({
                                   setPriority(null);
                                   setActiveSettingsView('main');
                                 }}
-                                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted"
+                                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-muted-foreground text-sm transition-colors hover:bg-muted"
                               >
                                 <X className="h-4 w-4" />
                                 <span>Clear</span>
@@ -734,7 +734,7 @@ export function CommandBar({
                                   setDueDate(null);
                                   setActiveSettingsView('main');
                                 }}
-                                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted"
+                                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-muted-foreground text-sm transition-colors hover:bg-muted"
                               >
                                 <X className="h-4 w-4" />
                                 <span>Clear</span>
@@ -799,7 +799,7 @@ export function CommandBar({
                                   setEstimationPoints(null);
                                   setActiveSettingsView('main');
                                 }}
-                                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted"
+                                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-muted-foreground text-sm transition-colors hover:bg-muted"
                               >
                                 <X className="h-4 w-4" />
                                 <span>Clear</span>
@@ -865,7 +865,7 @@ export function CommandBar({
                                 onCreateNewProject?.();
                                 setSettingsOpen(false);
                               }}
-                              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-muted-foreground text-sm transition-colors hover:bg-muted hover:text-foreground"
                             >
                               <Plus className="h-4 w-4" />
                               <span>Add New Project</span>
@@ -937,7 +937,7 @@ export function CommandBar({
                                 onCreateNewLabel?.();
                                 setSettingsOpen(false);
                               }}
-                              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-muted-foreground text-sm transition-colors hover:bg-muted hover:text-foreground"
                             >
                               <Plus className="h-4 w-4" />
                               <span>Add New Label</span>
@@ -1160,7 +1160,7 @@ export function CommandBar({
             {/* Destination Display - Shows selected board/list */}
             {mode === 'task' && hasDestination && selectedDestination && (
               <div className="group/destination relative hidden items-center rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 transition-all hover:bg-dynamic-blue/10 md:inline-flex">
-                <span className="text-dynamic-blue px-2.5 py-1.5 text-xs md:px-3 md:py-2 md:text-sm">
+                <span className="px-2.5 py-1.5 text-dynamic-blue text-xs md:px-3 md:py-2 md:text-sm">
                   {selectedDestination.boardName} /{' '}
                   {selectedDestination.listName}
                 </span>
@@ -1226,7 +1226,7 @@ export function CommandBar({
               onClick={handleAction}
               disabled={!canExecute || isLoading}
               size="sm"
-              className="h-8 shrink-0 gap-1.5 rounded-lg bg-gradient-to-r from-primary to-primary/90 px-3 text-xs font-semibold shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] disabled:opacity-50 sm:gap-2 sm:px-4 md:h-9 md:text-sm"
+              className="h-8 shrink-0 gap-1.5 rounded-lg bg-gradient-to-r from-primary to-primary/90 px-3 font-semibold text-xs shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] disabled:opacity-50 sm:gap-2 sm:px-4 md:h-9 md:text-sm"
             >
               {isLoading ? (
                 <>

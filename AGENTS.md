@@ -41,6 +41,7 @@ Mandatory guardrails:
 7. Explicit User Intent: Do NOT run `bun dev`, `bun run build`, or equivalent long-running / build commands unless the user explicitly requests it.
 8. User-Only Supabase Apply: NEVER run `bun sb:push` or `bun sb:linkpush`. Prepare migrations & instructions; the user applies them.
 9. User-Only Biome: NEVER run `bun lint`, `bun lint:fix`, `bun format`, or `bun format:fix`. Surface needed changes; ask user to run.
+10. Bilingual Translations: ALWAYS provide translations for both English (`en.json`) AND Vietnamese (`vi.json`) when adding user-facing strings. Never add translations only for English.
 
 Prohibited actions (HARD STOP):
 - Committing secrets, API keys, tokens, URLs containing credentials.
@@ -218,7 +219,8 @@ Workflow:
 3. Include proper icons from `lucide-react` that match the feature's purpose
 4. Add appropriate permission checks (e.g., `withoutPermission('manage_finance')`)
 5. Use translation keys from the appropriate namespace (e.g., `t('workspace-finance-tabs.recurring')`)
-6. Ensure the navigation structure is logical and grouped with related features
+6. **CRITICAL**: Add translation entries to BOTH `en.json` AND `vi.json` for all navigation labels
+7. Ensure the navigation structure is logical and grouped with related features
 
 Example for adding finance-related routes:
 ```tsx
@@ -452,7 +454,49 @@ import { toast } from '@tuturuuu/ui/sonner';
 No behavioral API change expected; if an edge case arises (missing variant / prop), escalate instead of shim‑patching locally.
 
 #### 5.14 Dialog Components
-#### 5.15 Task Management Hierarchy Context
+#### 5.15 Internationalization & Bilingual Translations
+The platform supports multiple languages via `next-intl`, with primary support for English and Vietnamese.
+
+**Mandatory Bilingual Policy:**
+1. **ALWAYS** add translations to BOTH `apps/web/messages/en.json` AND `apps/web/messages/vi.json` simultaneously.
+2. **NEVER** add translations only for English - this is a hard violation.
+3. Use consistent translation keys across both language files.
+4. All user-facing content must be bilingual:
+   - UI labels, buttons, and navigation items
+   - Form validation messages and error states
+   - Success/info/warning notifications (toasts, dialogs)
+   - Help text, tooltips, and placeholders
+   - Email templates and system communications
+   - API error messages returned to clients
+
+**Translation Key Structure:**
+- Use hierarchical namespaces: `feature.component.element` (e.g., `workspace-finance-tabs.recurring`)
+- Keep keys descriptive and self-documenting
+- Group related translations under the same namespace
+- Avoid deeply nested structures (max 4 levels)
+
+**Quality Standards:**
+- Vietnamese translations must be natural and contextually appropriate, not literal word-for-word translations
+- Maintain consistent terminology across the platform (create a glossary if needed)
+- Preserve formatting placeholders: `{variable}`, `{count, plural, ...}`, etc.
+- Test both languages in UI to ensure proper spacing and layout
+
+**Workflow:**
+1. Define translation key in component: `t('namespace.key')`
+2. Add entry to `en.json` with English text
+3. **Immediately** add corresponding entry to `vi.json` with Vietnamese text
+4. Test both language versions before committing
+
+**Escalate When:**
+- Complex pluralization rules differ between languages
+- Cultural context requires different messaging strategies
+- Technical terms lack established Vietnamese equivalents
+
+Guardrail Enforcement:
+- PRs adding new translation keys to only one language file should be flagged as incomplete
+- Review checklist must verify bilingual parity before merge
+
+#### 5.16 Task Management Hierarchy Context
 The platform implements a hierarchical task management system with the following structure:
 
 **Hierarchy (top to bottom):**
@@ -654,9 +698,10 @@ Tick ALL before requesting review:
 6. Types regenerated (`packages/types`) if schema changed ✅
 7. Docs updated for public API / env var / schema deltas ✅
 8. **Navigation updated for all new routes** (main navigation file) ✅
-9. No secrets, tokens, or API keys committed ✅
-10. Added edge runtime export where required ✅
-11. All new external inputs validated (Zod / guard logic) ✅
+9. **All user-facing strings have BOTH English and Vietnamese translations** ✅
+10. No secrets, tokens, or API keys committed ✅
+11. Added edge runtime export where required ✅
+12. All new external inputs validated (Zod / guard logic) ✅
 
 #### 8.2 Quality Gates
 | Gate | Pass Criteria |
@@ -791,7 +836,8 @@ Top Failure Causes → Fix Fast:
 4. Migration ordering error → rename with later timestamp.
 5. Documentation not visible → add page to `mint.json` navigation.
 6. **New routes not in navigation** → update `navigation.tsx` with aliases and children.
-7. Release workflow skipped → ensure PR title `chore(@tuturuuu/<pkg>): ...`.
+7. **Missing Vietnamese translations** → add entries to both `en.json` AND `vi.json`.
+8. Release workflow skipped → ensure PR title `chore(@tuturuuu/<pkg>): ...`.
 
 Escalate if: multi-app breaking refactor, destructive schema change, data backfill >30 LOC, new external service, auth/token contract change.
 
@@ -886,5 +932,7 @@ Document any deviation inside PR description (Reason + Observed Failure Mode).
 | Optimistic Update | Temporary cache modification prior to server confirmation with rollback on failure. |
 | Hydration | Passing pre-fetched query data from server (RSC) into client cache to avoid duplicate fetch. |
 | Dialog Components | Accessible modal components from `@tuturuuu/ui/dialog`; must be used instead of native browser dialogs (`alert()`, `confirm()`, `prompt()`). |
+| Bilingual Translations | Mandatory requirement to provide user-facing strings in both English (`en.json`) and Vietnamese (`vi.json`) simultaneously. |
+| Translation Key | Hierarchical identifier (e.g., `workspace-finance-tabs.recurring`) used to reference localized strings via `next-intl`. |
 
 

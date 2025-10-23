@@ -27,8 +27,8 @@ export function DailyActivityChart({ clicksByDay }: DailyActivityChartProps) {
 
   if (clicksByDay.length === 0) {
     return (
-      <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl xl:col-span-2">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+      <Card className="relative overflow-hidden border-0 bg-linear-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl xl:col-span-2">
+        <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent" />
         <CardHeader className="relative">
           <CardTitle className="flex items-center gap-3">
             <div className="rounded-lg bg-dynamic-blue/10 p-2">
@@ -73,8 +73,8 @@ export function DailyActivityChart({ clicksByDay }: DailyActivityChartProps) {
   const maxClicksDay = clicksByDay.find((d) => d.clicks === maxClicks);
 
   return (
-    <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl xl:col-span-2">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+    <Card className="relative overflow-hidden border-0 bg-linear-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl xl:col-span-2">
+      <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent" />
       <CardHeader className="relative">
         <CardTitle className="flex items-center gap-3">
           <div className="rounded-lg bg-dynamic-blue/10 p-2">
@@ -191,19 +191,19 @@ export function DailyActivityChart({ clicksByDay }: DailyActivityChartProps) {
 
           {/* Mobile Summary Stats */}
           <div className="grid grid-cols-3 gap-4 sm:hidden">
-            <div className="rounded-lg bg-gradient-to-br from-dynamic-blue/5 to-dynamic-blue/10 p-3 text-center">
+            <div className="rounded-lg bg-linear-to-br from-dynamic-blue/5 to-dynamic-blue/10 p-3 text-center">
               <div className="font-bold text-dynamic-blue text-lg">
                 {totalClicks.toLocaleString()}
               </div>
               <div className="text-muted-foreground text-xs">Total Clicks</div>
             </div>
-            <div className="rounded-lg bg-gradient-to-br from-dynamic-green/5 to-dynamic-green/10 p-3 text-center">
+            <div className="rounded-lg bg-linear-to-br from-dynamic-green/5 to-dynamic-green/10 p-3 text-center">
               <div className="font-bold text-dynamic-green text-lg">
                 {avgClicks}
               </div>
               <div className="text-muted-foreground text-xs">Avg/Day</div>
             </div>
-            <div className="rounded-lg bg-gradient-to-br from-dynamic-orange/5 to-dynamic-orange/10 p-3 text-center">
+            <div className="rounded-lg bg-linear-to-br from-dynamic-orange/5 to-dynamic-orange/10 p-3 text-center">
               <div className="font-bold text-dynamic-orange text-lg">
                 {maxClicks}
               </div>
@@ -213,7 +213,7 @@ export function DailyActivityChart({ clicksByDay }: DailyActivityChartProps) {
 
           {/* Peak Day Indicator */}
           {maxClicksDay && (
-            <div className="rounded-lg bg-gradient-to-br from-dynamic-orange/5 to-dynamic-orange/10 p-3">
+            <div className="rounded-lg bg-linear-to-br from-dynamic-orange/5 to-dynamic-orange/10 p-3">
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-dynamic-orange"></div>
                 <span className="font-medium text-dynamic-orange text-sm">

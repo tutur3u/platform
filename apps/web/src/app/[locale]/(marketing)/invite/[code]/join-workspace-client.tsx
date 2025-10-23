@@ -102,7 +102,7 @@ export default function JoinWorkspaceClient({
         >
           <div className="group relative overflow-hidden rounded-2xl border border-foreground/10 bg-background/80 p-8 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-foreground/20 hover:shadow-dynamic-green/10">
             {/* Shine effect */}
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+            <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-transparent via-white/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
 
             {/* Workspace Avatar/Logo */}
             <div className="mb-8 flex justify-center">
@@ -120,7 +120,7 @@ export default function JoinWorkspaceClient({
                     />
                   </div>
                 ) : (
-                  <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-dynamic-blue via-dynamic-purple to-dynamic-pink shadow-lg ring-4 ring-dynamic-green/20 ring-offset-4 ring-offset-background transition-transform duration-300 group-hover:scale-110">
+                  <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-linear-to-br from-dynamic-blue via-dynamic-purple to-dynamic-pink shadow-lg ring-4 ring-dynamic-green/20 ring-offset-4 ring-offset-background transition-transform duration-300 group-hover:scale-110">
                     <span className="font-bold text-4xl text-white drop-shadow-lg">
                       {memberWorkspace.name.charAt(0).toUpperCase()}
                     </span>
@@ -131,7 +131,7 @@ export default function JoinWorkspaceClient({
 
             {/* Already Member Info */}
             <div className="mb-8 space-y-3 text-center">
-              <h1 className="bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text font-bold text-3xl text-transparent">
+              <h1 className="bg-linear-to-br from-foreground to-foreground/70 bg-clip-text font-bold text-3xl text-transparent">
                 {t('already-member-title')}
               </h1>
               <div className="space-y-2">
@@ -191,7 +191,7 @@ export default function JoinWorkspaceClient({
       >
         <div className="group relative overflow-hidden rounded-2xl border border-foreground/10 bg-background/80 p-8 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-foreground/20 hover:shadow-dynamic-blue/10">
           {/* Shine effect */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+          <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-transparent via-white/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
 
           {/* Sparkle decoration */}
           {!joined && (
@@ -214,7 +214,7 @@ export default function JoinWorkspaceClient({
                   />
                 </div>
               ) : (
-                <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-dynamic-blue via-dynamic-purple to-dynamic-pink shadow-lg ring-4 ring-dynamic-blue/20 ring-offset-4 ring-offset-background transition-all duration-300 group-hover:scale-110 group-hover:ring-dynamic-blue/30">
+                <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-linear-to-br from-dynamic-blue via-dynamic-purple to-dynamic-pink shadow-lg ring-4 ring-dynamic-blue/20 ring-offset-4 ring-offset-background transition-all duration-300 group-hover:scale-110 group-hover:ring-dynamic-blue/30">
                   <span className="font-bold text-4xl text-white drop-shadow-lg">
                     {workspace.name.charAt(0).toUpperCase()}
                   </span>
@@ -231,7 +231,7 @@ export default function JoinWorkspaceClient({
           {/* Workspace Info */}
           <div className="mb-8 space-y-4 text-center">
             <div className="space-y-2">
-              <h1 className="bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text font-bold text-3xl text-transparent">
+              <h1 className="bg-linear-to-br from-foreground to-foreground/70 bg-clip-text font-bold text-3xl text-transparent">
                 {workspace.name}
               </h1>
               <p className="text-foreground/70 text-lg">

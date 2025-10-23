@@ -60,7 +60,7 @@ export default async function WorkspaceMembersPage({
         return (
           <div className="space-y-8">
             {/* Header Section with gradient background */}
-            <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-background via-background to-foreground/[0.02] p-6 shadow-sm">
+            <div className="relative overflow-hidden rounded-xl border border-border bg-linear-to-br from-background via-background to-foreground/[0.02] p-6 shadow-sm">
               {/* Decorative elements */}
               <div className="-right-4 -top-4 pointer-events-none absolute h-32 w-32 rounded-full bg-dynamic-blue/5 blur-2xl" />
               <div className="-bottom-4 -left-4 pointer-events-none absolute h-32 w-32 rounded-full bg-dynamic-purple/5 blur-2xl" />
@@ -68,7 +68,7 @@ export default async function WorkspaceMembersPage({
               <div className="relative flex flex-col justify-between gap-6 md:flex-row md:items-start">
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-dynamic-blue to-dynamic-purple shadow-lg">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-dynamic-blue to-dynamic-purple shadow-lg">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
@@ -86,7 +86,7 @@ export default async function WorkspaceMembersPage({
                         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                       </svg>
                     </div>
-                    <h1 className="bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text font-bold text-3xl text-transparent">
+                    <h1 className="bg-linear-to-br from-foreground to-foreground/70 bg-clip-text font-bold text-3xl text-transparent">
                       {t('workspace-settings-layout.members')}
                     </h1>
                   </div>
