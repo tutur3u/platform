@@ -278,12 +278,20 @@ export function TaskProjectsClient({
           bVal = b.status ?? '';
           break;
         case 'priority':
-          aVal = a.priority ? (priorityOrder[a.priority] ?? 0) : 0;
-          bVal = b.priority ? (priorityOrder[b.priority] ?? 0) : 0;
+          aVal = a.priority
+            ? (priorityOrder[a.priority as keyof typeof priorityOrder] ?? 0)
+            : 0;
+          bVal = b.priority
+            ? (priorityOrder[b.priority as keyof typeof priorityOrder] ?? 0)
+            : 0;
           break;
         case 'health_status':
-          aVal = a.health_status ? (healthOrder[a.health_status] ?? 0) : 0;
-          bVal = b.health_status ? (healthOrder[b.health_status] ?? 0) : 0;
+          aVal = a.health_status
+            ? (healthOrder[a.health_status as keyof typeof healthOrder] ?? 0)
+            : 0;
+          bVal = b.health_status
+            ? (healthOrder[b.health_status as keyof typeof healthOrder] ?? 0)
+            : 0;
           break;
         case 'tasks_count':
           aVal = a.tasksCount;
