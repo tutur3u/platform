@@ -819,6 +819,9 @@ export class TuturuuuClient {
  * - TUTURUUU_API_KEY (required)
  * - TUTURUUU_BASE_URL (optional, defaults to https://tuturuuu.com/api/v1)
  *
+ * Uses lazy initialization to avoid validation errors during module imports.
+ * The client is only instantiated when first accessed.
+ *
  * @example
  * ```typescript
  * import { tuturuuu } from 'tuturuuu';
@@ -831,4 +834,13 @@ export class TuturuuuClient {
  * const docs = await tuturuuu.documents.list();
  * ```
  */
-export const tuturuuu = new TuturuuuClient();
+let _tuturuuuInstance: TuturuuuClient | undefined;
+
+export const tuturuuu: TuturuuuClient = new Proxy({} as TuturuuuClient, {
+  get(_targett, prop) {
+    if (!_tuturuuuInstance) {
+      _tuturuuuInstance = new TuturuuuClient();
+    }
+    return _tuturuuuInstance[prop as keyof TuturuuuClient];
+  },
+});

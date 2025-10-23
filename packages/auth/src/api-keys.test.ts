@@ -194,13 +194,14 @@ describe('API Key Validation with Permissions', () => {
       return mockDefaultPermissionsQuery;
     });
 
-    let callCount = 0;
-    mockSupabase.from.mockImplementation(() => {
-      callCount++;
-      if (callCount === 1) return mockApiKeyQuery; // First call: workspace_api_keys
-      if (callCount === 2) return mockRolePermissionsQuery; // Second call: workspace_role_permissions
-      if (callCount === 3) return mockDefaultPermissionsQuery; // Third call: workspace_default_permissions
-      return mockApiKeyQuery;
+    // Use table-name-based mocking instead of call count
+    mockSupabase.from.mockImplementation((tableName: string) => {
+      if (tableName === 'workspace_api_keys') return mockApiKeyQuery;
+      if (tableName === 'workspace_role_permissions')
+        return mockRolePermissionsQuery;
+      if (tableName === 'workspace_default_permissions')
+        return mockDefaultPermissionsQuery;
+      throw new Error(`Unexpected table: ${tableName}`);
     });
 
     const result = await validateApiKey(key);
@@ -257,12 +258,12 @@ describe('API Key Validation with Permissions', () => {
       return mockDefaultPermissionsQuery;
     });
 
-    let callCount = 0;
-    mockSupabase.from.mockImplementation(() => {
-      callCount++;
-      if (callCount === 1) return mockApiKeyQuery; // First call: workspace_api_keys
-      if (callCount === 2) return mockDefaultPermissionsQuery; // Second call: workspace_default_permissions (no role, so skip role query)
-      return mockApiKeyQuery;
+    // Use table-name-based mocking instead of call count
+    mockSupabase.from.mockImplementation((tableName: string) => {
+      if (tableName === 'workspace_api_keys') return mockApiKeyQuery;
+      if (tableName === 'workspace_default_permissions')
+        return mockDefaultPermissionsQuery;
+      throw new Error(`Unexpected table: ${tableName}`);
     });
 
     const result = await validateApiKey(key);
@@ -315,12 +316,12 @@ describe('API Key Validation with Permissions', () => {
       return mockDefaultPermissionsQuery;
     });
 
-    let callCount = 0;
-    mockSupabase.from.mockImplementation(() => {
-      callCount++;
-      if (callCount === 1) return mockApiKeyQuery;
-      if (callCount === 2) return mockDefaultPermissionsQuery;
-      return mockApiKeyQuery;
+    // Use table-name-based mocking instead of call count
+    mockSupabase.from.mockImplementation((tableName: string) => {
+      if (tableName === 'workspace_api_keys') return mockApiKeyQuery;
+      if (tableName === 'workspace_default_permissions')
+        return mockDefaultPermissionsQuery;
+      throw new Error(`Unexpected table: ${tableName}`);
     });
 
     const result = await validateApiKey(key);
