@@ -186,12 +186,12 @@ export function TaskList({
   return (
     <div className="space-y-8">
       {/* Header with Stats */}
-      <Card className="border-0 bg-gradient-to-br from-white to-gray-50/50 shadow-lg dark:from-gray-900 dark:to-gray-800/50">
+      <Card className="border-0 bg-linear-to-br from-white to-gray-50/50 shadow-lg dark:from-gray-900 dark:to-gray-800/50">
         <CardHeader className="pb-6">
           <div className="flex items-center justify-between">
             <div className="space-y-2">
               <CardTitle className="flex items-center gap-3 font-bold text-2xl">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-blue-500 to-purple-600 text-white shadow-lg">
                   <CalendarIcon className="h-5 w-5" />
                 </div>
                 Task Management
@@ -277,7 +277,7 @@ export function TaskList({
         <CardContent>
           {tasks.length === 0 ? (
             <div className="py-16 text-center">
-              <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20">
+              <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20">
                 <CalendarIcon className="h-10 w-10 text-blue-500" />
               </div>
               <h3 className="mb-3 font-semibold text-xl">No Tasks Yet</h3>
@@ -309,8 +309,8 @@ export function TaskList({
                     key={task.id}
                     className={`group relative space-y-6 rounded-xl border-2 p-6 transition-all duration-200 hover:shadow-xl ${
                       isCompleted
-                        ? 'border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 dark:border-green-800 dark:from-green-950/20 dark:to-emerald-950/20'
-                        : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-gradient-to-br hover:from-blue-50/50 hover:to-purple-50/50 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-blue-700 dark:hover:from-blue-950/20 dark:hover:to-purple-950/20'
+                        ? 'border-green-200 bg-linear-to-br from-green-50 to-emerald-50 dark:border-green-800 dark:from-green-950/20 dark:to-emerald-950/20'
+                        : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-linear-to-br hover:from-blue-50/50 hover:to-purple-50/50 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-blue-700 dark:hover:from-blue-950/20 dark:hover:to-purple-950/20'
                     }`}
                   >
                     {/* Task Header */}
@@ -320,8 +320,8 @@ export function TaskList({
                           <div
                             className={`flex h-12 w-12 items-center justify-center rounded-xl text-xl shadow-lg ${
                               isCompleted
-                                ? 'bg-gradient-to-br from-green-500 to-emerald-600'
-                                : 'bg-gradient-to-br from-blue-500 to-purple-600'
+                                ? 'bg-linear-to-br from-green-500 to-emerald-600'
+                                : 'bg-linear-to-br from-blue-500 to-purple-600'
                             }`}
                           >
                             <span className="text-white">

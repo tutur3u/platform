@@ -29,12 +29,12 @@ interface Props {
 
 const statusColors: Record<TaskBoardStatus, string> = {
   not_started:
-    'border-dynamic-gray/40 bg-gradient-to-br from-dynamic-gray/10 to-dynamic-gray/5',
+    'border-dynamic-gray/40 bg-linear-to-br from-dynamic-gray/10 to-dynamic-gray/5',
   active:
-    'border-dynamic-blue/40 bg-gradient-to-br from-dynamic-blue/10 to-dynamic-blue/5',
-  done: 'border-dynamic-green/40 bg-gradient-to-br from-dynamic-green/10 to-dynamic-green/5',
+    'border-dynamic-blue/40 bg-linear-to-br from-dynamic-blue/10 to-dynamic-blue/5',
+  done: 'border-dynamic-green/40 bg-linear-to-br from-dynamic-green/10 to-dynamic-green/5',
   closed:
-    'border-dynamic-purple/40 bg-gradient-to-br from-dynamic-purple/10 to-dynamic-purple/5',
+    'border-dynamic-purple/40 bg-linear-to-br from-dynamic-purple/10 to-dynamic-purple/5',
 };
 
 const statusHoverColors: Record<TaskBoardStatus, string> = {

@@ -81,7 +81,7 @@ export default async function IntegrationsPage({ params }: Props) {
         <div className="flex items-center justify-between">
           <div className="space-y-3">
             <div className="flex items-center gap-4">
-              <div className="rounded-lg bg-gradient-to-br from-dynamic-blue/20 to-dynamic-purple/20 p-3 ring-2 ring-dynamic-blue/10">
+              <div className="rounded-lg bg-linear-to-br from-dynamic-blue/20 to-dynamic-purple/20 p-3 ring-2 ring-dynamic-blue/10">
                 <Settings className="size-8 text-dynamic-blue" />
               </div>
               <div>
@@ -192,7 +192,7 @@ export default async function IntegrationsPage({ params }: Props) {
 
       {integrations.length === 0 && (
         <div className="py-12 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-dynamic-gray/20 bg-gradient-to-br from-dynamic-gray/10 to-dynamic-slate/10">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-dynamic-gray/20 bg-linear-to-br from-dynamic-gray/10 to-dynamic-slate/10">
             <Bot className="h-8 w-8 text-dynamic-gray/60" />
           </div>
           <div className="space-y-2">

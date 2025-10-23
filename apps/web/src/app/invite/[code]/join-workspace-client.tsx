@@ -66,7 +66,7 @@ export default function JoinWorkspaceClient({
   // Already a member view
   if (alreadyMember && workspace) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-foreground/5 p-4">
+      <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background to-foreground/5 p-4">
         <div className="w-full max-w-md space-y-6">
           <div className="rounded-xl border bg-background/95 p-8 shadow-lg backdrop-blur">
             {/* Workspace Avatar/Logo */}
@@ -78,7 +78,7 @@ export default function JoinWorkspaceClient({
                   className="h-20 w-20 rounded-lg object-cover"
                 />
               ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-gradient-to-br from-dynamic-blue to-dynamic-purple">
+                <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-linear-to-br from-dynamic-blue to-dynamic-purple">
                   <span className="font-bold text-3xl text-white">
                     {workspace.name.charAt(0).toUpperCase()}
                   </span>
@@ -131,7 +131,7 @@ export default function JoinWorkspaceClient({
   const { workspace: ws, memberCount, roleTitle } = workspaceInfo;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-foreground/5 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background to-foreground/5 p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="rounded-xl border bg-background/95 p-8 shadow-lg backdrop-blur">
           {/* Workspace Avatar/Logo */}
@@ -143,7 +143,7 @@ export default function JoinWorkspaceClient({
                 className="h-20 w-20 rounded-lg object-cover"
               />
             ) : (
-              <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-gradient-to-br from-dynamic-blue to-dynamic-purple">
+              <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-linear-to-br from-dynamic-blue to-dynamic-purple">
                 <span className="font-bold text-3xl text-white">
                   {ws.name.charAt(0).toUpperCase()}
                 </span>

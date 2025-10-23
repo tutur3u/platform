@@ -2059,7 +2059,8 @@
       "error": "An error has occurred.",
       "cancel": "Cancel",
       "close": "Close"
-    }
+    },
+    "copy_prefix": "Copy Prefix"
   },
   "ws-reports": {
     "report": "Report",

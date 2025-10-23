@@ -1,7 +1,7 @@
+import { isValidUrl } from '@/lib/utils';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { isValidUrl } from '@/lib/utils';
 
 interface RedirectPageProps {
   params: Promise<{ slug: string }>;
@@ -20,7 +20,7 @@ export default async function RedirectPage({ params }: RedirectPageProps) {
 
   if (error || !shortenedLink) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 px-4 py-12 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-linear-to-br from-red-50 to-red-100 px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-md">
           <div className="text-center">
             <h1 className="mb-4 font-bold text-2xl text-red-900">
@@ -44,7 +44,7 @@ export default async function RedirectPage({ params }: RedirectPageProps) {
 
   if (!isValidUrl(shortenedLink.link)) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 px-4 py-12 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-linear-to-br from-red-50 to-red-100 px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-md">
           <div className="text-center">
             <h1 className="mb-4 font-bold text-2xl text-red-900">

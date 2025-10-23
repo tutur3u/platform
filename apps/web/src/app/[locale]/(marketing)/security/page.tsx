@@ -108,7 +108,7 @@ export default function SecurityPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl sm:h-[40rem] sm:w-[40rem]"
+          className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl sm:h-[40rem] sm:w-[40rem]"
         />
         <motion.div
           animate={{
@@ -120,7 +120,7 @@ export default function SecurityPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-right-32 sm:-right-64 absolute top-[40%] h-80 w-80 rounded-full bg-gradient-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl sm:h-[35rem] sm:w-[35rem]"
+          className="-right-32 sm:-right-64 absolute top-[40%] h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl sm:h-[35rem] sm:w-[35rem]"
         />
         <motion.div
           animate={{
@@ -132,7 +132,7 @@ export default function SecurityPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-green/30 via-dynamic-emerald/20 to-transparent blur-3xl sm:h-[45rem] sm:w-[45rem]"
+          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-green/30 via-dynamic-emerald/20 to-transparent blur-3xl sm:h-[45rem] sm:w-[45rem]"
         />
       </div>
 
@@ -223,7 +223,7 @@ export default function SecurityPage() {
                 <Card
                   className={cn(
                     'group h-full p-6 transition-all hover:shadow-lg',
-                    `border-dynamic-${feature.color}/30 bg-gradient-to-br from-dynamic-${feature.color}/5 via-background to-background hover:border-dynamic-${feature.color}/50 hover:shadow-dynamic-${feature.color}/10`
+                    `border-dynamic-${feature.color}/30 bg-linear-to-br from-dynamic-${feature.color}/5 via-background to-background hover:border-dynamic-${feature.color}/50 hover:shadow-dynamic-${feature.color}/10`
                   )}
                 >
                   <div
@@ -257,7 +257,7 @@ export default function SecurityPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <Card className="overflow-hidden border-dynamic-red/30 bg-gradient-to-br from-dynamic-red/5 via-background to-background p-8 md:p-12">
+            <Card className="overflow-hidden border-dynamic-red/30 bg-linear-to-br from-dynamic-red/5 via-background to-background p-8 md:p-12">
               <div className="grid gap-12 lg:grid-cols-2">
                 <div className="flex flex-col justify-center">
                   <motion.div
@@ -422,7 +422,7 @@ export default function SecurityPage() {
                 <Card
                   className={cn(
                     'h-full p-8 text-center transition-all hover:shadow-lg',
-                    `border-dynamic-${item.color}/30 bg-gradient-to-br from-dynamic-${item.color}/5 via-background to-background hover:border-dynamic-${item.color}/50 hover:shadow-dynamic-${item.color}/10`
+                    `border-dynamic-${item.color}/30 bg-linear-to-br from-dynamic-${item.color}/5 via-background to-background hover:border-dynamic-${item.color}/50 hover:shadow-dynamic-${item.color}/10`
                   )}
                 >
                   <div

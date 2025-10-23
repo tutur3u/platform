@@ -140,11 +140,11 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
 
   if (events.length === 0) {
     return (
-      <Card className="border-0 bg-gradient-to-br from-white to-gray-50/50 shadow-lg dark:from-gray-900 dark:to-gray-800/50">
+      <Card className="border-0 bg-linear-to-br from-white to-gray-50/50 shadow-lg dark:from-gray-900 dark:to-gray-800/50">
         <CardHeader className="pb-6">
           <div className="space-y-2">
             <CardTitle className="flex items-center gap-3 font-bold text-2xl">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-blue-500 to-purple-600 text-white shadow-lg">
                 <CalendarIcon className="h-5 w-5" />
               </div>
               Your Schedule
@@ -156,7 +156,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
         </CardHeader>
         <CardContent>
           <div className="py-16 text-center">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20">
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20">
               <SparklesIcon className="h-10 w-10 text-blue-500" />
             </div>
             <h3 className="mb-3 font-semibold text-xl">
@@ -192,11 +192,11 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
         </div>
       )}
       {/* Schedule Overview */}
-      <Card className="border-0 bg-gradient-to-br from-white to-gray-50/50 shadow-lg dark:from-gray-900 dark:to-gray-800/50">
+      <Card className="border-0 bg-linear-to-br from-white to-gray-50/50 shadow-lg dark:from-gray-900 dark:to-gray-800/50">
         <CardHeader className="pb-6">
           <div className="space-y-2">
             <CardTitle className="flex items-center gap-3 font-bold text-2xl">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-green-500 to-emerald-600 text-white shadow-lg">
                 <TrendingUpIcon className="h-5 w-5" />
               </div>
               Schedule Overview
@@ -281,7 +281,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
         <CardHeader className="pb-6">
           <div className="space-y-2">
             <CardTitle className="flex items-center gap-3 font-bold text-xl">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-blue-500 to-purple-600 text-white shadow-lg">
                 <CalendarIcon className="h-4 w-4" />
               </div>
               Schedule Timeline
@@ -305,9 +305,9 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
                     key={date}
                     className={`space-y-4 rounded-xl border-2 p-6 transition-all duration-200 ${
                       isToday
-                        ? 'border-blue-200 bg-gradient-to-br from-blue-50 to-purple-50 dark:border-blue-800 dark:from-blue-950/20 dark:to-purple-950/20'
+                        ? 'border-blue-200 bg-linear-to-br from-blue-50 to-purple-50 dark:border-blue-800 dark:from-blue-950/20 dark:to-purple-950/20'
                         : isTomorrow
-                          ? 'border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 dark:border-green-800 dark:from-green-950/20 dark:to-emerald-950/20'
+                          ? 'border-green-200 bg-linear-to-br from-green-50 to-emerald-50 dark:border-green-800 dark:from-green-950/20 dark:to-emerald-950/20'
                           : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900'
                     }`}
                   >
@@ -317,10 +317,10 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
                         <div
                           className={`flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-lg ${
                             isToday
-                              ? 'bg-gradient-to-br from-blue-500 to-purple-600'
+                              ? 'bg-linear-to-br from-blue-500 to-purple-600'
                               : isTomorrow
-                                ? 'bg-gradient-to-br from-green-500 to-emerald-600'
-                                : 'bg-gradient-to-br from-gray-500 to-gray-600'
+                                ? 'bg-linear-to-br from-green-500 to-emerald-600'
+                                : 'bg-linear-to-br from-gray-500 to-gray-600'
                           }`}
                         >
                           <CalendarIcon className="h-5 w-5" />
@@ -387,7 +387,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
                               <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1 space-y-3">
                                   <div className="flex items-center gap-3">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-blue-500 to-purple-600 text-white shadow-lg">
                                       <ClockIcon className="h-4 w-4" />
                                     </div>
                                     <div className="flex-1">

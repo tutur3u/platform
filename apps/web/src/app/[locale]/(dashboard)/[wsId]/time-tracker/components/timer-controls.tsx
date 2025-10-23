@@ -3075,13 +3075,13 @@ export function TimerControls({
                   'relative overflow-hidden rounded-lg p-6',
                   timerMode === TimerMode.pomodoro &&
                     countdownState.sessionType === 'focus'
-                    ? 'bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950/20 dark:to-emerald-900/20'
+                    ? 'bg-linear-to-br from-green-50 to-emerald-100 dark:from-green-950/20 dark:to-emerald-900/20'
                     : timerMode === TimerMode.pomodoro &&
                         countdownState.sessionType !== 'focus'
-                      ? 'bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20'
+                      ? 'bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20'
                       : timerMode === TimerMode.custom
-                        ? 'bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20'
-                        : 'bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950/20 dark:to-red-900/20'
+                        ? 'bg-linear-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20'
+                        : 'bg-linear-to-br from-red-50 to-red-100 dark:from-red-950/20 dark:to-red-900/20'
                 )}
               >
                 <div
@@ -3367,7 +3367,7 @@ export function TimerControls({
           ) : pausedSession ? (
             /* Paused Session Display */
             <div className="space-y-6 text-center">
-              <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-amber-50 to-amber-100 p-6 dark:from-amber-950/20 dark:to-amber-900/20">
+              <div className="relative overflow-hidden rounded-lg bg-linear-to-br from-amber-50 to-amber-100 p-6 dark:from-amber-950/20 dark:to-amber-900/20">
                 <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-transparent"></div>
                 <div className="relative">
                   <div className="mb-3 flex items-center justify-center gap-2">
@@ -3574,7 +3574,7 @@ export function TimerControls({
                                     openDropdown();
                                   }}
                                 >
-                                  <div className="flex h-6 w-6 items-center justify-center rounded border border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/20 to-dynamic-blue/10">
+                                  <div className="flex h-6 w-6 items-center justify-center rounded border border-dynamic-blue/30 bg-linear-to-br from-dynamic-blue/20 to-dynamic-blue/10">
                                     <CheckCircle className="h-3 w-3 text-dynamic-blue" />
                                   </div>
                                   <div className="flex-1 text-left">
@@ -4003,8 +4003,8 @@ export function TimerControls({
                                           className={cn(
                                             'flex h-8 w-8 items-center justify-center rounded-lg border',
                                             task.is_assigned_to_current_user
-                                              ? 'border-blue-400/50 bg-gradient-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700'
-                                              : 'border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/20 to-dynamic-blue/10'
+                                              ? 'border-blue-400/50 bg-linear-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700'
+                                              : 'border-dynamic-blue/30 bg-linear-to-br from-dynamic-blue/20 to-dynamic-blue/10'
                                           )}
                                         >
                                           <CheckCircle
@@ -4050,7 +4050,7 @@ export function TimerControls({
                                                     .map((assignee) => (
                                                       <div
                                                         key={assignee.id}
-                                                        className="h-4 w-4 rounded-full border border-white bg-gradient-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
+                                                        className="h-4 w-4 rounded-full border border-white bg-linear-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
                                                         title={
                                                           assignee.display_name ||
                                                           assignee.email
@@ -4240,7 +4240,7 @@ export function TimerControls({
                       !showTaskSuggestion && (
                         <div className="rounded-lg border border-dynamic-green/30 bg-gradient-to-r from-dynamic-green/5 to-dynamic-green/3 p-4 shadow-sm">
                           <div className="flex items-start gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-dynamic-green/30 bg-gradient-to-br from-dynamic-green/20 to-dynamic-green/10">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-dynamic-green/30 bg-linear-to-br from-dynamic-green/20 to-dynamic-green/10">
                               <CheckCircle className="h-5 w-5 text-dynamic-green" />
                             </div>
                             <div className="min-w-0 flex-1">

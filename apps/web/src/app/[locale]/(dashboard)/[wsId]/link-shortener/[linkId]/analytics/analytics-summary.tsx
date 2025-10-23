@@ -20,8 +20,8 @@ export function AnalyticsSummary({ analytics }: AnalyticsSummaryProps) {
   }
 
   return (
-    <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+    <Card className="relative overflow-hidden border-0 bg-linear-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
+      <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent" />
       <CardContent className="relative p-6">
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-2">

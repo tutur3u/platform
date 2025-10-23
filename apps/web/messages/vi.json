@@ -2144,7 +2144,8 @@
       "error": "Đã xảy ra lỗi.",
       "cancel": "Hủy bỏ",
       "close": "Đóng"
-    }
+    },
+    "copy_prefix": "Sao chép tiền tố"
   },
   "ws-reports": {
     "report": "Báo cáo",
