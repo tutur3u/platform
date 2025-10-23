@@ -988,8 +988,15 @@ export async function WorkspaceNavigationLinks({
           title: t('workspace-settings-layout.api_keys'),
           href: `/${personalOrWsId}/api-keys`,
           icon: <KeyRound className="h-5 w-5" />,
-          disabled: ENABLE_AI_ONLY || withoutPermission('manage_api_keys'),
-          requireRootWorkspace: true,
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId: resolvedWorkspaceId,
+              name: 'ENABLE_API_KEYS',
+              value: 'true',
+            })) ||
+            withoutPermission('manage_api_keys'),
           requireRootMember: true,
         },
         {
