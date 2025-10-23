@@ -70,7 +70,7 @@
         "next": "^16.0.0",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
-        "tuturuuu": "^0.0.4",
+        "tuturuuu": "^0.0.5",
         "zustand": "^5.0.8",
       },
       "devDependencies": {
@@ -660,7 +660,7 @@
     },
     "packages/sdk": {
       "name": "tuturuuu",
-      "version": "0.0.4",
+      "version": "0.0.5",
       "dependencies": {
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",

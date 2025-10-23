@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { generateSignedUrl } from '../lib/api';
+import { tuturuuu } from 'tuturuuu';
 import { isImageFile } from '../lib/utils';
 
 export function useImageUrls(
@@ -9,25 +9,56 @@ export function useImageUrls(
 ) {
   useEffect(() => {
     const loadImageUrls = async () => {
-      if (!files) return;
+      if (!files || files.length === 0) return;
 
-      const newUrls: Record<string, string> = {};
+      // Collect all image file paths
+      const imagePaths: string[] = [];
+      const imageFileNames: string[] = [];
 
       for (const file of files) {
         if (isImageFile(file.name)) {
-          try {
-            const result = await generateSignedUrl(
-              `${uploadPath}/${file.name}`,
-              3600
-            );
-            newUrls[file.name] = result.data.signedUrl;
-          } catch (err) {
-            console.error(`Failed to load image URL for ${file.name}:`, err);
-          }
+          imagePaths.push(`${uploadPath}/${file.name}`);
+          imageFileNames.push(file.name);
         }
       }
 
-      setImageUrls(newUrls);
+      if (imagePaths.length === 0) {
+        setImageUrls({});
+        return;
+      }
+
+      try {
+        // Batch generate signed URLs using SDK method
+        const result = await tuturuuu.storage.createSignedUrls(
+          imagePaths,
+          3600
+        );
+
+        // Map signed URLs back to file names
+        const newUrls: Record<string, string> = {};
+        result.data.forEach((item) => {
+          if (item.signedUrl && !item.error) {
+            // Extract just the filename from the full path
+            const fileName = item.path.split('/').pop();
+            if (fileName) {
+              newUrls[fileName] = item.signedUrl;
+            }
+          }
+        });
+
+        // Log any errors for debugging
+        if (result.errors && result.errors.length > 0) {
+          console.warn(
+            `Failed to generate ${result.errors.length} signed URLs:`,
+            result.errors
+          );
+        }
+
+        setImageUrls(newUrls);
+      } catch (err) {
+        console.error('Failed to load image URLs in batch:', err);
+        setImageUrls({});
+      }
     };
 
     loadImageUrls();

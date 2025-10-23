@@ -35,6 +35,7 @@ import {
 } from './errors';
 import type {
   AnalyticsResponse,
+  BatchShareResponse,
   CreateDocumentData,
   CreateFolderResponse,
   DeleteDocumentResponse,
@@ -418,6 +419,50 @@ export class StorageClient {
         path,
         expiresIn: validatedOptions.expiresIn,
       }),
+    });
+  }
+
+  /**
+   * Generates signed URLs for multiple files at once (batch operation)
+   *
+   * @param paths - Array of file paths (max 100)
+   * @param expiresIn - Expiration time in seconds (default 3600)
+   * @returns Array of signed URL data with path, signedUrl, and optional error
+   *
+   * @example
+   * ```typescript
+   * const result = await client.storage.createSignedUrls(
+   *   ['folder/avatar1.png', 'folder/avatar2.png'],
+   *   3600
+   * );
+   *
+   * // Access successful URLs
+   * result.data.forEach(item => {
+   *   if (!item.error) {
+   *     console.log(`${item.path}: ${item.signedUrl}`);
+   *   } else {
+   *     console.error(`${item.path} failed: ${item.error}`);
+   *   }
+   * });
+   * ```
+   */
+  async createSignedUrls(
+    paths: string[],
+    expiresIn = 3600
+  ): Promise<BatchShareResponse> {
+    if (!Array.isArray(paths) || paths.length === 0) {
+      throw new ValidationError(
+        'Paths array is required and must not be empty'
+      );
+    }
+
+    if (paths.length > 100) {
+      throw new ValidationError('Maximum 100 paths can be processed at once');
+    }
+
+    return this.client.request<BatchShareResponse>('/storage/share-batch', {
+      method: 'POST',
+      body: JSON.stringify({ paths, expiresIn }),
     });
   }
 

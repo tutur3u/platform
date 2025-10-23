@@ -49,6 +49,7 @@ export {
 export type {
   AnalyticsResponse,
   ApiErrorResponse,
+  BatchShareResponse,
   CreateDocumentData,
   CreateFolderResponse,
   DeleteDocumentResponse,
@@ -63,6 +64,7 @@ export type {
   Pagination,
   ShareOptions,
   ShareResponse,
+  SignedUrlData,
   StorageAnalytics,
   StorageObject,
   UpdateDocumentData,
