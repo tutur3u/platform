@@ -11,8 +11,8 @@ import {
   withApiAuth,
 } from '@/lib/api-middleware';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { createDocumentDataSchema } from '@tuturuuu/types/sdk';
 import { NextResponse } from 'next/server';
-import { createDocumentDataSchema } from 'tuturuuu/types';
 import { z } from 'zod';
 
 // Query parameters schema for listing (query string transformations)
