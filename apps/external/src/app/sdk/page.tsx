@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function SDKPage() {
   const [analytics, setAnalytics] = useState<any>(null);
@@ -14,10 +14,10 @@ export default function SDKPage() {
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [uploadPath, setUploadPath] = useState<string>('gallery');
 
-  const isImageFile = (filename: string) => {
+  const isImageFile = useCallback((filename: string) => {
     const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
     return imageExtensions.some((ext) => filename.toLowerCase().endsWith(ext));
-  };
+  }, []);
 
   const handleDownload = async (filename: string, folderPath: string) => {
     try {
@@ -43,35 +43,38 @@ export default function SDKPage() {
     }
   };
 
-  const loadImageUrls = async (files: any[], folderPath: string) => {
-    const newUrls: Record<string, string> = {};
+  const loadImageUrls = useCallback(
+    async (files: any[], folderPath: string) => {
+      const newUrls: Record<string, string> = {};
 
-    for (const file of files) {
-      if (isImageFile(file.name)) {
-        try {
-          const response = await fetch('/api/storage/share', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              path: `${folderPath}/${file.name}`,
-              expiresIn: 3600,
-            }),
-          });
+      for (const file of files) {
+        if (isImageFile(file.name)) {
+          try {
+            const response = await fetch('/api/storage/share', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                path: `${folderPath}/${file.name}`,
+                expiresIn: 3600,
+              }),
+            });
 
-          if (response.ok) {
-            const result = await response.json();
-            newUrls[file.name] = result.data.signedUrl;
+            if (response.ok) {
+              const result = await response.json();
+              newUrls[file.name] = result.data.signedUrl;
+            }
+          } catch (err) {
+            console.error(`Failed to load image URL for ${file.name}:`, err);
           }
-        } catch (err) {
-          console.error(`Failed to load image URL for ${file.name}:`, err);
         }
       }
-    }
 
-    setImageUrls(newUrls);
-  };
+      setImageUrls(newUrls);
+    },
+    [isImageFile]
+  );
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -104,17 +107,34 @@ export default function SDKPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [uploadPath, loadImageUrls]);
 
   useEffect(() => {
     loadData();
-  }, [uploadPath]);
+  }, [loadData]);
 
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Check storage limit before uploading
+    if (analytics?.data) {
+      const { totalSize, storageLimit } = analytics.data;
+      const remainingSpace = storageLimit - totalSize;
+
+      if (file.size > remainingSpace) {
+        const remainingMB = (remainingSpace / 1024 / 1024).toFixed(2);
+        const fileMB = (file.size / 1024 / 1024).toFixed(2);
+        setUploadStatus(
+          `❌ Storage limit exceeded: File size (${fileMB} MB) exceeds available space (${remainingMB} MB)`
+        );
+        setTimeout(() => setUploadStatus(''), 5000);
+        event.target.value = '';
+        return;
+      }
+    }
 
     setIsUploading(true);
     setUploadStatus(`Uploading ${file.name}...`);
@@ -159,7 +179,7 @@ export default function SDKPage() {
       <div className="mx-auto max-w-6xl p-8">
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
-            <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
+            <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-current border-r-transparent border-solid"></div>
             <p className="text-gray-600">Loading storage data...</p>
           </div>
         </div>
@@ -170,21 +190,21 @@ export default function SDKPage() {
   if (error) {
     return (
       <div className="mx-auto max-w-6xl p-8">
-        <div className="rounded-lg bg-red-50 p-6 border border-red-200">
-          <h1 className="mb-2 text-2xl font-bold text-red-900">API Error</h1>
-          <p className="text-red-800 mb-4">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-6">
+          <h1 className="mb-2 font-bold text-2xl text-red-900">API Error</h1>
+          <p className="mb-4 text-red-800">
             Failed to connect to the storage API. Please check the server
             configuration.
           </p>
           <div className="rounded-lg bg-white p-4">
-            <p className="font-semibold mb-2">Error Details:</p>
-            <pre className="overflow-auto text-sm text-red-700">
+            <p className="mb-2 font-semibold">Error Details:</p>
+            <pre className="overflow-auto text-red-700 text-sm">
               {error.message}
             </pre>
           </div>
           <div className="mt-4 rounded-lg bg-white p-4">
-            <p className="font-semibold mb-2">Troubleshooting:</p>
-            <ul className="text-sm space-y-1 list-disc ml-4">
+            <p className="mb-2 font-semibold">Troubleshooting:</p>
+            <ul className="ml-4 list-disc space-y-1 text-sm">
               <li>Ensure the server has TUTURUUU_API_KEY set in .env.local</li>
               <li>Ensure the server has TUTURUUU_BASE_URL set in .env.local</li>
               <li>Check that the API endpoints are accessible</li>
@@ -197,9 +217,9 @@ export default function SDKPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl p-8 space-y-8">
+    <div className="mx-auto max-w-6xl space-y-8 p-8">
       <div>
-        <h1 className="mb-4 text-3xl font-bold">
+        <h1 className="mb-4 font-bold text-3xl">
           Tuturuuu SDK - Storage Example
         </h1>
         <p className="text-gray-600">
@@ -209,13 +229,13 @@ export default function SDKPage() {
 
       {/* Upload Section */}
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-xl font-semibold">Upload Files</h2>
+        <h2 className="mb-4 font-semibold text-xl">Upload Files</h2>
         <div className="space-y-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <label
                 htmlFor="upload-path"
-                className="text-sm font-medium text-gray-700"
+                className="font-medium text-gray-700 text-sm"
               >
                 Folder:
               </label>
@@ -231,7 +251,7 @@ export default function SDKPage() {
             </div>
             <label
               htmlFor="file-upload"
-              className="cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isUploading ? 'Uploading...' : 'Choose File'}
             </label>
@@ -244,7 +264,7 @@ export default function SDKPage() {
               accept="image/*,application/pdf,.txt,.md,.json"
             />
           </div>
-          <p className="text-xs text-gray-500">
+          <p className="text-gray-500 text-xs">
             Files will be uploaded to:{' '}
             <span className="font-mono">{uploadPath || '(root)'}</span>
           </p>
@@ -260,26 +280,80 @@ export default function SDKPage() {
 
       {/* Storage Analytics */}
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-xl font-semibold">Storage Analytics</h2>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-lg bg-blue-50 p-4">
-            <p className="text-sm text-gray-600">Total Files</p>
-            <p className="text-2xl font-bold">
-              {analytics?.data.fileCount || 0}
-            </p>
+        <h2 className="mb-4 font-semibold text-xl">Storage Analytics</h2>
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-lg bg-blue-50 p-4">
+              <p className="text-gray-600 text-sm">Total Files</p>
+              <p className="font-bold text-2xl">
+                {analytics?.data.fileCount || 0}
+              </p>
+            </div>
+            <div className="rounded-lg bg-green-50 p-4">
+              <p className="text-gray-600 text-sm">Total Size</p>
+              <p className="font-bold text-2xl">
+                {((analytics?.data.totalSize || 0) / 1024 / 1024).toFixed(2)} MB
+              </p>
+            </div>
+            <div className="rounded-lg bg-purple-50 p-4">
+              <p className="text-gray-600 text-sm">Storage Limit</p>
+              <p className="font-bold text-2xl">
+                {((analytics?.data.storageLimit || 0) / 1024 / 1024).toFixed(2)}{' '}
+                MB
+              </p>
+            </div>
           </div>
-          <div className="rounded-lg bg-green-50 p-4">
-            <p className="text-sm text-gray-600">Total Size</p>
-            <p className="text-2xl font-bold">
-              {((analytics?.data.totalSize || 0) / 1024 / 1024).toFixed(2)} MB
-            </p>
+
+          {/* Storage Usage Progress Bar */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium text-gray-700">Storage Usage</span>
+              <span
+                className={`font-semibold ${
+                  (analytics?.data.usagePercentage || 0) >= 90
+                    ? 'text-red-600'
+                    : (analytics?.data.usagePercentage || 0) >= 75
+                      ? 'text-yellow-600'
+                      : 'text-green-600'
+                }`}
+              >
+                {(analytics?.data.usagePercentage || 0).toFixed(2)}%
+              </span>
+            </div>
+            <div className="h-4 w-full overflow-hidden rounded-full bg-gray-200">
+              <div
+                className={`h-full transition-all duration-500 ${
+                  (analytics?.data.usagePercentage || 0) >= 90
+                    ? 'bg-red-500'
+                    : (analytics?.data.usagePercentage || 0) >= 75
+                      ? 'bg-yellow-500'
+                      : 'bg-green-500'
+                }`}
+                style={{
+                  width: `${Math.min(100, analytics?.data.usagePercentage || 0)}%`,
+                }}
+              />
+            </div>
+            {(analytics?.data.usagePercentage || 0) >= 90 && (
+              <p className="font-medium text-red-600 text-sm">
+                Warning: Storage almost full! Please delete some files to free
+                up space.
+              </p>
+            )}
+            {(analytics?.data.usagePercentage || 0) >= 75 &&
+              (analytics?.data.usagePercentage || 0) < 90 && (
+                <p className="font-medium text-sm text-yellow-600">
+                  Caution: Storage usage is high. Consider cleaning up unused
+                  files.
+                </p>
+              )}
           </div>
         </div>
       </div>
 
       {/* Root Files */}
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-xl font-semibold">
+        <h2 className="mb-4 font-semibold text-xl">
           Root Files ({rootFiles?.data.length || 0} items)
         </h2>
         <div className="space-y-2">
@@ -290,7 +364,7 @@ export default function SDKPage() {
             >
               <span className="font-medium">{file.name}</span>
               {file.metadata?.size && (
-                <span className="text-sm text-gray-600">
+                <span className="text-gray-600 text-sm">
                   {(file.metadata.size / 1024).toFixed(2)} KB
                 </span>
               )}
@@ -304,15 +378,16 @@ export default function SDKPage() {
 
       {/* Folder Files */}
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-semibold text-xl">
             {uploadPath || 'Root'} Folder ({folderFiles?.data.length || 0}{' '}
             files)
           </h2>
           <button
+            type="button"
             onClick={loadData}
             disabled={loading}
-            className="text-sm text-blue-600 hover:text-blue-700 disabled:opacity-50"
+            className="text-blue-600 text-sm hover:text-blue-700 disabled:opacity-50"
           >
             🔄 Refresh
           </button>
@@ -325,10 +400,10 @@ export default function SDKPage() {
             return (
               <div
                 key={idx}
-                className="flex flex-col rounded-lg border border-gray-200 bg-white overflow-hidden"
+                className="flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white"
               >
                 {isImage && imageUrl ? (
-                  <div className="relative w-full h-48 bg-gray-100">
+                  <div className="relative h-48 w-full bg-gray-100">
                     <Image
                       src={imageUrl}
                       alt={file.name}
@@ -338,13 +413,14 @@ export default function SDKPage() {
                     />
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-48 bg-gray-100">
+                  <div className="flex h-48 items-center justify-center bg-gray-100">
                     <svg
-                      className="w-16 h-16 text-gray-400"
+                      className="h-16 w-16 text-gray-400"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
                     >
+                      <title>File Icon</title>
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -355,22 +431,23 @@ export default function SDKPage() {
                   </div>
                 )}
                 <div className="p-3">
-                  <p className="font-medium text-sm truncate" title={file.name}>
+                  <p className="truncate font-medium text-sm" title={file.name}>
                     {file.name}
                   </p>
-                  <div className="flex items-center justify-between mt-1">
+                  <div className="mt-1 flex items-center justify-between">
                     {file.metadata?.mimetype && (
-                      <p className="text-xs text-gray-500">
+                      <p className="text-gray-500 text-xs">
                         {file.metadata.mimetype}
                       </p>
                     )}
                     {file.metadata?.size && (
-                      <span className="text-xs text-gray-600">
+                      <span className="text-gray-600 text-xs">
                         {(file.metadata.size / 1024).toFixed(2)} KB
                       </span>
                     )}
                   </div>
                   <button
+                    type="button"
                     onClick={() => handleDownload(file.name, uploadPath)}
                     className="mt-2 w-full rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
                   >
@@ -381,16 +458,16 @@ export default function SDKPage() {
             );
           })}
           {(!folderFiles?.data || folderFiles.data.length === 0) && (
-            <p className="text-gray-500 text-sm col-span-full text-center py-8">
+            <p className="col-span-full py-8 text-center text-gray-500 text-sm">
               No files in {uploadPath || 'root'} folder
             </p>
           )}
         </div>
       </div>
 
-      <div className="rounded-lg bg-green-50 p-4 border border-green-200">
+      <div className="rounded-lg border border-green-200 bg-green-50 p-4">
         <p className="font-semibold text-green-900">✅ SDK Working!</p>
-        <p className="text-sm text-green-800 mt-1">
+        <p className="mt-1 text-green-800 text-sm">
           The Tuturuuu SDK successfully connected and retrieved your workspace
           files.
         </p>
