@@ -1,17 +1,9 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Check, ChevronDown, ExternalLink } from '@tuturuuu/icons';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@tuturuuu/ui/command';
+import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import {
   Dialog,
   DialogContent,
@@ -21,10 +13,10 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Label } from '@tuturuuu/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useCallback, useId, useMemo, useState } from 'react';
+import { TaskBoardForm } from './form';
+import { CreateListDialog } from '../shared/create-list-dialog';
 
 interface Board {
   id: string;
@@ -51,10 +43,13 @@ export function BoardSelector({
   onMove,
   isMoving = false,
 }: BoardSelectorProps) {
+  const t = useTranslations();
   const [selectedBoardId, setSelectedBoardId] = useState<string>('');
   const [selectedListId, setSelectedListId] = useState<string>('');
-  const [boardSelectOpen, setBoardSelectOpen] = useState(false);
-  const [listSelectOpen, setListSelectOpen] = useState(false);
+  const [newBoardDialogOpen, setNewBoardDialogOpen] = useState(false);
+  const [newBoardName, setNewBoardName] = useState<string>('');
+  const [newListDialogOpen, setNewListDialogOpen] = useState(false);
+  const [newListName, setNewListName] = useState<string>('');
 
   // Generate unique IDs for form elements
   const boardSelectId = useId();
@@ -96,12 +91,10 @@ export function BoardSelector({
   const handleBoardSelect = useCallback((boardId: string) => {
     setSelectedBoardId(boardId);
     setSelectedListId(''); // Reset list selection when board changes
-    setBoardSelectOpen(false);
   }, []);
 
   const handleListSelect = useCallback((listId: string) => {
     setSelectedListId(listId);
-    setListSelectOpen(false);
   }, []);
 
   const handleMove = useCallback(() => {
@@ -163,130 +156,52 @@ export function BoardSelector({
           {/* Board Selection */}
           <div className="space-y-2">
             <Label htmlFor={boardSelectId}>Destination Board</Label>
-            <Popover open={boardSelectOpen} onOpenChange={setBoardSelectOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={boardSelectOpen}
-                  className="w-full justify-between"
-                  id={boardSelectId}
-                >
-                  {selectedBoard ? selectedBoard.name : 'Select a board...'}
-                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0">
-                <Command>
-                  <CommandInput placeholder="Search boards..." />
-                  <CommandList>
-                    <CommandEmpty>No boards found.</CommandEmpty>
-                    <CommandGroup>
-                      <ScrollArea className="h-[200px]">
-                        {boards.map((board) => (
-                          <CommandItem
-                            key={board.id}
-                            value={board.name}
-                            onSelect={() => handleBoardSelect(board.id)}
-                            className="flex items-center justify-between"
-                          >
-                            <div className="flex items-center">
-                              <Check
-                                className={cn(
-                                  'mr-2 h-4 w-4',
-                                  selectedBoardId === board.id
-                                    ? 'opacity-100'
-                                    : 'opacity-0'
-                                )}
-                              />
-                              <span>{board.name}</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-muted-foreground text-xs">
-                              <span>
-                                {board.task_lists.length} list
-                                {board.task_lists.length !== 1 ? 's' : ''}
-                              </span>
-                              <ExternalLink className="h-3 w-3" />
-                            </div>
-                          </CommandItem>
-                        ))}
-                      </ScrollArea>
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+            <Combobox
+              t={t}
+              mode="single"
+              options={boards.map((board) => ({
+                value: board.id,
+                label: board.name,
+              }))}
+              placeholder="Select or create a board"
+              selected={selectedBoardId}
+              onChange={(value) => handleBoardSelect(value as string)}
+              onCreate={(name) => {
+                setNewBoardName(name);
+                setNewBoardDialogOpen(true);
+              }}
+              className="w-full"
+            />
           </div>
 
           {/* List Selection */}
           <div className="space-y-2">
             <Label htmlFor={listSelectId}>Destination List</Label>
-            <Popover open={listSelectOpen} onOpenChange={setListSelectOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={listSelectOpen}
-                  className="w-full justify-between"
-                  id={listSelectId}
-                  disabled={!selectedBoardId}
-                >
-                  {selectedList
-                    ? selectedList.name
-                    : selectedBoardId
-                      ? 'Select a list...'
-                      : 'Select a board first'}
-                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0">
-                <Command>
-                  <CommandInput placeholder="Search lists..." />
-                  <CommandList>
-                    <CommandEmpty>
-                      {availableLists.length === 0
-                        ? 'This board has no lists.'
-                        : 'No lists found.'}
-                    </CommandEmpty>
-                    <CommandGroup>
-                      <ScrollArea className="h-[200px]">
-                        {availableLists.map((list) => (
-                          <CommandItem
-                            key={list.id}
-                            value={list.name}
-                            onSelect={() => handleListSelect(list.id)}
-                            className="flex items-center justify-between"
-                          >
-                            <div className="flex items-center">
-                              <Check
-                                className={cn(
-                                  'mr-2 h-4 w-4',
-                                  selectedListId === list.id
-                                    ? 'opacity-100'
-                                    : 'opacity-0'
-                                )}
-                              />
-                              <span>{list.name}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div
-                                className={cn(
-                                  'h-2 w-2 rounded-full',
-                                  `bg-dynamic-${list.color || 'gray'}`
-                                )}
-                              />
-                              <span className="text-muted-foreground text-xs capitalize">
-                                {list.status}
-                              </span>
-                            </div>
-                          </CommandItem>
-                        ))}
-                      </ScrollArea>
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+            <Combobox
+              t={t}
+              mode="single"
+              options={availableLists.map((list) => ({
+                value: list.id,
+                label: list.name,
+              }))}
+              placeholder={
+                !selectedBoardId
+                  ? 'Select a board first'
+                  : 'Select or create a list'
+              }
+              selected={selectedListId}
+              onChange={(value) => handleListSelect(value as string)}
+              onCreate={
+                selectedBoardId
+                  ? (name) => {
+                      setNewListName(name);
+                      setNewListDialogOpen(true);
+                    }
+                  : undefined
+              }
+              disabled={!selectedBoardId}
+              className="w-full"
+            />
           </div>
 
           {/* Preview */}
@@ -331,6 +246,48 @@ export function BoardSelector({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Board Creation Dialog */}
+      <Dialog open={newBoardDialogOpen} onOpenChange={setNewBoardDialogOpen}>
+        <DialogContent
+          className="p-0"
+          style={
+            {
+              maxWidth: '1200px',
+              width: '85vw',
+            } as React.CSSProperties
+          }
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+          <TaskBoardForm
+            wsId={wsId}
+            data={{ name: newBoardName } as any}
+            onFinish={(formData) => {
+              setNewBoardDialogOpen(false);
+              setNewBoardName('');
+              // Auto-select the newly created board
+              if (formData?.id) {
+                setSelectedBoardId(formData.id);
+              }
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* List Creation Dialog */}
+      {selectedBoardId && (
+        <CreateListDialog
+          open={newListDialogOpen}
+          onOpenChange={setNewListDialogOpen}
+          boardId={selectedBoardId}
+          wsId={wsId}
+          initialName={newListName}
+          onSuccess={(listId) => {
+            setSelectedListId(listId);
+            setNewListName('');
+          }}
+        />
+      )}
     </Dialog>
   );
 }
