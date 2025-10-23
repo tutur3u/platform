@@ -3,7 +3,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 export default async function Supabase() {
   const supabase = await createClient();
 
-  const { data, error } = await supabase.from('ai_chats').select('*');
+  const { data, error } = await supabase.from('ai_chats').select('*').limit(1);
 
   if (error) {
     console.error('Error fetching AIChat instance:', error);

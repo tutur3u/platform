@@ -2,7 +2,8 @@
  * API Key Management Utilities
  *
  * Provides secure generation, hashing, and validation of workspace API keys
- * for external SDK authentication. Uses workspace role-based permissions.
+ * for external SDK authentication. API keys inherit permissions from both
+ * their assigned role (if any) and workspace default permissions.
  */
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -101,7 +102,13 @@ export interface WorkspaceContext {
 
 /**
  * Validates an API key and returns the workspace context with permissions
- * Also updates the last_used_at timestamp
+ *
+ * Permissions are calculated as the union of:
+ * 1. Role-specific permissions (if role_id is set)
+ * 2. Workspace default permissions (always included)
+ *
+ * This ensures API keys without a role inherit default permissions,
+ * while API keys with a role get both role and default permissions.
  *
  * @param apiKey - The raw API key from the Authorization header
  * @returns WorkspaceContext if valid, null if invalid or expired
@@ -155,9 +162,12 @@ export async function validateApiKey(
           return null;
         }
 
-        // Get permissions for this role
+        // Get permissions for this API key
+        // API keys inherit permissions from both their assigned role (if any)
+        // and the workspace's default permissions
         const permissions: PermissionId[] = [];
 
+        // 1. Fetch role-specific permissions if a role is assigned
         if (keyRecord.role_id) {
           const { data: rolePermissions } = await supabase
             .from('workspace_role_permissions')
@@ -170,6 +180,25 @@ export async function validateApiKey(
             permissions.push(
               ...(rolePermissions.map((p) => p.permission) as PermissionId[])
             );
+          }
+        }
+
+        // 2. Fetch and merge workspace default permissions
+        // This ensures API keys without a role still get default permissions,
+        // and API keys with a role get the union of role + default permissions
+        const { data: defaultPermissions } = await supabase
+          .from('workspace_default_permissions')
+          .select('permission')
+          .eq('ws_id', keyRecord.ws_id)
+          .eq('enabled', true);
+
+        if (defaultPermissions) {
+          // Merge default permissions, avoiding duplicates
+          for (const perm of defaultPermissions) {
+            const permId = perm.permission as PermissionId;
+            if (!permissions.includes(permId)) {
+              permissions.push(permId);
+            }
           }
         }
 

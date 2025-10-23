@@ -406,7 +406,7 @@ function TaskCardInner({
         (!!task.closed_at || !!task.completed_at) && 'opacity-70 saturate-75',
         // Overdue state
         isOverdue &&
-          !task.closed_at &&
+          !(!!task.closed_at || !!task.completed_at) &&
           'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20',
         // Hover state (no transitions)
         !isDragging && !isSelected && 'hover:ring-1 hover:ring-primary/15',
@@ -418,7 +418,7 @@ function TaskCardInner({
       )}
     >
       {/* Overdue indicator */}
-      {isOverdue && !task.closed_at && (
+      {isOverdue && !(!!task.closed_at || !!task.completed_at) && (
         <div className="absolute top-0 right-0 h-0 w-0 border-t-20 border-t-dynamic-red border-l-20 border-l-transparent">
           <AlertCircle className="-top-4 -right-[18px] absolute h-3 w-3" />
         </div>
