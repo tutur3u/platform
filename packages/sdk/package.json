@@ -1,6 +1,6 @@
 {
   "name": "tuturuuu",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Official TypeScript/JavaScript SDK for the Tuturuuu platform",
   "license": "MIT",
   "author": "Tuturuuu",
@@ -14,19 +14,38 @@
     "url": "https://github.com/tutur3u/platform/issues"
   },
   "keywords": ["tuturuuu", "sdk", "api"],
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./storage": "./src/storage.ts",
-    "./types": "./src/types.ts",
-    "./errors": "./src/errors.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./storage": {
+      "types": "./dist/storage.d.ts",
+      "import": "./dist/storage.js",
+      "require": "./dist/storage.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js",
+      "require": "./dist/types.js"
+    },
+    "./errors": {
+      "types": "./dist/errors.d.ts",
+      "import": "./dist/errors.js",
+      "require": "./dist/errors.js"
+    }
   },
-  "files": ["src", "README.md", "LICENSE"],
+  "files": ["dist", "README.md", "LICENSE"],
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "clean": "rm -rf dist .turbo",
+    "prepublishOnly": "bun run clean && bun run build",
     "test": "vitest run",
     "test:watch": "vitest"
   },

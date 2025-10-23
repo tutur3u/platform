@@ -69,7 +69,7 @@
         "next": "^16.0.0",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
-        "tuturuuu": "workspace:*",
+        "tuturuuu": "^0.0.3",
       },
       "devDependencies": {
         "@tailwindcss/postcss": "^4.1.15",
@@ -656,7 +656,7 @@
     },
     "packages/sdk": {
       "name": "tuturuuu",
-      "version": "0.0.1",
+      "version": "0.0.3",
       "dependencies": {
         "@tuturuuu/supabase": "workspace:*",
         "zod": "^4.1.12",
