@@ -40,11 +40,11 @@ import {
 } from '@tuturuuu/ui/dialog';
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuSeparator,
-  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -58,8 +58,8 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import NextLink from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 
 interface LinkedTask {
@@ -261,10 +261,12 @@ export function TaskProjectsClient({
       );
     }
 
+    const priorityOrder = { critical: 4, high: 3, normal: 2, low: 1 };
+    const healthOrder = { off_track: 3, at_risk: 2, on_track: 1 };
     // Sort
     result = [...result].sort((a, b) => {
-      let aVal: any;
-      let bVal: any;
+      let aVal: string | number;
+      let bVal: string | number;
 
       switch (sortBy) {
         case 'name':
@@ -276,29 +278,18 @@ export function TaskProjectsClient({
           bVal = b.status ?? '';
           break;
         case 'priority':
-          const priorityOrder = { critical: 4, high: 3, normal: 2, low: 1 };
-          aVal = a.priority
-            ? (priorityOrder[a.priority as keyof typeof priorityOrder] ?? 0)
-            : 0;
-          bVal = b.priority
-            ? (priorityOrder[b.priority as keyof typeof priorityOrder] ?? 0)
-            : 0;
+          aVal = a.priority ? (priorityOrder[a.priority] ?? 0) : 0;
+          bVal = b.priority ? (priorityOrder[b.priority] ?? 0) : 0;
           break;
         case 'health_status':
-          const healthOrder = { off_track: 3, at_risk: 2, on_track: 1 };
-          aVal = a.health_status
-            ? (healthOrder[a.health_status as keyof typeof healthOrder] ?? 0)
-            : 0;
-          bVal = b.health_status
-            ? (healthOrder[b.health_status as keyof typeof healthOrder] ?? 0)
-            : 0;
+          aVal = a.health_status ? (healthOrder[a.health_status] ?? 0) : 0;
+          bVal = b.health_status ? (healthOrder[b.health_status] ?? 0) : 0;
           break;
         case 'tasks_count':
           aVal = a.tasksCount;
           bVal = b.tasksCount;
           break;
         case 'created_at':
-        default:
           aVal = new Date(a.created_at).getTime();
           bVal = new Date(b.created_at).getTime();
           break;
@@ -645,7 +636,7 @@ export function TaskProjectsClient({
     return (
       <Badge variant="secondary" className="text-xs">
         <Target className="mr-1 h-3 w-3" />
-        {status.replace('_', ' ').toUpperCase()}
+        {status.replaceAll('_', ' ').toUpperCase()}
       </Badge>
     );
   };
@@ -686,7 +677,7 @@ export function TaskProjectsClient({
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2"
+                className="-translate-y-1/2 absolute top-1/2 right-1 h-7 w-7"
                 onClick={() => setSearchQuery('')}
               >
                 <X className="h-3 w-3" />
