@@ -47,10 +47,7 @@ export default function Loading() {
         <div className="rounded-lg border border-dynamic-border">
           <div className="p-4 space-y-3">
             {[...Array(5)].map((_, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-4"
-              >
+              <div key={i} className="flex items-center gap-4">
                 <div className="h-5 w-5 animate-pulse rounded bg-foreground/5" />
                 <div className="h-5 flex-1 animate-pulse rounded bg-foreground/5" />
                 <div className="h-5 w-24 animate-pulse rounded bg-foreground/5" />

@@ -48,9 +48,7 @@ export const GET = withApiAuth(
       // List files from Supabase Storage
       // Path format matches Drive page: [wsId]/[path]
       const trimmedPath = path.replace(/^\/+|\/+$/g, '');
-      const storagePath = trimmedPath
-        ? posix.join(wsId, trimmedPath)
-        : wsId;
+      const storagePath = trimmedPath ? posix.join(wsId, trimmedPath) : wsId;
 
       const { data: files, error } = await supabase.storage
         .from('workspaces')

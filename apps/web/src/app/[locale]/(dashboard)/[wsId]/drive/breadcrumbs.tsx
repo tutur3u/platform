@@ -83,7 +83,9 @@ export default function DriveBreadcrumbs({ wsId, path }: Props) {
     }
 
     const queryString = params.toString();
-    router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false });
+    router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, {
+      scroll: false,
+    });
   };
 
   return (
@@ -155,10 +157,7 @@ export default function DriveBreadcrumbs({ wsId, path }: Props) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
                       {collapsedItems.map((collapsed) => (
-                        <DropdownMenuItem
-                          key={collapsed.href}
-                          asChild
-                        >
+                        <DropdownMenuItem key={collapsed.href} asChild>
                           <button
                             type="button"
                             onClick={() => handleNavigate(collapsed)}

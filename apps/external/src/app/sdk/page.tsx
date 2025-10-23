@@ -16,7 +16,7 @@ export default function SDKPage() {
 
   const isImageFile = (filename: string) => {
     const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
-    return imageExtensions.some(ext => filename.toLowerCase().endsWith(ext));
+    return imageExtensions.some((ext) => filename.toLowerCase().endsWith(ext));
   };
 
   const handleDownload = async (filename: string, folderPath: string) => {
@@ -54,7 +54,7 @@ export default function SDKPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               path: `${folderPath}/${file.name}`,
-              expiresIn: 3600
+              expiresIn: 3600,
             }),
           });
 
@@ -110,7 +110,9 @@ export default function SDKPage() {
     loadData();
   }, [uploadPath]);
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -141,7 +143,9 @@ export default function SDKPage() {
         setUploadStatus('');
       }, 2000);
     } catch (err) {
-      setUploadStatus(`❌ Failed to upload: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setUploadStatus(
+        `❌ Failed to upload: ${err instanceof Error ? err.message : 'Unknown error'}`
+      );
       setTimeout(() => setUploadStatus(''), 5000);
     } finally {
       setIsUploading(false);
@@ -169,7 +173,8 @@ export default function SDKPage() {
         <div className="rounded-lg bg-red-50 p-6 border border-red-200">
           <h1 className="mb-2 text-2xl font-bold text-red-900">API Error</h1>
           <p className="text-red-800 mb-4">
-            Failed to connect to the storage API. Please check the server configuration.
+            Failed to connect to the storage API. Please check the server
+            configuration.
           </p>
           <div className="rounded-lg bg-white p-4">
             <p className="font-semibold mb-2">Error Details:</p>
@@ -194,7 +199,9 @@ export default function SDKPage() {
   return (
     <div className="mx-auto max-w-6xl p-8 space-y-8">
       <div>
-        <h1 className="mb-4 text-3xl font-bold">Tuturuuu SDK - Storage Example</h1>
+        <h1 className="mb-4 text-3xl font-bold">
+          Tuturuuu SDK - Storage Example
+        </h1>
         <p className="text-gray-600">
           Demonstrating the Tuturuuu SDK for workspace storage operations
         </p>
@@ -206,7 +213,10 @@ export default function SDKPage() {
         <div className="space-y-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <label htmlFor="upload-path" className="text-sm font-medium text-gray-700">
+              <label
+                htmlFor="upload-path"
+                className="text-sm font-medium text-gray-700"
+              >
                 Folder:
               </label>
               <input
@@ -235,10 +245,13 @@ export default function SDKPage() {
             />
           </div>
           <p className="text-xs text-gray-500">
-            Files will be uploaded to: <span className="font-mono">{uploadPath || '(root)'}</span>
+            Files will be uploaded to:{' '}
+            <span className="font-mono">{uploadPath || '(root)'}</span>
           </p>
           {uploadStatus && (
-            <div className={`rounded-lg p-3 text-sm ${uploadStatus.startsWith('✅') ? 'bg-green-50 text-green-800' : uploadStatus.startsWith('❌') ? 'bg-red-50 text-red-800' : 'bg-blue-50 text-blue-800'}`}>
+            <div
+              className={`rounded-lg p-3 text-sm ${uploadStatus.startsWith('✅') ? 'bg-green-50 text-green-800' : uploadStatus.startsWith('❌') ? 'bg-red-50 text-red-800' : 'bg-blue-50 text-blue-800'}`}
+            >
               {uploadStatus}
             </div>
           )}
@@ -251,7 +264,9 @@ export default function SDKPage() {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-lg bg-blue-50 p-4">
             <p className="text-sm text-gray-600">Total Files</p>
-            <p className="text-2xl font-bold">{analytics?.data.fileCount || 0}</p>
+            <p className="text-2xl font-bold">
+              {analytics?.data.fileCount || 0}
+            </p>
           </div>
           <div className="rounded-lg bg-green-50 p-4">
             <p className="text-sm text-gray-600">Total Size</p>
@@ -291,7 +306,8 @@ export default function SDKPage() {
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">
-            {uploadPath || 'Root'} Folder ({folderFiles?.data.length || 0} files)
+            {uploadPath || 'Root'} Folder ({folderFiles?.data.length || 0}{' '}
+            files)
           </h2>
           <button
             onClick={loadData}
@@ -344,7 +360,9 @@ export default function SDKPage() {
                   </p>
                   <div className="flex items-center justify-between mt-1">
                     {file.metadata?.mimetype && (
-                      <p className="text-xs text-gray-500">{file.metadata.mimetype}</p>
+                      <p className="text-xs text-gray-500">
+                        {file.metadata.mimetype}
+                      </p>
                     )}
                     {file.metadata?.size && (
                       <span className="text-xs text-gray-600">
@@ -373,7 +391,8 @@ export default function SDKPage() {
       <div className="rounded-lg bg-green-50 p-4 border border-green-200">
         <p className="font-semibold text-green-900">✅ SDK Working!</p>
         <p className="text-sm text-green-800 mt-1">
-          The Tuturuuu SDK successfully connected and retrieved your workspace files.
+          The Tuturuuu SDK successfully connected and retrieved your workspace
+          files.
         </p>
       </div>
     </div>

@@ -11,10 +11,7 @@ export async function POST(request: NextRequest) {
     const { path, expiresIn } = await request.json();
 
     if (!path) {
-      return NextResponse.json(
-        { error: 'Path is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Path is required' }, { status: 400 });
     }
 
     const result = await tuturuuu.storage.share(path, {
@@ -25,7 +22,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error generating signed URL:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to generate signed URL' },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to generate signed URL',
+      },
       { status: 500 }
     );
   }

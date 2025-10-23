@@ -85,7 +85,9 @@ export default function StorageObjectsTable({
         params.set('path', newPath);
       }
       const queryString = params.toString();
-      router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false });
+      router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, {
+        scroll: false,
+      });
     }
   };
 
@@ -110,7 +112,9 @@ export default function StorageObjectsTable({
         params.set('path', newPath);
       }
       const queryString = params.toString();
-      router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false });
+      router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, {
+        scroll: false,
+      });
     }
   };
 
@@ -238,7 +242,10 @@ export default function StorageObjectsTable({
                       params.set('path', nextPath);
                     }
                     const queryString = params.toString();
-                    router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false });
+                    router.push(
+                      `${pathname}${queryString ? `?${queryString}` : ''}`,
+                      { scroll: false }
+                    );
                   }}
                 >
                   {/* biome-ignore lint/suspicious/noExplicitAny: <there can be any children> */}
@@ -256,14 +263,19 @@ export default function StorageObjectsTable({
                       onClick={() => {
                         const basePath = searchParams.get('path') ?? '';
                         const nextPath = joinPath(basePath, rowData.name || '');
-                        const params = new URLSearchParams(searchParams.toString());
+                        const params = new URLSearchParams(
+                          searchParams.toString()
+                        );
                         if (!nextPath || nextPath === '/' || nextPath === '') {
                           params.delete('path');
                         } else {
                           params.set('path', nextPath);
                         }
                         const queryString = params.toString();
-                        router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false });
+                        router.push(
+                          `${pathname}${queryString ? `?${queryString}` : ''}`,
+                          { scroll: false }
+                        );
                       }}
                     >
                       {/* biome-ignore lint/suspicious/noExplicitAny: <there can be any children> */}
@@ -337,7 +349,10 @@ export default function StorageObjectsTable({
                   params.set('path', newPath);
                 }
                 const queryString = params.toString();
-                router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false });
+                router.push(
+                  `${pathname}${queryString ? `?${queryString}` : ''}`,
+                  { scroll: false }
+                );
               }}
             >
               <div className="mb-3 flex aspect-square items-center justify-center rounded-lg bg-muted/50">
