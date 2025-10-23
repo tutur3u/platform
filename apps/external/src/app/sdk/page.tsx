@@ -1,9 +1,9 @@
 'use client';
 
 import { useSdkStore } from '@/store/sdk-store';
+import { Breadcrumb } from './components/breadcrumb';
 import { ErrorDisplay } from './components/error-display';
 import { FileGrid } from './components/file-grid';
-import { FileList } from './components/file-list';
 import { StorageAnalytics } from './components/storage-analytics';
 import { SuccessBanner } from './components/success-banner';
 import { UploadSection } from './components/upload-section';
@@ -52,6 +52,16 @@ export default function SDKPage() {
     removeDeletingFile
   );
 
+  // Navigation handlers
+  const handleFolderClick = (folderName: string) => {
+    const newPath = uploadPath ? `${uploadPath}/${folderName}` : folderName;
+    setUploadPath(newPath);
+  };
+
+  const handleNavigate = (path: string) => {
+    setUploadPath(path);
+  };
+
   // Error handling
   const error = analytics.error || rootFiles.error || folderFiles.error;
   if (error) {
@@ -85,12 +95,8 @@ export default function SDKPage() {
         isLoading={analytics.isLoading}
       />
 
-      {/* Root Files */}
-      <FileList
-        files={rootFiles.data}
-        isLoading={rootFiles.isLoading}
-        title="Root Files"
-      />
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb currentPath={uploadPath} onNavigate={handleNavigate} />
 
       {/* Folder Files */}
       <FileGrid
@@ -102,6 +108,7 @@ export default function SDKPage() {
         onDownload={handleDownload}
         onDelete={handleDelete}
         onRefresh={refreshData}
+        onFolderClick={handleFolderClick}
       />
 
       {/* Success Banner */}
