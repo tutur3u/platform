@@ -226,7 +226,7 @@ export default function ContactPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl sm:h-[40rem] sm:w-[40rem]"
+          className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl sm:h-[40rem] sm:w-[40rem]"
         />
         <motion.div
           animate={{
@@ -238,7 +238,7 @@ export default function ContactPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-right-32 sm:-right-64 absolute top-[40%] h-80 w-80 rounded-full bg-gradient-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl sm:h-[35rem] sm:w-[35rem]"
+          className="-right-32 sm:-right-64 absolute top-[40%] h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl sm:h-[35rem] sm:w-[35rem]"
         />
         <motion.div
           animate={{
@@ -250,7 +250,7 @@ export default function ContactPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-green/30 via-dynamic-emerald/20 to-transparent blur-3xl sm:h-[45rem] sm:w-[45rem]"
+          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-green/30 via-dynamic-emerald/20 to-transparent blur-3xl sm:h-[45rem] sm:w-[45rem]"
         />
       </div>
 
@@ -336,7 +336,7 @@ export default function ContactPage() {
                 <Card
                   className={cn(
                     'group h-full p-6 transition-all hover:shadow-lg',
-                    `border-dynamic-${method.color}/30 bg-gradient-to-br from-dynamic-${method.color}/5 via-background to-background hover:border-dynamic-${method.color}/50 hover:shadow-dynamic-${method.color}/10`
+                    `border-dynamic-${method.color}/30 bg-linear-to-br from-dynamic-${method.color}/5 via-background to-background hover:border-dynamic-${method.color}/50 hover:shadow-dynamic-${method.color}/10`
                   )}
                 >
                   <div
@@ -394,7 +394,7 @@ export default function ContactPage() {
                 {t('form.description')}
               </p>
 
-              <Card className="border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/5 via-background to-background p-6">
+              <Card className="border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/5 via-background to-background p-6">
                 {!user && (
                   <div className="mb-6 rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/5 p-4">
                     <div className="flex items-start gap-3">
@@ -645,7 +645,7 @@ export default function ContactPage() {
                       <Card
                         className={cn(
                           'group p-6 transition-all hover:shadow-lg',
-                          `border-dynamic-${highlight.color}/30 bg-gradient-to-br from-dynamic-${highlight.color}/5 via-background to-background hover:border-dynamic-${highlight.color}/50 hover:shadow-dynamic-${highlight.color}/10`
+                          `border-dynamic-${highlight.color}/30 bg-linear-to-br from-dynamic-${highlight.color}/5 via-background to-background hover:border-dynamic-${highlight.color}/50 hover:shadow-dynamic-${highlight.color}/10`
                         )}
                       >
                         <div className="flex items-start gap-4">
@@ -684,7 +684,7 @@ export default function ContactPage() {
                     {t('founder.title')}
                   </span>
                 </h2>
-                <Card className="group border-dynamic-pink/30 bg-gradient-to-br from-dynamic-pink/5 via-background to-background p-6">
+                <Card className="group border-dynamic-pink/30 bg-linear-to-br from-dynamic-pink/5 via-background to-background p-6">
                   <div className="mb-4 flex items-start gap-4">
                     <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-dynamic-pink/10">
                       <Rocket className="h-8 w-8 text-dynamic-pink" />
@@ -742,7 +742,7 @@ export default function ContactPage() {
               </div>
 
               {/* Quick Links */}
-              <Card className="border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/5 via-background to-background p-6">
+              <Card className="border-dynamic-blue/30 bg-linear-to-br from-dynamic-blue/5 via-background to-background p-6">
                 <h3 className="mb-4 font-semibold text-lg">
                   {t('quickLinks.title')}
                 </h3>
@@ -784,7 +784,7 @@ export default function ContactPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <Card className="overflow-hidden border-dynamic-green/30 bg-gradient-to-br from-dynamic-green/10 via-dynamic-emerald/5 to-background p-8 text-center md:p-12">
+            <Card className="overflow-hidden border-dynamic-green/30 bg-linear-to-br from-dynamic-green/10 via-dynamic-emerald/5 to-background p-8 text-center md:p-12">
               <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-dynamic-green/10">
                 <Sparkles className="h-8 w-8 text-dynamic-green" />
               </div>

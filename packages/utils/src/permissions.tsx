@@ -128,6 +128,14 @@ export const permissionGroups = ({
               ]
             : []),
           {
+            id: 'manage_api_keys',
+            icon: <KeyRound />,
+            title: t('ws-roles.manage_api_keys'),
+            description: t('ws-roles.manage_api_keys_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
             id: 'manage_workspace_roles',
             icon: <UserCog />,
             title: t('ws-roles.manage_workspace_roles'),

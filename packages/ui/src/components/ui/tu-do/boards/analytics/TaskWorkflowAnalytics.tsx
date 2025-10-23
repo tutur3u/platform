@@ -178,7 +178,7 @@ export function TaskWorkflowAnalytics({
       <div className="space-y-4">
         {/* Key Metrics */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-lg bg-gradient-to-br from-emerald-50 to-emerald-100 p-3 dark:from-emerald-900/20 dark:to-emerald-800/20">
+          <div className="rounded-lg bg-linear-to-br from-emerald-50 to-emerald-100 p-3 dark:from-emerald-900/20 dark:to-emerald-800/20">
             <div className="font-bold text-emerald-600 text-lg">
               {workflowAnalytics.completionRate.toFixed(0)}%
             </div>
@@ -186,7 +186,7 @@ export function TaskWorkflowAnalytics({
               Completion Rate
             </div>
           </div>
-          <div className="rounded-lg bg-gradient-to-br from-violet-50 to-violet-100 p-3 dark:from-violet-900/20 dark:to-violet-800/20">
+          <div className="rounded-lg bg-linear-to-br from-violet-50 to-violet-100 p-3 dark:from-violet-900/20 dark:to-violet-800/20">
             <div className="font-bold text-lg text-violet-600">
               {workflowAnalytics.avgCycleTime > 0
                 ? `${workflowAnalytics.avgCycleTime.toFixed(1)}d`

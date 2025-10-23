@@ -448,7 +448,7 @@ function VirtualizedTaskListInner({
       className={cn(
         'relative h-full flex-1 space-y-2 overflow-y-auto p-3 transition-all duration-200',
         isColumnDragOver &&
-          'fade-in-0 animate-in rounded-lg bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-inner ring-2 ring-primary/40 duration-300'
+          'fade-in-0 animate-in rounded-lg bg-linear-to-br from-primary/10 via-primary/5 to-transparent shadow-inner ring-2 ring-primary/40 duration-300'
       )}
       // When not virtualizing we still want consistent styling
       data-virtualized={shouldVirtualize ? 'true' : 'false'}

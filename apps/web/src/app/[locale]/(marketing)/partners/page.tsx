@@ -161,7 +161,7 @@ export default function PartnersPage() {
           repeat: Number.POSITIVE_INFINITY,
           ease: 'easeInOut',
         }}
-        className="-left-32 sm:-left-64 fixed top-0 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl"
+        className="-left-32 sm:-left-64 fixed top-0 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl"
       />
       <motion.div
         animate={{
@@ -174,7 +174,7 @@ export default function PartnersPage() {
           ease: 'easeInOut',
           delay: 1,
         }}
-        className="-right-32 sm:-right-64 fixed top-1/4 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl"
+        className="-right-32 sm:-right-64 fixed top-1/4 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl"
       />
       <motion.div
         animate={{
@@ -187,7 +187,7 @@ export default function PartnersPage() {
           ease: 'easeInOut',
           delay: 2,
         }}
-        className="-translate-x-1/2 fixed bottom-0 left-1/2 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-pink/30 via-dynamic-purple/30 to-transparent blur-3xl"
+        className="-translate-x-1/2 fixed bottom-0 left-1/2 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-pink/30 via-dynamic-purple/30 to-transparent blur-3xl"
       />
 
       {/* Grid Pattern Overlay */}
@@ -290,7 +290,7 @@ export default function PartnersPage() {
                 }}
                 className="absolute top-1/2 left-[10%]"
               >
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-dynamic-purple/20 to-dynamic-pink/10 shadow-dynamic-purple/20 shadow-lg backdrop-blur-xl">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-dynamic-purple/20 to-dynamic-pink/10 shadow-dynamic-purple/20 shadow-lg backdrop-blur-xl">
                   <Sparkles className="h-8 w-8 text-dynamic-purple" />
                 </div>
               </motion.div>
@@ -307,7 +307,7 @@ export default function PartnersPage() {
                 }}
                 className="absolute top-1/4 right-[15%]"
               >
-                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-dynamic-orange/20 to-dynamic-red/10 shadow-dynamic-orange/20 shadow-lg backdrop-blur-xl">
+                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-linear-to-br from-dynamic-orange/20 to-dynamic-red/10 shadow-dynamic-orange/20 shadow-lg backdrop-blur-xl">
                   <Target className="h-10 w-10 text-dynamic-orange" />
                 </div>
               </motion.div>
@@ -324,7 +324,7 @@ export default function PartnersPage() {
                 }}
                 className="absolute top-0 left-[60%]"
               >
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-dynamic-blue/20 to-dynamic-cyan/10 shadow-dynamic-blue/20 shadow-lg backdrop-blur-xl">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-dynamic-blue/20 to-dynamic-cyan/10 shadow-dynamic-blue/20 shadow-lg backdrop-blur-xl">
                   <Award className="h-7 w-7 text-dynamic-blue" />
                 </div>
               </motion.div>
@@ -438,7 +438,7 @@ export default function PartnersPage() {
                       />
 
                       <Card
-                        className={`group relative h-full overflow-hidden bg-gradient-to-br to-background backdrop-blur-sm transition-all duration-700 hover:scale-[1.02] hover:shadow-2xl ${colors.border} ${colors.glow}`}
+                        className={`group relative h-full overflow-hidden bg-linear-to-br to-background backdrop-blur-sm transition-all duration-700 hover:scale-[1.02] hover:shadow-2xl ${colors.border} ${colors.glow}`}
                       >
                         <Link
                           href={partner.website}
@@ -449,7 +449,7 @@ export default function PartnersPage() {
                           {/* Image Container with Overlay */}
                           <div className="relative overflow-hidden">
                             <div
-                              className={`absolute inset-0 bg-gradient-to-br ${colors.gradient} to-background opacity-40 transition-opacity duration-700 group-hover:opacity-60`}
+                              className={`absolute inset-0 bg-linear-to-br ${colors.gradient} to-background opacity-40 transition-opacity duration-700 group-hover:opacity-60`}
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
 
@@ -470,7 +470,7 @@ export default function PartnersPage() {
                             </motion.div>
 
                             {/* Image with proper aspect ratio handling */}
-                            <div className="relative aspect-[21/9] w-full overflow-hidden bg-gradient-to-br from-muted/30 to-background">
+                            <div className="relative aspect-[21/9] w-full overflow-hidden bg-linear-to-br from-muted/30 to-background">
                               <Image
                                 src={partner.logo}
                                 alt={partner.name}
@@ -557,7 +557,7 @@ export default function PartnersPage() {
                 }}
                 className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2"
               >
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-dynamic-cyan/20 via-dynamic-blue/20 to-dynamic-purple/20 shadow-2xl shadow-dynamic-blue/30 ring-2 ring-dynamic-blue/40 backdrop-blur-xl">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-dynamic-cyan/20 via-dynamic-blue/20 to-dynamic-purple/20 shadow-2xl shadow-dynamic-blue/30 ring-2 ring-dynamic-blue/40 backdrop-blur-xl">
                   <Zap className="h-10 w-10 text-dynamic-blue" />
                 </div>
               </motion.div>
@@ -731,7 +731,7 @@ export default function PartnersPage() {
                     />
 
                     <Card
-                      className={`group relative h-full overflow-hidden bg-gradient-to-br to-background backdrop-blur-sm transition-all duration-500 hover:scale-[1.03] hover:shadow-2xl ${colors.border} ${colors.glow}`}
+                      className={`group relative h-full overflow-hidden bg-linear-to-br to-background backdrop-blur-sm transition-all duration-500 hover:scale-[1.03] hover:shadow-2xl ${colors.border} ${colors.glow}`}
                     >
                       <Link
                         href={partner.website}
@@ -743,7 +743,7 @@ export default function PartnersPage() {
                         <div className="relative overflow-hidden">
                           {/* Gradient Overlay */}
                           <div
-                            className={`absolute inset-0 bg-gradient-to-br ${colors.gradient} to-background opacity-30 transition-opacity duration-500 group-hover:opacity-50`}
+                            className={`absolute inset-0 bg-linear-to-br ${colors.gradient} to-background opacity-30 transition-opacity duration-500 group-hover:opacity-50`}
                           />
 
                           {/* Bottom Fade */}
@@ -766,7 +766,7 @@ export default function PartnersPage() {
                           </motion.div>
 
                           {/* Image with aspect ratio */}
-                          <div className="relative aspect-[16/9] w-full overflow-hidden bg-gradient-to-br from-muted/20 to-background">
+                          <div className="relative aspect-[16/9] w-full overflow-hidden bg-linear-to-br from-muted/20 to-background">
                             <Image
                               src={partner.logo}
                               alt={partner.name}
@@ -838,7 +838,7 @@ export default function PartnersPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           >
-            <Card className="relative overflow-hidden border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-12 backdrop-blur-sm md:p-16 lg:p-20">
+            <Card className="relative overflow-hidden border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-12 backdrop-blur-sm md:p-16 lg:p-20">
               {/* Decorative Floating Orbs */}
               <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-50">
                 <motion.div
@@ -851,7 +851,7 @@ export default function PartnersPage() {
                     repeat: Number.POSITIVE_INFINITY,
                     ease: 'easeInOut',
                   }}
-                  className="-left-32 absolute top-0 h-80 w-80 rounded-full bg-gradient-to-br from-dynamic-purple/40 to-transparent blur-3xl"
+                  className="-left-32 absolute top-0 h-80 w-80 rounded-full bg-linear-to-br from-dynamic-purple/40 to-transparent blur-3xl"
                 />
                 <motion.div
                   animate={{
@@ -864,7 +864,7 @@ export default function PartnersPage() {
                     ease: 'easeInOut',
                     delay: 1,
                   }}
-                  className="-right-32 absolute bottom-0 h-80 w-80 rounded-full bg-gradient-to-br from-dynamic-pink/40 to-transparent blur-3xl"
+                  className="-right-32 absolute bottom-0 h-80 w-80 rounded-full bg-linear-to-br from-dynamic-pink/40 to-transparent blur-3xl"
                 />
                 <motion.div
                   animate={{
@@ -877,7 +877,7 @@ export default function PartnersPage() {
                     ease: 'easeInOut',
                     delay: 2,
                   }}
-                  className="-translate-x-1/2 absolute bottom-1/4 left-1/2 h-64 w-64 rounded-full bg-gradient-to-br from-dynamic-orange/30 to-transparent blur-3xl"
+                  className="-translate-x-1/2 absolute bottom-1/4 left-1/2 h-64 w-64 rounded-full bg-linear-to-br from-dynamic-orange/30 to-transparent blur-3xl"
                 />
               </div>
 
@@ -888,7 +888,7 @@ export default function PartnersPage() {
                   whileInView={{ scale: 1, opacity: 1 }}
                   viewport={{ once: true }}
                   transition={{ delay: 0.2, duration: 0.5 }}
-                  className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-dynamic-purple/20 to-dynamic-pink/20 backdrop-blur-sm"
+                  className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-linear-to-br from-dynamic-purple/20 to-dynamic-pink/20 backdrop-blur-sm"
                 >
                   <Handshake className="h-10 w-10 text-dynamic-purple" />
                 </motion.div>

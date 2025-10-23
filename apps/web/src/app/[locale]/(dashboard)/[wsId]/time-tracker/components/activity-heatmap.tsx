@@ -991,7 +991,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
 
   // Card components
   const SummaryCard = ({ data }: { data: any }) => (
-    <div className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-blue-50 to-indigo-50 p-3 shadow-sm transition-all hover:shadow-md dark:border-blue-800/30 dark:from-blue-950/20 dark:to-indigo-950/20">
+    <div className="group relative overflow-hidden rounded-lg border bg-linear-to-br from-blue-50 to-indigo-50 p-3 shadow-sm transition-all hover:shadow-md dark:border-blue-800/30 dark:from-blue-950/20 dark:to-indigo-950/20">
       <div className="mb-2 flex items-center justify-between">
         <div>
           <h4 className="font-semibold text-blue-900 text-sm dark:text-blue-100">
@@ -1050,7 +1050,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
       data.activeDays > 0 ? data.totalDuration / data.activeDays : 0;
 
     return (
-      <div className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-green-50 to-emerald-50 p-3 shadow-sm transition-all hover:shadow-md dark:border-green-800/30 dark:from-green-950/20 dark:to-emerald-950/20">
+      <div className="group relative overflow-hidden rounded-lg border bg-linear-to-br from-green-50 to-emerald-50 p-3 shadow-sm transition-all hover:shadow-md dark:border-green-800/30 dark:from-green-950/20 dark:to-emerald-950/20">
         <div className="mb-2 flex items-center justify-between">
           <div>
             <h4 className="font-semibold text-green-900 text-sm dark:text-green-100">
@@ -1142,7 +1142,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
   };
 
   const UpcomingCard = ({ name }: { monthKey: string; name: string }) => (
-    <div className="group relative overflow-hidden rounded-lg border border-muted/40 bg-gradient-to-br from-muted/20 to-muted/10 p-3 opacity-60 backdrop-blur-sm transition-all hover:from-muted/30 hover:to-muted/20 hover:opacity-80">
+    <div className="group relative overflow-hidden rounded-lg border border-muted/40 bg-linear-to-br from-muted/20 to-muted/10 p-3 opacity-60 backdrop-blur-sm transition-all hover:from-muted/30 hover:to-muted/20 hover:opacity-80">
       <div className="mb-2 flex items-center justify-between">
         <div>
           <h4 className="font-semibold text-muted-foreground/80 text-sm">
@@ -1193,7 +1193,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
   );
 
   const GettingStartedCard = () => (
-    <div className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-purple-50 to-violet-50 p-3 shadow-sm transition-all hover:shadow-md dark:border-purple-800/30 dark:from-purple-950/20 dark:to-violet-950/20">
+    <div className="group relative overflow-hidden rounded-lg border bg-linear-to-br from-purple-50 to-violet-50 p-3 shadow-sm transition-all hover:shadow-md dark:border-purple-800/30 dark:from-purple-950/20 dark:to-violet-950/20">
       <div className="mb-2 flex items-center justify-between">
         <div>
           <h4 className="font-semibold text-purple-900 text-sm dark:text-purple-100">

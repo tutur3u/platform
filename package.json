@@ -76,7 +76,7 @@
     "@vitest/coverage-v8": "^4.0.1",
     "turbo": "^2.5.8",
     "typescript": "^5.9.3",
-    "vite": "^7.1.11",
+    "vite": "^7.1.12",
     "vitest": "^4.0.1"
   },
   "engines": {

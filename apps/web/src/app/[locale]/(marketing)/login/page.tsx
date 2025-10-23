@@ -75,7 +75,7 @@ export default function Login({ searchParams }: LoginProps) {
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
       {/* Animated Background */}
-      <div className="fixed inset-0 bg-gradient-to-br from-background via-dynamic-indigo/5 to-dynamic-purple/10" />
+      <div className="fixed inset-0 bg-linear-to-br from-background via-dynamic-indigo/5 to-dynamic-purple/10" />
 
       {/* Grid Pattern Overlay */}
       <div className="fixed inset-0 bg-[linear-gradient(rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.05)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_80%)]" />
@@ -91,7 +91,7 @@ export default function Login({ searchParams }: LoginProps) {
           repeat: Number.POSITIVE_INFINITY,
           ease: 'easeInOut',
         }}
-        className="-left-32 fixed top-0 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl"
+        className="-left-32 fixed top-0 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl"
       />
       <motion.div
         animate={{
@@ -104,7 +104,7 @@ export default function Login({ searchParams }: LoginProps) {
           ease: 'easeInOut',
           delay: 1,
         }}
-        className="-right-32 fixed top-1/4 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl"
+        className="-right-32 fixed top-1/4 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl"
       />
       <motion.div
         animate={{
@@ -117,7 +117,7 @@ export default function Login({ searchParams }: LoginProps) {
           ease: 'easeInOut',
           delay: 2,
         }}
-        className="-translate-x-1/2 fixed bottom-0 left-1/2 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-pink/30 via-dynamic-purple/30 to-transparent blur-3xl"
+        className="-translate-x-1/2 fixed bottom-0 left-1/2 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-pink/30 via-dynamic-purple/30 to-transparent blur-3xl"
       />
 
       {/* Main Content */}
@@ -170,7 +170,7 @@ export default function Login({ searchParams }: LoginProps) {
                 >
                   <Badge
                     variant="secondary"
-                    className="text-balance border border-foreground/20 bg-gradient-to-br from-foreground/5 via-dynamic-blue/20 to-dynamic-pink/20 px-4 py-2 font-medium text-sm leading-relaxed shadow-lg backdrop-blur-sm"
+                    className="text-balance border border-foreground/20 bg-linear-to-br from-foreground/5 via-dynamic-blue/20 to-dynamic-pink/20 px-4 py-2 font-medium text-sm leading-relaxed shadow-lg backdrop-blur-sm"
                   >
                     <span className="whitespace-normal">
                       {t('login.powered-by', { domain: currentDomain.name })}

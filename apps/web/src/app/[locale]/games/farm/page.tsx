@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function FarmGamePage() {
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-dynamic-green/5 to-dynamic-blue/5 p-4">
+    <div className="flex min-h-screen w-full items-center justify-center bg-linear-to-br from-dynamic-green/5 to-dynamic-blue/5 p-4">
       <div className="flex w-full max-w-7xl flex-col items-center justify-center">
         {/* Header */}
         <div className="mb-6 text-center">

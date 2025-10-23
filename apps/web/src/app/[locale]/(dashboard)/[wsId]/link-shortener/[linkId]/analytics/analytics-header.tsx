@@ -32,7 +32,7 @@ export function AnalyticsHeader({ link }: AnalyticsHeaderProps) {
     <div className="flex items-center space-x-4">
       <div className="relative">
         <div className="absolute inset-0 rounded-full bg-dynamic-blue/20 blur-lg" />
-        <div className="relative rounded-full border border-dynamic-blue/20 bg-gradient-to-br from-dynamic-blue/10 to-dynamic-blue/5 p-4">
+        <div className="relative rounded-full border border-dynamic-blue/20 bg-linear-to-br from-dynamic-blue/10 to-dynamic-blue/5 p-4">
           <LinkIcon className="h-10 w-10 text-dynamic-blue" />
         </div>
       </div>

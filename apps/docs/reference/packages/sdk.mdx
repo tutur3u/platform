@@ -1,0 +1,744 @@
+---
+title: 'tuturuuu'
+description: 'Official TypeScript/JavaScript SDK for the Tuturuuu platform'
+updatedAt: '2025-10-21'
+---
+
+# Tuturuuu SDK
+
+Official TypeScript/JavaScript SDK for interacting with the Tuturuuu platform. Provides type-safe access to workspace storage, files, and documents via API keys.
+
+## Installation
+
+<CodeGroup>
+
+```bash npm
+npm install tuturuuu
+```
+
+```bash yarn
+yarn add tuturuuu
+```
+
+```bash pnpm
+pnpm add tuturuuu
+```
+
+```bash bun
+bun add tuturuuu
+```
+
+</CodeGroup>
+
+## Quick Start
+
+```typescript
+import { TuturuuuClient } from 'tuturuuu';
+
+// Initialize the client with your API key
+const client = new TuturuuuClient('ttr_your_api_key');
+
+// List files in workspace
+const files = await client.storage.list({
+  path: 'documents',
+  limit: 50
+});
+
+// Upload a file
+const file = new File(['content'], 'example.txt');
+const result = await client.storage.upload(file, {
+  path: 'documents'
+});
+
+// Create a document
+const doc = await client.documents.create({
+  name: 'My Document',
+  content: { text: 'Hello World' }
+});
+```
+
+## Features
+
+<CardGroup cols={2}>
+  <Card title="Storage Operations" icon="folder">
+    Upload, download, list, and delete files and folders
+  </Card>
+  <Card title="Document Management" icon="file-alt">
+    Create, read, update, and delete workspace documents
+  </Card>
+  <Card title="Signed URLs" icon="link">
+    Generate temporary shareable links for files
+  </Card>
+  <Card title="Analytics" icon="chart-bar">
+    Track storage usage, file counts, and limits
+  </Card>
+</CardGroup>
+
+## Client Initialization
+
+### Basic Usage
+
+```typescript
+const client = new TuturuuuClient('ttr_your_api_key');
+```
+
+### With Custom Configuration
+
+```typescript
+const client = new TuturuuuClient({
+  apiKey: 'ttr_your_api_key',
+  baseUrl: 'https://tuturuuu.com/api/v1', // optional
+  timeout: 30000 // optional, default 30s
+});
+```
+
+## Storage API
+
+### List Files
+
+Lists files and folders in the workspace drive.
+
+```typescript
+const files = await client.storage.list({
+  path: 'documents',          // folder path (optional)
+  search: 'report',           // search term (optional)
+  limit: 50,                  // max results (optional, default 100)
+  offset: 0,                  // pagination offset (optional)
+  sortBy: 'created_at',       // sort field (optional)
+  sortOrder: 'desc'           // sort direction (optional)
+});
+
+console.log(files.data);       // Array of StorageObject
+console.log(files.pagination); // Pagination info
+```
+
+### Upload File
+
+Uploads a file to the workspace drive.
+
+```typescript
+const file = new File(['content'], 'document.pdf');
+
+const result = await client.storage.upload(file, {
+  path: 'documents',  // destination folder (optional)
+  upsert: true        // overwrite if exists (optional)
+});
+
+console.log(result.data.path);     // Relative path
+console.log(result.data.fullPath); // Full storage path
+```
+
+### Download File
+
+Downloads a file as a Blob.
+
+```typescript
+const blob = await client.storage.download('documents/report.pdf');
+
+// Save to disk (Node.js)
+const buffer = Buffer.from(await blob.arrayBuffer());
+await fs.writeFile('report.pdf', buffer);
+
+// Create download link (Browser)
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download = 'report.pdf';
+a.click();
+```
+
+### Delete Files
+
+Deletes one or more files or folders.
+
+```typescript
+const result = await client.storage.delete([
+  'documents/old-report.pdf',
+  'images/screenshot.png'
+]);
+
+console.log(result.data.deleted); // Number of files deleted
+console.log(result.data.paths);   // Array of deleted paths
+```
+
+### Create Folder
+
+Creates a new folder in the workspace drive.
+
+```typescript
+const result = await client.storage.createFolder(
+  'documents',  // parent path
+  'reports'     // folder name
+);
+
+console.log(result.data.path); // "documents/reports"
+```
+
+### Share File
+
+Generates a signed URL for temporary file sharing.
+
+```typescript
+const result = await client.storage.share('documents/report.pdf', {
+  expiresIn: 3600 // 1 hour in seconds (default 3600, max 604800)
+});
+
+console.log(result.data.signedUrl);  // Temporary URL
+console.log(result.data.expiresAt);  // ISO timestamp
+console.log(result.data.expiresIn);  // Seconds until expiration
+```
+
+### Get Analytics
+
+Retrieves storage usage statistics for the workspace.
+
+```typescript
+const analytics = await client.storage.getAnalytics();
+
+console.log(analytics.data.totalSize);       // Total bytes used
+console.log(analytics.data.fileCount);       // Number of files
+console.log(analytics.data.storageLimit);    // Storage limit in bytes
+console.log(analytics.data.usagePercentage); // Usage percentage
+console.log(analytics.data.largestFile);     // Largest file info
+console.log(analytics.data.smallestFile);    // Smallest file info
+```
+
+## Documents API
+
+### List Documents
+
+Lists documents in the workspace with optional filters.
+
+```typescript
+const docs = await client.documents.list({
+  search: 'meeting',    // search in names (optional)
+  limit: 20,            // max results (optional, default 50)
+  offset: 0,            // pagination offset (optional)
+  isPublic: false       // filter by visibility (optional)
+});
+
+console.log(docs.data);       // Array of Document
+console.log(docs.pagination); // Pagination info
+```
+
+### Create Document
+
+Creates a new document in the workspace.
+
+```typescript
+const doc = await client.documents.create({
+  name: 'Meeting Notes',
+  content: {
+    text: 'Discussion points...',
+    attendees: ['Alice', 'Bob']
+  },
+  isPublic: false // optional, default false
+});
+
+console.log(doc.data.id);      // Document ID
+console.log(doc.data.name);    // Document name
+console.log(doc.data.content); // JSONB content
+```
+
+### Get Document
+
+Retrieves a document by its ID.
+
+```typescript
+const doc = await client.documents.get('document-id-123');
+
+console.log(doc.data.name);
+console.log(doc.data.content);
+console.log(doc.data.created_at);
+```
+
+### Update Document
+
+Updates an existing document.
+
+```typescript
+const doc = await client.documents.update('document-id-123', {
+  name: 'Updated Meeting Notes',     // optional
+  content: { text: 'New content' },  // optional
+  isPublic: true                     // optional
+});
+
+console.log(doc.data); // Updated document
+```
+
+### Delete Document
+
+Deletes a document permanently.
+
+```typescript
+await client.documents.delete('document-id-123');
+```
+
+### Search Documents
+
+Searches documents by name (alias for `list()` with search).
+
+```typescript
+const results = await client.documents.search('meeting notes', {
+  limit: 10,
+  isPublic: false
+});
+
+console.log(results.data); // Matching documents
+```
+
+## Error Handling
+
+The SDK provides specific error classes for different scenarios:
+
+```typescript
+import {
+  AuthenticationError,
+  AuthorizationError,
+  NotFoundError,
+  ConflictError,
+  RateLimitError,
+  NetworkError,
+  ValidationError
+} from 'tuturuuu';
+
+try {
+  await client.storage.upload(file);
+} catch (error) {
+  if (error instanceof AuthenticationError) {
+    // Invalid or expired API key
+    console.error('Authentication failed:', error.message);
+  } else if (error instanceof AuthorizationError) {
+    // Insufficient permissions
+    console.error('Forbidden:', error.message);
+  } else if (error instanceof NotFoundError) {
+    // Resource not found
+    console.error('Not found:', error.message);
+  } else if (error instanceof ConflictError) {
+    // Resource already exists
+    console.error('Conflict:', error.message);
+  } else if (error instanceof RateLimitError) {
+    // Rate limit exceeded
+    console.error('Rate limited:', error.message);
+  } else if (error instanceof NetworkError) {
+    // Network or timeout error
+    console.error('Network error:', error.message);
+  } else if (error instanceof ValidationError) {
+    // Invalid input
+    console.error('Validation error:', error.message);
+  }
+}
+```
+
+### Error Properties
+
+All error classes include:
+
+- `message` - Human-readable error description
+- `code` - Machine-readable error code
+- `statusCode` - HTTP status code
+- `name` - Error class name
+
+```typescript
+try {
+  await client.storage.delete([]);
+} catch (error) {
+  if (error instanceof ValidationError) {
+    console.log(error.message);    // "At least one path is required"
+    console.log(error.code);       // "VALIDATION_ERROR"
+    console.log(error.statusCode); // 400
+    console.log(error.name);       // "ValidationError"
+  }
+}
+```
+
+## TypeScript Support
+
+The SDK is fully typed with TypeScript:
+
+```typescript
+import type {
+  StorageObject,
+  Document,
+  ListStorageOptions,
+  UploadOptions,
+  ShareOptions,
+  CreateDocumentData,
+  UpdateDocumentData,
+  ListDocumentsOptions
+} from 'tuturuuu';
+
+// Type-safe options
+const options: ListStorageOptions = {
+  path: 'documents',
+  sortBy: 'created_at',
+  sortOrder: 'desc'
+};
+
+// Type-safe document data
+const docData: CreateDocumentData = {
+  name: 'My Doc',
+  content: { text: 'Content' },
+  isPublic: false
+};
+```
+
+## API Key Management
+
+### Creating an API Key
+
+1. Log in to your Tuturuuu workspace
+2. Navigate to **Settings** → **API Keys**
+3. Click **"Create API Key"**
+4. Set a descriptive name
+5. Assign a **Workspace Role** (determines permissions)
+6. Optionally set an expiration date
+7. Copy the generated key (starts with `ttr_`)
+8. Store securely (you won't see it again)
+
+### Best Practices
+
+<Warning>
+  **Never commit API keys to version control!** Use environment variables or secret management services.
+</Warning>
+
+```bash
+# .env
+TUTURUUU_API_KEY=ttr_your_api_key_here
+```
+
+```typescript
+// app.ts
+const client = new TuturuuuClient(process.env.TUTURUUU_API_KEY!);
+```
+
+### Permissions
+
+API keys inherit permissions from their assigned **Workspace Role**. The role determines what operations the key can perform.
+
+**Required Permissions:**
+
+| Operation | Required Role Permission |
+|-----------|-------------------------|
+| Storage Operations (list, upload, download, delete, folders, share, analytics) | `manage_drive` |
+| Document Operations (list, create, get, update, delete, search) | `manage_documents` |
+| API Key Management | `manage_api_keys` (Owner/Admin only) |
+
+**Note:** Permissions are managed through workspace roles, not individual API keys. To modify what an API key can do, update its assigned role's permissions in **Settings** → **Roles**.
+
+## Security Best Practices
+
+<Warning>
+  **CRITICAL: Never expose API keys in client-side code!** API keys must remain server-side only.
+</Warning>
+
+### ❌ Insecure (NEVER do this)
+
+```typescript
+// BAD: Exposes API key to browser!
+'use client'; // Client component
+
+const client = new TuturuuuClient(process.env.NEXT_PUBLIC_API_KEY);
+// ❌ Anyone can inspect network requests and steal your key!
+```
+
+### ✅ Secure (Recommended patterns)
+
+#### Next.js App Router (Recommended)
+
+Create server-side API routes that proxy SDK calls:
+
+```typescript
+// app/api/storage/list/route.ts (SERVER-SIDE)
+import { TuturuuuClient } from 'tuturuuu';
+import { NextResponse } from 'next/server';
+
+const client = new TuturuuuClient(process.env.TUTURUUU_API_KEY);
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const path = searchParams.get('path') || '';
+
+  const files = await client.storage.list({ path, limit: 50 });
+  return NextResponse.json(files);
+}
+```
+
+Then call from your client component:
+
+```typescript
+// app/components/FileList.tsx (CLIENT COMPONENT - SAFE)
+'use client';
+
+export function FileList() {
+  const [files, setFiles] = useState([]);
+
+  useEffect(() => {
+    fetch('/api/storage/list?path=documents')
+      .then(res => res.json())
+      .then(setFiles);
+  }, []);
+
+  return <div>{/* Render files */}</div>;
+}
+```
+
+#### Node.js/Express Backend
+
+```typescript
+// server.js
+import { TuturuuuClient } from 'tuturuuu';
+import express from 'express';
+
+const client = new TuturuuuClient(process.env.TUTURUUU_API_KEY);
+const app = express();
+
+app.get('/api/files', async (req, res) => {
+  const files = await client.storage.list();
+  res.json(files);
+});
+
+app.listen(3000);
+```
+
+#### Serverless Functions (Netlify, Vercel, AWS Lambda)
+
+```typescript
+// netlify/functions/storage.ts
+import { TuturuuuClient } from 'tuturuuu';
+
+export const handler = async (event) => {
+  const client = new TuturuuuClient(process.env.TUTURUUU_API_KEY);
+  const files = await client.storage.list();
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify(files),
+  };
+};
+```
+
+### Security Checklist
+
+<AccordionGroup>
+  <Accordion title="✅ DO: Use server-side code">
+    Always use the SDK in server-side contexts:
+    - Next.js API Routes (App Router or Pages Router)
+    - Node.js backend servers
+    - Serverless functions
+    - Server Components (React Server Components)
+  </Accordion>
+
+  <Accordion title="✅ DO: Use environment variables">
+    Store API keys in environment variables:
+    ```bash
+    # .env.local (server-side only)
+    TUTURUUU_API_KEY=ttr_your_key_here
+    TUTURUUU_BASE_URL=https://tuturuuu.com/api/v1
+    ```
+
+    **Never** use `NEXT_PUBLIC_` prefix for API keys!
+  </Accordion>
+
+  <Accordion title="✅ DO: Add .env.local to .gitignore">
+    Ensure secrets never get committed:
+    ```gitignore
+    # .gitignore
+    .env.local
+    .env*.local
+    ```
+  </Accordion>
+
+  <Accordion title="❌ DON'T: Use NEXT_PUBLIC_ prefix">
+    This exposes the variable to the browser:
+    ```bash
+    # BAD - Exposed to client!
+    NEXT_PUBLIC_TUTURUUU_API_KEY=ttr_key
+    ```
+  </Accordion>
+
+  <Accordion title="❌ DON'T: Import SDK in client components">
+    Never import the SDK in files with `'use client'` directive.
+  </Accordion>
+
+  <Accordion title="❌ DON'T: Hardcode API keys">
+    Never commit keys to version control:
+    ```typescript
+    // BAD
+    const client = new TuturuuuClient('ttr_1234567890abcdef');
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Complete Example
+
+See the [external app example](https://github.com/tutur3u/platform/tree/main/apps/external) for a complete implementation showcasing:
+
+- ✅ Secure server-side API routes
+- ✅ File upload with progress
+- ✅ Storage analytics dashboard
+- ✅ Proper error handling
+- ✅ Environment variable configuration
+
+## Rate Limiting
+
+The API enforces rate limits per API key to ensure fair usage and system stability:
+
+### Rate Limits by Operation
+
+| Operation | Limit | Window |
+|-----------|-------|--------|
+| Storage Upload | 20 requests | per minute |
+| Storage Download | 50 requests | per minute |
+| Signed Upload URLs | 30 requests | per minute |
+| All Other Operations | 100 requests | per minute |
+
+### Rate Limit Headers
+
+Every API response includes rate limit information in the headers:
+
+- `X-RateLimit-Limit` - Maximum requests allowed in the time window
+- `X-RateLimit-Remaining` - Number of requests remaining in current window
+- `X-RateLimit-Reset` - Unix timestamp when the rate limit resets
+
+```typescript
+const result = await client.storage.list();
+
+// Access rate limit info from headers (if using direct API calls)
+console.log('Limit:', result.headers.get('X-RateLimit-Limit'));
+console.log('Remaining:', result.headers.get('X-RateLimit-Remaining'));
+console.log('Resets at:', new Date(
+  Number.parseInt(result.headers.get('X-RateLimit-Reset')) * 1000
+));
+```
+
+### Handling Rate Limits
+
+When you exceed the rate limit, the API returns a `429 Too Many Requests` response:
+
+```typescript
+try {
+  await client.storage.upload(file);
+} catch (error) {
+  if (error instanceof RateLimitError) {
+    console.error('Rate limited! Try again later.');
+    console.error('Retry after:', error.retryAfter, 'seconds');
+
+    // Implement exponential backoff
+    await new Promise(resolve =>
+      setTimeout(resolve, error.retryAfter * 1000)
+    );
+  }
+}
+```
+
+### Workspace-Specific Rate Limits
+
+Workspace administrators can configure custom rate limits for their workspace through **Workspace Secrets**. These override the default limits for all API keys in that workspace.
+
+To set custom rate limits:
+
+1. Navigate to **Settings** → **Workspace Settings** → **Secrets**
+2. Add one or more of these secrets:
+
+| Secret Name | Description | Example Value |
+|-------------|-------------|---------------|
+| `RATE_LIMIT_WINDOW_MS` | Time window in milliseconds | `60000` (1 minute) |
+| `RATE_LIMIT_MAX_REQUESTS` | Max requests per window | `200` (double the default) |
+
+**Example Configuration:**
+
+```
+RATE_LIMIT_WINDOW_MS = 60000
+RATE_LIMIT_MAX_REQUESTS = 500
+```
+
+This configuration allows 500 requests per minute for all API keys in the workspace, instead of the default 100.
+
+<Note>
+  Workspace-specific rate limits only apply to operations that don't have explicit per-operation limits. For operations like uploads and downloads, the operation-specific limits still apply.
+</Note>
+
+### Best Practices
+
+<Tip>
+  **Implement exponential backoff** when handling rate limits to avoid hammering the API with retries.
+</Tip>
+
+```typescript
+async function uploadWithRetry(file: File, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await client.storage.upload(file);
+    } catch (error) {
+      if (error instanceof RateLimitError && attempt < maxRetries - 1) {
+        // Exponential backoff: 1s, 2s, 4s
+        const delay = Math.pow(2, attempt) * 1000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+```
+
+<Tip>
+  **Monitor rate limit headers** to track your usage and avoid hitting limits:
+  ```typescript
+  // Check remaining requests after each call
+  const response = await fetch('https://tuturuuu.com/api/v1/storage/list', {
+    headers: { 'Authorization': `Bearer ${apiKey}` }
+  });
+
+  const remaining = response.headers.get('X-RateLimit-Remaining');
+  const limit = response.headers.get('X-RateLimit-Limit');
+
+  console.log(`API calls remaining: ${remaining}/${limit}`);
+
+  // Slow down if close to limit
+  if (Number(remaining) < Number(limit) * 0.1) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+  ```
+</Tip>
+
+## Examples
+
+<CardGroup cols={2}>
+  <Card title="Basic Usage" icon="play" href="https://github.com/tutur3u/platform/blob/main/packages/sdk/examples/basic-usage.ts">
+    Complete example of all SDK operations
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="https://github.com/tutur3u/platform/blob/main/packages/sdk/examples/error-handling.ts">
+    Comprehensive error handling patterns
+  </Card>
+</CardGroup>
+
+## Support
+
+<CardGroup cols={3}>
+  <Card title="GitHub" icon="github" href="https://github.com/tutur3u/platform">
+    Source code and issues
+  </Card>
+  <Card title="Discord" icon="discord" href="https://discord.gg/tuturuuu">
+    Community support
+  </Card>
+  <Card title="Docs" icon="book" href="https://docs.tuturuuu.com">
+    Full documentation
+  </Card>
+</CardGroup>
+
+## Changelog
+
+### v0.1.0 (2025-10-21)
+
+- Initial release
+- Storage operations (list, upload, download, delete, folders, share, analytics)
+- Document operations (CRUD, search)
+- Comprehensive error handling
+- Full TypeScript support
+- Zod validation
+
+## License
+
+MIT

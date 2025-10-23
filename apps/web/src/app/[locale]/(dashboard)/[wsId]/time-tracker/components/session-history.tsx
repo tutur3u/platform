@@ -270,7 +270,7 @@ const StackedSessionItem = ({
     : stackedSession?.sessions.slice(0, INITIAL_SESSION_LIMIT);
 
   return (
-    <div className="group rounded-xl border border-border/60 bg-gradient-to-br from-background to-muted/5 shadow-sm transition-all hover:border-border hover:shadow-md">
+    <div className="group rounded-xl border border-border/60 bg-linear-to-br from-background to-muted/5 shadow-sm transition-all hover:border-border hover:shadow-md">
       <div className="p-3 md:p-5">
         {/* Mobile-optimized layout */}
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
@@ -1923,7 +1923,7 @@ export function SessionHistory({
         <CardContent className="p-4 md:p-6">
           {sessionsForPeriod?.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 md:py-16">
-              <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-dynamic-orange/10 to-dynamic-orange/5 ring-1 ring-dynamic-orange/20 md:h-24 md:w-24">
+              <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-linear-to-br from-dynamic-orange/10 to-dynamic-orange/5 ring-1 ring-dynamic-orange/20 md:h-24 md:w-24">
                 <Clock className="h-10 w-10 text-dynamic-orange md:h-12 md:w-12" />
               </div>
               <h3 className="font-semibold text-foreground text-lg md:text-xl">
@@ -1949,7 +1949,7 @@ export function SessionHistory({
             <div className="space-y-6">
               {/* Month Overview Cards */}
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <div className="rounded-lg border bg-gradient-to-br from-blue-50 to-blue-100 p-4 dark:from-blue-950/50 dark:to-blue-900/50">
+                <div className="rounded-lg border bg-linear-to-br from-blue-50 to-blue-100 p-4 dark:from-blue-950/50 dark:to-blue-900/50">
                   <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
                     <Clock className="h-4 w-4" />
                     <span className="font-medium text-sm">Total Time</span>
@@ -1959,7 +1959,7 @@ export function SessionHistory({
                   </p>
                 </div>
 
-                <div className="rounded-lg border bg-gradient-to-br from-green-50 to-green-100 p-4 dark:from-green-950/50 dark:to-green-900/50">
+                <div className="rounded-lg border bg-linear-to-br from-green-50 to-green-100 p-4 dark:from-green-950/50 dark:to-green-900/50">
                   <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
                     <Layers className="h-4 w-4" />
                     <span className="font-medium text-sm">Activities</span>
@@ -1969,7 +1969,7 @@ export function SessionHistory({
                   </p>
                 </div>
 
-                <div className="rounded-lg border bg-gradient-to-br from-purple-50 to-purple-100 p-4 dark:from-purple-950/50 dark:to-purple-900/50">
+                <div className="rounded-lg border bg-linear-to-br from-purple-50 to-purple-100 p-4 dark:from-purple-950/50 dark:to-purple-900/50">
                   <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
                     <BarChart2 className="h-4 w-4" />
                     <span className="font-medium text-sm">Sessions</span>

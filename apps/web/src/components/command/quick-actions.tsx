@@ -110,8 +110,8 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
           >
             <div className="flex w-full items-center gap-4">
               <div className="relative">
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-dynamic-green/20 to-dynamic-emerald/20 blur-sm transition-all group-hover:blur-md" />
-                <div className="relative rounded-lg border border-dynamic-green/20 bg-gradient-to-br from-dynamic-green/10 to-dynamic-emerald/10 p-2.5">
+                <div className="absolute inset-0 rounded-lg bg-linear-to-br from-dynamic-green/20 to-dynamic-emerald/20 blur-sm transition-all group-hover:blur-md" />
+                <div className="relative rounded-lg border border-dynamic-green/20 bg-linear-to-br from-dynamic-green/10 to-dynamic-emerald/10 p-2.5">
                   <PlusCircle className="h-5 w-5 text-dynamic-green" />
                 </div>
               </div>
@@ -135,8 +135,8 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
           >
             <div className="flex w-full items-center gap-4">
               <div className="relative">
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-dynamic-purple/20 to-dynamic-pink/20 blur-sm transition-all group-hover:blur-md" />
-                <div className="relative rounded-lg border border-dynamic-purple/20 bg-gradient-to-br from-dynamic-purple/10 to-dynamic-pink/10 p-2.5">
+                <div className="absolute inset-0 rounded-lg bg-linear-to-br from-dynamic-purple/20 to-dynamic-pink/20 blur-sm transition-all group-hover:blur-md" />
+                <div className="relative rounded-lg border border-dynamic-purple/20 bg-linear-to-br from-dynamic-purple/10 to-dynamic-pink/10 p-2.5">
                   <Timer className="h-5 w-5 text-dynamic-purple" />
                 </div>
               </div>
@@ -172,8 +172,8 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
           >
             <div className="flex w-full items-center gap-4">
               <div className="relative">
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-dynamic-blue/20 to-dynamic-purple/20 blur-sm transition-all group-hover:blur-md" />
-                <div className="relative rounded-lg border border-dynamic-blue/20 bg-gradient-to-br from-dynamic-blue/10 to-dynamic-purple/10 p-2.5">
+                <div className="absolute inset-0 rounded-lg bg-linear-to-br from-dynamic-blue/20 to-dynamic-purple/20 blur-sm transition-all group-hover:blur-md" />
+                <div className="relative rounded-lg border border-dynamic-blue/20 bg-linear-to-br from-dynamic-blue/10 to-dynamic-purple/10 p-2.5">
                   <Clock className="h-5 w-5 text-dynamic-blue" />
                 </div>
               </div>
@@ -205,8 +205,8 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
           >
             <div className="flex w-full items-center gap-4">
               <div className="relative">
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-dynamic-orange/20 to-dynamic-pink/20 blur-sm transition-all group-hover:blur-md" />
-                <div className="relative rounded-lg border border-dynamic-orange/20 bg-gradient-to-br from-dynamic-orange/10 to-dynamic-pink/10 p-2.5">
+                <div className="absolute inset-0 rounded-lg bg-linear-to-br from-dynamic-orange/20 to-dynamic-pink/20 blur-sm transition-all group-hover:blur-md" />
+                <div className="relative rounded-lg border border-dynamic-orange/20 bg-linear-to-br from-dynamic-orange/10 to-dynamic-pink/10 p-2.5">
                   <Calendar className="h-5 w-5 text-dynamic-orange" />
                 </div>
               </div>

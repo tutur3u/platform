@@ -54,8 +54,8 @@ export function TransactionDetailsClientPage({
       <Card
         className={`mb-4 border-2 ${
           isExpense
-            ? 'border-dynamic-red/20 bg-gradient-to-br from-dynamic-red/5 to-dynamic-red/10'
-            : 'border-dynamic-green/20 bg-gradient-to-br from-dynamic-green/5 to-dynamic-green/10'
+            ? 'border-dynamic-red/20 bg-linear-to-br from-dynamic-red/5 to-dynamic-red/10'
+            : 'border-dynamic-green/20 bg-linear-to-br from-dynamic-green/5 to-dynamic-green/10'
         }`}
       >
         <div className="flex items-center justify-between gap-4 p-6">
@@ -127,7 +127,7 @@ export function TransactionDetailsClientPage({
       <div className="grid h-fit gap-4 md:grid-cols-2">
         <div className="space-y-4">
           <Card className="overflow-hidden">
-            <div className="space-y-0 bg-gradient-to-br from-primary/5 to-primary/10 p-4">
+            <div className="space-y-0 bg-linear-to-br from-primary/5 to-primary/10 p-4">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
                   <DollarSign className="h-4 w-4 text-primary" />
@@ -265,7 +265,7 @@ export function TransactionDetailsClientPage({
         </div>
 
         <Card className="h-fit overflow-hidden">
-          <div className="space-y-0 bg-gradient-to-br from-primary/5 to-primary/10 p-4">
+          <div className="space-y-0 bg-linear-to-br from-primary/5 to-primary/10 p-4">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
                 {isExpense ? (

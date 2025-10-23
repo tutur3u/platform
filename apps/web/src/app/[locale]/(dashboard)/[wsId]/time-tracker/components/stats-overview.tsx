@@ -101,7 +101,7 @@ export function StatsOverview({
         <Card
           key={stat.label}
           className={cn(
-            'group bg-gradient-to-br transition-all duration-300',
+            'group bg-linear-to-br transition-all duration-300',
             stat.bg,
             'slide-in-from-bottom animate-in duration-500'
           )}

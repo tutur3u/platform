@@ -62,7 +62,7 @@ CREATE TABLE task_initiatives (
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function createInitiative(data: {
   wsId: string;
@@ -122,7 +122,7 @@ CREATE TABLE task_project_tasks (
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function createProject(data: {
   wsId: string;
@@ -190,7 +190,7 @@ CREATE TABLE workspace_boards (
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function createBoard(wsId: string, name: string) {
   const supabase = createClient();
@@ -239,7 +239,7 @@ CREATE TABLE task_lists (
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function reorderLists(
   boardId: string,
@@ -305,7 +305,7 @@ CREATE TABLE notes (
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function convertNoteToTask(data: {
   noteId: string;
@@ -351,7 +351,7 @@ export async function convertNoteToTask(data: {
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function convertNoteToProject(data: {
   noteId: string;
@@ -416,7 +416,7 @@ ADD COLUMN cycle_id text REFERENCES task_cycles(id) ON DELETE SET NULL;
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function createCycle(data: {
   wsId: string;
@@ -477,7 +477,7 @@ CREATE TABLE task_estimates (
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function estimateTask(
   taskId: string,
@@ -519,7 +519,7 @@ CREATE TABLE task_label_assignments (
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function createLabel(wsId: string, name: string, color: string) {
   const supabase = createClient();
@@ -567,7 +567,7 @@ ADD COLUMN status_id text REFERENCES task_statuses(id) ON DELETE SET NULL;
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function createBoardWithStatuses(
   wsId: string,
@@ -621,7 +621,7 @@ CREATE TABLE task_dependencies (
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function addDependency(taskId: string, dependsOnTaskId: string) {
   const supabase = createClient();

@@ -504,7 +504,7 @@ export function GoalManager({
                                   )}
                                 />
                               ) : (
-                                <div className="h-4 w-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-500" />
+                                <div className="h-4 w-4 rounded-full bg-linear-to-br from-blue-500 to-purple-500" />
                               )}
                               <h3 className="font-medium">
                                 {goal.category?.name || 'General'} Goal
@@ -639,7 +639,7 @@ export function GoalManager({
                 <SelectContent>
                   <SelectItem value="general">
                     <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full bg-gradient-to-br from-blue-500 to-purple-500" />
+                      <div className="h-3 w-3 rounded-full bg-linear-to-br from-blue-500 to-purple-500" />
                       <div className="flex flex-col items-start justify-start">
                         <div className="font-medium">General Goal</div>
                         <div className="text-muted-foreground text-xs">
@@ -785,7 +785,7 @@ export function GoalManager({
                 <SelectContent>
                   <SelectItem value="general">
                     <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full bg-gradient-to-br from-blue-500 to-purple-500" />
+                      <div className="h-3 w-3 rounded-full bg-linear-to-br from-blue-500 to-purple-500" />
                       <div className="flex flex-col items-start justify-start">
                         <div className="font-medium">General Goal</div>
                         <div className="text-muted-foreground text-xs">

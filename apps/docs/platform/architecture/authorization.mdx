@@ -128,7 +128,7 @@ CREATE TABLE workspace_members (
 ### Server-Side Permission Check
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
 
 type Permission = Database['public']['Enums']['workspace_role_permission'];
@@ -163,7 +163,7 @@ export async function hasPermission(
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { hasPermission } from '@/lib/permissions';
 import { redirect } from 'next/navigation';
 
@@ -204,7 +204,7 @@ export async function deleteUser(wsId: string, userId: string) {
 
 ```typescript
 // app/api/[wsId]/users/route.ts
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { hasPermission } from '@/lib/permissions';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -292,7 +292,7 @@ export async function hasAllPermissions(
 ### Get User Permissions
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function getUserPermissions(
   userId: string,
@@ -321,7 +321,7 @@ export async function getUserPermissions(
 ### Get User Role
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function getUserRole(
   userId: string,
@@ -348,7 +348,7 @@ export async function getUserRole(
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { hasPermission } from '@/lib/permissions';
 
 export async function createRole(
@@ -394,7 +394,7 @@ export async function createRole(
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { hasPermission } from '@/lib/permissions';
 
 export async function assignRole(
@@ -547,7 +547,7 @@ export async function isWorkspaceAdmin(
 ### Owner Check
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function isWorkspaceOwner(
   userId: string,
@@ -571,7 +571,7 @@ export async function isWorkspaceOwner(
 ### Member Check
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function isWorkspaceMember(
   userId: string,
@@ -598,7 +598,7 @@ Create reusable permission middleware for API routes:
 
 ```typescript
 // lib/middleware/permissions.ts
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { hasPermission } from '@/lib/permissions';
 import { NextRequest, NextResponse } from 'next/server';
 

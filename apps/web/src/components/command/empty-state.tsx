@@ -8,8 +8,8 @@ export function EmptyState() {
     <CommandEmpty>
       <div className="flex flex-col items-center gap-4 py-8 text-center">
         <div className="relative">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-dynamic-blue/20 to-dynamic-purple/20 blur-lg" />
-          <div className="relative rounded-full border border-dynamic-blue/20 bg-gradient-to-br from-dynamic-blue/10 to-dynamic-purple/10 p-4">
+          <div className="absolute inset-0 rounded-full bg-linear-to-br from-dynamic-blue/20 to-dynamic-purple/20 blur-lg" />
+          <div className="relative rounded-full border border-dynamic-blue/20 bg-linear-to-br from-dynamic-blue/10 to-dynamic-purple/10 p-4">
             <Search className="h-6 w-6 text-dynamic-blue" />
           </div>
         </div>

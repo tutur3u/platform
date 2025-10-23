@@ -69,7 +69,7 @@ export default function UserNavClient({
                 src={user?.avatar_url ?? undefined}
                 className="overflow-clip rounded-lg"
               />
-              <AvatarFallback className="rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 font-semibold text-white">
+              <AvatarFallback className="rounded-lg bg-linear-to-br from-blue-500 to-purple-600 font-semibold text-white">
                 {user?.display_name ? (
                   getInitials(user.display_name)
                 ) : (
