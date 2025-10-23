@@ -164,9 +164,7 @@ interface MFAMiddlewareOptions {
 /**
  * Creates a middleware handler that redirects unauthenticated users to the central web app login page
  */
-export function createCentralizedAuthMiddleware(
-  options: CentralizedAuthOptions
-) {
+export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
   const {
     webAppUrl,
     publicPaths = [],
@@ -183,9 +181,7 @@ export function createCentralizedAuthMiddleware(
     enforceForAll: mfaEnforceForAll = true,
   } = mfa;
 
-  return async function authMiddleware(
-    req: NextRequest
-  ): Promise<NextResponse> {
+  return async function authProxy(req: NextRequest): Promise<NextResponse> {
     try {
       // Make sure user session is always refreshed
       const { res, user } = await updateSession(req);

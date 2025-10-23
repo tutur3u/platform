@@ -9,12 +9,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import type { ListStatusFilter } from './board-header';
 import CursorOverlay from './cursor-overlay';
-import type { TaskFilters } from './task-filter.types';
-
-export interface CursorViewMetadata {
-  listStatusFilter: ListStatusFilter;
-  filters: TaskFilters;
-}
+import type { BoardFiltersMetadata, TaskFilters } from './task-filter.types';
 
 /**
  * Efficiently compares two sorted arrays of primitive values
@@ -30,9 +25,9 @@ function arraysEqual<T extends string | number>(arr1: T[], arr2: T[]): boolean {
 /**
  * Checks if two cursor metadata objects represent the same view configuration
  */
-function isMatchingView(
-  metadata1?: CursorViewMetadata,
-  metadata2?: CursorViewMetadata
+function isMatchingFilters(
+  metadata1?: BoardFiltersMetadata,
+  metadata2?: BoardFiltersMetadata
 ): boolean {
   if (!metadata1 || !metadata2) return true; // Show all cursors if no metadata
 
@@ -136,7 +131,7 @@ export default function CursorOverlayMultiWrapper({
   }, []);
 
   // Create metadata object from view options (only if both are provided)
-  const metadata: CursorViewMetadata | undefined = useMemo(() => {
+  const metadata: BoardFiltersMetadata | undefined = useMemo(() => {
     if (!listStatusFilter || !filters) return undefined;
     return {
       listStatusFilter,
@@ -163,7 +158,9 @@ export default function CursorOverlayMultiWrapper({
       }
 
       // Filter based on view matching
-      if (isMatchingView(metadata, cursor.metadata as CursorViewMetadata)) {
+      if (
+        isMatchingFilters(metadata, cursor.metadata as BoardFiltersMetadata)
+      ) {
         filtered.set(userId, cursor);
       }
     }

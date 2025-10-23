@@ -6,6 +6,7 @@
  */
 
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import type { ListStatusFilter } from './board-header';
 
 export interface TaskLabel {
   id: string;
@@ -49,4 +50,11 @@ export interface TaskFilters {
   includeUnassigned: boolean;
   searchQuery?: string;
   sortBy?: SortOption;
+}
+
+export interface BoardFiltersMetadata {
+  /** List status filter (all, active, not_started) */
+  listStatusFilter: ListStatusFilter;
+  /** Active task filters */
+  filters: TaskFilters;
 }

@@ -24,12 +24,10 @@ import {
   CircleDashed,
   CircleX,
   GripVertical,
-  Loader2,
   MoreVertical,
   Pencil,
   Plus,
   Trash2,
-  X,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
@@ -75,6 +73,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useState } from 'react';
+import { CreateListDialog } from './create-list-dialog';
 
 interface BoardLayoutSettingsProps {
   open: boolean;
@@ -283,9 +282,6 @@ export function BoardLayoutSettings({
   const [editingList, setEditingList] = useState<TaskList | null>(null);
   const [deletingList, setDeletingList] = useState<TaskList | null>(null);
   const [creatingList, setCreatingList] = useState(false);
-  const [newListName, setNewListName] = useState('');
-  const [newListStatus, setNewListStatus] = useState<TaskBoardStatus>('active');
-  const [newListColor, setNewListColor] = useState<SupportedColor>('BLUE');
 
   // Group lists by status
   const groupedLists = lists.reduce(
@@ -305,52 +301,6 @@ export function BoardLayoutSettings({
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
-
-  const createListMutation = useMutation({
-    mutationFn: async ({
-      name,
-      status,
-      color,
-    }: {
-      name: string;
-      status: TaskBoardStatus;
-      color: SupportedColor;
-    }) => {
-      // Get max position for this status
-      const listsInStatus = groupedLists[status] || [];
-      const maxPosition = Math.max(
-        0,
-        ...listsInStatus.map((l) => l.position || 0)
-      );
-
-      const { data, error } = await supabase
-        .from('task_lists')
-        .insert({
-          name,
-          status,
-          color,
-          board_id: boardId,
-          position: maxPosition + 1,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      toast.success('List created successfully');
-      queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
-      setCreatingList(false);
-      setNewListName('');
-      setNewListStatus('active');
-      setNewListColor('BLUE');
-      onUpdate();
-    },
-    onError: (error: any) => {
-      toast.error(error.message || 'Failed to create list');
-    },
-  });
 
   const updateListMutation = useMutation({
     mutationFn: async ({
@@ -571,15 +521,6 @@ export function BoardLayoutSettings({
     [boardId, groupedLists, lists, queryClient, supabase]
   );
 
-  const handleCreateList = () => {
-    if (!newListName.trim()) return;
-    createListMutation.mutate({
-      name: newListName.trim(),
-      status: newListStatus,
-      color: newListColor,
-    });
-  };
-
   const handleColorChange = (listId: string, color: SupportedColor) => {
     updateColorMutation.mutate({ listId, color });
   };
@@ -604,133 +545,15 @@ export function BoardLayoutSettings({
           </DialogHeader>
 
           <div className="space-y-6">
-            {/* Add New List */}
-            {creatingList ? (
-              <div className="space-y-3 rounded-lg border bg-muted/50 p-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-sm">Create New List</h3>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => {
-                      setCreatingList(false);
-                      setNewListName('');
-                      setNewListStatus('active');
-                      setNewListColor('BLUE');
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="grid gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="list-name">List Name</Label>
-                    <Input
-                      value={newListName}
-                      onChange={(e) => setNewListName(e.target.value)}
-                      placeholder="e.g., In Review, Testing, Ready for Deploy"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleCreateList();
-                        }
-                      }}
-                      autoFocus
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="list-status">Status Category</Label>
-                    <Select
-                      value={newListStatus}
-                      onValueChange={(value) =>
-                        setNewListStatus(value as TaskBoardStatus)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {statuses.map((status) => {
-                          const Icon = statusConfig[status].icon;
-                          return (
-                            <SelectItem key={status} value={status}>
-                              <div className="flex items-center gap-2">
-                                <Icon
-                                  className={cn(
-                                    'h-4 w-4',
-                                    statusConfig[status].color
-                                  )}
-                                />
-                                {statusConfig[status].label}
-                              </div>
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Color</Label>
-                    <div className="grid grid-cols-5 gap-2">
-                      {colorOptions.map((color) => (
-                        <button
-                          type="button"
-                          key={color.value}
-                          onClick={() => setNewListColor(color.value)}
-                          className={cn(
-                            'h-8 w-8 rounded border-2 transition-all',
-                            color.class,
-                            newListColor === color.value &&
-                              'scale-110 ring-2 ring-primary'
-                          )}
-                          title={color.label}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setCreatingList(false);
-                        setNewListName('');
-                        setNewListStatus('active');
-                        setNewListColor('BLUE');
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={handleCreateList}
-                      disabled={
-                        !newListName.trim() || createListMutation.isPending
-                      }
-                    >
-                      {createListMutation.isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Creating...
-                        </>
-                      ) : (
-                        'Create List'
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setCreatingList(true)}
-              >
-                <Plus className="h-4 w-4" />
-                Add New List
-              </Button>
-            )}
+            {/* Add New List Button */}
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setCreatingList(true)}
+            >
+              <Plus className="h-4 w-4" />
+              Add New List
+            </Button>
 
             {/* Lists by Status */}
             <ScrollArea className="h-[500px] pr-4">
@@ -810,6 +633,16 @@ export function BoardLayoutSettings({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create List Dialog */}
+      <CreateListDialog
+        open={creatingList}
+        onOpenChange={setCreatingList}
+        boardId={boardId}
+        onSuccess={() => {
+          onUpdate();
+        }}
+      />
 
       {/* Edit List Dialog */}
       {editingList && (
