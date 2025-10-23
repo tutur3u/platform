@@ -1,5 +1,5 @@
 import { match } from '@formatjs/intl-localematcher';
-import { createCentralizedAuthMiddleware } from '@tuturuuu/auth/proxy';
+import { createCentralizedAuthProxy } from '@tuturuuu/auth/proxy';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
@@ -16,15 +16,15 @@ const WEB_APP_URL =
     ? 'https://tuturuuu.com'
     : `http://localhost:${PORT}`;
 
-const authMiddleware = createCentralizedAuthMiddleware({
+const authProxy = createCentralizedAuthProxy({
   webAppUrl: WEB_APP_URL,
   publicPaths: PUBLIC_PATHS,
   skipApiRoutes: true,
 });
 
-export async function middleware(req: NextRequest): Promise<NextResponse> {
+export async function proxy(req: NextRequest): Promise<NextResponse> {
   // Handle authentication and MFA with the centralized middleware
-  const authRes = await authMiddleware(req);
+  const authRes = await authProxy(req);
 
   // If the auth middleware returned a redirect response, return it
   if (authRes.headers.has('Location')) {

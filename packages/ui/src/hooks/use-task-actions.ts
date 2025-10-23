@@ -24,6 +24,9 @@ interface UseTaskActionsProps {
   setCustomDateDialogOpen?: (open: boolean) => void;
   setDeleteDialogOpen?: (open: boolean) => void;
   setEstimationSaving?: (saving: boolean) => void;
+  selectedTasks?: Set<string>; // For bulk operations
+  isMultiSelectMode?: boolean;
+  onClearSelection?: () => void; // Callback to clear selection after bulk operations
 }
 
 export function useTaskActions({
@@ -38,6 +41,9 @@ export function useTaskActions({
   setCustomDateDialogOpen,
   setDeleteDialogOpen,
   setEstimationSaving,
+  selectedTasks,
+  isMultiSelectMode,
+  onClearSelection,
 }: UseTaskActionsProps) {
   const queryClient = useQueryClient();
   const updateTaskMutation = useUpdateTask(boardId);
@@ -254,15 +260,40 @@ export function useTaskActions({
       setIsLoading(true);
 
       const supabase = createClient();
+
+      // Check if we're in multi-select mode and have multiple tasks selected
+      const shouldBulkMove =
+        isMultiSelectMode &&
+        selectedTasks &&
+        selectedTasks.size > 1 &&
+        selectedTasks.has(task.id);
+      const tasksToMove = shouldBulkMove
+        ? Array.from(selectedTasks)
+        : [task.id];
+
       try {
-        await moveTask(supabase, task.id, targetListId);
+        // Move all tasks in parallel
+        await Promise.all(
+          tasksToMove.map((taskId) => moveTask(supabase, taskId, targetListId))
+        );
 
         const targetList = availableLists.find(
           (list) => list.id === targetListId
         );
+
+        const taskCount = tasksToMove.length;
         toast.success('Success', {
-          description: `Task moved to ${targetList?.name || 'selected list'}`,
+          description:
+            taskCount > 1
+              ? `${taskCount} tasks moved to ${targetList?.name || 'selected list'}`
+              : `Task moved to ${targetList?.name || 'selected list'}`,
         });
+
+        // Clear selection after bulk move
+        if (shouldBulkMove && onClearSelection) {
+          onClearSelection();
+        }
+
         onUpdate();
       } catch (error) {
         console.error('Failed to move task:', error);
@@ -274,7 +305,17 @@ export function useTaskActions({
         setMenuOpen(false);
       }
     },
-    [task.id, task.list_id, availableLists, onUpdate, setIsLoading, setMenuOpen]
+    [
+      task.id,
+      task.list_id,
+      availableLists,
+      onUpdate,
+      setIsLoading,
+      setMenuOpen,
+      isMultiSelectMode,
+      selectedTasks,
+      onClearSelection,
+    ]
   );
 
   const handleDueDateChange = useCallback(
