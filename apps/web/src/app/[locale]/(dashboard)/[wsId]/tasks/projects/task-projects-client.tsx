@@ -168,8 +168,6 @@ export function TaskProjectsClient({
     initialData: initialProjects,
   });
 
-  console.log(projects);
-
   const {
     data: availableTaskOptions = [],
     isLoading: tasksLoading,
