@@ -9,8 +9,8 @@
     "./dodo/*": "./src/dodo/*.ts"
   },
   "dependencies": {
-    "@polar-sh/checkout": "^0.1.12",
-    "@polar-sh/nextjs": "^0.4.9",
+    "@polar-sh/checkout": "^0.1.13",
+    "@polar-sh/nextjs": "^0.4.11",
     "@polar-sh/sdk": "^0.38.1",
     "dodopayments": "^2.2.1",
     "dodopayments-checkout": "^1.3.1"
@@ -18,5 +18,5 @@
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*"
   },
-  "packageManager": "bun@1.3.0"
+  "packageManager": "bun@1.3.1"
 }

@@ -85,8 +85,8 @@
     "input-otp": "^1.4.2",
     "lodash": "^4.17.21",
     "moment": "^2.30.1",
-    "next": "^15.5.6",
-    "next-intl": "^4.3.12",
+    "next": "^16.0.0",
+    "next-intl": "^4.4.0",
     "next-themes": "^0.4.6",
     "prosemirror-state": "^1.4.3",
     "qrcode.react": "^4.2.0",
@@ -101,7 +101,7 @@
     "react-pdf": "^10.2.0",
     "react-resizable": "^3.0.5",
     "react-resizable-panels": "^3.0.6",
-    "react-syntax-highlighter": "^15.6.6",
+    "react-syntax-highlighter": "^16.0.0",
     "recharts": "3.3.0",
     "sonner": "^2.0.7",
     "tailwind-scrollbar": "^4.0.2",
@@ -134,7 +134,7 @@
     "postcss-load-config": "^6.0.1",
     "tailwindcss": "^4.1.15",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^4.0.1"
   },
   "exports": {
     "./globals.css": "./src/globals.css",
@@ -176,5 +176,5 @@
     "./tu-do/boards/*": "./src/components/ui/tu-do/boards/*.tsx",
     "./*": "./src/components/ui/*.tsx"
   },
-  "packageManager": "bun@1.3.0"
+  "packageManager": "bun@1.3.1"
 }
