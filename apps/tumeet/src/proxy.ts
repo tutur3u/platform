@@ -3,7 +3,11 @@ import { createCentralizedAuthProxy } from '@tuturuuu/auth/proxy';
 import Negotiator from 'negotiator';
 import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest, NextResponse } from 'next/server';
-import { CENTRAL_PORT, LOCALE_COOKIE_NAME } from './constants/common';
+import {
+  CENTRAL_PORT,
+  LOCALE_COOKIE_NAME,
+  PUBLIC_PATHS,
+} from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 
 const WEB_APP_URL =
@@ -11,9 +15,10 @@ const WEB_APP_URL =
     ? 'https://tuturuuu.com'
     : `http://localhost:${CENTRAL_PORT}`;
 
+// Create the centralized auth middleware with MFA
 const authProxy = createCentralizedAuthProxy({
   webAppUrl: WEB_APP_URL,
-  publicPaths: [''],
+  publicPaths: PUBLIC_PATHS,
   skipApiRoutes: true,
 });
 
