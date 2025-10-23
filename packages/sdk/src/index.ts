@@ -24,7 +24,27 @@ export {
 } from './errors';
 export type { TuturuuuClientConfig } from './storage';
 // Main client
-export { DocumentsClient, StorageClient, TuturuuuClient } from './storage';
+/**
+ * Default Tuturuuu client instance with auto-configured credentials
+ *
+ * Automatically loads from environment variables:
+ * - TUTURUUU_API_KEY (required)
+ * - TUTURUUU_BASE_URL (optional, defaults to https://tuturuuu.com/api/v1)
+ *
+ * @example
+ * ```typescript
+ * import { tuturuuu } from 'tuturuuu';
+ *
+ * const analytics = await tuturuuu.storage.getAnalytics();
+ * const files = await tuturuuu.storage.list({ path: 'documents' });
+ * ```
+ */
+export {
+  DocumentsClient,
+  StorageClient,
+  tuturuuu,
+  TuturuuuClient,
+} from './storage';
 // Types
 export type {
   AnalyticsResponse,

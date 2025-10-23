@@ -1,10 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { TuturuuuClient } from 'tuturuuu';
-
-const tuturuuu = new TuturuuuClient({
-  apiKey: process.env.TUTURUUU_API_KEY || '',
-  baseUrl: process.env.TUTURUUU_BASE_URL || '',
-});
+import { type NextRequest, NextResponse } from 'next/server';
+import { tuturuuu } from 'tuturuuu';
 
 export async function GET(
   _request: NextRequest,
