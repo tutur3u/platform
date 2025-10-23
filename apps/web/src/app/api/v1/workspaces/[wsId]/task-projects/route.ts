@@ -53,6 +53,7 @@ export async function GET(
             name,
             completed,
             completed_at,
+            closed_at,
             deleted_at,
             priority,
             task_lists(
@@ -83,8 +84,10 @@ export async function GET(
         ...project,
         created_at: project.created_at ?? new Date().toISOString(),
         tasksCount: activeTasks.length,
-        completedTasksCount: activeTasks.filter((link) => link.task?.completed)
-          .length,
+        completedTasksCount: activeTasks.filter(
+          (link) =>
+            link.task?.completed_at !== null || link.task?.closed_at !== null
+        ).length,
         linkedTasks: activeTasks.flatMap(({ task }) =>
           task
             ? [
