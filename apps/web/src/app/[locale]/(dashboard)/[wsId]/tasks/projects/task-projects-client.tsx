@@ -17,7 +17,6 @@ import {
   Target,
   Trash2,
   TrendingUp,
-  User,
   X,
 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -912,42 +911,58 @@ export function TaskProjectsClient({
           </CardContent>
         </Card>
       ) : viewMode === 'list' ? (
-        <div className="space-y-2">
-          {filteredProjects.map((project) => (
-            <Card
-              key={project.id}
-              className="group hover:-translate-y-0.5 transition-all hover:shadow-md"
-            >
-              <CardContent className="p-4">
-                <div className="flex items-start gap-4">
-                  {/* Project Info */}
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
+        <div className="space-y-3">
+          {filteredProjects.map((project) => {
+            const progressPercent =
+              project.tasksCount > 0
+                ? Math.round(
+                    (project.completedTasksCount / project.tasksCount) * 100
+                  )
+                : 0;
+            return (
+              <Card
+                key={project.id}
+                className="group overflow-hidden border-dynamic-purple/20 bg-linear-to-br from-dynamic-purple/5 to-transparent transition-all hover:border-dynamic-purple/30 hover:shadow-lg"
+              >
+                <div className="flex">
+                  {/* Left Accent Bar with Progress */}
+                  <div className="relative flex w-24 flex-col items-center justify-center gap-3 border-dynamic-purple/20 border-r bg-dynamic-purple/10 p-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-dynamic-purple/30 to-dynamic-indigo/30 shadow-sm">
+                      <Target className="h-7 w-7 text-dynamic-purple" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-bold text-2xl text-dynamic-purple">
+                        {progressPercent}%
+                      </p>
+                      <p className="text-muted-foreground text-xs">Complete</p>
+                    </div>
+                  </div>
+
+                  {/* Main Content */}
+                  <div className="flex-1 space-y-4 p-5">
+                    <div className="flex items-center justify-between">
+                      {/* Title Row with Badges */}
+                      <div className="flex flex-wrap items-center gap-3">
                         <NextLink
                           href={`/${wsId}/tasks/projects/${project.id}`}
-                          className="group/link inline-flex items-center gap-2 hover:text-dynamic-purple"
+                          className="group/link"
                         >
-                          <h3 className="font-semibold text-base">
+                          <h3 className="inline-flex items-center gap-2 font-bold text-xl transition-colors hover:text-dynamic-purple">
                             {project.name}
+                            <ExternalLink className="h-4 w-4 opacity-0 transition-opacity group-hover/link:opacity-100" />
                           </h3>
-                          <ExternalLink className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover/link:opacity-100" />
                         </NextLink>
-                        {project.description && (
-                          <p className="mt-1 line-clamp-1 text-muted-foreground text-sm">
-                            {project.description}
-                          </p>
-                        )}
+                        {getStatusBadge(project.status)}
+                        {getPriorityBadge(project.priority)}
+                        {getHealthStatusBadge(project.health_status)}
                       </div>
-
-                      {/* Actions */}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
                             size="sm"
                             variant="ghost"
                             disabled={isUpdating || isDeleting}
-                            className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100"
+                            className="h-9 w-9 p-0"
                           >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
@@ -971,93 +986,167 @@ export function TaskProjectsClient({
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1 space-y-3">
+                        {/* Description */}
+                        {project.description && (
+                          <p className="line-clamp-3 text-muted-foreground leading-relaxed">
+                            {project.description}
+                          </p>
+                        )}
 
-                    {/* Metadata Row */}
-                    <div className="flex flex-wrap items-center gap-3">
-                      {/* Status */}
-                      {getStatusBadge(project.status)}
+                        {/* Horizontal Info Bar */}
+                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                          {/* Project Lead */}
+                          {project.lead && (
+                            <div className="flex items-center gap-2.5">
+                              <Avatar className="h-9 w-9 ring-2 ring-dynamic-blue/30 ring-offset-2 ring-offset-background">
+                                <AvatarImage
+                                  src={project.lead.avatar_url || undefined}
+                                />
+                                <AvatarFallback className="bg-linear-to-br from-dynamic-blue/30 to-dynamic-purple/20 font-semibold text-dynamic-blue">
+                                  {project.lead.display_name?.[0]?.toUpperCase() ||
+                                    'U'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="text-muted-foreground text-xs">
+                                  Project Lead
+                                </p>
+                                <p className="font-semibold">
+                                  {project.lead.display_name || 'Unknown'}
+                                </p>
+                              </div>
+                            </div>
+                          )}
 
-                      {/* Priority */}
-                      {getPriorityBadge(project.priority)}
+                          {/* Task Stats */}
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-dynamic-indigo/20 to-dynamic-cyan/10">
+                              <Target className="h-4 w-4 text-dynamic-indigo" />
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground text-xs">
+                                Tasks
+                              </p>
+                              <p className="font-semibold">
+                                {project.completedTasksCount} of{' '}
+                                {project.tasksCount}
+                              </p>
+                            </div>
+                          </div>
 
-                      {/* Health */}
-                      {getHealthStatusBadge(project.health_status)}
+                          {/* Timeline */}
+                          {(project.start_date || project.end_date) && (
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-dynamic-purple/20 to-dynamic-pink/10">
+                                <Calendar className="h-4 w-4 text-dynamic-purple" />
+                              </div>
+                              <div>
+                                <p className="text-muted-foreground text-xs">
+                                  Timeline
+                                </p>
+                                <p className="font-semibold">
+                                  {project.start_date &&
+                                    new Date(
+                                      project.start_date
+                                    ).toLocaleDateString('en-GB', {
+                                      day: 'numeric',
+                                      month: 'numeric',
+                                      year: 'numeric',
+                                    })}
+                                  {project.start_date &&
+                                    project.end_date &&
+                                    ' → '}
+                                  {project.end_date &&
+                                    new Date(
+                                      project.end_date
+                                    ).toLocaleDateString('en-GB', {
+                                      day: 'numeric',
+                                      month: 'numeric',
+                                      year: 'numeric',
+                                    })}
+                                </p>
+                              </div>
+                            </div>
+                          )}
 
-                      {/* Lead */}
-                      {project.lead && (
-                        <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
-                          <User className="h-3.5 w-3.5" />
-                          <span>{project.lead.display_name || 'Unknown'}</span>
+                          {/* Linked Tasks Count */}
+                          {project.linkedTasks.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-dynamic-cyan/20 to-dynamic-teal/10">
+                                <Link className="h-4 w-4 text-dynamic-cyan" />
+                              </div>
+                              <div>
+                                <p className="text-muted-foreground text-xs">
+                                  Linked
+                                </p>
+                                <p className="font-semibold">
+                                  {project.linkedTasks.length} task
+                                  {project.linkedTasks.length !== 1 ? 's' : ''}
+                                </p>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      )}
 
-                      {/* Dates */}
-                      {(project.start_date || project.end_date) && (
-                        <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
-                          <Calendar className="h-3.5 w-3.5" />
-                          {project.start_date && (
-                            <span>
-                              {new Date(project.start_date).toLocaleDateString(
-                                'en-US',
-                                {
-                                  month: 'short',
-                                  day: 'numeric',
-                                }
-                              )}
-                            </span>
-                          )}
-                          {project.start_date && project.end_date && (
-                            <span>→</span>
-                          )}
-                          {project.end_date && (
-                            <span>
-                              {new Date(project.end_date).toLocaleDateString(
-                                'en-US',
-                                {
-                                  month: 'short',
-                                  day: 'numeric',
-                                }
-                              )}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                        {/* Linked Tasks Pills */}
+                        {project.linkedTasks.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {project.linkedTasks.slice(0, 3).map((task) => (
+                              <Badge
+                                key={task.id}
+                                variant="outline"
+                                className="border-dynamic-cyan/30 bg-dynamic-cyan/10 text-dynamic-cyan text-xs"
+                              >
+                                {task.name}
+                              </Badge>
+                            ))}
+                            {project.linkedTasks.length > 3 && (
+                              <Badge
+                                variant="outline"
+                                className="border-dynamic-cyan/30 bg-dynamic-cyan/10 text-dynamic-cyan text-xs"
+                              >
+                                +{project.linkedTasks.length - 3} more
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                      </div>
 
-                      {/* Task Count */}
-                      <Badge variant="outline" className="text-xs">
-                        {project.completedTasksCount}/{project.tasksCount} tasks
-                        completed
-                      </Badge>
+                      {/* Right Actions Column */}
+                      <div className="flex shrink-0 flex-col gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleOpenManageTasks(project)}
+                          disabled={isLinking || isUnlinking}
+                          className="whitespace-nowrap"
+                        >
+                          <Link className="mr-2 h-3.5 w-3.5" />
+                          Manage
+                        </Button>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleOpenManageTasks(project)}
-                      disabled={isLinking || isUnlinking}
-                    >
-                      <Link className="mr-2 h-4 w-4" />
-                      Link Tasks
-                    </Button>
-                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredProjects.map((project) => (
-            <Card key={project.id} className="group">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
+            <Card
+              key={project.id}
+              className="group flex flex-col border-dynamic-purple/20 bg-dynamic-purple/5 transition-all hover:border-dynamic-purple/30 hover:shadow-md"
+            >
+              <CardHeader className="pb-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
                     <CardTitle className="text-base">{project.name}</CardTitle>
                     {project.description && (
-                      <CardDescription className="mt-1">
+                      <CardDescription className="mt-2 line-clamp-3 leading-relaxed">
                         {project.description}
                       </CardDescription>
                     )}
@@ -1068,7 +1157,7 @@ export function TaskProjectsClient({
                         size="sm"
                         variant="ghost"
                         disabled={isUpdating || isDeleting}
-                        className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100"
+                        className="h-8 w-8 shrink-0 p-0 opacity-0 group-hover:opacity-100"
                       >
                         <MoreVertical className="h-4 w-4" />
                       </Button>
@@ -1093,74 +1182,117 @@ export function TaskProjectsClient({
                   </DropdownMenu>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3 pt-0">
-                {/* Badges */}
+              <CardContent className="flex flex-1 flex-col space-y-3 pt-0">
+                {/* Status Badges */}
                 <div className="flex flex-wrap gap-2">
                   {getStatusBadge(project.status)}
                   {getPriorityBadge(project.priority)}
                   {getHealthStatusBadge(project.health_status)}
                 </div>
 
-                {/* Metadata */}
-                <div className="flex flex-wrap items-center gap-4 text-muted-foreground text-sm">
+                {/* Info Cards */}
+                <div className="space-y-2">
+                  {/* Project Lead */}
                   {project.lead && (
-                    <div className="flex items-center gap-1">
-                      <Avatar className="h-5 w-5">
+                    <div className="flex items-center gap-2.5 rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/10 p-2.5">
+                      <Avatar className="h-7 w-7">
                         <AvatarImage
                           src={project.lead.avatar_url || undefined}
                         />
-                        <AvatarFallback className="text-xs">
+                        <AvatarFallback className="bg-dynamic-blue/20 text-dynamic-blue text-xs">
                           {project.lead.display_name?.[0]?.toUpperCase() || 'U'}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="truncate">
-                        {project.lead.display_name || 'Unknown'}
-                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-muted-foreground text-xs">
+                          Project Lead
+                        </p>
+                        <p className="truncate font-medium text-sm">
+                          {project.lead.display_name || 'Unknown'}
+                        </p>
+                      </div>
                     </div>
                   )}
+
+                  {/* Task Progress */}
+                  <div className="flex items-center gap-2.5 rounded-lg border border-dynamic-indigo/20 bg-dynamic-indigo/10 p-2.5">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-dynamic-indigo/20">
+                      <Target className="h-3.5 w-3.5 text-dynamic-indigo" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-muted-foreground text-xs">
+                        Task Progress
+                      </p>
+                      <p className="font-medium text-sm">
+                        {project.completedTasksCount}/{project.tasksCount}{' '}
+                        completed
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Timeline */}
                   {(project.start_date || project.end_date) && (
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      <span className="text-xs">
-                        {project.start_date &&
-                          new Date(project.start_date).toLocaleDateString(
-                            'en-US',
-                            { month: 'short', day: 'numeric' }
-                          )}
-                        {project.start_date && project.end_date && ' → '}
-                        {project.end_date &&
-                          new Date(project.end_date).toLocaleDateString(
-                            'en-US',
-                            { month: 'short', day: 'numeric' }
-                          )}
-                      </span>
+                    <div className="flex items-center gap-2.5 rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/10 p-2.5">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-dynamic-purple/20">
+                        <Calendar className="h-3.5 w-3.5 text-dynamic-purple" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-muted-foreground text-xs">
+                          Timeline
+                        </p>
+                        <p className="truncate font-medium text-sm">
+                          {project.start_date &&
+                            new Date(project.start_date).toLocaleDateString(
+                              'en-US',
+                              {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                              }
+                            )}
+                          {project.start_date && project.end_date && ' → '}
+                          {project.end_date &&
+                            new Date(project.end_date).toLocaleDateString(
+                              'en-US',
+                              {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                              }
+                            )}
+                        </p>
+                      </div>
                     </div>
                   )}
-                  <Badge variant="outline" className="text-xs">
-                    {project.completedTasksCount}/{project.tasksCount} done
-                  </Badge>
                 </div>
 
                 {/* Linked Tasks Preview */}
                 {project.linkedTasks.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-muted-foreground text-xs">
-                      {project.linkedTasks.length > 3
-                        ? `Showing 3 of ${project.linkedTasks.length} tasks`
-                        : 'Linked tasks:'}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium text-sm">Linked Tasks</p>
+                      <Badge
+                        variant="outline"
+                        className="border-dynamic-cyan/30 bg-dynamic-cyan/10 text-dynamic-cyan text-xs"
+                      >
+                        {project.linkedTasks.length}
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
                       {project.linkedTasks.slice(0, 3).map((task) => (
                         <Badge
                           key={task.id}
                           variant="outline"
-                          className="text-xs"
+                          className="border-dynamic-cyan/30 bg-dynamic-cyan/10 text-dynamic-cyan text-xs"
                         >
                           {task.name}
                         </Badge>
                       ))}
                       {project.linkedTasks.length > 3 && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge
+                          variant="outline"
+                          className="border-dynamic-cyan/30 bg-dynamic-cyan/10 text-dynamic-cyan text-xs"
+                        >
                           +{project.linkedTasks.length - 3} more
                         </Badge>
                       )}
@@ -1169,14 +1301,11 @@ export function TaskProjectsClient({
                 )}
 
                 {/* Actions */}
-                <div className="flex gap-2">
-                  <NextLink
-                    href={`/${wsId}/tasks/projects/${project.id}`}
-                    className="flex-1"
-                  >
+                <div className="mt-auto flex flex-col gap-2 pt-2">
+                  <NextLink href={`/${wsId}/tasks/projects/${project.id}`}>
                     <Button size="sm" variant="default" className="w-full">
                       <ExternalLink className="mr-2 h-4 w-4" />
-                      View Project
+                      View Details
                     </Button>
                   </NextLink>
                   <Button
@@ -1184,9 +1313,10 @@ export function TaskProjectsClient({
                     variant="outline"
                     onClick={() => handleOpenManageTasks(project)}
                     disabled={isLinking || isUnlinking}
+                    className="w-full"
                   >
                     <Link className="mr-2 h-4 w-4" />
-                    Link
+                    Manage Tasks
                   </Button>
                 </div>
               </CardContent>
