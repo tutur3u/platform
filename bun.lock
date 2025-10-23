@@ -61,6 +61,7 @@
       "name": "@tuturuuu/external",
       "version": "0.1.0",
       "dependencies": {
+        "@tanstack/react-query": "^5.90.5",
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
@@ -69,7 +70,8 @@
         "next": "^16.0.0",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
-        "tuturuuu": "^0.0.3",
+        "tuturuuu": "^0.0.4",
+        "zustand": "^5.0.8",
       },
       "devDependencies": {
         "@tailwindcss/postcss": "^4.1.16",
@@ -658,7 +660,7 @@
     },
     "packages/sdk": {
       "name": "tuturuuu",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "dependencies": {
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
