@@ -338,31 +338,49 @@ function TaskCardInner({
   // Removed explicit drag handle – entire card is now draggable for better UX.
   // Keep attributes/listeners to spread onto root interactive area.
 
+  const handleCardClick = useCallback(
+    (e: React.MouseEvent) => {
+      // Handle multi-select functionality
+      onSelect?.(task.id, e);
+
+      const isCtrlPressed = e.ctrlKey || e.metaKey;
+      const isShiftPressed = e.shiftKey;
+
+      if (isCtrlPressed || isShiftPressed) return;
+
+      // Only open edit dialog if not in multi-select mode, not dragging, and no other dialogs are open
+      if (
+        !isDragging &&
+        !dialogState.editDialogOpen &&
+        !dialogState.isClosingDialog &&
+        !menuOpen &&
+        !dialogState.deleteDialogOpen &&
+        !dialogState.customDateDialogOpen &&
+        !dialogState.newLabelDialogOpen &&
+        !dialogState.newProjectDialogOpen
+      ) {
+        openTask(task, boardId, availableLists);
+      }
+    },
+    [
+      task,
+      boardId,
+      availableLists,
+      isDragging,
+      menuOpen,
+      dialogState,
+      onSelect,
+      openTask,
+    ]
+  );
+
   return (
     <Card
       data-id={task.id}
       data-task-id={task.id}
       ref={setNodeRef}
       style={style}
-      onClick={(e) => {
-        // Handle multi-select functionality
-        onSelect?.(task.id, e);
-
-        // Only open edit dialog if not in multi-select mode, not dragging, and no other dialogs are open
-        if (
-          !e.shiftKey &&
-          !isDragging &&
-          !dialogState.editDialogOpen &&
-          !dialogState.isClosingDialog &&
-          !menuOpen &&
-          !dialogState.deleteDialogOpen &&
-          !dialogState.customDateDialogOpen &&
-          !dialogState.newLabelDialogOpen &&
-          !dialogState.newProjectDialogOpen
-        ) {
-          openTask(task, boardId, availableLists);
-        }
-      }}
+      onClick={handleCardClick}
       onContextMenu={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -394,14 +412,14 @@ function TaskCardInner({
         !isDragging && !isSelected && 'hover:ring-1 hover:ring-primary/15',
         // Selection state - enhanced visual feedback
         isSelected &&
-          'scale-[1.01] border-l-primary bg-gradient-to-r from-primary/10 via-primary/5 to-transparent shadow-lg ring-2 ring-primary/60',
+          'scale-[1.01] border-l-primary bg-linear-to-r from-primary/10 via-primary/5 to-transparent shadow-lg ring-2 ring-primary/60',
         // Multi-select mode cursor
         isMultiSelectMode && 'cursor-pointer'
       )}
     >
       {/* Overdue indicator */}
       {isOverdue && !task.closed_at && (
-        <div className="absolute top-0 right-0 h-0 w-0 border-t-[20px] border-t-dynamic-red border-l-[20px] border-l-transparent">
+        <div className="absolute top-0 right-0 h-0 w-0 border-t-20 border-t-dynamic-red border-l-20 border-l-transparent">
           <AlertCircle className="-top-4 -right-[18px] absolute h-3 w-3" />
         </div>
       )}
@@ -416,7 +434,7 @@ function TaskCardInner({
           )}
         >
           {isSelected ? (
-            <Check className="h-4 w-4 stroke-[3]" />
+            <Check className="h-4 w-4 stroke-3" />
           ) : (
             <div className="h-2 w-2 rounded-full bg-current opacity-30" />
           )}
@@ -785,7 +803,7 @@ function TaskCardInner({
               )}
               {/* Project indicator */}
               {!task.closed_at && task.projects && task.projects.length > 0 && (
-                <div className="min-w-0 flex-shrink-0">
+                <div className="min-w-0 shrink-0">
                   <Badge
                     variant="secondary"
                     className={cn(
@@ -802,7 +820,7 @@ function TaskCardInner({
               )}
               {/* Estimation Points */}
               {!task.closed_at && task.estimation_points != null && (
-                <div className="min-w-0 flex-shrink-0">
+                <div className="min-w-0 shrink-0">
                   <TaskEstimationDisplay
                     points={task.estimation_points}
                     size="sm"
@@ -813,7 +831,7 @@ function TaskCardInner({
               )}
               {/* Labels */}
               {!task.closed_at && task.labels && task.labels.length > 0 && (
-                <div className="flex min-w-0 flex-shrink-0 flex-wrap gap-1">
+                <div className="flex min-w-0 shrink-0 flex-wrap gap-1">
                   {/* Sort labels for deterministic display order */}
                   <TaskLabelsDisplay
                     labels={[...task.labels].sort((a, b) =>
@@ -829,7 +847,7 @@ function TaskCardInner({
                   descriptionMeta.hasImages ||
                   descriptionMeta.hasVideos ||
                   descriptionMeta.hasLinks) && (
-                  <div className="flex min-w-0 flex-shrink-0 items-center gap-0.5">
+                  <div className="flex min-w-0 shrink-0 items-center gap-0.5">
                     {descriptionMeta.hasText && (
                       <div
                         className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
@@ -1169,7 +1187,7 @@ function LightweightTaskCardInner({
     <Card className="pointer-events-none w-full max-w-[340px] select-none overflow-hidden border-2 border-primary/40 bg-background/95 shadow-2xl ring-2 ring-primary/30 backdrop-blur-md">
       <div className="flex flex-col gap-3 p-4">
         {destination && (
-          <div className="slide-in-from-top-2 flex animate-in items-center justify-between gap-2 rounded-lg bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-2 text-[11px] duration-300">
+          <div className="slide-in-from-top-2 flex animate-in items-center justify-between gap-2 rounded-lg bg-linear-to-r from-primary/10 via-primary/5 to-transparent p-2 text-[11px] duration-300">
             <span
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-semibold shadow-sm ring-1 ring-inset',
