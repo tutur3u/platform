@@ -54,6 +54,7 @@ export default async function TaskProjectsPage({ params }: Props) {
               task:tasks!inner(
                 id,
                 name,
+                completed,
                 completed_at,
                 deleted_at,
                 priority,
@@ -64,7 +65,6 @@ export default async function TaskProjectsPage({ params }: Props) {
             )
           `)
           .eq('ws_id', wsId)
-          .is('task_project_tasks.task.deleted_at', null)
           .order('created_at', { ascending: false });
 
         if (projectsError) {
@@ -80,32 +80,21 @@ export default async function TaskProjectsPage({ params }: Props) {
             ) ?? [];
 
           return {
-            id: project.id,
-            name: project.name,
-            description: project.description,
-            status: project.status,
-            priority: project.priority,
-            health_status: project.health_status,
-            lead_id: project.lead_id,
-            lead: project.lead,
-            start_date: project.start_date,
-            end_date: project.end_date,
+            ...project,
             created_at: project.created_at ?? new Date().toISOString(),
-            creator_id: project.creator_id,
-            creator: project.creator,
             tasksCount: activeTasks.length,
             completedTasksCount: activeTasks.filter(
-              (link) => link.task?.completed_at
+              (link) => link.task?.completed
             ).length,
-            linkedTasks: activeTasks.flatMap((link) =>
-              link.task
+            linkedTasks: activeTasks.flatMap(({ task }) =>
+              task
                 ? [
                     {
-                      id: link.task.id,
-                      name: link.task.name,
-                      completed_at: link.task.completed_at,
-                      priority: link.task.priority,
-                      listName: link.task.task_lists?.name ?? null,
+                      id: task.id,
+                      name: task.name,
+                      completed_at: task.completed_at,
+                      priority: task.priority,
+                      listName: task.task_lists?.name ?? null,
                     },
                   ]
                 : []

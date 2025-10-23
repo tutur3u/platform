@@ -154,7 +154,7 @@ export function TaskProjectsClient({
   const [taskToLink, setTaskToLink] = useState('');
 
   const {
-    data: projects = initialProjects,
+    data: projects,
     isLoading: projectsLoading,
     refetch: refetchProjects,
   } = useQuery<TaskProject[]>({
@@ -168,6 +168,8 @@ export function TaskProjectsClient({
     },
     initialData: initialProjects,
   });
+
+  console.log(projects);
 
   const {
     data: availableTaskOptions = [],
