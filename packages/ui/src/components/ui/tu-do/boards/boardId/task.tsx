@@ -96,7 +96,9 @@ interface TaskCardProps {
   isMultiSelectMode?: boolean;
   isPersonalWorkspace?: boolean;
   onSelect?: (taskId: string, event: React.MouseEvent) => void;
+  onClearSelection?: () => void;
   optimisticUpdateInProgress?: Set<string>;
+  selectedTasks?: Set<string>; // For bulk operations
 }
 
 // Memoized full TaskCard
@@ -111,7 +113,9 @@ function TaskCardInner({
   isMultiSelectMode = false,
   isPersonalWorkspace = false,
   onSelect,
+  onClearSelection,
   optimisticUpdateInProgress,
+  selectedTasks,
 }: TaskCardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -325,6 +329,9 @@ function TaskCardInner({
         ? dialogActions.openDeleteDialog()
         : dialogActions.closeDeleteDialog(),
     setEstimationSaving,
+    selectedTasks,
+    isMultiSelectMode,
+    onClearSelection,
   });
 
   // Memoize drag handle for performance
@@ -1037,8 +1044,10 @@ interface MeasuredTaskCardProps {
   isMultiSelectMode?: boolean;
   isPersonalWorkspace?: boolean;
   onSelect?: (taskId: string, event: React.MouseEvent) => void;
+  onClearSelection?: () => void;
   onHeight: (height: number) => void;
   optimisticUpdateInProgress?: Set<string>;
+  selectedTasks?: Set<string>;
 }
 
 export function MeasuredTaskCard({
@@ -1050,8 +1059,10 @@ export function MeasuredTaskCard({
   isMultiSelectMode,
   isPersonalWorkspace,
   onSelect,
+  onClearSelection,
   onHeight,
   optimisticUpdateInProgress,
+  selectedTasks,
 }: MeasuredTaskCardProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const onHeightRef = useRef(onHeight);
@@ -1094,7 +1105,9 @@ export function MeasuredTaskCard({
         isMultiSelectMode={isMultiSelectMode}
         isPersonalWorkspace={isPersonalWorkspace}
         onSelect={onSelect}
+        onClearSelection={onClearSelection}
         optimisticUpdateInProgress={optimisticUpdateInProgress}
+        selectedTasks={selectedTasks}
       />
     </div>
   );

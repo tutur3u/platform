@@ -7,9 +7,14 @@ import { useEffect, useRef, useState } from 'react';
 export interface UserPresenceState {
   user: User;
   online_at: string;
+  /** Optional metadata for context-specific presence tracking */
+  metadata?: Record<string, any>;
 }
 
-export function usePresence(channelName: string) {
+export function usePresence(
+  channelName: string,
+  metadata?: Record<string, any>
+) {
   const [presenceState, setPresenceState] = useState<
     RealtimePresenceState<UserPresenceState>
   >({});
@@ -17,7 +22,50 @@ export function usePresence(channelName: string) {
   const channelRef = useRef<any>(null);
   const retryCountRef = useRef(0);
   const isCleanedUpRef = useRef(false);
+  const metadataRef = useRef(metadata);
   const MAX_RETRIES = 3;
+
+  // Update metadata ref when it changes
+  useEffect(() => {
+    metadataRef.current = metadata;
+  }, [metadata]);
+
+  // Update presence metadata when it changes
+  useEffect(() => {
+    const updateMetadata = async () => {
+      if (!channelRef.current || !currentUserId || !metadata) return;
+
+      try {
+        const {
+          data: { user },
+        } = await createClient().auth.getUser();
+        if (!user?.id) return;
+
+        const { data: userData } = await createClient()
+          .from('users')
+          .select('display_name, avatar_url')
+          .eq('id', user.id)
+          .single();
+
+        await channelRef.current.track({
+          user: {
+            id: user.id,
+            display_name: userData?.display_name,
+            email: user.email,
+            avatar_url: userData?.avatar_url,
+          },
+          online_at: new Date().toISOString(),
+          metadata: metadata,
+        });
+      } catch (error) {
+        if (DEV_MODE) {
+          console.error('Error updating presence metadata:', error);
+        }
+      }
+    };
+
+    updateMetadata();
+  }, [metadata, currentUserId]);
 
   useEffect(() => {
     if (!channelName) return;
@@ -98,6 +146,7 @@ export function usePresence(channelName: string) {
                     avatar_url: userData?.avatar_url,
                   },
                   online_at: new Date().toISOString(),
+                  metadata: metadataRef.current,
                 });
 
                 if (DEV_MODE) {
@@ -122,6 +171,7 @@ export function usePresence(channelName: string) {
                           avatar_url: userData?.avatar_url,
                         },
                         online_at: new Date().toISOString(),
+                        metadata: metadataRef.current,
                       });
                     }
                   }, 1000);
