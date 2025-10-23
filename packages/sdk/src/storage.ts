@@ -166,7 +166,11 @@ export class StorageClient {
   }
 
   /**
-   * Uploads a file to the workspace drive
+   * Uploads a file to the workspace drive using signed upload URLs
+   *
+   * This method first requests a signed upload URL from the platform,
+   * then uploads the file directly to Supabase Storage. This approach
+   * is more efficient and secure than proxying files through the API.
    *
    * @param file - File to upload (File or Blob)
    * @param options - Upload options
@@ -193,29 +197,62 @@ export class StorageClient {
     // Validate options
     const validatedOptions = validateWithSchema(uploadOptionsSchema, options);
 
-    const formData = new FormData();
+    // Extract filename from File or use default for Blob
+    const filename =
+      file instanceof File ? file.name : `file-${Date.now()}.bin`;
 
-    // Append file with proper filename for File objects
-    if (file instanceof File) {
-      formData.append('file', file);
-    } else {
-      // For Blob, provide a default filename
-      formData.append('file', file, 'file');
-    }
-
-    if (validatedOptions.path) {
-      formData.append('path', validatedOptions.path);
-    }
-    if (validatedOptions.upsert !== undefined) {
-      formData.append('upsert', validatedOptions.upsert.toString());
-    }
-
-    return this.client.request<UploadResponse>('/storage/upload', {
+    // Step 1: Request a signed upload URL from the platform
+    const signedUrlResponse = await this.client.request<
+      import('./types').SignedUploadUrlResponse
+    >('/storage/upload-url', {
       method: 'POST',
-      body: formData,
-      // Don't set Content-Type header - let browser set it with boundary
-      skipJsonContentType: true,
+      body: JSON.stringify({
+        filename,
+        path: validatedOptions.path || '',
+        upsert: validatedOptions.upsert ?? false,
+      }),
     });
+
+    const { signedUrl, token, path } = signedUrlResponse.data;
+
+    // Step 2: Upload the file directly to Supabase using the signed URL
+    try {
+      const uploadResponse = await this.client.fetch(signedUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file instanceof File ? file.type : 'application/octet-stream',
+          'x-upsert': validatedOptions.upsert ? 'true' : 'false',
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        throw new NetworkError(
+          `Upload failed: ${uploadResponse.status} ${uploadResponse.statusText} - ${errorText}`
+        );
+      }
+
+      // Return success response in the expected format
+      // Remove "[wsId]/" prefix to get relative path
+      // Path format from API: [wsId]/[relativePath]
+      const relativePath = path.replace(/^[^/]+\//, '');
+
+      return {
+        message: 'File uploaded successfully',
+        data: {
+          path: relativePath,
+          fullPath: path,
+        },
+      };
+    } catch (error) {
+      if (error instanceof NetworkError) {
+        throw error;
+      }
+      throw new NetworkError(
+        `Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
   }
 
   /**
@@ -630,9 +667,15 @@ export class TuturuuuClient {
     };
 
     // Only set Content-Type for JSON bodies
+    // For FormData, we must NOT set Content-Type - let fetch set it automatically with the boundary
     if (!skipJsonContentType && typeof body === 'string') {
       headers['Content-Type'] = 'application/json';
     }
+
+    // IMPORTANT: When using FormData, we must not pass Content-Type header at all
+    // The fetch implementation will automatically set it with the correct multipart boundary
+    // If we pass any Content-Type (even undefined), it can interfere with boundary generation
+    const isFormData = body instanceof FormData;
 
     try {
       const controller = new AbortController();
@@ -640,7 +683,15 @@ export class TuturuuuClient {
 
       const response = await this.fetch(`${this.baseUrl}${endpoint}`, {
         method,
-        headers,
+        // For FormData, omit headers that might interfere with automatic Content-Type setting
+        headers: isFormData
+          ? {
+              Authorization: headers.Authorization,
+              'X-SDK-Client': headers['X-SDK-Client'],
+              Accept: headers.Accept,
+              // Do NOT include Content-Type - let fetch set it automatically
+            }
+          : headers,
         body,
         signal: controller.signal,
       });

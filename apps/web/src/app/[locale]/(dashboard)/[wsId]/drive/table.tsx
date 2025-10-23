@@ -28,10 +28,10 @@ import {
   ContextMenuContent,
   ContextMenuTrigger,
 } from '@tuturuuu/ui/context-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
+import { useState } from 'react';
 import { storageObjectsColumns } from './columns';
 import { FilePreviewDialog } from './file-preview-dialog';
 import { StorageObjectRowActions } from './row-actions';
@@ -53,19 +53,10 @@ export default function StorageObjectsTable({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
   const [storageObj, setStorageObject] = useState<StorageObject | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [deleteTarget, setDeleteTarget] = useState<StorageObject | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
-
-  // Fade-in animation on mount and path change
-  useEffect(() => {
-    setIsVisible(false);
-    const timer = setTimeout(() => setIsVisible(true), 50);
-    return () => clearTimeout(timer);
-  }, [path]);
 
   // Wrapper function to handle type mismatch
   const handleSetStorageObject = (value: StorageObject | undefined) => {
@@ -86,17 +77,15 @@ export default function StorageObjectsTable({
       const newPath =
         row.name === '...' ? popPath(basePath) : joinPath(basePath, row.name);
 
-      // Navigate using startTransition for smooth UI updates
-      startTransition(() => {
-        const params = new URLSearchParams(searchParams.toString());
-        if (!newPath || newPath === '/' || newPath === '') {
-          params.delete('path');
-        } else {
-          params.set('path', newPath);
-        }
-        const queryString = params.toString();
-        router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false });
-      });
+      // Navigate to the new path
+      const params = new URLSearchParams(searchParams.toString());
+      if (!newPath || newPath === '/' || newPath === '') {
+        params.delete('path');
+      } else {
+        params.set('path', newPath);
+      }
+      const queryString = params.toString();
+      router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false });
     }
   };
 
@@ -113,17 +102,15 @@ export default function StorageObjectsTable({
       const basePath = searchParams.get('path') ?? '';
       const newPath = joinPath(basePath, item.name);
 
-      // Navigate using startTransition for smooth UI updates
-      startTransition(() => {
-        const params = new URLSearchParams(searchParams.toString());
-        if (!newPath || newPath === '/' || newPath === '') {
-          params.delete('path');
-        } else {
-          params.set('path', newPath);
-        }
-        const queryString = params.toString();
-        router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false });
-      });
+      // Navigate to the new path
+      const params = new URLSearchParams(searchParams.toString());
+      if (!newPath || newPath === '/' || newPath === '') {
+        params.delete('path');
+      } else {
+        params.set('path', newPath);
+      }
+      const queryString = params.toString();
+      router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false });
     }
   };
 
@@ -145,16 +132,9 @@ export default function StorageObjectsTable({
           .remove([filePath]);
         if (!error) {
           router.refresh();
-          toast({
-            title: t('common.success'),
-            description: t('ws-storage-objects.file_deleted'),
-          });
+          toast.success(t('ws-storage-objects.file_deleted'));
         } else {
-          toast({
-            title: t('common.error'),
-            description: error.message,
-            variant: 'destructive',
-          });
+          toast.error(error.message);
         }
       } else {
         // Folder
@@ -168,11 +148,7 @@ export default function StorageObjectsTable({
           .select()
           .ilike('name', folderPath);
         if (objects.error) {
-          toast({
-            title: t('common.error'),
-            description: objects.error.message,
-            variant: 'destructive',
-          });
+          toast.error(objects.error.message);
           return;
         }
         const { error } = await supabase.storage
@@ -180,39 +156,18 @@ export default function StorageObjectsTable({
           .remove(objects.data.map((object: { name: string }) => object.name));
         if (!error) {
           router.refresh();
-          toast({
-            title: t('common.success'),
-            description: t('ws-storage-objects.folder_deleted'),
-          });
+          toast.success(t('ws-storage-objects.folder_deleted'));
         } else {
-          toast({
-            title: t('common.error'),
-            description: error.message,
-            variant: 'destructive',
-          });
+          toast.error(error.message);
         }
       }
     } catch {
-      toast({
-        title: t('common.error'),
-        description: 'Failed to delete file or folder',
-        variant: 'destructive',
-      });
+      toast.error('Failed to delete file or folder');
     }
   };
 
   return (
-    <div className={`space-y-6 transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      {/* Loading overlay */}
-      {isPending && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/50 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-3">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-dynamic-blue border-t-transparent" />
-            <p className="text-sm text-muted-foreground">Loading...</p>
-          </div>
-        </div>
-      )}
-
+    <div className="space-y-6">
       {/* View Mode Toggle */}
       <div className="flex items-center justify-between">
         <div className="text-muted-foreground text-sm">

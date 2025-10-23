@@ -345,52 +345,169 @@ describe('StorageClient', () => {
   });
 
   describe('upload', () => {
-    it('should upload File object', async () => {
-      const mockResponse: UploadResponse = {
-        message: 'Uploaded',
-        data: { path: 'test.txt', fullPath: 'workspace/test.txt' },
+    it('should upload File object using signed URL', async () => {
+      const wsId = '00000000-0000-0000-0000-000000000000';
+      const mockSignedUrlResponse = {
+        data: {
+          signedUrl: 'https://storage.example.com/signed-url',
+          token: 'upload-token',
+          path: `${wsId}/documents/test.txt`,
+        },
       };
 
-      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
+      const mockUploadResponse = {
+        ok: true,
+        status: 200,
+      };
 
-      const file = new File(['content'], 'test.txt');
+      // Step 1: Mock signed URL request
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse(mockSignedUrlResponse)
+      );
+
+      // Step 2: Mock direct upload to Supabase
+      mockFetch.mockResolvedValueOnce(mockUploadResponse);
+
+      const file = new File(['content'], 'test.txt', { type: 'text/plain' });
       const result = await client.storage.upload(file, { path: 'documents' });
 
-      expect(result).toEqual(mockResponse);
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/storage/upload'),
+      // Verify signed URL was requested
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining('/storage/upload-url'),
         expect.objectContaining({
           method: 'POST',
+          body: expect.stringContaining('test.txt'),
         })
       );
+
+      // Verify direct upload to Supabase
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        2,
+        'https://storage.example.com/signed-url',
+        expect.objectContaining({
+          method: 'PUT',
+          body: file,
+        })
+      );
+
+      // Verify the path returned strips the "[wsId]/" prefix
+      expect(result.data.path).toBe('documents/test.txt');
+      expect(result.data.fullPath).toBe(`${wsId}/documents/test.txt`);
     });
 
-    it('should upload Blob object', async () => {
-      const mockResponse: UploadResponse = {
-        message: 'Uploaded',
-        data: { path: 'file', fullPath: 'workspace/file' },
+    it('should use workspaces/[wsId]/ path format to match Drive page', async () => {
+      const wsId = '00000000-0000-0000-0000-000000000000';
+      const mockSignedUrlResponse = {
+        data: {
+          signedUrl: 'https://storage.example.com/signed-url',
+          token: 'upload-token',
+          path: `${wsId}/task-images/photo.png`,
+        },
       };
 
-      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse(mockSignedUrlResponse)
+      );
+      mockFetch.mockResolvedValueOnce({ ok: true, status: 200 });
+
+      const file = new File(['content'], 'photo.png', { type: 'image/png' });
+      await client.storage.upload(file, { path: 'task-images' });
+
+      // Verify the signed URL request includes correct path
+      const signedUrlCall = mockFetch.mock.calls[0];
+      const requestBody = JSON.parse(signedUrlCall?.[1]?.body as string);
+      expect(requestBody.filename).toBe('photo.png');
+      expect(requestBody.path).toBe('task-images');
+    });
+
+    it('should upload Blob object with generated filename', async () => {
+      const wsId = '00000000-0000-0000-0000-000000000000';
+      const mockSignedUrlResponse = {
+        data: {
+          signedUrl: 'https://storage.example.com/signed-url',
+          token: 'upload-token',
+          path: `${wsId}/file-${Date.now()}.bin`,
+        },
+      };
+
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse(mockSignedUrlResponse)
+      );
+      mockFetch.mockResolvedValueOnce({ ok: true, status: 200 });
 
       const blob = new Blob(['content']);
       const result = await client.storage.upload(blob);
 
-      expect(result).toEqual(mockResponse);
+      expect(result.data.fullPath).toMatch(/^[0-9a-f-]+\//); // Should start with workspaces/UUID/
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining('/storage/upload-url'),
+        expect.any(Object)
+      );
     });
 
     it('should accept upsert option', async () => {
-      const mockResponse: UploadResponse = {
-        message: 'Uploaded',
-        data: { path: 'test.txt', fullPath: 'workspace/test.txt' },
+      const wsId = '00000000-0000-0000-0000-000000000000';
+      const mockSignedUrlResponse = {
+        data: {
+          signedUrl: 'https://storage.example.com/signed-url',
+          token: 'upload-token',
+          path: `${wsId}/test.txt`,
+        },
       };
 
-      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse(mockSignedUrlResponse)
+      );
+      mockFetch.mockResolvedValueOnce({ ok: true, status: 200 });
 
       const file = new File(['content'], 'test.txt');
       await client.storage.upload(file, { upsert: true });
 
-      expect(mockFetch).toHaveBeenCalled();
+      // Verify upsert option is sent in signed URL request
+      const signedUrlCall = mockFetch.mock.calls[0];
+      const requestBody = JSON.parse(signedUrlCall?.[1]?.body as string);
+      expect(requestBody.upsert).toBe(true);
+
+      // Verify upsert header is sent in upload request
+      const uploadCall = mockFetch.mock.calls[1];
+      const headers = uploadCall?.[1]?.headers;
+      const upsertHeader =
+        headers instanceof Headers
+          ? headers.get('x-upsert')
+          : headers?.['x-upsert'];
+      expect(upsertHeader).toBe('true');
+    });
+
+    it('should handle upload failure with proper error', async () => {
+      const mockSignedUrlResponse = {
+        data: {
+          signedUrl: 'https://storage.example.com/signed-url',
+          token: 'upload-token',
+          path: '00000000-0000-0000-0000-000000000000/test.txt',
+        },
+      };
+
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse(mockSignedUrlResponse)
+      );
+
+      // Mock failed upload
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request',
+        text: async () => 'Invalid file',
+      });
+
+      const file = new File(['content'], 'test.txt');
+
+      const uploadPromise = client.storage.upload(file);
+      await expect(uploadPromise).rejects.toThrow(NetworkError);
+      await expect(uploadPromise).rejects.toThrow(
+        'Upload failed: 400 Bad Request'
+      );
     });
   });
 

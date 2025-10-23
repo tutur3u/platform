@@ -236,6 +236,84 @@ See the [examples](./examples) directory for complete usage examples:
 - [basic-usage.ts](./examples/basic-usage.ts) - Basic operations
 - [error-handling.ts](./examples/error-handling.ts) - Error handling patterns
 
+## Security Best Practices
+
+### ⚠️ Never Expose API Keys Client-Side
+
+API keys should **NEVER** be exposed to the browser. Always use server-side code:
+
+#### ❌ **WRONG** - Client-Side Usage (Insecure)
+```typescript
+// BAD: API key exposed in browser
+const client = new TuturuuuClient(process.env.NEXT_PUBLIC_API_KEY); // NEVER do this!
+```
+
+#### ✅ **CORRECT** - Server-Side Usage (Secure)
+
+**Option 1: Next.js API Routes** (Recommended for web apps)
+```typescript
+// app/api/storage/list/route.ts (SERVER-SIDE)
+import { TuturuuuClient } from 'tuturuuu';
+import { NextResponse } from 'next/server';
+
+const client = new TuturuuuClient(process.env.TUTURUUU_API_KEY);
+
+export async function GET(request: Request) {
+  const files = await client.storage.list({ limit: 50 });
+  return NextResponse.json(files);
+}
+```
+
+Then call from your client:
+```typescript
+// Client component (SAFE)
+const response = await fetch('/api/storage/list');
+const files = await response.json();
+```
+
+**Option 2: Node.js Backend**
+```typescript
+// server.js
+import { TuturuuuClient } from 'tuturuuu';
+import express from 'express';
+
+const client = new TuturuuuClient(process.env.TUTURUUU_API_KEY);
+const app = express();
+
+app.get('/api/files', async (req, res) => {
+  const files = await client.storage.list();
+  res.json(files);
+});
+```
+
+**Option 3: Serverless Functions**
+```typescript
+// netlify/functions/storage.ts
+import { TuturuuuClient } from 'tuturuuu';
+
+export const handler = async () => {
+  const client = new TuturuuuClient(process.env.TUTURUUU_API_KEY);
+  const files = await client.storage.list();
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify(files),
+  };
+};
+```
+
+### Security Checklist
+
+- ✅ Use server-side API routes or backend servers
+- ✅ Store API keys in environment variables (`.env.local`, never `.env`)
+- ✅ Add `.env.local` to `.gitignore`
+- ✅ Use `process.env.VARIABLE` (not `process.env.NEXT_PUBLIC_VARIABLE`)
+- ✅ Rotate API keys periodically
+- ❌ Never commit API keys to version control
+- ❌ Never use `NEXT_PUBLIC_` prefix for API keys
+- ❌ Never hardcode API keys in source code
+- ❌ Never expose API keys in client-side JavaScript
+
 ## API Key Management
 
 To use this SDK, you need a Tuturuuu API key:
@@ -258,6 +336,15 @@ API keys inherit permissions from their assigned **Workspace Role**:
 - **Document Operations** (list, create, get, update, delete, search) require `manage_documents` permission
 
 To modify what an API key can do, update its assigned role's permissions in Settings → Roles.
+
+## Example Project
+
+See the complete example in [`apps/external`](../../apps/external) which demonstrates:
+- ✅ Secure server-side API routes
+- ✅ File upload functionality
+- ✅ Storage analytics dashboard
+- ✅ Proper environment variable handling
+- ✅ Error handling and loading states
 
 ## License
 

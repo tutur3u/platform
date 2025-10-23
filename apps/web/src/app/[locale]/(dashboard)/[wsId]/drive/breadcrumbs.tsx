@@ -23,7 +23,6 @@ import {
 } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useTransition } from 'react';
 
 interface BreadcrumbItemType {
   label: string;
@@ -41,7 +40,6 @@ export default function DriveBreadcrumbs({ wsId, path }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
 
   // Build breadcrumb navigation
   const pathSegments = path ? path.split('/').filter(Boolean) : [];
@@ -73,26 +71,24 @@ export default function DriveBreadcrumbs({ wsId, path }: Props) {
   }
 
   const handleNavigate = (item: BreadcrumbItemType) => {
-    startTransition(() => {
-      const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams.toString());
 
-      if (item.isRoot) {
-        params.delete('path');
-      } else {
-        const pathMatch = item.href.match(/path=([^&]*)/);
-        if (pathMatch?.[1]) {
-          params.set('path', decodeURIComponent(pathMatch[1]));
-        }
+    if (item.isRoot) {
+      params.delete('path');
+    } else {
+      const pathMatch = item.href.match(/path=([^&]*)/);
+      if (pathMatch?.[1]) {
+        params.set('path', decodeURIComponent(pathMatch[1]));
       }
+    }
 
-      const queryString = params.toString();
-      router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false });
-    });
+    const queryString = params.toString();
+    router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, { scroll: false });
   };
 
   return (
     <Breadcrumb>
-      <BreadcrumbList className={`flex items-center gap-1 mb-4 overflow-x-auto whitespace-nowrap rounded-lg border border-dynamic-border bg-muted/40 px-1 py-2 transition-opacity ${isPending ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+      <BreadcrumbList className="flex items-center gap-1 mb-4 overflow-x-auto whitespace-nowrap rounded-lg border border-dynamic-border bg-muted/40 px-1 py-2">
         {visibleItems.map((item, index) => (
           <div key={item.href} className="flex items-center">
             <BreadcrumbItem>

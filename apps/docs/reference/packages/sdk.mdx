@@ -426,6 +426,160 @@ API keys inherit permissions from their assigned **Workspace Role**. The role de
 
 **Note:** Permissions are managed through workspace roles, not individual API keys. To modify what an API key can do, update its assigned role's permissions in **Settings** → **Roles**.
 
+## Security Best Practices
+
+<Warning>
+  **CRITICAL: Never expose API keys in client-side code!** API keys must remain server-side only.
+</Warning>
+
+### ❌ Insecure (NEVER do this)
+
+```typescript
+// BAD: Exposes API key to browser!
+'use client'; // Client component
+
+const client = new TuturuuuClient(process.env.NEXT_PUBLIC_API_KEY);
+// ❌ Anyone can inspect network requests and steal your key!
+```
+
+### ✅ Secure (Recommended patterns)
+
+#### Next.js App Router (Recommended)
+
+Create server-side API routes that proxy SDK calls:
+
+```typescript
+// app/api/storage/list/route.ts (SERVER-SIDE)
+import { TuturuuuClient } from 'tuturuuu';
+import { NextResponse } from 'next/server';
+
+const client = new TuturuuuClient(process.env.TUTURUUU_API_KEY);
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const path = searchParams.get('path') || '';
+
+  const files = await client.storage.list({ path, limit: 50 });
+  return NextResponse.json(files);
+}
+```
+
+Then call from your client component:
+
+```typescript
+// app/components/FileList.tsx (CLIENT COMPONENT - SAFE)
+'use client';
+
+export function FileList() {
+  const [files, setFiles] = useState([]);
+
+  useEffect(() => {
+    fetch('/api/storage/list?path=documents')
+      .then(res => res.json())
+      .then(setFiles);
+  }, []);
+
+  return <div>{/* Render files */}</div>;
+}
+```
+
+#### Node.js/Express Backend
+
+```typescript
+// server.js
+import { TuturuuuClient } from 'tuturuuu';
+import express from 'express';
+
+const client = new TuturuuuClient(process.env.TUTURUUU_API_KEY);
+const app = express();
+
+app.get('/api/files', async (req, res) => {
+  const files = await client.storage.list();
+  res.json(files);
+});
+
+app.listen(3000);
+```
+
+#### Serverless Functions (Netlify, Vercel, AWS Lambda)
+
+```typescript
+// netlify/functions/storage.ts
+import { TuturuuuClient } from 'tuturuuu';
+
+export const handler = async (event) => {
+  const client = new TuturuuuClient(process.env.TUTURUUU_API_KEY);
+  const files = await client.storage.list();
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify(files),
+  };
+};
+```
+
+### Security Checklist
+
+<AccordionGroup>
+  <Accordion title="✅ DO: Use server-side code">
+    Always use the SDK in server-side contexts:
+    - Next.js API Routes (App Router or Pages Router)
+    - Node.js backend servers
+    - Serverless functions
+    - Server Components (React Server Components)
+  </Accordion>
+
+  <Accordion title="✅ DO: Use environment variables">
+    Store API keys in environment variables:
+    ```bash
+    # .env.local (server-side only)
+    TUTURUUU_API_KEY=ttr_your_key_here
+    TUTURUUU_BASE_URL=https://tuturuuu.com/api/v1
+    ```
+
+    **Never** use `NEXT_PUBLIC_` prefix for API keys!
+  </Accordion>
+
+  <Accordion title="✅ DO: Add .env.local to .gitignore">
+    Ensure secrets never get committed:
+    ```gitignore
+    # .gitignore
+    .env.local
+    .env*.local
+    ```
+  </Accordion>
+
+  <Accordion title="❌ DON'T: Use NEXT_PUBLIC_ prefix">
+    This exposes the variable to the browser:
+    ```bash
+    # BAD - Exposed to client!
+    NEXT_PUBLIC_TUTURUUU_API_KEY=ttr_key
+    ```
+  </Accordion>
+
+  <Accordion title="❌ DON'T: Import SDK in client components">
+    Never import the SDK in files with `'use client'` directive.
+  </Accordion>
+
+  <Accordion title="❌ DON'T: Hardcode API keys">
+    Never commit keys to version control:
+    ```typescript
+    // BAD
+    const client = new TuturuuuClient('ttr_1234567890abcdef');
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Complete Example
+
+See the [external app example](https://github.com/tutur3u/platform/tree/main/apps/external) for a complete implementation showcasing:
+
+- ✅ Secure server-side API routes
+- ✅ File upload with progress
+- ✅ Storage analytics dashboard
+- ✅ Proper error handling
+- ✅ Environment variable configuration
+
 ## Rate Limiting
 
 The API enforces rate limits per API key:

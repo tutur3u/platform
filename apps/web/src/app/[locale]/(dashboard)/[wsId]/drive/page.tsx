@@ -11,7 +11,6 @@ import {
 } from '@tuturuuu/types/primitives/StorageObject';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
@@ -54,21 +53,18 @@ export default async function WorkspaceStorageObjectsPage({
 
         const { data } = await getData(wsId, await searchParams);
 
-        const count = await getFileCount(wsId);
-        const totalSize = await getTotalSize(wsId);
+        const count = (await getFileCount(wsId)) ?? 0;
+        const totalSize = (await getTotalSize(wsId)) ?? 0;
         const largestFile = await getLargestFile(wsId);
         const smallestFile = await getSmallestFile(wsId);
 
-        // Dynamic Storage limit
-        const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
-        const STORAGE_LIMIT = isRootWorkspace
-          ? 100 * 1024 * 1024 * 1024
-          : 50 * 1024 * 1024; // 100GB or 50MB
+        // Get storage limit from workspace_secrets or use 100MB default
+        const STORAGE_LIMIT = (await getStorageLimit(wsId)) ?? 104857600; // 100MB default
         const usagePercent = Math.min(
           100,
           Math.round((totalSize / STORAGE_LIMIT) * 100)
         );
-        const storageLimitDisplay = isRootWorkspace ? '100 GB' : '50 MB';
+        const storageLimitDisplay = formatBytes(STORAGE_LIMIT);
 
         return (
           <>
@@ -172,9 +168,7 @@ export default async function WorkspaceStorageObjectsPage({
                     {t('ws-storage-objects.largest_file')}
                   </h3>
                   <div className="mt-2 font-bold text-3xl text-foreground">
-                    {data.length > 0
-                      ? formatBytes(largestFile?.size as number)
-                      : '-'}
+                    {largestFile?.size ? formatBytes(largestFile.size) : '-'}
                   </div>
                   <p className="mt-1 text-muted-foreground text-xs">
                     {t('ws-storage-objects.max_file_size')}
@@ -189,9 +183,7 @@ export default async function WorkspaceStorageObjectsPage({
                     {t('ws-storage-objects.smallest_file')}
                   </h3>
                   <div className="mt-2 font-bold text-3xl text-foreground">
-                    {data.length > 0
-                      ? formatBytes(smallestFile?.size as number)
-                      : '-'}
+                    {smallestFile?.size ? formatBytes(smallestFile.size) : '-'}
                   </div>
                   <p className="mt-1 text-muted-foreground text-xs">
                     {t('ws-storage-objects.min_file_size')}
@@ -252,8 +244,11 @@ async function getTotalSize(wsId: string) {
     ws_id: wsId,
   });
 
-  if (error) throw error;
-  return data;
+  if (error) {
+    console.error('Error fetching total size:', error);
+    return 0;
+  }
+  return data ?? 0;
 }
 
 async function getFileCount(wsId: string) {
@@ -264,12 +259,14 @@ async function getFileCount(wsId: string) {
     .from('objects')
     .select('*', { count: 'exact', head: true })
     .eq('bucket_id', 'workspaces')
-    .not('owner', 'is', null)
     .ilike('name', `${wsId}/%`)
     .not('name', 'ilike', `%${EMPTY_FOLDER_PLACEHOLDER_NAME}`);
 
-  if (error) throw error;
-  return count;
+  if (error) {
+    console.error('Error fetching file count:', error);
+    return 0;
+  }
+  return count ?? 0;
 }
 
 async function getLargestFile(wsId: string) {
@@ -278,16 +275,19 @@ async function getLargestFile(wsId: string) {
   const { data, error } = await supabase
     .schema('storage')
     .from('objects')
-    .select('metadata->size')
+    .select('metadata')
     .eq('bucket_id', 'workspaces')
-    .not('owner', 'is', null)
     .ilike('name', `${wsId}/%`)
+    .not('name', 'ilike', `%${EMPTY_FOLDER_PLACEHOLDER_NAME}`)
     .order('metadata->size', { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  if (error) throw error;
-  return data;
+  if (error) {
+    console.error('Error fetching largest file:', error);
+    return null;
+  }
+  return data?.metadata as { size: number } | null;
 }
 
 async function getSmallestFile(wsId: string) {
@@ -296,14 +296,31 @@ async function getSmallestFile(wsId: string) {
   const { data, error } = await supabase
     .schema('storage')
     .from('objects')
-    .select('metadata->size')
+    .select('metadata')
     .eq('bucket_id', 'workspaces')
-    .not('owner', 'is', null)
     .ilike('name', `${wsId}/%`)
+    .not('name', 'ilike', `%${EMPTY_FOLDER_PLACEHOLDER_NAME}`)
     .order('metadata->size', { ascending: true })
     .limit(1)
     .maybeSingle();
 
-  if (error) throw error;
-  return data;
+  if (error) {
+    console.error('Error fetching smallest file:', error);
+    return null;
+  }
+  return data?.metadata as { size: number } | null;
+}
+
+async function getStorageLimit(wsId: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc('get_workspace_storage_limit', {
+    ws_id: wsId,
+  });
+
+  if (error) {
+    console.error('Error fetching storage limit:', error);
+    return 104857600; // 100MB default
+  }
+  return data ?? 104857600; // 100MB default
 }

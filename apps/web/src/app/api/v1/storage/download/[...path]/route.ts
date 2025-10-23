@@ -8,6 +8,7 @@
 import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { posix } from 'node:path';
 
 export const GET = withApiAuth(
   async (_, { params, context }) => {
@@ -26,9 +27,10 @@ export const GET = withApiAuth(
     try {
       const supabase = await createAdminClient();
 
-      // Construct the full storage path
+      // Construct the storage path relative to bucket
+      // Path format matches Drive page: [wsId]/[path]
       const filePath = path.join('/');
-      const storagePath = `${wsId}/${filePath}`;
+      const storagePath = posix.join(wsId, filePath);
 
       // Download file from Supabase Storage
       const { data, error } = await supabase.storage

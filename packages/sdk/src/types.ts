@@ -84,6 +84,17 @@ export interface PathResponse {
 }
 
 /**
+ * Response for signed upload URL request
+ */
+export interface SignedUploadUrlResponse {
+  data: {
+    signedUrl: string;
+    token: string;
+    path: string;
+  };
+}
+
+/**
  * Response for upload operation
  */
 export type UploadResponse = PathResponse;

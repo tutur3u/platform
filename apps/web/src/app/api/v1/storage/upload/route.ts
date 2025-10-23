@@ -11,6 +11,10 @@ import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { posix } from 'node:path';
 
+// Route segment config for large file uploads
+export const maxDuration = 60; // 60 seconds timeout for uploads
+export const runtime = 'nodejs'; // Use Node.js runtime for better FormData handling
+
 // Configurable allowlist of acceptable MIME types and extensions
 const ALLOWED_MIME_TYPES = new Set([
   // Images
@@ -154,7 +158,8 @@ export const POST = withApiAuth(
 
       const supabase = await createAdminClient();
 
-      // Construct the full storage path using safe joining
+      // Construct the storage path relative to bucket
+      // Path format matches Drive page: [wsId]/[path]/[filename]
       const storagePath = sanitizedPath
         ? posix.join(wsId, sanitizedPath, sanitizedFilename)
         : posix.join(wsId, sanitizedFilename);
@@ -192,9 +197,10 @@ export const POST = withApiAuth(
         );
       }
 
-      // Strip workspace ID prefix from path to return relative path
-      const relativePath = data.path.startsWith(`${wsId}/`)
-        ? data.path.substring(`${wsId}/`.length)
+      // Strip "[wsId]/" prefix from path to return relative path
+      const prefix = `${wsId}/`;
+      const relativePath = data.path.startsWith(prefix)
+        ? data.path.substring(prefix.length)
         : data.path;
 
       return NextResponse.json({
@@ -205,10 +211,10 @@ export const POST = withApiAuth(
         },
       });
     } catch (error) {
-      console.error('Unexpected error uploading file:', error);
+      console.error('Upload error:', error);
       return createErrorResponse(
         'Internal Server Error',
-        'An unexpected error occurred',
+        error instanceof Error ? error.message : 'An unexpected error occurred',
         500,
         'UNEXPECTED_ERROR'
       );

@@ -12,6 +12,7 @@ import {
 } from '@/lib/api-middleware';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { posix } from 'node:path';
 import { z } from 'zod';
 
 // Query parameters schema
@@ -45,12 +46,11 @@ export const GET = withApiAuth(
       const supabase = await createAdminClient();
 
       // List files from Supabase Storage
-      // Normalize path to prevent double slashes
-      const trimmedWsId = wsId.replace(/^\/+|\/+$/g, '');
+      // Path format matches Drive page: [wsId]/[path]
       const trimmedPath = path.replace(/^\/+|\/+$/g, '');
       const storagePath = trimmedPath
-        ? `${trimmedWsId}/${trimmedPath}`
-        : trimmedWsId;
+        ? posix.join(wsId, trimmedPath)
+        : wsId;
 
       const { data: files, error } = await supabase.storage
         .from('workspaces')
