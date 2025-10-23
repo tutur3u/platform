@@ -72,7 +72,7 @@
     "@tuturuuu/vercel": "workspace:*",
     "@upstash/qstash": "^2.8.4",
     "@upstash/redis": "^1.35.6",
-    "ai": "^5.0.76",
+    "ai": "^5.0.77",
     "canvas-confetti": "^1.9.3",
     "client-only": "^0.0.1",
     "cmdk": "^1.1.1",
@@ -127,7 +127,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^16.0.0",
-    "@tailwindcss/postcss": "^4.1.15",
+    "@tailwindcss/postcss": "^4.1.16",
     "@tanstack/react-query-devtools": "^5.90.2",
     "@testing-library/react": "^16.3.0",
     "@tuturuuu/typescript-config": "workspace:*",
