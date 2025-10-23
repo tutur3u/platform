@@ -582,22 +582,126 @@ See the [external app example](https://github.com/tutur3u/platform/tree/main/app
 
 ## Rate Limiting
 
-The API enforces rate limits per API key:
+The API enforces rate limits per API key to ensure fair usage and system stability:
 
-- **Default:** 100 requests per minute
-- **Rate limit headers:** Check `X-RateLimit-*` response headers
-- **429 Response:** Thrown as `RateLimitError` when exceeded
+### Rate Limits by Operation
+
+| Operation | Limit | Window |
+|-----------|-------|--------|
+| Storage Upload | 20 requests | per minute |
+| Storage Download | 50 requests | per minute |
+| Signed Upload URLs | 30 requests | per minute |
+| All Other Operations | 100 requests | per minute |
+
+### Rate Limit Headers
+
+Every API response includes rate limit information in the headers:
+
+- `X-RateLimit-Limit` - Maximum requests allowed in the time window
+- `X-RateLimit-Remaining` - Number of requests remaining in current window
+- `X-RateLimit-Reset` - Unix timestamp when the rate limit resets
+
+```typescript
+const result = await client.storage.list();
+
+// Access rate limit info from headers (if using direct API calls)
+console.log('Limit:', result.headers.get('X-RateLimit-Limit'));
+console.log('Remaining:', result.headers.get('X-RateLimit-Remaining'));
+console.log('Resets at:', new Date(
+  Number.parseInt(result.headers.get('X-RateLimit-Reset')) * 1000
+));
+```
+
+### Handling Rate Limits
+
+When you exceed the rate limit, the API returns a `429 Too Many Requests` response:
 
 ```typescript
 try {
-  await client.storage.list();
+  await client.storage.upload(file);
 } catch (error) {
   if (error instanceof RateLimitError) {
-    console.log('Rate limited! Try again later.');
+    console.error('Rate limited! Try again later.');
+    console.error('Retry after:', error.retryAfter, 'seconds');
+
     // Implement exponential backoff
+    await new Promise(resolve =>
+      setTimeout(resolve, error.retryAfter * 1000)
+    );
   }
 }
 ```
+
+### Workspace-Specific Rate Limits
+
+Workspace administrators can configure custom rate limits for their workspace through **Workspace Secrets**. These override the default limits for all API keys in that workspace.
+
+To set custom rate limits:
+
+1. Navigate to **Settings** → **Workspace Settings** → **Secrets**
+2. Add one or more of these secrets:
+
+| Secret Name | Description | Example Value |
+|-------------|-------------|---------------|
+| `RATE_LIMIT_WINDOW_MS` | Time window in milliseconds | `60000` (1 minute) |
+| `RATE_LIMIT_MAX_REQUESTS` | Max requests per window | `200` (double the default) |
+
+**Example Configuration:**
+
+```
+RATE_LIMIT_WINDOW_MS = 60000
+RATE_LIMIT_MAX_REQUESTS = 500
+```
+
+This configuration allows 500 requests per minute for all API keys in the workspace, instead of the default 100.
+
+<Note>
+  Workspace-specific rate limits only apply to operations that don't have explicit per-operation limits. For operations like uploads and downloads, the operation-specific limits still apply.
+</Note>
+
+### Best Practices
+
+<Tip>
+  **Implement exponential backoff** when handling rate limits to avoid hammering the API with retries.
+</Tip>
+
+```typescript
+async function uploadWithRetry(file: File, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await client.storage.upload(file);
+    } catch (error) {
+      if (error instanceof RateLimitError && attempt < maxRetries - 1) {
+        // Exponential backoff: 1s, 2s, 4s
+        const delay = Math.pow(2, attempt) * 1000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+```
+
+<Tip>
+  **Monitor rate limit headers** to track your usage and avoid hitting limits:
+  ```typescript
+  // Check remaining requests after each call
+  const response = await fetch('https://tuturuuu.com/api/v1/storage/list', {
+    headers: { 'Authorization': `Bearer ${apiKey}` }
+  });
+
+  const remaining = response.headers.get('X-RateLimit-Remaining');
+  const limit = response.headers.get('X-RateLimit-Limit');
+
+  console.log(`API calls remaining: ${remaining}/${limit}`);
+
+  // Slow down if close to limit
+  if (Number(remaining) < Number(limit) * 0.1) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+  ```
+</Tip>
 
 ## Examples
 

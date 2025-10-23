@@ -401,6 +401,52 @@ import { toast } from '@tuturuuu/ui/sonner';
 5. Validate input with Zod; reject early with 4xx
 6. Add test or example documentation
 
+#### API Rate Limiting
+
+All SDK APIs (routes using `withApiAuth`) have automatic rate limiting:
+
+**Default Limits:**
+- General operations: 100 requests/minute
+- Storage uploads: 20 requests/minute
+- Storage downloads: 50 requests/minute
+- Signed upload URLs: 30 requests/minute
+
+**Workspace-Specific Configuration:**
+
+Workspaces can override default rate limits via `workspace_secrets` table:
+
+| Secret Name | Description | Example |
+|-------------|-------------|---------|
+| `RATE_LIMIT_WINDOW_MS` | Time window in milliseconds | `60000` |
+| `RATE_LIMIT_MAX_REQUESTS` | Max requests per window | `500` |
+
+**Adding Custom Rate Limits:**
+
+```typescript
+// Custom rate limit for specific operation
+export const POST = withApiAuth(
+  async (request, { context }) => {
+    // Handler code
+  },
+  {
+    permissions: ['manage_drive'],
+    rateLimit: { windowMs: 60000, maxRequests: 10 } // 10 req/min
+  }
+);
+
+// Disable rate limiting (use sparingly)
+export const GET = withApiAuth(
+  handler,
+  { rateLimit: false } // Not recommended
+);
+```
+
+**Rate Limit Infrastructure:**
+- Uses Upstash Redis for distributed rate limiting
+- Falls back to in-memory if Redis unavailable
+- Returns standard HTTP 429 with `X-RateLimit-*` headers
+- Tracked per API key across all requests
+
 #### AI Endpoints
 
 1. Define schema in `packages/ai/src/object/types.ts` (Zod)

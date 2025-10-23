@@ -105,5 +105,8 @@ export const POST = withApiAuth(
       );
     }
   },
-  { permissions: ['manage_drive'] }
+  {
+    permissions: ['manage_drive'],
+    rateLimit: { windowMs: 60000, maxRequests: 30 }, // 30 signed URLs per minute
+  }
 );

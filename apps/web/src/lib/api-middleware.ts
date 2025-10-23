@@ -144,7 +144,10 @@ export function checkPermissions(
  *     // Your handler code here
  *     return NextResponse.json({ data: "..." });
  *   },
- *   { permissions: ['storage.read'] }
+ *   {
+ *     permissions: ['storage.read'],
+ *     rateLimit: { windowMs: 60000, maxRequests: 100 }
+ *   }
  * );
  */
 export function withApiAuth<T = unknown>(
@@ -158,6 +161,7 @@ export function withApiAuth<T = unknown>(
   options?: {
     permissions?: PermissionId[];
     requireAll?: boolean;
+    rateLimit?: RateLimitConfig | false;
   }
 ): (
   request: NextRequest,
@@ -185,6 +189,42 @@ export function withApiAuth<T = unknown>(
     if ('context' in authResult) {
       const { context } = authResult;
 
+      // Check rate limit if enabled (default: enabled with 100 requests per minute)
+      // Workspace-specific limits from workspace_secrets will override defaults
+      let rateLimitHeaders: Record<string, string> = {};
+      if (options?.rateLimit !== false) {
+        const rateLimitConfig = options?.rateLimit || {
+          windowMs: 60000,
+          maxRequests: 100,
+        };
+        const rateLimitResult = await checkRateLimit(
+          context.keyId,
+          rateLimitConfig,
+          context.wsId // Pass wsId to check for workspace-specific config
+        );
+
+        if ('allowed' in rateLimitResult) {
+          // Rate limit check returned success with headers
+          rateLimitHeaders = rateLimitResult.headers;
+        } else {
+          // Rate limit exceeded - log and return error response
+          const responseTimeMs = Date.now() - startTime;
+          void logApiKeyUsage({
+            apiKeyId: context.keyId,
+            wsId: context.wsId,
+            endpoint,
+            method,
+            statusCode: 429,
+            ipAddress,
+            userAgent,
+            responseTimeMs,
+            requestParams: Object.fromEntries(url.searchParams),
+            errorMessage: 'Rate limit exceeded',
+          });
+          return rateLimitResult;
+        }
+      }
+
       // Await params if it's a Promise (Next.js 15 behavior)
       const params = routeContext?.params
         ? await Promise.resolve(routeContext.params)
@@ -205,6 +245,11 @@ export function withApiAuth<T = unknown>(
               params,
               context,
             });
+
+            // Add rate limit headers to response
+            for (const [key, value] of Object.entries(rateLimitHeaders)) {
+              response.headers.set(key, value);
+            }
 
             // Log successful request
             const responseTimeMs = Date.now() - startTime;
@@ -270,6 +315,11 @@ export function withApiAuth<T = unknown>(
           context,
         });
 
+        // Add rate limit headers to response
+        for (const [key, value] of Object.entries(rateLimitHeaders)) {
+          response.headers.set(key, value);
+        }
+
         // Log successful request
         const responseTimeMs = Date.now() - startTime;
         void logApiKeyUsage({
@@ -322,6 +372,17 @@ export interface RateLimitConfig {
 }
 
 /**
+ * Workspace-specific rate limit secret names
+ */
+export const RATE_LIMIT_SECRET_NAMES = {
+  WINDOW_MS: 'RATE_LIMIT_WINDOW_MS',
+  MAX_REQUESTS: 'RATE_LIMIT_MAX_REQUESTS',
+  UPLOAD_MAX_REQUESTS: 'RATE_LIMIT_UPLOAD_MAX_REQUESTS',
+  DOWNLOAD_MAX_REQUESTS: 'RATE_LIMIT_DOWNLOAD_MAX_REQUESTS',
+  UPLOAD_URL_MAX_REQUESTS: 'RATE_LIMIT_UPLOAD_URL_MAX_REQUESTS',
+} as const;
+
+/**
  * Rate limit result with headers
  */
 interface RateLimitResult {
@@ -339,14 +400,17 @@ const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 /**
  * Redis client type (lazy-loaded if @upstash/redis is installed)
  */
-const redisClient = null;
+let redisClient: Awaited<
+  ReturnType<typeof import('@upstash/redis').Redis.fromEnv>
+> | null = null;
+let redisInitialized = false;
 
 /**
  * Initialize Redis client for rate limiting
  * Safe to call multiple times - will only initialize once
  */
 async function getRedisClient() {
-  if (redisClient !== null) return redisClient;
+  if (redisInitialized) return redisClient;
 
   try {
     // Check if Redis env vars are configured
@@ -357,22 +421,22 @@ async function getRedisClient() {
       console.warn(
         'Redis rate limiting disabled: UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN not configured'
       );
+      redisInitialized = true;
       return null;
     }
 
     // Dynamically import @upstash/redis if available
-    // const { Redis } = await import('@upstash/redis');
-    // redisClient = new Redis({
-    //   url: redisUrl,
-    //   token: redisToken,
-    // });
-    // console.log('Redis rate limiting enabled');
+    const { Redis } = await import('@upstash/redis');
+    redisClient = Redis.fromEnv();
+    redisInitialized = true;
+    console.log('Redis rate limiting enabled');
     return redisClient;
   } catch (error) {
     console.warn(
       'Redis rate limiting unavailable - falling back to in-memory:',
       error
     );
+    redisInitialized = true;
     return null;
   }
 }
@@ -390,30 +454,28 @@ async function checkRateLimitRedis(
     return checkRateLimitMemory(keyId, config);
   }
 
-  // const key = `ratelimit:${keyId}`;
-  // const windowSeconds = Math.ceil(config.windowMs / 1000);
-  // const now = Math.floor(Date.now() / 1000);
+  const key = `ratelimit:${keyId}`;
+  const windowSeconds = Math.ceil(config.windowMs / 1000);
+  const now = Math.floor(Date.now() / 1000);
 
   try {
     // Use Redis pipeline for atomic operations
-    // const count = await redis.incr(key);
+    const count = await redis.incr(key);
 
-    // if (count === 1) {
-    //   // First request in this window - set expiry
-    //   await redis.expire(key, windowSeconds);
-    // }
+    if (count === 1) {
+      // First request in this window - set expiry
+      await redis.expire(key, windowSeconds);
+    }
 
-    // const ttl = await redis.ttl(key);
-    // const resetTime = now + (ttl > 0 ? ttl : windowSeconds);
+    const ttl = await redis.ttl(key);
+    const resetTime = now + (ttl > 0 ? ttl : windowSeconds);
 
-    // return {
-    //   allowed: count <= config.maxRequests,
-    //   limit: config.maxRequests,
-    //   remaining: Math.max(0, config.maxRequests - count),
-    //   reset: resetTime,
-    // };
-
-    throw new Error('Redis client not implemented');
+    return {
+      allowed: count <= config.maxRequests,
+      limit: config.maxRequests,
+      remaining: Math.max(0, config.maxRequests - count),
+      reset: resetTime,
+    };
   } catch (error) {
     console.error('Redis rate limit error, falling back to in-memory:', error);
     // Fallback to in-memory on Redis errors
@@ -458,18 +520,113 @@ function checkRateLimitMemory(
 }
 
 /**
+ * Retrieves workspace-specific rate limit configuration from workspace_secrets
+ * @param wsId - The workspace ID
+ * @param secretName - Optional specific secret name to retrieve
+ * @returns Rate limit configuration from workspace secrets, or null if not found
+ */
+async function getWorkspaceRateLimitConfig(
+  wsId: string,
+  secretName?: string
+): Promise<Partial<RateLimitConfig> | null> {
+  try {
+    const { createDynamicAdminClient } = await import(
+      '@tuturuuu/supabase/next/server'
+    );
+    const supabase = await createDynamicAdminClient();
+
+    // Build query for workspace secrets
+    let query = supabase
+      .from('workspace_secrets')
+      .select('name, value')
+      .eq('ws_id', wsId);
+
+    if (secretName) {
+      query = query.eq('name', secretName);
+    } else {
+      // Get all rate limit related secrets
+      query = query.in('name', Object.values(RATE_LIMIT_SECRET_NAMES));
+    }
+
+    const { data, error } = await query;
+
+    if (error || !data || data.length === 0) {
+      return null;
+    }
+
+    // Parse the secrets into a config object
+    const config: Partial<RateLimitConfig> = {};
+
+    for (const secret of data) {
+      if (!secret.value) continue;
+
+      try {
+        const numValue = Number.parseInt(secret.value, 10);
+        if (Number.isNaN(numValue) || numValue <= 0) continue;
+
+        switch (secret.name) {
+          case RATE_LIMIT_SECRET_NAMES.WINDOW_MS:
+            config.windowMs = numValue;
+            break;
+          case RATE_LIMIT_SECRET_NAMES.MAX_REQUESTS:
+            config.maxRequests = numValue;
+            break;
+          // Note: Operation-specific limits are handled at the route level
+          default:
+            break;
+        }
+      } catch {
+        // Skip invalid values - no action needed
+      }
+    }
+
+    return Object.keys(config).length > 0 ? config : null;
+  } catch (error) {
+    console.error('Error fetching workspace rate limit config:', error);
+    return null;
+  }
+}
+
+/**
+ * Gets the effective rate limit configuration for a workspace
+ * Merges workspace-specific config with provided defaults
+ */
+async function getEffectiveRateLimitConfig(
+  wsId: string,
+  defaultConfig: RateLimitConfig
+): Promise<RateLimitConfig> {
+  const workspaceConfig = await getWorkspaceRateLimitConfig(wsId);
+
+  if (!workspaceConfig) {
+    return defaultConfig;
+  }
+
+  return {
+    windowMs: workspaceConfig.windowMs ?? defaultConfig.windowMs,
+    maxRequests: workspaceConfig.maxRequests ?? defaultConfig.maxRequests,
+  };
+}
+
+/**
  * Checks if a request should be rate limited
  * Uses Redis if available, falls back to in-memory store
  * Adds standard X-RateLimit-* headers to response
+ * Supports workspace-specific rate limits via workspace_secrets
  */
 export async function checkRateLimit(
   keyId: string,
-  config: RateLimitConfig = { windowMs: 60000, maxRequests: 100 }
+  config: RateLimitConfig = { windowMs: 60000, maxRequests: 100 },
+  wsId?: string
 ): Promise<
   | { allowed: true; headers: Record<string, string> }
   | NextResponse<ApiErrorResponse>
 > {
-  const result = await checkRateLimitRedis(keyId, config);
+  // Get workspace-specific config if wsId provided
+  const effectiveConfig = wsId
+    ? await getEffectiveRateLimitConfig(wsId, config)
+    : config;
+
+  const result = await checkRateLimitRedis(keyId, effectiveConfig);
 
   // Prepare rate limit headers
   const headers = {

@@ -87,5 +87,8 @@ export const GET = withApiAuth(
       );
     }
   },
-  { permissions: ['manage_drive'] }
+  {
+    permissions: ['manage_drive'],
+    rateLimit: { windowMs: 60000, maxRequests: 50 }, // 50 downloads per minute
+  }
 );
