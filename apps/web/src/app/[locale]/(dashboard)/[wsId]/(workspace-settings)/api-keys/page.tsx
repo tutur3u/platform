@@ -128,6 +128,31 @@ async function getApiKeys(
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
 
+  // Fetch last_used_at from usage logs for each API key
+  if (data && data.length > 0) {
+    const keyIds = data.map((key) => key.id);
+    const { data: lastUsedData } = await supabase
+      .from('workspace_api_key_usage_logs')
+      .select('api_key_id, created_at')
+      .in('api_key_id', keyIds)
+      .order('created_at', { ascending: false });
+
+    // Create a map of api_key_id to most recent created_at
+    const lastUsedMap = new Map<string, string>();
+    if (lastUsedData) {
+      for (const log of lastUsedData) {
+        if (!lastUsedMap.has(log.api_key_id)) {
+          lastUsedMap.set(log.api_key_id, log.created_at);
+        }
+      }
+    }
+
+    // Update each API key with its last_used_at from logs
+    for (const key of data) {
+      key.last_used_at = lastUsedMap.get(key.id) || null;
+    }
+  }
+
   return { data, count } as { data: WorkspaceApiKey[]; count: number };
 }
 

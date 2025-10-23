@@ -173,11 +173,8 @@ export async function validateApiKey(
           }
         }
 
-        // Update last_used_at timestamp — fire-and-forget, intentionally not awaiting
-        void supabase
-          .from('workspace_api_keys')
-          .update({ last_used_at: new Date().toISOString() })
-          .eq('id', keyRecord.id);
+        // Note: last_used_at is now derived from workspace_api_key_usage_logs
+        // No need to update it separately since we're already logging every request
 
         return {
           wsId: keyRecord.ws_id,
