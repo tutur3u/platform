@@ -8,7 +8,7 @@ const isDev = process.env.NODE_ENV === 'development';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  transpilePackages: ['@tuturuuu/ui'],
+  transpilePackages: ['@tuturuuu/ui', 'tuturuuu'],
   images: {
     remotePatterns: [
       {
