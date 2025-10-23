@@ -172,6 +172,7 @@ export function WorkspaceSelect({
         {
           label: personalWorkspace.name || 'Personal',
           value: PERSONAL_WORKSPACE_SLUG,
+          avatarUrl: personalWorkspace.avatar_url,
         },
       ],
     },
@@ -184,6 +185,7 @@ export function WorkspaceSelect({
           name: string | null;
           created_by_me?: boolean;
           personal?: boolean;
+          avatar_url?: string | null;
         }) => ({
           label: workspace.name || 'Untitled',
           value: toWorkspaceSlug(workspace.id, {
@@ -191,13 +193,19 @@ export function WorkspaceSelect({
           }),
           // Signal creator-owned workspaces for UI
           isCreator: workspace?.created_by_me === true,
+          avatarUrl: workspace.avatar_url,
         })
       ),
     },
   ].filter(Boolean) as {
     id: string;
     label: string;
-    teams: { label: string; value: string | undefined; isCreator?: boolean }[];
+    teams: {
+      label: string;
+      value: string | undefined;
+      isCreator?: boolean;
+      avatarUrl?: string | null;
+    }[];
   }[];
 
   const onValueChange = (nextSlug: string) => {
@@ -252,9 +260,10 @@ export function WorkspaceSelect({
               >
                 <AvatarImage
                   src={
-                    workspace?.name
+                    workspace?.avatar_url ||
+                    (workspace?.name
                       ? `https://avatar.vercel.sh/${workspace.name}.png`
-                      : undefined
+                      : undefined)
                   }
                   alt={workspace?.name || 'Workspace'}
                 />
@@ -284,6 +293,7 @@ export function WorkspaceSelect({
                         label: string;
                         value: string | undefined;
                         isCreator?: boolean;
+                        avatarUrl?: string | null;
                       }) => (
                         <CommandItem
                           key={team.value}
@@ -298,7 +308,10 @@ export function WorkspaceSelect({
                         >
                           <Avatar className="mr-2 h-5 w-5">
                             <AvatarImage
-                              src={`https://avatar.vercel.sh/${team.label}.png`}
+                              src={
+                                team.avatarUrl ||
+                                `https://avatar.vercel.sh/${team.label}.png`
+                              }
                               alt={team.label}
                               className="grayscale"
                             />
