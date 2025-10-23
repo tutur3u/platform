@@ -10,6 +10,7 @@ interface FileGridProps {
   onDownload: (filename: string, folderPath: string) => void;
   onDelete: (filename: string, folderPath: string) => void;
   onRefresh: () => void;
+  onFolderClick: (folderName: string) => void;
 }
 
 export function FileGrid({
@@ -21,6 +22,7 @@ export function FileGrid({
   onDownload,
   onDelete,
   onRefresh,
+  onFolderClick,
 }: FileGridProps) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
@@ -57,6 +59,7 @@ export function FileGrid({
                 isDeleting={isDeleting}
                 onDownload={onDownload}
                 onDelete={onDelete}
+                onFolderClick={onFolderClick}
               />
             );
           })}

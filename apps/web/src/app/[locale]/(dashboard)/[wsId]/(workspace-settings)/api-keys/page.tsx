@@ -6,7 +6,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, verifySecret } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
@@ -38,6 +38,16 @@ export default async function WorkspaceApiKeysPage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
+        if (
+          !(await verifySecret({
+            forceAdmin: true,
+            wsId: wsId,
+            name: 'ENABLE_API_KEYS',
+            value: 'true',
+          }))
+        )
+          redirect(`/${wsId}/settings`);
+
         const { withoutPermission } = await getPermissions({
           wsId,
         });

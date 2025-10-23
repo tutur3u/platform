@@ -1,9 +1,9 @@
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { TaskProjectsClient } from './task-projects-client';
 
 export const metadata: Metadata = {
@@ -56,6 +56,7 @@ export default async function TaskProjectsPage({ params }: Props) {
                 name,
                 completed,
                 completed_at,
+                closed_at,
                 deleted_at,
                 priority,
                 task_lists(
@@ -84,7 +85,9 @@ export default async function TaskProjectsPage({ params }: Props) {
             created_at: project.created_at ?? new Date().toISOString(),
             tasksCount: activeTasks.length,
             completedTasksCount: activeTasks.filter(
-              (link) => link.task?.completed
+              (link) =>
+                link.task?.completed_at !== null ||
+                link.task?.closed_at !== null
             ).length,
             linkedTasks: activeTasks.flatMap(({ task }) =>
               task
