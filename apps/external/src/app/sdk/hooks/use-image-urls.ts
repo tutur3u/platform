@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { tuturuuu } from 'tuturuuu';
 import { isImageFile } from '../lib/utils';
 
 export function useImageUrls(
@@ -28,15 +27,22 @@ export function useImageUrls(
       }
 
       try {
-        // Batch generate signed URLs using SDK method
-        const result = await tuturuuu.storage.createSignedUrls(
-          imagePaths,
-          3600
-        );
+        // Batch generate signed URLs via API endpoint (server-side)
+        const response = await fetch('/api/storage/share-batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paths: imagePaths, expiresIn: 3600 }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to generate batch signed URLs');
+        }
+
+        const result = await response.json();
 
         // Map signed URLs back to file names
         const newUrls: Record<string, string> = {};
-        result.data.forEach((item) => {
+        result.data.forEach((item: any) => {
           if (item.signedUrl && !item.error) {
             // Extract just the filename from the full path
             const fileName = item.path.split('/').pop();
