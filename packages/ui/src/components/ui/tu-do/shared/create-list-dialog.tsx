@@ -79,12 +79,7 @@ const colorOptions: { value: SupportedColor; label: string; class: string }[] =
     { value: 'CYAN', label: 'Cyan', class: 'bg-dynamic-cyan/30' },
   ];
 
-const statuses: TaskBoardStatus[] = [
-  'not_started',
-  'active',
-  'done',
-  'closed',
-];
+const statuses: TaskBoardStatus[] = ['not_started', 'active', 'done', 'closed'];
 
 export function CreateListDialog({
   open,
@@ -153,7 +148,7 @@ export function CreateListDialog({
     },
     onSuccess: async (data) => {
       toast.success('List created successfully');
-      
+
       // Invalidate queries first
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] }),
@@ -164,10 +159,10 @@ export function CreateListDialog({
             })
           : Promise.resolve(),
       ]);
-      
+
       // Then call onSuccess callback which will select the list
       onSuccess?.(data.id);
-      
+
       // Finally close dialog and reset form
       onOpenChange(false);
       resetForm();
