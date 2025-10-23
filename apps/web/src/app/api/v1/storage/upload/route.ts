@@ -6,7 +6,7 @@
  */
 
 import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { posix } from 'node:path';
@@ -156,7 +156,7 @@ export const POST = withApiAuth(
         );
       }
 
-      const supabase = await createAdminClient();
+      const supabase = await createDynamicAdminClient();
 
       // Construct the storage path relative to bucket
       // Path format matches Drive page: [wsId]/[path]/[filename]

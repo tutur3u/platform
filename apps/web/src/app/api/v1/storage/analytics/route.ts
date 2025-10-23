@@ -6,7 +6,7 @@
  */
 
 import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 export const GET = withApiAuth(
@@ -14,7 +14,7 @@ export const GET = withApiAuth(
     const { wsId } = context;
 
     try {
-      const supabase = await createAdminClient();
+      const supabase = await createDynamicAdminClient();
 
       // Get total storage size using RPC function
       const { data: sizeData, error: sizeError } = await supabase.rpc(

@@ -213,7 +213,7 @@ export class StorageClient {
       }),
     });
 
-    const { signedUrl, token, path } = signedUrlResponse.data;
+    const { signedUrl, path } = signedUrlResponse.data;
 
     // Step 2: Upload the file directly to Supabase using the signed URL
     try {
@@ -686,12 +686,12 @@ export class TuturuuuClient {
         method,
         // For FormData, omit headers that might interfere with automatic Content-Type setting
         headers: isFormData
-          ? {
+          ? ({
               Authorization: headers.Authorization,
               'X-SDK-Client': headers['X-SDK-Client'],
               Accept: headers.Accept,
               // Do NOT include Content-Type - let fetch set it automatically
-            }
+            } as HeadersInit)
           : headers,
         body,
         signal: controller.signal,

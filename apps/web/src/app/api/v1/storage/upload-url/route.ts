@@ -10,7 +10,7 @@ import {
   validateRequestBody,
   withApiAuth,
 } from '@/lib/api-middleware';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { posix } from 'node:path';
@@ -22,8 +22,6 @@ const uploadUrlRequestSchema = z.object({
   path: z.string().optional().default(''),
   upsert: z.boolean().optional().default(false),
 });
-
-type UploadUrlRequest = z.infer<typeof uploadUrlRequestSchema>;
 
 export const POST = withApiAuth(
   async (request, { context }) => {
@@ -63,7 +61,7 @@ export const POST = withApiAuth(
         );
       }
 
-      const supabase = await createAdminClient();
+      const supabase = await createDynamicAdminClient();
 
       // Construct the storage path relative to bucket
       // Path format matches Drive page: [wsId]/[path]/[filename]

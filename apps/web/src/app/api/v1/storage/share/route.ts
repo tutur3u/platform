@@ -5,7 +5,7 @@
  * Generates a signed URL for sharing a file
  */
 
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -33,7 +33,7 @@ export const POST = withApiAuth(
     const { path, expiresIn } = bodyResult.data;
 
     try {
-      const supabase = await createAdminClient();
+      const supabase = await createDynamicAdminClient();
 
       // Construct the full storage path
       const storagePath = `${wsId}/${path}`;

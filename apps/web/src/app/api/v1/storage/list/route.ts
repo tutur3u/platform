@@ -10,7 +10,7 @@ import {
   validateQueryParams,
   withApiAuth,
 } from '@/lib/api-middleware';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { posix } from 'node:path';
 import { z } from 'zod';
@@ -43,7 +43,7 @@ export const GET = withApiAuth(
 
     try {
       // Use admin client to bypass RLS policies when using API key authentication
-      const supabase = await createAdminClient();
+      const supabase = await createDynamicAdminClient();
 
       // List files from Supabase Storage
       // Path format matches Drive page: [wsId]/[path]
