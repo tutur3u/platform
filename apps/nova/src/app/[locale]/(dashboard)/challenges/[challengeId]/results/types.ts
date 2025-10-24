@@ -5,7 +5,7 @@ import type {
   NovaSession,
   NovaSubmission,
   NovaSubmissionCriteria,
-} from '@tuturuuu/types/db';
+} from '@tuturuuu/types';
 
 export type ExtendedNovaSubmission = NovaSubmission & {
   total_tests: number;

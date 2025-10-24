@@ -11,7 +11,7 @@ import {
   createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import type { WorkspaceCourseModule } from '@tuturuuu/types';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { Accordion } from '@tuturuuu/ui/accordion';
 import { CourseSection } from '@tuturuuu/ui/custom/education/modules/content-section';

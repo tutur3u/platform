@@ -6,7 +6,7 @@ import {
   ArrowUp,
   MoreHorizontal,
 } from '@tuturuuu/icons';
-import type { NovaChallenge } from '@tuturuuu/types/db';
+import type { NovaChallenge } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,

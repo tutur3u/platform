@@ -1,9 +1,12 @@
 'use client';
 
+import { availableConfigs } from '@/constants/configs/reports';
+import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { WorkspaceUserReport } from '@tuturuuu/types/db';
+import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import {
   Select,
@@ -12,13 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { useQuery } from '@tanstack/react-query';
-import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
-import { availableConfigs } from '@/constants/configs/reports';
 
 // Feature flag for experimental factor functionality
 const ENABLE_FACTOR_CALCULATION = false;
@@ -396,7 +396,7 @@ export default function GroupReportsClient({
 
   return (
     <div className="flex min-h-full w-full flex-col">
-      <div className="flex flex-row gap-2 items-center justify-between mb-4">
+      <div className="mb-4 flex flex-row items-center justify-between gap-2">
         <div className="grid flex-wrap items-start gap-2 md:flex">
           <Combobox
             t={t}
@@ -445,7 +445,7 @@ export default function GroupReportsClient({
           )}
         </div>
         {userId && canCreateReports ? (
-          <div className="flex flex-row gap-2 items-center">
+          <div className="flex flex-row items-center gap-2">
             <Button
               type="button"
               onClick={() => updateSearchParams({ reportId: 'new' })}

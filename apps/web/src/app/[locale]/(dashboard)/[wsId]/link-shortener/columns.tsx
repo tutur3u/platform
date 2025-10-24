@@ -8,7 +8,7 @@ import {
   MousePointerClick,
   User,
 } from '@tuturuuu/icons';
-import type { Tables } from '@tuturuuu/types/supabase';
+import type { Tables } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

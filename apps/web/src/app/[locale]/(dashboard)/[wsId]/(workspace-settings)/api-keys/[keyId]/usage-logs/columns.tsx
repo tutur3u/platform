@@ -2,7 +2,7 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import { ChevronDown, ChevronRight } from '@tuturuuu/icons';
-import type { WorkspaceApiKeyUsageLog } from '@tuturuuu/types/db';
+import type { WorkspaceApiKeyUsageLog } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';

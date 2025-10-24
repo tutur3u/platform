@@ -1,4 +1,4 @@
-import type { CertificateTemplate } from '@tuturuuu/types/db';
+import type { CertificateTemplate } from '@tuturuuu/types';
 
 export type CertificateDetails = {
   courseName: string;

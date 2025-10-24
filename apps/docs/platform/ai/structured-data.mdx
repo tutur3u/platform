@@ -267,7 +267,7 @@ Supabase-generated TypeScript types are available at `packages/types/src/supabas
 You can use these types to ensure type safety when working with Supabase data in your AI features:
 
 ```typescript
-import type { Database } from '@tuturuuu/types/supabase';
+import type { Database } from '@tuturuuu/types';
 
 // Type-safe access to workspace_secrets table
 const { data, error } = await supabase
@@ -294,7 +294,7 @@ const workspaceName: string = workspace?.name;
 For more convenient access to common table types in your AI features, Tuturuuu also provides short-hand type definitions in `packages/types/src/db.ts`. These are easier to use and remember than the full database type paths:
 
 ```typescript
-import type { AIChat, AIPrompt, WorkspaceDocument } from '@tuturuuu/types/db';
+import type { AIChat, AIPrompt, WorkspaceDocument } from '@tuturuuu/types';
 
 // Use short-hand types directly for AI-related tables
 const { data: chats } = await supabase

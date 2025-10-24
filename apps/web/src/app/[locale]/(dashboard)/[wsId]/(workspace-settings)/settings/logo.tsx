@@ -1,6 +1,6 @@
 'use client';
 
-import type { Workspace } from '@tuturuuu/types/db';
+import type { Workspace } from '@tuturuuu/types';
 import { useTranslations } from 'next-intl';
 import LogoInput from './logo-input';
 

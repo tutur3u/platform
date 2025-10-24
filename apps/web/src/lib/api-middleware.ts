@@ -12,7 +12,7 @@ import {
   validateApiKey,
   type WorkspaceContext,
 } from '@tuturuuu/auth/api-keys';
-import type { PermissionId } from '@tuturuuu/types/db';
+import type { PermissionId } from '@tuturuuu/types';
 import type { ApiErrorResponse } from '@tuturuuu/types/sdk';
 import { type NextRequest, NextResponse } from 'next/server';
 

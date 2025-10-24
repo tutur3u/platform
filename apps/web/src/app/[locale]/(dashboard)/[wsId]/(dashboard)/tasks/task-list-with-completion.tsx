@@ -10,7 +10,7 @@ import {
   UserRound,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { TaskWithRelations } from '@tuturuuu/types/db';
+import type { TaskWithRelations } from '@tuturuuu/types';
 import type { Task as PrimitiveTask } from '@tuturuuu/types/primitives/Task';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';

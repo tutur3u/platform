@@ -11,7 +11,7 @@ import {
   TrendingUp,
   Zap,
 } from '@tuturuuu/icons';
-import type { WorkspaceAIExecution } from '@tuturuuu/types/db';
+import type { WorkspaceAIExecution } from '@tuturuuu/types';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Badge } from '@tuturuuu/ui/badge';
 import {

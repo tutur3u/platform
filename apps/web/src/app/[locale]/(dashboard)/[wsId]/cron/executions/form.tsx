@@ -1,6 +1,6 @@
 'use client';
 
-import type { WorkspaceAIModel } from '@tuturuuu/types/db';
+import type { WorkspaceAIModel } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,

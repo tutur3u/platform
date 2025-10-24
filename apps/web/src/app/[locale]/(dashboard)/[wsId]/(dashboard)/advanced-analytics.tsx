@@ -3,7 +3,7 @@
 import type {
   AuroraMLMetrics,
   AuroraStatisticalMetrics,
-} from '@tuturuuu/types/db';
+} from '@tuturuuu/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';

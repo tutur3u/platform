@@ -17,7 +17,7 @@ import {
   User,
   X,
 } from '@tuturuuu/icons';
-import type { TaskProjectWithRelations, Workspace } from '@tuturuuu/types/db';
+import type { TaskProjectWithRelations, Workspace } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';

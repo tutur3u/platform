@@ -2,7 +2,7 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import { Check, Copy } from '@tuturuuu/icons';
-import type { WorkspaceApiKey } from '@tuturuuu/types/db';
+import type { WorkspaceApiKey } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';

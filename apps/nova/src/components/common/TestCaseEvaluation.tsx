@@ -9,7 +9,7 @@ import {
   ThumbsUp,
   XCircle,
 } from '@tuturuuu/icons';
-import type { NovaSubmissionData } from '@tuturuuu/types/db';
+import type { NovaSubmissionData } from '@tuturuuu/types';
 import {
   Accordion,
   AccordionContent,

@@ -8,7 +8,7 @@ import {
   Upload,
   X,
 } from '@tuturuuu/icons';
-import type { Product, SupportType } from '@tuturuuu/types/db';
+import type { Product, SupportType } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,

@@ -2,7 +2,7 @@
 
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
-import type { WorkspaceCourse } from '@tuturuuu/types/db';
+import type { WorkspaceCourse } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { CourseForm } from '@tuturuuu/ui/custom/education/courses/course-form';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';

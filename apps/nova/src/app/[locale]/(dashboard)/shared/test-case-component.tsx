@@ -1,5 +1,5 @@
 import { Code } from '@tuturuuu/icons';
-import type { NovaProblemTestCase } from '@tuturuuu/types/db';
+import type { NovaProblemTestCase } from '@tuturuuu/types';
 import {
   Card,
   CardContent,

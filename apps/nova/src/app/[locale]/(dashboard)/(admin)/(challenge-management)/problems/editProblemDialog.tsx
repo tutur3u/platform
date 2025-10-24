@@ -1,6 +1,6 @@
 'use client';
 
-import type { ExtendedNovaProblem } from '@tuturuuu/types/db';
+import type { ExtendedNovaProblem } from '@tuturuuu/types';
 import {
   Dialog,
   DialogContent,

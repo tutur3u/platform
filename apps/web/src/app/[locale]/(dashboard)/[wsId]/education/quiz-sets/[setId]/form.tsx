@@ -1,7 +1,7 @@
 'use client';
 
 import { Loader, Pencil, Plus, PlusCircle, Wand } from '@tuturuuu/icons';
-import type { WorkspaceQuiz } from '@tuturuuu/types/db';
+import type { WorkspaceQuiz } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { AutosizeTextarea } from '@tuturuuu/ui/custom/autosize-textarea';

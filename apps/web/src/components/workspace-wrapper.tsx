@@ -1,4 +1,4 @@
-import type { Workspace, WorkspaceUserRole } from '@tuturuuu/types/db';
+import type { Workspace, WorkspaceUserRole } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';

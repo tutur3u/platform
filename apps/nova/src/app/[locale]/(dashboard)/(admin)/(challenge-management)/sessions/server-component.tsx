@@ -1,5 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { NovaChallenge } from '@tuturuuu/types/db';
+import type { NovaChallenge } from '@tuturuuu/types';
 import { SessionFilters } from './filters';
 import { SessionOverview } from './overview';
 import { SessionTable } from './session-table';

@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertCircle, Clock, Loader2 } from '@tuturuuu/icons';
-import type { TimeTrackingSession } from '@tuturuuu/types/db';
+import type { TimeTrackingSession } from '@tuturuuu/types';
 import {
   Dialog,
   DialogContent,

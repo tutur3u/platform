@@ -1,7 +1,7 @@
 'use client';
 
 import { Clock, Eye, EyeOff } from '@tuturuuu/icons';
-import type { NovaChallenge } from '@tuturuuu/types/db';
+import type { NovaChallenge } from '@tuturuuu/types';
 import {
   AlertDialog,
   AlertDialogCancel,

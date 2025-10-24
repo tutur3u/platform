@@ -1,10 +1,7 @@
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { ArrowLeft } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type {
-  WorkspaceApiKey,
-  WorkspaceApiKeyUsageLog,
-} from '@tuturuuu/types/db';
+import type { WorkspaceApiKey, WorkspaceApiKeyUsageLog } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,

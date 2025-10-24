@@ -3,7 +3,7 @@
 import { useRecordingLoader } from '@/hooks/useRecordingLoader';
 import { useTranscription } from '@/hooks/useTranscription';
 import { EyeIcon, FileText, Headphones } from '@tuturuuu/icons';
-import type { RecordingStatus, RecordingTranscript } from '@tuturuuu/types/db';
+import type { RecordingStatus, RecordingTranscript } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { useState } from 'react';
 import { AudioPlayer } from './components/AudioPlayer';

@@ -2,7 +2,7 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import { Edit, Eye, MoreHorizontal, Trash } from '@tuturuuu/icons';
-import type { ExtendedNovaProblem } from '@tuturuuu/types/db';
+import type { ExtendedNovaProblem } from '@tuturuuu/types';
 import {
   AlertDialog,
   AlertDialogAction,

@@ -1,6 +1,6 @@
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceDocument } from '@tuturuuu/types/db';
+import type { WorkspaceDocument } from '@tuturuuu/types';
 import { DocumentEditor } from './document-editor';
 
 interface Props {

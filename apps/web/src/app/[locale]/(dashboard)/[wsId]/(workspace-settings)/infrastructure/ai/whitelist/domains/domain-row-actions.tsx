@@ -1,6 +1,6 @@
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
-import type { AIWhitelistDomain } from '@tuturuuu/types/db';
+import type { AIWhitelistDomain } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,

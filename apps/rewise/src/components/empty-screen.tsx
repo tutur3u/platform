@@ -6,7 +6,7 @@ import {
   NotebookPen,
   Sigma,
 } from '@tuturuuu/icons';
-import type { AIChat } from '@tuturuuu/types/db';
+import type { AIChat } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';

@@ -13,7 +13,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { NovaProblem } from '@tuturuuu/types/db';
+import type { NovaProblem } from '@tuturuuu/types';
 import { generateObject, streamObject } from 'ai';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';

@@ -1,6 +1,6 @@
 import { Box, Eye, Paperclip } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceQuizSet } from '@tuturuuu/types/db';
+import type { WorkspaceQuizSet } from '@tuturuuu/types';
 import LinkButton from '@tuturuuu/ui/custom/education/modules/link-button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';

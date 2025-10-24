@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertCircle } from '@tuturuuu/icons';
-import type { AuroraForecast } from '@tuturuuu/types/db';
+import type { AuroraForecast } from '@tuturuuu/types';
 import { Alert, AlertTitle } from '@tuturuuu/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';

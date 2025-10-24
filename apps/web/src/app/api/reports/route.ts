@@ -3,7 +3,7 @@ import {
   createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
-import type { Product, SupportType } from '@tuturuuu/types/db';
+import type { Product, SupportType } from '@tuturuuu/types';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 

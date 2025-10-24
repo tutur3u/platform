@@ -13,7 +13,7 @@ import {
   UserMinus,
   Users,
 } from '@tuturuuu/icons';
-import type { User, UserPrivateDetails } from '@tuturuuu/types/db';
+import type { User, UserPrivateDetails } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { Database } from '@tuturuuu/types/supabase';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';

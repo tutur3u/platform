@@ -2,7 +2,7 @@
 
 import type { Row } from '@tanstack/react-table';
 import { Eye } from '@tuturuuu/icons';
-import type { WorkspaceAIExecution } from '@tuturuuu/types/db';
+import type { WorkspaceAIExecution } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 

@@ -1,5 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceApiKeyUsageLog } from '@tuturuuu/types/db';
+import type { WorkspaceApiKeyUsageLog } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import * as z from 'zod';
 

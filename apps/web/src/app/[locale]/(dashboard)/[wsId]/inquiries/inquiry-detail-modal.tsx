@@ -9,7 +9,7 @@ import {
   ZoomInIcon,
 } from '@tuturuuu/icons';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
-import type { Product, SupportType } from '@tuturuuu/types/db';
+import type { Product, SupportType } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

@@ -11,7 +11,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { Tables } from '@tuturuuu/types/supabase';
+import type { Tables } from '@tuturuuu/types';
 import {
   Card,
   CardContent,

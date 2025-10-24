@@ -7,7 +7,7 @@ import {
 } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Loader2 } from '@tuturuuu/icons';
-import type { AIWhitelistDomain } from '@tuturuuu/types/db';
+import type { AIWhitelistDomain } from '@tuturuuu/types';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Switch } from '@tuturuuu/ui/switch';
 import moment from 'moment';

@@ -1,7 +1,7 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import type { WorkspaceFlashcard } from '@tuturuuu/types/db';
+import type { WorkspaceFlashcard } from '@tuturuuu/types';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { WorkspaceFlashcardRowActions } from './row-actions';

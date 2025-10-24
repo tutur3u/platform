@@ -1,6 +1,6 @@
 'use client';
 
-import type { WorkspaceApiKey } from '@tuturuuu/types/db';
+import type { WorkspaceApiKey } from '@tuturuuu/types';
 import {
   Dialog,
   DialogContent,

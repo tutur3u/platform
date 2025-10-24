@@ -9,7 +9,7 @@ import type {
   NovaSession,
   NovaSubmissionCriteria,
   NovaSubmissionWithScoresAndCriteria,
-} from '@tuturuuu/types/db';
+} from '@tuturuuu/types';
 
 // Helper interfaces for return types
 interface SessionDetails {
