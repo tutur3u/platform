@@ -660,9 +660,9 @@
     },
     "packages/sdk": {
       "name": "tuturuuu",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "dependencies": {
-        "@tuturuuu/types": "0.2.1",
+        "@tuturuuu/types": "0.2.2",
         "zod": "^4.1.12",
       },
       "devDependencies": {
@@ -4038,8 +4038,6 @@
     "tldraw/@tiptap/react": ["@tiptap/react@2.26.4", "", { "dependencies": { "@tiptap/extension-bubble-menu": "^2.26.4", "@tiptap/extension-floating-menu": "^2.26.4", "@types/use-sync-external-store": "^0.0.6", "fast-deep-equal": "^3", "use-sync-external-store": "^1" }, "peerDependencies": { "@tiptap/core": "^2.7.0", "@tiptap/pm": "^2.7.0", "react": "^17.0.0 || ^18.0.0 || ^19.0.0", "react-dom": "^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-U7dDiUtJArOF9Ahzt3m0zm8CQRqamjvLYGtsedadfBYrd3GB72ByJ2q2PJ8u2KE2dFN1R4aGMYZq8GqX2p2XgA=="],
 
     "tldraw/@tiptap/starter-kit": ["@tiptap/starter-kit@2.26.4", "", { "dependencies": { "@tiptap/core": "^2.26.4", "@tiptap/extension-blockquote": "^2.26.4", "@tiptap/extension-bold": "^2.26.4", "@tiptap/extension-bullet-list": "^2.26.4", "@tiptap/extension-code": "^2.26.4", "@tiptap/extension-code-block": "^2.26.4", "@tiptap/extension-document": "^2.26.4", "@tiptap/extension-dropcursor": "^2.26.4", "@tiptap/extension-gapcursor": "^2.26.4", "@tiptap/extension-hard-break": "^2.26.4", "@tiptap/extension-heading": "^2.26.4", "@tiptap/extension-history": "^2.26.4", "@tiptap/extension-horizontal-rule": "^2.26.4", "@tiptap/extension-italic": "^2.26.4", "@tiptap/extension-list-item": "^2.26.4", "@tiptap/extension-ordered-list": "^2.26.4", "@tiptap/extension-paragraph": "^2.26.4", "@tiptap/extension-strike": "^2.26.4", "@tiptap/extension-text": "^2.26.4", "@tiptap/extension-text-style": "^2.26.4", "@tiptap/pm": "^2.26.4" } }, "sha512-bcoBXGXKOhjBZK7M5cQ1LqYZsFsT7TwbOyM4FA71noptI9BWG10EeNo2i1EkvSEHVM0YKs8Z3HckdEqgL4XOEQ=="],
-
-    "tuturuuu/@tuturuuu/types": ["@tuturuuu/types@0.2.1", "", { "dependencies": { "@tiptap/react": "^3.7.2", "react": "^19.2.0", "react-dom": "^19.2.0", "zod": "^4.1.12" } }, "sha512-vZVR1/hap5du+VpqD6YvRiOPpRXFgnwPDjuJoOV7oAdB3FDAoBIhW2S0qDs7JmtSWxrnnI2uppnKp4oHRQ33ew=="],
 
     "web-resource-inliner/htmlparser2": ["htmlparser2@5.0.1", "", { "dependencies": { "domelementtype": "^2.0.1", "domhandler": "^3.3.0", "domutils": "^2.4.2", "entities": "^2.0.0" } }, "sha512-vKZZra6CSe9qsJzh0BjBGXo8dvzNsq/oGvsjfRdOrrryfeD9UOBEEQdeoqCRmKZchF5h2zOBMQ6YuQ0uRUmdbQ=="],
 
