@@ -1,7 +1,7 @@
 'use client';
 
 import { Clock, Filter, Search } from '@tuturuuu/icons';
-import type { NovaExtendedChallenge } from '@tuturuuu/types/db';
+import type { NovaExtendedChallenge } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';

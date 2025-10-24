@@ -12,7 +12,7 @@ import {
   TrendingUp,
   Zap,
 } from '@tuturuuu/icons';
-import type { WorkspaceAIExecution } from '@tuturuuu/types/db';
+import type { WorkspaceAIExecution } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Card,

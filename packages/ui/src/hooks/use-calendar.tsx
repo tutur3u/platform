@@ -1,8 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type {
-  Workspace,
-  WorkspaceCalendarGoogleToken,
-} from '@tuturuuu/types/db';
+import type { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import {
@@ -11,8 +8,6 @@ import {
 } from '@tuturuuu/utils/calendar-utils';
 import dayjs from 'dayjs';
 import moment from 'moment';
-import { toast } from '../components/ui/sonner';
-import { useCalendarSync } from './use-calendar-sync';
 import 'moment/locale/vi';
 import {
   createContext,
@@ -24,6 +19,8 @@ import {
   useRef,
   useState,
 } from 'react';
+import { toast } from '../components/ui/sonner';
+import { useCalendarSync } from './use-calendar-sync';
 
 // Utility function to round time to nearest 15-minute interval
 const roundToNearest15Minutes = (date: Date): Date => {

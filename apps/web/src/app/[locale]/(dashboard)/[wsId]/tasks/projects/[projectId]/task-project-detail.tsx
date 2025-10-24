@@ -17,11 +17,14 @@ import {
   User,
   X,
 } from '@tuturuuu/icons';
-import type { TaskProjectWithRelations, Workspace } from '@tuturuuu/types/db';
+import type {
+  Database,
+  TaskProjectWithRelations,
+  Workspace,
+} from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import type { Database } from '@tuturuuu/types/supabase';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

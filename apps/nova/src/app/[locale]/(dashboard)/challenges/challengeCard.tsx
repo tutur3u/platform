@@ -14,7 +14,7 @@ import {
   TimerOff,
   Trash2,
 } from '@tuturuuu/icons';
-import type { NovaExtendedChallenge } from '@tuturuuu/types/db';
+import type { NovaExtendedChallenge } from '@tuturuuu/types';
 import {
   AlertDialog,
   AlertDialogAction,

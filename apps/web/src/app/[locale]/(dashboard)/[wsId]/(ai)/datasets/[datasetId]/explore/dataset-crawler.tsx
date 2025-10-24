@@ -2,7 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { Info, RefreshCw } from '@tuturuuu/icons';
-import type { WorkspaceDataset } from '@tuturuuu/types/db';
+import type { WorkspaceDataset } from '@tuturuuu/types';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import {

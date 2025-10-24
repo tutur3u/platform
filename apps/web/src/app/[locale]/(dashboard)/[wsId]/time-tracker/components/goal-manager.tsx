@@ -16,7 +16,7 @@ import {
   Trash2,
   TrendingUp,
 } from '@tuturuuu/icons';
-import type { TimeTrackingCategory } from '@tuturuuu/types/db';
+import type { TimeTrackingCategory } from '@tuturuuu/types';
 import {
   AlertDialog,
   AlertDialogAction,

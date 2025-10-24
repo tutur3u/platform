@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertTriangle, Trash2 } from '@tuturuuu/icons';
-import type { WorkspaceDataset } from '@tuturuuu/types/db';
+import type { WorkspaceDataset } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,

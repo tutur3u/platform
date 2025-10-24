@@ -1,12 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MailDisplay } from '../app/[locale]/(dashboard)/[wsId]/mail/_components/mail-display';
 import '@testing-library/jest-dom/vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import type { InternalEmail } from '@tuturuuu/types/db';
+import type { InternalEmail } from '@tuturuuu/types';
 import DOMPurify from 'dompurify';
 import type React from 'react';
 import sanitizeHtml from 'sanitize-html';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MailDisplay } from '../app/[locale]/(dashboard)/[wsId]/mail/_components/mail-display';
 
 // Move useQueryMock and vi.mock to the very top of the file, before all imports
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -11,7 +11,7 @@ import {
   Trash2,
   Users,
 } from '@tuturuuu/icons';
-import type { RecordingStatus } from '@tuturuuu/types/db';
+import type { RecordingStatus } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {

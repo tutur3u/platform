@@ -3,7 +3,7 @@
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import type { WorkspaceCourseModule } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {

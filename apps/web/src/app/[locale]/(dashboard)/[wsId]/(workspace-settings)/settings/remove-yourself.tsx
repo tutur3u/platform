@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertTriangle, UserMinus } from '@tuturuuu/icons';
-import type { Workspace, WorkspaceUserRole } from '@tuturuuu/types/db';
+import type { Workspace, WorkspaceUserRole } from '@tuturuuu/types';
 import {
   AlertDialog,
   AlertDialogAction,

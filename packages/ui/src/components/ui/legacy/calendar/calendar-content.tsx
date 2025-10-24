@@ -1,7 +1,4 @@
-import type {
-  Workspace,
-  WorkspaceCalendarGoogleToken,
-} from '@tuturuuu/types/db';
+import type { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
@@ -12,8 +9,8 @@ import { CalendarViewWithTrail } from './calendar-view-with-trail';
 import { CreateEventButton } from './create-event-button';
 import { EventModal } from './event-modal';
 import { MonthCalendar } from './month-calendar';
-import { useCalendarSettings } from './settings/settings-context';
 import { SettingsButton } from './settings-button';
+import { useCalendarSettings } from './settings/settings-context';
 import { WeekdayBar } from './weekday-bar';
 
 function getMonthGridDates(date: Date, firstDayOfWeek: number): Date[] {

@@ -1,5 +1,5 @@
 import type { JSONContent } from '@tiptap/core';
-import type { Json } from '@tuturuuu/types/supabase';
+import type { Json } from '@tuturuuu/types';
 
 export const removeAccents = (str: string) =>
   str

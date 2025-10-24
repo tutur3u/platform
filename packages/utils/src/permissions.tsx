@@ -2,8 +2,9 @@ import {
   Archive,
   Banknote,
   Calendar,
-  ChartBar,
+  CalendarCheck,
   CalendarCog,
+  ChartBar,
   CircleCheck,
   CircuitBoard,
   DatabaseZap,
@@ -34,10 +35,9 @@ import {
   UserPlus,
   Users,
   UserX,
-  CalendarCheck,
 } from '@tuturuuu/icons';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import type { PermissionId } from '@tuturuuu/types/db';
+import type { PermissionId } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { ReactNode } from 'react';
 

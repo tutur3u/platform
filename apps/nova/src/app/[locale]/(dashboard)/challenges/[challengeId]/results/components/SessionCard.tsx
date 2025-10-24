@@ -6,7 +6,7 @@ import {
   Target,
   Zap,
 } from '@tuturuuu/icons';
-import type { NovaProblem, NovaSession } from '@tuturuuu/types/db';
+import type { NovaProblem, NovaSession } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Card,

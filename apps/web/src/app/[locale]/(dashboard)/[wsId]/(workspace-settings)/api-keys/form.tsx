@@ -1,4 +1,4 @@
-import type { WorkspaceApiKey } from '@tuturuuu/types/db';
+import type { WorkspaceApiKey } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,

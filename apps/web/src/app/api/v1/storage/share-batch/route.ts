@@ -11,7 +11,7 @@ import {
   withApiAuth,
 } from '@/lib/api-middleware';
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
-import type { SignedUrlData } from '@tuturuuu/types/sdk';
+import type { SignedUrlData } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 

@@ -13,9 +13,8 @@ import {
   UserMinus,
   Users,
 } from '@tuturuuu/icons';
-import type { User, UserPrivateDetails } from '@tuturuuu/types/db';
+import type { Database, User, UserPrivateDetails } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import type { Database } from '@tuturuuu/types/supabase';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -442,7 +441,7 @@ export default function DiscordIntegrationDashboard({
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Integration Status */}
         <Card className="overflow-hidden border-dynamic-green/20 transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-green/20 border-b bg-gradient-to-r from-dynamic-green/5 to-dynamic-blue/5 p-4">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-green/20 border-b bg-linear-to-r from-dynamic-green/5 to-dynamic-blue/5 p-4">
             <CardTitle className="flex items-center gap-2 font-semibold text-base">
               <div className="rounded-lg bg-dynamic-green/10 p-1.5 text-dynamic-green">
                 <CheckCircle className="h-4 w-4" />
@@ -541,7 +540,7 @@ export default function DiscordIntegrationDashboard({
 
         {/* Guild Members */}
         <Card className="overflow-hidden border-dynamic-blue/20 transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-blue/20 border-b bg-gradient-to-r from-dynamic-blue/5 to-dynamic-purple/5 p-4">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-blue/20 border-b bg-linear-to-r from-dynamic-blue/5 to-dynamic-purple/5 p-4">
             <CardTitle className="flex items-center gap-2 font-semibold text-base">
               <div className="rounded-lg bg-dynamic-blue/10 p-1.5 text-dynamic-blue">
                 <Users className="h-4 w-4" />

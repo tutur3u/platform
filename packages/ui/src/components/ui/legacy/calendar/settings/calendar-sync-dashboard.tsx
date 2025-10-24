@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Calendar, Download, RefreshCw } from '@tuturuuu/icons';
-import type { Workspace } from '@tuturuuu/types/db';
+import type { Workspace } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { AnalyticsCharts } from '@tuturuuu/ui/legacy/calendar/settings/analytics-charts';
 import { SummaryCards } from '@tuturuuu/ui/legacy/calendar/settings/summary-cards';

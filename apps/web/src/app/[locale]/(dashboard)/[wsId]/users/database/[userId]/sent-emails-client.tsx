@@ -3,7 +3,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Loader2, Mail } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Database } from '@tuturuuu/types/supabase';
+import type { Database } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,

@@ -8,7 +8,7 @@ import {
   TrendingUp,
   Zap,
 } from '@tuturuuu/icons';
-import type { WorkspaceAIExecution } from '@tuturuuu/types/db';
+import type { WorkspaceAIExecution } from '@tuturuuu/types';
 import {
   Card,
   CardContent,

@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Calendar, Clock, FileText, Mic } from '@tuturuuu/icons';
-import type { RecordingStatus, RecordingTranscript } from '@tuturuuu/types/db';
+import type { RecordingStatus, RecordingTranscript } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { formatDistanceToNow } from 'date-fns';

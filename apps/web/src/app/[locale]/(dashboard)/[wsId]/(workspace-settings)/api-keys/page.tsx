@@ -1,7 +1,7 @@
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { Plus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceApiKey } from '@tuturuuu/types/db';
+import type { WorkspaceApiKey } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Separator } from '@tuturuuu/ui/separator';

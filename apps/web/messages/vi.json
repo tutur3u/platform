@@ -2168,7 +2168,26 @@
       "cancel": "Hủy bỏ",
       "close": "Đóng"
     },
-    "copy_prefix": "Sao chép tiền tố"
+    "copy_prefix": "Sao chép tiền tố",
+    "filters": "Bộ lọc",
+    "clear_filters": "Xóa bộ lọc",
+    "from_date": "Từ ngày",
+    "to_date": "Đến ngày",
+    "all_statuses": "Tất cả trạng thái",
+    "success_2xx": "Thành công (2xx)",
+    "client_error_4xx": "Lỗi client (4xx)",
+    "server_error_5xx": "Lỗi server (5xx)",
+    "redirect_3xx": "Chuyển hướng (3xx)",
+    "request_timeline": "Biểu đồ yêu cầu",
+    "no_data_available": "Không có dữ liệu",
+    "group_by_status": "Nhóm theo trạng thái",
+    "group_by_endpoint": "Nhóm theo điểm cuối",
+    "area_chart": "Biểu đồ khu vực",
+    "bar_chart": "Biểu đồ cột",
+    "active_filters": "đang hoạt động",
+    "detailed_logs": "Nhật ký yêu cầu chi tiết",
+    "filter_by_method": "Lọc theo phương thức",
+    "all_methods": "Tất cả phương thức"
   },
   "api-key-usage-logs-table": {
     "id": "ID nhật ký",

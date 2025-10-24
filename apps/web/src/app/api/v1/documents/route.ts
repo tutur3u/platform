@@ -11,7 +11,7 @@ import {
   withApiAuth,
 } from '@/lib/api-middleware';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { createDocumentDataSchema } from '@tuturuuu/types/sdk';
+import { createDocumentDataSchema } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 

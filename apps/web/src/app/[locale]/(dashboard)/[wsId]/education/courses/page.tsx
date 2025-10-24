@@ -1,5 +1,6 @@
+import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceCourse } from '@tuturuuu/types/db';
+import type { WorkspaceCourse } from '@tuturuuu/types';
 import { CourseCardView } from '@tuturuuu/ui/custom/education/courses/course-card-view';
 import { CourseForm } from '@tuturuuu/ui/custom/education/courses/course-form';
 import { CoursePagination } from '@tuturuuu/ui/custom/education/courses/course-pagination';
@@ -8,7 +9,6 @@ import { ViewToggle } from '@tuturuuu/ui/custom/view-toggle';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { getWorkspaceCourseColumns } from './columns';
 
 export const metadata: Metadata = {

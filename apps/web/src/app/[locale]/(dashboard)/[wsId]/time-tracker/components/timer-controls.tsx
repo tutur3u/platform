@@ -21,7 +21,7 @@ import {
   Tag,
   Timer,
 } from '@tuturuuu/icons';
-import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types/db';
+import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';

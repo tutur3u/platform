@@ -30,7 +30,7 @@ import {
   Trash2,
   TrendingUp,
 } from '@tuturuuu/icons';
-import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types/db';
+import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types';
 import {
   AlertDialog,
   AlertDialogAction,

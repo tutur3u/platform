@@ -8,11 +8,7 @@ import {
   Shield,
   User as UserIcon,
 } from '@tuturuuu/icons';
-import type {
-  PlatformUser,
-  User,
-  UserPrivateDetails,
-} from '@tuturuuu/types/db';
+import type { PlatformUser, User, UserPrivateDetails } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';

@@ -5,7 +5,7 @@ import {
   MapPin as MapPinIcon,
   Sparkles as SparklesIcon,
 } from '@tuturuuu/icons';
-import type { User } from '@tuturuuu/types/db';
+import type { User } from '@tuturuuu/types';
 import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { Button } from '@tuturuuu/ui/button';

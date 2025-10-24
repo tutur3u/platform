@@ -11,7 +11,7 @@ import {
   Sigma,
   Sparkle,
 } from '@tuturuuu/icons';
-import type { AIChat } from '@tuturuuu/types/db';
+import type { AIChat } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
 import { capitalize, cn } from '@tuturuuu/utils/format';

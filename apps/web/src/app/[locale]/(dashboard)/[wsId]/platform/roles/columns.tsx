@@ -14,11 +14,7 @@ import {
   Shield,
   Users,
 } from '@tuturuuu/icons';
-import type {
-  PlatformUser,
-  User,
-  UserPrivateDetails,
-} from '@tuturuuu/types/db';
+import type { PlatformUser, User, UserPrivateDetails } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

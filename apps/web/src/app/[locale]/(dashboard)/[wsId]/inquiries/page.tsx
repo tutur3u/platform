@@ -3,7 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { Product, SupportInquiry, SupportType } from '@tuturuuu/types/db';
+import type { Product, SupportInquiry, SupportType } from '@tuturuuu/types';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import type { Metadata } from 'next';
 import { InquiriesClient } from './inquiries-client';

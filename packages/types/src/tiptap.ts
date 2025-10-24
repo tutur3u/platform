@@ -1,2 +1,1 @@
-import type { JSONContent } from '@tiptap/react';
-export { JSONContent };
+export type { JSONContent } from '@tiptap/react';

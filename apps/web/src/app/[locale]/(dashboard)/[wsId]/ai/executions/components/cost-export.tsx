@@ -1,7 +1,7 @@
 'use client';
 
 import { Download, FileText, Table } from '@tuturuuu/icons';
-import type { WorkspaceAIExecution } from '@tuturuuu/types/db';
+import type { WorkspaceAIExecution } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,

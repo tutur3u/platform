@@ -6,7 +6,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { Plus, RotateCw, Trash, Upload } from '@tuturuuu/icons';
-import type { WorkspaceDataset } from '@tuturuuu/types/db';
+import type { WorkspaceDataset } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,

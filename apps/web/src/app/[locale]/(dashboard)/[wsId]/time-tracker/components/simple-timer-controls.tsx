@@ -2,7 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, Pause, Play, Square, Timer } from '@tuturuuu/icons';
-import type { TimeTrackingCategory } from '@tuturuuu/types/db';
+import type { TimeTrackingCategory } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';

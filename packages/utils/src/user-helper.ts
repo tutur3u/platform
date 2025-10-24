@@ -1,5 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { User, UserPrivateDetails } from '@tuturuuu/types/db';
+import type { User, UserPrivateDetails } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { notFound, redirect } from 'next/navigation';
 

@@ -17,7 +17,7 @@ import {
   PenTool,
   Star,
 } from '@tuturuuu/icons';
-import type { WorkspaceCourse } from '@tuturuuu/types/db';
+import type { WorkspaceCourse } from '@tuturuuu/types';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

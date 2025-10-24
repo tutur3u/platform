@@ -1,9 +1,17 @@
 {
   "name": "@tuturuuu/types",
   "license": "MIT",
-  "version": "0.1.5",
+  "version": "0.2.2",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "README.md"],
   "publishConfig": {
     "access": "public"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "clean": "rm -rf dist .turbo",
+    "prepublishOnly": "bun run clean && bun run build"
   },
   "dependencies": {
     "@tiptap/react": "^3.7.2",
@@ -18,8 +26,26 @@
     "typescript": "^5.9.3"
   },
   "exports": {
-    ".": "./index.ts",
-    "./*": "./src/*.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./sdk": {
+      "types": "./dist/sdk.d.ts",
+      "import": "./dist/sdk.js",
+      "require": "./dist/sdk.js"
+    },
+    "./primitives/*": {
+      "types": "./dist/primitives/*.d.ts",
+      "import": "./dist/primitives/*.js",
+      "require": "./dist/primitives/*.js"
+    },
+    "./tiptap": {
+      "types": "./dist/tiptap.d.ts",
+      "import": "./dist/tiptap.js",
+      "require": "./dist/tiptap.js"
+    }
   },
   "packageManager": "bun@1.3.1"
 }

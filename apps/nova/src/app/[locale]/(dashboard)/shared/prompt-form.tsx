@@ -20,7 +20,7 @@ import type {
   NovaSession,
   NovaSubmissionData,
   NovaSubmissionWithScores,
-} from '@tuturuuu/types/db';
+} from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';

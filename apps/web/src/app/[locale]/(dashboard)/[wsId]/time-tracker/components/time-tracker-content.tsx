@@ -12,7 +12,7 @@ import {
   Tag,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { TimeTrackingCategory } from '@tuturuuu/types/db';
+import type { TimeTrackingCategory } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Button } from '@tuturuuu/ui/button';
 import {

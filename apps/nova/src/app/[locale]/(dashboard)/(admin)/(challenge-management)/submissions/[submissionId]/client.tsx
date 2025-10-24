@@ -8,7 +8,7 @@ import {
   RefreshCw,
   User,
 } from '@tuturuuu/icons';
-import type { NovaSubmissionData } from '@tuturuuu/types/db';
+import type { NovaSubmissionData } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
