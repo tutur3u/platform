@@ -2083,7 +2083,26 @@
       "cancel": "Cancel",
       "close": "Close"
     },
-    "copy_prefix": "Copy Prefix"
+    "copy_prefix": "Copy Prefix",
+    "filters": "Filters",
+    "clear_filters": "Clear filters",
+    "from_date": "From date",
+    "to_date": "To date",
+    "all_statuses": "All statuses",
+    "success_2xx": "Success (2xx)",
+    "client_error_4xx": "Client Error (4xx)",
+    "server_error_5xx": "Server Error (5xx)",
+    "redirect_3xx": "Redirect (3xx)",
+    "request_timeline": "Request Timeline",
+    "no_data_available": "No data available",
+    "group_by_status": "Group by Status",
+    "group_by_endpoint": "Group by Endpoint",
+    "area_chart": "Area Chart",
+    "bar_chart": "Bar Chart",
+    "active_filters": "active",
+    "detailed_logs": "Detailed Request Logs",
+    "filter_by_method": "Filter by method",
+    "all_methods": "All methods"
   },
   "api-key-usage-logs-table": {
     "id": "Log ID",
