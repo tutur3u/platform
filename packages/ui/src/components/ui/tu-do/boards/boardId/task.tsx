@@ -205,7 +205,7 @@ function TaskCardInner({
   });
 
   // Fetch available task lists using React Query (same key as other components)
-  const { data: queryAvailableLists = [] } = useQuery({
+  const { data: availableLists = [] } = useQuery({
     queryKey: ['task_lists', boardId],
     queryFn: async () => {
       const supabase = createClient();
@@ -221,10 +221,8 @@ function TaskCardInner({
       return data as TaskList[];
     },
     enabled: !propAvailableLists, // Only fetch if not provided as prop
+    initialData: propAvailableLists,
   });
-
-  // Use prop if provided, otherwise use React Query data
-  const availableLists = propAvailableLists || queryAvailableLists;
 
   // Find the first list with 'done' or 'closed' status
   const getTargetCompletionList = () => {

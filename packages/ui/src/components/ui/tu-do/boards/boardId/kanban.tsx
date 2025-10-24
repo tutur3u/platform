@@ -129,6 +129,7 @@ export function KanbanBoard({
   const [bulkWorking, setBulkWorking] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const pickedUpTaskColumn = useRef<string | null>(null);
+  const selectedColumnId = useRef<string | null>(null);
   const firstSelectedTaskId = useRef<string | null>(null);
 
   const queryClient = useQueryClient();
@@ -217,94 +218,61 @@ export function KanbanBoard({
           });
 
           firstSelectedTaskId.current = taskId;
+
+          const firstSelectedTask = tasks.find((t) => t.id === taskId);
+          if (firstSelectedTask) {
+            selectedColumnId.current = firstSelectedTask.list_id;
+          } else {
+            selectedColumnId.current = null;
+          }
         } else if (isShiftPressed) {
           // Range selection - select all tasks between first and current selection
           if (firstSelectedTaskId.current) {
-            // Get all tasks in visual order (sorted by columns, then by position within each column)
-            const sortedColumns = columns.sort((a, b) => {
-              const statusOrder = {
-                not_started: 0,
-                active: 1,
-                done: 2,
-                closed: 3,
-              };
-              const statusA =
-                statusOrder[a.status as keyof typeof statusOrder] ?? 999;
-              const statusB =
-                statusOrder[b.status as keyof typeof statusOrder] ?? 999;
-              if (statusA !== statusB) return statusA - statusB;
-              return a.position - b.position;
-            });
+            const secondSelectedTask = tasks.find((t) => t.id === taskId);
+            if (
+              secondSelectedTask &&
+              selectedColumnId.current === secondSelectedTask?.list_id
+            ) {
+              const columnTasks = tasks.filter(
+                (t) => t.list_id === selectedColumnId.current
+              );
+              const firstTaskIndex = columnTasks.findIndex(
+                (t) => t.id === firstSelectedTaskId.current
+              );
+              const secondTaskIndex = columnTasks.findIndex(
+                (t) => t.id === taskId
+              );
 
-            // Build flat list of all tasks in visual order (left-to-right columns, top-to-bottom within columns)
-            const allTasksInOrder: Task[] = [];
-            for (const column of sortedColumns) {
-              let columnTasks = tasks.filter((t) => t.list_id === column.id);
+              const minTaskIndex = Math.min(firstTaskIndex, secondTaskIndex);
+              const maxTaskIndex = Math.max(firstTaskIndex, secondTaskIndex);
+              const tasksToSelect = columnTasks.slice(
+                minTaskIndex,
+                maxTaskIndex + 1
+              );
 
-              // Sort tasks within column using same logic as render
-              columnTasks = columnTasks.sort((a, b) => {
-                if (column.status === 'done') {
-                  const completionA = a.completed_at
-                    ? new Date(a.completed_at).getTime()
-                    : 0;
-                  const completionB = b.completed_at
-                    ? new Date(b.completed_at).getTime()
-                    : 0;
-                  return completionB - completionA;
-                }
-
-                if (column.status === 'closed') {
-                  const closedA = a.closed_at
-                    ? new Date(a.closed_at).getTime()
-                    : 0;
-                  const closedB = b.closed_at
-                    ? new Date(b.closed_at).getTime()
-                    : 0;
-                  return closedB - closedA;
-                }
-
-                if (!disableSort) {
-                  const sortA = a.sort_key ?? MAX_SAFE_INTEGER_SORT;
-                  const sortB = b.sort_key ?? MAX_SAFE_INTEGER_SORT;
-                  if (sortA !== sortB) return sortA - sortB;
-                  if (!a.created_at || !b.created_at) return 0;
-                  return (
-                    new Date(a.created_at).getTime() -
-                    new Date(b.created_at).getTime()
-                  );
-                }
-
-                return 0;
-              });
-
-              allTasksInOrder.push(...columnTasks);
-            }
-
-            // Find indices of first and current task
-            const firstIndex = allTasksInOrder.findIndex(
-              (t) => t.id === firstSelectedTaskId.current
-            );
-            const currentIndex = allTasksInOrder.findIndex(
-              (t) => t.id === taskId
-            );
-
-            if (firstIndex !== -1 && currentIndex !== -1) {
-              // Select all tasks in the range (inclusive)
-              const startIndex = Math.min(firstIndex, currentIndex);
-              const endIndex = Math.max(firstIndex, currentIndex);
-              const tasksInRange = allTasksInOrder
-                .slice(startIndex, endIndex + 1)
-                .map((t) => t.id);
-
-              setSelectedTasks(new Set(tasksInRange));
+              const newSelectedTasks = new Set(tasksToSelect.map((t) => t.id));
+              setSelectedTasks(new Set(newSelectedTasks));
             } else {
-              // Fallback: just add current task if indices not found
-              setSelectedTasks((prev) => new Set([...prev, taskId]));
+              setSelectedTasks(new Set([taskId]));
+              firstSelectedTaskId.current = taskId;
+
+              const firstSelectedTask = tasks.find((t) => t.id === taskId);
+              if (firstSelectedTask) {
+                selectedColumnId.current = firstSelectedTask.list_id;
+              } else {
+                selectedColumnId.current = null;
+              }
             }
           } else {
-            // No first selection yet, start a new range
-            firstSelectedTaskId.current = taskId;
             setSelectedTasks(new Set([taskId]));
+            firstSelectedTaskId.current = taskId;
+
+            const firstSelectedTask = tasks.find((t) => t.id === taskId);
+            if (firstSelectedTask) {
+              selectedColumnId.current = firstSelectedTask.list_id;
+            } else {
+              selectedColumnId.current = null;
+            }
           }
         }
       } else {
@@ -313,12 +281,13 @@ export function KanbanBoard({
         setIsMultiSelectMode(false);
       }
     },
-    [columns, disableSort, tasks]
+    [tasks]
   );
 
   const clearSelection = useCallback(() => {
     setSelectedTasks(new Set());
     setIsMultiSelectMode(false);
+    firstSelectedTaskId.current = null;
   }, []);
 
   // Cross-board move handler
