@@ -27,8 +27,8 @@ export interface TaskBoardStatusDefinition {
 export interface TaskBoard {
   id: string;
   name: string;
-  archived: boolean;
-  deleted: boolean;
+  archived_at: string | null;
+  deleted_at: string | null;
   estimation_type: 'exponential' | 'fibonacci' | 'linear' | 't-shirt' | null;
   extended_estimation: boolean;
   allow_zero_estimates: boolean;

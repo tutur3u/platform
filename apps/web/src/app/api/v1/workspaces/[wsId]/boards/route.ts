@@ -49,7 +49,7 @@ export async function GET(
       );
     }
 
-    // Fetch boards with their lists
+    // Fetch boards with their lists (exclude soft-deleted boards)
     const { data, error } = await supabase
       .from('workspace_boards')
       .select(
@@ -67,7 +67,7 @@ export async function GET(
       `
       )
       .eq('ws_id', wsId)
-      .eq('deleted', false)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
     if (error) {

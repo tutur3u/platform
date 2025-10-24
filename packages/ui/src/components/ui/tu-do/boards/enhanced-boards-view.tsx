@@ -17,6 +17,7 @@ import {
   Settings2,
   SortAsc,
   Target,
+  Trash2,
   TrendingUp,
   X,
 } from '@tuturuuu/icons';
@@ -78,7 +79,7 @@ interface EnhancedBoardsViewProps {
 
 // Define types for better type safety
 type TaskStatus = 'not_started' | 'active' | 'done' | 'closed';
-type FilterType = 'all' | 'completed' | 'overdue' | 'urgent';
+type FilterType = 'all' | 'completed' | 'overdue' | 'urgent' | 'recently_deleted';
 
 interface TaskModalState {
   isOpen: boolean;
@@ -98,6 +99,9 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showColumnSettings, setShowColumnSettings] = useState(false);
+  const [boardStatusFilter, setBoardStatusFilter] = useState<
+    'all' | 'active' | 'archived' | 'recently_deleted'
+  >('active');
 
   // Column visibility state
   const [columnVisibility, setColumnVisibility] = useState({
@@ -386,11 +390,69 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     // - Save/restore user preferences
   }, []);
 
+  // Calculate days remaining for soft-deleted boards (30-day retention)
+  const calculateDaysRemaining = useCallback((deletedAt: string | null) => {
+    if (!deletedAt) return null;
+    
+    const deletedDate = new Date(deletedAt);
+    const now = new Date();
+    const daysPassed = Math.floor(
+      (now.getTime() - deletedDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const daysRemaining = 30 - daysPassed;
+    
+    return Math.max(0, daysRemaining);
+  }, []);
+
+  // Soft delete a board
+  const handleSoftDeleteBoard = useCallback(
+    async (boardId: string, wsId: string) => {
+      try {
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/boards/${boardId}/trash`,
+          {
+            method: 'POST',
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to delete board');
+        }
+
+        // Refresh the page to show updated data
+        router.refresh();
+      } catch (error) {
+        console.error('Error deleting board:', error);
+        // TODO: Show toast notification for error
+      }
+    },
+    [router]
+  );
+
   // Apply filters to data and check if filters are active
   const { filteredData, hasActiveFilters } = useMemo(() => {
     const hasFilters =
-      searchQuery.trim() !== '' || taskModal.filterType !== 'all';
+      searchQuery.trim() !== '' ||
+      taskModal.filterType !== 'all' ||
+      boardStatusFilter !== 'all';
     let filtered = [...safeData];
+
+    // Board status filter
+    if (boardStatusFilter !== 'all') {
+      filtered = filtered.filter((board) => {
+        switch (boardStatusFilter) {
+          case 'active':
+            return !board.deleted_at && !board.archived_at;
+          case 'archived':
+            return board.archived_at && !board.deleted_at;
+          case 'recently_deleted':
+            return !!board.deleted_at;
+          default:
+            return true;
+        }
+      });
+    }
+    // When 'all' is selected, show all boards (no filtering by status)
 
     // Search filter
     if (searchQuery.trim()) {
@@ -440,7 +502,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     });
 
     return { filteredData: filtered, hasActiveFilters: hasFilters };
-  }, [safeData, searchQuery, sortBy, sortOrder, taskModal]);
+  }, [safeData, searchQuery, sortBy, sortOrder, taskModal, boardStatusFilter]);
 
   return (
     <>
@@ -595,18 +657,22 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   Status
                 </label>
                 <select
-                  value={taskModal.filterType || 'all'}
+                  value={boardStatusFilter}
                   onChange={(e) =>
-                    setTaskModal({
-                      ...taskModal,
-                      filterType: e.target.value as FilterType,
-                    })
+                    setBoardStatusFilter(
+                      e.target.value as
+                        | 'all'
+                        | 'active'
+                        | 'archived'
+                        | 'recently_deleted'
+                    )
                   }
                   className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
                 >
                   <option value="all">All Boards</option>
                   <option value="active">Active</option>
                   <option value="archived">Archived</option>
+                  <option value="recently_deleted">Recently Deleted</option>
                 </select>
               </div>
               <div className="w-32">
@@ -631,6 +697,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   setSearchQuery('');
                   setSortBy('name');
                   setSortOrder('asc');
+                  setBoardStatusFilter('all');
                   setTaskModal({ ...taskModal, filterType: 'all' });
                 }}
                 className="mt-6"
@@ -876,9 +943,14 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          {board.archived && (
+                          {board.archived_at && (
                             <span className="inline-flex items-center rounded-full bg-muted px-2 py-1 font-medium text-muted-foreground text-xs">
                               Archived
+                            </span>
+                          )}
+                          {board.deleted_at && (
+                            <span className="inline-flex items-center rounded-full bg-destructive/10 px-2 py-1 font-medium text-destructive text-xs">
+                              {calculateDaysRemaining(board.deleted_at)} days left
                             </span>
                           )}
                           <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
@@ -894,6 +966,20 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                             >
                               <Copy className="h-4 w-4" />
                             </Button>
+                            {!board.deleted_at && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSoftDeleteBoard(board.id, board.ws_id);
+                                }}
+                                title="Delete board"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="sm"
@@ -1449,12 +1535,12 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       <span className="text-muted-foreground">Status</span>
                       <span
                         className={
-                          selectedBoardData?.archived
+                          selectedBoardData?.archived_at
                             ? 'text-muted-foreground'
                             : 'text-green-600'
                         }
                       >
-                        {selectedBoardData?.archived ? 'Archived' : 'Active'}
+                        {selectedBoardData?.archived_at ? 'Archived' : 'Active'}
                       </span>
                     </div>
                   </div>
