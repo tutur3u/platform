@@ -917,7 +917,44 @@
     "invited-to": "Bạn đã được mời tham gia",
     "unresolved-inquiries": "Yêu cầu chưa xử lý",
     "inquiries-need-attention": "yêu cầu cần xử lý",
-    "view-inquiries": "Xem yêu cầu"
+    "view-inquiries": "Xem yêu cầu",
+    "mark-as-read": "Đánh dấu đã đọc",
+    "mark-as-unread": "Đánh dấu chưa đọc",
+    "mark-all-read": "Đánh dấu tất cả đã đọc",
+    "delete": "Xóa",
+    "unread-count": "{{count}} chưa đọc",
+    "task-assigned": "Nhiệm vụ được giao",
+    "task-updated": "Nhiệm vụ đã cập nhật",
+    "task-mention": "Bạn được nhắc đến",
+    "types": {
+      "task_assigned": "Nhiệm vụ được giao",
+      "task_updated": "Nhiệm vụ cập nhật",
+      "task_mention": "Được nhắc đến",
+      "workspace_invite": "Lời mời không gian làm việc"
+    },
+    "settings": {
+      "title": "Cài đặt thông báo",
+      "description": "Cấu hình cách bạn nhận thông báo cho các sự kiện khác nhau",
+      "channels": {
+        "web": "Web",
+        "email": "Email",
+        "sms": "SMS",
+        "push": "Đẩy"
+      },
+      "events": {
+        "task_assigned": "Giao nhiệm vụ",
+        "task_updated": "Cập nhật nhiệm vụ",
+        "task_mention": "Khi bạn được nhắc đến",
+        "workspace_invite": "Lời mời không gian làm việc"
+      },
+      "save": "Lưu tùy chọn",
+      "saved": "Đã lưu tùy chọn thành công"
+    },
+    "browser": {
+      "permission-denied": "Thông báo trình duyệt đã bị chặn. Vui lòng bật trong cài đặt trình duyệt.",
+      "permission-request": "Bật thông báo trình duyệt để cập nhật",
+      "enable": "Bật thông báo"
+    }
   },
   "search": {
     "search": "Tìm kiếm",

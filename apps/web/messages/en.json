@@ -825,7 +825,44 @@
     "invited-to": "You have been invited to",
     "unresolved-inquiries": "Unresolved Inquiries",
     "inquiries-need-attention": "inquiries need attention",
-    "view-inquiries": "View Inquiries"
+    "view-inquiries": "View Inquiries",
+    "mark-as-read": "Mark as read",
+    "mark-as-unread": "Mark as unread",
+    "mark-all-read": "Mark all as read",
+    "delete": "Delete",
+    "unread-count": "{{count}} unread",
+    "task-assigned": "Task assigned",
+    "task-updated": "Task updated",
+    "task-mention": "You were mentioned",
+    "types": {
+      "task_assigned": "Task Assigned",
+      "task_updated": "Task Updated",
+      "task_mention": "Mentioned",
+      "workspace_invite": "Workspace Invite"
+    },
+    "settings": {
+      "title": "Notification Settings",
+      "description": "Configure how you receive notifications for different events",
+      "channels": {
+        "web": "Web",
+        "email": "Email",
+        "sms": "SMS",
+        "push": "Push"
+      },
+      "events": {
+        "task_assigned": "Task assignments",
+        "task_updated": "Task updates",
+        "task_mention": "When you're mentioned",
+        "workspace_invite": "Workspace invitations"
+      },
+      "save": "Save preferences",
+      "saved": "Preferences saved successfully"
+    },
+    "browser": {
+      "permission-denied": "Browser notifications are blocked. Please enable them in your browser settings.",
+      "permission-request": "Enable browser notifications to stay updated",
+      "enable": "Enable notifications"
+    }
   },
   "search": {
     "search": "Search",

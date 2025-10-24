@@ -4,6 +4,7 @@ import {
   Activity,
   Archive,
   Banknote,
+  Bell,
   Blocks,
   Bolt,
   BookKey,
@@ -247,6 +248,13 @@ export async function WorkspaceNavigationLinks({
       experimental: 'beta',
       requireRootMember: true,
       requireRootWorkspace: true,
+    },
+    {
+      title: t('sidebar_tabs.notifications'),
+      href: `/${personalOrWsId}/notifications`,
+      aliases: [`/${personalOrWsId}/notifications`],
+      icon: <Bell className="h-5 w-5" />,
+      experimental: 'beta',
     },
     {
       title: t('sidebar_tabs.drive'),

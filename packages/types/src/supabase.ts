@@ -251,6 +251,20 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_notification: {
+        Args: {
+          p_created_by?: string;
+          p_data?: Json;
+          p_description?: string;
+          p_entity_id?: string;
+          p_entity_type?: string;
+          p_title: string;
+          p_type: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
       extract_domain: {
         Args: {
           url: string;
@@ -633,6 +647,15 @@ export type Database = {
           os: string;
         }[];
       };
+      get_or_create_notification_batch: {
+        Args: {
+          p_channel: string;
+          p_user_id: string;
+          p_window_minutes?: number;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
       get_pending_event_participants: {
         Args: {
           _event_id: string;
@@ -744,6 +767,27 @@ export type Database = {
           total_count: number;
           unique_users_count: number;
         }[];
+      };
+      get_task_details: {
+        Args: {
+          p_task_id: string;
+        };
+        Returns: {
+          board_id: string;
+          board_name: string;
+          creator_id: string;
+          list_id: string;
+          list_name: string;
+          task_id: string;
+          task_name: string;
+          ws_id: string;
+        }[];
+      };
+      get_task_workspace_id: {
+        Args: {
+          p_task_id: string;
+        };
+        Returns: string;
       };
       get_time_tracking_sessions_paginated: {
         Args: {
@@ -1289,6 +1333,15 @@ export type Database = {
           id: string;
           relevance: number;
         }[];
+      };
+      should_send_notification: {
+        Args: {
+          p_channel: string;
+          p_event_type: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: boolean;
       };
       show_limit: {
         Args: never;
@@ -4874,6 +4927,221 @@ export type Database = {
           deleted?: boolean | null;
           id?: string;
           updated_at?: null | string;
+          ws_id?: string;
+        };
+      };
+      notification_batches: {
+        Insert: {
+          channel: string;
+          created_at?: string;
+          error_message?: null | string;
+          id?: string;
+          notification_count?: number;
+          sent_at?: null | string;
+          status?: string;
+          updated_at?: string;
+          user_id: string;
+          window_end: string;
+          window_start: string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'notification_batches_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'notification_batches_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          channel: string;
+          created_at: string;
+          error_message: null | string;
+          id: string;
+          notification_count: number;
+          sent_at: null | string;
+          status: string;
+          updated_at: string;
+          user_id: string;
+          window_end: string;
+          window_start: string;
+          ws_id: string;
+        };
+        Update: {
+          channel?: string;
+          created_at?: string;
+          error_message?: null | string;
+          id?: string;
+          notification_count?: number;
+          sent_at?: null | string;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+          window_end?: string;
+          window_start?: string;
+          ws_id?: string;
+        };
+      };
+      notification_delivery_log: {
+        Insert: {
+          batch_id?: null | string;
+          channel: string;
+          created_at?: string;
+          error_message?: null | string;
+          id?: string;
+          notification_id: string;
+          retry_count?: number;
+          sent_at?: null | string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            columns: ['notification_id'];
+            foreignKeyName: 'notification_delivery_log_notification_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'notifications';
+          },
+        ];
+        Row: {
+          batch_id: null | string;
+          channel: string;
+          created_at: string;
+          error_message: null | string;
+          id: string;
+          notification_id: string;
+          retry_count: number;
+          sent_at: null | string;
+          status: string;
+          updated_at: string;
+        };
+        Update: {
+          batch_id?: null | string;
+          channel?: string;
+          created_at?: string;
+          error_message?: null | string;
+          id?: string;
+          notification_id?: string;
+          retry_count?: number;
+          sent_at?: null | string;
+          status?: string;
+          updated_at?: string;
+        };
+      };
+      notification_preferences: {
+        Insert: {
+          channel: string;
+          created_at?: string;
+          enabled?: boolean;
+          event_type: string;
+          id?: string;
+          updated_at?: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'notification_preferences_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'notification_preferences_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          channel: string;
+          created_at: string;
+          enabled: boolean;
+          event_type: string;
+          id: string;
+          updated_at: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          channel?: string;
+          created_at?: string;
+          enabled?: boolean;
+          event_type?: string;
+          id?: string;
+          updated_at?: string;
+          user_id?: string;
+          ws_id?: string;
+        };
+      };
+      notifications: {
+        Insert: {
+          created_at?: string;
+          created_by?: null | string;
+          data?: Json | null;
+          description?: null | string;
+          entity_id?: null | string;
+          entity_type?: null | string;
+          id?: string;
+          read_at?: null | string;
+          title: string;
+          type: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'notifications_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'notifications_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          created_at: string;
+          created_by: null | string;
+          data: Json | null;
+          description: null | string;
+          entity_id: null | string;
+          entity_type: null | string;
+          id: string;
+          read_at: null | string;
+          title: string;
+          type: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: null | string;
+          data?: Json | null;
+          description?: null | string;
+          entity_id?: null | string;
+          entity_type?: null | string;
+          id?: string;
+          read_at?: null | string;
+          title?: string;
+          type?: string;
+          user_id?: string;
           ws_id?: string;
         };
       };
