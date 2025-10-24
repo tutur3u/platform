@@ -50,7 +50,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@tuturuuu/types": "^0.2.0",
+    "@tuturuuu/types": "workspace:*",
     "zod": "^4.1.12"
   },
   "devDependencies": {
