@@ -231,7 +231,7 @@ export function KanbanBoard({
             const secondSelectedTask = tasks.find((t) => t.id === taskId);
             if (
               secondSelectedTask &&
-              selectedColumnId.current === secondSelectedTask?.list_id
+              secondSelectedTask.list_id === selectedColumnId.current
             ) {
               const columnTasks = tasks.filter(
                 (t) => t.list_id === selectedColumnId.current
@@ -288,6 +288,7 @@ export function KanbanBoard({
     setSelectedTasks(new Set());
     setIsMultiSelectMode(false);
     firstSelectedTaskId.current = null;
+    selectedColumnId.current = null;
   }, []);
 
   // Cross-board move handler
