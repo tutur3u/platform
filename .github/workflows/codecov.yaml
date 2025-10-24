@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Build workspace dependencies
+        run: bunx turbo run build --filter='@tuturuuu/types'
+
       - name: Run tests
         run: bun vitest run --coverage
 

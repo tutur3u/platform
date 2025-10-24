@@ -1,7 +1,7 @@
 'use client';
 
 import type { WorkspaceCourse } from '@tuturuuu/types';
-import { Constants } from '@tuturuuu/types/supabase';
+import { Constants } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import {
@@ -83,7 +83,7 @@ export function CourseForm({
 
   useEffect(() => {
     setImageError(false);
-  }, [certTemplate, locale]);
+  }, []);
 
   const isDirty = form.formState.isDirty;
   const isValid = form.formState.isValid;
