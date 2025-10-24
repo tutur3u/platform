@@ -660,10 +660,9 @@
     },
     "packages/sdk": {
       "name": "tuturuuu",
-      "version": "0.0.5",
+      "version": "0.1.0",
       "dependencies": {
-        "@tuturuuu/supabase": "workspace:*",
-        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/types": "^0.2.0",
         "zod": "^4.1.12",
       },
       "devDependencies": {
@@ -725,7 +724,7 @@
     },
     "packages/types": {
       "name": "@tuturuuu/types",
-      "version": "0.1.5",
+      "version": "0.2.0",
       "dependencies": {
         "@tiptap/react": "^3.7.2",
         "react": "^19.2.0",
@@ -3898,6 +3897,8 @@
 
     "@trigger.dev/sdk/uuid": ["uuid@9.0.1", "", { "bin": { "uuid": "dist/bin/uuid" } }, "sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA=="],
 
+    "@tuturuuu/external/tuturuuu": ["tuturuuu@0.0.5", "", { "dependencies": { "@tuturuuu/supabase": "0.1.1", "@tuturuuu/types": "0.1.5", "zod": "^4.1.12" } }, "sha512-PWV1D0/NqsPuZJYZsLF1drZAob6pnwB6DScY+BGxELWQ2MLNScwt678Gw9Ixcx3U7x/cJ7/VPnU31w3PW3O6iA=="],
+
     "accepts/mime-types": ["mime-types@2.1.35", "", { "dependencies": { "mime-db": "1.52.0" } }, "sha512-ZDY+bPm5zTTF+YpCrAU9nK0UgICYPT0QtT1NZWFv4s++TNkcgVaT0g6+4R2uI4MjQjzysHB1zxuWL50hzaeXiw=="],
 
     "accepts/negotiator": ["negotiator@0.6.3", "", {}, "sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg=="],
@@ -4097,6 +4098,8 @@
     "@trigger.dev/core/socket.io/debug": ["debug@4.3.7", "", { "dependencies": { "ms": "^2.1.3" } }, "sha512-Er2nc/H7RrMXZBFCEim6TCmMk02Z8vLC2Rbi1KEBggpo0fS6l0S1nnapwmIi3yW/+GOJap1Krg4w0Hg80oCqgQ=="],
 
     "@trigger.dev/core/socket.io/engine.io": ["engine.io@6.5.5", "", { "dependencies": { "@types/cookie": "^0.4.1", "@types/cors": "^2.8.12", "@types/node": ">=10.0.0", "accepts": "~1.3.4", "base64id": "2.0.0", "cookie": "~0.4.1", "cors": "~2.8.5", "debug": "~4.3.1", "engine.io-parser": "~5.2.1", "ws": "~8.17.1" } }, "sha512-C5Pn8Wk+1vKBoHghJODM63yk8MvrO9EWZUfkAt5HAqIgPE4/8FF0PEGHXtEd40l223+cE5ABWuPzm38PHFXfMA=="],
+
+    "@tuturuuu/external/tuturuuu/@tuturuuu/types": ["@tuturuuu/types@0.1.5", "", { "dependencies": { "@tiptap/react": "^3.6.6", "react": "^19.2.0", "react-dom": "^19.2.0", "zod": "^4.1.12" } }, "sha512-bH/3clJt8hS3as//5kiU8S0Vh2Yz18eI/WTjOgdPeIPjOcIxUAjVCDDPOuaqQeckoEiuXjiJv0IveEkWuzn51Q=="],
 
     "accepts/mime-types/mime-db": ["mime-db@1.52.0", "", {}, "sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg=="],
 
