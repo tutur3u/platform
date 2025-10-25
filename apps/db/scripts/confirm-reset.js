@@ -13,10 +13,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const PROJECT_REF_PATH = resolve(
-  __dirname,
-  '../supabase/.temp/project-ref'
-);
+const PROJECT_REF_PATH = resolve(__dirname, '../supabase/.temp/project-ref');
 const NAMES_MAP_PATH = resolve(
   __dirname,
   '../supabase/.temp/project-names.json'
@@ -68,9 +65,7 @@ function promptConfirmation(projectId) {
     if (projectName) {
       console.log(`   Project Name: \x1b[36m${projectName}\x1b[0m`);
     }
-    console.log(
-      '   This will reset the remote database to its seed state.\n'
-    );
+    console.log('   This will reset the remote database to its seed state.\n');
     console.log('   All data in the remote database will be lost!\n');
 
     rl.question('   Do you want to continue? (yes/no): ', (answer) => {

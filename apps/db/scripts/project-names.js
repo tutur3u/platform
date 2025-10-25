@@ -13,10 +13,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const PROJECT_REF_PATH = resolve(
-  __dirname,
-  '../supabase/.temp/project-ref'
-);
+const PROJECT_REF_PATH = resolve(__dirname, '../supabase/.temp/project-ref');
 const NAMES_MAP_PATH = resolve(
   __dirname,
   '../supabase/.temp/project-names.json'
@@ -41,7 +38,9 @@ function loadNamesMap() {
     }
     return {};
   } catch {
-    console.warn('⚠️  Warning: Could not load project names map, starting fresh');
+    console.warn(
+      '⚠️  Warning: Could not load project names map, starting fresh'
+    );
     return {};
   }
 }
@@ -79,7 +78,7 @@ function promptForName(projectId, existingName) {
       console.log(`   Current Name: \x1b[36m${existingName}\x1b[0m`);
     }
     console.log(
-      '   This helps you verify you\'re operating on the correct project.\n'
+      "   This helps you verify you're operating on the correct project.\n"
     );
 
     const question = existingName
