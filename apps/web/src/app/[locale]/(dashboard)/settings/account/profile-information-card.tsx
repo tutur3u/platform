@@ -14,6 +14,7 @@ import { Suspense } from 'react';
 import UserAvatar from '../../../settings-avatar';
 import DisplayNameInput from '../../../settings-display-name-input';
 import FullNameInput from '../../../settings-full-name-input';
+import UsernameInput from '../../../settings-username-input';
 import AccountStatusSection from './account-status-section';
 
 interface ProfileInformationCardProps {
@@ -57,6 +58,19 @@ export default async function ProfileInformationCard({
         </div>
 
         <AccountStatusSection user={user} />
+        <Separator />
+
+        {/* Username Field */}
+        <div className="space-y-3">
+          <label className="font-medium text-sm">{t('username')}</label>
+          <Suspense fallback={<Skeleton className="h-10 w-full" />}>
+            <UsernameInput defaultValue={user?.handle} />
+          </Suspense>
+          <p className="text-muted-foreground text-xs">
+            {t('username-description')}
+          </p>
+        </div>
+
         <Separator />
 
         {/* Name Fields */}
