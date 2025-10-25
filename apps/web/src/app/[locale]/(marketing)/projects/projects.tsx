@@ -371,7 +371,7 @@ export default function Projects() {
                 </div>
               </motion.div>
             ) : (
-              <div className="mx-auto grid max-w-7xl gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              <div className="mx-auto grid max-w-7xl gap-6 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
                 {filteredProjects.map((project, index) => (
                   <motion.div
                     key={index}
