@@ -38,6 +38,7 @@ import type {
   BatchShareResponse,
   CreateDocumentData,
   CreateFolderResponse,
+  CreateSignedUploadUrlOptions,
   DeleteDocumentResponse,
   DeleteResponse,
   DocumentResponse,
@@ -48,6 +49,7 @@ import type {
   ListStorageResponse,
   ShareOptions,
   ShareResponse,
+  SignedUploadUrlResponse,
   StorageObject,
   UpdateDocumentData,
   UploadOptions,
@@ -55,6 +57,7 @@ import type {
 } from './types';
 import {
   createDocumentDataSchema,
+  createSignedUploadUrlOptionsSchema,
   listDocumentsOptionsSchema,
   listStorageOptionsSchema,
   shareOptionsSchema,
@@ -255,6 +258,59 @@ export class StorageClient {
         `Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
+  }
+
+  /**
+   * Creates a signed upload URL for direct file uploads to storage
+   *
+   * This method returns a signed URL that external applications can use to
+   * upload files directly to Tuturuuu storage without proxying through your server.
+   * Useful for client-side uploads, progress tracking, and custom upload flows.
+   *
+   * @param options - Options for creating the signed URL
+   * @returns Signed upload URL with metadata
+   *
+   * @example
+   * ```typescript
+   * // Get a signed URL for uploading a file
+   * const result = await client.storage.createSignedUploadUrl({
+   *   filename: 'document.pdf',
+   *   path: 'documents',
+   *   upsert: true
+   * });
+   *
+   * // Use the signed URL to upload directly from the client
+   * const file = new File(['content'], 'document.pdf');
+   * await fetch(result.data.signedUrl, {
+   *   method: 'PUT',
+   *   body: file,
+   *   headers: {
+   *     'Content-Type': file.type,
+   *     'x-upsert': 'true'
+   *   }
+   * });
+   * ```
+   */
+  async createSignedUploadUrl(
+    options: CreateSignedUploadUrlOptions
+  ): Promise<SignedUploadUrlResponse> {
+    // Validate options
+    const validatedOptions = validateWithSchema(
+      createSignedUploadUrlOptionsSchema,
+      options
+    );
+
+    return this.client.request<SignedUploadUrlResponse>(
+      '/storage/upload-url',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          filename: validatedOptions.filename,
+          path: validatedOptions.path || '',
+          upsert: validatedOptions.upsert ?? false,
+        }),
+      }
+    );
   }
 
   /**
