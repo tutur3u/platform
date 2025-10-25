@@ -196,53 +196,35 @@ export function KanbanBoard({
   // Multi-select handlers
   const handleTaskSelect = useCallback(
     (taskId: string, event: React.MouseEvent) => {
-      const isCtrlPressed = event.ctrlKey || event.metaKey;
       const isShiftPressed = event.shiftKey;
 
-      if (isCtrlPressed || isShiftPressed || isMultiSelectMode) {
-        event.preventDefault();
-        event.stopPropagation();
+      if (isShiftPressed) {
+        // Range selection - select all tasks between first and current selection
+        if (firstSelectedTaskId.current) {
+          const secondSelectedTask = tasks.find((t) => t.id === taskId);
+          if (
+            secondSelectedTask &&
+            secondSelectedTask.list_id === selectedColumnId.current
+          ) {
+            const columnTasks = tasks.filter(
+              (t) => t.list_id === selectedColumnId.current
+            );
+            const firstTaskIndex = columnTasks.findIndex(
+              (t) => t.id === firstSelectedTaskId.current
+            );
+            const secondTaskIndex = columnTasks.findIndex(
+              (t) => t.id === taskId
+            );
 
-        setIsMultiSelectMode(true);
+            const minTaskIndex = Math.min(firstTaskIndex, secondTaskIndex);
+            const maxTaskIndex = Math.max(firstTaskIndex, secondTaskIndex);
+            const tasksToSelect = columnTasks.slice(
+              minTaskIndex,
+              maxTaskIndex + 1
+            );
 
-        if (isShiftPressed) {
-          // Range selection - select all tasks between first and current selection
-          if (firstSelectedTaskId.current) {
-            const secondSelectedTask = tasks.find((t) => t.id === taskId);
-            if (
-              secondSelectedTask &&
-              secondSelectedTask.list_id === selectedColumnId.current
-            ) {
-              const columnTasks = tasks.filter(
-                (t) => t.list_id === selectedColumnId.current
-              );
-              const firstTaskIndex = columnTasks.findIndex(
-                (t) => t.id === firstSelectedTaskId.current
-              );
-              const secondTaskIndex = columnTasks.findIndex(
-                (t) => t.id === taskId
-              );
-
-              const minTaskIndex = Math.min(firstTaskIndex, secondTaskIndex);
-              const maxTaskIndex = Math.max(firstTaskIndex, secondTaskIndex);
-              const tasksToSelect = columnTasks.slice(
-                minTaskIndex,
-                maxTaskIndex + 1
-              );
-
-              const newSelectedTasks = new Set(tasksToSelect.map((t) => t.id));
-              setSelectedTasks(new Set(newSelectedTasks));
-            } else {
-              setSelectedTasks(new Set([taskId]));
-              firstSelectedTaskId.current = taskId;
-
-              const firstSelectedTask = tasks.find((t) => t.id === taskId);
-              if (firstSelectedTask) {
-                selectedColumnId.current = firstSelectedTask.list_id;
-              } else {
-                selectedColumnId.current = null;
-              }
-            }
+            const newSelectedTasks = new Set(tasksToSelect.map((t) => t.id));
+            setSelectedTasks(new Set(newSelectedTasks));
           } else {
             setSelectedTasks(new Set([taskId]));
             firstSelectedTaskId.current = taskId;
@@ -255,17 +237,7 @@ export function KanbanBoard({
             }
           }
         } else {
-          // Toggle selection in multi-select mode
-          setSelectedTasks((prev) => {
-            const newSet = new Set(prev);
-            if (newSet.has(taskId)) {
-              newSet.delete(taskId);
-            } else {
-              newSet.add(taskId);
-            }
-            return newSet;
-          });
-
+          setSelectedTasks(new Set([taskId]));
           firstSelectedTaskId.current = taskId;
 
           const firstSelectedTask = tasks.find((t) => t.id === taskId);
@@ -276,12 +248,28 @@ export function KanbanBoard({
           }
         }
       } else {
-        // Single click - clear selection and select only this task
-        setSelectedTasks(new Set());
-        setIsMultiSelectMode(false);
+        // Toggle selection in multi-select mode
+        setSelectedTasks((prev) => {
+          const newSet = new Set(prev);
+          if (newSet.has(taskId)) {
+            newSet.delete(taskId);
+          } else {
+            newSet.add(taskId);
+          }
+          return newSet;
+        });
+
+        firstSelectedTaskId.current = taskId;
+
+        const firstSelectedTask = tasks.find((t) => t.id === taskId);
+        if (firstSelectedTask) {
+          selectedColumnId.current = firstSelectedTask.list_id;
+        } else {
+          selectedColumnId.current = null;
+        }
       }
     },
-    [tasks, isMultiSelectMode]
+    [tasks]
   );
 
   const clearSelection = useCallback(() => {
@@ -1640,7 +1628,7 @@ export function KanbanBoard({
   return (
     <div className="flex h-full flex-col">
       {/* Multi-select indicator */}
-      {isMultiSelectMode && (
+      {isMultiSelectMode ? (
         <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-linear-to-r from-primary/5 via-primary/3 to-transparent px-4 py-3 shadow-sm">
           <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm">
             <div className="flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 ring-1 ring-primary/20">
@@ -1970,6 +1958,18 @@ export function KanbanBoard({
               Clear
             </Button>
           </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-end px-3 pt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsMultiSelectMode(true)}
+            className="px-2 text-muted-foreground hover:text-primary"
+          >
+            <Check className="h-3.5 w-3.5 text-primary" />
+            <span className="text-sm">Choose tasks</span>
+          </Button>
         </div>
       )}
 

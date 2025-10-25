@@ -339,15 +339,9 @@ function TaskCardInner({
   const handleCardClick = useCallback(
     (e: React.MouseEvent) => {
       // Handle multi-select functionality
-      onSelect?.(task.id, e);
-
-      const isCtrlPressed = e.ctrlKey || e.metaKey;
-      const isShiftPressed = e.shiftKey;
-
-      if (isCtrlPressed || isShiftPressed || isMultiSelectMode) return;
-
-      // Only open edit dialog if not in multi-select mode, not dragging, and no other dialogs are open
-      if (
+      if (isMultiSelectMode) {
+        onSelect?.(task.id, e);
+      } else if (
         !isDragging &&
         !dialogState.editDialogOpen &&
         !dialogState.isClosingDialog &&
@@ -357,6 +351,7 @@ function TaskCardInner({
         !dialogState.newLabelDialogOpen &&
         !dialogState.newProjectDialogOpen
       ) {
+        // Only open edit dialog if not in multi-select mode, not dragging, and no other dialogs are open
         openTask(task, boardId, availableLists);
       }
     },
