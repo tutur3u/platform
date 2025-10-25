@@ -39,6 +39,7 @@ const doc = await client.documents.create({
 ## Features
 
 - ✅ **Storage Operations** - Upload, download, list, delete files and folders
+- ✅ **Direct Uploads** - Generate signed URLs for client-side uploads without proxying
 - ✅ **Document Management** - Create, read, update, delete workspace documents
 - ✅ **Signed URLs** - Generate temporary shareable links for files
 - ✅ **Storage Analytics** - Track usage, file counts, and limits
@@ -108,6 +109,31 @@ await client.storage.delete([
 
 ```typescript
 await client.storage.createFolder('documents', 'reports');
+```
+
+#### Create Signed Upload URL
+
+Generate a signed URL for direct file uploads without proxying through your server. Perfect for client-side uploads with progress tracking.
+
+```typescript
+// Server-side: Generate signed URL
+const { data } = await client.storage.createSignedUploadUrl({
+  filename: 'document.pdf',
+  path: 'documents',
+  upsert: true // overwrite if exists
+});
+
+// Send the signed URL to the client
+// Client-side: Upload directly to storage
+const file = new File(['content'], 'document.pdf');
+await fetch(data.signedUrl, {
+  method: 'PUT',
+  body: file,
+  headers: {
+    'Content-Type': file.type,
+    'x-upsert': 'true'
+  }
+});
 ```
 
 #### Share File
@@ -224,6 +250,8 @@ import type {
   Document,
   ListStorageOptions,
   UploadOptions,
+  CreateSignedUploadUrlOptions,
+  SignedUploadUrlResponse,
   ShareOptions,
   CreateDocumentData
 } from 'tuturuuu';

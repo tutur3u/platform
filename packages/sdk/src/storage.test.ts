@@ -511,6 +511,126 @@ describe('StorageClient', () => {
     });
   });
 
+  describe('createSignedUploadUrl', () => {
+    it('should create signed upload URL with minimal options', async () => {
+      const mockResponse = {
+        data: {
+          signedUrl: 'https://storage.example.com/signed-url',
+          token: 'upload-token',
+          path: '00000000-0000-0000-0000-000000000000/document.pdf',
+        },
+      };
+
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
+
+      const result = await client.storage.createSignedUploadUrl({
+        filename: 'document.pdf',
+      });
+
+      expect(result).toEqual(mockResponse);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/storage/upload-url'),
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('document.pdf'),
+        })
+      );
+    });
+
+    it('should create signed upload URL with all options', async () => {
+      const mockResponse = {
+        data: {
+          signedUrl: 'https://storage.example.com/signed-url',
+          token: 'upload-token',
+          path: '00000000-0000-0000-0000-000000000000/documents/report.pdf',
+        },
+      };
+
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
+
+      const result = await client.storage.createSignedUploadUrl({
+        filename: 'report.pdf',
+        path: 'documents',
+        upsert: true,
+      });
+
+      expect(result).toEqual(mockResponse);
+
+      // Verify request body includes all options
+      const callArgs = mockFetch.mock.calls[0];
+      const requestBody = JSON.parse(callArgs?.[1]?.body as string);
+      expect(requestBody.filename).toBe('report.pdf');
+      expect(requestBody.path).toBe('documents');
+      expect(requestBody.upsert).toBe(true);
+    });
+
+    it('should throw ValidationError for empty filename', async () => {
+      await expect(
+        client.storage.createSignedUploadUrl({ filename: '' })
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw ValidationError for filename over 255 chars', async () => {
+      const longFilename = 'a'.repeat(256) + '.txt';
+      await expect(
+        client.storage.createSignedUploadUrl({ filename: longFilename })
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('should allow filename exactly 255 chars', async () => {
+      const mockResponse = {
+        data: {
+          signedUrl: 'https://storage.example.com/signed-url',
+          token: 'upload-token',
+          path: '00000000-0000-0000-0000-000000000000/longfile.txt',
+        },
+      };
+
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
+
+      const filename = 'a'.repeat(251) + '.txt'; // exactly 255 chars
+      const result = await client.storage.createSignedUploadUrl({ filename });
+
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should default path to empty string when not provided', async () => {
+      const mockResponse = {
+        data: {
+          signedUrl: 'https://storage.example.com/signed-url',
+          token: 'upload-token',
+          path: '00000000-0000-0000-0000-000000000000/file.txt',
+        },
+      };
+
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
+
+      await client.storage.createSignedUploadUrl({ filename: 'file.txt' });
+
+      const callArgs = mockFetch.mock.calls[0];
+      const requestBody = JSON.parse(callArgs?.[1]?.body as string);
+      expect(requestBody.path).toBe('');
+    });
+
+    it('should default upsert to false when not provided', async () => {
+      const mockResponse = {
+        data: {
+          signedUrl: 'https://storage.example.com/signed-url',
+          token: 'upload-token',
+          path: '00000000-0000-0000-0000-000000000000/file.txt',
+        },
+      };
+
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
+
+      await client.storage.createSignedUploadUrl({ filename: 'file.txt' });
+
+      const callArgs = mockFetch.mock.calls[0];
+      const requestBody = JSON.parse(callArgs?.[1]?.body as string);
+      expect(requestBody.upsert).toBe(false);
+    });
+  });
+
   describe('download', () => {
     it('should download file', async () => {
       const mockBlob = new Blob(['content']);
