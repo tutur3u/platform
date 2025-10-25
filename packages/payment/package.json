@@ -9,7 +9,7 @@
     "./dodo/*": "./src/dodo/*.ts"
   },
   "dependencies": {
-    "@polar-sh/checkout": "^0.1.13",
+    "@polar-sh/checkout": "^0.1.14",
     "@polar-sh/nextjs": "^0.4.11",
     "@polar-sh/sdk": "^0.40.1",
     "dodopayments": "^2.2.1",
