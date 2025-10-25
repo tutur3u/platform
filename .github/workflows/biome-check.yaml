@@ -183,6 +183,79 @@ jobs:
           echo "PR URL: ${{ steps.create-pr.outputs.pull-request-url }}"
           exit 1
 
+  close-outdated-format-pr:
+    name: Close Outdated Format PR
+    runs-on: ubuntu-latest
+    needs: [format]
+    if: ${{ needs.format.outputs.has_issues == 'false' }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+
+      - name: Close and delete outdated formatting PR
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const branchName = context.ref.replace('refs/heads/', '');
+            const formattingBranchName = `fix/biome-formatting-${branchName}`;
+
+            console.log(`Looking for PRs from branch: ${formattingBranchName}`);
+
+            try {
+              // Find PRs with the formatting branch name
+              const { data: prs } = await github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                head: `${context.repo.owner}:${formattingBranchName}`,
+                state: 'open'
+              });
+
+              if (prs.length === 0) {
+                console.log('No outdated formatting PRs found.');
+                return;
+              }
+
+              // Close each PR found
+              for (const pr of prs) {
+                console.log(`Closing outdated formatting PR #${pr.number}: ${pr.title}`);
+
+                // Add a comment explaining why it's being closed
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: '✅ This PR is being automatically closed because the base branch now has up-to-date formatting. No changes are needed anymore.'
+                });
+
+                // Close the PR
+                await github.rest.pulls.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr.number,
+                  state: 'closed'
+                });
+
+                // Delete the branch
+                try {
+                  await github.rest.git.deleteRef({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    ref: `heads/${formattingBranchName}`
+                  });
+                  console.log(`Deleted branch: ${formattingBranchName}`);
+                } catch (error) {
+                  console.log(`Could not delete branch ${formattingBranchName}: ${error.message}`);
+                }
+
+                console.log(`Successfully closed PR #${pr.number} and cleaned up.`);
+              }
+            } catch (error) {
+              console.log('Error while closing outdated formatting PRs:', error.message);
+            }
+
   comment:
     name: Comment on PR
     runs-on: ubuntu-latest
