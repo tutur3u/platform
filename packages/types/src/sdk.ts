@@ -43,6 +43,15 @@ export interface UploadOptions {
 }
 
 /**
+ * Options for creating a signed upload URL
+ */
+export interface CreateSignedUploadUrlOptions {
+  filename: string;
+  path?: string;
+  upsert?: boolean;
+}
+
+/**
  * Share options for signed URL generation
  */
 export interface ShareOptions {
@@ -272,6 +281,12 @@ export const uploadOptionsSchema = z
     upsert: z.boolean(),
   })
   .partial();
+
+export const createSignedUploadUrlOptionsSchema = z.object({
+  filename: z.string().min(1).max(255),
+  path: z.string().optional(),
+  upsert: z.boolean().optional(),
+});
 
 export const shareOptionsSchema = z
   .object({
