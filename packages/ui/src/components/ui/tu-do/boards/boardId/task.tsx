@@ -344,7 +344,7 @@ function TaskCardInner({
       const isCtrlPressed = e.ctrlKey || e.metaKey;
       const isShiftPressed = e.shiftKey;
 
-      if (isCtrlPressed || isShiftPressed) return;
+      if (isCtrlPressed || isShiftPressed || isMultiSelectMode) return;
 
       // Only open edit dialog if not in multi-select mode, not dragging, and no other dialogs are open
       if (
@@ -363,6 +363,7 @@ function TaskCardInner({
     [
       task,
       boardId,
+      isMultiSelectMode,
       availableLists,
       isDragging,
       menuOpen,

@@ -199,33 +199,13 @@ export function KanbanBoard({
       const isCtrlPressed = event.ctrlKey || event.metaKey;
       const isShiftPressed = event.shiftKey;
 
-      if (isCtrlPressed || isShiftPressed) {
+      if (isCtrlPressed || isShiftPressed || isMultiSelectMode) {
         event.preventDefault();
         event.stopPropagation();
 
         setIsMultiSelectMode(true);
 
-        if (isCtrlPressed) {
-          // Toggle selection in multi-select mode
-          setSelectedTasks((prev) => {
-            const newSet = new Set(prev);
-            if (newSet.has(taskId)) {
-              newSet.delete(taskId);
-            } else {
-              newSet.add(taskId);
-            }
-            return newSet;
-          });
-
-          firstSelectedTaskId.current = taskId;
-
-          const firstSelectedTask = tasks.find((t) => t.id === taskId);
-          if (firstSelectedTask) {
-            selectedColumnId.current = firstSelectedTask.list_id;
-          } else {
-            selectedColumnId.current = null;
-          }
-        } else if (isShiftPressed) {
+        if (isShiftPressed) {
           // Range selection - select all tasks between first and current selection
           if (firstSelectedTaskId.current) {
             const secondSelectedTask = tasks.find((t) => t.id === taskId);
@@ -274,6 +254,26 @@ export function KanbanBoard({
               selectedColumnId.current = null;
             }
           }
+        } else {
+          // Toggle selection in multi-select mode
+          setSelectedTasks((prev) => {
+            const newSet = new Set(prev);
+            if (newSet.has(taskId)) {
+              newSet.delete(taskId);
+            } else {
+              newSet.add(taskId);
+            }
+            return newSet;
+          });
+
+          firstSelectedTaskId.current = taskId;
+
+          const firstSelectedTask = tasks.find((t) => t.id === taskId);
+          if (firstSelectedTask) {
+            selectedColumnId.current = firstSelectedTask.list_id;
+          } else {
+            selectedColumnId.current = null;
+          }
         }
       } else {
         // Single click - clear selection and select only this task
@@ -281,7 +281,7 @@ export function KanbanBoard({
         setIsMultiSelectMode(false);
       }
     },
-    [tasks]
+    [tasks, isMultiSelectMode]
   );
 
   const clearSelection = useCallback(() => {
