@@ -81,7 +81,7 @@
     "cronstrue": "^3.9.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.18",
-    "dodopayments": "^2.2.1",
+    "dodopayments": "^2.3.0",
     "dompurify": "^3.3.0",
     "framer-motion": "^12.23.24",
     "html2canvas-pro": "^1.5.12",
