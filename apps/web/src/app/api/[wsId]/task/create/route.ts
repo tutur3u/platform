@@ -6,6 +6,7 @@ import { defaultActiveHours } from '@tuturuuu/ai/scheduling/default';
 import type { Task } from '@tuturuuu/ai/scheduling/types';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
+import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 export async function POST(
@@ -100,15 +101,25 @@ export async function POST(
       );
     }
 
-    const { error: assignError } = await supabase
-      .from('task_assignees')
-      .insert({
-        task_id: dbTask.id,
-        user_id: user.id,
-      });
+    // Check if auto-assign is enabled for this workspace
+    const autoAssignConfig = await getWorkspaceConfig(
+      wsId,
+      'auto_assign_task_creator'
+    );
+    const shouldAutoAssign = autoAssignConfig?.toLowerCase() === 'true';
 
-    if (assignError) {
-      console.error('Error assigning task to creator:', assignError);
+    // Auto-assign the task to the creator if enabled
+    if (shouldAutoAssign) {
+      const { error: assignError } = await supabase
+        .from('task_assignees')
+        .insert({
+          task_id: dbTask.id,
+          user_id: user.id,
+        });
+
+      if (assignError) {
+        console.error('Error auto-assigning task to creator:', assignError);
+      }
     }
 
     // 5. Convert task to chunkable format

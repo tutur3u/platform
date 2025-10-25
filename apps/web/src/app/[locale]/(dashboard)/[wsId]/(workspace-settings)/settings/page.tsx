@@ -7,6 +7,7 @@ import {
   getPermissions,
   getSecrets,
   getWorkspace,
+  getWorkspaceConfig,
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
@@ -18,6 +19,7 @@ import BasicInfo from './basic-info';
 import WorkspaceLogoSettings from './logo';
 import RemoveYourself from './remove-yourself';
 import Security from './security';
+import TaskSettings from './task-settings';
 
 export const metadata: Metadata = {
   title: 'Settings',
@@ -64,6 +66,12 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
   const enableSecurity =
     !isRootWorkspace && isWorkspaceOwner && !preventWorkspaceDeletion;
 
+  const autoAssignConfig = await getWorkspaceConfig(
+    id,
+    'auto_assign_task_creator'
+  );
+  const autoAssignEnabled = autoAssignConfig?.toLowerCase() === 'true';
+
   return (
     <>
       <FeatureSummary
@@ -98,6 +106,10 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
           }
           isPersonal={id === 'personal'}
         />
+
+        {id !== 'personal' && (
+          <TaskSettings wsId={wsId} initialValue={autoAssignEnabled} />
+        )}
 
         {enableAvatar && (
           <WorkspaceAvatarSettings
