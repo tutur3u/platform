@@ -300,17 +300,14 @@ export class StorageClient {
       options
     );
 
-    return this.client.request<SignedUploadUrlResponse>(
-      '/storage/upload-url',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          filename: validatedOptions.filename,
-          path: validatedOptions.path || '',
-          upsert: validatedOptions.upsert ?? false,
-        }),
-      }
-    );
+    return this.client.request<SignedUploadUrlResponse>('/storage/upload-url', {
+      method: 'POST',
+      body: JSON.stringify({
+        filename: validatedOptions.filename,
+        path: validatedOptions.path || '',
+        upsert: validatedOptions.upsert ?? false,
+      }),
+    });
   }
 
   /**
