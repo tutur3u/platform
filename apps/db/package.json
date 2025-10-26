@@ -6,17 +6,19 @@
     "sb:status": "bun supabase status",
     "sb:start": "bun supabase start",
     "sb:stop": "bun supabase stop",
+    "sb:sync": "bun supabase db push && bun supabase db pull",
     "sb:pull": "bun supabase db pull",
     "sb:push": "bun supabase db push",
     "sb:link": "bun supabase link",
+    "sb:linkpush": "bun supabase link && bun supabase db push",
     "sb:reset": "bun supabase db reset",
     "sb:diff": "bun supabase db diff -f new_migration",
     "sb:new": "bun supabase migration new new_migration",
     "sb:up": "bun supabase migration up",
-    "sb:typegen": "bun supabase gen types typescript --local --schema public > ../../packages/types/src/supabase.ts && prettier --write ../../packages/types/src/supabase.ts"
+    "sb:typegen": "bun supabase gen types typescript --local --schema public > ../../packages/types/src/supabase.ts && node ./scripts/sort-types.js && prettier --write ../../packages/types/src/supabase.ts"
   },
   "devDependencies": {
-    "supabase": "^2.30.4"
+    "supabase": "^2.51.0"
   },
-  "packageManager": "bun@1.2.18"
+  "packageManager": "bun@1.2.23"
 }

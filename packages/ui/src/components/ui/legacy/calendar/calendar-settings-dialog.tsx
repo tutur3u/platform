@@ -59,7 +59,7 @@ import * as React from 'react';
 type SettingsSection = {
   id: keyof CalendarSettings | 'hours' | 'advanced' | 'googleCalendar';
   name: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   description: string;
 };
 

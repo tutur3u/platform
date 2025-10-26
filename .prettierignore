@@ -1,2 +1,8 @@
+# Workflow files
+.github/workflows/**
+
+# Docs
+**/docs/**
+
 # Virtual environment
 venv

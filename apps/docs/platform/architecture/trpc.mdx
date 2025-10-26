@@ -1,0 +1,672 @@
+---
+title: 'tRPC Implementation Guide'
+description: 'How to create and use tRPC routers in the NCT Hub platform'
+updated: '2025-01-10'
+---
+
+The NCT Hub platform uses [tRPC](https://trpc.io/) for end-to-end type-safe API communication between the Next.js frontend and backend. This ensures type safety for club management operations, member interactions, and data synchronization.
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Client (Browser)                      │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │  React Components (RSC or 'use client')          │   │
+│  │  ↓                                                │   │
+│  │  trpc.workspace.get.useQuery()                    │   │
+│  └────────────────┬─────────────────────────────────┘   │
+└────────────────────┼─────────────────────────────────────┘
+                     │ HTTP Request
+                     ↓
+┌─────────────────────────────────────────────────────────┐
+│                Server (Next.js API)                      │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │  tRPC Router (/api/trpc/[trpc]/route.ts)         │   │
+│  │  ↓                                                │   │
+│  │  Procedure Handler (input validation with Zod)   │   │
+│  │  ↓                                                │   │
+│  │  Supabase Query / Business Logic                 │   │
+│  │  ↓                                                │   │
+│  │  Type-safe Response                              │   │
+│  └──────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
+```
+
+## Directory Structure
+
+```
+apps/web/src/trpc/
+├── init.ts              # tRPC initialization
+├── routers/
+│   ├── _app.ts          # Root router aggregating all routes
+│   ├── workspace.ts     # Workspace-related procedures
+│   ├── user.ts          # User-related procedures
+│   ├── ai.ts            # AI-related procedures
+│   └── ...              # Other domain routers
+├── client.tsx           # Client-side hooks (useQuery, useMutation)
+├── server.ts            # Server-side caller
+└── query.ts             # React Query integration
+```
+
+## Creating a New Router
+
+### Step 1: Define the Router
+
+Create a new file in `apps/web/src/trpc/routers/`:
+
+```typescript
+// apps/web/src/trpc/routers/tasks.ts
+import { protectedProcedure, router } from '../init';
+import { createClient } from '@tuturuuu/supabase/server';
+import { z } from 'zod';
+
+export const tasksRouter = router({
+  // GET single task
+  get: protectedProcedure
+    .input(
+      z.object({
+        taskId: z.string().uuid(),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from('workspace_tasks')
+        .select('*')
+        .eq('id', input.taskId)
+        .single();
+
+      if (error) throw new Error(error.message);
+      return data;
+    }),
+
+  // LIST tasks in workspace
+  list: protectedProcedure
+    .input(
+      z.object({
+        wsId: z.string(),
+        listId: z.string().optional(),
+        completed: z.boolean().optional(),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const supabase = createClient();
+
+      let query = supabase
+        .from('workspace_tasks')
+        .select('*')
+        .eq('ws_id', input.wsId);
+
+      if (input.listId) {
+        query = query.eq('list_id', input.listId);
+      }
+
+      if (input.completed !== undefined) {
+        query = query.eq('completed', input.completed);
+      }
+
+      const { data, error } = await query;
+      if (error) throw new Error(error.message);
+      return data;
+    }),
+
+  // CREATE task
+  create: protectedProcedure
+    .input(
+      z.object({
+        wsId: z.string(),
+        listId: z.string(),
+        name: z.string().min(1).max(255),
+        description: z.string().optional(),
+        priority: z.number().int().min(0).max(5).optional(),
+        dueDate: z.date().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from('workspace_tasks')
+        .insert({
+          ws_id: input.wsId,
+          list_id: input.listId,
+          name: input.name,
+          description: input.description,
+          priority: input.priority,
+          due_date: input.dueDate?.toISOString(),
+          created_by: ctx.user.id, // From protected context
+        })
+        .select()
+        .single();
+
+      if (error) throw new Error(error.message);
+      return data;
+    }),
+
+  // UPDATE task
+  update: protectedProcedure
+    .input(
+      z.object({
+        taskId: z.string().uuid(),
+        name: z.string().min(1).max(255).optional(),
+        description: z.string().optional(),
+        completed: z.boolean().optional(),
+        priority: z.number().int().min(0).max(5).optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const supabase = createClient();
+
+      const { taskId, ...updates } = input;
+
+      const { data, error } = await supabase
+        .from('workspace_tasks')
+        .update(updates)
+        .eq('id', taskId)
+        .select()
+        .single();
+
+      if (error) throw new Error(error.message);
+      return data;
+    }),
+
+  // DELETE task
+  delete: protectedProcedure
+    .input(
+      z.object({
+        taskId: z.string().uuid(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const supabase = createClient();
+
+      const { error } = await supabase
+        .from('workspace_tasks')
+        .delete()
+        .eq('id', input.taskId);
+
+      if (error) throw new Error(error.message);
+      return { success: true };
+    }),
+});
+```
+
+### Step 2: Add to Root Router
+
+Add your router to `apps/web/src/trpc/routers/_app.ts`:
+
+```typescript
+import { router } from '../init';
+import { tasksRouter } from './tasks';
+import { userRouter } from './user';
+import { workspaceRouter } from './workspace';
+
+// Import new router
+
+export const appRouter = router({
+  workspace: workspaceRouter,
+  user: userRouter,
+  tasks: tasksRouter, // Add to root
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### Step 3: Use in Components
+
+#### Client Component with useQuery
+
+```tsx
+'use client';
+
+import { trpc } from '@/trpc/client';
+
+export function TaskList({ wsId }: { wsId: string }) {
+  const {
+    data: tasks,
+    isLoading,
+    error,
+  } = trpc.tasks.list.useQuery({
+    wsId,
+    completed: false,
+  });
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <ul>
+      {tasks?.map((task) => (
+        <li key={task.id}>{task.name}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+#### Client Component with useMutation
+
+```tsx
+'use client';
+
+import { trpc } from '@/trpc/client';
+import { useState } from 'react';
+
+export function CreateTaskForm({
+  wsId,
+  listId,
+}: {
+  wsId: string;
+  listId: string;
+}) {
+  const [name, setName] = useState('');
+  const utils = trpc.useContext();
+
+  const createTask = trpc.tasks.create.useMutation({
+    onSuccess: () => {
+      // Invalidate tasks list to refetch
+      utils.tasks.list.invalidate({ wsId });
+      setName('');
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createTask.mutate({ wsId, listId, name });
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Task name"
+      />
+      <button type="submit" disabled={createTask.isPending}>
+        {createTask.isPending ? 'Creating...' : 'Create Task'}
+      </button>
+      {createTask.error && <p>Error: {createTask.error.message}</p>}
+    </form>
+  );
+}
+```
+
+#### Server Component (Server-Side Caller)
+
+```tsx
+import { createCaller } from '@/trpc/server';
+
+export default async function TaskPage({
+  params,
+}: {
+  params: { taskId: string };
+}) {
+  const trpc = await createCaller();
+  const task = await trpc.tasks.get({ taskId: params.taskId });
+
+  return (
+    <div>
+      <h1>{task.name}</h1>
+      <p>{task.description}</p>
+    </div>
+  );
+}
+```
+
+## Procedure Types
+
+### `publicProcedure`
+
+No authentication required. Use for public endpoints.
+
+```typescript
+export const publicRouter = router({
+  status: publicProcedure.query(() => {
+    return { status: 'ok' };
+  }),
+});
+```
+
+### `protectedProcedure`
+
+Requires authentication. Provides `ctx.user` in handler.
+
+```typescript
+export const protectedRouter = router({
+  profile: protectedProcedure.query(({ ctx }) => {
+    return { userId: ctx.user.id }; // ctx.user is guaranteed
+  }),
+});
+```
+
+Implementation in `apps/web/src/trpc/init.ts`:
+
+```typescript
+const isAuthed = t.middleware(async ({ ctx, next }) => {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('Unauthorized');
+  }
+
+  return next({
+    ctx: {
+      user, // Add user to context
+    },
+  });
+});
+
+export const protectedProcedure = t.procedure.use(isAuthed);
+```
+
+## Input Validation with Zod
+
+Always validate inputs using Zod schemas:
+
+```typescript
+import { z } from 'zod';
+
+const createTaskSchema = z.object({
+  wsId: z.string().min(1, 'Workspace ID required'),
+  name: z.string().min(1, 'Name required').max(255, 'Name too long'),
+  priority: z.number().int().min(0).max(5).default(0),
+  dueDate: z.date().optional(),
+  tags: z.array(z.string()).optional(),
+});
+
+export const tasksRouter = router({
+  create: protectedProcedure
+    .input(createTaskSchema)
+    .mutation(async ({ input }) => {
+      // input is fully typed and validated
+      // ...
+    }),
+});
+```
+
+### Common Zod Patterns
+
+```typescript
+// UUID validation
+z.string().uuid();
+
+// Email validation
+z.string().email();
+
+// URL validation
+z.string().url();
+
+// Enum
+z.enum(['pending', 'in_progress', 'completed']);
+
+// Date
+z.date(); // or z.string().datetime() for ISO strings
+
+// Optional with default
+z.string().default('default-value');
+
+// Nested objects
+z.object({
+  user: z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+  }),
+});
+
+// Arrays
+z.array(z.string());
+
+// Union types
+z.union([z.string(), z.number()]);
+
+// Transform
+z.string().transform((val) => val.toLowerCase());
+
+// Refine (custom validation)
+z.string().refine((val) => val.includes('@'), {
+  message: 'Must be an email',
+});
+```
+
+## Error Handling
+
+### Throwing Errors
+
+```typescript
+import { TRPCError } from '@trpc/server';
+
+export const tasksRouter = router({
+  get: protectedProcedure
+    .input(z.object({ taskId: z.string().uuid() }))
+    .query(async ({ input }) => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('workspace_tasks')
+        .select('*')
+        .eq('id', input.taskId)
+        .single();
+
+      if (error) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Task ${input.taskId} not found`,
+          cause: error,
+        });
+      }
+
+      return data;
+    }),
+});
+```
+
+### Error Codes
+
+- `BAD_REQUEST` - Invalid input
+- `UNAUTHORIZED` - Not authenticated
+- `FORBIDDEN` - Authenticated but not authorized
+- `NOT_FOUND` - Resource not found
+- `INTERNAL_SERVER_ERROR` - Server error
+- `TIMEOUT` - Request timeout
+- `CONFLICT` - Resource conflict
+
+### Handling Errors Client-Side
+
+```tsx
+'use client';
+
+import { trpc } from '@/trpc/client';
+
+export function TaskDetails({ taskId }: { taskId: string }) {
+  const { data, error } = trpc.tasks.get.useQuery({ taskId });
+
+  if (error) {
+    if (error.data?.code === 'NOT_FOUND') {
+      return <div>Task not found</div>;
+    }
+    if (error.data?.code === 'UNAUTHORIZED') {
+      return <div>Please log in</div>;
+    }
+    return <div>Error: {error.message}</div>;
+  }
+
+  return <div>{data?.name}</div>;
+}
+```
+
+## React Query Integration
+
+tRPC uses React Query under the hood. You have access to all React Query features:
+
+### Query Options
+
+```tsx
+const { data } = trpc.tasks.list.useQuery(
+  { wsId },
+  {
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+    retry: 3,
+    enabled: !!wsId, // Only run if wsId exists
+  }
+);
+```
+
+### Optimistic Updates
+
+```tsx
+const utils = trpc.useContext();
+
+const updateTask = trpc.tasks.update.useMutation({
+  onMutate: async (newData) => {
+    // Cancel outgoing refetches
+    await utils.tasks.get.cancel({ taskId: newData.taskId });
+
+    // Snapshot previous value
+    const previous = utils.tasks.get.getData({ taskId: newData.taskId });
+
+    // Optimistically update
+    utils.tasks.get.setData({ taskId: newData.taskId }, (old) => ({
+      ...old!,
+      ...newData,
+    }));
+
+    return { previous };
+  },
+  onError: (err, newData, context) => {
+    // Rollback on error
+    if (context?.previous) {
+      utils.tasks.get.setData({ taskId: newData.taskId }, context.previous);
+    }
+  },
+  onSettled: (data, error, variables) => {
+    // Always refetch after error or success
+    utils.tasks.get.invalidate({ taskId: variables.taskId });
+  },
+});
+```
+
+### Cache Invalidation
+
+```tsx
+const utils = trpc.useContext();
+
+// Invalidate specific query
+utils.tasks.get.invalidate({ taskId: '123' });
+
+// Invalidate all tasks.list queries
+utils.tasks.list.invalidate();
+
+// Invalidate all tasks queries
+utils.tasks.invalidate();
+
+// Reset to initial state
+utils.tasks.list.reset({ wsId });
+```
+
+## Performance Best Practices
+
+### 1. Use Query Keys Wisely
+
+```typescript
+// ✅ Good: Specific query keys
+trpc.tasks.list.useQuery({ wsId, listId, completed: false });
+
+// ❌ Bad: Over-fetching
+trpc.tasks.getAll.useQuery(); // Gets ALL tasks
+```
+
+### 2. Enable Request Batching
+
+tRPC automatically batches requests made within 10ms:
+
+```tsx
+// These three queries are sent in a single HTTP request
+const tasks = trpc.tasks.list.useQuery({ wsId });
+const boards = trpc.boards.list.useQuery({ wsId });
+const members = trpc.workspace.members.useQuery({ wsId });
+```
+
+### 3. Use `staleTime` for Cacheable Data
+
+```tsx
+// User profile rarely changes - cache for 10 minutes
+const { data: profile } = trpc.user.profile.useQuery(undefined, {
+  staleTime: 10 * 60 * 1000,
+});
+```
+
+### 4. Prefetch on Server
+
+```tsx
+// app/workspace/[wsId]/tasks/page.tsx
+import { HydrateClient } from '@/trpc/query';
+import { createCaller } from '@/trpc/server';
+
+export default async function TasksPage({
+  params,
+}: {
+  params: { wsId: string };
+}) {
+  const trpc = await createCaller();
+  const tasks = await trpc.tasks.list({ wsId: params.wsId });
+
+  return (
+    <HydrateClient>
+      <TaskList wsId={params.wsId} /> {/* Uses prefetched data */}
+    </HydrateClient>
+  );
+}
+```
+
+## Testing tRPC Procedures
+
+```typescript
+// __tests__/tasks.test.ts
+import { createCaller } from '@/trpc/server';
+import { describe, expect, it } from 'vitest';
+
+describe('tasks router', () => {
+  it('should create a task', async () => {
+    const trpc = await createCaller();
+
+    const task = await trpc.tasks.create({
+      wsId: 'test-workspace',
+      listId: 'test-list',
+      name: 'Test Task',
+    });
+
+    expect(task.name).toBe('Test Task');
+    expect(task.ws_id).toBe('test-workspace');
+  });
+
+  it('should throw on invalid input', async () => {
+    const trpc = await createCaller();
+
+    await expect(
+      trpc.tasks.create({
+        wsId: '',
+        listId: 'test-list',
+        name: '', // Invalid: empty name
+      })
+    ).rejects.toThrow();
+  });
+});
+```
+
+## Related Documentation
+
+- [API Routes](/platform/architecture/api-routes) - REST API patterns
+- [Data Fetching](/platform/architecture/data-fetching) - When to use tRPC vs other patterns
+- [Authentication](/platform/architecture/authentication) - Auth middleware
+- [Authorization](/platform/architecture/authorization) - Permission checking
+
+## External Resources
+
+- [tRPC Official Docs](https://trpc.io/)
+- [Zod Documentation](https://zod.dev/)
+- [React Query Docs](https://tanstack.com/query/latest)

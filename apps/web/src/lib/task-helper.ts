@@ -103,9 +103,67 @@ export async function createTask(
   listId: string,
   task: Partial<Task>
 ) {
+  // Validate required fields
+  if (!task.name || task.name.trim().length === 0) {
+    throw new Error('Task name is required');
+  }
+
+  if (!listId) {
+    throw new Error('List ID is required');
+  }
+
+  // First, check if user is authenticated
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user) {
+    console.error('Authentication error:', authError);
+    throw new Error('User not authenticated');
+  }
+
+  // Then, verify that the list exists and user has access to it
+  const { data: listCheck, error: listError } = await supabase
+    .from('task_lists')
+    .select('id, name')
+    .eq('id', listId)
+    .single();
+
+  if (listError) {
+    throw new Error(
+      `List not found or access denied: ${listError.message || 'Unknown error'}`
+    );
+  }
+
+  if (!listCheck) {
+    throw new Error('List not found');
+  }
+
+  // Prepare task data with only the fields that exist in the database
+  const taskData: {
+    name: string;
+    description: string | null;
+    list_id: string;
+    priority: number | null;
+    start_date: string | null;
+    end_date: string | null;
+    archived: boolean;
+    created_at: string;
+  } = {
+    name: task.name.trim(),
+    description: task.description || null,
+    list_id: listId,
+    priority: task.priority || null,
+    start_date: task.start_date || null,
+    end_date: task.end_date || null,
+    archived: false,
+    created_at: new Date().toISOString(),
+  };
+
+  // Now try the normal insert with the fixed database
   const { data, error } = await supabase
     .from('tasks')
-    .insert({ ...task, list_id: listId })
+    .insert(taskData)
     .select()
     .single();
 
