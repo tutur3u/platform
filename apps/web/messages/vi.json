@@ -171,7 +171,6 @@
     "products": "Các sản phẩm",
     "solutions": "Giải pháp",
     "pricing": "Bảng giá",
-    "about": "Giới thiệu",
     "contact": "Liên hệ",
     "ai-assistant": "Trợ lý AI",
     "lms": "LMS",
@@ -414,6 +413,25 @@
     "save_credentials": "Lưu thông tin đăng nhập cho kế hoạch này",
     "save_credentials_desc": "Tự động đăng nhập khi bạn quay lại kế hoạch này",
     "logged_in_as": "Đăng nhập như"
+  },
+  "neo-meeting-agent": {
+    "headline-p1": "Tóm tắt ngay cuộc họp của bạn chỉ bằng",
+    "headline-p2": "vài cú nhấp chuột",
+    "dropzone": {
+      "title": "Kéo thả video cuộc họp, hoặc nhấn để chọn tệp",
+      "caption": "Bạn có thể tải lên tệp có dung lượng tối đa {size}MB"
+    },
+    "actions": {
+      "generate": "Tạo biên bản"
+    },
+    "history": {
+      "title": "Lịch sử cuộc họp",
+      "view_more": "Xem thêm"
+    },
+    "languages": {
+      "english": "Tiếng Anh",
+      "vietnamese": "Tiếng Việt"
+    }
   },
   "invite": {
     "invited-to": "Bạn được mời vào",

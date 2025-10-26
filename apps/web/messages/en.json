@@ -414,6 +414,25 @@
     "save_credentials_desc": "Automatically log in when you return to this plan",
     "logged_in_as": "Logged in as"
   },
+  "neo-meeting-agent": {
+    "headline-p1": "Instantly summarize your meeting in just",
+    "headline-p2": "a few clicks",
+    "dropzone": {
+      "title": "Drag 'n' drop meeting video, or click to select a file",
+      "caption": "You can upload a file up to {size}MB"
+    },
+    "actions": {
+      "generate": "Generate Minutes"
+    },
+    "history": {
+      "title": "Meeting History",
+      "view_more": "View More"
+    },
+    "languages": {
+      "english": "English",
+      "vietnamese": "Vietnamese"
+    }
+  },
   "invite": {
     "invited-to": "You have been invited to join",
     "accept-invite": "Accept Invite",

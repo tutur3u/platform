@@ -6,6 +6,7 @@ import {
   Calendar,
   Gamepad2,
   GitBranch,
+  NotebookPen,
   Puzzle,
   ScanLine,
   Sparkles,
@@ -62,6 +63,12 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       label: t('common.meet-together'),
       description: 'Find the best time slot for everyone, hassle-free.',
       icon: <Calendar />,
+    },
+    {
+      href: '/neo-meeting-agent',
+      label: 'Neo Meeting Agent',
+      description: 'Automate minutes of meetings and summaries.',
+      icon: <NotebookPen />,
     },
     {
       href: '/neo-generator',
