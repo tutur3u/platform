@@ -74,8 +74,5 @@
     "sharp",
     "supabase",
     "unrs-resolver"
-  ],
-  "dependencies": {
-    "react-hook-form": "^7.65.0"
-  }
+  ]
 }
