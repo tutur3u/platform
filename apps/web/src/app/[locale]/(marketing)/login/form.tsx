@@ -157,7 +157,9 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     // IMPORTANT: If in multi-account mode, ALWAYS go through add-account page first
     // This ensures the session is added to the multi-account store
     if (multiAccount === 'true') {
-      console.log('[processNextUrl] Multi-account mode, redirecting to add-account page');
+      console.log(
+        '[processNextUrl] Multi-account mode, redirecting to add-account page'
+      );
       const addAccountUrl = `/add-account${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`;
       // Use window.location.href for full page reload to ensure add-account page runs
       window.location.href = addAccountUrl;
@@ -172,7 +174,10 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       if (isRelativePath) {
         // Relative paths are always for the 'web' app
         returnApp = 'web';
-        console.log('[processNextUrl] Relative path detected, using web app:', returnUrl);
+        console.log(
+          '[processNextUrl] Relative path detected, using web app:',
+          returnUrl
+        );
       } else {
         // Absolute URLs need to be mapped to their app
         returnApp = mapUrlToApp(returnUrl);
@@ -184,7 +189,10 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       if (returnApp === 'web') {
         // Normal redirect for single-account mode
         const redirectUrl = new URL(returnUrl, window.location.origin);
-        console.log('[processNextUrl] Redirecting to web app:', redirectUrl.pathname);
+        console.log(
+          '[processNextUrl] Redirecting to web app:',
+          redirectUrl.pathname
+        );
         router.push(redirectUrl.pathname + redirectUrl.search);
         router.refresh();
         return;
@@ -221,7 +229,9 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       // Fallback: If multiAccount mode somehow reached here, redirect to add-account page
       // (This should not normally happen as it's handled at the top of this function)
       if (multiAccount === 'true') {
-        router.push(`/add-account${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`);
+        router.push(
+          `/add-account${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`
+        );
       } else {
         router.push('/');
       }
@@ -264,7 +274,10 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
           } catch (navError) {
             // Navigation error after successful login
             // Don't show "invalid credentials" - login succeeded!
-            console.error('[loginWithPassword] Navigation error after successful login:', navError);
+            console.error(
+              '[loginWithPassword] Navigation error after successful login:',
+              navError
+            );
             // Fallback to default redirect using window.location.href for full reload
             if (multiAccount === 'true') {
               window.location.href = `/add-account${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`;
@@ -608,8 +621,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       searchParamsArray.push(`returnUrl=${encodeURIComponent(returnUrl)}`);
     if (nextUrl)
       searchParamsArray.push(`nextUrl=${encodeURIComponent(nextUrl)}`);
-    if (multiAccount === 'true')
-      searchParamsArray.push('multiAccount=true');
+    if (multiAccount === 'true') searchParamsArray.push('multiAccount=true');
 
     if (searchParamsArray.length > 0) {
       redirectURL += `?${searchParamsArray.join('&')}`;
@@ -650,8 +662,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       searchParamsArray.push(`returnUrl=${encodeURIComponent(returnUrl)}`);
     if (nextUrl)
       searchParamsArray.push(`nextUrl=${encodeURIComponent(nextUrl)}`);
-    if (multiAccount === 'true')
-      searchParamsArray.push('multiAccount=true');
+    if (multiAccount === 'true') searchParamsArray.push('multiAccount=true');
 
     if (searchParamsArray.length > 0) {
       redirectURL += `?${searchParamsArray.join('&')}`;

@@ -30,8 +30,14 @@ export function AccountSwitcherModal({
   onOpenChange,
 }: AccountSwitcherModalProps) {
   const t = useTranslations();
-  const { accounts, activeAccountId, isLoading, switchAccount, addAccount, removeAccount } =
-    useAccountSwitcher();
+  const {
+    accounts,
+    activeAccountId,
+    isLoading,
+    switchAccount,
+    addAccount,
+    removeAccount,
+  } = useAccountSwitcher();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -63,7 +69,10 @@ export function AccountSwitcherModal({
     await switchAccount(accountId);
   };
 
-  const handleRemoveAccount = async (accountId: string, e: React.MouseEvent) => {
+  const handleRemoveAccount = async (
+    accountId: string,
+    e: React.MouseEvent
+  ) => {
     e.stopPropagation(); // Prevent triggering switch
     if (isLoading) return;
 
@@ -75,13 +84,22 @@ export function AccountSwitcherModal({
     try {
       // First, save the current session to the store before navigating
       // This prevents losing the current account when adding a new one
-      const supabase = (await import('@tuturuuu/supabase/next/client')).createClient();
+      const supabase = (
+        await import('@tuturuuu/supabase/next/client')
+      ).createClient();
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
-      console.log('[AccountSwitcherModal] Current session:', session ? { id: session.user.id, email: session.user.email } : null);
-      console.log('[AccountSwitcherModal] Existing accounts:', accounts.length, accounts.map(a => ({ id: a.id, email: a.metadata.email })));
+      console.log(
+        '[AccountSwitcherModal] Current session:',
+        session ? { id: session.user.id, email: session.user.email } : null
+      );
+      console.log(
+        '[AccountSwitcherModal] Existing accounts:',
+        accounts.length,
+        accounts.map((a) => ({ id: a.id, email: a.metadata.email }))
+      );
 
       if (session) {
         // Check if current session is already in the store
@@ -89,27 +107,40 @@ export function AccountSwitcherModal({
           (acc) => acc.id === session.user.id
         );
 
-        console.log('[AccountSwitcherModal] Current account in store?', currentAccountExists);
+        console.log(
+          '[AccountSwitcherModal] Current account in store?',
+          currentAccountExists
+        );
 
         if (!currentAccountExists) {
           // Save current session before navigating away
-          console.log('[AccountSwitcherModal] Saving current session before navigating...');
-          const result = await addAccount(session, { switchImmediately: false });
+          console.log(
+            '[AccountSwitcherModal] Saving current session before navigating...'
+          );
+          const result = await addAccount(session, {
+            switchImmediately: false,
+          });
           console.log('[AccountSwitcherModal] Save result:', result);
 
           // Wait briefly to ensure localStorage write completes
-          await new Promise(resolve => setTimeout(resolve, 200));
+          await new Promise((resolve) => setTimeout(resolve, 200));
         }
       }
 
       // Navigate to login with multiAccount flag
       const currentPath = window.location.pathname;
       const returnUrl = encodeURIComponent(currentPath);
-      console.log('[AccountSwitcherModal] Navigating to login with returnUrl:', returnUrl);
+      console.log(
+        '[AccountSwitcherModal] Navigating to login with returnUrl:',
+        returnUrl
+      );
       // Locale is auto-handled by proxy.ts, no need to include it
       window.location.href = `/login?multiAccount=true&returnUrl=${returnUrl}`;
     } catch (error) {
-      console.error('[AccountSwitcherModal] Failed to prepare for adding account:', error);
+      console.error(
+        '[AccountSwitcherModal] Failed to prepare for adding account:',
+        error
+      );
       // Still navigate even if saving fails
       const currentPath = window.location.pathname;
       const returnUrl = encodeURIComponent(currentPath);
@@ -240,59 +271,62 @@ export function AccountSwitcherModal({
                       )}
                     >
                       <div className="flex items-start gap-3 pr-8">
-                      <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
-                        <AvatarImage
-                          src={account.metadata.avatarUrl}
-                          alt={displayName}
-                        />
-                        <AvatarFallback className="bg-linear-to-br from-dynamic-purple to-dynamic-pink text-white font-semibold">
-                          {initials}
-                        </AvatarFallback>
-                      </Avatar>
+                        <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+                          <AvatarImage
+                            src={account.metadata.avatarUrl}
+                            alt={displayName}
+                          />
+                          <AvatarFallback className="bg-linear-to-br from-dynamic-purple to-dynamic-pink text-white font-semibold">
+                            {initials}
+                          </AvatarFallback>
+                        </Avatar>
 
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <p className="truncate font-semibold text-sm">
-                            {displayName}
-                          </p>
-                          {isActive && (
-                            <Badge
-                              variant="secondary"
-                              className="border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green"
-                            >
-                              <Check className="mr-1 h-3 w-3" />
-                              {t('account_switcher.active')}
-                            </Badge>
-                          )}
-                        </div>
-
-                        {account.metadata.email && (
-                          <p className="truncate text-foreground/60 text-xs">
-                            {account.metadata.email}
-                          </p>
-                        )}
-
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-foreground/40 text-xs">
-                          {lastActive && (
-                            <span>{t('account_switcher.last_active')}: {lastActive}</span>
-                          )}
-                          {account.metadata.lastWorkspaceId && (
-                            <span className="truncate">
-                              WS: {account.metadata.lastWorkspaceId}
-                            </span>
-                          )}
-                        </div>
-
-                        {index < 9 && !isActive && (
-                          <div className="mt-1 flex items-center gap-1 text-foreground/30 text-xs">
-                            <kbd className="rounded bg-foreground/5 px-1.5 py-0.5 font-mono">
-                              {index + 1}
-                            </kbd>
-                            <span>to switch</span>
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <p className="truncate font-semibold text-sm">
+                              {displayName}
+                            </p>
+                            {isActive && (
+                              <Badge
+                                variant="secondary"
+                                className="border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green"
+                              >
+                                <Check className="mr-1 h-3 w-3" />
+                                {t('account_switcher.active')}
+                              </Badge>
+                            )}
                           </div>
-                        )}
+
+                          {account.metadata.email && (
+                            <p className="truncate text-foreground/60 text-xs">
+                              {account.metadata.email}
+                            </p>
+                          )}
+
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-foreground/40 text-xs">
+                            {lastActive && (
+                              <span>
+                                {t('account_switcher.last_active')}:{' '}
+                                {lastActive}
+                              </span>
+                            )}
+                            {account.metadata.lastWorkspaceId && (
+                              <span className="truncate">
+                                WS: {account.metadata.lastWorkspaceId}
+                              </span>
+                            )}
+                          </div>
+
+                          {index < 9 && !isActive && (
+                            <div className="mt-1 flex items-center gap-1 text-foreground/30 text-xs">
+                              <kbd className="rounded bg-foreground/5 px-1.5 py-0.5 font-mono">
+                                {index + 1}
+                              </kbd>
+                              <span>to switch</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
                       {/* Selection indicator */}
                       {isSelected && !isActive && (

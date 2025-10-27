@@ -279,7 +279,9 @@ export class SessionStore {
    */
   async removeAccount(accountId: string): Promise<AccountOperationResult> {
     const store = this.loadStore();
-    const accountIndex = store.accounts.findIndex((acc) => acc.id === accountId);
+    const accountIndex = store.accounts.findIndex(
+      (acc) => acc.id === accountId
+    );
 
     if (accountIndex === -1) {
       return {

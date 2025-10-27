@@ -256,7 +256,10 @@ export default function UserNavClient({
             </DropdownMenuItem>
           ) : (
             <DropdownMenuItem asChild>
-              <Link href="/settings/account/accounts" className="cursor-pointer">
+              <Link
+                href="/settings/account/accounts"
+                className="cursor-pointer"
+              >
                 <Users className="h-4 w-4 text-dynamic-orange" />
                 <span>{t('account_switcher.manage_accounts')}</span>
               </Link>

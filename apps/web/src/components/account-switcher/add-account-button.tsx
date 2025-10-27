@@ -25,8 +25,15 @@ export function AddAccountButton() {
         data: { session },
       } = await supabase.auth.getSession();
 
-      console.log('[AddAccountButton] Current session:', session ? { id: session.user.id, email: session.user.email } : null);
-      console.log('[AddAccountButton] Existing accounts:', accounts.length, accounts.map(a => ({ id: a.id, email: a.metadata.email })));
+      console.log(
+        '[AddAccountButton] Current session:',
+        session ? { id: session.user.id, email: session.user.email } : null
+      );
+      console.log(
+        '[AddAccountButton] Existing accounts:',
+        accounts.length,
+        accounts.map((a) => ({ id: a.id, email: a.metadata.email }))
+      );
 
       if (session) {
         // Check if current session is already in the store
@@ -34,26 +41,39 @@ export function AddAccountButton() {
           (acc) => acc.id === session.user.id
         );
 
-        console.log('[AddAccountButton] Current account in store?', currentAccountExists);
+        console.log(
+          '[AddAccountButton] Current account in store?',
+          currentAccountExists
+        );
 
         if (!currentAccountExists) {
           // Save current session before navigating away
-          console.log('[AddAccountButton] Saving current session before navigating...');
-          const result = await addAccount(session, { switchImmediately: false });
+          console.log(
+            '[AddAccountButton] Saving current session before navigating...'
+          );
+          const result = await addAccount(session, {
+            switchImmediately: false,
+          });
           console.log('[AddAccountButton] Save result:', result);
 
           // Wait briefly to ensure localStorage write completes
-          await new Promise(resolve => setTimeout(resolve, 200));
+          await new Promise((resolve) => setTimeout(resolve, 200));
         }
       }
 
       // Navigate to login with multiAccount flag
       const currentPath = window.location.pathname;
       const returnUrl = encodeURIComponent(currentPath);
-      console.log('[AddAccountButton] Navigating to login with returnUrl:', returnUrl);
+      console.log(
+        '[AddAccountButton] Navigating to login with returnUrl:',
+        returnUrl
+      );
       window.location.href = `/login?multiAccount=true&returnUrl=${returnUrl}`;
     } catch (error) {
-      console.error('[AddAccountButton] Failed to prepare for adding account:', error);
+      console.error(
+        '[AddAccountButton] Failed to prepare for adding account:',
+        error
+      );
       setIsLoading(false);
     }
   };
