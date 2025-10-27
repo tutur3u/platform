@@ -1,6 +1,8 @@
 'use client';
 
+import { AccountSwitcherModal } from '@/components/account-switcher';
 import { CommandPalette } from '@/components/command';
+import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { SidebarContext } from '@/context/sidebar-context';
 import {
   Check,
@@ -13,6 +15,7 @@ import {
   SquareMousePointer,
   Terminal,
   User,
+  Users,
 } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -63,7 +66,9 @@ export default function UserNavClient({
   const { wsId } = useParams();
   const [open, setOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [accountSwitcherOpen, setAccountSwitcherOpen] = useState(false);
   const sidebar = useContext(SidebarContext);
+  const { accounts } = useAccountSwitcher();
 
   return (
     <>
@@ -78,6 +83,10 @@ export default function UserNavClient({
           <UserSettingsDialog user={user} />
         </Dialog>
       )}
+      <AccountSwitcherModal
+        open={accountSwitcherOpen}
+        onOpenChange={setAccountSwitcherOpen}
+      />
 
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
@@ -235,6 +244,24 @@ export default function UserNavClient({
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <InviteMembersMenuItem />
+          <DropdownMenuSeparator />
+          {accounts.length >= 2 ? (
+            <DropdownMenuItem
+              onSelect={() => setAccountSwitcherOpen(true)}
+              className="cursor-pointer"
+            >
+              <Users className="h-4 w-4 text-dynamic-orange" />
+              <span>{t('account_switcher.switch_account')}</span>
+              <DropdownMenuShortcut>⌘⇧A</DropdownMenuShortcut>
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem asChild>
+              <Link href="/settings/account/accounts" className="cursor-pointer">
+                <Users className="h-4 w-4 text-dynamic-orange" />
+                <span>{t('account_switcher.manage_accounts')}</span>
+              </Link>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <LogoutDropdownItem />
         </DropdownMenuContent>

@@ -152,15 +152,40 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   // URL Processing Helper
   const processNextUrl = useCallback(async () => {
     const returnUrl = searchParams.get('returnUrl');
+    const multiAccount = searchParams.get('multiAccount');
+
+    // IMPORTANT: If in multi-account mode, ALWAYS go through add-account page first
+    // This ensures the session is added to the multi-account store
+    if (multiAccount === 'true') {
+      console.log('[processNextUrl] Multi-account mode, redirecting to add-account page');
+      const addAccountUrl = `/add-account${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`;
+      // Use window.location.href for full page reload to ensure add-account page runs
+      window.location.href = addAccountUrl;
+      return;
+    }
 
     if (returnUrl) {
-      const returnApp = mapUrlToApp(returnUrl);
-      console.log(returnApp);
+      // Check if returnUrl is a relative path (same domain)
+      const isRelativePath = returnUrl.startsWith('/');
+
+      let returnApp: string | null;
+      if (isRelativePath) {
+        // Relative paths are always for the 'web' app
+        returnApp = 'web';
+        console.log('[processNextUrl] Relative path detected, using web app:', returnUrl);
+      } else {
+        // Absolute URLs need to be mapped to their app
+        returnApp = mapUrlToApp(returnUrl);
+        console.log('[processNextUrl] Absolute URL mapped to app:', returnApp);
+      }
 
       if (!returnApp) throw new Error('Invalid returnUrl');
 
       if (returnApp === 'web') {
-        router.push(returnUrl);
+        // Normal redirect for single-account mode
+        const redirectUrl = new URL(returnUrl, window.location.origin);
+        console.log('[processNextUrl] Redirecting to web app:', redirectUrl.pathname);
+        router.push(redirectUrl.pathname + redirectUrl.search);
         router.refresh();
         return;
       }
@@ -179,6 +204,9 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       nextUrl.searchParams.set('originApp', 'web');
       nextUrl.searchParams.set('targetApp', returnApp);
       nextUrl.searchParams.set('locale', locale);
+      if (multiAccount === 'true') {
+        nextUrl.searchParams.set('multiAccount', 'true');
+      }
 
       router.push(nextUrl.toString());
       router.refresh();
@@ -190,11 +218,17 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     if (nextUrl) {
       router.push(nextUrl);
     } else {
-      router.push('/');
+      // Fallback: If multiAccount mode somehow reached here, redirect to add-account page
+      // (This should not normally happen as it's handled at the top of this function)
+      if (multiAccount === 'true') {
+        router.push(`/add-account${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`);
+      } else {
+        router.push('/');
+      }
     }
 
     router.refresh();
-  }, [searchParams, router, locale, supabase]);
+  }, [searchParams, router, supabase]);
 
   const loginWithPassword = async (data: {
     email: string;
@@ -209,16 +243,42 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         password: data.password,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Login failed - this is an authentication error
+        console.error('[loginWithPassword] Auth error:', error);
+        throw error;
+      }
+
+      // Login succeeded, now handle navigation
       router.refresh();
 
       if (await needsMFA()) {
         setRequiresMFA(true);
       } else {
-        window.location.reload();
+        // Use processNextUrl if in multiAccount mode or if there's a returnUrl
+        const multiAccount = searchParams.get('multiAccount');
+        const returnUrl = searchParams.get('returnUrl');
+        if (multiAccount === 'true' || returnUrl) {
+          try {
+            await processNextUrl();
+          } catch (navError) {
+            // Navigation error after successful login
+            // Don't show "invalid credentials" - login succeeded!
+            console.error('[loginWithPassword] Navigation error after successful login:', navError);
+            // Fallback to default redirect using window.location.href for full reload
+            if (multiAccount === 'true') {
+              window.location.href = `/add-account${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`;
+            } else {
+              window.location.href = '/';
+            }
+          }
+        } else {
+          window.location.reload();
+        }
       }
     } catch (error) {
-      console.error('Error signing in with password:', error);
+      // This is an authentication error (login failed)
+      console.error('[loginWithPassword] Authentication failed:', error);
       passwordForm.setError('password', {
         message: t('login.invalid_credentials'),
       });
@@ -540,6 +600,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
     const returnUrl = searchParams.get('returnUrl');
     const nextUrl = searchParams.get('nextUrl');
+    const multiAccount = searchParams.get('multiAccount');
     let redirectURL = `${window.location.origin}/${locale}/login`;
     const searchParamsArray = [];
 
@@ -547,6 +608,8 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       searchParamsArray.push(`returnUrl=${encodeURIComponent(returnUrl)}`);
     if (nextUrl)
       searchParamsArray.push(`nextUrl=${encodeURIComponent(nextUrl)}`);
+    if (multiAccount === 'true')
+      searchParamsArray.push('multiAccount=true');
 
     if (searchParamsArray.length > 0) {
       redirectURL += `?${searchParamsArray.join('&')}`;
@@ -579,6 +642,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
     const returnUrl = searchParams.get('returnUrl');
     const nextUrl = searchParams.get('nextUrl');
+    const multiAccount = searchParams.get('multiAccount');
     let redirectURL = `${window.location.origin}/${locale}/login`;
     const searchParamsArray = [];
 
@@ -586,6 +650,8 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       searchParamsArray.push(`returnUrl=${encodeURIComponent(returnUrl)}`);
     if (nextUrl)
       searchParamsArray.push(`nextUrl=${encodeURIComponent(nextUrl)}`);
+    if (multiAccount === 'true')
+      searchParamsArray.push('multiAccount=true');
 
     if (searchParamsArray.length > 0) {
       redirectURL += `?${searchParamsArray.join('&')}`;
@@ -666,6 +732,15 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
   useEffect(() => {
     const processUrl = async () => {
+      const multiAccount = searchParams.get('multiAccount');
+
+      // If in multi-account mode, always show login form (don't auto-redirect)
+      if (multiAccount === 'true') {
+        setReadyForAuth(true);
+        return;
+      }
+
+      // Normal flow: if user is logged in and no MFA needed, redirect
       if (user && !requiresMFA) {
         await processNextUrl();
       } else {
@@ -676,7 +751,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     if (initialized) {
       processUrl();
     }
-  }, [user, initialized, requiresMFA, processNextUrl]);
+  }, [user, initialized, requiresMFA, processNextUrl, searchParams]);
 
   useEffect(() => {
     if (DEV_MODE) {

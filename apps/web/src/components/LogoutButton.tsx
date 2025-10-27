@@ -1,17 +1,12 @@
+'use client';
+
+import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { Button } from '@tuturuuu/ui/button';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 export default function LogoutButton() {
   const t = useTranslations('common');
-  const router = useRouter();
-
-  const logout = async () => {
-    await fetch('/api/auth/logout', {
-      method: 'POST',
-    });
-    router.refresh();
-  };
+  const { logout } = useAccountSwitcher();
 
   return (
     <Button

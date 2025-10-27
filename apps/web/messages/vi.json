@@ -4758,10 +4758,47 @@
       "name": "Thanh toán & Gói",
       "description": "Gói đăng ký, phương thức thanh toán và lịch sử thanh toán"
     },
+    "accounts": {
+      "name": "Tài khoản",
+      "description": "Quản lý nhiều tài khoản và chuyển đổi giữa chúng"
+    },
     "workspaces": {
       "name": "Không gian làm việc",
       "description": "Quản lý cài đặt và tùy chọn không gian làm việc của bạn"
     }
+  },
+  "account_switcher": {
+    "accounts": "Tài khoản",
+    "active": "Đang hoạt động",
+    "add_account": "Thêm tài khoản",
+    "add_account_description": "Đăng nhập bằng tài khoản khác để thêm vào trình chuyển đổi tài khoản",
+    "preparing": "Đang chuẩn bị...",
+    "switch_account": "Chuyển tài khoản",
+    "manage_accounts": "Quản lý tài khoản",
+    "remove": "Xóa",
+    "remove_account": "Xóa tài khoản",
+    "no_accounts": "Không có tài khoản nào",
+    "no_accounts_found": "Không tìm thấy tài khoản. Thêm tài khoản để bắt đầu.",
+    "no_results": "Không có tài khoản nào khớp với tìm kiếm",
+    "search_accounts": "Tìm kiếm tài khoản...",
+    "last_active": "Hoạt động lần cuối",
+    "last_workspace": "Không gian làm việc cuối",
+    "cannot_remove_active": "Không thể xóa tài khoản đang hoạt động",
+    "adding_account": "Đang thêm tài khoản",
+    "adding_account_description": "Vui lòng đợi trong khi chúng tôi thêm tài khoản của bạn...",
+    "account_added_success": "Đã thêm tài khoản thành công!",
+    "account_added_error": "Không thể thêm tài khoản",
+    "please_wait": "Vui lòng đợi...",
+    "redirecting": "Đang chuyển hướng...",
+    "remove_account_title": "Xóa tài khoản?",
+    "remove_account_description": "Bạn có chắc chắn muốn xóa {account}? Bạn sẽ cần đăng nhập lại để sử dụng tài khoản này.",
+    "account_removed_success": "Đã xóa tài khoản thành công",
+    "account_removed_error": "Không thể xóa tài khoản",
+    "manage_accounts_description": "Thêm, xóa và chuyển đổi giữa nhiều tài khoản. Ngữ cảnh không gian làm việc của bạn sẽ được ghi nhớ cho mỗi tài khoản.",
+    "switch_account_description": "Nhanh chóng chuyển đổi giữa các tài khoản của bạn. Sử dụng phím mũi tên để điều hướng và Enter để chọn.",
+    "navigate": "Điều hướng",
+    "select": "Chọn",
+    "quick_switch": "Chuyển nhanh"
   },
   "sessions-card": {
     "title": "Phiên hoạt động",
