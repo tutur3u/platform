@@ -47,6 +47,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { toast } from '@tuturuuu/ui/sonner';
 import { getFilteredMetrics } from '@tuturuuu/utils/task-helpers';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
@@ -419,11 +420,14 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
           throw new Error('Failed to delete board');
         }
 
+        toast.success('Board moved to trash successfully');
         // Refresh the page to show updated data
         router.refresh();
       } catch (error) {
         console.error('Error deleting board:', error);
-        // TODO: Show toast notification for error
+        toast.error('Failed to delete board', {
+          description: error instanceof Error ? error.message : 'An unexpected error occurred',
+        });
       }
     },
     [router]
@@ -658,15 +662,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 </label>
                 <select
                   value={boardStatusFilter}
-                  onChange={(e) =>
-                    setBoardStatusFilter(
-                      e.target.value as
-                        | 'all'
-                        | 'active'
-                        | 'archived'
-                        | 'recently_deleted'
-                    )
-                  }
+                  onChange={(e) => setBoardStatusFilter(e.target.value as typeof boardStatusFilter)}
                   className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
                 >
                   <option value="all">All Boards</option>

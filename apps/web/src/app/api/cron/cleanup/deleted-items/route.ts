@@ -5,7 +5,7 @@ import { type NextRequest, NextResponse } from 'next/server';
  * Cron job to permanently delete soft-deleted tasks and boards after 30 days
  * Runs hourly to clean up old deleted items
  */
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest): Promise<NextResponse> {
   // Verify cron secret
   const cronSecret =
     process.env.CRON_SECRET ?? process.env.VERCEL_CRON_SECRET ?? '';

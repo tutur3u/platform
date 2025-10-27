@@ -1,6 +1,12 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
-import { validate } from 'uuid';
+import { z } from 'zod';
+
+// Schema for validating route params
+const paramsSchema = z.object({
+  wsId: z.string().uuid('Invalid workspace ID'),
+  boardId: z.string().uuid('Invalid board ID'),
+});
 
 interface BoardParams {
   wsId: string;
@@ -12,15 +18,18 @@ export async function POST(
   { params }: { params: Promise<BoardParams> }
 ) {
   try {
-    const { wsId, boardId } = await params;
+    const rawParams = await params;
 
-    // Validate UUIDs
-    if (!validate(wsId) || !validate(boardId)) {
-      return NextResponse.json(
-        { error: 'Invalid workspace or board ID' },
-        { status: 400 }
-      );
+    // Validate params using Zod schema
+    const validation = paramsSchema.safeParse(rawParams);
+    if (!validation.success) {
+      const errorMessage = validation.error.issues
+        .map((e) => e.message)
+        .join(', ');
+      return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
+
+    const { wsId, boardId } = validation.data;
 
     const supabase = await createClient();
 
@@ -114,15 +123,18 @@ export async function DELETE(
   { params }: { params: Promise<BoardParams> }
 ) {
   try {
-    const { wsId, boardId } = await params;
+    const rawParams = await params;
 
-    // Validate UUIDs
-    if (!validate(wsId) || !validate(boardId)) {
-      return NextResponse.json(
-        { error: 'Invalid workspace or board ID' },
-        { status: 400 }
-      );
+    // Validate params using Zod schema
+    const validation = paramsSchema.safeParse(rawParams);
+    if (!validation.success) {
+      const errorMessage = validation.error.issues
+        .map((e) => e.message)
+        .join(', ');
+      return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
+
+    const { wsId, boardId } = validation.data;
 
     const supabase = await createClient();
 

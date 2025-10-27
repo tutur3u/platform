@@ -125,7 +125,7 @@ export async function GET(
       const now = new Date();
       const autoDeleteDate = new Date(deleted);
       autoDeleteDate.setDate(autoDeleteDate.getDate() + 30);
-      const daysRemaining = Math.ceil(
+      const daysRemaining = Math.floor(
         (autoDeleteDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
       );
       return Math.max(0, daysRemaining);

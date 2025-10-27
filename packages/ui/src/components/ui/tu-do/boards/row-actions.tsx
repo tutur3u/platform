@@ -50,20 +50,6 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
 
   const data = row.original;
 
-  // Calculate days remaining for soft-deleted boards (30-day retention)
-  const calculateDaysRemaining = (deletedAt: string | null) => {
-    if (!deletedAt) return null;
-
-    const deletedDate = new Date(deletedAt);
-    const now = new Date();
-    const daysPassed = Math.floor(
-      (now.getTime() - deletedDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    const daysRemaining = 30 - daysPassed;
-
-    return Math.max(0, daysRemaining);
-  };
-
   // Soft delete mutation
   const softDeleteMutation = useMutation({
     mutationFn: async () => {
@@ -76,7 +62,9 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
 
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || 'Failed to delete board');
+        throw new Error(
+          error.error || error.message || 'Failed to delete board'
+        );
       }
 
       return res.json();
@@ -106,7 +94,11 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
 
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || 'Failed to permanently delete board');
+        throw new Error(
+          error.error ||
+            error.message ||
+            'Failed to permanently delete board'
+        );
       }
 
       return res.json();
@@ -138,7 +130,9 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
 
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || 'Failed to restore board');
+        throw new Error(
+          error.error || error.message || 'Failed to restore board'
+        );
       }
 
       return res.json();
@@ -168,7 +162,9 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
 
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || 'Failed to archive board');
+        throw new Error(
+          error.error || error.message || 'Failed to archive board'
+        );
       }
 
       return res.json();
@@ -198,7 +194,9 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
 
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || 'Failed to unarchive board');
+        throw new Error(
+          error.error || error.message || 'Failed to unarchive board'
+        );
       }
 
       return res.json();
