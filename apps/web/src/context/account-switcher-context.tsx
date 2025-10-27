@@ -103,14 +103,23 @@ export function AccountSwitcherProvider({
 
       if (event.type === 'account-added' || event.type === 'account-removed') {
         // Refresh accounts list
-        console.log('[handleStoreEvent] Refreshing accounts due to:', event.type);
+        console.log(
+          '[handleStoreEvent] Refreshing accounts due to:',
+          event.type
+        );
         refreshAccounts();
       } else if (event.type === 'account-switched') {
         // Update active account
-        console.log('[handleStoreEvent] Switching active account to:', event.toId);
+        console.log(
+          '[handleStoreEvent] Switching active account to:',
+          event.toId
+        );
         setActiveAccountId(event.toId);
       } else if (event.type === 'session-refreshed') {
-        console.log('[handleStoreEvent] Session refreshed for account:', event.accountId);
+        console.log(
+          '[handleStoreEvent] Session refreshed for account:',
+          event.accountId
+        );
         // Optionally refresh accounts to get updated metadata
         refreshAccounts();
       }
@@ -213,7 +222,7 @@ export function AccountSwitcherProvider({
             if (currentAccounts.length !== storedAccounts.length) {
               console.log('Account count changed, refreshing state:', {
                 old: storedAccounts.length,
-                new: currentAccounts.length
+                new: currentAccounts.length,
               });
               setAccounts(currentAccounts);
             }
@@ -295,16 +304,25 @@ export function AccountSwitcherProvider({
       } else {
         // Use remembered workspace and route if available
         const account = accounts.find((acc) => acc.id === accountId);
-        console.log('[handleAccountSwitch] Account metadata:', account?.metadata);
+        console.log(
+          '[handleAccountSwitch] Account metadata:',
+          account?.metadata
+        );
 
         if (account?.metadata.lastRoute) {
           // Use exact last route
           targetPath = account.metadata.lastRoute;
-          console.log('[handleAccountSwitch] Using remembered route:', targetPath);
+          console.log(
+            '[handleAccountSwitch] Using remembered route:',
+            targetPath
+          );
         } else if (account?.metadata.lastWorkspaceId) {
           // Construct workspace URL (locale will be auto-added by proxy if needed)
           targetPath = `/${account.metadata.lastWorkspaceId}`;
-          console.log('[handleAccountSwitch] Using remembered workspace:', targetPath);
+          console.log(
+            '[handleAccountSwitch] Using remembered workspace:',
+            targetPath
+          );
         } else {
           console.log('[handleAccountSwitch] Using default path:', targetPath);
         }
@@ -346,9 +364,10 @@ export function AccountSwitcherProvider({
           // If switching immediately, handle navigation
           if (options?.switchImmediately) {
             console.log('[addAccount] Switching immediately to new account...');
-            const switchOptions: SwitchAccountOptions | undefined = options?.workspaceId
-              ? { targetWorkspaceId: options.workspaceId }
-              : undefined;
+            const switchOptions: SwitchAccountOptions | undefined =
+              options?.workspaceId
+                ? { targetWorkspaceId: options.workspaceId }
+                : undefined;
             await handleAccountSwitch(result.accountId, session, switchOptions);
           }
         }
@@ -439,9 +458,17 @@ export function AccountSwitcherProvider({
           const workspaceId = pathMatch?.[1];
           if (workspaceId) {
             // Only save if it's not a special route (settings, login, etc.)
-            const isSpecialRoute = ['settings', 'login', 'onboarding', 'add-account'].includes(workspaceId);
+            const isSpecialRoute = [
+              'settings',
+              'login',
+              'onboarding',
+              'add-account',
+            ].includes(workspaceId);
             if (!isSpecialRoute) {
-              console.log('[switchAccount] Saving workspace context:', { workspaceId, pathname });
+              console.log('[switchAccount] Saving workspace context:', {
+                workspaceId,
+                pathname,
+              });
               await store.updateAccountMetadata(activeAccountId, {
                 lastWorkspaceId: workspaceId,
                 lastRoute: pathname,
@@ -499,7 +526,9 @@ export function AccountSwitcherProvider({
 
       // Get remaining accounts before removing current one
       const allAccounts = await store.getAccounts();
-      const otherAccounts = allAccounts.filter(acc => acc.id !== activeAccountId);
+      const otherAccounts = allAccounts.filter(
+        (acc) => acc.id !== activeAccountId
+      );
 
       console.log('[logout] Other accounts available:', otherAccounts.length);
 

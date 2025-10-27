@@ -39,7 +39,10 @@ export default function AddAccountPage() {
           error,
         } = await supabase.auth.getSession();
 
-        console.log('[AddAccountPage] Current session:', session ? { id: session.user.id, email: session.user.email } : null);
+        console.log(
+          '[AddAccountPage] Current session:',
+          session ? { id: session.user.id, email: session.user.email } : null
+        );
 
         if (error || !session) {
           console.error('[AddAccountPage] Error getting session:', error);
@@ -57,18 +60,25 @@ export default function AddAccountPage() {
         console.log('[AddAccountPage] Add account result:', result);
 
         // If account already exists, treat it as success (just switch to it)
-        const accountAlreadyExists = !result.success && result.error?.toLowerCase().includes('already exists');
+        const accountAlreadyExists =
+          !result.success &&
+          result.error?.toLowerCase().includes('already exists');
 
         if (result.success || accountAlreadyExists) {
           if (accountAlreadyExists) {
-            console.log('[AddAccountPage] Account already exists, treating as success and redirecting');
+            console.log(
+              '[AddAccountPage] Account already exists, treating as success and redirecting'
+            );
           }
 
           // Get the return URL from query params
           const returnUrl = searchParams.get('returnUrl');
           const redirectUrl = returnUrl ? decodeURIComponent(returnUrl) : '/';
 
-          console.log('[AddAccountPage] Redirecting immediately to:', redirectUrl);
+          console.log(
+            '[AddAccountPage] Redirecting immediately to:',
+            redirectUrl
+          );
 
           // Redirect immediately without showing success UI
           window.location.href = redirectUrl;

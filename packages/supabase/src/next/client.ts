@@ -50,7 +50,9 @@ export async function switchClientSession(
   });
 
   if (error || !data.session) {
-    throw new Error(`Failed to switch session: ${error?.message || 'No session returned'}`);
+    throw new Error(
+      `Failed to switch session: ${error?.message || 'No session returned'}`
+    );
   }
 
   // Return the fresh session (may have refreshed tokens)
