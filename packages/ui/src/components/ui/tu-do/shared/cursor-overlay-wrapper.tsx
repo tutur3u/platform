@@ -1,3 +1,5 @@
+import { createClient } from '@tuturuuu/supabase/next/client';
+import type { User } from '@tuturuuu/types/primitives/User';
 import { useCursorTracking } from '@tuturuuu/ui/hooks/useCursorTracking';
 import { useEffect, useState } from 'react';
 import CursorOverlay from './cursor-overlay';
@@ -13,7 +15,45 @@ export default function CursorOverlayWrapper({
     width: number;
     height: number;
   }>({ width: 0, height: 0 });
-  const { cursors, error } = useCursorTracking(channelName, containerRef);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  // Fetch current user
+  useEffect(() => {
+    const fetchUser = async () => {
+      const supabase = createClient();
+
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user?.id) return;
+
+        const { data: userData, error: userDataError } = await supabase
+          .from('users')
+          .select('id, display_name')
+          .eq('id', user.id)
+          .single();
+
+        if (userDataError) {
+          console.warn('Error fetching user data:', userDataError);
+          return;
+        }
+
+        setCurrentUser(userData);
+      } catch (err) {
+        console.warn('Error fetching user:', err);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  const { cursors, error } = useCursorTracking(
+    channelName,
+    containerRef,
+    currentUser ?? undefined
+  );
 
   useEffect(() => {
     if (!containerRef.current) return;
