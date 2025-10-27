@@ -134,7 +134,7 @@
     "postcss-load-config": "^6.0.1",
     "tailwindcss": "^4.1.16",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.3"
+    "vitest": "^4.0.4"
   },
   "exports": {
     "./globals.css": "./src/globals.css",
