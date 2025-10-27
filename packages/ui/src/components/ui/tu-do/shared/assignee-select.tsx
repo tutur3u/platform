@@ -177,7 +177,7 @@ export function AssigneeSelect({ taskId, assignees = [] }: Props) {
       });
     },
     onSettled: () => {
-      setOpen(false);
+      // Intentionally left blank to keep popover open for multiple selections
     },
   });
 
