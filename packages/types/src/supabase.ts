@@ -942,6 +942,10 @@ export type Database = {
                 };
                 Returns: number;
             };
+            hard_delete_soft_deleted_items: {
+                Args: never;
+                Returns: undefined;
+            };
             has_other_owner: {
                 Args: {
                     _user_id: string;

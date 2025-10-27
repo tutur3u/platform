@@ -15,10 +15,6 @@
     {
       "path": "/api/cron/tasks/generate-embeddings",
       "schedule": "0 2 * * *"
-    },
-    {
-      "path": "/api/cron/cleanup/deleted-items",
-      "schedule": "0 * * * *"
     }
   ],
   "functions": {
