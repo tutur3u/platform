@@ -19,7 +19,7 @@ import {
   Users,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { TaskWithRelations } from '@tuturuuu/types/db';
+import type { TaskWithRelations } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -1277,7 +1277,7 @@ export default function MyTasksContent({
       none: [] as TaskWithRelations[],
     };
 
-    if (!tasks) return emptyResult;
+    if (!tasks || !Array.isArray(tasks)) return emptyResult;
 
     return tasks.reduce(
       (acc, task) => {

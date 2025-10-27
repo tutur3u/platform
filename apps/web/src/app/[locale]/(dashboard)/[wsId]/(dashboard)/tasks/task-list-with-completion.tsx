@@ -20,6 +20,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
 import { TaskEstimationDisplay } from '@tuturuuu/ui/tu-do/shared/task-estimation-display';
 import { TaskLabelsDisplay } from '@tuturuuu/ui/tu-do/shared/task-labels-display';
+import { TaskProjectsDisplay } from '@tuturuuu/ui/tu-do/shared/task-projects-display';
 import { cn } from '@tuturuuu/utils/format';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import {
@@ -29,7 +30,7 @@ import {
   isYesterday,
 } from 'date-fns';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 
 interface TaskListWithCompletionProps {
   tasks: TaskWithRelations[];
@@ -64,7 +65,7 @@ export default function TaskListWithCompletion({
   const handleToggleComplete = async (
     task: TaskWithRelations,
     e?: React.MouseEvent | Record<string, never>
-  ) => {
+  ): Promise<void> => {
     if (e && 'preventDefault' in e) {
       e.preventDefault();
       e.stopPropagation();
@@ -156,7 +157,7 @@ export default function TaskListWithCompletion({
     }
   };
 
-  const handleEditTask = (task: TaskWithRelations, e: React.MouseEvent) => {
+  const handleEditTask = (task: TaskWithRelations, e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -256,7 +257,7 @@ export default function TaskListWithCompletion({
             )}
           >
             {/* Main content area */}
-            <div className="flex items-start gap-4">
+            <div className="flex items-start gap-3">
               {/* Checkbox for completion */}
               <div className="flex items-start pt-1">
                 {isCompleting ? (
@@ -285,189 +286,240 @@ export default function TaskListWithCompletion({
               {/* Task info - clickable area */}
               <button
                 type="button"
-                className="min-w-0 flex-1 space-y-3 text-left"
+                className="min-w-0 flex-1 text-left lg:gap-y-3"
                 onClick={(e) => handleEditTask(task, e)}
               >
-                {/* Task name and priority badge */}
-                <div className="flex items-start gap-3">
-                  <h4
-                    className={cn(
-                      'line-clamp-2 flex-1 font-bold text-base leading-snug transition-colors duration-200 group-hover:text-primary',
-                      isCompleted
-                        ? 'text-muted-foreground line-through'
-                        : 'text-foreground'
-                    )}
-                  >
-                    {task.name}
-                  </h4>
-                  {task.priority && (
-                    <Badge
-                      className={cn(
-                        'shrink-0 font-bold text-[10px] uppercase tracking-wider shadow-md ring-1',
-                        getPriorityColor(task.priority)
-                      )}
-                    >
-                      {getPriorityLabel(task.priority)}
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Metadata row - Workspace → Board → List hierarchy */}
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-xs">
-                  {/* Workspace badge */}
-                  {isPersonal && task.list?.board?.ws_id && (
-                    <Link
-                      href={`/${task.list.board.ws_id}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className={cn(
-                        'group/ws flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-semibold shadow-sm ring-1 transition-all',
-                        task.list?.board?.workspaces?.personal
-                          ? 'bg-dynamic-purple/10 text-dynamic-purple ring-dynamic-purple/20 hover:bg-dynamic-purple/20 hover:shadow-md'
-                          : 'bg-dynamic-blue/10 text-dynamic-blue ring-dynamic-blue/20 hover:bg-dynamic-blue/20 hover:shadow-md'
-                      )}
-                    >
-                      {task.list?.board?.workspaces?.personal ? (
-                        <>
-                          <UserRound className="h-3.5 w-3.5" />
-                          <span className="truncate group-hover/ws:underline">
-                            Personal
-                          </span>
-                        </>
-                      ) : (
-                        <span className="truncate group-hover/ws:underline">
-                          {task.list?.board?.workspaces?.name}
-                        </span>
-                      )}
-                    </Link>
-                  )}
-
-                  {isPersonal && task.list?.board?.ws_id && (
-                    <span className="text-muted-foreground/40">→</span>
-                  )}
-
-                  {/* Board name */}
-                  {task.list?.board?.id && task.list?.board?.ws_id && (
-                    <Link
-                      href={`/${task.list.board.ws_id}/tasks/boards/${task.list.board.id}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="group/link flex items-center gap-1.5 rounded-lg bg-dynamic-green/10 px-2.5 py-1 font-semibold text-dynamic-green shadow-sm ring-1 ring-dynamic-green/20 transition-all hover:bg-dynamic-green/20 hover:shadow-md"
-                    >
-                      <span className="truncate group-hover/link:underline">
-                        {task.list?.board?.name || 'Board'}
-                      </span>
-                    </Link>
-                  )}
-
-                  {task.list?.board?.id && task.list?.name && (
-                    <span className="text-muted-foreground/40">→</span>
-                  )}
-
-                  {/* List name */}
-                  {task.list?.name && (
-                    <span className="truncate rounded-lg bg-dynamic-purple/10 px-2.5 py-1 font-semibold text-dynamic-purple shadow-sm ring-1 ring-dynamic-purple/20">
-                      {task.list.name}
-                    </span>
-                  )}
-
-                  {(endDate || (startDate && startDate > now)) && (
-                    <span className="text-muted-foreground/30">•</span>
-                  )}
-
-                  {/* Due date */}
-                  {endDate && (
-                    <div
-                      className={cn(
-                        'flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-medium shadow-sm ring-1 transition-colors',
-                        taskOverdue && !task.archived && !isCompleted
-                          ? 'bg-dynamic-red/10 text-dynamic-red ring-dynamic-red/20'
-                          : 'bg-dynamic-orange/10 text-dynamic-orange ring-dynamic-orange/20'
-                      )}
-                    >
-                      <Calendar className="h-3.5 w-3.5 shrink-0" />
-                      <span className="truncate">
-                        {formatSmartDate(endDate)}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Start date */}
-                  {startDate && startDate > now && (
-                    <div className="flex items-center gap-1.5 rounded-lg bg-dynamic-blue/10 px-2.5 py-1 font-medium text-dynamic-blue shadow-sm ring-1 ring-dynamic-blue/20">
-                      <Clock className="h-3.5 w-3.5 shrink-0" />
-                      <span className="truncate">
-                        Starts {formatSmartDate(startDate)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Bottom row - labels, estimation, assignees */}
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* Assignees */}
-                  {task.assignees && task.assignees.length > 0 && (
-                    <div className="-space-x-2 flex">
-                      {task.assignees.slice(0, 3).map((assignee) => (
-                        <Avatar
-                          key={assignee.user?.id}
-                          className="h-7 w-7 border-2 border-background shadow-md ring-1 ring-border/50 transition-all duration-200 hover:z-10 hover:scale-110 hover:ring-primary/30"
-                        >
-                          <AvatarImage
-                            src={assignee.user?.avatar_url || undefined}
-                            alt={assignee.user?.display_name || 'User'}
-                          />
-                          <AvatarFallback className="font-semibold text-xs">
-                            {(assignee.user?.display_name || 'U')
-                              .charAt(0)
-                              .toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                      ))}
-                      {task.assignees.length > 3 && (
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-gradient-to-br from-primary/20 to-primary/10 font-bold text-[10px] text-primary shadow-md ring-1 ring-border/50">
-                          +{task.assignees.length - 3}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Labels */}
-                  {task.labels && task.labels.length > 0 && (
-                    <>
-                      <div className="h-5 w-[1px] bg-border" />
-                      <TaskLabelsDisplay
-                        labels={task.labels
-                          .map((tl) => tl.label)
-                          .filter(
-                            (label): label is NonNullable<typeof label> =>
-                              label !== null
+                {/* Desktop layout (md/lg): Task name + metadata on line 1, labels/projects on line 2 */}
+                {/* Check if line 2 will have content */}
+                {(() => {
+                  const hasLabels = task.labels && task.labels.length > 0;
+                  const hasProjects = task.projects && task.projects.length > 0;
+                  const hasLine2 = hasLabels || hasProjects;
+                  return (
+                    <div className={cn("flex flex-col", hasLine2 ? "gap-y-3" : "")}>
+                      {/* Line 1: Task name on left, Board → List → Due date → Assignees + Estimation on right */}
+                      <div className="hidden md:flex items-center justify-between gap-2">
+                        <h4
+                          className={cn(
+                            'flex-1 font-bold text-base leading-snug transition-colors duration-200 group-hover:text-primary',
+                            isCompleted
+                              ? 'text-muted-foreground line-through'
+                              : 'text-foreground'
                           )}
-                        size="sm"
-                        maxDisplay={4}
-                      />
-                    </>
-                  )}
+                        >
+                          {task.name}
+                        </h4>
+                        {/* Right side: Board → List → Due → Assignees → Estimation */}
+                        <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs flex-shrink-0">
+                          {/* Board name */}
+                          {task.list?.board?.id && task.list?.board?.ws_id && (
+                            <Link
+                              href={`/${task.list.board.ws_id}/tasks/boards/${task.list.board.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="group/link flex items-center gap-1.5 rounded-lg bg-dynamic-green/10 px-2.5 py-1 font-semibold text-dynamic-green shadow-sm ring-1 ring-dynamic-green/20 transition-all hover:bg-dynamic-green/20 hover:shadow-md"
+                            >
+                              <span className="truncate group-hover/link:underline">
+                                {task.list?.board?.name || 'Board'}
+                              </span>
+                            </Link>
+                          )}
 
-                  {/* Estimation */}
-                  {task.estimation_points !== null &&
-                    task.estimation_points !== undefined && (
-                      <>
-                        <div className="h-5 w-[1px] bg-border" />
+                          {task.list?.board?.id && task.list?.name && (
+                            <span className="text-muted-foreground/40">→</span>
+                          )}
+
+                          {/* List name */}
+                          {task.list?.name && (
+                            <span className="truncate rounded-lg bg-dynamic-purple/10 px-2.5 py-1 font-semibold text-dynamic-purple shadow-sm ring-1 ring-dynamic-purple/20">
+                              {task.list.name}
+                            </span>
+                          )}
+
+                          {endDate && (
+                            <span className="text-muted-foreground/30">•</span>
+                          )}
+
+                          {/* Due date */}
+                          {endDate && (
+                            <div
+                              className={cn(
+                                'flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-medium shadow-sm ring-1 transition-colors',
+                                taskOverdue && !task.archived && !isCompleted
+                                  ? 'bg-dynamic-red/10 text-dynamic-red ring-dynamic-red/20'
+                                  : 'bg-dynamic-orange/10 text-dynamic-orange ring-dynamic-orange/20'
+                              )}
+                            >
+                              <Calendar className="h-3.5 w-3.5 shrink-0" />
+                              <span className="truncate">
+                                {formatSmartDate(endDate)}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Assignees */}
+                          {task.assignees && task.assignees.length > 0 && (
+                            <>
+                              <span className="text-muted-foreground/30">•</span>
+                              <div className="-space-x-2 flex">
+                                {task.assignees.slice(0, 2).map((assignee) => (
+                                  <Avatar
+                                    key={assignee.user?.id}
+                                    className="h-6 w-6 border-2 border-background shadow-sm ring-1 ring-border/50 transition-all duration-200 hover:z-10 hover:scale-110 hover:ring-primary/30"
+                                  >
+                                    <AvatarImage
+                                      src={assignee.user?.avatar_url || undefined}
+                                      alt={assignee.user?.display_name || 'User'}
+                                    />
+                                    <AvatarFallback className="font-semibold text-[9px]">
+                                      {(assignee.user?.display_name || 'U')
+                                        .charAt(0)
+                                        .toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                ))}
+                                {task.assignees.length > 2 && (
+                                  <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-gradient-to-br from-primary/20 to-primary/10 font-bold text-[8px] text-primary shadow-sm ring-1 ring-border/50">
+                                    +{task.assignees.length - 2}
+                                  </div>
+                                )}
+                              </div>
+                            </>
+                          )}
+
+                          {/* Estimation */}
+                          {task.estimation_points !== null &&
+                            task.estimation_points !== undefined && (
+                              <>
+                                <span className="text-muted-foreground/30">•</span>
+                                <TaskEstimationDisplay
+                                  points={task.estimation_points}
+                                  size="sm"
+                                  showIcon={true}
+                                  estimationType={task.list?.board?.estimation_type}
+                                />
+                              </>
+                            )}
+                        </div>
+                  </div>
+
+    
+                    </div>
+                  );
+                })()}
+
+                {/* Mobile layout (sm and below): Responsive multi-line layout */}
+                <div className="md:hidden space-y-4">
+                  {/* Task name with estimation */}
+                  <div className="flex items-start mt-1 gap-3">
+                    <h4
+                      className={cn(
+                        'line-clamp-2 flex-1 font-bold text-base leading-snug transition-colors duration-200 group-hover:text-primary',
+                        isCompleted
+                          ? 'text-muted-foreground line-through'
+                          : 'text-foreground'
+                      )}
+                    >
+                      {task.name}
+                    </h4>
+                    {task.estimation_points !== null &&
+                      task.estimation_points !== undefined && (
                         <TaskEstimationDisplay
                           points={task.estimation_points}
                           size="sm"
                           showIcon={true}
                           estimationType={task.list?.board?.estimation_type}
                         />
-                      </>
-                    )}
+                      )}
+                  </div>
+
+                  {/* Metadata rows */}
+                  <div className="space-y-3">
+                    {/* First line: Board → List → Due date */}
+                    <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs">
+                      {/* Board name */}
+                      {task.list?.board?.id && task.list?.board?.ws_id && (
+                        <Link
+                          href={`/${task.list.board.ws_id}/tasks/boards/${task.list.board.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="group/link flex items-center gap-1 rounded-lg bg-dynamic-green/10 px-2 py-0.5 font-semibold text-dynamic-green shadow-sm ring-1 ring-dynamic-green/20 transition-all hover:bg-dynamic-green/20"
+                        >
+                          <span className="truncate group-hover/link:underline">
+                            {task.list?.board?.name || 'Board'}
+                          </span>
+                        </Link>
+                      )}
+
+                      {task.list?.board?.id && task.list?.name && (
+                        <span className="text-muted-foreground/40">→</span>
+                      )}
+
+                      {/* List name */}
+                      {task.list?.name && (
+                        <span className="truncate rounded-lg bg-dynamic-purple/10 px-2 py-0.5 font-semibold text-dynamic-purple shadow-sm ring-1 ring-dynamic-purple/20 text-xs">
+                          {task.list.name}
+                        </span>
+                      )}
+
+                      {endDate && (
+                        <span className="text-muted-foreground/30">•</span>
+                      )}
+
+                      {/* Due date */}
+                      {endDate && (
+                        <div
+                          className={cn(
+                            'flex items-center gap-1 rounded-lg px-2 py-0.5 font-medium shadow-sm ring-1 transition-colors text-xs',
+                            taskOverdue && !task.archived && !isCompleted
+                              ? 'bg-dynamic-red/10 text-dynamic-red ring-dynamic-red/20'
+                              : 'bg-dynamic-orange/10 text-dynamic-orange ring-dynamic-orange/20'
+                          )}
+                        >
+                          <Calendar className="h-3 w-3 shrink-0" />
+                          <span className="truncate">
+                            {formatSmartDate(endDate)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Second line: Assignees */}
+                    <div className="flex flex-wrap items-center gap-3">
+                      {/* Assignees */}
+                      {task.assignees && task.assignees.length > 0 && (
+                        <div className="-space-x-2 flex">
+                          {task.assignees.slice(0, 2).map((assignee) => (
+                            <Avatar
+                              key={assignee.user?.id}
+                              className="h-5.5 w-5.5 border-2 border-background shadow-sm ring-1 ring-border/50 transition-all hover:z-10 hover:scale-110 hover:ring-primary/30"
+                            >
+                              <AvatarImage
+                                src={assignee.user?.avatar_url || undefined}
+                                alt={assignee.user?.display_name || 'User'}
+                              />
+                              <AvatarFallback className="font-semibold text-[8px]">
+                                {(assignee.user?.display_name || 'U')
+                                  .charAt(0)
+                                  .toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                          ))}
+                          {task.assignees.length > 2 && (
+                            <div className="flex h-5.5 w-5.5 items-center justify-center rounded-full border-2 border-background bg-gradient-to-br from-primary/20 to-primary/10 font-bold text-[7px] text-primary shadow-sm ring-1 ring-border/50">
+                              +{task.assignees.length - 2}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                {/* Description */}
+                {/* Description
                 {task.description && getDescriptionText(task.description) && (
                   <p className="line-clamp-2 rounded-lg border border-border/50 bg-muted/30 px-3.5 py-2.5 text-muted-foreground text-xs leading-relaxed shadow-sm backdrop-blur-sm">
                     {getDescriptionText(task.description)}
                   </p>
-                )}
+                )} */}
               </button>
             </div>
           </div>

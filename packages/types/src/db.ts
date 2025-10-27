@@ -90,6 +90,9 @@ export type TaskWithRelations = {
       created_at: string;
     } | null;
   }> | null;
+  projects?: Array<{
+    project: TaskProject | null;
+  }>;
 };
 
 export type WorkspaceCalendarEvent = Tables<'workspace_calendar_events'>;

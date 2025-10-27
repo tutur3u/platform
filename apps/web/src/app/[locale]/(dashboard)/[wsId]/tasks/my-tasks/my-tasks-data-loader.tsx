@@ -105,6 +105,20 @@ export async function MyTasksDataLoader({
     )
     .in('id', listIds);
 
+  // Fetch projects for all tasks
+  const { data: projectsData } = await supabase
+    .from('task_project_tasks')
+    .select(
+      `
+      task_id,
+      project:task_projects(
+        id,
+        name
+      )
+    `
+    )
+    .in('task_id', taskIds);
+
   // Map the data to match the expected structure
   const tasksWithRelations = allTasks?.map((task) => ({
     ...task,
@@ -117,6 +131,10 @@ export async function MyTasksDataLoader({
       labelsData
         ?.filter((l) => l.task_id === task.id)
         .map((l) => ({ label: l.label })) || null,
+    projects:
+      projectsData
+        ?.filter((p) => p.task_id === task.id)
+        .map((p) => ({ project: p.project })) || null,
   }));
 
   // Filter tasks by categories
