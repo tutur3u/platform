@@ -44,11 +44,15 @@ interface UseNotificationPreferencesOptions {
 /**
  * Hook to fetch notification preferences for a workspace
  */
-export function useNotificationPreferences({ wsId }: UseNotificationPreferencesOptions) {
+export function useNotificationPreferences({
+  wsId,
+}: UseNotificationPreferencesOptions) {
   return useQuery({
     queryKey: ['notification-preferences', wsId],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/notifications/preferences?wsId=${wsId}`);
+      const response = await fetch(
+        `/api/v1/notifications/preferences?wsId=${wsId}`
+      );
       if (!response.ok) {
         throw new Error('Failed to fetch notification preferences');
       }

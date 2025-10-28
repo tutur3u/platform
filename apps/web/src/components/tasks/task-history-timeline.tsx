@@ -3,10 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
-import {
-  useTaskHistory,
-  type TaskHistoryEntry,
-} from '@/hooks/useTaskHistory';
+import { useTaskHistory, type TaskHistoryEntry } from '@/hooks/useTaskHistory';
 import { format } from 'date-fns';
 import { vi, enUS } from 'date-fns/locale';
 import { useLocale } from 'next-intl';
@@ -66,7 +63,9 @@ export default function TaskHistoryTimeline({
 
   if (error) {
     return (
-      <div className={`rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-4 ${className}`}>
+      <div
+        className={`rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-4 ${className}`}
+      >
         <p className="text-dynamic-red text-sm">
           {t('error', { defaultValue: 'Failed to load task history' })}
         </p>
@@ -76,7 +75,9 @@ export default function TaskHistoryTimeline({
 
   if (!data?.history || data.history.length === 0) {
     return (
-      <div className={`rounded-lg border border-dashed p-8 text-center ${className}`}>
+      <div
+        className={`rounded-lg border border-dashed p-8 text-center ${className}`}
+      >
         <p className="text-foreground/60 text-sm">
           {t('empty', { defaultValue: 'No history available for this task' })}
         </p>
@@ -113,7 +114,8 @@ function HistoryEntry({ entry, isLast, dateLocale }: HistoryEntryProps) {
     locale: dateLocale,
   });
 
-  const userName = entry.user?.name || t('unknown_user', { defaultValue: 'Unknown user' });
+  const userName =
+    entry.user?.name || t('unknown_user', { defaultValue: 'Unknown user' });
   const userInitials = userName
     .split(' ')
     .map((n) => n[0])

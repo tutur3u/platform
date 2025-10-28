@@ -11,5 +11,11 @@
     "moduleResolution": "Bundler"
   },
   "include": ["src"],
-  "exclude": ["node_modules", "dist", ".turbo", "**/*.test.ts", "**/__tests__/**"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".turbo",
+    "**/*.test.ts",
+    "**/__tests__/**"
+  ]
 }

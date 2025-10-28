@@ -86,7 +86,10 @@ export default function NotificationPreferencesCard({
     }
   }, [preferences]);
 
-  const handleToggle = (eventType: NotificationEventType, channel: NotificationChannel) => {
+  const handleToggle = (
+    eventType: NotificationEventType,
+    channel: NotificationChannel
+  ) => {
     setLocalPreferences((prev) => {
       const newPrefs = { ...prev };
       if (!newPrefs[eventType]) {
@@ -145,7 +148,9 @@ export default function NotificationPreferencesCard({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-foreground/60 text-sm">Loading preferences...</div>
+          <div className="text-foreground/60 text-sm">
+            Loading preferences...
+          </div>
         </CardContent>
       </Card>
     );
@@ -201,10 +206,7 @@ export default function NotificationPreferencesCard({
         {/* Save button */}
         {hasChanges && (
           <div className="flex justify-end pt-4">
-            <Button
-              onClick={handleSave}
-              disabled={updatePreferences.isPending}
-            >
+            <Button onClick={handleSave} disabled={updatePreferences.isPending}>
               {updatePreferences.isPending ? 'Saving...' : t('save')}
             </Button>
           </div>
@@ -213,8 +215,8 @@ export default function NotificationPreferencesCard({
         {/* Info text */}
         <div className="rounded-lg bg-muted/50 p-4">
           <p className="text-muted-foreground text-xs">
-            Note: SMS notifications are coming soon and currently disabled.
-            Web notifications require browser permission.
+            Note: SMS notifications are coming soon and currently disabled. Web
+            notifications require browser permission.
           </p>
         </div>
       </CardContent>

@@ -2,10 +2,12 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-const metadataSchema = z.object({
-  action_taken: z.enum(['accepted', 'declined']).optional(),
-  action_timestamp: z.string().datetime().optional(),
-}).passthrough(); // Allow additional fields
+const metadataSchema = z
+  .object({
+    action_taken: z.enum(['accepted', 'declined']).optional(),
+    action_timestamp: z.string().datetime().optional(),
+  })
+  .passthrough(); // Allow additional fields
 
 /**
  * PATCH /api/v1/notifications/[id]/metadata
