@@ -8,6 +8,7 @@ import {
   Shield,
   Smartphone,
   User,
+  Users,
 } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -39,6 +40,11 @@ const settingsNav = [
     key: 'billing',
     href: '/settings/account/billing',
     icon: CreditCard,
+  },
+  {
+    key: 'accounts',
+    href: '/settings/account/accounts',
+    icon: Users,
   },
   {
     key: 'workspaces',

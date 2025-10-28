@@ -18,7 +18,7 @@
   },
   "scripts": {},
   "dependencies": {
-    "workflow": "^4.0.1-beta.3"
+    "workflow": "^4.0.1-beta.4"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",

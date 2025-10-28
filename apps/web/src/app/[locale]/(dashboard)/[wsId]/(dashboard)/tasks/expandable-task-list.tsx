@@ -340,7 +340,7 @@ export default function ExpandableTaskList({
                   {task.labels && task.labels.length > 0 && (
                     <>
                       {task.assignees && task.assignees.length > 0 && (
-                        <div className="h-5 w-[1px] bg-border" />
+                        <div className="h-5 w-px bg-border" />
                       )}
                       <TaskLabelsDisplay
                         labels={task.labels
@@ -360,7 +360,7 @@ export default function ExpandableTaskList({
                     task.estimation_points !== undefined && (
                       <>
                         {task.labels && task.labels.length > 0 && (
-                          <div className="h-5 w-[1px] bg-border" />
+                          <div className="h-5 w-px bg-border" />
                         )}
                         <TaskEstimationDisplay
                           points={task.estimation_points}
@@ -374,7 +374,7 @@ export default function ExpandableTaskList({
 
                 {/* Description - only show if exists */}
                 {task.description && getDescriptionText(task.description) && (
-                  <p className="line-clamp-2 rounded-lg border border-border/50 bg-muted/30 px-3.5 py-2.5 text-muted-foreground text-xs leading-relaxed shadow-sm backdrop-blur-sm">
+                  <p className="line-clamp-3 max-h-16 break-words rounded-lg border border-border/50 bg-muted/30 px-3.5 py-2.5 text-muted-foreground text-xs leading-snug shadow-sm backdrop-blur-sm">
                     {getDescriptionText(task.description)}
                   </p>
                 )}

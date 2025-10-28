@@ -75,6 +75,7 @@ import {
   mapEstimationPoints,
 } from '../../shared/estimation-mapping';
 import { BoardSelector } from '../board-selector';
+import { BoardColumn } from './board-column';
 import { createBulkOperations } from './kanban-bulk-operations';
 import {
   DRAG_ACTIVATION_DISTANCE,
@@ -84,7 +85,6 @@ import {
 import { calculateSortKeyWithRetry as createCalculateSortKeyWithRetry } from './kanban-sort-helpers';
 import { TaskCard } from './task';
 import type { TaskFilters } from './task-filter';
-import { BoardColumn } from './task-list';
 import { TaskListForm } from './task-list-form';
 
 interface Props {
@@ -129,6 +129,9 @@ export function KanbanBoard({
   const [bulkWorking, setBulkWorking] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const pickedUpTaskColumn = useRef<string | null>(null);
+  const selectedColumnId = useRef<string | null>(null);
+  const firstSelectedTaskId = useRef<string | null>(null);
+
   const queryClient = useQueryClient();
   const supabase = createClient();
   const moveTaskToBoardMutation = useMoveTaskToBoard(boardId ?? '');
@@ -193,43 +196,87 @@ export function KanbanBoard({
   // Multi-select handlers
   const handleTaskSelect = useCallback(
     (taskId: string, event: React.MouseEvent) => {
-      const isCtrlPressed = event.ctrlKey || event.metaKey;
       const isShiftPressed = event.shiftKey;
 
-      if (isCtrlPressed || isShiftPressed || isMultiSelectMode) {
-        event.preventDefault();
-        event.stopPropagation();
+      if (isShiftPressed) {
+        // Range selection - select all tasks between first and current selection
+        if (firstSelectedTaskId.current) {
+          const secondSelectedTask = tasks.find((t) => t.id === taskId);
+          if (
+            secondSelectedTask &&
+            secondSelectedTask.list_id === selectedColumnId.current
+          ) {
+            const columnTasks = tasks.filter(
+              (t) => t.list_id === selectedColumnId.current
+            );
+            const firstTaskIndex = columnTasks.findIndex(
+              (t) => t.id === firstSelectedTaskId.current
+            );
+            const secondTaskIndex = columnTasks.findIndex(
+              (t) => t.id === taskId
+            );
 
-        setIsMultiSelectMode(true);
+            const minTaskIndex = Math.min(firstTaskIndex, secondTaskIndex);
+            const maxTaskIndex = Math.max(firstTaskIndex, secondTaskIndex);
+            const tasksToSelect = columnTasks.slice(
+              minTaskIndex,
+              maxTaskIndex + 1
+            );
 
-        if (isCtrlPressed || isMultiSelectMode) {
-          // Toggle selection in multi-select mode
-          setSelectedTasks((prev) => {
-            const newSet = new Set(prev);
-            if (newSet.has(taskId)) {
-              newSet.delete(taskId);
+            const newSelectedTasks = new Set(tasksToSelect.map((t) => t.id));
+            setSelectedTasks(new Set(newSelectedTasks));
+          } else {
+            setSelectedTasks(new Set([taskId]));
+            firstSelectedTaskId.current = taskId;
+
+            const firstSelectedTask = tasks.find((t) => t.id === taskId);
+            if (firstSelectedTask) {
+              selectedColumnId.current = firstSelectedTask.list_id;
             } else {
-              newSet.add(taskId);
+              selectedColumnId.current = null;
             }
-            return newSet;
-          });
-        } else if (isShiftPressed) {
-          // Range selection (if there's a last selected task)
-          // For now, just add to selection
-          setSelectedTasks((prev) => new Set([...prev, taskId]));
+          }
+        } else {
+          setSelectedTasks(new Set([taskId]));
+          firstSelectedTaskId.current = taskId;
+
+          const firstSelectedTask = tasks.find((t) => t.id === taskId);
+          if (firstSelectedTask) {
+            selectedColumnId.current = firstSelectedTask.list_id;
+          } else {
+            selectedColumnId.current = null;
+          }
         }
       } else {
-        // Single click - clear selection and select only this task
-        setSelectedTasks(new Set([taskId]));
-        setIsMultiSelectMode(false);
+        // Toggle selection in multi-select mode
+        setSelectedTasks((prev) => {
+          const newSet = new Set(prev);
+          if (newSet.has(taskId)) {
+            newSet.delete(taskId);
+          } else {
+            newSet.add(taskId);
+          }
+          return newSet;
+        });
+
+        firstSelectedTaskId.current = taskId;
+
+        const firstSelectedTask = tasks.find((t) => t.id === taskId);
+        if (firstSelectedTask) {
+          selectedColumnId.current = firstSelectedTask.list_id;
+        } else {
+          selectedColumnId.current = null;
+        }
       }
     },
-    [isMultiSelectMode]
+    [tasks]
   );
 
   const clearSelection = useCallback(() => {
     setSelectedTasks(new Set());
     setIsMultiSelectMode(false);
+    firstSelectedTaskId.current = null;
+    selectedColumnId.current = null;
   }, []);
 
   // Cross-board move handler
@@ -1581,7 +1628,7 @@ export function KanbanBoard({
   return (
     <div className="flex h-full flex-col">
       {/* Multi-select indicator */}
-      {isMultiSelectMode && selectedTasks.size > 0 && (
+      {isMultiSelectMode ? (
         <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-linear-to-r from-primary/5 via-primary/3 to-transparent px-4 py-3 shadow-sm">
           <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm">
             <div className="flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 ring-1 ring-primary/20">
@@ -1911,6 +1958,18 @@ export function KanbanBoard({
               Clear
             </Button>
           </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-end px-3 pt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsMultiSelectMode(true)}
+            className="px-2 text-muted-foreground hover:text-primary"
+          >
+            <Check className="h-3.5 w-3.5 text-primary" />
+            <span className="text-sm">Choose tasks</span>
+          </Button>
         </div>
       )}
 
