@@ -424,7 +424,7 @@ export default function MyTasksContent({
         `
         )
         .eq('ws_id', selectedWorkspaceId)
-        .is('deleted_at', null)
+        .eq('deleted', false)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

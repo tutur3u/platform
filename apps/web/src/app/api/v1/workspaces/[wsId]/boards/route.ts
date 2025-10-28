@@ -67,7 +67,7 @@ export async function GET(
       `
       )
       .eq('ws_id', wsId)
-      .is('deleted_at', null)
+      .eq('deleted', false)
       .order('created_at', { ascending: false });
 
     if (error) {

@@ -127,7 +127,7 @@ export default function ReferralSectionClient({
         .select('id, full_name, display_name, email, phone')
         .eq('ws_id', wsId)
         .eq('referred_by', userId)
-        .is('archived_at', null)
+        .eq('archived', false)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return (data || []) as unknown as WorkspaceUser[];
