@@ -145,12 +145,14 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
   const skipWorkspaceRedirect = req.nextUrl.searchParams.has('no-redirect');
   const isHashNavigation = req.nextUrl.searchParams.has('hash-nav');
+  const isMultiAccountFlow = req.nextUrl.searchParams.has('multiAccount');
 
   if (
     isOnboardingPath ||
     ((isRootPath || isLocaleRootPath) &&
       !skipWorkspaceRedirect &&
-      !isHashNavigation)
+      !isHashNavigation &&
+      !isMultiAccountFlow)
   ) {
     try {
       const supabase = await createClient();

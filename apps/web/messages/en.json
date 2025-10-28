@@ -4745,10 +4745,52 @@
       "name": "Billing & Plan",
       "description": "Subscription, payment methods, and billing history"
     },
+    "accounts": {
+      "name": "Accounts",
+      "description": "Manage multiple accounts and switch between them"
+    },
     "workspaces": {
       "name": "Workspaces",
       "description": "Manage your workspace settings and preferences"
     }
+  },
+  "account_switcher": {
+    "accounts": "Accounts",
+    "active": "Active",
+    "add_account": "Add Account",
+    "add_account_description": "Sign in with a different account to add it to your account switcher",
+    "preparing": "Preparing...",
+    "switch_account": "Switch Account",
+    "switch": "Switch",
+    "switch_error": "Failed to switch account",
+    "switch_account_error": "Failed to switch account. Please try again.",
+    "current_account": "Current Account",
+    "manage_accounts": "Manage Accounts",
+    "remove": "Remove",
+    "remove_account": "Remove account",
+    "no_accounts": "No accounts available",
+    "no_accounts_found": "No accounts found. Add an account to get started.",
+    "no_results": "No accounts match your search",
+    "search_accounts": "Search accounts...",
+    "last_active": "Last active",
+    "last_workspace": "Last workspace",
+    "cannot_remove_active": "Can't remove active account",
+    "adding_account": "Adding Account",
+    "adding_account_description": "Please wait while we add your account...",
+    "account_added_success": "Account added successfully!",
+    "account_added_error": "Failed to add account",
+    "please_wait": "Please wait...",
+    "redirecting": "Redirecting...",
+    "remove_account_title": "Remove Account?",
+    "remove_account_description": "Are you sure you want to remove {account}? You'll need to sign in again to use this account.",
+    "account_removed_success": "Account removed successfully",
+    "account_removed_error": "Failed to remove account",
+    "manage_accounts_description": "Add, remove, and switch between multiple accounts. Your workspace context will be remembered for each account.",
+    "switch_account_description": "Quickly switch between your accounts. Use arrow keys to navigate and Enter to select.",
+    "navigate": "Navigate",
+    "select": "Select",
+    "quick_switch": "Quick switch",
+    "unknown_user": "Unknown User"
   },
   "sessions-card": {
     "title": "Active Sessions",

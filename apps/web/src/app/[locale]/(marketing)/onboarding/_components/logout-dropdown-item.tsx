@@ -1,27 +1,16 @@
 'use client';
 
+import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { LogOut } from '@tuturuuu/icons';
 import { DropdownMenuItem } from '@tuturuuu/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
 
 export function LogoutDropdownItem() {
   const t = useTranslations('common');
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-      });
-      router.refresh();
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
-  };
+  const { logout } = useAccountSwitcher();
 
   return (
-    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+    <DropdownMenuItem onClick={logout} className="cursor-pointer">
       <LogOut className="mr-2 h-4 w-4" />
       {t('logout')}
     </DropdownMenuItem>

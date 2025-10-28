@@ -1,7 +1,7 @@
 {
   "name": "@tuturuuu/types",
   "license": "MIT",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": ["dist", "README.md"],
@@ -14,7 +14,7 @@
     "prepublishOnly": "bun run clean && bun run build"
   },
   "dependencies": {
-    "@tiptap/react": "^3.7.2",
+    "@tiptap/react": "^3.8.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "zod": "^4.1.12"

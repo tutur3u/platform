@@ -177,7 +177,7 @@ export function AssigneeSelect({ taskId, assignees = [] }: Props) {
       });
     },
     onSettled: () => {
-      setOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
     },
   });
 

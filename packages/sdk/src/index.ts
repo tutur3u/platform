@@ -52,6 +52,7 @@ export type {
   BatchShareResponse,
   CreateDocumentData,
   CreateFolderResponse,
+  CreateSignedUploadUrlOptions,
   DeleteDocumentResponse,
   DeleteResponse,
   Document,
@@ -64,6 +65,7 @@ export type {
   Pagination,
   ShareOptions,
   ShareResponse,
+  SignedUploadUrlResponse,
   SignedUrlData,
   StorageAnalytics,
   StorageObject,
@@ -74,6 +76,7 @@ export type {
 // Zod schemas (for external validation if needed)
 export {
   createDocumentDataSchema,
+  createSignedUploadUrlOptionsSchema,
   listDocumentsOptionsSchema,
   listStorageOptionsSchema,
   shareOptionsSchema,

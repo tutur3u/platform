@@ -205,7 +205,7 @@ function TaskCardInner({
   });
 
   // Fetch available task lists using React Query (same key as other components)
-  const { data: queryAvailableLists = [] } = useQuery({
+  const { data: availableLists = [] } = useQuery({
     queryKey: ['task_lists', boardId],
     queryFn: async () => {
       const supabase = createClient();
@@ -221,10 +221,8 @@ function TaskCardInner({
       return data as TaskList[];
     },
     enabled: !propAvailableLists, // Only fetch if not provided as prop
+    initialData: propAvailableLists,
   });
-
-  // Use prop if provided, otherwise use React Query data
-  const availableLists = propAvailableLists || queryAvailableLists;
 
   // Find the first list with 'done' or 'closed' status
   const getTargetCompletionList = () => {
@@ -338,31 +336,45 @@ function TaskCardInner({
   // Removed explicit drag handle – entire card is now draggable for better UX.
   // Keep attributes/listeners to spread onto root interactive area.
 
+  const handleCardClick = useCallback(
+    (e: React.MouseEvent) => {
+      // Handle multi-select functionality
+      if (isMultiSelectMode) {
+        onSelect?.(task.id, e);
+      } else if (
+        !isDragging &&
+        !dialogState.editDialogOpen &&
+        !dialogState.isClosingDialog &&
+        !menuOpen &&
+        !dialogState.deleteDialogOpen &&
+        !dialogState.customDateDialogOpen &&
+        !dialogState.newLabelDialogOpen &&
+        !dialogState.newProjectDialogOpen
+      ) {
+        // Only open edit dialog if not in multi-select mode, not dragging, and no other dialogs are open
+        openTask(task, boardId, availableLists);
+      }
+    },
+    [
+      task,
+      boardId,
+      isMultiSelectMode,
+      availableLists,
+      isDragging,
+      menuOpen,
+      dialogState,
+      onSelect,
+      openTask,
+    ]
+  );
+
   return (
     <Card
       data-id={task.id}
       data-task-id={task.id}
       ref={setNodeRef}
       style={style}
-      onClick={(e) => {
-        // Handle multi-select functionality
-        onSelect?.(task.id, e);
-
-        // Only open edit dialog if not in multi-select mode, not dragging, and no other dialogs are open
-        if (
-          !e.shiftKey &&
-          !isDragging &&
-          !dialogState.editDialogOpen &&
-          !dialogState.isClosingDialog &&
-          !menuOpen &&
-          !dialogState.deleteDialogOpen &&
-          !dialogState.customDateDialogOpen &&
-          !dialogState.newLabelDialogOpen &&
-          !dialogState.newProjectDialogOpen
-        ) {
-          openTask(task, boardId, availableLists);
-        }
-      }}
+      onClick={handleCardClick}
       onContextMenu={(e) => {
         e.preventDefault();
         e.stopPropagation();
