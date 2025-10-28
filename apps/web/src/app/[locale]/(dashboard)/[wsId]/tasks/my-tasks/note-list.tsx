@@ -563,7 +563,7 @@ export default function NoteList({ wsId }: { wsId: string }) {
           }
         }}
       >
-        <DialogContent className="max-h-[80vh] max-w-4xl">
+        <DialogContent className="max-h-[80vh] md:max-w-4xl">
           <DialogHeader>
             <DialogTitle>{t('edit_dialog.title')}</DialogTitle>
             <DialogDescription>
