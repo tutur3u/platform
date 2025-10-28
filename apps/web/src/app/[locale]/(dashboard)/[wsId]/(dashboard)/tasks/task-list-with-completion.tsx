@@ -24,7 +24,7 @@ import {
   isYesterday,
 } from 'date-fns';
 import Link from 'next/link';
-import { useEffect, useState, type MouseEvent } from 'react';
+import { type MouseEvent, useEffect, useState } from 'react';
 
 interface TaskListWithCompletionProps {
   tasks: TaskWithRelations[];
@@ -35,7 +35,6 @@ interface TaskListWithCompletionProps {
 
 export default function TaskListWithCompletion({
   tasks,
-  isPersonal = false,
   initialLimit = 5,
   onTaskUpdate,
 }: TaskListWithCompletionProps) {
@@ -183,39 +182,6 @@ export default function TaskListWithCompletion({
     openTask(transformedTask as unknown as PrimitiveTask, boardId);
   };
 
-  const getPriorityColor = (priority: string | null) => {
-    switch (priority) {
-      case 'critical':
-      case 'urgent':
-        return 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20';
-      case 'high':
-        return 'bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/20';
-      case 'normal':
-      case 'medium':
-        return 'bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/20';
-      case 'low':
-        return 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20';
-      default:
-        return 'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20';
-    }
-  };
-
-  const getPriorityLabel = (priority: string | null) => {
-    switch (priority) {
-      case 'critical':
-        return 'Urgent';
-      case 'high':
-        return 'High';
-      case 'normal':
-      case 'medium':
-        return 'Medium';
-      case 'low':
-        return 'Low';
-      default:
-        return priority;
-    }
-  };
-
   const formatSmartDate = (date: Date) => {
     if (isToday(date)) return 'Today';
     if (isTomorrow(date)) return 'Tomorrow';
@@ -233,8 +199,6 @@ export default function TaskListWithCompletion({
       {displayedTasks.map((task) => {
         const taskOverdue = isOverdue(task.end_date);
         const endDate = task.end_date ? new Date(task.end_date) : null;
-        const startDate = task.start_date ? new Date(task.start_date) : null;
-        const now = new Date();
         const isCompleted = task.list?.status === 'done';
         const isCompleting = completingTasks.has(task.id);
 
@@ -294,7 +258,7 @@ export default function TaskListWithCompletion({
                       className={cn('flex flex-col', hasLine2 ? 'gap-y-3' : '')}
                     >
                       {/* Line 1: Task name on left, Board → List → Due date → Assignees + Estimation on right */}
-                      <div className="hidden md:flex items-center justify-between gap-2">
+                      <div className="hidden items-center justify-between gap-2 md:flex">
                         <h4
                           className={cn(
                             'flex-1 font-bold text-base leading-snug transition-colors duration-200 group-hover:text-primary',
@@ -306,7 +270,7 @@ export default function TaskListWithCompletion({
                           {task.name}
                         </h4>
                         {/* Right side: Board → List → Due → Assignees → Estimation */}
-                        <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs flex-shrink-0">
+                        <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs">
                           {/* Board name */}
                           {task.list?.board?.id && task.list?.board?.ws_id && (
                             <Link
@@ -412,9 +376,9 @@ export default function TaskListWithCompletion({
                 })()}
 
                 {/* Mobile layout (sm and below): Responsive multi-line layout */}
-                <div className="md:hidden space-y-4">
+                <div className="space-y-4 md:hidden">
                   {/* Task name with estimation */}
-                  <div className="flex items-start mt-1 gap-3">
+                  <div className="mt-1 flex items-start gap-3">
                     <h4
                       className={cn(
                         'line-clamp-2 flex-1 font-bold text-base leading-snug transition-colors duration-200 group-hover:text-primary',
@@ -459,7 +423,7 @@ export default function TaskListWithCompletion({
 
                       {/* List name */}
                       {task.list?.name && (
-                        <span className="truncate rounded-lg bg-dynamic-purple/10 px-2 py-0.5 font-semibold text-dynamic-purple shadow-sm ring-1 ring-dynamic-purple/20 text-xs">
+                        <span className="truncate rounded-lg bg-dynamic-purple/10 px-2 py-0.5 font-semibold text-dynamic-purple text-xs shadow-sm ring-1 ring-dynamic-purple/20">
                           {task.list.name}
                         </span>
                       )}
