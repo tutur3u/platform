@@ -27,8 +27,7 @@ export function AccountManagementCard(): JSX.Element {
   const [accountToRemove, setAccountToRemove] = useState<string | null>(null);
 
   const sortedAccounts = [...accounts].sort(
-    (a, b) =>
-      (b.metadata.lastActiveAt ?? 0) - (a.metadata.lastActiveAt ?? 0)
+    (a, b) => (b.metadata.lastActiveAt ?? 0) - (a.metadata.lastActiveAt ?? 0)
   );
 
   return (

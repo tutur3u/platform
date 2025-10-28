@@ -77,7 +77,10 @@ export function AccountSwitcherModal({
     if (isLoading) return;
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('[AccountSwitcherModal] Removing account (count before):', accounts.length);
+      console.log(
+        '[AccountSwitcherModal] Removing account (count before):',
+        accounts.length
+      );
     }
     await removeAccount(accountId);
   };
@@ -190,7 +193,9 @@ export function AccountSwitcherModal({
                 const isActive = account.id === activeAccountId;
                 const isSelected = selectedIndex === index;
                 const displayName =
-                  account.metadata.displayName || account.email || 'Unknown User';
+                  account.metadata.displayName ||
+                  account.email ||
+                  'Unknown User';
                 const initials = getInitials(displayName);
                 const lastActive = account.metadata.lastActiveAt
                   ? formatDistanceToNow(account.metadata.lastActiveAt, {

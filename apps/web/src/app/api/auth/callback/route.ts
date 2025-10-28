@@ -63,11 +63,19 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   });
 
   if (!parseResult.success) {
-    console.error('[auth/callback] Invalid query parameters:', parseResult.error);
+    console.error(
+      '[auth/callback] Invalid query parameters:',
+      parseResult.error
+    );
     return NextResponse.redirect(new URL('/onboarding', requestUrl.origin));
   }
 
-  const { code: _code, returnUrl: _returnUrl, nextUrl: _nextUrl, multiAccount } = parseResult.data;
+  const {
+    code: _code,
+    returnUrl: _returnUrl,
+    nextUrl: _nextUrl,
+    multiAccount,
+  } = parseResult.data;
 
   // Normalize nextUrl by removing leading slashes to avoid double slashes
   const normalizedNextUrl = _nextUrl?.replace(/^\/+/, '');
@@ -80,7 +88,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       await supabase.auth.exchangeCodeForSession(_code);
     } catch (error) {
       // Log error server-side only (not in response)
-      console.error('[auth/callback] Failed to exchange code for session:', error);
+      console.error(
+        '[auth/callback] Failed to exchange code for session:',
+        error
+      );
       // Return safe error response without leaking details
       return NextResponse.redirect(
         new URL('/login?error=auth_failed', requestUrl.origin)
@@ -116,12 +127,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         : new URL(validatedUrl, requestUrl.origin);
     } else {
       // Invalid or unsafe URL, fall back to safe default
-      const fallbackPath = normalizedNextUrl ? `/${normalizedNextUrl}` : '/onboarding';
+      const fallbackPath = normalizedNextUrl
+        ? `/${normalizedNextUrl}`
+        : '/onboarding';
       redirectUrl = new URL(fallbackPath, requestUrl.origin);
     }
   } else {
     // Use nextUrl or fall back to default
-    const defaultPath = normalizedNextUrl ? `/${normalizedNextUrl}` : '/onboarding';
+    const defaultPath = normalizedNextUrl
+      ? `/${normalizedNextUrl}`
+      : '/onboarding';
     redirectUrl = new URL(defaultPath, requestUrl.origin);
   }
 

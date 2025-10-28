@@ -76,9 +76,7 @@ export default function AddAccountPage(): JSX.Element {
 
         if (result.success || accountAlreadyExists) {
           if (accountAlreadyExists && process.env.NODE_ENV === 'development') {
-            console.log(
-              '[AddAccountPage] Account already exists, redirecting'
-            );
+            console.log('[AddAccountPage] Account already exists, redirecting');
           }
 
           // Get the return URL from query params
@@ -99,7 +97,10 @@ export default function AddAccountPage(): JSX.Element {
                   const parsedUrl = new URL(decodedUrl);
 
                   // Check protocol - only allow http: and https:
-                  if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+                  if (
+                    parsedUrl.protocol !== 'http:' &&
+                    parsedUrl.protocol !== 'https:'
+                  ) {
                     console.warn(
                       '[AddAccountPage] Invalid protocol rejected:',
                       parsedUrl.protocol,
@@ -122,7 +123,10 @@ export default function AddAccountPage(): JSX.Element {
                 }
               }
             } catch (error) {
-              console.warn('[AddAccountPage] Failed to decode returnUrl:', error);
+              console.warn(
+                '[AddAccountPage] Failed to decode returnUrl:',
+                error
+              );
             }
           }
 

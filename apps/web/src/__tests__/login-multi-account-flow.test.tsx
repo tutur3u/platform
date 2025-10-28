@@ -27,7 +27,10 @@ describe('Login Multi-Account Flow', () => {
       }
 
       // Only define href if it's not already defined or is configurable
-      const hrefDescriptor = Object.getOwnPropertyDescriptor(window.location, 'href');
+      const hrefDescriptor = Object.getOwnPropertyDescriptor(
+        window.location,
+        'href'
+      );
       if (!hrefDescriptor || hrefDescriptor.configurable) {
         Object.defineProperty(window.location, 'href', {
           get: () => mockLocationHref,
@@ -46,15 +49,23 @@ describe('Login Multi-Account Flow', () => {
 
     it('should detect returnUrl parameter', () => {
       const returnUrl = '/workspace-123/dashboard';
-      const searchParams = new URLSearchParams(`?returnUrl=${encodeURIComponent(returnUrl)}`);
-      expect(decodeURIComponent(searchParams.get('returnUrl') || '')).toBe(returnUrl);
+      const searchParams = new URLSearchParams(
+        `?returnUrl=${encodeURIComponent(returnUrl)}`
+      );
+      expect(decodeURIComponent(searchParams.get('returnUrl') || '')).toBe(
+        returnUrl
+      );
     });
 
     it('should handle both multiAccount and returnUrl together', () => {
       const returnUrl = '/workspace-123';
-      const searchParams = new URLSearchParams(`?multiAccount=true&returnUrl=${encodeURIComponent(returnUrl)}`);
+      const searchParams = new URLSearchParams(
+        `?multiAccount=true&returnUrl=${encodeURIComponent(returnUrl)}`
+      );
       expect(searchParams.get('multiAccount')).toBe('true');
-      expect(decodeURIComponent(searchParams.get('returnUrl') || '')).toBe(returnUrl);
+      expect(decodeURIComponent(searchParams.get('returnUrl') || '')).toBe(
+        returnUrl
+      );
     });
   });
 
@@ -70,7 +81,9 @@ describe('Login Multi-Account Flow', () => {
         mockLocationHrefSetter(addAccountUrl);
       }
 
-      expect(mockLocationHrefSetter).toHaveBeenCalledWith(`/add-account?returnUrl=${encodeURIComponent(returnUrl)}`);
+      expect(mockLocationHrefSetter).toHaveBeenCalledWith(
+        `/add-account?returnUrl=${encodeURIComponent(returnUrl)}`
+      );
     });
 
     it('should include returnUrl in add-account redirect', () => {
@@ -82,8 +95,12 @@ describe('Login Multi-Account Flow', () => {
         mockLocationHrefSetter(addAccountUrl);
       }
 
-      expect(mockLocationHrefSetter).toHaveBeenCalledWith(expect.stringContaining('/add-account'));
-      expect(mockLocationHrefSetter).toHaveBeenCalledWith(expect.stringContaining('returnUrl'));
+      expect(mockLocationHrefSetter).toHaveBeenCalledWith(
+        expect.stringContaining('/add-account')
+      );
+      expect(mockLocationHrefSetter).toHaveBeenCalledWith(
+        expect.stringContaining('returnUrl')
+      );
     });
 
     it('should handle /add-account without returnUrl', () => {
@@ -165,11 +182,15 @@ describe('Login Multi-Account Flow', () => {
       } catch (navError) {
         // Fallback logic
         if (multiAccount === 'true') {
-          mockLocationHrefSetter(`/add-account${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`);
+          mockLocationHrefSetter(
+            `/add-account${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`
+          );
         }
       }
 
-      expect(mockLocationHrefSetter).toHaveBeenCalledWith(`/add-account?returnUrl=${encodeURIComponent(returnUrl)}`);
+      expect(mockLocationHrefSetter).toHaveBeenCalledWith(
+        `/add-account?returnUrl=${encodeURIComponent(returnUrl)}`
+      );
     });
   });
 
@@ -180,7 +201,9 @@ describe('Login Multi-Account Flow', () => {
         error: 'Account already exists',
       };
 
-      const accountAlreadyExists = !result.success && result.error?.toLowerCase().includes('already exists');
+      const accountAlreadyExists =
+        !result.success &&
+        result.error?.toLowerCase().includes('already exists');
 
       expect(accountAlreadyExists).toBe(true);
 
@@ -198,7 +221,9 @@ describe('Login Multi-Account Flow', () => {
         error: 'Account already exists',
       };
 
-      const accountAlreadyExists = !result.success && result.error?.toLowerCase().includes('already exists');
+      const accountAlreadyExists =
+        !result.success &&
+        result.error?.toLowerCase().includes('already exists');
 
       // Should treat as success
       expect(accountAlreadyExists).toBe(true);
@@ -210,7 +235,9 @@ describe('Login Multi-Account Flow', () => {
         error: 'Network error',
       };
 
-      const accountAlreadyExists = !result.success && result.error?.toLowerCase().includes('already exists');
+      const accountAlreadyExists =
+        !result.success &&
+        result.error?.toLowerCase().includes('already exists');
 
       // Should show error
       expect(accountAlreadyExists).toBe(false);
@@ -257,7 +284,7 @@ describe('Login Multi-Account Flow', () => {
         '/workspace-123/dashboard',
       ];
 
-      urls.forEach(url => {
+      urls.forEach((url) => {
         // None should start with /[locale]/
         expect(url).not.toMatch(/^\/[a-z]{2}\//);
       });
