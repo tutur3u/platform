@@ -266,11 +266,17 @@ const supabase = createClient<Database>();
 
 ## Development
 
+### Monorepo Development
+
+**Important:** This package must be built before it can be used by other packages in the monorepo.
+
+> **Note for New Contributors:** After cloning the repository or switching branches, you must build this package first. The `dist/` folder is git-ignored and won't be present until you build it.
+
 ```bash
 # Install dependencies
 bun install
 
-# Build the package
+# Build the package (required before first use)
 bun run build
 
 # Run tests
@@ -278,6 +284,31 @@ bun run test
 
 # Type check
 bun run type-check
+
+# Clean build artifacts
+bun run clean
+```
+
+### Watch Mode (During Active Development)
+
+If you're actively working on this package, you can set up watch mode:
+
+```bash
+# Terminal 1: Watch and rebuild on changes
+bun run build:watch
+
+# Terminal 2: Run your app that depends on this package
+cd ../../apps/web
+bun dev
+```
+
+### Monorepo Build Order
+
+When building the entire monorepo, this package should be built before dependent packages:
+
+```bash
+# From monorepo root
+bun run build  # Turborepo handles the correct build order
 ```
 
 ## Contributing

@@ -5,7 +5,8 @@
     "outDir": "dist",
     "rootDir": "src",
     "declarationDir": "dist",
-    "emitDeclarationOnly": false
+    "emitDeclarationOnly": false,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist", ".turbo", "**/*.test.ts", "**/__tests__/**"]

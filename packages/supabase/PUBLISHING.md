@@ -2,6 +2,10 @@
 
 This document provides step-by-step instructions for publishing the `@tuturuuu/supabase` package to npm.
 
+## Important Note
+
+This package requires compilation before use. Both in the monorepo and when published to npm, it uses the compiled `dist/` files. The `prepublishOnly` script ensures a fresh build before every publish.
+
 ## Pre-Publishing Checklist
 
 Before publishing, ensure all the following items are checked:
@@ -23,8 +27,8 @@ Before publishing, ensure all the following items are checked:
 ### 3. Code Quality ✅
 - [x] TypeScript compiles without errors (`bun run type-check`)
 - [x] All tests pass (`bun run test`)
-- [ ] Build process succeeds (`bun run build`)
-- [ ] Build output exists in `dist/` directory
+- [x] Build process succeeds (`bun run build`)
+- [x] Build output exists in `dist/` directory
 
 ### 4. Dependencies
 - [x] All dependencies are at correct versions
@@ -117,12 +121,6 @@ npm login   # If not logged in
 
 ### Step 7: Publish to npm
 
-**IMPORTANT NOTE:** This package uses a dual-mode configuration:
-- **Development mode**: Exports point to `src/` files for monorepo development
-- **Published mode**: `publishConfig` overrides exports to point to `dist/` files
-
-When you run `npm publish`, npm automatically applies the `publishConfig` overrides, so the published package will use the compiled `dist/` files.
-
 **DRY RUN (Recommended First):**
 
 ```bash
@@ -130,7 +128,7 @@ cd packages/supabase
 npm publish --dry-run
 ```
 
-This shows what will be published without actually publishing. You should see that the exports point to `dist/` files.
+This shows what will be published without actually publishing.
 
 **ACTUAL PUBLISH:**
 
@@ -140,9 +138,8 @@ npm publish
 
 The `prepublishOnly` script will automatically:
 1. Clean the dist directory
-2. Run a fresh build
-3. Then npm applies `publishConfig` overrides
-4. Finally, the package is published with `dist/` exports
+2. Run a fresh build with TypeScript compiler
+3. Finally, the package is published with compiled `dist/` files
 
 ### Step 8: Verify Publication
 
