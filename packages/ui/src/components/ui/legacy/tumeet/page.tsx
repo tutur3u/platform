@@ -193,7 +193,7 @@ export async function MeetTogetherPage({
               user={user}
             />
           ) : (
-            <Card className="border-border/50 bg-gradient-to-br from-dynamic-blue/5 to-dynamic-purple/5">
+            <Card className="border-border/50 bg-linear-to-br from-dynamic-blue/5 to-dynamic-purple/5">
               <CardContent className="flex flex-col items-center justify-center p-16">
                 <div className="mb-8 rounded-full bg-dynamic-blue/10 p-8 shadow-sm">
                   <UserIcon className="h-8 w-8 text-dynamic-blue" />

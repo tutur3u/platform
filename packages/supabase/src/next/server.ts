@@ -1,6 +1,6 @@
 import { createBrowserClient, createServerClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@tuturuuu/types/supabase';
+import type { Database } from '@tuturuuu/types';
 import type { RequestCookie } from 'next/dist/compiled/@edge-runtime/cookies';
 import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
 import { cookies } from 'next/headers';
@@ -68,5 +68,18 @@ export async function createDynamicClient(): Promise<SupabaseClient<any>> {
   const cookieStore = await cookies();
   return createServerClient(url, key, {
     cookies: createCookieHandler(cookieStore),
+  });
+}
+
+export async function createDynamicAdminClient(): Promise<SupabaseClient<any>> {
+  const { url, key } = checkEnvVariables({ useSecretKey: true });
+  return createServerClient(url, key, {
+    cookies: {
+      getAll() {
+        return [] as SupabaseCookie[];
+      },
+      // eslint-disable-next-line no-unused-vars
+      setAll(_: SupabaseCookie[]) {},
+    },
   });
 }

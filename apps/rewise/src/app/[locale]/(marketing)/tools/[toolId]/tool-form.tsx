@@ -1,7 +1,7 @@
 'use client';
 
 import { Album, RotateCcw } from '@tuturuuu/icons';
-import type { AIChat } from '@tuturuuu/types/db';
+import type { AIChat } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';

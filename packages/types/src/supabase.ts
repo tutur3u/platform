@@ -30,7 +30,7 @@ export type Database = {
             task_board_status: "active" | "closed" | "done" | "not_started";
             task_priority: "critical" | "high" | "low" | "normal";
             workspace_api_key_scope: "gemini-2.0-flash-lite" | "gemini-2.0-flash" | "gemini-2.0-pro" | "gemini-2.5-flash-lite" | "gemini-2.5-flash" | "gemini-2.5-pro";
-            workspace_role_permission: "ai_chat" | "ai_lab" | "check_user_attendance" | "create_inventory" | "create_invoices" | "create_lead_generations" | "create_transactions" | "create_user_groups_posts" | "create_user_groups_scores" | "create_user_groups" | "create_users" | "delete_inventory" | "delete_invoices" | "delete_transactions" | "delete_user_groups_posts" | "delete_user_groups_scores" | "delete_user_groups" | "delete_users" | "export_finance_data" | "export_users_data" | "manage_calendar" | "manage_documents" | "manage_drive" | "manage_external_migrations" | "manage_finance" | "manage_inventory" | "manage_projects" | "manage_user_report_templates" | "manage_users" | "manage_workspace_audit_logs" | "manage_workspace_billing" | "manage_workspace_integrations" | "manage_workspace_members" | "manage_workspace_roles" | "manage_workspace_secrets" | "manage_workspace_security" | "manage_workspace_settings" | "send_user_group_post_emails" | "update_inventory" | "update_invoices" | "update_transactions" | "update_user_groups_posts" | "update_user_groups_scores" | "update_user_groups" | "update_users" | "view_finance_stats" | "view_infrastructure" | "view_inventory" | "view_invoices" | "view_transactions" | "view_user_groups_posts" | "view_user_groups_scores" | "view_user_groups" | "view_users_private_info" | "view_users_public_info";
+            workspace_role_permission: "ai_chat" | "ai_lab" | "check_user_attendance" | "create_inventory" | "create_invoices" | "create_lead_generations" | "create_transactions" | "create_user_groups_posts" | "create_user_groups_scores" | "create_user_groups" | "create_users" | "delete_inventory" | "delete_invoices" | "delete_transactions" | "delete_user_groups_posts" | "delete_user_groups_scores" | "delete_user_groups" | "delete_users" | "export_finance_data" | "export_users_data" | "manage_api_keys" | "manage_calendar" | "manage_documents" | "manage_drive" | "manage_external_migrations" | "manage_finance" | "manage_inventory" | "manage_projects" | "manage_user_report_templates" | "manage_users" | "manage_workspace_audit_logs" | "manage_workspace_billing" | "manage_workspace_integrations" | "manage_workspace_members" | "manage_workspace_roles" | "manage_workspace_secrets" | "manage_workspace_security" | "manage_workspace_settings" | "send_user_group_post_emails" | "update_inventory" | "update_invoices" | "update_transactions" | "update_user_groups_posts" | "update_user_groups_scores" | "update_user_groups" | "update_users" | "view_finance_stats" | "view_infrastructure" | "view_inventory" | "view_invoices" | "view_transactions" | "view_user_groups_posts" | "view_user_groups_scores" | "view_user_groups" | "view_users_private_info" | "view_users_public_info";
         };
         Functions: {
             atomic_sync_token_operation: {
@@ -93,6 +93,10 @@ export type Database = {
                 Returns: boolean;
             };
             cleanup_expired_cross_app_tokens: {
+                Args: never;
+                Returns: undefined;
+            };
+            cleanup_old_api_key_usage_logs: {
                 Args: never;
                 Returns: undefined;
             };
@@ -11294,16 +11298,113 @@ export type Database = {
                     ws_id?: null | string;
                 };
             };
-            workspace_api_keys: {
+            workspace_api_key_usage_logs: {
                 Insert: {
+                    api_key_id: string;
                     created_at?: string;
+                    endpoint: string;
+                    error_message?: null | string;
                     id?: string;
-                    name: string;
-                    scopes?: Database["public"]["Enums"]["workspace_api_key_scope"][];
-                    value: string;
+                    ip_address?: null | string;
+                    method: string;
+                    request_params?: Json | null;
+                    response_time_ms?: null | number;
+                    status_code: number;
+                    user_agent?: null | string;
                     ws_id: string;
                 };
                 Relationships: [
+                    {
+                        columns: [
+                            "api_key_id"
+                        ];
+                        foreignKeyName: "workspace_api_key_usage_logs_api_key_id_fkey";
+                        isOneToOne: false;
+                        referencedColumns: [
+                            "id"
+                        ];
+                        referencedRelation: "workspace_api_keys";
+                    },
+                    {
+                        columns: [
+                            "ws_id"
+                        ];
+                        foreignKeyName: "workspace_api_key_usage_logs_ws_id_fkey";
+                        isOneToOne: false;
+                        referencedColumns: [
+                            "id"
+                        ];
+                        referencedRelation: "workspace_link_counts";
+                    },
+                    {
+                        columns: [
+                            "ws_id"
+                        ];
+                        foreignKeyName: "workspace_api_key_usage_logs_ws_id_fkey";
+                        isOneToOne: false;
+                        referencedColumns: [
+                            "id"
+                        ];
+                        referencedRelation: "workspaces";
+                    }
+                ];
+                Row: {
+                    api_key_id: string;
+                    created_at: string;
+                    endpoint: string;
+                    error_message: null | string;
+                    id: string;
+                    ip_address: null | string;
+                    method: string;
+                    request_params: Json | null;
+                    response_time_ms: null | number;
+                    status_code: number;
+                    user_agent: null | string;
+                    ws_id: string;
+                };
+                Update: {
+                    api_key_id?: string;
+                    created_at?: string;
+                    endpoint?: string;
+                    error_message?: null | string;
+                    id?: string;
+                    ip_address?: null | string;
+                    method?: string;
+                    request_params?: Json | null;
+                    response_time_ms?: null | number;
+                    status_code?: number;
+                    user_agent?: null | string;
+                    ws_id?: string;
+                };
+            };
+            workspace_api_keys: {
+                Insert: {
+                    created_at?: string;
+                    created_by?: null | string;
+                    description?: null | string;
+                    expires_at?: null | string;
+                    id?: string;
+                    key_hash?: null | string;
+                    key_prefix?: null | string;
+                    last_used_at?: null | string;
+                    name: string;
+                    role_id?: null | string;
+                    scopes?: Database["public"]["Enums"]["workspace_api_key_scope"][];
+                    updated_at?: string;
+                    ws_id: string;
+                };
+                Relationships: [
+                    {
+                        columns: [
+                            "role_id"
+                        ];
+                        foreignKeyName: "workspace_api_keys_role_id_fkey";
+                        isOneToOne: false;
+                        referencedColumns: [
+                            "id"
+                        ];
+                        referencedRelation: "workspace_roles";
+                    },
                     {
                         columns: [
                             "ws_id"
@@ -11329,18 +11430,32 @@ export type Database = {
                 ];
                 Row: {
                     created_at: string;
+                    created_by: null | string;
+                    description: null | string;
+                    expires_at: null | string;
                     id: string;
+                    key_hash: null | string;
+                    key_prefix: null | string;
+                    last_used_at: null | string;
                     name: string;
+                    role_id: null | string;
                     scopes: Database["public"]["Enums"]["workspace_api_key_scope"][];
-                    value: string;
+                    updated_at: string;
                     ws_id: string;
                 };
                 Update: {
                     created_at?: string;
+                    created_by?: null | string;
+                    description?: null | string;
+                    expires_at?: null | string;
                     id?: string;
+                    key_hash?: null | string;
+                    key_prefix?: null | string;
+                    last_used_at?: null | string;
                     name?: string;
+                    role_id?: null | string;
                     scopes?: Database["public"]["Enums"]["workspace_api_key_scope"][];
-                    value?: string;
+                    updated_at?: string;
                     ws_id?: string;
                 };
             };
@@ -17098,6 +17213,7 @@ export const Constants = {
                 "delete_users",
                 "export_finance_data",
                 "export_users_data",
+                "manage_api_keys",
                 "manage_calendar",
                 "manage_documents",
                 "manage_drive",

@@ -2,7 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { TimeTrackingSession } from '@tuturuuu/types/db';
+import type { TimeTrackingSession } from '@tuturuuu/types';
 import 'server-only';
 
 // Enhanced pagination interface

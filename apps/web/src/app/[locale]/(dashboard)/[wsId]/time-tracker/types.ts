@@ -2,7 +2,7 @@ import type {
   TimeTrackingCategory,
   TimeTrackingSession,
   WorkspaceTask,
-} from '@tuturuuu/types/db';
+} from '@tuturuuu/types';
 
 // Main timer statistics interface
 export interface TimerStats {

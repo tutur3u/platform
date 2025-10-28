@@ -1,5 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { Workspace } from '@tuturuuu/types/db';
+import type { Workspace } from '@tuturuuu/types';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
 import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';

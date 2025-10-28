@@ -364,7 +364,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
       </div>
 
       {/* Estimation Types Distribution - Aligned with task-edit-dialog sidebar style */}
-      <Card className="overflow-hidden border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-6 shadow-sm">
+      <Card className="overflow-hidden border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-6 shadow-sm">
         <div className="space-y-4">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/15">
@@ -402,7 +402,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
       </Card>
 
       {/* Boards List - Aligned with task card style */}
-      <Card className="overflow-hidden border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-6 shadow-sm">
+      <Card className="overflow-hidden border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-6 shadow-sm">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -525,7 +525,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-5">
-              <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+              <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
                 <Label
                   htmlFor="estimation-method"
                   className="flex items-center gap-2 font-semibold text-foreground text-sm"
@@ -567,7 +567,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
               </div>
 
               {selectedEstimationType && selectedEstimationType !== 'none' && (
-                <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
                   <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
                     <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
                       <BarChart3 className="h-3.5 w-3.5 text-dynamic-orange" />
@@ -645,7 +645,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
 
               {/* Estimation Configuration Options */}
               {selectedEstimationType && selectedEstimationType !== 'none' && (
-                <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
                   <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
                     <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
                       <CheckSquare className="h-3.5 w-3.5 text-dynamic-orange" />

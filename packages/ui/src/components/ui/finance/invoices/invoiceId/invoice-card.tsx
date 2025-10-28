@@ -5,7 +5,7 @@ import type {
   Invoice,
   InvoiceProduct,
   InvoicePromotion,
-} from '@tuturuuu/types/db';
+} from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { Button } from '@tuturuuu/ui/button';
 import {

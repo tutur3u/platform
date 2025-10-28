@@ -1,6 +1,6 @@
 'use client';
 
-import type { User } from '@tuturuuu/types/db';
+import type { User } from '@tuturuuu/types';
 import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
 import { Separator } from '@tuturuuu/ui/separator';
 import timezones from '@tuturuuu/utils/timezones';

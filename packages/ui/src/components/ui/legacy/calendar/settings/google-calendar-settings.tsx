@@ -2,7 +2,7 @@
 
 import { Check, ExternalLink, Link, Loader2, RefreshCw } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
+import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import {

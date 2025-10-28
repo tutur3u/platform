@@ -1,7 +1,7 @@
 'use client';
 
 import { Copy, Loader2 } from '@tuturuuu/icons';
-import type { Workspace } from '@tuturuuu/types/db';
+import type { Workspace } from '@tuturuuu/types';
 import type { EnhancedTaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { Button } from '@tuturuuu/ui/button';
 import {

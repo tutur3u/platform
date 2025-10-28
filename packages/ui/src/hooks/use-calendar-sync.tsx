@@ -6,7 +6,7 @@ import type {
   Workspace,
   WorkspaceCalendarEvent,
   WorkspaceCalendarGoogleToken,
-} from '@tuturuuu/types/db';
+} from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import dayjs from 'dayjs';

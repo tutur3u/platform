@@ -1,6 +1,6 @@
 'use client';
 
-import type { WorkspaceDataset } from '@tuturuuu/types/db';
+import type { WorkspaceDataset } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,

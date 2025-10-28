@@ -414,7 +414,7 @@ SELECT * FROM workspace_tasks; -- Runs with RLS as that user
 Use `createAdminClient()` from `@tuturuuu/supabase` in server-side code:
 
 ```typescript
-import { createAdminClient } from '@tuturuuu/supabase/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 
 const supabase = createAdminClient();
 // This client bypasses RLS - use carefully!

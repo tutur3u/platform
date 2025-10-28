@@ -1,7 +1,7 @@
 'use client';
 
 import { Clock, FileText, Search, X } from '@tuturuuu/icons';
-import type { RecordingTranscript } from '@tuturuuu/types/db';
+import type { RecordingTranscript } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,

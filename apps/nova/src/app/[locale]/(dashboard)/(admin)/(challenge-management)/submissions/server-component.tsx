@@ -3,7 +3,7 @@ import type {
   NovaChallenge,
   NovaProblem,
   NovaSubmission,
-} from '@tuturuuu/types/db';
+} from '@tuturuuu/types';
 import { SubmissionFilters } from './filters';
 import { SubmissionOverview } from './overview';
 import { SubmissionTable } from './submission-table';

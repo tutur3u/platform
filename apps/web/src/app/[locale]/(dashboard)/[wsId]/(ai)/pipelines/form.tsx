@@ -1,6 +1,6 @@
 'use client';
 
-import type { CrawledUrl } from '@tuturuuu/types/db';
+import type { CrawledUrl } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,

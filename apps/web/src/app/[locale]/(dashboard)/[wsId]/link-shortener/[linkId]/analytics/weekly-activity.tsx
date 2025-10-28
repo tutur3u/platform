@@ -69,8 +69,8 @@ export function WeeklyActivity({ clicksByDayOfWeek }: WeeklyActivityProps) {
   );
 
   return (
-    <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+    <Card className="relative overflow-hidden border-0 bg-linear-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
+      <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent" />
       <CardHeader className="relative">
         <CardTitle className="flex items-center gap-3">
           <div className="rounded-lg bg-dynamic-green/10 p-2">

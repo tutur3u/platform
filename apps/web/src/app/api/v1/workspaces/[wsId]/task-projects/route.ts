@@ -42,11 +42,20 @@ export async function GET(
           display_name,
           avatar_url
         ),
+        lead:workspace_members(...users(
+          id,
+          display_name,
+          avatar_url
+        )),
         task_project_tasks(
-          task:tasks(
+          task:tasks!inner(
             id,
             name,
             completed,
+            completed_at,
+            closed_at,
+            deleted_at,
+            priority,
             task_lists(
               name
             )
@@ -64,30 +73,38 @@ export async function GET(
       );
     }
 
-    const formatted = (projects ?? []).map((project) => ({
-      id: project.id,
-      name: project.name,
-      description: project.description,
-      created_at: project.created_at,
-      creator_id: project.creator_id,
-      creator: project.creator,
-      tasksCount: project.task_project_tasks?.length ?? 0,
-      linkedTasks:
-        project.task_project_tasks?.flatMap((link) =>
-          link.task
+    const formattedProjects = (projects ?? []).map((project) => {
+      // Filter out soft-deleted tasks
+      const activeTasks =
+        project.task_project_tasks?.filter(
+          (link) => link.task && link.task.deleted_at === null
+        ) ?? [];
+
+      return {
+        ...project,
+        created_at: project.created_at ?? new Date().toISOString(),
+        tasksCount: activeTasks.length,
+        completedTasksCount: activeTasks.filter(
+          (link) =>
+            link.task?.completed_at !== null || link.task?.closed_at !== null
+        ).length,
+        linkedTasks: activeTasks.flatMap(({ task }) =>
+          task
             ? [
                 {
-                  id: link.task.id,
-                  name: link.task.name,
-                  completed: link.task.completed,
-                  listName: link.task.task_lists?.name ?? null,
+                  id: task.id,
+                  name: task.name,
+                  completed_at: task.completed_at,
+                  priority: task.priority,
+                  listName: task.task_lists?.name ?? null,
                 },
               ]
             : []
-        ) ?? [],
-    }));
+        ),
+      };
+    });
 
-    return NextResponse.json(formatted);
+    return NextResponse.json(formattedProjects);
   } catch (error) {
     console.error(
       'Error in GET /api/v1/workspaces/[wsId]/task-projects:',

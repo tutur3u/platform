@@ -7,7 +7,7 @@ import {
   ListChecks,
   LogOut,
 } from '@tuturuuu/icons';
-import type { NovaChallenge, NovaChallengeCriteria } from '@tuturuuu/types/db';
+import type { NovaChallenge, NovaChallengeCriteria } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {

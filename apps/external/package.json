@@ -23,6 +23,7 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.5",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
@@ -30,10 +31,12 @@
     "@tuturuuu/utils": "workspace:*",
     "next": "^16.0.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "tuturuuu": "^0.1.1",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.15",
+    "@tailwindcss/postcss": "^4.1.16",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.9.1",
     "@types/react": "^19.2.2",

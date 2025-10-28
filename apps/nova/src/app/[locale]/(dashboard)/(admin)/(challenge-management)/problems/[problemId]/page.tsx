@@ -7,7 +7,7 @@ import type {
   NovaProblem,
   NovaProblemTestCase,
   NovaSubmissionWithScores,
-} from '@tuturuuu/types/db';
+} from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';

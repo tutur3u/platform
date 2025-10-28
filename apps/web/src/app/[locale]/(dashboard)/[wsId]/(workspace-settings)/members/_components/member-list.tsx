@@ -1,5 +1,5 @@
 import { User as UserIcon } from '@tuturuuu/icons';
-import type { Workspace, WorkspaceUserRole } from '@tuturuuu/types/db';
+import type { Workspace, WorkspaceUserRole } from '@tuturuuu/types';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { cn } from '@tuturuuu/utils/format';

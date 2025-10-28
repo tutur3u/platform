@@ -1,11 +1,7 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type {
-  InternalEmail,
-  User,
-  UserPrivateDetails,
-} from '@tuturuuu/types/db';
+import type { InternalEmail, User, UserPrivateDetails } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { useCallback, useEffect, useState } from 'react';
 import { MailClient } from './_components/mail';

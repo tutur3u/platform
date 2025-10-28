@@ -1,5 +1,5 @@
 import { BookOpen, Code, FileText, Info } from '@tuturuuu/icons';
-import type { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types/db';
+import type { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 

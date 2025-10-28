@@ -2,7 +2,7 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import { CheckCircle, Clock, PowerOff, XCircle } from '@tuturuuu/icons';
-import type { WorkspaceCronJob } from '@tuturuuu/types/db';
+import type { WorkspaceCronJob } from '@tuturuuu/types';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import parser from 'cron-parser';
 import cronstrue from 'cronstrue';

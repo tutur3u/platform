@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 
+import { ChatPermissions } from '@/components/chat-permissions';
 import type { Model } from '@tuturuuu/ai/models';
 import type { UIMessage, UseChatHelpers } from '@tuturuuu/ai/types';
 import {
@@ -7,7 +8,7 @@ import {
   createDynamicClient,
 } from '@tuturuuu/supabase/next/client';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
-import type { AIChat } from '@tuturuuu/types/db';
+import type { AIChat } from '@tuturuuu/types';
 import {
   FileUploader,
   type StatedFile,
@@ -20,12 +21,11 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import dayjs from 'dayjs';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import type React from 'react';
 import { useState } from 'react';
 import sanitize from 'sanitize-filename';
-import { ChatPermissions } from '@/components/chat-permissions';
 import { ChatModelSelector } from './chat-model-selector';
 import { PromptForm } from './prompt-form';
 

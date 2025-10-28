@@ -54,7 +54,7 @@ export default function MarketingPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl sm:h-[40rem] sm:w-[40rem]"
+          className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl sm:h-160 sm:w-160"
         />
         <motion.div
           animate={{
@@ -66,7 +66,7 @@ export default function MarketingPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-right-32 sm:-right-64 absolute top-[40%] h-80 w-80 rounded-full bg-gradient-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl sm:h-[35rem] sm:w-[35rem]"
+          className="-right-32 sm:-right-64 absolute top-[40%] h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl sm:h-140 sm:w-140"
         />
         <motion.div
           animate={{
@@ -78,76 +78,15 @@ export default function MarketingPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-green/30 via-dynamic-emerald/20 to-transparent blur-3xl sm:h-[45rem] sm:w-[45rem]"
+          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-green/30 via-dynamic-emerald/20 to-transparent blur-3xl sm:h-180 sm:w-180"
         />
       </div>
 
       {/* Grid Pattern Overlay */}
       <div className="-z-10 pointer-events-none fixed inset-0 opacity-30">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.08)_1px,transparent_1px)] bg-[size:32px_32px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.04)_1px,transparent_1px)] bg-[size:120px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.08)_1px,transparent_1px)] bg-size-[32px_32px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.04)_1px,transparent_1px)] bg-size-[120px]" />
       </div>
-
-      {/* Vietnamese Women's Day Banner */}
-      <motion.section
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="relative px-4 pt-6 sm:px-6 lg:px-8"
-      >
-        <div className="mx-auto max-w-7xl">
-          <Link href="/women-in-tech">
-            <Card className="group relative overflow-hidden border-2 border-dynamic-pink/30 bg-gradient-to-r from-dynamic-pink/10 via-dynamic-purple/10 to-dynamic-pink/10 p-6 transition-all hover:border-dynamic-pink/50 hover:shadow-dynamic-pink/20 hover:shadow-lg sm:p-8">
-              {/* Decorative Elements */}
-              <div className="absolute inset-0 overflow-hidden opacity-20">
-                <div className="absolute top-0 left-0 h-32 w-32 rounded-full bg-dynamic-pink blur-3xl" />
-                <div className="absolute right-0 bottom-0 h-32 w-32 rounded-full bg-dynamic-purple blur-3xl" />
-              </div>
-
-              {/* Content */}
-              <div className="relative flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
-                {/* Icon */}
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-dynamic-pink to-dynamic-purple shadow-lg sm:h-20 sm:w-20">
-                  <Heart className="h-8 w-8 text-white sm:h-10 sm:w-10" />
-                </div>
-
-                {/* Text Content */}
-                <div className="flex-1">
-                  <div className="mb-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                    <Badge
-                      variant="secondary"
-                      className="border-dynamic-pink/30 bg-dynamic-pink/20 text-dynamic-pink"
-                    >
-                      <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                      {t('womenInTechBanner.date')}
-                    </Badge>
-                    <Badge
-                      variant="secondary"
-                      className="border-dynamic-purple/30 bg-dynamic-purple/20 text-dynamic-purple"
-                    >
-                      {t('womenInTechBanner.occasion')}
-                    </Badge>
-                  </div>
-                  <h3 className="mb-2 bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-pink bg-clip-text font-bold text-2xl text-transparent sm:text-3xl">
-                    {t('womenInTechBanner.title')}
-                  </h3>
-                  <p className="text-foreground/70 sm:text-lg">
-                    {t('womenInTechBanner.description')}
-                  </p>
-                </div>
-
-                {/* CTA Arrow */}
-                <div className="flex items-center gap-2 text-dynamic-pink">
-                  <span className="hidden font-semibold sm:block">
-                    {t('womenInTechBanner.cta')}
-                  </span>
-                  <ArrowRight className="h-6 w-6 transition-transform group-hover:translate-x-1" />
-                </div>
-              </div>
-            </Card>
-          </Link>
-        </div>
-      </motion.section>
 
       {/* Hero Section */}
       <section className="relative px-4 pt-24 pb-16 sm:px-6 sm:pt-32 sm:pb-20 lg:px-8 lg:pt-40 lg:pb-24">
@@ -179,7 +118,7 @@ export default function MarketingPage() {
               className="mb-6 text-balance font-bold text-4xl tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl"
             >
               {t('hero.title.part1')}{' '}
-              <span className="animate-gradient bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+              <span className="animate-gradient bg-linear-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
                 {t('hero.title.part2')}
               </span>
             </motion.h1>
@@ -277,7 +216,7 @@ export default function MarketingPage() {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               {t('digitalFriction.title.part1')}{' '}
-              <span className="bg-gradient-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
                 {t('digitalFriction.title.highlight')}
               </span>{' '}
               {t('digitalFriction.title.part2')}
@@ -325,7 +264,7 @@ export default function MarketingPage() {
                 <Card
                   className={cn(
                     'h-full p-8 text-center transition-all hover:shadow-lg',
-                    `border-dynamic-${stat.color}/30 bg-gradient-to-br from-dynamic-${stat.color}/5 via-background to-background hover:border-dynamic-${stat.color}/50 hover:shadow-dynamic-${stat.color}/10`
+                    `border-dynamic-${stat.color}/30 bg-linear-to-br from-dynamic-${stat.color}/5 via-background to-background hover:border-dynamic-${stat.color}/50 hover:shadow-dynamic-${stat.color}/10`
                   )}
                 >
                   <div
@@ -382,7 +321,7 @@ export default function MarketingPage() {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               {t('features.title.part1')}{' '}
-              <span className="bg-gradient-to-r from-dynamic-cyan via-dynamic-blue to-dynamic-purple bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-dynamic-cyan via-dynamic-blue to-dynamic-purple bg-clip-text text-transparent">
                 {t('features.title.highlight')}
               </span>
             </h2>
@@ -440,7 +379,7 @@ export default function MarketingPage() {
                 <Card
                   className={cn(
                     'group h-full p-6 transition-all hover:shadow-lg',
-                    `border-dynamic-${feature.color}/30 bg-gradient-to-br from-dynamic-${feature.color}/5 via-background to-background hover:border-dynamic-${feature.color}/50 hover:shadow-dynamic-${feature.color}/10`
+                    `border-dynamic-${feature.color}/30 bg-linear-to-br from-dynamic-${feature.color}/5 via-background to-background hover:border-dynamic-${feature.color}/50 hover:shadow-dynamic-${feature.color}/10`
                   )}
                 >
                   <div
@@ -503,7 +442,7 @@ export default function MarketingPage() {
             </Badge>
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               {t('demo.title.part1')}{' '}
-              <span className="bg-gradient-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
                 {t('demo.title.highlight')}
               </span>
             </h2>
@@ -519,7 +458,7 @@ export default function MarketingPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <Card className="h-full overflow-hidden border-dynamic-green/30 bg-gradient-to-br from-dynamic-green/5 via-background to-background p-4 sm:p-6 md:p-8">
+              <Card className="h-full overflow-hidden border-dynamic-green/30 bg-linear-to-br from-dynamic-green/5 via-background to-background p-4 sm:p-6 md:p-8">
                 <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:gap-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-green/10 sm:h-14 sm:w-14">
                     <CheckCircle2 className="h-6 w-6 text-dynamic-green sm:h-7 sm:w-7" />
@@ -675,7 +614,7 @@ export default function MarketingPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <Card className="h-full overflow-hidden border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/5 via-background to-background p-4 sm:p-6 md:p-8">
+              <Card className="h-full overflow-hidden border-dynamic-blue/30 bg-linear-to-br from-dynamic-blue/5 via-background to-background p-4 sm:p-6 md:p-8">
                 <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:gap-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-blue/10 sm:h-14 sm:w-14">
                     <Calendar className="h-6 w-6 text-dynamic-blue sm:h-7 sm:w-7" />
@@ -821,7 +760,7 @@ export default function MarketingPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <Card className="h-full overflow-hidden border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/5 via-background to-background p-4 sm:p-6 md:p-8">
+              <Card className="h-full overflow-hidden border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/5 via-background to-background p-4 sm:p-6 md:p-8">
                 <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:gap-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-purple/10 sm:h-14 sm:w-14">
                     <Bot className="h-6 w-6 text-dynamic-purple sm:h-7 sm:w-7" />
@@ -954,7 +893,7 @@ export default function MarketingPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <Card className="h-full overflow-hidden border-dynamic-cyan/30 bg-gradient-to-br from-dynamic-cyan/5 via-background to-background p-4 sm:p-6 md:p-8">
+              <Card className="h-full overflow-hidden border-dynamic-cyan/30 bg-linear-to-br from-dynamic-cyan/5 via-background to-background p-4 sm:p-6 md:p-8">
                 <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:gap-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-cyan/10 sm:h-14 sm:w-14">
                     <BarChart3 className="h-6 w-6 text-dynamic-cyan sm:h-7 sm:w-7" />
@@ -983,7 +922,7 @@ export default function MarketingPage() {
                         {t('demo.analytics.metrics.tasks.value')}
                       </div>
                       <div className="flex items-center gap-1 text-[10px] text-foreground/60 sm:text-xs">
-                        <ArrowRight className="h-2.5 w-2.5 rotate-[-45deg] sm:h-3 sm:w-3" />
+                        <ArrowRight className="-rotate-45 h-2.5 w-2.5 sm:h-3 sm:w-3" />
                         {t('demo.analytics.metrics.tasks.change')}
                       </div>
                     </div>
@@ -999,7 +938,7 @@ export default function MarketingPage() {
                         {t('demo.analytics.metrics.focus.value')}
                       </div>
                       <div className="flex items-center gap-1 text-[10px] text-foreground/60 sm:text-xs">
-                        <ArrowRight className="h-2.5 w-2.5 rotate-[-45deg] sm:h-3 sm:w-3" />
+                        <ArrowRight className="-rotate-45 h-2.5 w-2.5 sm:h-3 sm:w-3" />
                         {t('demo.analytics.metrics.focus.change')}
                       </div>
                     </div>
@@ -1050,7 +989,7 @@ export default function MarketingPage() {
                       </Badge>
                     </div>
                     <div className="mb-2 h-3 overflow-hidden rounded-full bg-dynamic-cyan/20">
-                      <div className="h-full w-[87%] rounded-full bg-gradient-to-r from-dynamic-cyan to-dynamic-blue" />
+                      <div className="h-full w-[87%] rounded-full bg-linear-to-r from-dynamic-cyan to-dynamic-blue" />
                     </div>
                     <div className="flex items-center justify-between text-foreground/60 text-xs">
                       <span>{t('demo.analytics.productivityScore.value')}</span>
@@ -1149,7 +1088,7 @@ export default function MarketingPage() {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               {t('pricing.title.part1')}{' '}
-              <span className="bg-gradient-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
                 {t('pricing.title.highlight')}
               </span>{' '}
               {t('pricing.title.part2')}
@@ -1166,7 +1105,7 @@ export default function MarketingPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <Card className="h-full border-dynamic-green/30 bg-gradient-to-br from-dynamic-green/5 via-background to-background p-8">
+              <Card className="h-full border-dynamic-green/30 bg-linear-to-br from-dynamic-green/5 via-background to-background p-8">
                 <Badge
                   variant="secondary"
                   className="mb-4 border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green"
@@ -1228,7 +1167,7 @@ export default function MarketingPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <Card className="h-full border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/5 via-background to-background p-8">
+              <Card className="h-full border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/5 via-background to-background p-8">
                 <Badge
                   variant="secondary"
                   className="mb-4 border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple"
@@ -1292,7 +1231,7 @@ export default function MarketingPage() {
             viewport={{ once: true }}
             className="mt-12"
           >
-            <Card className="border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/5 via-background to-background p-8 text-center">
+            <Card className="border-dynamic-blue/30 bg-linear-to-br from-dynamic-blue/5 via-background to-background p-8 text-center">
               <h3 className="mb-4 font-bold text-2xl">
                 {t('pricing.future.title')}
               </h3>
@@ -1355,7 +1294,7 @@ export default function MarketingPage() {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               {t('demo.aiCore.title.part1')}{' '}
-              <span className="bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
                 {t('demo.aiCore.title.highlight')}
               </span>
             </h2>
@@ -1364,12 +1303,12 @@ export default function MarketingPage() {
             </p>
           </motion.div>
 
-          <Card className="overflow-hidden border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/5 via-background to-background p-8 md:p-12">
+          <Card className="overflow-hidden border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/5 via-background to-background p-8 md:p-12">
             <div className="grid gap-8 lg:grid-cols-2">
               {/* Mira Highlight */}
               <div className="lg:col-span-2">
                 <div className="flex flex-col items-start gap-6 md:flex-row">
-                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-dynamic-pink/20 to-dynamic-purple/20">
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-dynamic-pink/20 to-dynamic-purple/20">
                     <Bot className="h-10 w-10 text-dynamic-pink" />
                   </div>
                   <div>
@@ -1478,7 +1417,7 @@ export default function MarketingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <Card className="relative overflow-hidden border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-12">
+            <Card className="relative overflow-hidden border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-12">
               {/* Decorative Elements */}
               <div className="absolute inset-0 overflow-hidden opacity-10">
                 <div className="absolute top-10 left-10 h-40 w-40 rounded-full bg-dynamic-purple blur-3xl" />

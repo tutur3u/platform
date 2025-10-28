@@ -35,7 +35,7 @@ export default function EmptyState({
   return (
     <Card className="border-2 border-dynamic-muted/50 border-dashed">
       <CardContent className="px-6 py-16 text-center">
-        <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-dynamic-blue/10 via-dynamic-purple/10 to-dynamic-pink/10">
+        <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-linear-to-br from-dynamic-blue/10 via-dynamic-purple/10 to-dynamic-pink/10">
           <CheckCircle2 className="h-12 w-12 text-dynamic-blue" />
         </div>
         <h3 className="mb-3 font-bold text-2xl">{t('ws-tasks.no_tasks')}</h3>

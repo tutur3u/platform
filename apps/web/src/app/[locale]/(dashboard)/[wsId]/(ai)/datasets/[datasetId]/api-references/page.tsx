@@ -1,4 +1,6 @@
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { WorkspaceApiKey } from '@tuturuuu/types';
 import {
   Card,
   CardContent,
@@ -10,7 +12,6 @@ import { CodeBlock } from '@tuturuuu/ui/codeblock';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import EnvironmentSetup from './environment-setup';
 
 export const metadata: Metadata = {
@@ -26,7 +27,7 @@ interface Props {
   }>;
 }
 
-async function getApiKeys(wsId: string) {
+async function getApiKeys(wsId: string): Promise<WorkspaceApiKey[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from('workspace_api_keys')
@@ -44,7 +45,15 @@ export default async function ApiReferencesPage({ params }: Props) {
         const headersList = await headers();
         const host = headersList.get('host');
 
-        const apiKeys = await getApiKeys(wsId);
+        const rawApiKeys: WorkspaceApiKey[] = await getApiKeys(wsId);
+        const apiKeys: { id: string; name: string; value: string }[] =
+          rawApiKeys.map((key: WorkspaceApiKey) => ({
+            id: key.id!,
+            name: key.name!,
+            value: key.key_prefix
+              ? `${key.key_prefix}...`
+              : 'your_api_key_here',
+          }));
 
         const pythonSetupCode = `import os
 from dotenv import load_dotenv

@@ -111,7 +111,7 @@ export function ProgressIndicator({
     <Card
       className={cn(
         'transform transition-all duration-700 ease-out',
-        'border bg-gradient-to-br from-background/95 via-background/98 to-background/95',
+        'border bg-linear-to-br from-background/95 via-background/98 to-background/95',
         'shadow-lg backdrop-blur-sm',
         isEvaluationComplete
           ? 'scale-[1.01] border-dynamic-green/30 shadow-2xl shadow-dynamic-green/20'

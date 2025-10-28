@@ -164,7 +164,7 @@ export function PromptInput({
           <div className="flex items-center justify-center px-6 py-24">
             <div className="max-w-lg space-y-8 text-center">
               <div className="relative">
-                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border-4 border-dynamic-blue/20 bg-gradient-to-br from-dynamic-blue/10 via-dynamic-purple/10 to-dynamic-indigo/10 shadow-2xl backdrop-blur-sm">
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border-4 border-dynamic-blue/20 bg-linear-to-br from-dynamic-blue/10 via-dynamic-purple/10 to-dynamic-indigo/10 shadow-2xl backdrop-blur-sm">
                   <LoadingIndicator className="h-10 w-10 text-dynamic-blue" />
                 </div>
                 <div className="absolute inset-0 animate-ping">

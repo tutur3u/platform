@@ -1,9 +1,6 @@
 'use client';
 
-import type {
-  Workspace,
-  WorkspaceCalendarGoogleToken,
-} from '@tuturuuu/types/db';
+import type { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types';
 import { CalendarProvider } from '@tuturuuu/ui/hooks/use-calendar';
 import { CalendarContent } from './calendar-content';
 import {

@@ -1,11 +1,7 @@
 import { CustomDataTable } from '@/components/custom-data-table';
 import { Mail } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type {
-  PlatformUser,
-  User,
-  UserPrivateDetails,
-} from '@tuturuuu/types/db';
+import type { PlatformUser, User, UserPrivateDetails } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';

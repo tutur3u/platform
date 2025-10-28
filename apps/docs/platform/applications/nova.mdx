@@ -186,7 +186,7 @@ Creating a new prompt engineering problem:
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function createProblem(data: {
   title: string;
@@ -240,7 +240,7 @@ Create a timed challenge:
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function createChallenge(data: {
   problemId: string;
@@ -273,7 +273,7 @@ Start a problem-solving session:
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function startSession(problemId: string) {
   const supabase = createClient();
@@ -300,7 +300,7 @@ Complete a session:
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function completeSession(sessionId: string, score: number) {
   const supabase = createClient();
@@ -327,7 +327,7 @@ Submit a prompt for evaluation:
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { evaluatePrompt } from '@/lib/nova/evaluation';
 
 export async function submitPrompt(data: {
@@ -551,7 +551,7 @@ export function PromptSubmissionForm({ challengeId }: { challengeId: string }) {
 ```typescript
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function assignNovaRole(
   userId: string,
@@ -574,7 +574,7 @@ export async function assignNovaRole(
 ### Check Nova Permissions
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function hasNovaRole(
   userId: string,

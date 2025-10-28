@@ -2,7 +2,7 @@
 
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis, Eye } from '@tuturuuu/icons';
-import type { WorkspaceCronExecution } from '@tuturuuu/types/db';
+import type { WorkspaceCronExecution } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,

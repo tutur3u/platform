@@ -1,6 +1,6 @@
 import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@tuturuuu/types/supabase';
+import type { Database } from '@tuturuuu/types';
 import { checkEnvVariables } from './common';
 
 const { url, key } = checkEnvVariables({ useSecretKey: false });

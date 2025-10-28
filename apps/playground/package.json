@@ -23,7 +23,7 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@ai-sdk/google": "^2.0.23",
+    "@ai-sdk/google": "^2.0.24",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
@@ -36,7 +36,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.15",
+    "@tailwindcss/postcss": "^4.1.16",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.9.1",
     "@types/react": "^19.2.2",

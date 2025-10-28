@@ -12,7 +12,7 @@ import {
   Lock,
 } from '@tuturuuu/icons';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
-import type { AIChat } from '@tuturuuu/types/db';
+import type { AIChat } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   FileUploader,

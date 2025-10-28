@@ -471,7 +471,7 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
                       key={suggestion}
                       onClick={() => handleSend(suggestion)}
                       type="button"
-                      className={`group relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-br from-muted/30 to-muted/10 p-4 text-left transition-all duration-200 hover:scale-[1.02] hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/50 active:scale-[0.98] ${
+                      className={`group relative overflow-hidden rounded-xl border border-border/50 bg-linear-to-br from-muted/30 to-muted/10 p-4 text-left transition-all duration-200 hover:scale-[1.02] hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/50 active:scale-[0.98] ${
                         index % 2 === 0
                           ? 'slide-in-from-left-4 animate-in'
                           : 'slide-in-from-right-4 animate-in'
@@ -479,7 +479,7 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
                       style={{ animationDelay: `${index * 100}ms` }}
                       aria-label={`Try suggestion: ${suggestion}`}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                      <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                       <div className="relative flex items-start gap-3">
                         <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 transition-colors group-hover:bg-primary/20">
                           <Sparkles className="h-4 w-4 text-primary transition-all group-hover:scale-110" />
@@ -503,13 +503,13 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
             {open && aiMessages.length === 0 && !isLoading && (
               <div className="slide-in-from-bottom-4 flex animate-in items-start gap-4">
                 <div className="relative mt-1">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-primary/20 to-primary/10 shadow-lg">
                     <Bot className="h-4 w-4 text-primary" />
                   </div>
                   <div className="-inset-1 absolute animate-pulse rounded-full bg-primary/10 blur-sm" />
                 </div>
                 <div className="max-w-[85%] space-y-3">
-                  <div className="rounded-2xl bg-gradient-to-br from-muted/80 to-muted/40 px-4 py-3 shadow-sm backdrop-blur-sm">
+                  <div className="rounded-2xl bg-linear-to-br from-muted/80 to-muted/40 px-4 py-3 shadow-sm backdrop-blur-sm">
                     <p className="text-foreground text-sm leading-relaxed">
                       👋 <strong>Welcome to Jarvis!</strong>
                     </p>
@@ -520,7 +520,7 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
                       required.
                     </p>
                   </div>
-                  <div className="rounded-2xl bg-gradient-to-br from-blue-50/80 to-blue-100/40 px-4 py-3 shadow-sm backdrop-blur-sm dark:from-blue-950/40 dark:to-blue-900/20">
+                  <div className="rounded-2xl bg-linear-to-br from-blue-50/80 to-blue-100/40 px-4 py-3 shadow-sm backdrop-blur-sm dark:from-blue-950/40 dark:to-blue-900/20">
                     <p className="text-blue-800 text-sm leading-relaxed dark:text-blue-200">
                       💡 <strong>Pro tip:</strong> Try the suggestions below or
                       ask me anything about your workspace. I have full context

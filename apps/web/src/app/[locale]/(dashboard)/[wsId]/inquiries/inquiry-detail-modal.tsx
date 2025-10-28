@@ -9,7 +9,7 @@ import {
   ZoomInIcon,
 } from '@tuturuuu/icons';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
-import type { Product, SupportType } from '@tuturuuu/types/db';
+import type { Product, SupportType } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -310,7 +310,7 @@ export function InquiryDetailModal({
                     <>
                       <Avatar className="h-12 w-12 shrink-0">
                         <AvatarImage src={inquiry.users.avatar_url || ''} />
-                        <AvatarFallback className="bg-gradient-to-br from-dynamic-blue to-dynamic-purple font-semibold text-white">
+                        <AvatarFallback className="bg-linear-to-br from-dynamic-blue to-dynamic-purple font-semibold text-white">
                           {inquiry.users.display_name?.[0] ||
                             inquiry.users.user_private_details.email?.[0] ||
                             'U'}
@@ -334,7 +334,7 @@ export function InquiryDetailModal({
                   ) : (
                     <>
                       <Avatar className="h-12 w-12 shrink-0">
-                        <AvatarFallback className="bg-gradient-to-br from-dynamic-blue to-dynamic-purple font-semibold text-white">
+                        <AvatarFallback className="bg-linear-to-br from-dynamic-blue to-dynamic-purple font-semibold text-white">
                           {inquiry.name[0] || 'U'}
                         </AvatarFallback>
                       </Avatar>

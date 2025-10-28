@@ -2,7 +2,7 @@
 
 import { CheckIcon, ChevronDown, Crown, PlusCircle } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Workspace } from '@tuturuuu/types/db';
+import type { Workspace } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {

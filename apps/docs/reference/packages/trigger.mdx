@@ -159,7 +159,7 @@ await scheduleTasks.trigger({
 The package uses atomic sync state management to prevent concurrent syncs:
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 async function acquireSyncLock(wsId: string): Promise<boolean> {
   const supabase = createClient();
@@ -199,7 +199,7 @@ async function releaseSyncLock(wsId: string) {
 ```typescript
 import { task } from '@trigger.dev/sdk/v3';
 import { google } from 'googleapis';
-import { createAdminClient } from '@tuturuuu/supabase/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 
 export const googleCalendarFullSync = task({
   id: 'google-calendar-full-sync',
@@ -320,7 +320,7 @@ export const googleCalendarFullSync = task({
 ```typescript
 import { task } from '@trigger.dev/sdk/v3';
 import { google } from 'googleapis';
-import { createAdminClient } from '@tuturuuu/supabase/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 
 export const googleCalendarIncrementalSync = task({
   id: 'google-calendar-incremental-sync',
@@ -430,7 +430,7 @@ export const googleCalendarIncrementalSync = task({
 // apps/web/src/trigger/scheduled.ts
 import { schedules } from '@trigger.dev/sdk/v3';
 import { googleCalendarIncrementalSync } from '@tuturuuu/trigger';
-import { createAdminClient } from '@tuturuuu/supabase/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 
 export const dailyCalendarSync = schedules.task({
   id: 'daily-calendar-sync',

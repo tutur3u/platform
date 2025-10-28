@@ -44,7 +44,7 @@ export default function StatsOverview({
 
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-      <Card className="overflow-hidden border-dynamic-blue/20 bg-gradient-to-br from-dynamic-blue/5 to-dynamic-purple/5 transition-all duration-300 hover:shadow-dynamic-blue/10 hover:shadow-lg">
+      <Card className="overflow-hidden border-dynamic-blue/20 bg-linear-to-br from-dynamic-blue/5 to-dynamic-purple/5 transition-all duration-300 hover:shadow-dynamic-blue/10 hover:shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between border-dynamic-blue/20 border-b bg-gradient-to-r from-dynamic-blue/10 to-dynamic-purple/10 pb-4">
           <CardTitle className="font-semibold text-dynamic-blue text-sm">
             Total{' '}
@@ -77,7 +77,7 @@ export default function StatsOverview({
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden border-dynamic-green/20 bg-gradient-to-br from-dynamic-green/5 to-dynamic-blue/5 transition-all duration-300 hover:shadow-dynamic-green/10 hover:shadow-lg">
+      <Card className="overflow-hidden border-dynamic-green/20 bg-linear-to-br from-dynamic-green/5 to-dynamic-blue/5 transition-all duration-300 hover:shadow-dynamic-green/10 hover:shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between border-dynamic-green/20 border-b bg-gradient-to-r from-dynamic-green/10 to-dynamic-blue/10 pb-4">
           <CardTitle className="font-semibold text-dynamic-green text-sm">
             Active Sessions
@@ -112,7 +112,7 @@ export default function StatsOverview({
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden border-dynamic-yellow/20 bg-gradient-to-br from-dynamic-yellow/5 to-dynamic-orange/5 transition-all duration-300 hover:shadow-dynamic-yellow/10 hover:shadow-lg">
+      <Card className="overflow-hidden border-dynamic-yellow/20 bg-linear-to-br from-dynamic-yellow/5 to-dynamic-orange/5 transition-all duration-300 hover:shadow-dynamic-yellow/10 hover:shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between border-dynamic-yellow/20 border-b bg-gradient-to-r from-dynamic-yellow/10 to-dynamic-orange/10 pb-4">
           <CardTitle className="font-semibold text-dynamic-yellow text-sm">
             Today's Work
@@ -152,7 +152,7 @@ export default function StatsOverview({
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden border-dynamic-purple/20 bg-gradient-to-br from-dynamic-purple/5 to-dynamic-pink/5 transition-all duration-300 hover:shadow-dynamic-purple/10 hover:shadow-lg">
+      <Card className="overflow-hidden border-dynamic-purple/20 bg-linear-to-br from-dynamic-purple/5 to-dynamic-pink/5 transition-all duration-300 hover:shadow-dynamic-purple/10 hover:shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between border-dynamic-purple/20 border-b bg-gradient-to-r from-dynamic-purple/10 to-dynamic-pink/10 pb-4">
           <CardTitle className="font-semibold text-dynamic-purple text-sm">
             {period === 'day'

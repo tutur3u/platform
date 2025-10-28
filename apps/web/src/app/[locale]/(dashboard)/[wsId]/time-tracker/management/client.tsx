@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertCircle, Clock, Loader2 } from '@tuturuuu/icons';
-import type { TimeTrackingSession } from '@tuturuuu/types/db';
+import type { TimeTrackingSession } from '@tuturuuu/types';
 import {
   Dialog,
   DialogContent,
@@ -634,7 +634,7 @@ export default function TimeTrackerManagementClient({
         <div className="flex items-center justify-between">
           <div className="space-y-3">
             <div className="flex items-center gap-4">
-              <div className="rounded-lg bg-gradient-to-br from-dynamic-blue/20 to-dynamic-purple/20 p-3 ring-2 ring-dynamic-blue/10">
+              <div className="rounded-lg bg-linear-to-br from-dynamic-blue/20 to-dynamic-purple/20 p-3 ring-2 ring-dynamic-blue/10">
                 <Clock className="size-8 text-dynamic-blue" />
               </div>
               <div>
@@ -738,7 +738,7 @@ export default function TimeTrackerManagementClient({
           <div className="space-y-6 p-2">
             {/* Header */}
             <div className="flex items-center gap-4">
-              <div className="flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-dynamic-green/20 to-dynamic-blue/20 ring-2 ring-dynamic-green/10">
+              <div className="flex size-12 items-center justify-center rounded-full bg-linear-to-br from-dynamic-green/20 to-dynamic-blue/20 ring-2 ring-dynamic-green/10">
                 <Loader2 className="size-6 animate-spin text-dynamic-green" />
               </div>
               <div className="flex-1">

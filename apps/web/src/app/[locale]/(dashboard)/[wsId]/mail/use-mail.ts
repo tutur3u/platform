@@ -1,4 +1,4 @@
-import type { InternalEmail } from '@tuturuuu/types/db';
+import type { InternalEmail } from '@tuturuuu/types';
 import { atom, useAtom } from 'jotai';
 
 type Config = {

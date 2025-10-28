@@ -9,9 +9,14 @@
     "./cross-app": "./src/cross-app/index.ts",
     "./cross-app/server": "./src/cross-app/server.ts",
     "./cross-app/token-verifier": "./src/cross-app/token-verifier.tsx",
-    "./identity-linking": "./src/identity-linking.ts"
+    "./identity-linking": "./src/identity-linking.ts",
+    "./api-keys": "./src/api-keys.ts"
   },
   "license": "MIT",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
   "dependencies": {
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
@@ -25,7 +30,8 @@
     "@types/node": "^24.9.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.4"
   },
   "packageManager": "bun@1.3.1"
 }

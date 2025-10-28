@@ -11,7 +11,7 @@ import {
   Share2,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { WorkspaceDocument } from '@tuturuuu/types/db';
+import type { WorkspaceDocument } from '@tuturuuu/types';
 import {
   AlertDialog,
   AlertDialogAction,

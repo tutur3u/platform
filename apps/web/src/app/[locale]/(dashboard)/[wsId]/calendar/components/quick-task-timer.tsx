@@ -1,7 +1,7 @@
 'use client';
 
 import { Clock, Play } from '@tuturuuu/icons';
-import type { WorkspaceTask } from '@tuturuuu/types/db';
+import type { WorkspaceTask } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';

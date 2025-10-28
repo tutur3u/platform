@@ -179,8 +179,8 @@ export default function ExpandableTaskList({
             className={cn(
               'group relative w-full cursor-pointer overflow-hidden rounded-xl border p-5 text-left shadow-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-xl',
               taskOverdue && !task.archived
-                ? 'border-dynamic-red/30 bg-gradient-to-br from-dynamic-red/5 via-dynamic-red/3 to-transparent ring-2 ring-dynamic-red/20'
-                : 'border-border/50 bg-gradient-to-br from-card via-card/95 to-card/90 hover:border-primary/30 hover:ring-2 hover:ring-primary/10'
+                ? 'border-dynamic-red/30 bg-linear-to-br from-dynamic-red/5 via-dynamic-red/3 to-transparent ring-2 ring-dynamic-red/20'
+                : 'border-border/50 bg-linear-to-br from-card via-card/95 to-card/90 hover:border-primary/30 hover:ring-2 hover:ring-primary/10'
             )}
             onClick={(e) => handleEditTask(task, e)}
           >
@@ -329,7 +329,7 @@ export default function ExpandableTaskList({
                         </Avatar>
                       ))}
                       {task.assignees.length > 3 && (
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-gradient-to-br from-primary/20 to-primary/10 font-bold text-[10px] text-primary shadow-md ring-1 ring-border/50 transition-all duration-200 hover:z-10 hover:scale-110 hover:ring-primary/30">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-linear-to-br from-primary/20 to-primary/10 font-bold text-[10px] text-primary shadow-md ring-1 ring-border/50 transition-all duration-200 hover:z-10 hover:scale-110 hover:ring-primary/30">
                           +{task.assignees.length - 3}
                         </div>
                       )}
@@ -340,7 +340,7 @@ export default function ExpandableTaskList({
                   {task.labels && task.labels.length > 0 && (
                     <>
                       {task.assignees && task.assignees.length > 0 && (
-                        <div className="h-5 w-[1px] bg-border" />
+                        <div className="h-5 w-px bg-border" />
                       )}
                       <TaskLabelsDisplay
                         labels={task.labels
@@ -360,7 +360,7 @@ export default function ExpandableTaskList({
                     task.estimation_points !== undefined && (
                       <>
                         {task.labels && task.labels.length > 0 && (
-                          <div className="h-5 w-[1px] bg-border" />
+                          <div className="h-5 w-px bg-border" />
                         )}
                         <TaskEstimationDisplay
                           points={task.estimation_points}
@@ -374,7 +374,7 @@ export default function ExpandableTaskList({
 
                 {/* Description - only show if exists */}
                 {task.description && getDescriptionText(task.description) && (
-                  <p className="line-clamp-2 rounded-lg border border-border/50 bg-muted/30 px-3.5 py-2.5 text-muted-foreground text-xs leading-relaxed shadow-sm backdrop-blur-sm">
+                  <p className="line-clamp-3 max-h-16 break-words rounded-lg border border-border/50 bg-muted/30 px-3.5 py-2.5 text-muted-foreground text-xs leading-snug shadow-sm backdrop-blur-sm">
                     {getDescriptionText(task.description)}
                   </p>
                 )}
