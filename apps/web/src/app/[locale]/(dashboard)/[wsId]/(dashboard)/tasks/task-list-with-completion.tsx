@@ -5,24 +5,18 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
-  Clock,
-  Loader2,
-  UserRound,
+  Loader2
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskWithRelations } from '@tuturuuu/types';
 import type { Task as PrimitiveTask } from '@tuturuuu/types/primitives/Task';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
 import { TaskEstimationDisplay } from '@tuturuuu/ui/tu-do/shared/task-estimation-display';
-import { TaskLabelsDisplay } from '@tuturuuu/ui/tu-do/shared/task-labels-display';
-import { TaskProjectsDisplay } from '@tuturuuu/ui/tu-do/shared/task-projects-display';
 import { cn } from '@tuturuuu/utils/format';
-import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import {
   formatDistanceToNow,
   isToday,
