@@ -2,13 +2,9 @@
 
 import { Box } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
+import type { TaskProject } from '@tuturuuu/types';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-
-interface TaskProject {
-  id: string;
-  name: string;
-}
 
 interface TaskProjectsDisplayProps {
   projects: TaskProject[] | undefined | null;
