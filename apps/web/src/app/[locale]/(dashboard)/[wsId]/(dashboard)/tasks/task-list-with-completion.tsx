@@ -5,7 +5,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
-  Loader2
+  Loader2,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskWithRelations } from '@tuturuuu/types';
@@ -290,7 +290,9 @@ export default function TaskListWithCompletion({
                   const hasProjects = task.projects && task.projects.length > 0;
                   const hasLine2 = hasLabels || hasProjects;
                   return (
-                    <div className={cn("flex flex-col", hasLine2 ? "gap-y-3" : "")}>
+                    <div
+                      className={cn('flex flex-col', hasLine2 ? 'gap-y-3' : '')}
+                    >
                       {/* Line 1: Task name on left, Board → List → Due date → Assignees + Estimation on right */}
                       <div className="hidden md:flex items-center justify-between gap-2">
                         <h4
@@ -353,7 +355,9 @@ export default function TaskListWithCompletion({
                           {/* Assignees */}
                           {task.assignees && task.assignees.length > 0 && (
                             <>
-                              <span className="text-muted-foreground/30">•</span>
+                              <span className="text-muted-foreground/30">
+                                •
+                              </span>
                               <div className="-space-x-2 flex">
                                 {task.assignees.slice(0, 2).map((assignee) => (
                                   <Avatar
@@ -361,8 +365,12 @@ export default function TaskListWithCompletion({
                                     className="h-6 w-6 border-2 border-background shadow-sm ring-1 ring-border/50 transition-all duration-200 hover:z-10 hover:scale-110 hover:ring-primary/30"
                                   >
                                     <AvatarImage
-                                      src={assignee.user?.avatar_url || undefined}
-                                      alt={assignee.user?.display_name || 'User'}
+                                      src={
+                                        assignee.user?.avatar_url || undefined
+                                      }
+                                      alt={
+                                        assignee.user?.display_name || 'User'
+                                      }
                                     />
                                     <AvatarFallback className="font-semibold text-[9px]">
                                       {(assignee.user?.display_name || 'U')
@@ -384,19 +392,21 @@ export default function TaskListWithCompletion({
                           {task.estimation_points !== null &&
                             task.estimation_points !== undefined && (
                               <>
-                                <span className="text-muted-foreground/30">•</span>
+                                <span className="text-muted-foreground/30">
+                                  •
+                                </span>
                                 <TaskEstimationDisplay
                                   points={task.estimation_points}
                                   size="sm"
                                   showIcon={true}
-                                  estimationType={task.list?.board?.estimation_type}
+                                  estimationType={
+                                    task.list?.board?.estimation_type
+                                  }
                                 />
                               </>
                             )}
                         </div>
-                  </div>
-
-    
+                      </div>
                     </div>
                   );
                 })()}
@@ -459,51 +469,51 @@ export default function TaskListWithCompletion({
                       )}
 
                       {/* Due date */}
-                          {endDate && (
-                            <div
-                              className={cn(
-                                'flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-medium shadow-sm ring-1 transition-colors',
-                                taskOverdue && !task.archived && !isCompleted
-                                  ? 'bg-dynamic-red/10 text-dynamic-red ring-dynamic-red/20'
-                                  : 'bg-dynamic-orange/10 text-dynamic-orange ring-dynamic-orange/20'
-                              )}
-                            >
-                              <Calendar className="h-3.5 w-3.5 shrink-0" />
-                              <span className="truncate">
-                                {formatSmartDate(endDate)}
-                              </span>
-                            </div>
+                      {endDate && (
+                        <div
+                          className={cn(
+                            'flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-medium shadow-sm ring-1 transition-colors',
+                            taskOverdue && !task.archived && !isCompleted
+                              ? 'bg-dynamic-red/10 text-dynamic-red ring-dynamic-red/20'
+                              : 'bg-dynamic-orange/10 text-dynamic-orange ring-dynamic-orange/20'
                           )}
+                        >
+                          <Calendar className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate">
+                            {formatSmartDate(endDate)}
+                          </span>
+                        </div>
+                      )}
 
-                          {/* Assignees */}
-                          {task.assignees && task.assignees.length > 0 && (
-                            <>
-                              <span className="text-muted-foreground/30">•</span>
-                              <div className="-space-x-2 flex">
-                                {task.assignees.slice(0, 2).map((assignee) => (
-                                  <Avatar
-                                    key={assignee.user?.id}
-                                    className="h-6 w-6 border-2 border-background shadow-sm ring-1 ring-border/50 transition-all duration-200 hover:z-10 hover:scale-110 hover:ring-primary/30"
-                                  >
-                                    <AvatarImage
-                                      src={assignee.user?.avatar_url || undefined}
-                                      alt={assignee.user?.display_name || 'User'}
-                                    />
-                                    <AvatarFallback className="font-semibold text-[9px]">
-                                      {(assignee.user?.display_name || 'U')
-                                        .charAt(0)
-                                        .toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                ))}
-                                {task.assignees.length > 2 && (
-                                  <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-gradient-to-br from-primary/20 to-primary/10 font-bold text-[8px] text-primary shadow-sm ring-1 ring-border/50">
-                                    +{task.assignees.length - 2}
-                                  </div>
-                                )}
+                      {/* Assignees */}
+                      {task.assignees && task.assignees.length > 0 && (
+                        <>
+                          <span className="text-muted-foreground/30">•</span>
+                          <div className="-space-x-2 flex">
+                            {task.assignees.slice(0, 2).map((assignee) => (
+                              <Avatar
+                                key={assignee.user?.id}
+                                className="h-6 w-6 border-2 border-background shadow-sm ring-1 ring-border/50 transition-all duration-200 hover:z-10 hover:scale-110 hover:ring-primary/30"
+                              >
+                                <AvatarImage
+                                  src={assignee.user?.avatar_url || undefined}
+                                  alt={assignee.user?.display_name || 'User'}
+                                />
+                                <AvatarFallback className="font-semibold text-[9px]">
+                                  {(assignee.user?.display_name || 'U')
+                                    .charAt(0)
+                                    .toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                            ))}
+                            {task.assignees.length > 2 && (
+                              <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-gradient-to-br from-primary/20 to-primary/10 font-bold text-[8px] text-primary shadow-sm ring-1 ring-border/50">
+                                +{task.assignees.length - 2}
                               </div>
-                            </>
-                          )}
+                            )}
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

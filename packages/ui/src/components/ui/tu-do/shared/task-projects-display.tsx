@@ -37,7 +37,7 @@ export function TaskProjectsDisplay({
   if (projects.length === 1) {
     const project = projects[0];
     if (!project) return null;
-    
+
     return (
       <Badge
         variant="outline"
