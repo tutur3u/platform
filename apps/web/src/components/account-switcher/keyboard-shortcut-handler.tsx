@@ -20,7 +20,11 @@ export function AccountSwitcherKeyboardShortcut(): JSX.Element {
       }
 
       // Cmd/Ctrl + Shift + A (case-insensitive)
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.shiftKey &&
+        e.key.toLowerCase() === 'a'
+      ) {
         e.preventDefault();
         setOpen(true);
       }

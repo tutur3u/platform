@@ -15,7 +15,8 @@ interface AccountItemProps {
 export function AccountItem({ account, isActive, onClick }: AccountItemProps) {
   const t = useTranslations();
 
-  const displayName = account.metadata.displayName || account.email || 'Unknown User';
+  const displayName =
+    account.metadata.displayName || account.email || 'Unknown User';
   const initials = displayName
     .trim()
     .split(' ')
@@ -46,9 +47,7 @@ export function AccountItem({ account, isActive, onClick }: AccountItemProps) {
           )}
         </div>
         {account.email && (
-          <span className="text-xs text-foreground/60">
-            {account.email}
-          </span>
+          <span className="text-xs text-foreground/60">{account.email}</span>
         )}
       </div>
 
