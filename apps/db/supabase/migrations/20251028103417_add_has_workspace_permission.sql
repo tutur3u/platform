@@ -19,7 +19,7 @@ begin
       on wrp.role_id = wrm.role_id
       and wrp.ws_id = p_ws_id
     where wrm.user_id = p_user_id
-      and wrp.permission = p_permission
+      and wrp.permission = p_permission::"public"."workspace_role_permission"
       and wrp.enabled = true
 
     union
@@ -28,13 +28,8 @@ begin
     select 1
     from workspace_default_permissions wdp
     where wdp.ws_id = p_ws_id
-      and wdp.permission = p_permission
+      and wdp.permission = p_permission::"public"."workspace_role_permission"
       and wdp.enabled = true
-      and exists (
-        select 1 from workspace_members wm
-        where wm.ws_id = p_ws_id
-        and wm.user_id = p_user_id
-      )
   );
 end;
 $$;
