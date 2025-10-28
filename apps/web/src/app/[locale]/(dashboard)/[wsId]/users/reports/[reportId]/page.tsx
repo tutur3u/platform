@@ -1,7 +1,7 @@
 import { availableConfigs } from '@/constants/configs/reports';
 import { PlusCircle, User } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceUserReport } from '@tuturuuu/types/db';
+import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';

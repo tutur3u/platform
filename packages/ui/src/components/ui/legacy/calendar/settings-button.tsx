@@ -1,5 +1,5 @@
 import { Settings } from '@tuturuuu/icons';
-import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
+import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types';
 import { useState } from 'react';
 import { Button } from '../../button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip';

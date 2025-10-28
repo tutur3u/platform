@@ -1,6 +1,6 @@
 'use client';
 
-import type { AuroraForecast } from '@tuturuuu/types/db';
+import type { AuroraForecast } from '@tuturuuu/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
   Select,

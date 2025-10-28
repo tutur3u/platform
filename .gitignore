@@ -11,6 +11,7 @@ coverage
 
 # next.js
 .next
+next-env.d.ts
 out
 target
 build
@@ -58,3 +59,6 @@ __pycache__
 *.pyzw
 *.pyzwz
 .venv
+
+# Supabase local files
+apps/db/supabase/.temp/project-names.json

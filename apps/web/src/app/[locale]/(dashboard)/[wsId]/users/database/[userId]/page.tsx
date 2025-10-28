@@ -1,7 +1,7 @@
 import { CustomDataTable } from '@/components/custom-data-table';
 import { Users } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceUserReport } from '@tuturuuu/types/db';
+import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';

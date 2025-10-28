@@ -2,9 +2,10 @@
   "name": "@tuturuuu/db",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "sbr:link": "bun supabase link",
-    "sbr:reset": "bun supabase db reset --linked",
+    "sbr:link": "bun supabase link && node scripts/project-names.js",
+    "sbr:reset": "node scripts/confirm-reset.js && bun supabase db reset --linked && node scripts/project-names.js",
     "sbr:diff": "bun supabase db diff -f new_migration --linked",
     "sbr:typegen": "bun supabase gen types typescript --linked --schema public > ../../packages/types/src/supabase.ts && node ./scripts/sort-types.js && biome format --write ../../packages/types/src/supabase.ts",
     "sbr:up": "bun supabase migration up --linked",
@@ -25,7 +26,7 @@
     "sb:linkpush": "bun supabase link && bun supabase db push"
   },
   "devDependencies": {
-    "supabase": "^2.53.6",
+    "supabase": "^2.54.10",
     "typescript": "^5.9.3"
   },
   "packageManager": "bun@1.3.1"

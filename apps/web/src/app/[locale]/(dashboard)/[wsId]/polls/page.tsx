@@ -274,28 +274,28 @@ function QuickStats({ t }: QuickStatsProps) {
       value: '4',
       icon: Vote,
       color: 'text-dynamic-blue',
-      bg: 'bg-gradient-to-br from-dynamic-blue/5 to-dynamic-blue/10 border-dynamic-blue/20',
+      bg: 'bg-linear-to-br from-dynamic-blue/5 to-dynamic-blue/10 border-dynamic-blue/20',
     },
     {
       title: t('ws-polls.active_polls'),
       value: '2',
       icon: TrendingUp,
       color: 'text-dynamic-green',
-      bg: 'bg-gradient-to-br from-dynamic-green/5 to-dynamic-green/10 border-dynamic-green/20',
+      bg: 'bg-linear-to-br from-dynamic-green/5 to-dynamic-green/10 border-dynamic-green/20',
     },
     {
       title: t('ws-polls.total_votes'),
       value: '87',
       icon: Users,
       color: 'text-dynamic-purple',
-      bg: 'bg-gradient-to-br from-dynamic-purple/5 to-dynamic-purple/10 border-dynamic-purple/20',
+      bg: 'bg-linear-to-br from-dynamic-purple/5 to-dynamic-purple/10 border-dynamic-purple/20',
     },
     {
       title: t('ws-polls.participation_rate'),
       value: '73%',
       icon: Eye,
       color: 'text-dynamic-orange',
-      bg: 'bg-gradient-to-br from-dynamic-orange/5 to-dynamic-orange/10 border-dynamic-orange/20',
+      bg: 'bg-linear-to-br from-dynamic-orange/5 to-dynamic-orange/10 border-dynamic-orange/20',
     },
   ];
 

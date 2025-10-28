@@ -1,3 +1,3 @@
-import type { User } from '@supabase/supabase-js';
+import type { Session, User } from '@supabase/supabase-js';
 
-export type { User as SupabaseUser };
+export type { Session as SupabaseSession, User as SupabaseUser };

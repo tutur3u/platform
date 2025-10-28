@@ -1,5 +1,20 @@
 'use client';
 
+// Removed unused table imports as we now use grid layout
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Download,
+  Eye,
+  FileSpreadsheet,
+  Filter,
+  Loader2,
+  Pause,
+  Play,
+  Search,
+} from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -17,21 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-// Removed unused table imports as we now use grid layout
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Download,
-  Eye,
-  FileSpreadsheet,
-  Filter,
-  Loader2,
-  Pause,
-  Play,
-  Search,
-} from '@tuturuuu/icons';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -288,7 +288,7 @@ export default function SessionsTable({
           </div>
         ) : sortedSessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-full border border-dynamic-blue/20 bg-gradient-to-br from-dynamic-blue/10 to-dynamic-purple/10">
+            <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-full border border-dynamic-blue/20 bg-linear-to-br from-dynamic-blue/10 to-dynamic-purple/10">
               {hasActiveFilters ? (
                 <Search className="size-10 text-dynamic-blue/60" />
               ) : (
@@ -368,7 +368,7 @@ export default function SessionsTable({
                           }
                           alt={session.user.displayName || 'User'}
                         />
-                        <AvatarFallback className="bg-gradient-to-br from-dynamic-blue/10 to-dynamic-purple/10 text-dynamic-blue">
+                        <AvatarFallback className="bg-linear-to-br from-dynamic-blue/10 to-dynamic-purple/10 text-dynamic-blue">
                           {getInitials(
                             session.user.displayName || 'Unknown User'
                           )}

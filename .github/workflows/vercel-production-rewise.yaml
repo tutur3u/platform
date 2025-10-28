@@ -42,7 +42,7 @@ jobs:
         if: steps.check_commits.outputs.skip_build != 'true'
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.3.0"
+          bun-version: "1.3.1"
 
       - name: Use Node.js 24
         if: steps.check_commits.outputs.skip_build != 'true'
@@ -61,6 +61,10 @@ jobs:
       - name: Pull Vercel Environment Information
         if: steps.check_commits.outputs.skip_build != 'true'
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build workspace dependencies
+        if: steps.check_commits.outputs.skip_build != 'true'
+        run: bunx turbo run build --filter=@tuturuuu/types
 
       - name: Build Project Artifacts
         if: steps.check_commits.outputs.skip_build != 'true'

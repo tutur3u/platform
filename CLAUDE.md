@@ -189,6 +189,7 @@ bun trigger:deploy
 7. **Always** reference environment variables by name only (never echo values)
 8. **Always** add new documentation pages to `apps/docs/mint.json` navigation
 9. **Always** update main navigation (`apps/web/src/app/[locale]/(dashboard)/[wsId]/navigation.tsx`) when adding new routes - add to both `aliases` array and `children` navigation items with proper icons and permissions
+10. **Always** provide translations for both English AND Vietnamese when adding user-facing strings to `apps/web/messages/{locale}.json`
 
 ### Escalate When
 
@@ -316,6 +317,11 @@ Five seed accounts are available:
 - Uses `next-intl` for i18n
 - Messages are in `apps/web/messages/{locale}.json`
 - All routes are prefixed with locale: `/[locale]/...`
+- **CRITICAL**: Always provide translations for both English (`en.json`) AND Vietnamese (`vi.json`)
+- When adding new user-facing strings, add entries to both language files simultaneously
+- Never add translations only for English - Vietnamese translations are mandatory
+- Use consistent translation keys across both language files
+- For new features, ensure all UI text, error messages, and user communications are bilingual
 
 ### Code Style & Conventions
 
@@ -395,6 +401,52 @@ import { toast } from '@tuturuuu/ui/sonner';
 5. Validate input with Zod; reject early with 4xx
 6. Add test or example documentation
 
+#### API Rate Limiting
+
+All SDK APIs (routes using `withApiAuth`) have automatic rate limiting:
+
+**Default Limits:**
+- General operations: 100 requests/minute
+- Storage uploads: 20 requests/minute
+- Storage downloads: 50 requests/minute
+- Signed upload URLs: 30 requests/minute
+
+**Workspace-Specific Configuration:**
+
+Workspaces can override default rate limits via `workspace_secrets` table:
+
+| Secret Name | Description | Example |
+|-------------|-------------|---------|
+| `RATE_LIMIT_WINDOW_MS` | Time window in milliseconds | `60000` |
+| `RATE_LIMIT_MAX_REQUESTS` | Max requests per window | `500` |
+
+**Adding Custom Rate Limits:**
+
+```typescript
+// Custom rate limit for specific operation
+export const POST = withApiAuth(
+  async (request, { context }) => {
+    // Handler code
+  },
+  {
+    permissions: ['manage_drive'],
+    rateLimit: { windowMs: 60000, maxRequests: 10 } // 10 req/min
+  }
+);
+
+// Disable rate limiting (use sparingly)
+export const GET = withApiAuth(
+  handler,
+  { rateLimit: false } // Not recommended
+);
+```
+
+**Rate Limit Infrastructure:**
+- Uses Upstash Redis for distributed rate limiting
+- Falls back to in-memory if Redis unavailable
+- Returns standard HTTP 429 with `X-RateLimit-*` headers
+- Tracked per API key across all requests
+
 #### AI Endpoints
 
 1. Define schema in `packages/ai/src/object/types.ts` (Zod)
@@ -472,6 +524,7 @@ Before requesting review:
 8. ✅ No secrets, tokens, or API keys committed
 9. ✅ Edge runtime export added where required
 10. ✅ All external inputs validated with Zod
+11. ✅ All user-facing strings have both English and Vietnamese translations
 
 ## Reference
 

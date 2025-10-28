@@ -1,7 +1,7 @@
 'use client';
 
 import { FileText, MoreHorizontal, Trash2 } from '@tuturuuu/icons';
-import type { WorkspaceDocument } from '@tuturuuu/types/db';
+import type { WorkspaceDocument } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import {

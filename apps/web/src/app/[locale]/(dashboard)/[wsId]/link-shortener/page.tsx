@@ -11,7 +11,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { Tables } from '@tuturuuu/types/supabase';
+import type { Tables } from '@tuturuuu/types';
 import {
   Card,
   CardContent,
@@ -112,7 +112,7 @@ export default async function LinkShortenerPage({
           <div className="flex items-center justify-center space-x-4">
             <div className="relative">
               <div className="absolute inset-0 rounded-full bg-dynamic-blue/20 blur-lg" />
-              <div className="relative rounded-full border border-dynamic-blue/20 bg-gradient-to-br from-dynamic-blue/10 to-dynamic-blue/5 p-4">
+              <div className="relative rounded-full border border-dynamic-blue/20 bg-linear-to-br from-dynamic-blue/10 to-dynamic-blue/5 p-4">
                 <LinkIcon className="h-10 w-10 text-dynamic-blue" />
               </div>
             </div>
@@ -129,8 +129,8 @@ export default async function LinkShortenerPage({
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-5">
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-blue/5 via-dynamic-blue/10 to-dynamic-blue/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-dynamic-blue/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          <Card className="group relative overflow-hidden border-0 bg-linear-to-br from-dynamic-blue/5 via-dynamic-blue/10 to-dynamic-blue/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
+            <div className="absolute inset-0 bg-linear-to-br from-dynamic-blue/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <CardHeader className="relative pb-3">
               <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                 <div className="rounded-md bg-dynamic-blue/10 p-1.5 transition-colors group-hover:bg-dynamic-blue/20">
@@ -149,8 +149,8 @@ export default async function LinkShortenerPage({
             </CardContent>
           </Card>
 
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-green/5 via-dynamic-green/10 to-dynamic-green/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-dynamic-green/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          <Card className="group relative overflow-hidden border-0 bg-linear-to-br from-dynamic-green/5 via-dynamic-green/10 to-dynamic-green/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
+            <div className="absolute inset-0 bg-linear-to-br from-dynamic-green/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <CardHeader className="relative pb-3">
               <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                 <div className="rounded-md bg-dynamic-green/10 p-1.5 transition-colors group-hover:bg-dynamic-green/20">
@@ -169,8 +169,8 @@ export default async function LinkShortenerPage({
             </CardContent>
           </Card>
 
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-orange/5 via-dynamic-orange/10 to-dynamic-orange/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-dynamic-orange/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          <Card className="group relative overflow-hidden border-0 bg-linear-to-br from-dynamic-orange/5 via-dynamic-orange/10 to-dynamic-orange/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
+            <div className="absolute inset-0 bg-linear-to-br from-dynamic-orange/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <CardHeader className="relative pb-3">
               <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                 <div className="rounded-md bg-dynamic-orange/10 p-1.5 transition-colors group-hover:bg-dynamic-orange/20">
@@ -189,8 +189,8 @@ export default async function LinkShortenerPage({
             </CardContent>
           </Card>
 
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-purple/5 via-dynamic-purple/10 to-dynamic-purple/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-dynamic-purple/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          <Card className="group relative overflow-hidden border-0 bg-linear-to-br from-dynamic-purple/5 via-dynamic-purple/10 to-dynamic-purple/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
+            <div className="absolute inset-0 bg-linear-to-br from-dynamic-purple/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <CardHeader className="relative pb-3">
               <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                 <div className="rounded-md bg-dynamic-purple/10 p-1.5 transition-colors group-hover:bg-dynamic-purple/20">
@@ -209,8 +209,8 @@ export default async function LinkShortenerPage({
             </CardContent>
           </Card>
 
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-pink/5 via-dynamic-pink/10 to-dynamic-pink/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-dynamic-pink/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          <Card className="group relative overflow-hidden border-0 bg-linear-to-br from-dynamic-pink/5 via-dynamic-pink/10 to-dynamic-pink/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
+            <div className="absolute inset-0 bg-linear-to-br from-dynamic-pink/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <CardHeader className="relative pb-3">
               <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                 <div className="rounded-md bg-dynamic-pink/10 p-1.5 transition-colors group-hover:bg-dynamic-pink/20">
@@ -231,16 +231,16 @@ export default async function LinkShortenerPage({
         </div>
 
         {/* Create Link Section */}
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+        <Card className="relative overflow-hidden border-0 bg-linear-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
+          <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent" />
           <CardContent className="relative p-0">
             <InlineLinkShortenerForm wsId={wsId} />
           </CardContent>
         </Card>
 
         {/* Links Table Section */}
-        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-50" />
+        <Card className="relative overflow-hidden border-0 bg-linear-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
+          <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent opacity-50" />
           <CardHeader className="relative">
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-3">

@@ -18,7 +18,7 @@ import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { getTaskLists, getTasks } from '@tuturuuu/utils/task-helper';
 import { format } from 'date-fns';
-import { useMemo, type JSX } from 'react';
+import { type JSX, useMemo } from 'react';
 
 interface Props {
   board: TaskBoard;
@@ -151,7 +151,7 @@ export function BoardSummary({
       {!collapsed && (
         <div className="mt-2 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {/* Progress Card */}
-          <div className="space-y-3 rounded-xl border border-blue-200/30 bg-gradient-to-br from-blue-50 to-indigo-50 p-5 shadow-lg transition-all duration-300 hover:shadow-xl dark:border-blue-800/30 dark:from-blue-950/20 dark:to-indigo-950/20">
+          <div className="space-y-3 rounded-xl border border-blue-200/30 bg-linear-to-br from-blue-50 to-indigo-50 p-5 shadow-lg transition-all duration-300 hover:shadow-xl dark:border-blue-800/30 dark:from-blue-950/20 dark:to-indigo-950/20">
             <div className="flex items-center gap-2">
               <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-900/30">
                 <CheckCircle2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -176,7 +176,7 @@ export function BoardSummary({
           </div>
 
           {/* Task Status Card */}
-          <div className="space-y-3 rounded-xl border border-amber-200/30 bg-gradient-to-br from-amber-50 to-orange-50 p-5 shadow-lg transition-all duration-300 hover:shadow-xl dark:border-amber-800/30 dark:from-amber-950/20 dark:to-orange-950/20">
+          <div className="space-y-3 rounded-xl border border-amber-200/30 bg-linear-to-br from-amber-50 to-orange-50 p-5 shadow-lg transition-all duration-300 hover:shadow-xl dark:border-amber-800/30 dark:from-amber-950/20 dark:to-orange-950/20">
             <div className="flex items-center gap-2">
               <div className="rounded-lg bg-amber-100 p-2 dark:bg-amber-900/30">
                 <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -223,7 +223,7 @@ export function BoardSummary({
           </div>
 
           {/* Priority Distribution Card */}
-          <div className="space-y-3 rounded-xl border border-purple-200/30 bg-gradient-to-br from-purple-50 to-pink-50 p-5 shadow-lg transition-all duration-300 hover:shadow-xl dark:border-purple-800/30 dark:from-purple-950/20 dark:to-pink-950/20">
+          <div className="space-y-3 rounded-xl border border-purple-200/30 bg-linear-to-br from-purple-50 to-pink-50 p-5 shadow-lg transition-all duration-300 hover:shadow-xl dark:border-purple-800/30 dark:from-purple-950/20 dark:to-pink-950/20">
             <div className="flex items-center gap-2">
               <div className="rounded-lg bg-purple-100 p-2 dark:bg-purple-900/30">
                 <Flag className="h-4 w-4 text-purple-600 dark:text-purple-400" />
@@ -270,7 +270,7 @@ export function BoardSummary({
           </div>
 
           {/* Next Due Card */}
-          <div className="space-y-3 rounded-xl border border-green-200/30 bg-gradient-to-br from-green-50 to-emerald-50 p-5 shadow-lg transition-all duration-300 hover:shadow-xl dark:border-green-800/30 dark:from-green-950/20 dark:to-emerald-950/20">
+          <div className="space-y-3 rounded-xl border border-green-200/30 bg-linear-to-br from-green-50 to-emerald-50 p-5 shadow-lg transition-all duration-300 hover:shadow-xl dark:border-green-800/30 dark:from-green-950/20 dark:to-emerald-950/20">
             <div className="flex items-center gap-2">
               <div className="rounded-lg bg-green-100 p-2 dark:bg-green-900/30">
                 <Clock className="h-4 w-4 text-green-600 dark:text-green-400" />

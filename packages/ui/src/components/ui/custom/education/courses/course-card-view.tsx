@@ -17,7 +17,7 @@ import {
   PenTool,
   Star,
 } from '@tuturuuu/icons';
-import type { WorkspaceCourse } from '@tuturuuu/types/db';
+import type { WorkspaceCourse } from '@tuturuuu/types';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -65,7 +65,7 @@ export function CourseCardView({ courses }: CourseCardViewProps) {
   if (courses.length === 0) {
     return (
       <div className="py-12 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-purple-100 to-blue-100">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-purple-100 to-blue-100">
           <BookOpen className="h-8 w-8 text-purple-600" />
         </div>
         <p className="font-medium text-gray-900 text-lg dark:text-gray-100">

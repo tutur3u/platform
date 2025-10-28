@@ -1,6 +1,6 @@
 import ScoreBadge from '@/components/common/ScoreBadge';
 import { CheckCircle2, Clock, EyeIcon, XCircle } from '@tuturuuu/icons';
-import type { NovaSubmissionData } from '@tuturuuu/types/db';
+import type { NovaSubmissionData } from '@tuturuuu/types';
 import {
   HoverCard,
   HoverCardContent,

@@ -45,7 +45,7 @@ Use for public-facing APIs that external clients consume.
 
 ```typescript
 // app/api/v1/workspaces/route.ts
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Invalid input', details: parsed.error.errors },
+        { error: 'Invalid input', details: parsed.error.issues },
         { status: 400 }
       );
     }
@@ -163,7 +163,7 @@ Use for workspace-specific operations with automatic workspace context.
 
 ```typescript
 // app/api/[wsId]/tasks/route.ts
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { hasPermission } from '@/lib/permissions';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -255,7 +255,7 @@ export async function POST(
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Invalid input', details: parsed.error.errors },
+        { error: 'Invalid input', details: parsed.error.issues },
         { status: 400 }
       );
     }
@@ -337,7 +337,7 @@ Use for AI-specific operations with model selection and token tracking.
 
 ```typescript
 // app/api/ai/chat/route.ts
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { streamText } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { NextRequest } from 'next/server';
@@ -443,7 +443,7 @@ Use edge runtime for auth endpoints.
 
 ```typescript
 // app/api/auth/otp/route.ts
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -525,7 +525,7 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Validation failed', details: error.issues },
         { status: 400 }
       );
     }
@@ -544,7 +544,7 @@ export async function POST(request: NextRequest) {
 
 ```typescript
 // lib/api/middleware.ts
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { hasPermission } from '@/lib/permissions';
 import { NextRequest, NextResponse } from 'next/server';
 

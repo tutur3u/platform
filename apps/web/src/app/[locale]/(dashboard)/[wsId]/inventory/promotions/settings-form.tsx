@@ -1,7 +1,10 @@
 'use client';
 
-import type { Database } from '@tuturuuu/types/supabase';
+import { useMutation } from '@tanstack/react-query';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Database } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
+import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import {
   Form,
   FormControl,
@@ -11,16 +14,13 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/sonner';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { useRouter } from 'next/navigation';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { z } from 'zod';
-import { useMutation } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 
 type WorkspaceSettings =
   Database['public']['Tables']['workspace_settings']['Row'];

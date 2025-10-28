@@ -17,7 +17,7 @@ bun add @tuturuuu/types
 ```typescript
 import { User, Workspace, WorkspaceUser } from '@tuturuuu/types';
 // Use type-safe database queries
-import { Tables } from '@tuturuuu/types/supabase';
+import { Tables } from '@tuturuuu/types';
 
 type AIChat = Tables<'ai_chats'>;
 ```

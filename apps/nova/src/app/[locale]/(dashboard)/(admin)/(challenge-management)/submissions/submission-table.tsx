@@ -11,7 +11,7 @@ import type {
   NovaChallenge,
   NovaProblem,
   NovaSubmission,
-} from '@tuturuuu/types/db';
+} from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,

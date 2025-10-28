@@ -240,8 +240,8 @@ export default function VietnameseWomensDayPage() {
     <main className="relative mx-auto w-full overflow-x-hidden text-balance">
       {/* Simplified Background */}
       <div className="-z-10 pointer-events-none fixed inset-0">
-        <div className="-left-1/4 absolute top-0 h-[40rem] w-[40rem] rounded-full bg-gradient-to-br from-dynamic-pink/20 via-dynamic-purple/10 to-transparent blur-3xl" />
-        <div className="-right-1/4 absolute top-1/3 h-[40rem] w-[40rem] rounded-full bg-gradient-to-br from-dynamic-purple/20 via-dynamic-pink/10 to-transparent blur-3xl" />
+        <div className="-left-1/4 absolute top-0 h-[40rem] w-[40rem] rounded-full bg-linear-to-br from-dynamic-pink/20 via-dynamic-purple/10 to-transparent blur-3xl" />
+        <div className="-right-1/4 absolute top-1/3 h-[40rem] w-[40rem] rounded-full bg-linear-to-br from-dynamic-purple/20 via-dynamic-pink/10 to-transparent blur-3xl" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,182,193,0.03)_1px,transparent_1px)] bg-[size:48px_48px]" />
       </div>
 
@@ -591,7 +591,7 @@ export default function VietnameseWomensDayPage() {
                   <div
                     className={cn(
                       'mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl',
-                      `bg-gradient-to-br ${stat.gradient}`
+                      `bg-linear-to-br ${stat.gradient}`
                     )}
                   >
                     <stat.icon className="h-8 w-8 text-white" />
@@ -901,7 +901,7 @@ export default function VietnameseWomensDayPage() {
                         <div
                           className={cn(
                             'mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl',
-                            `bg-gradient-to-br ${achievement.gradient}`
+                            `bg-linear-to-br ${achievement.gradient}`
                           )}
                         >
                           <achievement.icon className="h-6 w-6 text-white" />
@@ -1162,7 +1162,7 @@ export default function VietnameseWomensDayPage() {
                     <div
                       className={cn(
                         'flex h-20 w-20 items-center justify-center rounded-2xl transition-transform group-hover:scale-110',
-                        `bg-gradient-to-br ${item.gradient} shadow-lg`
+                        `bg-linear-to-br ${item.gradient} shadow-lg`
                       )}
                     >
                       <item.icon className="h-10 w-10 text-white" />
@@ -1611,7 +1611,7 @@ export default function VietnameseWomensDayPage() {
           <motion.div {...fadeInViewVariant(0)}>
             <Card
               className={cn(
-                'relative overflow-hidden border border-dynamic-pink/30 bg-gradient-to-br from-dynamic-pink/10 to-background p-12'
+                'relative overflow-hidden border border-dynamic-pink/30 bg-linear-to-br from-dynamic-pink/10 to-background p-12'
               )}
             >
               <div className="relative text-center">

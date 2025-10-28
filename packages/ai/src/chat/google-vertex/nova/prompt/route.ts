@@ -11,7 +11,7 @@ import type {
   NovaChallengeCriteria,
   NovaProblem,
   NovaProblemTestCase,
-} from '@tuturuuu/types/db';
+} from '@tuturuuu/types';
 import { checkPermission } from '@tuturuuu/utils/nova/submissions/check-permission';
 import { generateObject, streamObject } from 'ai';
 import type { NextRequest } from 'next/server';

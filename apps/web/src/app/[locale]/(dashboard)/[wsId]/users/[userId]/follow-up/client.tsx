@@ -4,7 +4,7 @@ import { API_URL } from '@/constants/common';
 import { availableConfigs } from '@/constants/configs/reports';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { WorkspaceUserReport } from '@tuturuuu/types/db';
+import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';

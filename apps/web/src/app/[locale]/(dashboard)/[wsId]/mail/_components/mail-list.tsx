@@ -1,5 +1,5 @@
 import { Loader2 } from '@tuturuuu/icons';
-import type { InternalEmail } from '@tuturuuu/types/db';
+import type { InternalEmail } from '@tuturuuu/types';
 import { formatEmailAddresses } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';

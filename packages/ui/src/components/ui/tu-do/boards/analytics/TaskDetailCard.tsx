@@ -207,7 +207,7 @@ export function TaskDetailCard({
 
           {clickedTask.assignee_name && (
             <div className="flex items-center gap-2 pt-1">
-              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-purple-500 font-medium text-white text-xs">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-linear-to-br from-blue-400 to-purple-500 font-medium text-white text-xs">
                 {clickedTask.assignee_name.charAt(0).toUpperCase()}
               </div>
               <span className="font-medium text-xs">

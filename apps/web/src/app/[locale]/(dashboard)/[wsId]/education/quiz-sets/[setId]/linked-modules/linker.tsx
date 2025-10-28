@@ -1,9 +1,9 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
-import { useRouter } from 'next/navigation';
+import type { WorkspaceCourseModule } from '@tuturuuu/types';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { Filter } from '../../../../users/filters';
 
 export function QuizsetModuleLinker({

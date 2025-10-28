@@ -2,7 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { NovaSession } from '@tuturuuu/types/db';
+import type { NovaSession } from '@tuturuuu/types';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 

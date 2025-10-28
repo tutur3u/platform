@@ -1,4 +1,4 @@
-import type { WorkspaceDocument } from '@tuturuuu/types/db';
+import type { WorkspaceDocument } from '@tuturuuu/types';
 import { createContext, type ReactNode, useContext } from 'react';
 
 const DocumentContext = createContext({

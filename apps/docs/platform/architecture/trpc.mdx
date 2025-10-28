@@ -60,7 +60,7 @@ Create a new file in `apps/web/src/trpc/routers/`:
 // apps/web/src/trpc/routers/tasks.ts
 import { z } from 'zod';
 import { router, protectedProcedure } from '../init';
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 
 export const tasksRouter = router({
   // GET single task

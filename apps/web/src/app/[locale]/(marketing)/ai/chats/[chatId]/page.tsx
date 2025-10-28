@@ -1,7 +1,7 @@
 import Chat from '@/app/[locale]/(dashboard)/[wsId]/ai-chat/chat';
 import type { UIMessage } from '@tuturuuu/ai/types';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { AIChat } from '@tuturuuu/types/db';
+import type { AIChat } from '@tuturuuu/types';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 

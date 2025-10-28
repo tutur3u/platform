@@ -48,7 +48,6 @@ import {
   Package,
   PencilLine,
   Play,
-  Presentation,
   QrCodeIcon,
   ReceiptText,
   RotateCcw,
@@ -821,20 +820,6 @@ export async function WorkspaceNavigationLinks({
               experimental: 'beta',
             },
             {
-              title: t('sidebar_tabs.slides'),
-              href: `/${personalOrWsId}/slides`,
-              icon: <Presentation className="h-5 w-5" />,
-              disabled:
-                ENABLE_AI_ONLY ||
-                !(await verifySecret({
-                  forceAdmin: true,
-                  wsId: resolvedWorkspaceId,
-                  name: 'ENABLE_SLIDES',
-                  value: 'true',
-                })),
-              experimental: 'alpha',
-            },
-            {
               title: t('sidebar_tabs.education'),
               href: `/${personalOrWsId}/education`,
               icon: <GraduationCap className="h-5 w-5" />,
@@ -1004,8 +989,14 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/api-keys`,
           icon: <KeyRound className="h-5 w-5" />,
           disabled:
-            ENABLE_AI_ONLY || withoutPermission('manage_workspace_security'),
-          requireRootWorkspace: true,
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId: resolvedWorkspaceId,
+              name: 'ENABLE_API_KEYS',
+              value: 'true',
+            })) ||
+            withoutPermission('manage_api_keys'),
           requireRootMember: true,
         },
         {

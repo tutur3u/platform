@@ -60,7 +60,7 @@ export default function AboutPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-purple/30 via-dynamic-pink/20 to-transparent blur-3xl sm:h-[40rem] sm:w-[40rem]"
+          className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/30 via-dynamic-pink/20 to-transparent blur-3xl sm:h-[40rem] sm:w-[40rem]"
         />
         <motion.div
           animate={{
@@ -72,7 +72,7 @@ export default function AboutPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-right-32 sm:-right-64 absolute top-[30%] h-80 w-80 rounded-full bg-gradient-to-br from-dynamic-blue/30 via-dynamic-cyan/20 to-transparent blur-3xl sm:h-[35rem] sm:w-[35rem]"
+          className="-right-32 sm:-right-64 absolute top-[30%] h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/30 via-dynamic-cyan/20 to-transparent blur-3xl sm:h-[35rem] sm:w-[35rem]"
         />
         <motion.div
           animate={{
@@ -84,7 +84,7 @@ export default function AboutPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-green/20 via-dynamic-emerald/15 to-transparent blur-3xl sm:h-[45rem] sm:w-[45rem]"
+          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-green/20 via-dynamic-emerald/15 to-transparent blur-3xl sm:h-[45rem] sm:w-[45rem]"
         />
       </div>
 
@@ -211,7 +211,7 @@ export default function AboutPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <Card className="group h-full border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/5 via-background to-background p-8 transition-all hover:border-dynamic-purple/50 hover:shadow-dynamic-purple/10 hover:shadow-lg">
+              <Card className="group h-full border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/5 via-background to-background p-8 transition-all hover:border-dynamic-purple/50 hover:shadow-dynamic-purple/10 hover:shadow-lg">
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-purple/10">
                   <Target className="h-6 w-6 text-dynamic-purple" />
                 </div>
@@ -229,7 +229,7 @@ export default function AboutPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <Card className="group h-full border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/5 via-background to-background p-8 transition-all hover:border-dynamic-blue/50 hover:shadow-dynamic-blue/10 hover:shadow-lg">
+              <Card className="group h-full border-dynamic-blue/30 bg-linear-to-br from-dynamic-blue/5 via-background to-background p-8 transition-all hover:border-dynamic-blue/50 hover:shadow-dynamic-blue/10 hover:shadow-lg">
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-blue/10">
                   <Rocket className="h-6 w-6 text-dynamic-blue" />
                 </div>
@@ -314,7 +314,7 @@ export default function AboutPage() {
                 <Card
                   className={cn(
                     'group h-full p-6 transition-all hover:shadow-lg',
-                    `border-dynamic-${belief.color}/30 bg-gradient-to-br from-dynamic-${belief.color}/5 via-background to-background hover:border-dynamic-${belief.color}/50 hover:shadow-dynamic-${belief.color}/10`
+                    `border-dynamic-${belief.color}/30 bg-linear-to-br from-dynamic-${belief.color}/5 via-background to-background hover:border-dynamic-${belief.color}/50 hover:shadow-dynamic-${belief.color}/10`
                   )}
                 >
                   <div
@@ -397,7 +397,7 @@ export default function AboutPage() {
                 <Card
                   className={cn(
                     'h-full p-8 text-center transition-all hover:shadow-lg',
-                    `border-dynamic-${cost.color}/30 bg-gradient-to-br from-dynamic-${cost.color}/5 via-background to-background hover:border-dynamic-${cost.color}/50 hover:shadow-dynamic-${cost.color}/10`
+                    `border-dynamic-${cost.color}/30 bg-linear-to-br from-dynamic-${cost.color}/5 via-background to-background hover:border-dynamic-${cost.color}/50 hover:shadow-dynamic-${cost.color}/10`
                   )}
                 >
                   <div
@@ -488,7 +488,7 @@ export default function AboutPage() {
                 <Card
                   className={cn(
                     'group p-6 text-center transition-all hover:shadow-lg',
-                    `border-dynamic-${app.color}/30 bg-gradient-to-br from-dynamic-${app.color}/5 via-background to-background hover:border-dynamic-${app.color}/50 hover:shadow-dynamic-${app.color}/10`
+                    `border-dynamic-${app.color}/30 bg-linear-to-br from-dynamic-${app.color}/5 via-background to-background hover:border-dynamic-${app.color}/50 hover:shadow-dynamic-${app.color}/10`
                   )}
                 >
                   <div
@@ -518,7 +518,7 @@ export default function AboutPage() {
             viewport={{ once: true }}
             className="mb-12"
           >
-            <Card className="border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/5 via-background to-background p-8">
+            <Card className="border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/5 via-background to-background p-8">
               <div className="mb-6 text-center">
                 <h3 className="mb-2 font-bold text-2xl">
                   {t('ecosystem.aiCore.title')}
@@ -656,7 +656,7 @@ export default function AboutPage() {
                 <Card
                   className={cn(
                     'group h-full p-6 transition-all hover:shadow-lg',
-                    `border-dynamic-${stack.color}/30 bg-gradient-to-br from-dynamic-${stack.color}/5 via-background to-background hover:border-dynamic-${stack.color}/50 hover:shadow-dynamic-${stack.color}/10`
+                    `border-dynamic-${stack.color}/30 bg-linear-to-br from-dynamic-${stack.color}/5 via-background to-background hover:border-dynamic-${stack.color}/50 hover:shadow-dynamic-${stack.color}/10`
                   )}
                 >
                   <div
@@ -782,7 +782,7 @@ export default function AboutPage() {
                 <Card
                   className={cn(
                     'group h-full p-6 transition-all hover:shadow-lg',
-                    `border-dynamic-${feature.color}/30 bg-gradient-to-br from-dynamic-${feature.color}/5 via-background to-background hover:border-dynamic-${feature.color}/50 hover:shadow-dynamic-${feature.color}/10`
+                    `border-dynamic-${feature.color}/30 bg-linear-to-br from-dynamic-${feature.color}/5 via-background to-background hover:border-dynamic-${feature.color}/50 hover:shadow-dynamic-${feature.color}/10`
                   )}
                 >
                   <div
@@ -923,7 +923,7 @@ export default function AboutPage() {
                       <Card
                         className={cn(
                           'p-6 transition-all hover:shadow-lg',
-                          `border-dynamic-${milestone.color}/30 bg-gradient-to-br from-dynamic-${milestone.color}/5 via-background to-background hover:border-dynamic-${milestone.color}/50 hover:shadow-dynamic-${milestone.color}/10`
+                          `border-dynamic-${milestone.color}/30 bg-linear-to-br from-dynamic-${milestone.color}/5 via-background to-background hover:border-dynamic-${milestone.color}/50 hover:shadow-dynamic-${milestone.color}/10`
                         )}
                       >
                         <Badge
@@ -1042,7 +1042,7 @@ export default function AboutPage() {
                 <Card
                   className={cn(
                     'p-8 text-center transition-all hover:shadow-lg',
-                    `border-dynamic-${stat.color}/30 bg-gradient-to-br from-dynamic-${stat.color}/5 via-background to-background hover:border-dynamic-${stat.color}/50 hover:shadow-dynamic-${stat.color}/10`
+                    `border-dynamic-${stat.color}/30 bg-linear-to-br from-dynamic-${stat.color}/5 via-background to-background hover:border-dynamic-${stat.color}/50 hover:shadow-dynamic-${stat.color}/10`
                   )}
                 >
                   <div
@@ -1074,7 +1074,7 @@ export default function AboutPage() {
             ))}
           </div>
 
-          <Card className="overflow-hidden border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-8 md:p-12">
+          <Card className="overflow-hidden border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-8 md:p-12">
             <div className="mb-8 text-center">
               <h3 className="mb-3 font-bold text-3xl">
                 {t('community.culture.title')}
@@ -1149,7 +1149,7 @@ export default function AboutPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <Card className="overflow-hidden border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/5 via-background to-background p-8 md:p-12">
+            <Card className="overflow-hidden border-dynamic-blue/30 bg-linear-to-br from-dynamic-blue/5 via-background to-background p-8 md:p-12">
               <div className="mb-8 flex items-start gap-6">
                 <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-dynamic-blue/10">
                   <Building2 className="h-8 w-8 text-dynamic-blue" />
@@ -1250,7 +1250,7 @@ export default function AboutPage() {
             viewport={{ once: true }}
             className="text-center"
           >
-            <Card className="overflow-hidden border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-12">
+            <Card className="overflow-hidden border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-12">
               <h2 className="mb-4 font-bold text-3xl sm:text-4xl">
                 {t('cta.title')}
               </h2>

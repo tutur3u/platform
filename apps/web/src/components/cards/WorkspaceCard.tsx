@@ -1,4 +1,4 @@
-import type { Workspace } from '@tuturuuu/types/db';
+import type { Workspace } from '@tuturuuu/types';
 import { Separator } from '@tuturuuu/ui/separator';
 import moment from 'moment';
 

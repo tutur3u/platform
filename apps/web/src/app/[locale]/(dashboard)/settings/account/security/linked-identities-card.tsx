@@ -355,7 +355,7 @@ export default function LinkedIdentitiesCard({
       <CardContent className="space-y-8 p-6 pt-0">
         {/* Prominent Link New Accounts Section */}
         {availableProviders.length > 0 && (
-          <div className="rounded-lg border border-dynamic-blue/20 bg-gradient-to-br from-dynamic-blue/5 to-dynamic-indigo/5 p-6 dark:border-dynamic-blue/30 dark:from-dynamic-blue/5 dark:to-dynamic-indigo/5">
+          <div className="rounded-lg border border-dynamic-blue/20 bg-linear-to-br from-dynamic-blue/5 to-dynamic-indigo/5 p-6 dark:border-dynamic-blue/30 dark:from-dynamic-blue/5 dark:to-dynamic-indigo/5">
             <div className="flex items-start gap-4">
               <div className="rounded-full bg-dynamic-blue/10 p-3 dark:bg-dynamic-blue/20">
                 <Zap className="h-6 w-6 text-dynamic-blue dark:text-dynamic-blue/80" />

@@ -13,8 +13,8 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
+import { toast } from '@tuturuuu/ui/sonner';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { joinPath } from '@tuturuuu/utils/path-helper';
@@ -93,10 +93,7 @@ export function StorageFolderForm({
       router.refresh();
     } else {
       setLoading(false);
-      toast({
-        title: 'Error creating folder',
-        description: 'An error occurred while creating the folder',
-      });
+      toast.error('An error occurred while creating the folder');
     }
   }
 

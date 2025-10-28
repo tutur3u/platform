@@ -12,7 +12,7 @@ import {
   Send,
   X,
 } from '@tuturuuu/icons';
-import type { AIChat } from '@tuturuuu/types/db';
+import type { AIChat } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import type { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
 import { Dialog } from '@tuturuuu/ui/dialog';

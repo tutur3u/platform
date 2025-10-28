@@ -132,7 +132,7 @@ export default function BugBountyPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl sm:h-[40rem] sm:w-[40rem]"
+          className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl sm:h-[40rem] sm:w-[40rem]"
         />
         <motion.div
           animate={{
@@ -144,7 +144,7 @@ export default function BugBountyPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-right-32 sm:-right-64 absolute top-[40%] h-80 w-80 rounded-full bg-gradient-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl sm:h-[35rem] sm:w-[35rem]"
+          className="-right-32 sm:-right-64 absolute top-[40%] h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl sm:h-[35rem] sm:w-[35rem]"
         />
         <motion.div
           animate={{
@@ -156,7 +156,7 @@ export default function BugBountyPage() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-green/30 via-dynamic-emerald/20 to-transparent blur-3xl sm:h-[45rem] sm:w-[45rem]"
+          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-green/30 via-dynamic-emerald/20 to-transparent blur-3xl sm:h-[45rem] sm:w-[45rem]"
         />
       </div>
 
@@ -223,7 +223,7 @@ export default function BugBountyPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <Card className="overflow-hidden border-dynamic-yellow/30 bg-gradient-to-br from-dynamic-yellow/10 via-dynamic-orange/5 to-background p-8 md:p-12">
+            <Card className="overflow-hidden border-dynamic-yellow/30 bg-linear-to-br from-dynamic-yellow/10 via-dynamic-orange/5 to-background p-8 md:p-12">
               <div className="mb-12 flex flex-col items-center justify-center gap-6">
                 <motion.div
                   initial={{ scale: 0.9 }}
@@ -232,7 +232,7 @@ export default function BugBountyPage() {
                   className="relative"
                 >
                   <div className="absolute inset-0 rounded-full bg-gradient-to-r from-dynamic-yellow/30 via-dynamic-orange/30 to-dynamic-red/30 blur-2xl" />
-                  <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-dynamic-yellow via-dynamic-orange to-dynamic-red shadow-lg">
+                  <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-linear-to-br from-dynamic-yellow via-dynamic-orange to-dynamic-red shadow-lg">
                     <Trophy className="h-12 w-12 text-white" />
                   </div>
                 </motion.div>
@@ -307,7 +307,7 @@ export default function BugBountyPage() {
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
           >
-            <Card className="overflow-hidden border-dynamic-orange/30 bg-gradient-to-br from-dynamic-orange/5 via-background to-background p-8 md:p-10">
+            <Card className="overflow-hidden border-dynamic-orange/30 bg-linear-to-br from-dynamic-orange/5 via-background to-background p-8 md:p-10">
               <div className="mb-8 flex flex-wrap items-center gap-4">
                 <Badge
                   variant="secondary"
@@ -416,7 +416,7 @@ export default function BugBountyPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <Card className="overflow-hidden border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/5 via-background to-background p-8 md:p-12">
+            <Card className="overflow-hidden border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/5 via-background to-background p-8 md:p-12">
               <div className="grid gap-12 lg:grid-cols-2">
                 <div className="flex flex-col justify-center">
                   <motion.div
@@ -516,7 +516,7 @@ export default function BugBountyPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <Card className="relative overflow-hidden border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-12">
+            <Card className="relative overflow-hidden border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-12">
               {/* Decorative Elements */}
               <div className="absolute inset-0 overflow-hidden opacity-10">
                 <div className="absolute top-10 left-10 h-40 w-40 rounded-full bg-dynamic-purple blur-3xl" />

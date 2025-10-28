@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertCircle, CheckCircle, Copy, Loader2 } from '@tuturuuu/icons';
-import type { TimeTrackingCategory } from '@tuturuuu/types/db';
+import type { TimeTrackingCategory } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {

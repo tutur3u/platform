@@ -7,10 +7,7 @@ import {
   XCircle,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type {
-  WorkspaceCronExecution,
-  WorkspaceCronJob,
-} from '@tuturuuu/types/db';
+import type { WorkspaceCronExecution, WorkspaceCronJob } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,

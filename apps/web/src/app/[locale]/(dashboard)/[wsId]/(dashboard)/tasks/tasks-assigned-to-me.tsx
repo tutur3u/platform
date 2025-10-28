@@ -150,7 +150,7 @@ export default async function TasksAssignedToMe({
     <Card className="group overflow-hidden border-dynamic-orange/20 transition-all duration-300 hover:border-dynamic-orange/30 hover:shadow-lg">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-orange/20 border-b bg-gradient-to-r from-dynamic-orange/5 via-dynamic-orange/3 to-dynamic-red/5 p-4">
         <CardTitle className="flex items-center gap-3 font-semibold text-base">
-          <div className="rounded-xl bg-gradient-to-br from-dynamic-orange/20 to-dynamic-orange/10 p-2 text-dynamic-orange shadow-sm ring-1 ring-dynamic-orange/20">
+          <div className="rounded-xl bg-linear-to-br from-dynamic-orange/20 to-dynamic-orange/10 p-2 text-dynamic-orange shadow-sm ring-1 ring-dynamic-orange/20">
             <UserStar className="h-4 w-4" />
           </div>
           <div className="line-clamp-1">{t('my_tasks')}</div>
@@ -175,7 +175,7 @@ export default async function TasksAssignedToMe({
           />
         ) : (
           <div className="py-12 text-center">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-dynamic-gray/20 bg-gradient-to-br from-dynamic-gray/10 via-dynamic-gray/5 to-dynamic-slate/10 shadow-sm ring-1 ring-dynamic-gray/10">
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-dynamic-gray/20 bg-linear-to-br from-dynamic-gray/10 via-dynamic-gray/5 to-dynamic-slate/10 shadow-sm ring-1 ring-dynamic-gray/10">
               <User className="h-10 w-10 text-dynamic-gray/60" />
             </div>
             <div className="space-y-3">

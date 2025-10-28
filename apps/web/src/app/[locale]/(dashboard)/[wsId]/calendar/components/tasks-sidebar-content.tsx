@@ -6,7 +6,7 @@ import {
   PanelLeftClose,
   PanelRightClose,
 } from '@tuturuuu/icons';
-import type { AIChat } from '@tuturuuu/types/db';
+import type { AIChat } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';

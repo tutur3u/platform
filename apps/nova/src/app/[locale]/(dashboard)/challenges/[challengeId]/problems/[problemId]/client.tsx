@@ -7,7 +7,7 @@ import type {
   NovaProblemTestCase,
   NovaSession,
   NovaSubmissionWithScores,
-} from '@tuturuuu/types/db';
+} from '@tuturuuu/types';
 import {
   AlertDialog,
   AlertDialogAction,

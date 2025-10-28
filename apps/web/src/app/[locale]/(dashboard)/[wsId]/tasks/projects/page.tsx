@@ -1,9 +1,9 @@
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { TaskProjectsClient } from './task-projects-client';
 
 export const metadata: Metadata = {
@@ -35,7 +35,7 @@ export default async function TaskProjectsPage({ params }: Props) {
           notFound();
         }
 
-        // Fetch task projects
+        // Fetch task projects with all fields
         const { data: projects, error: projectsError } = await supabase
           .from('task_projects')
           .select(`
@@ -45,12 +45,20 @@ export default async function TaskProjectsPage({ params }: Props) {
               display_name,
               avatar_url
             ),
+            lead:workspace_members(...users(
+              id,
+              display_name,
+              avatar_url
+            )),
             task_project_tasks(
               task:tasks!inner(
                 id,
                 name,
+                completed,
                 completed_at,
+                closed_at,
                 deleted_at,
+                priority,
                 task_lists(
                   name
                 )
@@ -58,7 +66,6 @@ export default async function TaskProjectsPage({ params }: Props) {
             )
           `)
           .eq('ws_id', wsId)
-          .is('task_project_tasks.task.deleted_at', null)
           .order('created_at', { ascending: false });
 
         if (projectsError) {
@@ -74,21 +81,23 @@ export default async function TaskProjectsPage({ params }: Props) {
             ) ?? [];
 
           return {
-            id: project.id,
-            name: project.name,
-            description: project.description,
+            ...project,
             created_at: project.created_at ?? new Date().toISOString(),
-            creator_id: project.creator_id,
-            creator: project.creator,
             tasksCount: activeTasks.length,
-            linkedTasks: activeTasks.flatMap((link) =>
-              link.task
+            completedTasksCount: activeTasks.filter(
+              (link) =>
+                link.task?.completed_at !== null ||
+                link.task?.closed_at !== null
+            ).length,
+            linkedTasks: activeTasks.flatMap(({ task }) =>
+              task
                 ? [
                     {
-                      id: link.task.id,
-                      name: link.task.name,
-                      completed_at: link.task.completed_at,
-                      listName: link.task.task_lists?.name ?? null,
+                      id: task.id,
+                      name: task.name,
+                      completed_at: task.completed_at,
+                      priority: task.priority,
+                      listName: task.task_lists?.name ?? null,
                     },
                   ]
                 : []

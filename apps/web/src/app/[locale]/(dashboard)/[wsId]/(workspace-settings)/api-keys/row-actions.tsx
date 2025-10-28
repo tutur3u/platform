@@ -1,8 +1,14 @@
 'use client';
 
 import type { Row } from '@tanstack/react-table';
-import { Ellipsis } from '@tuturuuu/icons';
-import type { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
+import {
+  BarChart,
+  Ellipsis,
+  Pencil,
+  RefreshCcw,
+  Trash2,
+} from '@tuturuuu/icons';
+import type { WorkspaceApiKey } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -11,42 +17,28 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { useState } from 'react';
+import DeleteDialog from './delete-dialog';
 import ApiKeyEditDialog from './edit-dialog';
+import RotateDialog from './rotate-dialog';
 
 interface ApiKeyRowActionsProps {
   row: Row<WorkspaceApiKey>;
 }
 
 export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
-  const router = useRouter();
   const t = useTranslations();
+  const params = useParams();
+  const wsId = params?.wsId as string;
 
   const apiKey = row.original;
 
-  const deleteApiKey = async () => {
-    const res = await fetch(
-      `/api/v1/workspaces/${apiKey.ws_id}/api-keys/${apiKey.id}`,
-      {
-        method: 'DELETE',
-      }
-    );
-
-    if (res.ok) {
-      router.refresh();
-    } else {
-      const data = await res.json();
-      toast({
-        title: 'Failed to delete workspace api key',
-        description: data.message,
-      });
-    }
-  };
-
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showRotateDialog, setShowRotateDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   if (!apiKey.id || !apiKey.ws_id) return null;
 
@@ -62,12 +54,28 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            {t('common.edit')}
+        <DropdownMenuContent align="end" className="w-[180px]">
+          <DropdownMenuItem asChild>
+            <Link href={`/${wsId}/api-keys/${apiKey.id}/usage-logs`}>
+              <BarChart className="h-4 w-4" />
+              {t('ws-api-keys.view_usage_logs')}
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteApiKey}>
+          <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+            <Pencil className="h-4 w-4" />
+            {t('common.edit')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setShowRotateDialog(true)}>
+            <RefreshCcw className="h-4 w-4" />
+            {t('ws-api-keys.rotate_key')}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => setShowDeleteDialog(true)}
+            className="text-dynamic-red focus:text-dynamic-red"
+          >
+            <Trash2 className="h-4 w-4" />
             {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -77,6 +85,16 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
         open={showEditDialog}
         setOpen={setShowEditDialog}
         submitLabel={t('ws-api-keys.edit_key')}
+      />
+      <RotateDialog
+        apiKey={apiKey}
+        open={showRotateDialog}
+        onOpenChange={setShowRotateDialog}
+      />
+      <DeleteDialog
+        apiKey={apiKey}
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
       />
     </>
   );

@@ -7,7 +7,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { NovaProblem } from '@tuturuuu/types/db';
+import type { NovaProblem } from '@tuturuuu/types';
 import { checkPermission } from '@tuturuuu/utils/nova/submissions/check-permission';
 import { generateObject } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';

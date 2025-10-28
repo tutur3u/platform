@@ -3,7 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { NovaExtendedChallenge } from '@tuturuuu/types/db';
+import type { NovaExtendedChallenge } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { getTranslations } from 'next-intl/server';
 import ChallengesList from './ChallengesList';

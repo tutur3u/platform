@@ -1,6 +1,6 @@
 import ScoreBadge from '@/components/common/ScoreBadge';
 import { ArrowUpDown, Clock, CodeIcon } from '@tuturuuu/icons';
-import type { NovaProblem } from '@tuturuuu/types/db';
+import type { NovaProblem } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Card,

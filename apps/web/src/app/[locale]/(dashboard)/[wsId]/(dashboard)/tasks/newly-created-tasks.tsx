@@ -69,7 +69,7 @@ export default async function NewlyCreatedTasks({
     <Card className="group overflow-hidden border-dynamic-green/20 transition-all duration-300 hover:border-dynamic-green/30 hover:shadow-lg">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-green/20 border-b bg-gradient-to-r from-dynamic-green/5 via-dynamic-green/3 to-dynamic-cyan/5 p-4">
         <CardTitle className="flex items-center gap-3 font-semibold text-base">
-          <div className="rounded-xl bg-gradient-to-br from-dynamic-green/20 to-dynamic-green/10 p-2 text-dynamic-green shadow-sm ring-1 ring-dynamic-green/20">
+          <div className="rounded-xl bg-linear-to-br from-dynamic-green/20 to-dynamic-green/10 p-2 text-dynamic-green shadow-sm ring-1 ring-dynamic-green/20">
             <CheckCircle className="h-4 w-4" />
           </div>
           <div className="line-clamp-1">{t('recently_created_tasks')}</div>
@@ -94,7 +94,7 @@ export default async function NewlyCreatedTasks({
           />
         ) : (
           <div className="py-12 text-center">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-dynamic-gray/20 bg-gradient-to-br from-dynamic-gray/10 via-dynamic-gray/5 to-dynamic-slate/10 shadow-sm ring-1 ring-dynamic-gray/10">
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-dynamic-gray/20 bg-linear-to-br from-dynamic-gray/10 via-dynamic-gray/5 to-dynamic-slate/10 shadow-sm ring-1 ring-dynamic-gray/10">
               <Plus className="h-10 w-10 text-dynamic-gray/60" />
             </div>
             <div className="space-y-3">

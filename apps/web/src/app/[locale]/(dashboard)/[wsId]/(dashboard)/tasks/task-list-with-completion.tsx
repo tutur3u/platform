@@ -10,7 +10,7 @@ import {
   UserRound,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { TaskWithRelations } from '@tuturuuu/types/db';
+import type { TaskWithRelations } from '@tuturuuu/types';
 import type { Task as PrimitiveTask } from '@tuturuuu/types/primitives/Task';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -250,10 +250,10 @@ export default function TaskListWithCompletion({
             className={cn(
               'group relative overflow-hidden rounded-xl border p-5 shadow-sm transition-all duration-300',
               taskOverdue && !task.archived && !isCompleted
-                ? 'border-dynamic-red/30 bg-gradient-to-br from-dynamic-red/5 via-dynamic-red/3 to-transparent'
+                ? 'border-dynamic-red/30 bg-linear-to-br from-dynamic-red/5 via-dynamic-red/3 to-transparent'
                 : isCompleted
                   ? 'border-dynamic-green/20 bg-dynamic-green/5 opacity-70'
-                  : 'border-border/50 bg-gradient-to-br from-card via-card/95 to-card/90 hover:border-primary/30 hover:shadow-lg'
+                  : 'border-border/50 bg-linear-to-br from-card via-card/95 to-card/90 hover:border-primary/30 hover:shadow-lg'
             )}
           >
             {/* Main content area */}
@@ -474,10 +474,20 @@ export default function TaskListWithCompletion({
                               : 'bg-dynamic-orange/10 text-dynamic-orange ring-dynamic-orange/20'
                           )}
                         >
-                          <Calendar className="h-3 w-3 shrink-0" />
-                          <span className="truncate">
-                            {formatSmartDate(endDate)}
-                          </span>
+                          <AvatarImage
+                            src={assignee.user?.avatar_url || undefined}
+                            alt={assignee.user?.display_name || 'User'}
+                          />
+                          <AvatarFallback className="font-semibold text-xs">
+                            {(assignee.user?.display_name || 'U')
+                              .charAt(0)
+                              .toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      ))}
+                      {task.assignees.length > 3 && (
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-linear-to-br from-primary/20 to-primary/10 font-bold text-[10px] text-primary shadow-md ring-1 ring-border/50">
+                          +{task.assignees.length - 3}
                         </div>
                       )}
                     </div>

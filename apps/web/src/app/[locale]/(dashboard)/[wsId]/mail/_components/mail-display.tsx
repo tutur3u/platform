@@ -13,11 +13,7 @@ import {
   Trash2,
   UserIcon,
 } from '@tuturuuu/icons';
-import type {
-  InternalEmail,
-  User,
-  UserPrivateDetails,
-} from '@tuturuuu/types/db';
+import type { InternalEmail, User, UserPrivateDetails } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';

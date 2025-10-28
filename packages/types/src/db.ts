@@ -99,6 +99,21 @@ export type WorkspaceCalendarEvent = Tables<'workspace_calendar_events'>;
 export type User = Tables<'users'>;
 export type UserPrivateDetails = Tables<'user_private_details'>;
 export type PlatformUser = Tables<'platform_user_roles'>;
+export type WorkspaceApiKey = Tables<'workspace_api_keys'>;
+export type WorkspaceApiKeyUsageLog = {
+  id: string;
+  api_key_id: string;
+  ws_id: string;
+  endpoint: string;
+  method: string;
+  status_code: number;
+  ip_address: string | null;
+  user_agent: string | null;
+  response_time_ms: number | null;
+  request_params: Record<string, unknown> | null;
+  error_message: string | null;
+  created_at: string;
+};
 export type WorkspaceQuizSet = Tables<'workspace_quiz_sets'> & {
   href?: string;
   usage?: {

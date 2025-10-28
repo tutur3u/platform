@@ -2,7 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, Pause, Play, Square, Timer } from '@tuturuuu/icons';
-import type { TimeTrackingCategory } from '@tuturuuu/types/db';
+import type { TimeTrackingCategory } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
@@ -343,7 +343,7 @@ export function SimpleTimerControls({
         {currentSession ? (
           // Active timer display
           <div className="space-y-6 text-center">
-            <div className="rounded-lg bg-gradient-to-br from-green-50 to-emerald-100 p-6 dark:from-green-950/20 dark:to-emerald-900/20">
+            <div className="rounded-lg bg-linear-to-br from-green-50 to-emerald-100 p-6 dark:from-green-950/20 dark:to-emerald-900/20">
               <div className="font-bold font-mono text-4xl text-green-600 dark:text-green-400">
                 {formatTime(elapsedTime)}
               </div>
@@ -394,7 +394,7 @@ export function SimpleTimerControls({
         ) : pausedSession ? (
           // Paused timer display
           <div className="space-y-6 text-center">
-            <div className="rounded-lg bg-gradient-to-br from-amber-50 to-amber-100 p-6 dark:from-amber-950/20 dark:to-amber-900/20">
+            <div className="rounded-lg bg-linear-to-br from-amber-50 to-amber-100 p-6 dark:from-amber-950/20 dark:to-amber-900/20">
               <div className="mb-3 flex items-center justify-center gap-2">
                 <Pause className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                 <span className="font-semibold text-amber-700 text-lg dark:text-amber-300">

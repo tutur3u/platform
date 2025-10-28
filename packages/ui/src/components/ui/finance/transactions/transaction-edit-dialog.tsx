@@ -38,9 +38,9 @@ import {
   DialogDescription,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { toast } from '@tuturuuu/ui/sonner';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { fetcher } from '@tuturuuu/utils/fetcher';
@@ -494,7 +494,7 @@ export function TransactionEditDialog({
             {/* Main editing area */}
             <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-4 md:p-8">
               {/* Amount Section - Most prominent */}
-              <div className="space-y-3 rounded-lg border-2 border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-4 shadow-sm">
+              <div className="space-y-3 rounded-lg border-2 border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-4 shadow-sm">
                 <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
                   <div
                     className={cn(
@@ -522,7 +522,7 @@ export function TransactionEditDialog({
                     className={cn(
                       'pr-16 font-bold text-2xl tabular-nums',
                       isExpense ? 'text-dynamic-red' : 'text-dynamic-green',
-                      !canUpdateTransactions && 'opacity-60 cursor-not-allowed'
+                      !canUpdateTransactions && 'cursor-not-allowed opacity-60'
                     )}
                   />
                   <div className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-3 flex items-center gap-1.5 text-muted-foreground text-sm">
@@ -548,7 +548,7 @@ export function TransactionEditDialog({
               </div>
 
               {/* Description */}
-              <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+              <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
                 <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
                   <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-blue/15">
                     <FileText className="h-3.5 w-3.5 text-dynamic-blue" />
@@ -562,13 +562,13 @@ export function TransactionEditDialog({
                   disabled={!canUpdateTransactions}
                   className={cn(
                     'min-h-[80px] resize-none',
-                    !canUpdateTransactions && 'opacity-60 cursor-not-allowed'
+                    !canUpdateTransactions && 'cursor-not-allowed opacity-60'
                   )}
                 />
               </div>
 
               {/* Wallet */}
-              <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+              <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
                 <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
                   <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-blue/15">
                     <WalletIcon className="h-3.5 w-3.5 text-dynamic-blue" />
@@ -591,7 +591,7 @@ export function TransactionEditDialog({
               </div>
 
               {/* Category */}
-              <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+              <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
                 <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
                   <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-blue/15">
                     <FolderOpen className="h-3.5 w-3.5 text-dynamic-blue" />
@@ -614,7 +614,7 @@ export function TransactionEditDialog({
               </div>
 
               {/* Date */}
-              <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+              <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
                 <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
                   <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-blue/15">
                     <Calendar className="h-3.5 w-3.5 text-dynamic-blue" />
@@ -633,7 +633,7 @@ export function TransactionEditDialog({
 
               {/* Tags */}
               {tags.length > 0 && (
-                <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
                   <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
                     <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-blue/15">
                       <Tag className="h-3.5 w-3.5 text-dynamic-blue" />
@@ -652,7 +652,7 @@ export function TransactionEditDialog({
                             isSelected && 'ring-2',
                             canUpdateTransactions && 'cursor-pointer',
                             !canUpdateTransactions &&
-                              'opacity-60 cursor-not-allowed'
+                              'cursor-not-allowed opacity-60'
                           )}
                           style={{
                             borderColor: tag.color,
@@ -683,7 +683,7 @@ export function TransactionEditDialog({
               )}
 
               {/* Report Opt-in */}
-              <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+              <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label className="font-semibold text-foreground text-sm">

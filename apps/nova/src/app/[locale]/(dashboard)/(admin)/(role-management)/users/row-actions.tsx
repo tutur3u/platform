@@ -2,11 +2,7 @@
 
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis, ExternalLink } from '@tuturuuu/icons';
-import type {
-  PlatformUser,
-  User,
-  UserPrivateDetails,
-} from '@tuturuuu/types/db';
+import type { PlatformUser, User, UserPrivateDetails } from '@tuturuuu/types';
 import {
   AlertDialog,
   AlertDialogAction,

@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Monitor, PencilRuler, Users } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import type { PermissionId, WorkspaceRole } from '@tuturuuu/types/db';
+import type { PermissionId, WorkspaceRole } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { Form } from '@tuturuuu/ui/form';

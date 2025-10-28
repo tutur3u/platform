@@ -13,7 +13,13 @@ export default defineConfig({
       },
     },
     environment: 'jsdom',
-    env: loadEnv('production', process.cwd(), ''),
+    setupFiles: ['./vitest.setup.ts'],
+    env: {
+      ...loadEnv('production', process.cwd(), ''),
+      // Set test Supabase environment variables
+      NEXT_PUBLIC_SUPABASE_URL: 'https://test.supabase.co',
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'test-key',
+    },
   },
   resolve: {
     alias: [{ find: '@', replacement: resolve(__dirname, './src') }],

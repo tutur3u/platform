@@ -13,7 +13,7 @@ import {
   UserIcon,
   XIcon,
 } from '@tuturuuu/icons';
-import type { Product, SupportType } from '@tuturuuu/types/db';
+import type { Product, SupportType } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -145,7 +145,7 @@ export function InquiriesClient({
     <>
       <div className="space-y-4 md:space-y-6">
         {/* Filters - Enhanced styling */}
-        <Card className="border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 shadow-sm transition-shadow hover:shadow-md">
+        <Card className="border-border/60 bg-linear-to-br from-muted/30 to-muted/10 shadow-sm transition-shadow hover:shadow-md">
           <CardHeader className="border-border/50 border-b bg-gradient-to-b from-background/95 to-background/80 backdrop-blur-md">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/10">
@@ -290,7 +290,7 @@ export function InquiriesClient({
           </div>
 
           {inquiries.length === 0 ? (
-            <Card className="border-border/60 bg-gradient-to-br from-muted/30 to-muted/10">
+            <Card className="border-border/60 bg-linear-to-br from-muted/30 to-muted/10">
               <CardContent className="flex flex-col items-center justify-center py-16">
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-dynamic-orange/10 ring-1 ring-dynamic-orange/20">
                   <MessageCircleIcon className="h-8 w-8 text-dynamic-orange" />
@@ -310,7 +310,7 @@ export function InquiriesClient({
               {inquiries.map((inquiry) => (
                 <Card
                   key={inquiry.id}
-                  className="group cursor-pointer border-border/60 bg-gradient-to-br from-background to-muted/5 shadow-sm transition-all hover:shadow-md hover:ring-2 hover:ring-dynamic-orange/20"
+                  className="group cursor-pointer border-border/60 bg-linear-to-br from-background to-muted/5 shadow-sm transition-all hover:shadow-md hover:ring-2 hover:ring-dynamic-orange/20"
                   onClick={() => setSelectedInquiry(inquiry)}
                 >
                   <CardContent className="p-4 md:p-6">
@@ -421,7 +421,7 @@ export function InquiriesClient({
 
           {/* Pagination Controls - Enhanced styling */}
           {totalPages > 1 && (
-            <Card className="border-border/60 bg-gradient-to-br from-muted/20 to-muted/5 shadow-sm">
+            <Card className="border-border/60 bg-linear-to-br from-muted/20 to-muted/5 shadow-sm">
               <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4 md:flex-nowrap md:p-5">
                 {/* First/Previous buttons */}
                 <div className="flex items-center gap-1.5">

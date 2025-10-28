@@ -1,7 +1,7 @@
 'use client';
 
 import { Clock, Plus } from '@tuturuuu/icons';
-import type { Workspace } from '@tuturuuu/types/db';
+import type { Workspace } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Button } from '@tuturuuu/ui/button';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';

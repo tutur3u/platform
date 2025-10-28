@@ -3,7 +3,7 @@
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis, Pencil } from '@tuturuuu/icons';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import type { WorkspaceRole } from '@tuturuuu/types/db';
+import type { WorkspaceRole } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {

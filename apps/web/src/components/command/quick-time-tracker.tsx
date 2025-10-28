@@ -817,7 +817,7 @@ export function QuickTimeTracker({
                               className="w-full rounded-sm p-2 text-left transition-colors hover:bg-accent"
                             >
                               <div className="flex items-center gap-2">
-                                <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/20 to-dynamic-blue/10">
+                                <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border border-dynamic-blue/30 bg-linear-to-br from-dynamic-blue/20 to-dynamic-blue/10">
                                   <CheckCircle className="h-2.5 w-2.5 text-dynamic-blue" />
                                 </div>
                                 <div className="min-w-0 flex-1">
@@ -880,7 +880,7 @@ export function QuickTimeTracker({
               {selectedTask && (
                 <div className="rounded-lg border border-dynamic-green/30 bg-gradient-to-r from-dynamic-green/5 to-dynamic-green/3 p-3">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-dynamic-green/30 bg-gradient-to-br from-dynamic-green/20 to-dynamic-green/10">
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-dynamic-green/30 bg-linear-to-br from-dynamic-green/20 to-dynamic-green/10">
                       <CheckCircle className="h-4 w-4 text-dynamic-green" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -960,7 +960,7 @@ export function QuickTimeTracker({
                   className={cn(
                     'group rounded-lg border p-3 text-left transition-all duration-200',
                     recentSessions?.[0] && !runningSession
-                      ? 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:shadow-blue-500/20 hover:shadow-md active:scale-[0.98] dark:border-blue-800 dark:from-blue-950/30 dark:to-blue-900/20'
+                      ? 'border-blue-200 bg-linear-to-br from-blue-50 to-blue-100/50 hover:shadow-blue-500/20 hover:shadow-md active:scale-[0.98] dark:border-blue-800 dark:from-blue-950/30 dark:to-blue-900/20'
                       : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
                   )}
                 >
@@ -1037,7 +1037,7 @@ export function QuickTimeTracker({
                   className={cn(
                     'group rounded-lg border p-3 text-left transition-all duration-200',
                     nextTaskData?.nextTask && !runningSession
-                      ? 'border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100/50 hover:shadow-md hover:shadow-purple-500/20 active:scale-[0.98] dark:border-purple-800 dark:from-purple-950/30 dark:to-purple-900/20'
+                      ? 'border-purple-200 bg-linear-to-br from-purple-50 to-purple-100/50 hover:shadow-md hover:shadow-purple-500/20 active:scale-[0.98] dark:border-purple-800 dark:from-purple-950/30 dark:to-purple-900/20'
                       : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
                   )}
                 >
