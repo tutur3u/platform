@@ -31,13 +31,13 @@ if (typeof window !== 'undefined') {
           return key in store ? store[key] : null;
         },
         setItem: (key: string, value: string) => {
-          const oldValue = store[key] || null;
+          const oldValue = store[key] ?? null;
           store[key] = value;
           // Dispatch storage event after mutation
           dispatchStorageEvent(key, oldValue, value);
         },
         removeItem: (key: string) => {
-          const oldValue = store[key] || null;
+          const oldValue = store[key] ?? null;
           delete store[key];
           // Dispatch storage event after mutation
           dispatchStorageEvent(key, oldValue, null);

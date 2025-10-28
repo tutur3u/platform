@@ -28,6 +28,7 @@ function AddAccountContent(): JSX.Element {
 
   const returnUrl = searchParams.get('returnUrl');
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: hasRun ref prevents duplicate execution, router.replace and returnUrl are stable
   useEffect(() => {
     if (!isInitialized || hasRun.current) return;
     hasRun.current = true;
@@ -157,14 +158,7 @@ function AddAccountContent(): JSX.Element {
     };
 
     handleAddAccount();
-  }, [
-    isInitialized,
-    addAccount,
-    // is already added to the multi-account store client-side
-    // This provides a smoother experience without a full page reload
-    router.replace,
-    returnUrl,
-  ]);
+  }, [isInitialized, addAccount]);
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
