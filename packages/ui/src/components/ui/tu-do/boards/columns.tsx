@@ -193,7 +193,7 @@ export const projectColumns = (
     ),
     cell: ({ row }) => {
       const board = row.original;
-      
+
       // Calculate days remaining for soft-deleted boards
       const calculateDaysRemaining = (deletedAt: string | null) => {
         if (!deletedAt) return null;
@@ -204,7 +204,7 @@ export const projectColumns = (
         );
         return Math.max(0, 30 - daysPassed);
       };
-      
+
       if (board.deleted_at) {
         const daysRemaining = calculateDaysRemaining(board.deleted_at);
         return (
@@ -218,7 +218,7 @@ export const projectColumns = (
           </div>
         );
       }
-      
+
       if (board.archived_at) {
         return (
           <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-1 font-medium text-muted-foreground text-xs">
@@ -226,7 +226,7 @@ export const projectColumns = (
           </span>
         );
       }
-      
+
       return (
         <span className="inline-flex items-center rounded-full bg-dynamic-green/10 px-2.5 py-1 font-medium text-dynamic-green text-xs">
           Active

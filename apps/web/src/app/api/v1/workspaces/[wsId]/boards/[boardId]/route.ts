@@ -60,10 +60,7 @@ export async function DELETE(
       .single();
 
     if (boardCheckError || !board) {
-      return NextResponse.json(
-        { error: 'Board not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
     // Only allow permanent deletion if board is already soft-deleted
@@ -167,10 +164,7 @@ export async function PATCH(
       .single();
 
     if (boardCheckError || !board) {
-      return NextResponse.json(
-        { error: 'Board not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
     if (!board.deleted_at) {

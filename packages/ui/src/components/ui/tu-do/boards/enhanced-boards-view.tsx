@@ -80,7 +80,12 @@ interface EnhancedBoardsViewProps {
 
 // Define types for better type safety
 type TaskStatus = 'not_started' | 'active' | 'done' | 'closed';
-type FilterType = 'all' | 'completed' | 'overdue' | 'urgent' | 'recently_deleted';
+type FilterType =
+  | 'all'
+  | 'completed'
+  | 'overdue'
+  | 'urgent'
+  | 'recently_deleted';
 
 interface TaskModalState {
   isOpen: boolean;
@@ -394,14 +399,14 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
   // Calculate days remaining for soft-deleted boards (30-day retention)
   const calculateDaysRemaining = useCallback((deletedAt: string | null) => {
     if (!deletedAt) return null;
-    
+
     const deletedDate = new Date(deletedAt);
     const now = new Date();
     const daysPassed = Math.floor(
       (now.getTime() - deletedDate.getTime()) / (1000 * 60 * 60 * 24)
     );
     const daysRemaining = 30 - daysPassed;
-    
+
     return Math.max(0, daysRemaining);
   }, []);
 
@@ -426,7 +431,10 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
       } catch (error) {
         console.error('Error deleting board:', error);
         toast.error('Failed to delete board', {
-          description: error instanceof Error ? error.message : 'An unexpected error occurred',
+          description:
+            error instanceof Error
+              ? error.message
+              : 'An unexpected error occurred',
         });
       }
     },
@@ -662,7 +670,11 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 </label>
                 <select
                   value={boardStatusFilter}
-                  onChange={(e) => setBoardStatusFilter(e.target.value as typeof boardStatusFilter)}
+                  onChange={(e) =>
+                    setBoardStatusFilter(
+                      e.target.value as typeof boardStatusFilter
+                    )
+                  }
                   className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
                 >
                   <option value="all">All Boards</option>
@@ -946,7 +958,8 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                           )}
                           {board.deleted_at && (
                             <span className="inline-flex items-center rounded-full bg-destructive/10 px-2 py-1 font-medium text-destructive text-xs">
-                              {calculateDaysRemaining(board.deleted_at)} days left
+                              {calculateDaysRemaining(board.deleted_at)} days
+                              left
                             </span>
                           )}
                           <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">

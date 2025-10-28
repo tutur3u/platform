@@ -94,9 +94,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
       if (!res.ok) {
         const error = await res.json();
         throw new Error(
-          error.error ||
-            error.message ||
-            'Failed to permanently delete board'
+          error.error || error.message || 'Failed to permanently delete board'
         );
       }
 
@@ -213,7 +211,8 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
 
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showPermanentDeleteDialog, setShowPermanentDeleteDialog] = useState(false);
+  const [showPermanentDeleteDialog, setShowPermanentDeleteDialog] =
+    useState(false);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showUnarchiveDialog, setShowUnarchiveDialog] = useState(false);
@@ -368,11 +367,13 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Move Board to Trash</AlertDialogTitle>
             <AlertDialogDescription>
-               {(() => {
+              {(() => {
                 const name = data.name ?? '';
                 const truncated = name.length > 20;
                 const display = truncated ? `${name.slice(0, 20)}…` : name;
-                return <>Are you sure you want to delete &quot;{display}&quot;?</>;
+                return (
+                  <>Are you sure you want to delete &quot;{display}&quot;?</>
+                );
               })()}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -390,10 +391,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
       </AlertDialog>
 
       {/* Restore Dialog */}
-      <AlertDialog
-        open={showRestoreDialog}
-        onOpenChange={setShowRestoreDialog}
-      >
+      <AlertDialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Restore Board</AlertDialogTitle>
@@ -446,10 +444,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
       </AlertDialog>
 
       {/* Archive Dialog */}
-      <AlertDialog
-        open={showArchiveDialog}
-        onOpenChange={setShowArchiveDialog}
-      >
+      <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Archive Board</AlertDialogTitle>
