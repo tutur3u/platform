@@ -200,7 +200,6 @@ export default function AvatarInput({ workspace, disabled }: Props) {
   };
 
   const handleCropComplete = async (croppedImageBlob: Blob) => {
-    console.log('croppedImageBlob', croppedImageBlob);
     try {
       // Compress and resize the cropped image to the final avatar size
       const finalBlob = await compressAndResizeImage(croppedImageBlob);
