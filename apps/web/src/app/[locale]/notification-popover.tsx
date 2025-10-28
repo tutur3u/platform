@@ -18,6 +18,7 @@ export default async function NotificationPopover() {
   dayjs.extend(relativeTime);
 
   const noNotifications = t('no-notifications');
+  const viewAllText = t('view-all');
 
   const invites = await getWorkspaceInvites();
   const { count: unresolvedInquiriesCount, latestDate: latestInquiryDate } =
@@ -95,6 +96,7 @@ export default async function NotificationPopover() {
       notifications={notifications}
       noNotificationsText={noNotifications}
       notificationsText={t('notifications')}
+      viewAllText={viewAllText}
     />
   );
 }

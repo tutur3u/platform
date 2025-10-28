@@ -37,6 +37,8 @@ export type Database = {
         | 'ENABLE_CHALLENGES'
         | 'ENABLE_EDUCATION'
         | 'ENABLE_QUIZZES';
+      notification_priority: 'high' | 'low' | 'medium' | 'urgent';
+      notification_scope: 'system' | 'user' | 'workspace';
       platform_service: 'NOVA' | 'REWISE' | 'TUTURUUU' | 'UPSKII';
       product:
         | 'calendar'
@@ -130,6 +132,12 @@ export type Database = {
         | 'view_users_public_info';
     };
     Functions: {
+      archive_old_notifications: {
+        Args: {
+          p_days_threshold?: number;
+        };
+        Returns: number;
+      };
       atomic_sync_token_operation: {
         Args: {
           p_calendar_id?: string;
@@ -193,6 +201,10 @@ export type Database = {
         Args: never;
         Returns: undefined;
       };
+      cleanup_expired_notifications: {
+        Args: never;
+        Returns: number;
+      };
       cleanup_old_api_key_usage_logs: {
         Args: never;
         Returns: undefined;
@@ -253,15 +265,42 @@ export type Database = {
       };
       create_notification: {
         Args: {
+          p_code?: string;
           p_created_by?: string;
           p_data?: Json;
           p_description?: string;
+          p_email?: string;
           p_entity_id?: string;
           p_entity_type?: string;
+          p_priority?: Database['public']['Enums']['notification_priority'];
+          p_scope?: Database['public']['Enums']['notification_scope'];
+          p_title?: string;
+          p_type?: string;
+          p_user_id?: string;
+          p_ws_id?: string;
+        };
+        Returns: string;
+      };
+      create_system_announcement: {
+        Args: {
+          p_action_url?: string;
+          p_data?: Json;
+          p_description: string;
+          p_expires_at?: string;
+          p_priority?: Database['public']['Enums']['notification_priority'];
+          p_title: string;
+        };
+        Returns: string;
+      };
+      create_user_notification: {
+        Args: {
+          p_action_url?: string;
+          p_data?: Json;
+          p_description?: string;
+          p_priority?: Database['public']['Enums']['notification_priority'];
           p_title: string;
           p_type: string;
           p_user_id: string;
-          p_ws_id: string;
         };
         Returns: string;
       };
@@ -647,15 +686,26 @@ export type Database = {
           os: string;
         }[];
       };
-      get_or_create_notification_batch: {
-        Args: {
-          p_channel: string;
-          p_user_id: string;
-          p_window_minutes?: number;
-          p_ws_id: string;
-        };
-        Returns: string;
-      };
+      get_or_create_notification_batch:
+        | {
+            Args: {
+              p_channel: string;
+              p_email?: string;
+              p_user_id: string;
+              p_window_minutes?: number;
+              p_ws_id: string;
+            };
+            Returns: string;
+          }
+        | {
+            Args: {
+              p_channel: string;
+              p_user_id: string;
+              p_window_minutes?: number;
+              p_ws_id: string;
+            };
+            Returns: string;
+          };
       get_pending_event_participants: {
         Args: {
           _event_id: string;
@@ -905,6 +955,12 @@ export type Database = {
           task_total_duration: number;
         }[];
       };
+      get_user_email: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: string;
+      };
       get_user_role: {
         Args: {
           user_id: string;
@@ -1104,6 +1160,17 @@ export type Database = {
         };
         Returns: undefined;
       };
+      insert_task_history: {
+        Args: {
+          p_change_type: string;
+          p_field_name?: string;
+          p_metadata?: Json;
+          p_new_value?: Json;
+          p_old_value?: Json;
+          p_task_id: string;
+        };
+        Returns: string;
+      };
       is_list_accessible: {
         Args: {
           _list_id: string;
@@ -1265,6 +1332,10 @@ export type Database = {
           os: string;
         }[];
       };
+      process_notification_batches: {
+        Args: never;
+        Returns: undefined;
+      };
       process_recurring_transactions: {
         Args: never;
         Returns: {
@@ -1338,8 +1409,9 @@ export type Database = {
         Args: {
           p_channel: string;
           p_event_type: string;
+          p_scope?: Database['public']['Enums']['notification_scope'];
           p_user_id: string;
-          p_ws_id: string;
+          p_ws_id?: string;
         };
         Returns: boolean;
       };
@@ -4934,16 +5006,17 @@ export type Database = {
         Insert: {
           channel: string;
           created_at?: string;
+          email?: null | string;
           error_message?: null | string;
           id?: string;
           notification_count?: number;
           sent_at?: null | string;
           status?: string;
           updated_at?: string;
-          user_id: string;
+          user_id?: null | string;
           window_end: string;
           window_start: string;
-          ws_id: string;
+          ws_id?: null | string;
         };
         Relationships: [
           {
@@ -4964,30 +5037,32 @@ export type Database = {
         Row: {
           channel: string;
           created_at: string;
+          email: null | string;
           error_message: null | string;
           id: string;
           notification_count: number;
           sent_at: null | string;
           status: string;
           updated_at: string;
-          user_id: string;
+          user_id: null | string;
           window_end: string;
           window_start: string;
-          ws_id: string;
+          ws_id: null | string;
         };
         Update: {
           channel?: string;
           created_at?: string;
+          email?: null | string;
           error_message?: null | string;
           id?: string;
           notification_count?: number;
           sent_at?: null | string;
           status?: string;
           updated_at?: string;
-          user_id?: string;
+          user_id?: null | string;
           window_end?: string;
           window_start?: string;
-          ws_id?: string;
+          ws_id?: null | string;
         };
       };
       notification_delivery_log: {
@@ -5041,12 +5116,17 @@ export type Database = {
         Insert: {
           channel: string;
           created_at?: string;
+          digest_frequency?: null | string;
           enabled?: boolean;
           event_type: string;
           id?: string;
+          quiet_hours_end?: null | string;
+          quiet_hours_start?: null | string;
+          scope?: Database['public']['Enums']['notification_scope'];
+          timezone?: null | string;
           updated_at?: string;
           user_id: string;
-          ws_id: string;
+          ws_id?: null | string;
         };
         Relationships: [
           {
@@ -5067,40 +5147,66 @@ export type Database = {
         Row: {
           channel: string;
           created_at: string;
+          digest_frequency: null | string;
           enabled: boolean;
           event_type: string;
           id: string;
+          quiet_hours_end: null | string;
+          quiet_hours_start: null | string;
+          scope: Database['public']['Enums']['notification_scope'];
+          timezone: null | string;
           updated_at: string;
           user_id: string;
-          ws_id: string;
+          ws_id: null | string;
         };
         Update: {
           channel?: string;
           created_at?: string;
+          digest_frequency?: null | string;
           enabled?: boolean;
           event_type?: string;
           id?: string;
+          quiet_hours_end?: null | string;
+          quiet_hours_start?: null | string;
+          scope?: Database['public']['Enums']['notification_scope'];
+          timezone?: null | string;
           updated_at?: string;
           user_id?: string;
-          ws_id?: string;
+          ws_id?: null | string;
         };
       };
       notifications: {
         Insert: {
+          action_url?: null | string;
+          archived_at?: null | string;
+          code?: null | string;
           created_at?: string;
           created_by?: null | string;
           data?: Json | null;
           description?: null | string;
+          email?: null | string;
           entity_id?: null | string;
           entity_type?: null | string;
+          expires_at?: null | string;
           id?: string;
+          metadata?: Json | null;
+          parent_id?: null | string;
+          priority?: Database['public']['Enums']['notification_priority'];
           read_at?: null | string;
+          scope?: Database['public']['Enums']['notification_scope'];
           title: string;
           type: string;
-          user_id: string;
-          ws_id: string;
+          user_id?: null | string;
+          ws_id?: null | string;
         };
         Relationships: [
+          {
+            columns: ['parent_id'];
+            foreignKeyName: 'notifications_parent_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'notifications';
+          },
           {
             columns: ['ws_id'];
             foreignKeyName: 'notifications_ws_id_fkey';
@@ -5117,32 +5223,50 @@ export type Database = {
           },
         ];
         Row: {
+          action_url: null | string;
+          archived_at: null | string;
+          code: null | string;
           created_at: string;
           created_by: null | string;
           data: Json | null;
           description: null | string;
+          email: null | string;
           entity_id: null | string;
           entity_type: null | string;
+          expires_at: null | string;
           id: string;
+          metadata: Json | null;
+          parent_id: null | string;
+          priority: Database['public']['Enums']['notification_priority'];
           read_at: null | string;
+          scope: Database['public']['Enums']['notification_scope'];
           title: string;
           type: string;
-          user_id: string;
-          ws_id: string;
+          user_id: null | string;
+          ws_id: null | string;
         };
         Update: {
+          action_url?: null | string;
+          archived_at?: null | string;
+          code?: null | string;
           created_at?: string;
           created_by?: null | string;
           data?: Json | null;
           description?: null | string;
+          email?: null | string;
           entity_id?: null | string;
           entity_type?: null | string;
+          expires_at?: null | string;
           id?: string;
+          metadata?: Json | null;
+          parent_id?: null | string;
+          priority?: Database['public']['Enums']['notification_priority'];
           read_at?: null | string;
+          scope?: Database['public']['Enums']['notification_scope'];
           title?: string;
           type?: string;
-          user_id?: string;
-          ws_id?: string;
+          user_id?: null | string;
+          ws_id?: null | string;
         };
       };
       nova_challenge_criteria: {
@@ -7179,6 +7303,53 @@ export type Database = {
           status?: null | string;
           updated_at?: null | string;
           ws_id?: string;
+        };
+      };
+      task_history: {
+        Insert: {
+          change_type: string;
+          changed_at?: string;
+          changed_by?: null | string;
+          deleted_at?: null | string;
+          field_name?: null | string;
+          id?: string;
+          metadata?: Json | null;
+          new_value?: Json | null;
+          old_value?: Json | null;
+          task_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['task_id'];
+            foreignKeyName: 'task_history_task_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'tasks';
+          },
+        ];
+        Row: {
+          change_type: string;
+          changed_at: string;
+          changed_by: null | string;
+          deleted_at: null | string;
+          field_name: null | string;
+          id: string;
+          metadata: Json | null;
+          new_value: Json | null;
+          old_value: Json | null;
+          task_id: string;
+        };
+        Update: {
+          change_type?: string;
+          changed_at?: string;
+          changed_by?: null | string;
+          deleted_at?: null | string;
+          field_name?: null | string;
+          id?: string;
+          metadata?: Json | null;
+          new_value?: Json | null;
+          old_value?: Json | null;
+          task_id?: string;
         };
       };
       task_initiatives: {
@@ -14157,6 +14328,8 @@ export const Constants = {
         'ENABLE_EDUCATION',
         'ENABLE_QUIZZES',
       ],
+      notification_priority: ['high', 'low', 'medium', 'urgent'],
+      notification_scope: ['system', 'user', 'workspace'],
       platform_service: ['NOVA', 'REWISE', 'TUTURUUU', 'UPSKII'],
       product: [
         'calendar',

@@ -1,5 +1,5 @@
--- Enable pg_cron extension if not already enabled
-CREATE EXTENSION IF NOT EXISTS pg_cron;
+-- Note: pg_cron extension is already available in Supabase by default
+-- No need to explicitly create it
 
 -- Function to process notification batches
 CREATE OR REPLACE FUNCTION public.process_notification_batches()

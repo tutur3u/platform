@@ -1,7 +1,30 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export type NotificationChannel = 'web' | 'email' | 'sms' | 'push';
-export type NotificationEventType = 'task_assigned' | 'task_updated' | 'task_mention' | 'workspace_invite';
+export type NotificationEventType =
+  // Task assignment and general updates
+  | 'task_assigned'
+  | 'task_updated'
+  | 'task_mention'
+  // Task field changes
+  | 'task_title_changed'
+  | 'task_description_changed'
+  | 'task_priority_changed'
+  | 'task_due_date_changed'
+  | 'task_start_date_changed'
+  | 'task_estimation_changed'
+  | 'task_moved'
+  // Task status changes
+  | 'task_completed'
+  | 'task_reopened'
+  // Task relationships
+  | 'task_label_added'
+  | 'task_label_removed'
+  | 'task_project_linked'
+  | 'task_project_unlinked'
+  | 'task_assignee_removed'
+  // Workspace
+  | 'workspace_invite';
 
 export interface NotificationPreference {
   id: string;

@@ -676,22 +676,27 @@
     },
     "packages/supabase": {
       "name": "@tuturuuu/supabase",
-      "version": "0.1.1",
+      "version": "0.2.2",
       "dependencies": {
         "@supabase/ssr": "^0.7.0",
         "@supabase/supabase-js": "^2.76.1",
         "@tuturuuu/types": "workspace:*",
-        "next": "^16.0.0",
-        "react": "^19.2.0",
-        "react-dom": "^19.2.0",
         "zod": "^4.1.12",
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^24.9.1",
         "@types/react": "^19.2.2",
+        "next": "^16.0.0",
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0",
         "typescript": "^5.9.3",
         "vitest": "^4.0.4",
+      },
+      "peerDependencies": {
+        "next": ">=15.0.0",
+        "react": ">=18.0.0",
+        "react-dom": ">=18.0.0",
       },
     },
     "packages/transactional": {
@@ -930,7 +935,7 @@
       "name": "@tuturuuu/workflows",
       "version": "0.0.1",
       "dependencies": {
-        "workflow": "^4.0.1-beta.3",
+        "workflow": "^4.0.1-beta.4",
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",

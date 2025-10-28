@@ -10,7 +10,7 @@ export type NotificationType =
 
 export interface Notification {
   id: string;
-  ws_id: string;
+  ws_id: string | null; // Can be null for user-scoped notifications
   user_id: string;
   type: NotificationType;
   title: string;
@@ -66,6 +66,8 @@ export function useNotifications({
       };
     },
     enabled: !!wsId,
+    staleTime: 30000, // Keep data fresh for 30s to prevent excessive refetches
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
 }
 
@@ -111,9 +113,62 @@ export function useUpdateNotification() {
 
       return response.json();
     },
-    onSuccess: () => {
-      // Invalidate and refetch
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    onMutate: async ({ id, read }) => {
+      // Cancel any outgoing refetches to prevent race conditions
+      await queryClient.cancelQueries({ queryKey: ['notifications'] });
+
+      // Snapshot the previous value for rollback
+      const previousData = queryClient.getQueriesData({ queryKey: ['notifications'] });
+
+      // Optimistically update to the new state IN PLACE (maintains order)
+      queryClient.setQueriesData<{
+        notifications: Notification[];
+        count: number;
+        limit: number;
+        offset: number;
+      }>({ queryKey: ['notifications'] }, (old) => {
+        if (!old) return old;
+
+        const updatedNotifications = old.notifications.map((notification) =>
+          notification.id === id
+            ? {
+                ...notification,
+                read_at: read ? new Date().toISOString() : null,
+              }
+            : notification
+        );
+
+        return {
+          ...old,
+          notifications: updatedNotifications,
+        };
+      });
+
+      return { previousData };
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback on error
+      if (context?.previousData) {
+        context.previousData.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+    },
+    onSuccess: async () => {
+      // Invalidate and refetch the unread count immediately
+      await queryClient.invalidateQueries({
+        queryKey: ['notifications', 'unread-count'],
+        refetchType: 'active',
+      });
+    },
+    onSettled: async (_data, error) => {
+      // If there was an error, refetch everything to ensure consistency
+      if (error) {
+        await queryClient.invalidateQueries({
+          queryKey: ['notifications'],
+          refetchType: 'active',
+        });
+      }
     },
   });
 }
@@ -138,8 +193,22 @@ export function useMarkAllAsRead() {
 
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    onSuccess: async () => {
+      // Force immediate refetch of notifications
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['notifications'],
+          refetchType: 'active'
+        }),
+        queryClient.refetchQueries({
+          queryKey: ['notifications'],
+          type: 'active'
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['notifications', 'unread-count'],
+          refetchType: 'active'
+        })
+      ]);
     },
   });
 }
@@ -177,21 +246,58 @@ export function useNotificationSubscription(wsId: string, userId: string) {
 
   // Subscribe to realtime updates using useEffect
   useEffect(() => {
-    if (!wsId || !userId) return;
+    if (!userId) return;
 
+    // Subscribe to all user's notifications (including user-scoped with null ws_id)
     const channel = supabase
-      .channel(`notifications:${wsId}:${userId}`)
+      .channel(`notifications:${userId}`)
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'notifications',
-          filter: `ws_id=eq.${wsId},user_id=eq.${userId}`,
+          filter: `user_id=eq.${userId}`,
         },
         () => {
-          // Invalidate queries when notifications change
+          // Invalidate on INSERT (new notifications)
           queryClient.invalidateQueries({ queryKey: ['notifications'] });
+          queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          // For read/unread updates, we use optimistic updates in useUpdateNotification
+          // For action updates (like workspace_invite accepted/declined), we need to refetch
+          const newRecord = payload.new as Notification;
+
+          // If the notification data has action_taken, it's an action completion - refetch
+          if (newRecord?.data?.action_taken) {
+            queryClient.invalidateQueries({ queryKey: ['notifications'] });
+            queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+          }
+          // Otherwise, the optimistic update in useUpdateNotification handles it
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          // Invalidate on DELETE
+          queryClient.invalidateQueries({ queryKey: ['notifications'] });
+          queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
         }
       )
       .subscribe();
@@ -200,5 +306,5 @@ export function useNotificationSubscription(wsId: string, userId: string) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [wsId, userId, supabase, queryClient]);
+  }, [userId, supabase, queryClient]);
 }
