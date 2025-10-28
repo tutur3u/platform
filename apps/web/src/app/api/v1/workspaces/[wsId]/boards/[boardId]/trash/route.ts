@@ -60,10 +60,7 @@ export async function POST(
       .single();
 
     if (boardCheckError || !board) {
-      return NextResponse.json(
-        { error: 'Board not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
     // Check if already in trash
