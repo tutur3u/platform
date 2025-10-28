@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
+import { toast } from '@tuturuuu/ui/sonner';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { formatDistanceToNow } from 'date-fns';
 import { useTranslations } from 'next-intl';
@@ -55,6 +56,7 @@ export function AccountManagementCard(): JSX.Element {
       // Navigation will happen automatically in switchAccount
     } catch (error) {
       console.error('Failed to switch account:', error);
+      toast.error(t('account_switcher.switch_account_error'));
       setSwitchingAccountId(null);
     }
   };
@@ -132,7 +134,8 @@ export function AccountManagementCard(): JSX.Element {
                         {account.metadata.lastWorkspaceId && (
                           <p className="text-foreground/40 text-xs">
                             {t('account_switcher.last_workspace')}:{' '}
-                            {account.metadata.lastWorkspaceId}
+                            {account.metadata.lastWorkspaceId.substring(0, 8)}
+                            ...
                           </p>
                         )}
                       </div>

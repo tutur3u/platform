@@ -167,8 +167,10 @@ export function AccountSwitcherProvider({
         }
 
         // Only auto-add current session if not on login/auth pages
+        // Use stricter matching to avoid false positives
         const isAuthPage =
-          pathname.includes('/login') || pathname.includes('/add-account');
+          /\/login(\/|$)/.test(pathname) ||
+          /\/add-account(\/|$)/.test(pathname);
 
         // Sync activeAccountId with current session
         if (currentSession) {
@@ -320,7 +322,7 @@ export function AccountSwitcherProvider({
       if (timeoutId !== undefined) clearTimeout(timeoutId);
       unsubscribePromise.then((unsubscribe) => unsubscribe?.());
     };
-  }, [isInitialized, pathname.includes]); // Run only once on mount - event handlers use stable refreshAccountsRef
+  }, [isInitialized, pathname]); // Run only once on mount - event handlers use stable refreshAccountsRef
 
   // Handle account switch navigation
   const handleAccountSwitch = useCallback(
@@ -512,10 +514,14 @@ export function AccountSwitcherProvider({
 
         // Update current account's workspace context before switching
         if (activeAccountId) {
-          // Match pattern: /[locale]/[wsId]/...
+          // Extract workspace ID from pathname
+          // Expected pattern: /[locale]/[wsId]/... or /[wsId]/...
           // Route groups like (dashboard) don't appear in URLs
+          // This regex matches the second path segment, which is typically the workspace ID
           const pathMatch = pathname.match(/^\/[^/]+\/([^/]+)/);
           const workspaceId = pathMatch?.[1];
+
+          // Only proceed if we successfully extracted a workspace ID
           if (workspaceId) {
             // Only save if it's not a special route (settings, login, etc.)
             const isSpecialRoute = SPECIAL_ROUTES.includes(

@@ -14,6 +14,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Separator } from '@tuturuuu/ui/separator';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { formatDistanceToNow } from 'date-fns';
@@ -40,6 +41,9 @@ export function AccountSwitcherModal({
   } = useAccountSwitcher();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSwitching, setIsSwitching] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [isAddingAccount, setIsAddingAccount] = useState(false);
 
   // Filter accounts based on search
   const filteredAccounts = accounts.filter((account) => {
@@ -57,9 +61,22 @@ export function AccountSwitcherModal({
   }, [open]);
 
   const handleSwitchAccount = async (accountId: string) => {
-    if (accountId === activeAccountId || isLoading) return;
-    onOpenChange(false);
-    await switchAccount(accountId);
+    if (accountId === activeAccountId || isLoading || isSwitching) return;
+
+    setIsSwitching(true);
+    try {
+      onOpenChange(false);
+      await switchAccount(accountId);
+      // Success feedback will be shown after navigation
+    } catch (error) {
+      console.error('[AccountSwitcherModal] Failed to switch account:', error);
+      toast.error(
+        t('account_switcher.switch_error') ||
+          'Failed to switch account. Please try again.'
+      );
+    } finally {
+      setIsSwitching(false);
+    }
   };
 
   const handleRemoveAccount = async (
@@ -67,27 +84,58 @@ export function AccountSwitcherModal({
     e: React.MouseEvent
   ) => {
     e.stopPropagation(); // Prevent triggering switch
-    if (isLoading) return;
+    if (isLoading || isRemoving) return;
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        '[AccountSwitcherModal] Removing account (count before):',
-        accounts.length
+    setIsRemoving(true);
+    try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(
+          '[AccountSwitcherModal] Removing account (count before):',
+          accounts.length
+        );
+      }
+
+      await removeAccount(accountId);
+
+      // Show success message
+      toast.success(
+        t('account_switcher.account_removed_success') ||
+          'Account removed successfully'
       );
+    } catch (error) {
+      console.error('[AccountSwitcherModal] Failed to remove account:', error);
+      toast.error(
+        t('account_switcher.account_removed_error') ||
+          'Failed to remove account. Please try again.'
+      );
+    } finally {
+      setIsRemoving(false);
     }
-    await removeAccount(accountId);
   };
 
   const handleAddAccount = async () => {
-    // Use lazy import to avoid SSR issues
-    const { createClient } = await import('@tuturuuu/supabase/next/client');
-    const { prepareAddAccountAndNavigate } = await import('./utils');
+    if (isAddingAccount) return;
 
-    await prepareAddAccountAndNavigate({
-      createClient,
-      addAccount,
-      accounts,
-    });
+    setIsAddingAccount(true);
+    try {
+      // Use lazy import to avoid SSR issues
+      const { createClient } = await import('@tuturuuu/supabase/next/client');
+      const { prepareAddAccountAndNavigate } = await import('./utils');
+
+      await prepareAddAccountAndNavigate({
+        createClient,
+        addAccount,
+        accounts,
+      });
+    } catch (error) {
+      console.error('[AccountSwitcherModal] Failed to add account:', error);
+      toast.error(
+        t('account_switcher.account_added_error') ||
+          'Failed to add account. Please try again.'
+      );
+    } finally {
+      setIsAddingAccount(false);
+    }
   };
 
   return (
@@ -223,10 +271,15 @@ export function AccountSwitcherModal({
               <button
                 type="button"
                 onClick={handleAddAccount}
-                className="group flex w-full items-center gap-3 rounded-lg border border-dashed p-3 transition-all hover:border-foreground/30 hover:bg-foreground/5"
+                disabled={isAddingAccount}
+                className="group flex w-full items-center gap-3 rounded-lg border border-dashed p-3 transition-all hover:border-foreground/30 hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground/10">
-                  <Plus className="h-4 w-4" />
+                  {isAddingAccount ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
                 </div>
                 <div className="flex-1 text-left">
                   <p className="font-medium text-sm">

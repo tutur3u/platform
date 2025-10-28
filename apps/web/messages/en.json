@@ -4725,6 +4725,8 @@
     "preparing": "Preparing...",
     "switch_account": "Switch Account",
     "switch": "Switch",
+    "switch_error": "Failed to switch account",
+    "switch_account_error": "Failed to switch account. Please try again.",
     "current_account": "Current Account",
     "manage_accounts": "Manage Accounts",
     "remove": "Remove",
