@@ -66,9 +66,6 @@ export async function prepareAddAccountAndNavigate({
         await addAccount(session, {
           switchImmediately: false,
         });
-
-        // Wait briefly to ensure localStorage write completes
-        await new Promise((resolve) => setTimeout(resolve, 200));
       }
     }
 

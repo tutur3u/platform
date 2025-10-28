@@ -4748,7 +4748,8 @@
     "switch_account_description": "Quickly switch between your accounts. Use arrow keys to navigate and Enter to select.",
     "navigate": "Navigate",
     "select": "Select",
-    "quick_switch": "Quick switch"
+    "quick_switch": "Quick switch",
+    "unknown_user": "Unknown User"
   },
   "sessions-card": {
     "title": "Active Sessions",

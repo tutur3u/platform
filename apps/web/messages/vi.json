@@ -4798,7 +4798,8 @@
     "switch_account_description": "Nhanh chóng chuyển đổi giữa các tài khoản của bạn. Sử dụng phím mũi tên để điều hướng và Enter để chọn.",
     "navigate": "Điều hướng",
     "select": "Chọn",
-    "quick_switch": "Chuyển nhanh"
+    "quick_switch": "Chuyển nhanh",
+    "unknown_user": "Người dùng không xác định"
   },
   "sessions-card": {
     "title": "Phiên hoạt động",

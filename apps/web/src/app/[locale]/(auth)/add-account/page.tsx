@@ -13,9 +13,9 @@ import {
 } from '@tuturuuu/ui/card';
 import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { type JSX, useEffect, useRef, useState } from 'react';
+import { type JSX, Suspense, useEffect, useRef, useState } from 'react';
 
-export default function AddAccountPage(): JSX.Element {
+function AddAccountContent(): JSX.Element {
   const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -25,6 +25,8 @@ export default function AddAccountPage(): JSX.Element {
   );
   const [errorMessage, setErrorMessage] = useState<string>('');
   const hasRun = useRef(false);
+
+  const returnUrl = searchParams.get('returnUrl');
 
   useEffect(() => {
     if (!isInitialized || hasRun.current) return;
@@ -80,7 +82,6 @@ export default function AddAccountPage(): JSX.Element {
           }
 
           // Get the return URL from query params
-          const returnUrl = searchParams.get('returnUrl');
           let redirectUrl = '/';
 
           if (returnUrl) {
@@ -156,7 +157,14 @@ export default function AddAccountPage(): JSX.Element {
     };
 
     handleAddAccount();
-  }, [isInitialized, addAccount]);
+  }, [
+    isInitialized,
+    addAccount,
+    // is already added to the multi-account store client-side
+    // This provides a smoother experience without a full page reload
+    router.replace,
+    returnUrl,
+  ]);
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
@@ -175,7 +183,7 @@ export default function AddAccountPage(): JSX.Element {
           {status === 'loading' && (
             <div className="flex flex-col items-center gap-4 py-8">
               <Loader2 className="h-8 w-8 animate-spin" />
-              <p className="text-sm text-foreground/60">
+              <p className="text-foreground/60 text-sm">
                 {t('account_switcher.please_wait')}
               </p>
             </div>
@@ -190,6 +198,7 @@ export default function AddAccountPage(): JSX.Element {
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
+                  <title>Switch account success icon</title>
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -198,7 +207,7 @@ export default function AddAccountPage(): JSX.Element {
                   />
                 </svg>
               </div>
-              <p className="text-sm text-foreground/60">
+              <p className="text-foreground/60 text-sm">
                 {t('account_switcher.redirecting')}
               </p>
             </div>
@@ -207,7 +216,7 @@ export default function AddAccountPage(): JSX.Element {
           {status === 'error' && (
             <div className="space-y-4 py-4">
               <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/10 p-4">
-                <p className="text-sm text-dynamic-red">{errorMessage}</p>
+                <p className="text-dynamic-red text-sm">{errorMessage}</p>
               </div>
               <Button
                 type="button"
@@ -221,5 +230,38 @@ export default function AddAccountPage(): JSX.Element {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function AddAccountFallback(): JSX.Element {
+  const t = useTranslations();
+
+  return (
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>{t('account_switcher.adding_account')}</CardTitle>
+          <CardDescription>
+            {t('account_switcher.adding_account_description')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center gap-4 py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <p className="text-foreground/60 text-sm">
+              {t('account_switcher.please_wait')}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function AddAccountPage(): JSX.Element {
+  return (
+    <Suspense fallback={<AddAccountFallback />}>
+      <AddAccountContent />
+    </Suspense>
   );
 }

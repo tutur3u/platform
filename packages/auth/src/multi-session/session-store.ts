@@ -1,4 +1,5 @@
 import type { Session } from '@supabase/supabase-js';
+import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import {
   decryptSession,
@@ -16,12 +17,20 @@ import type {
   SessionStoreEvent,
   SessionStoreListener,
   StoredAccount,
-  SwitchAccountOptions,
 } from './types';
 
 const DEFAULT_STORAGE_KEY = 'tuturuuu_multi_session_store';
 const DEFAULT_MAX_ACCOUNTS = 5;
 const STORE_VERSION = 1;
+
+/**
+ * Compute a deterministic SHA-256 hash of the encrypted session string
+ * to use as part of the cache key. This prevents cache collisions between
+ * different session strings that happen to have the same length.
+ */
+function hashEncryptedSession(encryptedSession: string): string {
+  return createHash('sha256').update(encryptedSession).digest('hex');
+}
 
 /**
  * Simple LRU cache implementation
@@ -100,7 +109,7 @@ export class SessionStore {
   private config: Required<MultiSessionConfig>;
   private listeners: Set<SessionStoreListener> = new Set();
   private encryptionKey: string | null = null;
-  // LRU cache for decrypted emails (keyed by accountId + encryptedSession length)
+  // LRU cache for decrypted emails (keyed by accountId + SHA-256 hash of encryptedSession)
   private emailCache = new LRUCache<string, string>(100);
 
   constructor(config: MultiSessionConfig = {}) {
@@ -113,6 +122,12 @@ export class SessionStore {
 
   /**
    * Initialize the store and encryption key
+   *
+   * SECURITY WARNING: If config.encryptionKey is not provided, a key will be
+   * auto-generated and stored in localStorage. This is vulnerable to XSS attacks
+   * that can steal the key and decrypt stored sessions offline. For production use,
+   * callers SHOULD provide their own encryption key derived from a secure source
+   * (e.g., PBKDF2 with user passcode, WebAuthn unwrapping, or server-side key delivery).
    */
   async initialize(): Promise<void> {
     if (!isCryptoAvailable()) {
@@ -126,6 +141,18 @@ export class SessionStore {
 
   /**
    * Get or create a persistent encryption key
+   *
+   * SECURITY WARNING: This auto-generated key is stored in localStorage and
+   * derived from browser fingerprint properties (userAgent, language, timezone, etc).
+   * This approach is NOT cryptographically secure and is vulnerable to:
+   * - XSS attacks that can read localStorage and decrypt sessions offline
+   * - Fingerprint collision between different devices
+   *
+   * This is a convenience feature for development/testing. Production applications
+   * MUST provide their own encryption key via MultiSessionConfig.encryptionKey.
+   *
+   * TODO: Track as security debt - consider requiring explicit key or implementing
+   * secure key derivation (PBKDF2, WebAuthn, etc.) See GitHub issue #XXXX
    */
   private async getOrCreateEncryptionKey(): Promise<string> {
     const keyStorageKey = `${this.config.storageKey}_encryption_key`;
@@ -384,8 +411,10 @@ export class SessionStore {
     this.saveStore(store);
 
     // Invalidate email cache for this account
-    const cacheKey = `${account.id}:${account.encryptedSession.length}`;
-    this.emailCache.delete(cacheKey);
+    if (account) {
+      const cacheKey = `${account.id}:${hashEncryptedSession(account.encryptedSession)}`;
+      this.emailCache.delete(cacheKey);
+    }
 
     this.emit({ type: 'account-removed', accountId });
 
@@ -398,10 +427,7 @@ export class SessionStore {
   /**
    * Switch to a different account
    */
-  async switchAccount(
-    accountId: string,
-    options: SwitchAccountOptions = {}
-  ): Promise<AccountOperationResult> {
+  async switchAccount(accountId: string): Promise<AccountOperationResult> {
     const store = this.loadStore();
     const account = store.accounts.find((acc) => acc.id === accountId);
 
@@ -488,12 +514,12 @@ export class SessionStore {
 
     try {
       // Invalidate old cache entry before updating
-      const oldCacheKey = `${account.id}:${account.encryptedSession.length}`;
+      const oldCacheKey = `${account.id}:${hashEncryptedSession(account.encryptedSession)}`;
       this.emailCache.delete(oldCacheKey);
 
       // Re-encrypt the updated session
       account.encryptedSession = await encryptSession(
-        session,
+        session as unknown as Record<string, unknown>,
         this.encryptionKey
       );
 
@@ -583,9 +609,9 @@ export class SessionStore {
     const accounts = await this.getAccounts();
     const accountsWithEmail = await Promise.all(
       accounts.map(async (account) => {
-        // Create cache key from account ID and encrypted session length
+        // Create cache key from account ID and hash of encrypted session
         // This allows us to detect when the session has changed
-        const cacheKey = `${account.id}:${account.encryptedSession.length}`;
+        const cacheKey = `${account.id}:${hashEncryptedSession(account.encryptedSession)}`;
         const cachedEmail = this.emailCache.get(cacheKey);
 
         if (cachedEmail) {

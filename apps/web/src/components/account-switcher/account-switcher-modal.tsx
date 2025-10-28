@@ -195,7 +195,7 @@ export function AccountSwitcherModal({
                 const displayName =
                   account.metadata.displayName ||
                   account.email ||
-                  'Unknown User';
+                  t('account_switcher.unknown_user');
                 const initials = getInitials(displayName);
                 const lastActive = account.metadata.lastActiveAt
                   ? formatDistanceToNow(account.metadata.lastActiveAt, {
@@ -225,12 +225,12 @@ export function AccountSwitcherModal({
                             src={account.metadata.avatarUrl}
                             alt={displayName}
                           />
-                          <AvatarFallback className="bg-linear-to-br from-dynamic-purple to-dynamic-pink text-white font-semibold">
+                          <AvatarFallback className="bg-linear-to-br from-dynamic-purple to-dynamic-pink font-semibold text-white">
                             {initials}
                           </AvatarFallback>
                         </Avatar>
 
-                        <div className="flex-1 min-w-0 space-y-1">
+                        <div className="min-w-0 flex-1 space-y-1">
                           <div className="flex items-center gap-2">
                             <p className="truncate font-semibold text-sm">
                               {displayName}
@@ -279,7 +279,7 @@ export function AccountSwitcherModal({
 
                       {/* Selection indicator */}
                       {isSelected && !isActive && (
-                        <div className="-right-px -top-px absolute h-3 w-3 rounded-bl-lg rounded-tr-xl border-b-2 border-l-2 border-dynamic-blue/50 bg-dynamic-blue/20" />
+                        <div className="-right-px -top-px absolute h-3 w-3 rounded-tr-xl rounded-bl-lg border-dynamic-blue/50 border-b-2 border-l-2 bg-dynamic-blue/20" />
                       )}
                     </button>
 
@@ -311,7 +311,7 @@ export function AccountSwitcherModal({
                   'group flex w-full items-center gap-3 rounded-xl border-2 p-4 transition-all',
                   selectedIndex === filteredAccounts.length
                     ? 'border-dynamic-blue/50 bg-dynamic-blue/5 shadow-md'
-                    : 'border-dashed border-foreground/20 hover:border-dynamic-blue/30 hover:bg-foreground/5'
+                    : 'border-foreground/20 border-dashed hover:border-dynamic-blue/30 hover:bg-foreground/5'
                 )}
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-br from-dynamic-blue to-dynamic-cyan text-white shadow-sm transition-transform group-hover:scale-110">

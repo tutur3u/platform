@@ -2,9 +2,10 @@
   "name": "tutur3u",
   "private": true,
   "scripts": {
-    "build": "turbo run build",
-    "buildx": "turbo test build",
     "clean": "rm bun.lock && bunx npkill --delete-all -y",
+    "build": "turbo run build",
+    "build:web": "turbo run build -F @tuturuuu/web",
+    "buildx": "turbo test build",
     "dev": "turbo run dev --parallel",
     "dev:docs": "cd apps/docs && mintlify dev",
     "dev:web": "turbo run dev -F @tuturuuu/web",

@@ -64,6 +64,16 @@ const AccountSwitcherContext = createContext<
   AccountSwitcherContextValue | undefined
 >(undefined);
 
+/**
+ * Special routes that should not be saved as workspace context
+ */
+const SPECIAL_ROUTES = [
+  'settings',
+  'login',
+  'onboarding',
+  'add-account',
+] as const;
+
 interface AccountSwitcherProviderProps {
   children: ReactNode;
 }
@@ -497,12 +507,9 @@ export function AccountSwitcherProvider({
           const workspaceId = pathMatch?.[1];
           if (workspaceId) {
             // Only save if it's not a special route (settings, login, etc.)
-            const isSpecialRoute = [
-              'settings',
-              'login',
-              'onboarding',
-              'add-account',
-            ].includes(workspaceId);
+            const isSpecialRoute = SPECIAL_ROUTES.includes(
+              workspaceId as (typeof SPECIAL_ROUTES)[number]
+            );
             if (!isSpecialRoute) {
               if (process.env.NODE_ENV === 'development') {
                 console.log('[switchAccount] Saving workspace context');
@@ -520,7 +527,7 @@ export function AccountSwitcherProvider({
         }
 
         // Switch the account in the store
-        const result = await store.switchAccount(accountId, options);
+        const result = await store.switchAccount(accountId);
 
         if (result.success) {
           await handleAccountSwitch(accountId, accountSession.session, options);

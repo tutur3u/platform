@@ -28,7 +28,7 @@ if (typeof window !== 'undefined') {
 
       return {
         getItem: (key: string) => {
-          return store[key] || null;
+          return key in store ? store[key] : null;
         },
         setItem: (key: string, value: string) => {
           const oldValue = store[key] || null;
