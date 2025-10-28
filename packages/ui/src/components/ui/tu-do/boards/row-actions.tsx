@@ -262,7 +262,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
                     e.stopPropagation();
                     setShowPermanentDeleteDialog(true);
                   }}
-                  className="text-destructive focus:text-destructive"
+                  className="text-dynamic-red focus:text-dynamic-red"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete Forever
@@ -382,7 +382,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
             <AlertDialogAction
               onClick={() => softDeleteMutation.mutate()}
               disabled={softDeleteMutation.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-dynamic-red text-white hover:bg-dynamic-red/90"
             >
               {softDeleteMutation.isPending ? 'Moving...' : 'Move to Trash'}
             </AlertDialogAction>
@@ -433,7 +433,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
             <AlertDialogAction
               onClick={() => permanentDeleteMutation.mutate()}
               disabled={permanentDeleteMutation.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-dynamic-red text-white hover:bg-dynamic-red/90"
             >
               {permanentDeleteMutation.isPending
                 ? 'Deleting...'
