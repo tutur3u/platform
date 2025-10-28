@@ -793,8 +793,6 @@ export default function MyTasksContent({
       } else {
         toast.error('Fail to create task');
       }
-
-      handleUpdate();
     } catch (error: any) {
       console.error('Error creating task:', error);
       toast.error(error.message || 'Failed to create task');
