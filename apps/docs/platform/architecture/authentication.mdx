@@ -529,7 +529,7 @@ export default async function ProtectedPage() {
 
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { useEffect, useState } from 'react';
-import type { User } from '@supabase/supabase-js';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 
 export function useUser() {
   const [user, setUser] = useState<User | null>(null);

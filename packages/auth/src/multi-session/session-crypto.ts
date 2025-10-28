@@ -26,7 +26,7 @@ const SALT_LENGTH = 16;
  */
 async function deriveKey(
   password: string,
-  salt: Uint8Array
+  salt: BufferSource
 ): Promise<CryptoKey> {
   const encoder = new TextEncoder();
   const passwordKey = await crypto.subtle.importKey(

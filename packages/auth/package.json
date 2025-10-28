@@ -20,12 +20,14 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.48.2",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "next": "^16.0.0",
-    "react": "^19.2.0"
+    "react": "^19.2.0",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",

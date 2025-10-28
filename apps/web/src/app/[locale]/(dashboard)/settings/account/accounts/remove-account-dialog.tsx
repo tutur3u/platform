@@ -14,7 +14,7 @@ import {
 } from '@tuturuuu/ui/alert-dialog';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { type JSX, useState } from 'react';
 
 interface RemoveAccountDialogProps {
   accountId: string | null;
@@ -68,7 +68,7 @@ export function RemoveAccountDialog({
             {t('account_switcher.remove_account_description', {
               account:
                 account?.metadata.displayName ||
-                account?.metadata.email ||
+                account?.email ||
                 'this account',
             })}
           </AlertDialogDescription>

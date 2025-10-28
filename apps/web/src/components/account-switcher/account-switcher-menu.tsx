@@ -64,7 +64,6 @@ export function AccountSwitcherMenu({ children }: AccountSwitcherMenuProps) {
                   <AccountItem
                     account={account}
                     isActive={account.id === activeAccountId}
-                    onClick={() => handleSwitchAccount(account.id)}
                   />
                 </DropdownMenuItem>
               ))}

@@ -1,9 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import type { Session } from '@supabase/supabase-js';
-import { describe, expect, it, vi, beforeEach, beforeAll } from 'vitest';
 import AddAccountPage from '@/app/[locale]/(auth)/add-account/page';
+import { render, screen, waitFor } from '@testing-library/react';
+import type { SupabaseSession } from '@tuturuuu/supabase/next/user';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockSession: Session = {
+const mockSession: SupabaseSession = {
   user: {
     id: 'test-user-id',
     email: 'test@example.com',
@@ -24,6 +24,7 @@ const mockSession: Session = {
 
 const mockAddAccount = vi.fn();
 const mockPush = vi.fn();
+const mockReplace = vi.fn();
 let mockLocationHref = '';
 const mockGetSession = vi.fn();
 const mockSearchParamsGet = vi.fn();
@@ -32,6 +33,7 @@ const mockSearchParamsGet = vi.fn();
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
+    replace: mockReplace,
     refresh: vi.fn(),
   }),
   useSearchParams: () => ({
@@ -128,7 +130,7 @@ describe('AddAccountPage', () => {
 
     await waitFor(
       () => {
-        expect(mockLocationHref).toBe('/test-workspace');
+        expect(mockReplace).toHaveBeenCalledWith('/test-workspace');
       },
       { timeout: 2000 }
     );
@@ -152,7 +154,7 @@ describe('AddAccountPage', () => {
     // Should redirect without showing error
     await waitFor(
       () => {
-        expect(mockLocationHref).toBe('/test-workspace');
+        expect(mockReplace).toHaveBeenCalledWith('/test-workspace');
       },
       { timeout: 2000 }
     );
@@ -167,7 +169,9 @@ describe('AddAccountPage', () => {
     render(<AddAccountPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('account_switcher.account_added_error')).toBeDefined();
+      expect(
+        screen.getByText('account_switcher.account_added_error')
+      ).toBeDefined();
     });
 
     await waitFor(() => {
@@ -175,7 +179,7 @@ describe('AddAccountPage', () => {
     });
 
     // Should not redirect
-    expect(mockLocationHref).toBe('');
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 
   it('should handle missing session error', async () => {
@@ -187,7 +191,9 @@ describe('AddAccountPage', () => {
     render(<AddAccountPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('account_switcher.account_added_error')).toBeDefined();
+      expect(
+        screen.getByText('account_switcher.account_added_error')
+      ).toBeDefined();
     });
   });
 
@@ -205,7 +211,7 @@ describe('AddAccountPage', () => {
 
     await waitFor(
       () => {
-        expect(mockLocationHref).toBe(customReturnUrl);
+        expect(mockReplace).toHaveBeenCalledWith(customReturnUrl);
       },
       { timeout: 2000 }
     );
@@ -220,7 +226,47 @@ describe('AddAccountPage', () => {
 
     await waitFor(
       () => {
-        expect(mockLocationHref).toBe('/');
+        expect(mockReplace).toHaveBeenCalledWith('/');
+      },
+      { timeout: 2000 }
+    );
+  });
+
+  it('should fall back to root for cross-origin returnUrl', async () => {
+    const unsafeReturnUrl = 'https://evil.com/path';
+
+    mockSearchParamsGet.mockImplementation((key: string) => {
+      if (key === 'returnUrl') return encodeURIComponent(unsafeReturnUrl);
+      return null;
+    });
+
+    mockAddAccount.mockResolvedValue({ success: true });
+
+    render(<AddAccountPage />);
+
+    await waitFor(
+      () => {
+        expect(mockReplace).toHaveBeenCalledWith('/');
+      },
+      { timeout: 2000 }
+    );
+  });
+
+  it('should fall back to root for protocol-relative returnUrl', async () => {
+    const unsafeReturnUrl = '//evil.com/path';
+
+    mockSearchParamsGet.mockImplementation((key: string) => {
+      if (key === 'returnUrl') return encodeURIComponent(unsafeReturnUrl);
+      return null;
+    });
+
+    mockAddAccount.mockResolvedValue({ success: true });
+
+    render(<AddAccountPage />);
+
+    await waitFor(
+      () => {
+        expect(mockReplace).toHaveBeenCalledWith('/');
       },
       { timeout: 2000 }
     );
@@ -232,12 +278,16 @@ describe('AddAccountPage', () => {
     render(<AddAccountPage />);
 
     await waitFor(() => {
-      const errorElements = screen.getAllByText('account_switcher.account_added_error');
+      const errorElements = screen.getAllByText(
+        'account_switcher.account_added_error'
+      );
       expect(errorElements.length).toBeGreaterThan(0);
     });
 
     await waitFor(() => {
-      const unexpectedErrorElements = screen.getAllByText('An unexpected error occurred');
+      const unexpectedErrorElements = screen.getAllByText(
+        'An unexpected error occurred'
+      );
       expect(unexpectedErrorElements.length).toBeGreaterThan(0);
     });
   });

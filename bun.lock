@@ -392,7 +392,6 @@
         "@octokit/auth-app": "^8.1.1",
         "@octokit/rest": "^22.0.0",
         "@react-email/render": "^1.4.0",
-        "@supabase/supabase-js": "^2.76.1",
         "@tanstack/react-query": "^5.90.5",
         "@tanstack/react-table": "^8.21.3",
         "@testing-library/jest-dom": "^6.9.1",
@@ -578,12 +577,14 @@
       "name": "@tuturuuu/auth",
       "version": "0.1.0",
       "dependencies": {
+        "@supabase/supabase-js": "^2.48.2",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "next": "^16.0.0",
         "react": "^19.2.0",
+        "zod": "^4.1.12",
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",

@@ -9,7 +9,7 @@ import { useTranslations } from 'next-intl';
 interface AccountItemProps {
   account: StoredAccountWithEmail;
   isActive: boolean;
-  onClick: () => void;
+  onClick?: () => void;
 }
 
 export function AccountItem({ account, isActive, onClick }: AccountItemProps) {
@@ -17,7 +17,9 @@ export function AccountItem({ account, isActive, onClick }: AccountItemProps) {
 
   const displayName = account.metadata.displayName || account.email || 'Unknown User';
   const initials = displayName
+    .trim()
     .split(' ')
+    .filter(Boolean)
     .map((n) => n[0])
     .join('')
     .toUpperCase()

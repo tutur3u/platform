@@ -17,7 +17,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { formatDistanceToNow } from 'date-fns';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { type JSX, useState } from 'react';
 import { RemoveAccountDialog } from './remove-account-dialog';
 
 export function AccountManagementCard(): JSX.Element {
@@ -62,7 +62,7 @@ export function AccountManagementCard(): JSX.Element {
                 const isActive = account.id === activeAccountId;
                 const displayName =
                   account.metadata.displayName ||
-                  account.metadata.email ||
+                  account.email ||
                   'Unknown User';
                 const initials = getInitials(displayName);
                 const lastActive =
@@ -93,9 +93,9 @@ export function AccountManagementCard(): JSX.Element {
                             </Badge>
                           )}
                         </div>
-                        {account.metadata.email && (
+                        {account.email && (
                           <p className="text-sm text-foreground/60">
-                            {account.metadata.email}
+                            {account.email}
                           </p>
                         )}
                         <p className="text-xs text-foreground/40">

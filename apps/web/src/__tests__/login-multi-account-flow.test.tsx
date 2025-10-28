@@ -5,23 +5,6 @@ const mockLocationHrefSetter = vi.fn((value: string) => {
   mockLocationHref = value;
 });
 
-// Mock Next.js router
-const mockPush = vi.fn();
-const mockRefresh = vi.fn();
-
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: mockPush,
-    refresh: mockRefresh,
-  }),
-  useSearchParams: () => {
-    if (typeof window !== 'undefined' && window.location) {
-      return new URLSearchParams(window.location.search || '');
-    }
-    return new URLSearchParams('');
-  },
-}));
-
 describe('Login Multi-Account Flow', () => {
   beforeEach(() => {
     vi.clearAllMocks();

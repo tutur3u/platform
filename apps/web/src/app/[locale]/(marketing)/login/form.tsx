@@ -215,8 +215,17 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         nextUrl.searchParams.set('multiAccount', 'true');
       }
 
-      router.push(nextUrl.toString());
-      router.refresh();
+      // Check if URL is cross-origin
+      const isCrossOrigin = nextUrl.origin !== window.location.origin;
+
+      if (isCrossOrigin) {
+        // Use full-page navigation for cross-origin URLs
+        window.location.assign(nextUrl.toString());
+      } else {
+        // Use router navigation for same-origin URLs
+        router.push(nextUrl.toString());
+        router.refresh();
+      }
       return;
     }
 

@@ -1,12 +1,10 @@
 'use client';
 
-import type { Session } from '@supabase/supabase-js';
 import type {
   AccountOperationResult,
   AddAccountOptions,
   SessionStore,
   SessionStoreEvent,
-  StoredAccount,
   StoredAccountWithEmail,
   SwitchAccountOptions,
 } from '@tuturuuu/auth';
@@ -15,9 +13,11 @@ import {
   createClient,
   switchClientSession,
 } from '@tuturuuu/supabase/next/client';
+import type { SupabaseSession } from '@tuturuuu/supabase/next/user';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   createContext,
+  type JSX,
   type ReactNode,
   useCallback,
   useContext,
@@ -37,7 +37,7 @@ interface AccountSwitcherContextValue {
   isLoading: boolean;
   /** Add a new account */
   addAccount: (
-    session: Session,
+    session: SupabaseSession,
     options?: AddAccountOptions
   ) => Promise<AccountOperationResult>;
   /** Remove an account */
@@ -121,16 +121,12 @@ export function AccountSwitcherProvider({
       } else if (event.type === 'account-switched') {
         // Update active account
         if (process.env.NODE_ENV === 'development') {
-          console.log(
-            '[handleStoreEvent] Switching active account'
-          );
+          console.log('[handleStoreEvent] Switching active account');
         }
         setActiveAccountId(event.toId);
       } else if (event.type === 'session-refreshed') {
         if (process.env.NODE_ENV === 'development') {
-          console.log(
-            '[handleStoreEvent] Session refreshed for account'
-          );
+          console.log('[handleStoreEvent] Session refreshed for account');
         }
         // Optionally refresh accounts to get updated metadata
         refreshAccounts();
@@ -169,10 +165,7 @@ export function AccountSwitcherProvider({
         // Load initial accounts (with emails from encrypted sessions)
         const storedAccounts = await sessionStore.getAccountsWithEmail();
         if (process.env.NODE_ENV === 'development') {
-          console.log(
-            'Loaded stored accounts count:',
-            storedAccounts.length
-          );
+          console.log('Loaded stored accounts count:', storedAccounts.length);
         }
         if (!mounted) return;
 
@@ -185,10 +178,7 @@ export function AccountSwitcherProvider({
         } = await client.auth.getSession();
 
         if (process.env.NODE_ENV === 'development') {
-          console.log(
-            'Current session exists:',
-            !!currentSession
-          );
+          console.log('Current session exists:', !!currentSession);
         }
 
         // Only auto-add current session if not on login/auth pages
@@ -216,9 +206,7 @@ export function AccountSwitcherProvider({
           // If current session is not in store and we're not on an auth page, add it
           if (!currentAccountInStore && !isAuthPage) {
             if (process.env.NODE_ENV === 'development') {
-              console.log(
-                'Adding current session to store (not on auth page)'
-              );
+              console.log('Adding current session to store (not on auth page)');
             }
             await sessionStore.addAccount(currentSession, {
               switchImmediately: true,
@@ -252,9 +240,7 @@ export function AccountSwitcherProvider({
             // update the store to match reality
             if (storedActiveId !== currentUserId) {
               if (process.env.NODE_ENV === 'development') {
-                console.log(
-                  'Syncing active account (mismatch detected)'
-                );
+                console.log('Syncing active account (mismatch detected)');
               }
               await sessionStore.switchAccount(currentUserId);
             }
@@ -279,11 +265,14 @@ export function AccountSwitcherProvider({
         // Listen for storage events from other tabs (cross-tab sync)
         const handleStorageChange = (event: StorageEvent) => {
           if (
-            event.key &&
-            event.key.includes('tuturuuu_multi_session_store') &&
+            event.key?.includes('tuturuuu_multi_session_store') &&
             event.newValue !== event.oldValue
           ) {
-            console.log('[storage event] Detected store change from other tab');
+            if (process.env.NODE_ENV === 'development') {
+              console.log(
+                '[storage event] Detected store change from other tab'
+              );
+            }
             refreshAccounts();
           }
         };
@@ -316,7 +305,7 @@ export function AccountSwitcherProvider({
   const handleAccountSwitch = useCallback(
     async (
       accountId: string,
-      session: Session,
+      session: SupabaseSession,
       options?: SwitchAccountOptions
     ) => {
       // Update Supabase client session (sign out + sign in with refresh token)
@@ -355,17 +344,13 @@ export function AccountSwitcherProvider({
           // Use exact last route
           targetPath = account.metadata.lastRoute;
           if (process.env.NODE_ENV === 'development') {
-            console.log(
-              '[handleAccountSwitch] Using remembered route'
-            );
+            console.log('[handleAccountSwitch] Using remembered route');
           }
         } else if (account?.metadata.lastWorkspaceId) {
           // Construct workspace URL (locale will be auto-added by proxy if needed)
           targetPath = `/${account.metadata.lastWorkspaceId}`;
           if (process.env.NODE_ENV === 'development') {
-            console.log(
-              '[handleAccountSwitch] Using remembered workspace'
-            );
+            console.log('[handleAccountSwitch] Using remembered workspace');
           }
         } else {
           if (process.env.NODE_ENV === 'development') {
@@ -386,7 +371,7 @@ export function AccountSwitcherProvider({
   // Add a new account
   const addAccount = useCallback(
     async (
-      session: Session,
+      session: SupabaseSession,
       options?: AddAccountOptions
     ): Promise<AccountOperationResult> => {
       if (!store) {
@@ -414,7 +399,9 @@ export function AccountSwitcherProvider({
           // If switching immediately, handle navigation
           if (options?.switchImmediately) {
             if (process.env.NODE_ENV === 'development') {
-              console.log('[addAccount] Switching immediately to new account...');
+              console.log(
+                '[addAccount] Switching immediately to new account...'
+              );
             }
             const switchOptions: SwitchAccountOptions | undefined =
               options?.workspaceId
@@ -596,12 +583,16 @@ export function AccountSwitcherProvider({
 
       // If no other accounts, sign out from Supabase and redirect to login
       if (otherAccounts.length === 0) {
-        console.log('[logout] No other accounts, signing out completely');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[logout] No other accounts, signing out completely');
+        }
         const client = createClient();
         await client.auth.signOut({ scope: 'local' });
         router.push('/login');
       } else {
-        console.log('[logout] Switched to another account');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[logout] Switched to another account');
+        }
         // removeAccount already handles switching to another account
         // Just refresh to ensure UI is updated
         router.refresh();

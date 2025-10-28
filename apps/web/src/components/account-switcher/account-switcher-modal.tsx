@@ -83,77 +83,15 @@ export function AccountSwitcherModal({
   };
 
   const handleAddAccount = async () => {
-    try {
-      // First, save the current session to the store before navigating
-      // This prevents losing the current account when adding a new one
-      const supabase = (
-        await import('@tuturuuu/supabase/next/client')
-      ).createClient();
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    // Use lazy import to avoid SSR issues
+    const { createClient } = await import('@tuturuuu/supabase/next/client');
+    const { prepareAddAccountAndNavigate } = await import('./utils');
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log(
-          '[AccountSwitcherModal] Session exists:',
-          !!session,
-          'Accounts count:',
-          accounts.length
-        );
-      }
-
-      if (session) {
-        // Check if current session is already in the store
-        const currentAccountExists = accounts.some(
-          (acc) => acc.id === session.user.id
-        );
-
-        if (process.env.NODE_ENV === 'development') {
-          console.log(
-            '[AccountSwitcherModal] Current account in store:',
-            currentAccountExists
-          );
-        }
-
-        if (!currentAccountExists) {
-          // Save current session before navigating away
-          if (process.env.NODE_ENV === 'development') {
-            console.log(
-              '[AccountSwitcherModal] Saving current session before navigating...'
-            );
-          }
-          const result = await addAccount(session, {
-            switchImmediately: false,
-          });
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[AccountSwitcherModal] Save result:', result.success);
-          }
-
-          // Wait briefly to ensure localStorage write completes
-          await new Promise((resolve) => setTimeout(resolve, 200));
-        }
-      }
-
-      // Navigate to login with multiAccount flag
-      const currentPath = window.location.pathname;
-      const returnUrl = encodeURIComponent(currentPath);
-      if (process.env.NODE_ENV === 'development') {
-        console.log(
-          '[AccountSwitcherModal] Navigating to login with return path'
-        );
-      }
-      // Locale is auto-handled by proxy.ts, no need to include it
-      window.location.href = `/login?multiAccount=true&returnUrl=${returnUrl}`;
-    } catch (error) {
-      console.error(
-        '[AccountSwitcherModal] Failed to prepare for adding account:',
-        error instanceof Error ? error.message : 'Unknown error'
-      );
-      // Still navigate even if saving fails
-      const currentPath = window.location.pathname;
-      const returnUrl = encodeURIComponent(currentPath);
-      window.location.href = `/login?multiAccount=true&returnUrl=${returnUrl}`;
-    }
+    await prepareAddAccountAndNavigate({
+      createClient,
+      addAccount,
+      accounts,
+    });
   };
 
   // Keyboard navigation

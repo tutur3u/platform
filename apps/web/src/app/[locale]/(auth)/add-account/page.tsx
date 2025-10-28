@@ -13,7 +13,7 @@ import {
 } from '@tuturuuu/ui/card';
 import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { type JSX, useEffect, useRef, useState } from 'react';
 
 export default function AddAccountPage(): JSX.Element {
   const t = useTranslations();
@@ -94,10 +94,19 @@ export default function AddAccountPage(): JSX.Element {
                 // Safe relative path
                 redirectUrl = decodedUrl;
               } else {
-                // Absolute URL - validate origin
+                // Absolute URL - validate origin and protocol
                 try {
                   const parsedUrl = new URL(decodedUrl);
-                  if (parsedUrl.origin === window.location.origin) {
+
+                  // Check protocol - only allow http: and https:
+                  if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+                    console.warn(
+                      '[AddAccountPage] Invalid protocol rejected:',
+                      parsedUrl.protocol,
+                      decodedUrl
+                    );
+                  } else if (parsedUrl.origin === window.location.origin) {
+                    // Same origin and valid protocol
                     redirectUrl = decodedUrl;
                   } else {
                     console.warn(
@@ -118,11 +127,19 @@ export default function AddAccountPage(): JSX.Element {
           }
 
           if (process.env.NODE_ENV === 'development') {
-            console.log('[AddAccountPage] Redirecting');
+            console.log('[AddAccountPage] Redirecting to:', redirectUrl);
           }
 
-          // Redirect immediately without showing success UI
-          window.location.href = redirectUrl;
+          // Show success UI briefly before redirecting
+          setStatus('success');
+
+          // Wait a moment to show the success UI, then redirect
+          await new Promise((resolve) => setTimeout(resolve, 500));
+
+          // Use router.replace for same-origin navigation since the session
+          // is already added to the multi-account store client-side
+          // This provides a smoother experience without a full page reload
+          router.replace(redirectUrl);
         } else {
           setStatus('error');
           setErrorMessage(result.error || 'Failed to add account');

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { type JSX, useEffect, useState } from 'react';
 import { AccountSwitcherModal } from './account-switcher-modal';
 
 export function AccountSwitcherKeyboardShortcut(): JSX.Element {

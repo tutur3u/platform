@@ -1,4 +1,5 @@
-import type { Session, User } from '@supabase/supabase-js';
+import type { Session } from '@supabase/supabase-js';
+import { z } from 'zod';
 import {
   decryptSession,
   encryptSession,
@@ -23,6 +24,75 @@ const DEFAULT_MAX_ACCOUNTS = 5;
 const STORE_VERSION = 1;
 
 /**
+ * Simple LRU cache implementation
+ */
+class LRUCache<K, V> {
+  private cache = new Map<K, V>();
+  private maxSize: number;
+
+  constructor(maxSize: number) {
+    this.maxSize = maxSize;
+  }
+
+  get(key: K): V | undefined {
+    if (!this.cache.has(key)) {
+      return undefined;
+    }
+    // Move to end (most recently used)
+    const value = this.cache.get(key)!;
+    this.cache.delete(key);
+    this.cache.set(key, value);
+    return value;
+  }
+
+  set(key: K, value: V): void {
+    // Delete if exists (to reinsert at end)
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    }
+    // Add to end
+    this.cache.set(key, value);
+    // Evict oldest if over size
+    if (this.cache.size > this.maxSize) {
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+      }
+    }
+  }
+
+  delete(key: K): void {
+    this.cache.delete(key);
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
+// Zod schemas for runtime validation
+const AccountMetadataSchema = z.object({
+  lastWorkspaceId: z.string().optional(),
+  lastRoute: z.string().optional(),
+  lastActiveAt: z.number(),
+  displayName: z.string().optional(),
+  avatarUrl: z.string().optional(),
+});
+
+const StoredAccountSchema = z.object({
+  id: z.string(),
+  encryptedSession: z.string(),
+  metadata: AccountMetadataSchema,
+  addedAt: z.number(),
+});
+
+const MultiSessionStoreSchema = z.object({
+  accounts: z.array(StoredAccountSchema),
+  activeAccountId: z.string().nullable(),
+  version: z.number(),
+});
+
+/**
  * Multi-session store manager
  * Handles storage, encryption, and management of multiple Supabase sessions
  */
@@ -30,6 +100,8 @@ export class SessionStore {
   private config: Required<MultiSessionConfig>;
   private listeners: Set<SessionStoreListener> = new Set();
   private encryptionKey: string | null = null;
+  // LRU cache for decrypted emails (keyed by accountId + encryptedSession length)
+  private emailCache = new LRUCache<string, string>(100);
 
   constructor(config: MultiSessionConfig = {}) {
     this.config = {
@@ -77,15 +149,26 @@ export class SessionStore {
         return this.createEmptyStore();
       }
 
-      const parsed = JSON.parse(stored) as MultiSessionStore;
+      const parsed = JSON.parse(stored);
 
-      // Validate version and structure
-      if (parsed.version !== STORE_VERSION) {
+      // Validate with Zod schema
+      const validation = MultiSessionStoreSchema.safeParse(parsed);
+
+      if (!validation.success) {
+        console.warn(
+          'Store validation failed, resetting store:',
+          validation.error.issues
+        );
+        return this.createEmptyStore();
+      }
+
+      // Validate version
+      if (validation.data.version !== STORE_VERSION) {
         console.warn('Store version mismatch, resetting store');
         return this.createEmptyStore();
       }
 
-      return parsed;
+      return validation.data;
     } catch (error) {
       console.error('Failed to load session store:', error);
       return this.createEmptyStore();
@@ -99,8 +182,7 @@ export class SessionStore {
     try {
       localStorage.setItem(this.config.storageKey, JSON.stringify(store));
     } catch (error) {
-      console.error('Failed to save session store:', error);
-      throw new Error('Failed to save session store');
+      throw new Error('Failed to save session store', { cause: error });
     }
   }
 
@@ -141,7 +223,8 @@ export class SessionStore {
    */
   async getAccounts(): Promise<StoredAccount[]> {
     const store = this.loadStore();
-    return store.accounts;
+    // Return a shallow copy to prevent external mutation of internal state
+    return [...store.accounts];
   }
 
   /**
@@ -227,7 +310,7 @@ export class SessionStore {
     try {
       // Encrypt the session
       const encryptedSession = await encryptSession(
-        session,
+        session as unknown as Record<string, unknown>,
         this.encryptionKey
       );
 
@@ -288,6 +371,8 @@ export class SessionStore {
       };
     }
 
+    const account = store.accounts[accountIndex];
+
     // Remove the account
     store.accounts.splice(accountIndex, 1);
 
@@ -297,6 +382,11 @@ export class SessionStore {
     }
 
     this.saveStore(store);
+
+    // Invalidate email cache for this account
+    const cacheKey = `${account.id}:${account.encryptedSession.length}`;
+    this.emailCache.delete(cacheKey);
+
     this.emit({ type: 'account-removed', accountId });
 
     return {
@@ -397,6 +487,10 @@ export class SessionStore {
     }
 
     try {
+      // Invalidate old cache entry before updating
+      const oldCacheKey = `${account.id}:${account.encryptedSession.length}`;
+      this.emailCache.delete(oldCacheKey);
+
       // Re-encrypt the updated session
       account.encryptedSession = await encryptSession(
         session,
@@ -432,6 +526,14 @@ export class SessionStore {
   async clearAll(): Promise<void> {
     const store = this.createEmptyStore();
     this.saveStore(store);
+
+    // Clear the encryption key from storage and memory
+    const keyStorageKey = `${this.config.storageKey}_encryption_key`;
+    localStorage.removeItem(keyStorageKey);
+    this.encryptionKey = null;
+
+    // Clear the email cache
+    this.emailCache.clear();
   }
 
   /**
@@ -464,6 +566,9 @@ export class SessionStore {
    * Get accounts with email addresses from decrypted sessions
    * This decrypts each session to extract the email for display purposes
    *
+   * Uses an LRU cache to avoid repeated decryption of the same sessions.
+   * Cache is invalidated when sessions are updated or deleted.
+   *
    * SECURITY NOTE: While emails are encrypted at rest, this method decrypts them for display.
    * XSS attacks that can call this method can still access email addresses.
    * This approach is more secure than storing emails in plaintext metadata.
@@ -478,15 +583,32 @@ export class SessionStore {
     const accounts = await this.getAccounts();
     const accountsWithEmail = await Promise.all(
       accounts.map(async (account) => {
+        // Create cache key from account ID and encrypted session length
+        // This allows us to detect when the session has changed
+        const cacheKey = `${account.id}:${account.encryptedSession.length}`;
+        const cachedEmail = this.emailCache.get(cacheKey);
+
+        if (cachedEmail) {
+          return {
+            ...account,
+            email: cachedEmail,
+          };
+        }
+
         try {
           const decrypted = (await decryptSession(
             account.encryptedSession,
             this.encryptionKey!
           )) as { user: { email?: string } };
 
+          const email = decrypted.user?.email || 'Unknown';
+
+          // Cache the decrypted email
+          this.emailCache.set(cacheKey, email);
+
           return {
             ...account,
-            email: decrypted.user?.email || 'Unknown',
+            email,
           };
         } catch (error) {
           console.error('Failed to decrypt session for email:', error);

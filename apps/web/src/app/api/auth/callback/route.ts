@@ -3,11 +3,12 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const queryParamsSchema = z.object({
-  code: z.string().optional(),
-  returnUrl: z.string().optional(),
-  nextUrl: z.string().optional(),
+  code: z.string().nullable(),
+  returnUrl: z.string().nullable(),
+  nextUrl: z.string().nullable(),
   multiAccount: z
     .string()
+    .nullable()
     .transform((val) => val === 'true')
     .pipe(z.boolean())
     .optional()
@@ -66,17 +67,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(new URL('/onboarding', requestUrl.origin));
   }
 
-  const { code, returnUrl, nextUrl, multiAccount } = parseResult.data;
+  const { code: _code, returnUrl: _returnUrl, nextUrl: _nextUrl, multiAccount } = parseResult.data;
 
   // Normalize nextUrl by removing leading slashes to avoid double slashes
-  const normalizedNextUrl = nextUrl?.replace(/^\/+/, '');
+  const normalizedNextUrl = _nextUrl?.replace(/^\/+/, '');
 
-  if (code) {
+  if (_code) {
     try {
       // Create and await the Supabase client
       const supabase = await createClient();
       // Exchange the code for a session
-      await supabase.auth.exchangeCodeForSession(code);
+      await supabase.auth.exchangeCodeForSession(_code);
     } catch (error) {
       // Log error server-side only (not in response)
       console.error('[auth/callback] Failed to exchange code for session:', error);
@@ -90,36 +91,40 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   // If in multi-account mode, redirect to the add-account page
   if (multiAccount) {
     const addAccountUrl = new URL('/add-account', requestUrl.origin);
-    if (returnUrl) {
+    if (_returnUrl) {
       // Validate returnUrl before passing it along
-      const validatedUrl = validateRedirectUrl(returnUrl, requestUrl.origin);
+      // validateRedirectUrl already returns a decoded, normalized URL
+      const validatedUrl = validateRedirectUrl(_returnUrl, requestUrl.origin);
       if (validatedUrl) {
-        addAccountUrl.searchParams.set('returnUrl', encodeURIComponent(validatedUrl));
+        // Set the raw validated URL - searchParams.set() will handle encoding automatically
+        addAccountUrl.searchParams.set('returnUrl', validatedUrl);
       }
     }
+    // Pass URL object directly to NextResponse.redirect
     return NextResponse.redirect(addAccountUrl);
   }
 
   // Determine the redirect URL after authentication
-  let redirectTo: string;
+  let redirectUrl: URL;
 
-  if (returnUrl) {
-    const validatedUrl = validateRedirectUrl(returnUrl, requestUrl.origin);
+  if (_returnUrl) {
+    const validatedUrl = validateRedirectUrl(_returnUrl, requestUrl.origin);
     if (validatedUrl) {
-      redirectTo = validatedUrl;
+      // Create URL object from validated path or absolute URL
+      redirectUrl = validatedUrl.startsWith('http')
+        ? new URL(validatedUrl)
+        : new URL(validatedUrl, requestUrl.origin);
     } else {
       // Invalid or unsafe URL, fall back to safe default
-      redirectTo = normalizedNextUrl ? `/${normalizedNextUrl}` : '/onboarding';
+      const fallbackPath = normalizedNextUrl ? `/${normalizedNextUrl}` : '/onboarding';
+      redirectUrl = new URL(fallbackPath, requestUrl.origin);
     }
   } else {
     // Use nextUrl or fall back to default
-    redirectTo = normalizedNextUrl ? `/${normalizedNextUrl}` : '/onboarding';
+    const defaultPath = normalizedNextUrl ? `/${normalizedNextUrl}` : '/onboarding';
+    redirectUrl = new URL(defaultPath, requestUrl.origin);
   }
 
-  // Redirect to the determined URL
-  return NextResponse.redirect(
-    redirectTo.startsWith('http')
-      ? redirectTo
-      : new URL(redirectTo, requestUrl.origin)
-  );
+  // Pass URL object directly to NextResponse.redirect for consistent handling
+  return NextResponse.redirect(redirectUrl);
 }

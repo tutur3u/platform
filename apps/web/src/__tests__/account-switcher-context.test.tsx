@@ -1,22 +1,23 @@
-import { renderHook, waitFor } from '@testing-library/react';
-import type { Session } from '@supabase/supabase-js';
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import {
   AccountSwitcherProvider,
   useAccountSwitcher,
 } from '@/context/account-switcher-context';
+import { renderHook, waitFor } from '@testing-library/react';
+import type { SupabaseSession } from '@tuturuuu/supabase/next/user';
 import type { ReactNode } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock functions - Use vi.hoisted() to ensure they're available in vi.mock factories
-const { mockGetSession, mockSetSession, mockSignOut, mockSwitchClientSession } = vi.hoisted(() => ({
-  mockGetSession: vi.fn(),
-  mockSetSession: vi.fn(),
-  mockSignOut: vi.fn(),
-  mockSwitchClientSession: vi.fn(),
-}));
+const { mockGetSession, mockSetSession, mockSignOut, mockSwitchClientSession } =
+  vi.hoisted(() => ({
+    mockGetSession: vi.fn(),
+    mockSetSession: vi.fn(),
+    mockSignOut: vi.fn(),
+    mockSwitchClientSession: vi.fn(),
+  }));
 
 // Mock session data
-const mockSession: Session = {
+const mockSession: SupabaseSession = {
   user: {
     id: 'user-1',
     email: 'user1@test.com',
@@ -35,7 +36,7 @@ const mockSession: Session = {
   token_type: 'bearer',
 };
 
-const mockSession2: Session = {
+const mockSession2: SupabaseSession = {
   ...mockSession,
   user: {
     ...mockSession.user,
@@ -155,12 +156,14 @@ describe('AccountSwitcherContext', () => {
       return { success: true };
     });
 
-    mockSessionStore.switchAccount.mockImplementation(async (accountId: string) => {
-      if (eventHandler) {
-        eventHandler({ type: 'account-switched', toId: accountId });
+    mockSessionStore.switchAccount.mockImplementation(
+      async (accountId: string) => {
+        if (eventHandler) {
+          eventHandler({ type: 'account-switched', toId: accountId });
+        }
+        return { success: true };
       }
-      return { success: true };
-    });
+    );
 
     mockSessionStore.on.mockImplementation((handler: (event: any) => void) => {
       eventHandler = handler;
@@ -219,7 +222,9 @@ describe('AccountSwitcherContext', () => {
         },
       };
 
-      mockSessionStore.getAccountsWithEmail.mockResolvedValue([mockAccountWithEmail]);
+      mockSessionStore.getAccountsWithEmail.mockResolvedValue([
+        mockAccountWithEmail,
+      ]);
       mockSessionStore.getActiveAccountId.mockReturnValue('user-1');
 
       const { result } = renderHook(() => useAccountSwitcher(), { wrapper });
@@ -254,8 +259,13 @@ describe('AccountSwitcherContext', () => {
         },
       };
 
-      mockSessionStore.addAccount.mockResolvedValue({ success: true, accountId: 'user-1' });
-      mockSessionStore.getAccountsWithEmail.mockResolvedValue([mockAccountWithEmail]);
+      mockSessionStore.addAccount.mockResolvedValue({
+        success: true,
+        accountId: 'user-1',
+      });
+      mockSessionStore.getAccountsWithEmail.mockResolvedValue([
+        mockAccountWithEmail,
+      ]);
 
       const addResult = await result.current.addAccount(mockSession, {
         switchImmediately: false,
@@ -289,8 +299,13 @@ describe('AccountSwitcherContext', () => {
       };
 
       // First addition succeeds
-      mockSessionStore.addAccount.mockResolvedValueOnce({ success: true, accountId: 'user-1' });
-      mockSessionStore.getAccountsWithEmail.mockResolvedValue([mockAccountWithEmail]);
+      mockSessionStore.addAccount.mockResolvedValueOnce({
+        success: true,
+        accountId: 'user-1',
+      });
+      mockSessionStore.getAccountsWithEmail.mockResolvedValue([
+        mockAccountWithEmail,
+      ]);
 
       await result.current.addAccount(mockSession, {
         switchImmediately: false,
@@ -303,7 +318,7 @@ describe('AccountSwitcherContext', () => {
       // Second addition fails (duplicate)
       mockSessionStore.addAccount.mockResolvedValueOnce({
         success: false,
-        error: 'Account already exists'
+        error: 'Account already exists',
       });
 
       const duplicateResult = await result.current.addAccount(mockSession, {
@@ -334,8 +349,13 @@ describe('AccountSwitcherContext', () => {
         },
       };
 
-      mockSessionStore.addAccount.mockResolvedValue({ success: true, accountId: 'user-1' });
-      mockSessionStore.getAccountsWithEmail.mockResolvedValue([mockAccountWithEmail]);
+      mockSessionStore.addAccount.mockResolvedValue({
+        success: true,
+        accountId: 'user-1',
+      });
+      mockSessionStore.getAccountsWithEmail.mockResolvedValue([
+        mockAccountWithEmail,
+      ]);
       mockSessionStore.getActiveAccountId.mockReturnValue('user-1');
 
       await result.current.addAccount(mockSession, {
@@ -369,8 +389,13 @@ describe('AccountSwitcherContext', () => {
       };
 
       // Add account first
-      mockSessionStore.addAccount.mockResolvedValue({ success: true, accountId: 'user-1' });
-      mockSessionStore.getAccountsWithEmail.mockResolvedValue([mockAccountWithEmail]);
+      mockSessionStore.addAccount.mockResolvedValue({
+        success: true,
+        accountId: 'user-1',
+      });
+      mockSessionStore.getAccountsWithEmail.mockResolvedValue([
+        mockAccountWithEmail,
+      ]);
 
       await result.current.addAccount(mockSession, {
         switchImmediately: false,
@@ -429,7 +454,10 @@ describe('AccountSwitcherContext', () => {
       mockSessionStore.addAccount
         .mockResolvedValueOnce({ success: true, accountId: 'user-1' })
         .mockResolvedValueOnce({ success: true, accountId: 'user-2' });
-      mockSessionStore.getAccountsWithEmail.mockResolvedValue([mockAccount1, mockAccount2]);
+      mockSessionStore.getAccountsWithEmail.mockResolvedValue([
+        mockAccount1,
+        mockAccount2,
+      ]);
       mockSessionStore.getActiveAccountId.mockReturnValue('user-1');
 
       await result.current.addAccount(mockSession, {
@@ -448,7 +476,9 @@ describe('AccountSwitcherContext', () => {
       mockSessionStore.removeAccount.mockResolvedValue({ success: true });
       mockSessionStore.getAccounts.mockResolvedValue([mockAccount2]);
       mockSessionStore.getAccountsWithEmail.mockResolvedValue([mockAccount2]);
-      mockSessionStore.getAccountSession.mockResolvedValue({ session: mockSession2 });
+      mockSessionStore.getAccountSession.mockResolvedValue({
+        session: mockSession2,
+      });
       mockSessionStore.getActiveAccountId.mockReturnValue('user-2');
 
       await result.current.removeAccount('user-1');
@@ -496,7 +526,10 @@ describe('AccountSwitcherContext', () => {
       mockSessionStore.addAccount
         .mockResolvedValueOnce({ success: true, accountId: 'user-1' })
         .mockResolvedValueOnce({ success: true, accountId: 'user-2' });
-      mockSessionStore.getAccountsWithEmail.mockResolvedValue([mockAccount1, mockAccount2]);
+      mockSessionStore.getAccountsWithEmail.mockResolvedValue([
+        mockAccount1,
+        mockAccount2,
+      ]);
       mockSessionStore.getActiveAccountId.mockReturnValue('user-1');
 
       await result.current.addAccount(mockSession, {
@@ -512,7 +545,9 @@ describe('AccountSwitcherContext', () => {
       });
 
       // Switch to second account
-      mockSessionStore.getAccountSession.mockResolvedValue({ session: mockSession2 });
+      mockSessionStore.getAccountSession.mockResolvedValue({
+        session: mockSession2,
+      });
       mockSessionStore.getActiveAccountId.mockReturnValue('user-2');
 
       await result.current.switchAccount('user-2');
@@ -541,8 +576,13 @@ describe('AccountSwitcherContext', () => {
         },
       };
 
-      mockSessionStore.addAccount.mockResolvedValue({ success: true, accountId: 'user-1' });
-      mockSessionStore.getAccountsWithEmail.mockResolvedValue([mockAccountWithEmail]);
+      mockSessionStore.addAccount.mockResolvedValue({
+        success: true,
+        accountId: 'user-1',
+      });
+      mockSessionStore.getAccountsWithEmail.mockResolvedValue([
+        mockAccountWithEmail,
+      ]);
       mockSessionStore.getActiveAccountId.mockReturnValue('user-1');
 
       await result.current.addAccount(mockSession, {
@@ -555,10 +595,11 @@ describe('AccountSwitcherContext', () => {
 
       mockSessionStore.switchAccount.mockResolvedValue({
         success: false,
-        error: 'Account not found'
+        error: 'Account not found',
       });
 
-      const switchResult = await result.current.switchAccount('non-existent-id');
+      const switchResult =
+        await result.current.switchAccount('non-existent-id');
 
       expect(switchResult.success).toBe(false);
       expect(result.current.activeAccountId).toBe('user-1');
@@ -601,7 +642,10 @@ describe('AccountSwitcherContext', () => {
       mockSessionStore.addAccount
         .mockResolvedValueOnce({ success: true, accountId: 'user-1' })
         .mockResolvedValueOnce({ success: true, accountId: 'user-2' });
-      mockSessionStore.getAccountsWithEmail.mockResolvedValue([mockAccount1, mockAccount2]);
+      mockSessionStore.getAccountsWithEmail.mockResolvedValue([
+        mockAccount1,
+        mockAccount2,
+      ]);
       mockSessionStore.getActiveAccountId.mockReturnValue('user-1');
 
       await result.current.addAccount(mockSession, {
@@ -620,7 +664,9 @@ describe('AccountSwitcherContext', () => {
       mockSessionStore.getAccounts.mockResolvedValue([mockAccount2]);
       mockSessionStore.removeAccount.mockResolvedValue({ success: true });
       mockSessionStore.getAccountsWithEmail.mockResolvedValue([mockAccount2]);
-      mockSessionStore.getAccountSession.mockResolvedValue({ session: mockSession2 });
+      mockSessionStore.getAccountSession.mockResolvedValue({
+        session: mockSession2,
+      });
       mockSessionStore.getActiveAccountId.mockReturnValue('user-2');
 
       await result.current.logout();
@@ -667,7 +713,10 @@ describe('AccountSwitcherContext', () => {
       mockSessionStore.addAccount
         .mockResolvedValueOnce({ success: true, accountId: 'user-1' })
         .mockResolvedValueOnce({ success: true, accountId: 'user-2' });
-      mockSessionStore.getAccountsWithEmail.mockResolvedValue([mockAccount1, mockAccount2]);
+      mockSessionStore.getAccountsWithEmail.mockResolvedValue([
+        mockAccount1,
+        mockAccount2,
+      ]);
 
       await result.current.addAccount(mockSession, {
         switchImmediately: false,
@@ -714,8 +763,13 @@ describe('AccountSwitcherContext', () => {
         },
       };
 
-      mockSessionStore.addAccount.mockResolvedValue({ success: true, accountId: 'user-1' });
-      mockSessionStore.getAccountsWithEmail.mockResolvedValue([mockAccountWithEmail]);
+      mockSessionStore.addAccount.mockResolvedValue({
+        success: true,
+        accountId: 'user-1',
+      });
+      mockSessionStore.getAccountsWithEmail.mockResolvedValue([
+        mockAccountWithEmail,
+      ]);
       mockSessionStore.getActiveAccountId.mockReturnValue('user-1');
 
       await result.current.addAccount(mockSession, {
@@ -736,17 +790,26 @@ describe('AccountSwitcherContext', () => {
         },
       };
 
-      mockSessionStore.updateAccountMetadata.mockResolvedValue({ success: true });
-      mockSessionStore.getAccountsWithEmail.mockResolvedValue([updatedMockAccount]);
+      mockSessionStore.updateAccountMetadata.mockResolvedValue({
+        success: true,
+      });
+      mockSessionStore.getAccountsWithEmail.mockResolvedValue([
+        updatedMockAccount,
+      ]);
 
-      await result.current.updateWorkspaceContext('workspace-123', '/workspace-123/dashboard');
+      await result.current.updateWorkspaceContext(
+        'workspace-123',
+        '/workspace-123/dashboard'
+      );
 
       // Refresh accounts to get updated metadata
       await result.current.refreshAccounts();
 
       await waitFor(() => {
         // Check that metadata was updated
-        const account = result.current.accounts.find(acc => acc.id === 'user-1');
+        const account = result.current.accounts.find(
+          (acc) => acc.id === 'user-1'
+        );
         expect(account?.metadata.lastWorkspaceId).toBe('workspace-123');
         expect(account?.metadata.lastRoute).toBe('/workspace-123/dashboard');
       });
@@ -773,8 +836,13 @@ describe('AccountSwitcherContext', () => {
         },
       };
 
-      mockSessionStore.addAccount.mockResolvedValue({ success: true, accountId: 'user-1' });
-      mockSessionStore.getAccountsWithEmail.mockResolvedValue([mockAccountWithEmail]);
+      mockSessionStore.addAccount.mockResolvedValue({
+        success: true,
+        accountId: 'user-1',
+      });
+      mockSessionStore.getAccountsWithEmail.mockResolvedValue([
+        mockAccountWithEmail,
+      ]);
 
       await result.current.addAccount(mockSession, {
         switchImmediately: false,
