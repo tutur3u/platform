@@ -6,7 +6,7 @@
     "build": "turbo run build",
     "build:web": "turbo run build -F @tuturuuu/web",
     "buildx": "turbo test build",
-    "dev": "turbo run dev --parallel",
+    "dev": "turbo run dev -F dev:web",
     "dev:docs": "cd apps/docs && mintlify dev",
     "dev:web": "turbo run dev -F @tuturuuu/web",
     "dev:external": "turbo run dev -F @tuturuuu/external",

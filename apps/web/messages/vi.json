@@ -4774,6 +4774,8 @@
     "add_account_description": "Đăng nhập bằng tài khoản khác để thêm vào trình chuyển đổi tài khoản",
     "preparing": "Đang chuẩn bị...",
     "switch_account": "Chuyển tài khoản",
+    "switch": "Chuyển",
+    "current_account": "Tài khoản hiện tại",
     "manage_accounts": "Quản lý tài khoản",
     "remove": "Xóa",
     "remove_account": "Xóa tài khoản",

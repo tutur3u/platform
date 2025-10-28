@@ -4724,6 +4724,8 @@
     "add_account_description": "Sign in with a different account to add it to your account switcher",
     "preparing": "Preparing...",
     "switch_account": "Switch Account",
+    "switch": "Switch",
+    "current_account": "Current Account",
     "manage_accounts": "Manage Accounts",
     "remove": "Remove",
     "remove_account": "Remove account",

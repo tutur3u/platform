@@ -1,7 +1,7 @@
 'use client';
 
 import { useAccountSwitcher } from '@/context/account-switcher-context';
-import { Check, Loader2, Plus, Search, Trash2 } from '@tuturuuu/icons';
+import { Check, Loader2, Plus, Trash2 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -40,7 +40,6 @@ export function AccountSwitcherModal({
   } = useAccountSwitcher();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedIndex, setSelectedIndex] = useState(0);
 
   // Filter accounts based on search
   const filteredAccounts = accounts.filter((account) => {
@@ -50,16 +49,10 @@ export function AccountSwitcherModal({
     return displayName.includes(searchLower) || email.includes(searchLower);
   });
 
-  // Reset selection when search changes
-  useEffect(() => {
-    if (searchQuery) setSelectedIndex(0);
-  }, [searchQuery]);
-
   // Reset when modal closes
   useEffect(() => {
     if (!open) {
       setSearchQuery('');
-      setSelectedIndex(0);
     }
   }, [open]);
 
@@ -97,80 +90,24 @@ export function AccountSwitcherModal({
     });
   };
 
-  // Keyboard navigation
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    const totalItems = filteredAccounts.length + 1; // +1 for "Add account" option
-
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev + 1) % totalItems);
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev - 1 + totalItems) % totalItems);
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (selectedIndex < filteredAccounts.length) {
-          // Switch to selected account
-          handleSwitchAccount(filteredAccounts[selectedIndex]!.id);
-        } else {
-          // Add new account
-          handleAddAccount();
-        }
-        break;
-      case '1':
-      case '2':
-      case '3':
-      case '4':
-      case '5':
-      case '6':
-      case '7':
-      case '8':
-      case '9': {
-        // Quick switch with number keys (if not typing in search)
-        const target = e.target as HTMLElement;
-        if (target.tagName !== 'INPUT') {
-          const index = Number.parseInt(e.key, 10) - 1;
-          if (index < filteredAccounts.length) {
-            handleSwitchAccount(filteredAccounts[index]!.id);
-          }
-        }
-        break;
-      }
-      default:
-        break;
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg gap-6" onKeyDown={handleKeyDown}>
-        <DialogHeader className="space-y-3">
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-dynamic-purple to-dynamic-pink text-white shadow-sm">
-              <Search className="h-5 w-5" />
-            </div>
-            {t('account_switcher.switch_account')}
-          </DialogTitle>
-          <DialogDescription className="text-foreground/60">
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{t('account_switcher.switch_account')}</DialogTitle>
+          <DialogDescription>
             {t('account_switcher.switch_account_description')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Search input */}
-          <div className="relative">
-            <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-5 w-5 text-foreground/40" />
-            <Input
-              placeholder={t('account_switcher.search_accounts')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-12 border-2 pl-10 text-base focus-visible:border-dynamic-blue/50 focus-visible:ring-dynamic-blue/20"
-              autoFocus
-            />
-          </div>
+          <Input
+            placeholder={t('account_switcher.search_accounts')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            autoFocus
+          />
 
           {isLoading && (
             <div className="flex items-center justify-center p-8">
@@ -181,17 +118,15 @@ export function AccountSwitcherModal({
           {!isLoading && (
             <div className="max-h-[450px] space-y-2 overflow-y-auto">
               {filteredAccounts.length === 0 && searchQuery && (
-                <div className="flex flex-col items-center gap-2 p-12 text-center">
-                  <Search className="h-12 w-12 text-foreground/20" />
+                <div className="p-8 text-center">
                   <p className="text-foreground/60 text-sm">
                     {t('account_switcher.no_results')}
                   </p>
                 </div>
               )}
 
-              {filteredAccounts.map((account, index) => {
+              {filteredAccounts.map((account) => {
                 const isActive = account.id === activeAccountId;
-                const isSelected = selectedIndex === index;
                 const displayName =
                   account.metadata.displayName ||
                   account.email ||
@@ -210,22 +145,20 @@ export function AccountSwitcherModal({
                       onClick={() => handleSwitchAccount(account.id)}
                       disabled={isActive || isLoading}
                       className={cn(
-                        'group/card relative w-full rounded-xl border-2 p-4 text-left transition-all',
+                        'group/card relative w-full rounded-lg border p-3 text-left transition-all',
                         isActive
                           ? 'border-dynamic-green/50 bg-dynamic-green/5'
-                          : isSelected
-                            ? 'border-dynamic-blue/50 bg-dynamic-blue/5 shadow-md'
-                            : 'border-transparent hover:border-dynamic-blue/30 hover:bg-foreground/5',
+                          : 'border-transparent hover:border-foreground/20 hover:bg-foreground/5',
                         'cursor-pointer'
                       )}
                     >
                       <div className="flex items-start gap-3 pr-8">
-                        <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+                        <Avatar className="h-10 w-10">
                           <AvatarImage
                             src={account.metadata.avatarUrl}
                             alt={displayName}
                           />
-                          <AvatarFallback className="bg-linear-to-br from-dynamic-purple to-dynamic-pink font-semibold text-white">
+                          <AvatarFallback className="bg-foreground/10 font-medium">
                             {initials}
                           </AvatarFallback>
                         </Avatar>
@@ -236,10 +169,7 @@ export function AccountSwitcherModal({
                               {displayName}
                             </p>
                             {isActive && (
-                              <Badge
-                                variant="secondary"
-                                className="border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green"
-                              >
+                              <Badge variant="secondary" className="text-xs">
                                 <Check className="mr-1 h-3 w-3" />
                                 {t('account_switcher.active')}
                               </Badge>
@@ -265,22 +195,8 @@ export function AccountSwitcherModal({
                               </span>
                             )}
                           </div>
-
-                          {index < 9 && !isActive && (
-                            <div className="mt-1 flex items-center gap-1 text-foreground/30 text-xs">
-                              <kbd className="rounded bg-foreground/5 px-1.5 py-0.5 font-mono">
-                                {index + 1}
-                              </kbd>
-                              <span>to switch</span>
-                            </div>
-                          )}
                         </div>
                       </div>
-
-                      {/* Selection indicator */}
-                      {isSelected && !isActive && (
-                        <div className="-right-px -top-px absolute h-3 w-3 rounded-tr-xl rounded-bl-lg border-dynamic-blue/50 border-b-2 border-l-2 bg-dynamic-blue/20" />
-                      )}
                     </button>
 
                     {/* Remove account button (only show if more than 1 account) */}
@@ -307,18 +223,13 @@ export function AccountSwitcherModal({
               <button
                 type="button"
                 onClick={handleAddAccount}
-                className={cn(
-                  'group flex w-full items-center gap-3 rounded-xl border-2 p-4 transition-all',
-                  selectedIndex === filteredAccounts.length
-                    ? 'border-dynamic-blue/50 bg-dynamic-blue/5 shadow-md'
-                    : 'border-foreground/20 border-dashed hover:border-dynamic-blue/30 hover:bg-foreground/5'
-                )}
+                className="group flex w-full items-center gap-3 rounded-lg border border-dashed p-3 transition-all hover:border-foreground/30 hover:bg-foreground/5"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-br from-dynamic-blue to-dynamic-cyan text-white shadow-sm transition-transform group-hover:scale-110">
-                  <Plus className="h-5 w-5" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground/10">
+                  <Plus className="h-4 w-4" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-semibold text-sm">
+                  <p className="font-medium text-sm">
                     {t('account_switcher.add_account')}
                   </p>
                   <p className="text-foreground/60 text-xs">
@@ -328,26 +239,6 @@ export function AccountSwitcherModal({
               </button>
             </div>
           )}
-
-          {/* Keyboard hints */}
-          <div className="border-t pt-3 text-foreground/60 text-xs">
-            <div className="flex flex-wrap gap-x-4 gap-y-1">
-              <span>
-                <kbd className="rounded bg-foreground/10 px-1.5 py-0.5">↑↓</kbd>{' '}
-                {t('account_switcher.navigate')}
-              </span>
-              <span>
-                <kbd className="rounded bg-foreground/10 px-1.5 py-0.5">⏎</kbd>{' '}
-                {t('account_switcher.select')}
-              </span>
-              <span>
-                <kbd className="rounded bg-foreground/10 px-1.5 py-0.5">
-                  1-9
-                </kbd>{' '}
-                {t('account_switcher.quick_switch')}
-              </span>
-            </div>
-          </div>
         </div>
       </DialogContent>
     </Dialog>

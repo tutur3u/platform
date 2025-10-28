@@ -90,6 +90,9 @@ export function AccountSwitcherProvider({
   const [isLoading, setIsLoading] = useState(false);
   const initializingRef = useRef(false);
 
+  // Stable ref for refreshAccounts to prevent infinite loops
+  const refreshAccountsRef = useRef<(() => Promise<void>) | null>(null);
+
   // Refresh accounts list from store (with emails from encrypted sessions)
   const refreshAccounts = useCallback(async () => {
     if (!store) return;
@@ -112,41 +115,13 @@ export function AccountSwitcherProvider({
     setActiveAccountId(activeId);
   }, [store]);
 
-  // Handle store events
-  const handleStoreEvent = useCallback(
-    (event: SessionStoreEvent) => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[handleStoreEvent] Session store event type:', event.type);
-      }
-
-      if (event.type === 'account-added' || event.type === 'account-removed') {
-        // Refresh accounts list
-        if (process.env.NODE_ENV === 'development') {
-          console.log(
-            '[handleStoreEvent] Refreshing accounts due to:',
-            event.type
-          );
-        }
-        refreshAccounts();
-      } else if (event.type === 'account-switched') {
-        // Update active account
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[handleStoreEvent] Switching active account');
-        }
-        setActiveAccountId(event.toId);
-      } else if (event.type === 'session-refreshed') {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[handleStoreEvent] Session refreshed for account');
-        }
-        // Optionally refresh accounts to get updated metadata
-        refreshAccounts();
-      }
-    },
-    [refreshAccounts]
-  );
+  // Keep the ref updated with the latest refreshAccounts function
+  useEffect(() => {
+    refreshAccountsRef.current = refreshAccounts;
+  }, [refreshAccounts]);
 
   // Initialize the session store
-  // biome-ignore lint/correctness/useExhaustiveDependencies: refreshAccounts is included but other deps are intentionally omitted
+  // Runs only once on mount to prevent infinite loops
   useEffect(() => {
     // Prevent multiple simultaneous initializations
     if (initializingRef.current) return;
@@ -269,6 +244,42 @@ export function AccountSwitcherProvider({
         if (!mounted) return;
         setIsInitialized(true);
 
+        // Handle store events (defined inside useEffect to use stable ref)
+        const handleStoreEvent = (event: SessionStoreEvent) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.log(
+              '[handleStoreEvent] Session store event type:',
+              event.type
+            );
+          }
+
+          if (
+            event.type === 'account-added' ||
+            event.type === 'account-removed'
+          ) {
+            // Refresh accounts list
+            if (process.env.NODE_ENV === 'development') {
+              console.log(
+                '[handleStoreEvent] Refreshing accounts due to:',
+                event.type
+              );
+            }
+            refreshAccountsRef.current?.();
+          } else if (event.type === 'account-switched') {
+            // Update active account
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[handleStoreEvent] Switching active account');
+            }
+            setActiveAccountId(event.toId);
+          } else if (event.type === 'session-refreshed') {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[handleStoreEvent] Session refreshed for account');
+            }
+            // Optionally refresh accounts to get updated metadata
+            refreshAccountsRef.current?.();
+          }
+        };
+
         // Listen for store events (in-process)
         const unsubscribe = sessionStore.on(handleStoreEvent);
 
@@ -283,7 +294,7 @@ export function AccountSwitcherProvider({
                 '[storage event] Detected store change from other tab'
               );
             }
-            refreshAccounts();
+            refreshAccountsRef.current?.();
           }
         };
 
@@ -309,7 +320,7 @@ export function AccountSwitcherProvider({
       if (timeoutId !== undefined) clearTimeout(timeoutId);
       unsubscribePromise.then((unsubscribe) => unsubscribe?.());
     };
-  }, [refreshAccounts]); // Include refreshAccounts for storage event handler
+  }, [isInitialized, pathname.includes]); // Run only once on mount - event handlers use stable refreshAccountsRef
 
   // Handle account switch navigation
   const handleAccountSwitch = useCallback(
