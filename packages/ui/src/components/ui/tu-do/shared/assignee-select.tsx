@@ -177,7 +177,7 @@ export function AssigneeSelect({ taskId, assignees = [] }: Props) {
       });
     },
     onSettled: () => {
-      // Intentionally left blank to keep popover open for multiple selections
+      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
     },
   });
 
