@@ -52,7 +52,7 @@ if (typeof window !== 'undefined') {
         },
         key: (index: number) => {
           const keys = Object.keys(store);
-          return keys[index] || null;
+          return keys[index] ?? null;
         },
       };
     })();
