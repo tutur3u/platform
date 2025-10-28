@@ -165,7 +165,7 @@ export async function DELETE(
     // Verify board exists and belongs to workspace
     const { data: board, error: boardCheckError } = await supabase
       .from('workspace_boards')
-      .select('id, ws_id, archived_at')
+      .select('id, ws_id, archived_at, deleted_at')
       .eq('id', boardId)
       .eq('ws_id', wsId)
       .single();
@@ -181,6 +181,14 @@ export async function DELETE(
     if (!board.archived_at) {
       return NextResponse.json(
         { error: 'Board is not archived' },
+        { status: 400 }
+      );
+    }
+
+    // Check if board is deleted
+    if (board.deleted_at) {
+      return NextResponse.json(
+        { error: 'Cannot unarchive a deleted board' },
         { status: 400 }
       );
     }
