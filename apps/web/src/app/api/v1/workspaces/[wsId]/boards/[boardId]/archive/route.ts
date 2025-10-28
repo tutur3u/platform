@@ -8,10 +8,7 @@ const paramsSchema = z.object({
   boardId: z.string().uuid('Invalid board ID'),
 });
 
-interface BoardParams {
-  wsId: string;
-  boardId: string;
-}
+type BoardParams = z.infer<typeof paramsSchema>;
 
 export async function POST(
   _: NextRequest,

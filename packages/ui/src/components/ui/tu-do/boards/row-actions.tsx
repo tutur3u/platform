@@ -70,10 +70,9 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
       return res.json();
     },
     onSuccess: () => {
-      toast.success('Board moved to trash successfully');
-      setShowDeleteDialog(false);
+      toast.success('Board temporarily deleted');
       router.refresh();
-      queryClient.invalidateQueries({ queryKey: ['boards'] });
+      queryClient.invalidateQueries({ queryKey: ['boards', data.ws_id] });
     },
     onError: (error: Error) => {
       toast.error('Failed to delete board', {
@@ -105,9 +104,9 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
     },
     onSuccess: () => {
       toast.success('Board permanently deleted');
-      setShowPermanentDeleteDialog(false);
       router.refresh();
-      queryClient.invalidateQueries({ queryKey: ['boards'] });
+      setShowPermanentDeleteDialog(false);
+      queryClient.invalidateQueries({ queryKey: ['boards', data.ws_id] });
     },
     onError: (error: Error) => {
       toast.error('Failed to permanently delete board', {
@@ -139,9 +138,8 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
     },
     onSuccess: () => {
       toast.success('Board restored successfully');
-      setShowRestoreDialog(false);
       router.refresh();
-      queryClient.invalidateQueries({ queryKey: ['boards'] });
+      queryClient.invalidateQueries({ queryKey: ['boards', data.ws_id] });
     },
     onError: (error: Error) => {
       toast.error('Failed to restore board', {
@@ -171,9 +169,9 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
     },
     onSuccess: () => {
       toast.success('Board archived successfully');
-      setShowArchiveDialog(false);
       router.refresh();
-      queryClient.invalidateQueries({ queryKey: ['boards'] });
+      setShowArchiveDialog(false);
+      queryClient.invalidateQueries({ queryKey: ['boards', data.ws_id] });
     },
     onError: (error: Error) => {
       toast.error('Failed to archive board', {
@@ -204,8 +202,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
     onSuccess: () => {
       toast.success('Board unarchived successfully');
       setShowUnarchiveDialog(false);
-      router.refresh();
-      queryClient.invalidateQueries({ queryKey: ['boards'] });
+      queryClient.invalidateQueries({ queryKey: ['boards', data.ws_id] });
     },
     onError: (error: Error) => {
       toast.error('Failed to unarchive board', {
@@ -216,8 +213,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
 
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showPermanentDeleteDialog, setShowPermanentDeleteDialog] =
-    useState(false);
+  const [showPermanentDeleteDialog, setShowPermanentDeleteDialog] = useState(false);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showUnarchiveDialog, setShowUnarchiveDialog] = useState(false);
@@ -259,7 +255,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
                   }}
                 >
                   <RotateCcw className="mr-2 h-4 w-4" />
-                  Recover
+                  Restore
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -372,9 +368,12 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Move Board to Trash</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &quot;{data.name.slice(0, 20)}
-              ...&quot;? The board will be moved to trash and permanently
-              deleted after 30 days.
+               {(() => {
+                const name = data.name ?? '';
+                const truncated = name.length > 20;
+                const display = truncated ? `${name.slice(0, 20)}…` : name;
+                return <>Are you sure you want to delete &quot;{display}&quot;?</>;
+              })()}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
