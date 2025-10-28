@@ -201,6 +201,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
       toast.success('Board unarchived successfully');
       setShowUnarchiveDialog(false);
       queryClient.invalidateQueries({ queryKey: ['boards', data.ws_id] });
+      router.refresh();
     },
     onError: (error: Error) => {
       toast.error('Failed to unarchive board', {
