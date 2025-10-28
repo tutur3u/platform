@@ -13,9 +13,9 @@ import {
 } from '@tuturuuu/ui/card';
 import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-export default function AddAccountPage() {
+export default function AddAccountPage(): JSX.Element {
   const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -24,13 +24,17 @@ export default function AddAccountPage() {
     'loading'
   );
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const hasRun = useRef(false);
 
   useEffect(() => {
-    if (!isInitialized) return;
+    if (!isInitialized || hasRun.current) return;
+    hasRun.current = true;
 
     const handleAddAccount = async () => {
       try {
-        console.log('[AddAccountPage] Starting to add account...');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[AddAccountPage] Starting account add flow');
+        }
 
         // Get the current session from Supabase
         const supabase = createClient();
@@ -39,10 +43,12 @@ export default function AddAccountPage() {
           error,
         } = await supabase.auth.getSession();
 
-        console.log(
-          '[AddAccountPage] Current session:',
-          session ? { id: session.user.id, email: session.user.email } : null
-        );
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            '[AddAccountPage] Session status:',
+            session ? 'present' : 'absent'
+          );
+        }
 
         if (error || !session) {
           console.error('[AddAccountPage] Error getting session:', error);
@@ -52,12 +58,16 @@ export default function AddAccountPage() {
         }
 
         // Add the account to the store
-        console.log('[AddAccountPage] Adding account to store...');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[AddAccountPage] Adding account to store');
+        }
         const result = await addAccount(session, {
           switchImmediately: true,
         });
 
-        console.log('[AddAccountPage] Add account result:', result);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[AddAccountPage] Account add result:', result.success);
+        }
 
         // If account already exists, treat it as success (just switch to it)
         const accountAlreadyExists =
@@ -65,20 +75,51 @@ export default function AddAccountPage() {
           result.error?.toLowerCase().includes('already exists');
 
         if (result.success || accountAlreadyExists) {
-          if (accountAlreadyExists) {
+          if (accountAlreadyExists && process.env.NODE_ENV === 'development') {
             console.log(
-              '[AddAccountPage] Account already exists, treating as success and redirecting'
+              '[AddAccountPage] Account already exists, redirecting'
             );
           }
 
           // Get the return URL from query params
           const returnUrl = searchParams.get('returnUrl');
-          const redirectUrl = returnUrl ? decodeURIComponent(returnUrl) : '/';
+          let redirectUrl = '/';
 
-          console.log(
-            '[AddAccountPage] Redirecting immediately to:',
-            redirectUrl
-          );
+          if (returnUrl) {
+            try {
+              const decodedUrl = decodeURIComponent(returnUrl);
+
+              // Validate the URL to prevent open redirects
+              if (decodedUrl.startsWith('/') && !decodedUrl.startsWith('//')) {
+                // Safe relative path
+                redirectUrl = decodedUrl;
+              } else {
+                // Absolute URL - validate origin
+                try {
+                  const parsedUrl = new URL(decodedUrl);
+                  if (parsedUrl.origin === window.location.origin) {
+                    redirectUrl = decodedUrl;
+                  } else {
+                    console.warn(
+                      '[AddAccountPage] Cross-origin redirect rejected:',
+                      decodedUrl
+                    );
+                  }
+                } catch {
+                  console.warn(
+                    '[AddAccountPage] Invalid absolute URL:',
+                    decodedUrl
+                  );
+                }
+              }
+            } catch (error) {
+              console.warn('[AddAccountPage] Failed to decode returnUrl:', error);
+            }
+          }
+
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[AddAccountPage] Redirecting');
+          }
 
           // Redirect immediately without showing success UI
           window.location.href = redirectUrl;
@@ -94,7 +135,7 @@ export default function AddAccountPage() {
     };
 
     handleAddAccount();
-  }, [isInitialized, addAccount, searchParams]);
+  }, [isInitialized, addAccount]);
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">

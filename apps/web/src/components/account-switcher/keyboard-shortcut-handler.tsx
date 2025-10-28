@@ -3,13 +3,24 @@
 import { useEffect, useState } from 'react';
 import { AccountSwitcherModal } from './account-switcher-modal';
 
-export function AccountSwitcherKeyboardShortcut() {
+export function AccountSwitcherKeyboardShortcut(): JSX.Element {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd/Ctrl + Shift + A
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'A') {
+      // Ignore if typing in input fields or editable content
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Cmd/Ctrl + Shift + A (case-insensitive)
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
         e.preventDefault();
         setOpen(true);
       }

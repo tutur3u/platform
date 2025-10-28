@@ -4782,7 +4782,7 @@
     "no_results": "Không có tài khoản nào khớp với tìm kiếm",
     "search_accounts": "Tìm kiếm tài khoản...",
     "last_active": "Hoạt động lần cuối",
-    "last_workspace": "Không gian làm việc cuối",
+    "last_workspace": "Không gian làm việc gần nhất",
     "cannot_remove_active": "Không thể xóa tài khoản đang hoạt động",
     "adding_account": "Đang thêm tài khoản",
     "adding_account_description": "Vui lòng đợi trong khi chúng tôi thêm tài khoản của bạn...",

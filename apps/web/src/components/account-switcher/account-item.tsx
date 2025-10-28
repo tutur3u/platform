@@ -1,13 +1,13 @@
 'use client';
 
-import type { StoredAccount } from '@tuturuuu/auth';
+import type { StoredAccountWithEmail } from '@tuturuuu/auth';
 import { Check } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useTranslations } from 'next-intl';
 
 interface AccountItemProps {
-  account: StoredAccount;
+  account: StoredAccountWithEmail;
   isActive: boolean;
   onClick: () => void;
 }
@@ -15,8 +15,7 @@ interface AccountItemProps {
 export function AccountItem({ account, isActive, onClick }: AccountItemProps) {
   const t = useTranslations();
 
-  const displayName =
-    account.metadata.displayName || account.metadata.email || 'Unknown User';
+  const displayName = account.metadata.displayName || account.email || 'Unknown User';
   const initials = displayName
     .split(' ')
     .map((n) => n[0])
@@ -44,9 +43,9 @@ export function AccountItem({ account, isActive, onClick }: AccountItemProps) {
             </Badge>
           )}
         </div>
-        {account.metadata.email && (
+        {account.email && (
           <span className="text-xs text-foreground/60">
-            {account.metadata.email}
+            {account.email}
           </span>
         )}
       </div>

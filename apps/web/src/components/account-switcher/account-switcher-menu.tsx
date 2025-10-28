@@ -13,7 +13,6 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
 import { AccountItem } from './account-item';
 import { AddAccountButton } from './add-account-button';
 
@@ -23,8 +22,6 @@ interface AccountSwitcherMenuProps {
 
 export function AccountSwitcherMenu({ children }: AccountSwitcherMenuProps) {
   const t = useTranslations();
-  const params = useParams();
-  const locale = params?.locale || 'en';
   const { accounts, activeAccountId, isLoading, switchAccount } =
     useAccountSwitcher();
 
@@ -50,7 +47,7 @@ export function AccountSwitcherMenu({ children }: AccountSwitcherMenuProps) {
         )}
 
         {!isLoading && accounts.length === 0 && (
-          <div className="p-4 text-center text-sm text-foreground/60">
+          <div className="p-4 text-center text-foreground/60 text-sm">
             {t('account_switcher.no_accounts')}
           </div>
         )}
@@ -59,12 +56,17 @@ export function AccountSwitcherMenu({ children }: AccountSwitcherMenuProps) {
           <DropdownMenuGroup className="max-h-[400px] overflow-y-auto">
             <div className="space-y-1 p-2">
               {accounts.map((account) => (
-                <AccountItem
+                <DropdownMenuItem
                   key={account.id}
-                  account={account}
-                  isActive={account.id === activeAccountId}
-                  onClick={() => handleSwitchAccount(account.id)}
-                />
+                  asChild
+                  onSelect={() => handleSwitchAccount(account.id)}
+                >
+                  <AccountItem
+                    account={account}
+                    isActive={account.id === activeAccountId}
+                    onClick={() => handleSwitchAccount(account.id)}
+                  />
+                </DropdownMenuItem>
               ))}
             </div>
           </DropdownMenuGroup>
@@ -80,7 +82,7 @@ export function AccountSwitcherMenu({ children }: AccountSwitcherMenuProps) {
 
         <DropdownMenuItem asChild>
           <Link
-            href={`/${locale}/settings/account/accounts`}
+            href={`/settings/account/accounts`}
             className="flex items-center gap-2"
           >
             <Settings className="h-4 w-4" />

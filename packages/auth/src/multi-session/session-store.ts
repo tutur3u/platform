@@ -35,7 +35,6 @@ export class SessionStore {
     this.config = {
       maxAccounts: config.maxAccounts ?? DEFAULT_MAX_ACCOUNTS,
       storageKey: config.storageKey ?? DEFAULT_STORAGE_KEY,
-      autoRefreshInactive: config.autoRefreshInactive ?? true,
       encryptionKey: config.encryptionKey ?? '',
     };
   }
@@ -239,7 +238,6 @@ export class SessionStore {
         lastActiveAt: Date.now(),
         displayName: session.user.user_metadata?.display_name,
         avatarUrl: session.user.user_metadata?.avatar_url,
-        email: session.user.email,
       };
 
       // Create stored account
@@ -410,7 +408,6 @@ export class SessionStore {
         ...account.metadata,
         displayName: session.user.user_metadata?.display_name,
         avatarUrl: session.user.user_metadata?.avatar_url,
-        email: session.user.email,
       };
 
       this.saveStore(store);
@@ -458,9 +455,50 @@ export class SessionStore {
    */
   async getAccountsSortedByActivity(): Promise<StoredAccount[]> {
     const accounts = await this.getAccounts();
-    return accounts.sort(
+    return [...accounts].sort(
       (a, b) => b.metadata.lastActiveAt - a.metadata.lastActiveAt
     );
+  }
+
+  /**
+   * Get accounts with email addresses from decrypted sessions
+   * This decrypts each session to extract the email for display purposes
+   *
+   * SECURITY NOTE: While emails are encrypted at rest, this method decrypts them for display.
+   * XSS attacks that can call this method can still access email addresses.
+   * This approach is more secure than storing emails in plaintext metadata.
+   */
+  async getAccountsWithEmail(): Promise<
+    Array<StoredAccount & { email: string }>
+  > {
+    if (!this.encryptionKey) {
+      throw new Error('Store not initialized');
+    }
+
+    const accounts = await this.getAccounts();
+    const accountsWithEmail = await Promise.all(
+      accounts.map(async (account) => {
+        try {
+          const decrypted = (await decryptSession(
+            account.encryptedSession,
+            this.encryptionKey!
+          )) as { user: { email?: string } };
+
+          return {
+            ...account,
+            email: decrypted.user?.email || 'Unknown',
+          };
+        } catch (error) {
+          console.error('Failed to decrypt session for email:', error);
+          return {
+            ...account,
+            email: 'Unknown',
+          };
+        }
+      })
+    );
+
+    return accountsWithEmail;
   }
 
   /**

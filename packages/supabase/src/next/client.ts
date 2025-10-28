@@ -6,6 +6,8 @@ import { checkEnvVariables } from './common';
 const { url, key } = checkEnvVariables({ useSecretKey: false });
 type TypedSupabaseClient = SupabaseClient<Database>;
 
+// Using SupabaseClient<any> to allow dynamic client creation without schema constraints.
+// This is intentional for cases where the database schema type is determined at runtime.
 export function createDynamicClient(): SupabaseClient<any> {
   return createBrowserClient(url, key);
 }
@@ -18,14 +20,14 @@ export function createClient<T = Database>(): SupabaseClient<T> {
  * Create a Supabase client with an injected session
  * Used for multi-account support
  */
-export function createClientWithSession<T = Database>(
+export async function createClientWithSession<T = Database>(
   session: Session
-): SupabaseClient<T> {
+): Promise<SupabaseClient<T>> {
   const client = createBrowserClient<T>(url, key);
 
   // Set the session manually
   // This will override any existing session
-  client.auth.setSession({
+  await client.auth.setSession({
     access_token: session.access_token,
     refresh_token: session.refresh_token,
   });
@@ -39,6 +41,9 @@ export function createClientWithSession<T = Database>(
  * The old session remains valid and can be switched back to later
  */
 export async function switchClientSession(
+  // Using SupabaseClient<any> because this function accepts clients with any database schema type.
+  // The generic type cannot be expressed here as it comes from external callers with varied schemas.
+  // This is a safe boundary for the `any` type as session operations are schema-agnostic.
   client: SupabaseClient<any>,
   session: Session
 ): Promise<Session> {

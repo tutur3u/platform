@@ -7,6 +7,7 @@ import type {
   SessionStore,
   SessionStoreEvent,
   StoredAccount,
+  StoredAccountWithEmail,
   SwitchAccountOptions,
 } from '@tuturuuu/auth';
 import { createSessionStore } from '@tuturuuu/auth';
@@ -26,8 +27,8 @@ import {
 } from 'react';
 
 interface AccountSwitcherContextValue {
-  /** All stored accounts */
-  accounts: StoredAccount[];
+  /** All stored accounts with email (decrypted from session) */
+  accounts: StoredAccountWithEmail[];
   /** Currently active account ID */
   activeAccountId: string | null;
   /** Whether the store is initialized */
@@ -69,57 +70,68 @@ interface AccountSwitcherProviderProps {
 
 export function AccountSwitcherProvider({
   children,
-}: AccountSwitcherProviderProps) {
+}: AccountSwitcherProviderProps): JSX.Element {
   const router = useRouter();
   const pathname = usePathname();
   const [store, setStore] = useState<SessionStore | null>(null);
-  const [accounts, setAccounts] = useState<StoredAccount[]>([]);
+  const [accounts, setAccounts] = useState<StoredAccountWithEmail[]>([]);
   const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const initializingRef = useRef(false);
 
-  // Refresh accounts list from store
+  // Refresh accounts list from store (with emails from encrypted sessions)
   const refreshAccounts = useCallback(async () => {
     if (!store) return;
-    console.log('[refreshAccounts] Refreshing accounts...');
-    const storedAccounts = await store.getAccounts();
-    console.log(
-      '[refreshAccounts] Got accounts:',
-      storedAccounts.length,
-      storedAccounts.map((a) => ({ id: a.id, email: a.metadata.email }))
-    );
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[refreshAccounts] Refreshing accounts...');
+    }
+    const storedAccounts = await store.getAccountsWithEmail();
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        '[refreshAccounts] Loaded accounts count:',
+        storedAccounts.length
+      );
+    }
     setAccounts(storedAccounts);
 
     const activeId = store.getActiveAccountId();
-    console.log('[refreshAccounts] Active account ID:', activeId);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[refreshAccounts] Has active account:', !!activeId);
+    }
     setActiveAccountId(activeId);
   }, [store]);
 
   // Handle store events
   const handleStoreEvent = useCallback(
     (event: SessionStoreEvent) => {
-      console.log('[handleStoreEvent] Session store event:', event);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[handleStoreEvent] Session store event type:', event.type);
+      }
 
       if (event.type === 'account-added' || event.type === 'account-removed') {
         // Refresh accounts list
-        console.log(
-          '[handleStoreEvent] Refreshing accounts due to:',
-          event.type
-        );
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            '[handleStoreEvent] Refreshing accounts due to:',
+            event.type
+          );
+        }
         refreshAccounts();
       } else if (event.type === 'account-switched') {
         // Update active account
-        console.log(
-          '[handleStoreEvent] Switching active account to:',
-          event.toId
-        );
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            '[handleStoreEvent] Switching active account'
+          );
+        }
         setActiveAccountId(event.toId);
       } else if (event.type === 'session-refreshed') {
-        console.log(
-          '[handleStoreEvent] Session refreshed for account:',
-          event.accountId
-        );
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            '[handleStoreEvent] Session refreshed for account'
+          );
+        }
         // Optionally refresh accounts to get updated metadata
         refreshAccounts();
       }
@@ -128,14 +140,14 @@ export function AccountSwitcherProvider({
   );
 
   // Initialize the session store
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Only run once on mount
+  // biome-ignore lint/correctness/useExhaustiveDependencies: refreshAccounts is included but other deps are intentionally omitted
   useEffect(() => {
     // Prevent multiple simultaneous initializations
     if (initializingRef.current) return;
     initializingRef.current = true;
 
     let mounted = true;
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
     const initStore = async () => {
       try {
@@ -154,13 +166,14 @@ export function AccountSwitcherProvider({
 
         setStore(sessionStore);
 
-        // Load initial accounts
-        const storedAccounts = await sessionStore.getAccounts();
-        console.log(
-          'Loaded stored accounts:',
-          storedAccounts.length,
-          storedAccounts.map((a) => ({ id: a.id, email: a.metadata.email }))
-        );
+        // Load initial accounts (with emails from encrypted sessions)
+        const storedAccounts = await sessionStore.getAccountsWithEmail();
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            'Loaded stored accounts count:',
+            storedAccounts.length
+          );
+        }
         if (!mounted) return;
 
         setAccounts(storedAccounts);
@@ -171,12 +184,12 @@ export function AccountSwitcherProvider({
           data: { session: currentSession },
         } = await client.auth.getSession();
 
-        console.log(
-          'Current session:',
-          currentSession
-            ? { id: currentSession.user.id, email: currentSession.user.email }
-            : null
-        );
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            'Current session exists:',
+            !!currentSession
+          );
+        }
 
         // Only auto-add current session if not on login/auth pages
         const isAuthPage =
@@ -187,76 +200,103 @@ export function AccountSwitcherProvider({
           const currentUserId = currentSession.user.id;
           const storedActiveId = sessionStore.getActiveAccountId();
 
-          console.log('Stored active account ID:', storedActiveId);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Has stored active account:', !!storedActiveId);
+          }
 
           // Check if current session is in the store
           const currentAccountInStore = storedAccounts.some(
             (acc) => acc.id === currentUserId
           );
 
-          console.log('Current account in store?', currentAccountInStore);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Current account in store:', currentAccountInStore);
+          }
 
           // If current session is not in store and we're not on an auth page, add it
           if (!currentAccountInStore && !isAuthPage) {
-            console.log(
-              'Adding current session to store:',
-              currentUserId,
-              currentSession.user.email
-            );
+            if (process.env.NODE_ENV === 'development') {
+              console.log(
+                'Adding current session to store (not on auth page)'
+              );
+            }
             await sessionStore.addAccount(currentSession, {
               switchImmediately: true,
             });
             // Reload accounts - IMPORTANT: Update both store reference AND state
-            const updatedAccounts = await sessionStore.getAccounts();
-            console.log(
-              'After adding, accounts count:',
-              updatedAccounts.length
-            );
+            const updatedAccounts = await sessionStore.getAccountsWithEmail();
+            if (process.env.NODE_ENV === 'development') {
+              console.log(
+                'After adding, accounts count:',
+                updatedAccounts.length
+              );
+            }
             if (!mounted) return;
             setAccounts(updatedAccounts);
             setActiveAccountId(currentUserId);
           } else {
             // Even if account exists, make sure state is up to date
             // This fixes the issue where accounts don't refresh after adding
-            const currentAccounts = await sessionStore.getAccounts();
+            const currentAccounts = await sessionStore.getAccountsWithEmail();
             if (currentAccounts.length !== storedAccounts.length) {
-              console.log('Account count changed, refreshing state:', {
-                old: storedAccounts.length,
-                new: currentAccounts.length,
-              });
+              if (process.env.NODE_ENV === 'development') {
+                console.log('Account count changed, refreshing state:', {
+                  old: storedAccounts.length,
+                  new: currentAccounts.length,
+                });
+              }
               setAccounts(currentAccounts);
             }
 
             // If the current session doesn't match the stored active account,
             // update the store to match reality
             if (storedActiveId !== currentUserId) {
-              console.log(
-                'Syncing active account from',
-                storedActiveId,
-                'to',
-                currentUserId
-              );
+              if (process.env.NODE_ENV === 'development') {
+                console.log(
+                  'Syncing active account (mismatch detected)'
+                );
+              }
               await sessionStore.switchAccount(currentUserId);
             }
 
             setActiveAccountId(currentUserId);
           }
 
-          console.log('Set active account ID to:', currentUserId);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Set active account:', !!currentUserId);
+          }
         } else {
           setActiveAccountId(sessionStore.getActiveAccountId());
         }
 
-        clearTimeout(timeoutId);
+        if (timeoutId !== undefined) clearTimeout(timeoutId);
         if (!mounted) return;
         setIsInitialized(true);
 
-        // Listen for store events
+        // Listen for store events (in-process)
         const unsubscribe = sessionStore.on(handleStoreEvent);
-        return unsubscribe;
+
+        // Listen for storage events from other tabs (cross-tab sync)
+        const handleStorageChange = (event: StorageEvent) => {
+          if (
+            event.key &&
+            event.key.includes('tuturuuu_multi_session_store') &&
+            event.newValue !== event.oldValue
+          ) {
+            console.log('[storage event] Detected store change from other tab');
+            refreshAccounts();
+          }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+
+        return () => {
+          unsubscribe?.();
+          window.removeEventListener('storage', handleStorageChange);
+        };
       } catch (error) {
         console.error('Failed to initialize session store:', error);
-        clearTimeout(timeoutId);
+        if (timeoutId !== undefined) clearTimeout(timeoutId);
         if (mounted) {
           setIsInitialized(true); // Mark as initialized even on error
         }
@@ -267,10 +307,10 @@ export function AccountSwitcherProvider({
     return () => {
       mounted = false;
       initializingRef.current = false;
-      clearTimeout(timeoutId);
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
       unsubscribePromise.then((unsubscribe) => unsubscribe?.());
     };
-  }, []); // Empty dependency array - only run once on mount
+  }, [refreshAccounts]); // Include refreshAccounts for storage event handler
 
   // Handle account switch navigation
   const handleAccountSwitch = useCallback(
@@ -304,32 +344,40 @@ export function AccountSwitcherProvider({
       } else {
         // Use remembered workspace and route if available
         const account = accounts.find((acc) => acc.id === accountId);
-        console.log(
-          '[handleAccountSwitch] Account metadata:',
-          account?.metadata
-        );
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            '[handleAccountSwitch] Account has metadata:',
+            !!account?.metadata
+          );
+        }
 
         if (account?.metadata.lastRoute) {
           // Use exact last route
           targetPath = account.metadata.lastRoute;
-          console.log(
-            '[handleAccountSwitch] Using remembered route:',
-            targetPath
-          );
+          if (process.env.NODE_ENV === 'development') {
+            console.log(
+              '[handleAccountSwitch] Using remembered route'
+            );
+          }
         } else if (account?.metadata.lastWorkspaceId) {
           // Construct workspace URL (locale will be auto-added by proxy if needed)
           targetPath = `/${account.metadata.lastWorkspaceId}`;
-          console.log(
-            '[handleAccountSwitch] Using remembered workspace:',
-            targetPath
-          );
+          if (process.env.NODE_ENV === 'development') {
+            console.log(
+              '[handleAccountSwitch] Using remembered workspace'
+            );
+          }
         } else {
-          console.log('[handleAccountSwitch] Using default path:', targetPath);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[handleAccountSwitch] Using default path');
+          }
         }
       }
 
       // Force a hard refresh to reload all server components
-      console.log('[handleAccountSwitch] Redirecting to:', targetPath);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[handleAccountSwitch] Redirecting...');
+      }
       window.location.href = targetPath;
     },
     [accounts, store]
@@ -346,24 +394,28 @@ export function AccountSwitcherProvider({
         return { success: false, error: 'Store not initialized' };
       }
 
-      console.log('[addAccount] Adding account:', {
-        userId: session.user.id,
-        email: session.user.email,
-        options,
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[addAccount] Adding account with options:', !!options);
+      }
 
       setIsLoading(true);
       try {
         const result = await store.addAccount(session, options);
-        console.log('[addAccount] Store result:', result);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[addAccount] Store result success:', result.success);
+        }
 
         if (result.success && result.accountId) {
-          console.log('[addAccount] Refreshing accounts after add...');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[addAccount] Refreshing accounts after add...');
+          }
           await refreshAccounts();
 
           // If switching immediately, handle navigation
           if (options?.switchImmediately) {
-            console.log('[addAccount] Switching immediately to new account...');
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[addAccount] Switching immediately to new account...');
+            }
             const switchOptions: SwitchAccountOptions | undefined =
               options?.workspaceId
                 ? { targetWorkspaceId: options.workspaceId }
@@ -465,14 +517,17 @@ export function AccountSwitcherProvider({
               'add-account',
             ].includes(workspaceId);
             if (!isSpecialRoute) {
-              console.log('[switchAccount] Saving workspace context:', {
-                workspaceId,
-                pathname,
-              });
-              await store.updateAccountMetadata(activeAccountId, {
-                lastWorkspaceId: workspaceId,
-                lastRoute: pathname,
-              });
+              if (process.env.NODE_ENV === 'development') {
+                console.log('[switchAccount] Saving workspace context');
+              }
+              // Verify account still exists before updating metadata
+              const account = await store.getAccount(activeAccountId);
+              if (account) {
+                await store.updateAccountMetadata(activeAccountId, {
+                  lastWorkspaceId: workspaceId,
+                  lastRoute: pathname,
+                });
+              }
             }
           }
         }
@@ -522,7 +577,9 @@ export function AccountSwitcherProvider({
 
     setIsLoading(true);
     try {
-      console.log('[logout] Logging out current account:', activeAccountId);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[logout] Logging out current account');
+      }
 
       // Get remaining accounts before removing current one
       const allAccounts = await store.getAccounts();
@@ -530,7 +587,9 @@ export function AccountSwitcherProvider({
         (acc) => acc.id !== activeAccountId
       );
 
-      console.log('[logout] Other accounts available:', otherAccounts.length);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[logout] Other accounts available:', otherAccounts.length);
+      }
 
       // Remove current account from store (this will auto-switch if others exist)
       await removeAccount(activeAccountId);
@@ -598,7 +657,7 @@ export function AccountSwitcherProvider({
 /**
  * Hook to access the account switcher context
  */
-export function useAccountSwitcher() {
+export function useAccountSwitcher(): AccountSwitcherContextValue {
   const context = useContext(AccountSwitcherContext);
   if (!context) {
     throw new Error(

@@ -7,6 +7,6 @@ export const metadata: Metadata = {
     'Manage multiple accounts in the Account area of your Tuturuuu workspace.',
 };
 
-export default function AccountsPage() {
+export default function AccountsPage(): JSX.Element {
   return <AccountManagementCard />;
 }

@@ -1,6 +1,19 @@
 /**
  * Session encryption utilities using Web Crypto API
  * Provides secure encryption/decryption for stored Supabase sessions
+ *
+ * SECURITY WARNING:
+ * - Encryption keys are stored in localStorage, making them vulnerable to XSS attacks
+ * - Keys derived from device fingerprint are NOT cryptographically secure secrets
+ * - Any XSS vulnerability can exfiltrate both keys and encrypted sessions
+ *
+ * Recommended hardening (not yet implemented):
+ * 1. Gate decryption with user-provided passcode (PBKDF2/Argon2), cached in memory only
+ * 2. Use WebAuthn platform authenticator to unwrap keys, requiring user presence
+ * 3. Use non-extractable CryptoKeys in memory with wrapped storage in IndexedDB
+ *
+ * Current implementation prioritizes convenience over security and should only be used
+ * for non-critical session management where the risk of XSS is acceptably low.
  */
 
 const ALGORITHM = 'AES-GCM';
@@ -63,11 +76,20 @@ export async function generateEncryptionKey(): Promise<string> {
 
 /**
  * Encrypt a session object
+ * @param sessionData - A serializable object to encrypt
+ * @param encryptionKey - The encryption key string
+ * @returns Base64-encoded encrypted data
  */
 export async function encryptSession(
-  sessionData: object,
+  sessionData: Record<string, unknown>,
   encryptionKey: string
 ): Promise<string> {
+  if (!isCryptoAvailable()) {
+    throw new Error(
+      'Session encryption failed: Web Crypto API is not available in this environment'
+    );
+  }
+
   try {
     const encoder = new TextEncoder();
     const data = encoder.encode(JSON.stringify(sessionData));
@@ -98,17 +120,28 @@ export async function encryptSession(
     return btoa(String.fromCharCode(...combined));
   } catch (error) {
     console.error('Failed to encrypt session:', error);
-    throw new Error('Session encryption failed');
+    throw new Error(
+      `Session encryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
 /**
  * Decrypt a session object
+ * @param encryptedData - Base64-encoded encrypted data
+ * @param encryptionKey - The encryption key string
+ * @returns The decrypted session object
  */
-export async function decryptSession(
+export async function decryptSession<T = Record<string, unknown>>(
   encryptedData: string,
   encryptionKey: string
-): Promise<object> {
+): Promise<T> {
+  if (!isCryptoAvailable()) {
+    throw new Error(
+      'Session decryption failed: Web Crypto API is not available in this environment'
+    );
+  }
+
   try {
     // Decode from base64
     const combined = Uint8Array.from(atob(encryptedData), (c) =>
@@ -133,10 +166,12 @@ export async function decryptSession(
     // Convert back to object
     const decoder = new TextDecoder();
     const jsonString = decoder.decode(decryptedData);
-    return JSON.parse(jsonString);
+    return JSON.parse(jsonString) as T;
   } catch (error) {
     console.error('Failed to decrypt session:', error);
-    throw new Error('Session decryption failed');
+    throw new Error(
+      `Session decryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 

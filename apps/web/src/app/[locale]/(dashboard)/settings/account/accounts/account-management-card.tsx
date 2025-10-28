@@ -14,19 +14,21 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getInitials } from '@tuturuuu/utils/name-helper';
 import { formatDistanceToNow } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { RemoveAccountDialog } from './remove-account-dialog';
 
-export function AccountManagementCard() {
+export function AccountManagementCard(): JSX.Element {
   const t = useTranslations();
   const { accounts, activeAccountId, isLoading, refreshAccounts } =
     useAccountSwitcher();
   const [accountToRemove, setAccountToRemove] = useState<string | null>(null);
 
   const sortedAccounts = [...accounts].sort(
-    (a, b) => b.metadata.lastActiveAt - a.metadata.lastActiveAt
+    (a, b) =>
+      (b.metadata.lastActiveAt ?? 0) - (a.metadata.lastActiveAt ?? 0)
   );
 
   return (
@@ -62,16 +64,13 @@ export function AccountManagementCard() {
                   account.metadata.displayName ||
                   account.metadata.email ||
                   'Unknown User';
-                const initials = displayName
-                  .split(' ')
-                  .map((n) => n[0])
-                  .join('')
-                  .toUpperCase()
-                  .substring(0, 2);
-                const lastActive = formatDistanceToNow(
-                  account.metadata.lastActiveAt,
-                  { addSuffix: true }
-                );
+                const initials = getInitials(displayName);
+                const lastActive =
+                  account.metadata.lastActiveAt != null
+                    ? formatDistanceToNow(account.metadata.lastActiveAt, {
+                        addSuffix: true,
+                      })
+                    : 'Never';
 
                 return (
                   <div key={account.id}>

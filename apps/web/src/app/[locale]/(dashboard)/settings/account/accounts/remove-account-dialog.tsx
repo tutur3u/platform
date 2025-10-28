@@ -26,7 +26,7 @@ export function RemoveAccountDialog({
   accountId,
   onClose,
   onSuccess,
-}: RemoveAccountDialogProps) {
+}: RemoveAccountDialogProps): JSX.Element {
   const t = useTranslations();
   const { accounts, removeAccount } = useAccountSwitcher();
   const [isRemoving, setIsRemoving] = useState(false);

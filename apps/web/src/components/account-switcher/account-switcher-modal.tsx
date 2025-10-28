@@ -46,7 +46,7 @@ export function AccountSwitcherModal({
   const filteredAccounts = accounts.filter((account) => {
     const searchLower = searchQuery.toLowerCase();
     const displayName = account.metadata.displayName?.toLowerCase() || '';
-    const email = account.metadata.email?.toLowerCase() || '';
+    const email = account.email?.toLowerCase() || '';
     return displayName.includes(searchLower) || email.includes(searchLower);
   });
 
@@ -76,7 +76,9 @@ export function AccountSwitcherModal({
     e.stopPropagation(); // Prevent triggering switch
     if (isLoading) return;
 
-    console.log('[AccountSwitcherModal] Removing account:', accountId);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[AccountSwitcherModal] Removing account (count before):', accounts.length);
+    }
     await removeAccount(accountId);
   };
 
@@ -91,15 +93,14 @@ export function AccountSwitcherModal({
         data: { session },
       } = await supabase.auth.getSession();
 
-      console.log(
-        '[AccountSwitcherModal] Current session:',
-        session ? { id: session.user.id, email: session.user.email } : null
-      );
-      console.log(
-        '[AccountSwitcherModal] Existing accounts:',
-        accounts.length,
-        accounts.map((a) => ({ id: a.id, email: a.metadata.email }))
-      );
+      if (process.env.NODE_ENV === 'development') {
+        console.log(
+          '[AccountSwitcherModal] Session exists:',
+          !!session,
+          'Accounts count:',
+          accounts.length
+        );
+      }
 
       if (session) {
         // Check if current session is already in the store
@@ -107,20 +108,26 @@ export function AccountSwitcherModal({
           (acc) => acc.id === session.user.id
         );
 
-        console.log(
-          '[AccountSwitcherModal] Current account in store?',
-          currentAccountExists
-        );
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            '[AccountSwitcherModal] Current account in store:',
+            currentAccountExists
+          );
+        }
 
         if (!currentAccountExists) {
           // Save current session before navigating away
-          console.log(
-            '[AccountSwitcherModal] Saving current session before navigating...'
-          );
+          if (process.env.NODE_ENV === 'development') {
+            console.log(
+              '[AccountSwitcherModal] Saving current session before navigating...'
+            );
+          }
           const result = await addAccount(session, {
             switchImmediately: false,
           });
-          console.log('[AccountSwitcherModal] Save result:', result);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[AccountSwitcherModal] Save result:', result.success);
+          }
 
           // Wait briefly to ensure localStorage write completes
           await new Promise((resolve) => setTimeout(resolve, 200));
@@ -130,16 +137,17 @@ export function AccountSwitcherModal({
       // Navigate to login with multiAccount flag
       const currentPath = window.location.pathname;
       const returnUrl = encodeURIComponent(currentPath);
-      console.log(
-        '[AccountSwitcherModal] Navigating to login with returnUrl:',
-        returnUrl
-      );
+      if (process.env.NODE_ENV === 'development') {
+        console.log(
+          '[AccountSwitcherModal] Navigating to login with return path'
+        );
+      }
       // Locale is auto-handled by proxy.ts, no need to include it
       window.location.href = `/login?multiAccount=true&returnUrl=${returnUrl}`;
     } catch (error) {
       console.error(
         '[AccountSwitcherModal] Failed to prepare for adding account:',
-        error
+        error instanceof Error ? error.message : 'Unknown error'
       );
       // Still navigate even if saving fails
       const currentPath = window.location.pathname;
@@ -244,9 +252,7 @@ export function AccountSwitcherModal({
                 const isActive = account.id === activeAccountId;
                 const isSelected = selectedIndex === index;
                 const displayName =
-                  account.metadata.displayName ||
-                  account.metadata.email ||
-                  'Unknown User';
+                  account.metadata.displayName || account.email || 'Unknown User';
                 const initials = getInitials(displayName);
                 const lastActive = account.metadata.lastActiveAt
                   ? formatDistanceToNow(account.metadata.lastActiveAt, {
@@ -297,9 +303,9 @@ export function AccountSwitcherModal({
                             )}
                           </div>
 
-                          {account.metadata.email && (
+                          {account.email && (
                             <p className="truncate text-foreground/60 text-xs">
-                              {account.metadata.email}
+                              {account.email}
                             </p>
                           )}
 

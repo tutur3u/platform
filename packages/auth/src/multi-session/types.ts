@@ -2,6 +2,9 @@ import type { Session, User } from '@supabase/supabase-js';
 
 /**
  * Metadata for a stored account including workspace and route context
+ *
+ * SECURITY NOTE: This metadata is stored in localStorage alongside encrypted sessions.
+ * Minimize PII exposure - email has been removed to reduce data leakage in case of XSS.
  */
 export interface AccountMetadata {
   /** Last workspace ID this account was viewing */
@@ -14,8 +17,6 @@ export interface AccountMetadata {
   displayName?: string;
   /** Avatar URL cached from user profile */
   avatarUrl?: string;
-  /** Email address */
-  email?: string;
 }
 
 /**
@@ -30,6 +31,15 @@ export interface StoredAccount {
   metadata: AccountMetadata;
   /** When this account was added */
   addedAt: number;
+}
+
+/**
+ * Extended account information including email from decrypted session
+ * Use this for displaying accounts in UI where email is needed
+ */
+export interface StoredAccountWithEmail extends StoredAccount {
+  /** Email address retrieved from encrypted session (requires decryption) */
+  email: string;
 }
 
 /**
@@ -48,8 +58,6 @@ export interface MultiSessionStore {
  * Options for switching accounts
  */
 export interface SwitchAccountOptions {
-  /** Whether to remember the current route */
-  rememberRoute?: boolean;
   /** Target workspace ID to navigate to (overrides remembered workspace) */
   targetWorkspaceId?: string;
   /** Target route to navigate to (overrides remembered route) */
@@ -92,8 +100,6 @@ export interface MultiSessionConfig {
   maxAccounts?: number;
   /** Storage key prefix */
   storageKey?: string;
-  /** Whether to auto-refresh inactive sessions */
-  autoRefreshInactive?: boolean;
   /** Encryption key for sessions (if not provided, will generate) */
   encryptionKey?: string;
 }

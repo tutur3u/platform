@@ -211,7 +211,6 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       nextUrl.searchParams.set('token', token);
       nextUrl.searchParams.set('originApp', 'web');
       nextUrl.searchParams.set('targetApp', returnApp);
-      nextUrl.searchParams.set('locale', locale);
       if (multiAccount === 'true') {
         nextUrl.searchParams.set('multiAccount', 'true');
       }
@@ -614,7 +613,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     const returnUrl = searchParams.get('returnUrl');
     const nextUrl = searchParams.get('nextUrl');
     const multiAccount = searchParams.get('multiAccount');
-    let redirectURL = `${window.location.origin}/${locale}/login`;
+    let redirectURL = `${window.location.origin}/login`;
     const searchParamsArray = [];
 
     if (returnUrl)
@@ -655,7 +654,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     const returnUrl = searchParams.get('returnUrl');
     const nextUrl = searchParams.get('nextUrl');
     const multiAccount = searchParams.get('multiAccount');
-    let redirectURL = `${window.location.origin}/${locale}/login`;
+    let redirectURL = `${window.location.origin}/login`;
     const searchParamsArray = [];
 
     if (returnUrl)
@@ -799,7 +798,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       <Card className="overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-xl">
         <CardContent className="space-y-6 p-8">
           <div className="space-y-2 text-center">
-            <h2 className="bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text font-bold text-2xl text-transparent dark:from-white dark:to-gray-300">
+            <h2 className="bg-linear-to-r from-gray-900 to-gray-600 bg-clip-text font-bold text-2xl text-transparent dark:from-white dark:to-gray-300">
               {t('login.two_factor_authentication')}
             </h2>
             <p className="text-balance text-muted-foreground text-sm">
@@ -871,7 +870,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       <CardContent className="space-y-6 p-8">
         <div className="space-y-2 text-center">
           {isExternal && (
-            <h2 className="bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text font-bold text-2xl text-transparent dark:from-white dark:to-gray-300">
+            <h2 className="bg-linear-to-r from-gray-900 to-gray-600 bg-clip-text font-bold text-2xl text-transparent dark:from-white dark:to-gray-300">
               {t('login.welcome')}
             </h2>
           )}
