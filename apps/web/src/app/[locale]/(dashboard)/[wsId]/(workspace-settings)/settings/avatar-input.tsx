@@ -273,57 +273,59 @@ export default function AvatarInput({ workspace, disabled }: Props) {
               </AvatarFallback>
             </Avatar>
           </div>
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <div>
-              <Label
-                htmlFor="file-upload"
-                className={cn(
-                  'inline-block rounded-md border p-3 px-4 text-center max-sm:w-full',
-                  isConverting
-                    ? 'cursor-not-allowed opacity-50'
-                    : 'cursor-pointer'
-                )}
-              >
-                {isConverting
-                  ? 'Converting...'
-                  : previewSrc
-                    ? t('settings-account.new_avatar')
-                    : t('settings-account.upload_avatar')}
-              </Label>
-              <input
-                id="file-upload"
-                type="file"
-                accept="image/png,image/jpeg,image/jpg,image/webp"
-                disabled={isConverting || disabled}
-                onChange={(e) => {
-                  if (e.target.files?.[0] && !isConverting) {
-                    handleFileSelect(e.target.files[0]);
-                  }
-                }}
-                className="hidden"
-              />
-            </div>
-            {previewSrc && (
-              <Button
-                variant="destructive"
-                onClick={removeAvatar}
-                type="button"
-              >
+          {!disabled && (
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <div>
+                <Label
+                  htmlFor="file-upload"
+                  className={cn(
+                    'inline-block rounded-md border p-3 px-4 text-center max-sm:w-full',
+                    isConverting
+                      ? 'cursor-not-allowed opacity-50'
+                      : 'cursor-pointer'
+                  )}
+                >
+                  {isConverting
+                    ? 'Converting...'
+                    : previewSrc
+                      ? t('settings-account.new_avatar')
+                      : t('settings-account.upload_avatar')}
+                </Label>
+                <input
+                  id="file-upload"
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                  disabled={isConverting || disabled}
+                  onChange={(e) => {
+                    if (e.target.files?.[0] && !isConverting) {
+                      handleFileSelect(e.target.files[0]);
+                    }
+                  }}
+                  className="hidden"
+                />
+              </div>
+              {previewSrc && (
+                <Button
+                  variant="destructive"
+                  onClick={removeAvatar}
+                  type="button"
+                >
+                  {saving ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    t('settings-account.remove_avatar')
+                  )}
+                </Button>
+              )}
+              <Button type="submit" disabled={saving || !form.getValues('file')}>
                 {saving ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  t('settings-account.remove_avatar')
+                  t('settings-account.save_avatar')
                 )}
               </Button>
-            )}
-            <Button type="submit" disabled={saving || !form.getValues('file')}>
-              {saving ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                t('settings-account.save_avatar')
-              )}
-            </Button>
-          </div>
+            </div>
+          )}
         </form>
       </Form>
     </>
