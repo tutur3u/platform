@@ -317,7 +317,10 @@ export default function AvatarInput({ workspace, disabled }: Props) {
                   )}
                 </Button>
               )}
-              <Button type="submit" disabled={saving || !form.getValues('file')}>
+              <Button
+                type="submit"
+                disabled={saving || !form.getValues('file')}
+              >
                 {saving ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
