@@ -284,7 +284,7 @@ export function CommandBar({
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={currentConfig.placeholder}
-          className="max-h-[280px] min-h-[150px] resize-none rounded-2xl border border-border/0 bg-linear-to-br from-background to-primary/15 px-4 pt-4 pb-14 text-base leading-relaxed transition-all duration-300 placeholder:text-muted-foreground/40 hover:shadow-xl focus-visible:border-white/10 focus-visible:shadow-[0_20px_50px_-15px_rgba(var(--primary)_/_0.15)] focus-visible:ring-0 sm:px-6 md:min-h-[200px] md:rounded-3xl md:px-8 md:pt-6 md:pb-16 md:text-lg lg:text-xl"
+          className="max-h-[280px] min-h-[150px] resize-none rounded-2xl border border-border/0 bg-linear-to-br from-background to-primary/15 px-4 pt-4 pb-14 text-base leading-relaxed transition-all duration-300 placeholder:text-muted-foreground/40 hover:shadow-xl focus-visible:border-white/10 focus-visible:shadow-[0_20px_50px_-15px_rgba(var(--primary)/0.15)] focus-visible:ring-0 sm:px-6 md:min-h-[200px] md:rounded-3xl md:px-8 md:pt-6 md:pb-16 md:text-lg lg:text-xl"
           disabled={isLoading}
         />
 
@@ -415,6 +415,7 @@ export function CommandBar({
                         <div className="py-1">
                           <div className="space-y-0.5 p-2">
                             <button
+                              type="button"
                               onClick={() => setActiveSettingsView('priority')}
                               className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                             >
@@ -445,6 +446,7 @@ export function CommandBar({
                             </button>
 
                             <button
+                              type="button"
                               onClick={() => setActiveSettingsView('dueDate')}
                               className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                             >
@@ -468,6 +470,7 @@ export function CommandBar({
                             {workspaceEstimationConfig?.estimation_type &&
                               availableEstimationIndices.length > 0 && (
                                 <button
+                                  type="button"
                                   onClick={() =>
                                     setActiveSettingsView('estimation')
                                   }
@@ -493,6 +496,7 @@ export function CommandBar({
 
                             {workspaceProjects.length > 0 && (
                               <button
+                                type="button"
                                 onClick={() =>
                                   setActiveSettingsView('projects')
                                 }
@@ -515,6 +519,7 @@ export function CommandBar({
 
                             {workspaceLabels.length > 0 && (
                               <button
+                                type="button"
                                 onClick={() => setActiveSettingsView('labels')}
                                 className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                               >
@@ -535,6 +540,7 @@ export function CommandBar({
 
                             {workspaceMembers.length > 0 && (
                               <button
+                                type="button"
                                 onClick={() =>
                                   setActiveSettingsView('assignees')
                                 }
@@ -561,6 +567,7 @@ export function CommandBar({
                         <div>
                           <div className="space-y-0.5 p-2">
                             <button
+                              type="button"
                               onClick={() => setActiveSettingsView('main')}
                               className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                             >
@@ -570,6 +577,7 @@ export function CommandBar({
                               </span>
                             </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 setPriority('critical');
                                 setActiveSettingsView('main');
@@ -587,6 +595,7 @@ export function CommandBar({
                               )}
                             </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 setPriority('high');
                                 setActiveSettingsView('main');
@@ -604,6 +613,7 @@ export function CommandBar({
                               )}
                             </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 setPriority('normal');
                                 setActiveSettingsView('main');
@@ -621,6 +631,7 @@ export function CommandBar({
                               )}
                             </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 setPriority('low');
                                 setActiveSettingsView('main');
@@ -639,6 +650,7 @@ export function CommandBar({
                             </button>
                             {priority && (
                               <button
+                                type="button"
                                 onClick={() => {
                                   setPriority(null);
                                   setActiveSettingsView('main');
@@ -656,6 +668,7 @@ export function CommandBar({
                         <div>
                           <div className="space-y-0.5 p-2">
                             <button
+                              type="button"
                               onClick={() => setActiveSettingsView('main')}
                               className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                             >
@@ -665,6 +678,7 @@ export function CommandBar({
                               </span>
                             </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 setDueDate(new Date());
                                 setActiveSettingsView('main');
@@ -681,6 +695,7 @@ export function CommandBar({
                               )}
                             </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 const tomorrow = new Date();
                                 tomorrow.setDate(tomorrow.getDate() + 1);
@@ -705,6 +720,7 @@ export function CommandBar({
                               })()}
                             </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 const nextWeek = new Date();
                                 nextWeek.setDate(nextWeek.getDate() + 7);
@@ -730,6 +746,7 @@ export function CommandBar({
                             </button>
                             {dueDate && (
                               <button
+                                type="button"
                                 onClick={() => {
                                   setDueDate(null);
                                   setActiveSettingsView('main');
@@ -747,6 +764,7 @@ export function CommandBar({
                         <div>
                           <div className="space-y-0.5 p-2">
                             <button
+                              type="button"
                               onClick={() => setActiveSettingsView('main')}
                               className="flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors hover:bg-muted"
                             >
@@ -764,6 +782,7 @@ export function CommandBar({
                               return (
                                 <button
                                   key={index}
+                                  type="button"
                                   onClick={() => {
                                     if (!isDisabled) {
                                       setEstimationPoints(index);
@@ -795,6 +814,7 @@ export function CommandBar({
                             })}
                             {estimationPoints !== null && (
                               <button
+                                type="button"
                                 onClick={() => {
                                   setEstimationPoints(null);
                                   setActiveSettingsView('main');
@@ -811,6 +831,7 @@ export function CommandBar({
                         // Projects selection view
                         <div className="space-y-0.5 p-2">
                           <button
+                            type="button"
                             onClick={() => setActiveSettingsView('main')}
                             className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                           >
@@ -861,6 +882,7 @@ export function CommandBar({
                           </ScrollArea>
                           <div className="border-t pt-2">
                             <button
+                              type="button"
                               onClick={() => {
                                 onCreateNewProject?.();
                                 setSettingsOpen(false);
@@ -876,6 +898,7 @@ export function CommandBar({
                         // Labels selection view
                         <div className="space-y-0.5 p-2">
                           <button
+                            type="button"
                             onClick={() => setActiveSettingsView('main')}
                             className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                           >
@@ -933,6 +956,7 @@ export function CommandBar({
                           </ScrollArea>
                           <div className="border-t pt-2">
                             <button
+                              type="button"
                               onClick={() => {
                                 onCreateNewLabel?.();
                                 setSettingsOpen(false);
@@ -948,6 +972,7 @@ export function CommandBar({
                         // Assignees selection view - matching kanban.tsx implementation
                         <div className="p-3">
                           <button
+                            type="button"
                             onClick={() => {
                               setActiveSettingsView('main');
                               setAssigneeSearchQuery('');
@@ -1135,27 +1160,29 @@ export function CommandBar({
               </Popover>
             )}
 
-            {/* AI Toggle Button (like Claude's extended thinking) */}
-            <Button
-              variant={aiEnabled ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setAiEnabled(!aiEnabled)}
-              disabled={isLoading}
-              className={cn(
-                'h-8 gap-1.5 rounded-lg border px-2.5 transition-all md:h-9 md:gap-2 md:px-3',
-                aiEnabled
-                  ? 'border-dynamic-blue/20 bg-dynamic-blue/5 text-dynamic-blue shadow-lg hover:bg-dynamic-blue/10 hover:shadow-xl'
-                  : 'border-border'
-              )}
-            >
-              <Sparkles
+            {/* AI Toggle Button (like Claude's extended thinking) - Only for Tasks */}
+            {mode === 'task' && (
+              <Button
+                variant={aiEnabled ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setAiEnabled(!aiEnabled)}
+                disabled={isLoading}
                 className={cn(
-                  'h-3.5 w-3.5 md:h-4 md:w-4',
-                  aiEnabled ? 'animate-pulse' : ''
+                  'h-8 gap-1.5 rounded-lg border px-2.5 transition-all md:h-9 md:gap-2 md:px-3',
+                  aiEnabled
+                    ? 'border-dynamic-blue/20 bg-dynamic-blue/5 text-dynamic-blue shadow-lg hover:bg-dynamic-blue/10 hover:shadow-xl'
+                    : 'border-border'
                 )}
-              />
-              <span className="text-xs md:text-sm">AI</span>
-            </Button>
+              >
+                <Sparkles
+                  className={cn(
+                    'h-3.5 w-3.5 md:h-4 md:w-4',
+                    aiEnabled ? 'animate-pulse' : ''
+                  )}
+                />
+                <span className="text-xs md:text-sm">AI</span>
+              </Button>
+            )}
 
             {/* Destination Display - Shows selected board/list */}
             {mode === 'task' && hasDestination && selectedDestination && (
@@ -1226,14 +1253,14 @@ export function CommandBar({
               onClick={handleAction}
               disabled={!canExecute || isLoading}
               size="sm"
-              className="h-8 shrink-0 gap-1.5 rounded-lg bg-gradient-to-r from-primary to-primary/90 px-3 font-semibold text-xs shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] disabled:opacity-50 sm:gap-2 sm:px-4 md:h-9 md:text-sm"
+              className="h-8 shrink-0 gap-1.5 rounded-lg bg-linear-to-r from-primary to-primary/90 px-3 font-semibold text-xs shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] disabled:opacity-50 sm:gap-2 sm:px-4 md:h-9 md:text-sm"
             >
               {isLoading ? (
                 <>
                   <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent md:h-4 md:w-4" />
                   <span className="hidden sm:inline">Creating...</span>
                 </>
-              ) : aiEnabled ? (
+              ) : aiEnabled && mode === 'task' ? (
                 <>
                   <Sparkles className="h-3.5 w-3.5 md:h-4 md:w-4" />
                   <span>Generate</span>

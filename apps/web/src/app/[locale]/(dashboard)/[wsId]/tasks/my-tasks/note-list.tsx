@@ -43,11 +43,6 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
-interface NotesListProps {
-  wsId: string;
-  enabled?: boolean;
-}
-
 interface Note {
   id: string;
   content: JSONContent;
@@ -97,7 +92,7 @@ const extractTextFromContent = (content: JSONContent): string => {
   return '';
 };
 
-function NotesListContent({ wsId }: { wsId: string }) {
+export default function NoteList({ wsId }: { wsId: string }) {
   const t = useTranslations('dashboard.bucket_dump');
 
   const [isConversionDialogOpen, setIsConversionDialogOpen] = useState(false);
@@ -770,9 +765,4 @@ function NotesListContent({ wsId }: { wsId: string }) {
       </Dialog>
     </>
   );
-}
-
-export default function NotesList({ wsId, enabled = true }: NotesListProps) {
-  if (!enabled) return null;
-  return <NotesListContent wsId={wsId} />;
 }
