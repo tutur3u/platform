@@ -77,7 +77,7 @@ async function getTaskBoards(
       created_at
     `)
     .eq('ws_id', wsId)
-    .eq('deleted', false)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
   if (error) {
