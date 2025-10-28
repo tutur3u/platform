@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/supabase",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Supabase client and utilities for Next.js applications with SSR support, cookie handling, and TypeScript type safety",
   "keywords": [
     "supabase",
@@ -23,6 +23,7 @@
     "url": "https://github.com/tutur3u/platform/issues"
   },
   "homepage": "https://github.com/tutur3u/platform/tree/main/packages/supabase#readme",
+  "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",

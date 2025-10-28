@@ -6,7 +6,9 @@
     "rootDir": "src",
     "declarationDir": "dist",
     "emitDeclarationOnly": false,
-    "tsBuildInfoFile": "./dist/.tsbuildinfo"
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist", ".turbo", "**/*.test.ts", "**/__tests__/**"]
