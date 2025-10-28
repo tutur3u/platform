@@ -374,7 +374,7 @@ export default function ExpandableTaskList({
 
                 {/* Description - only show if exists */}
                 {task.description && getDescriptionText(task.description) && (
-                  <p className="line-clamp-3 max-h-16 break-word rounded-lg border border-border/50 bg-muted/30 px-3.5 py-2.5 text-muted-foreground text-xs leading-snug shadow-sm backdrop-blur-sm">
+                  <p className="line-clamp-3 max-h-16 break-words rounded-lg border border-border/50 bg-muted/30 px-3.5 py-2.5 text-muted-foreground text-xs leading-snug shadow-sm backdrop-blur-sm">
                     {getDescriptionText(task.description)}
                   </p>
                 )}
