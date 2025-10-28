@@ -52,36 +52,62 @@ export async function MyTasksDataLoader({
   // Fetch related data for all tasks
   const taskIds = allTasks?.map((t) => t.id) || [];
 
-  // Fetch assignees for all tasks
-  const { data: assigneesData } = await supabase
-    .from('task_assignees')
-    .select(
-      `
-      task_id,
-      user:users(
-        id,
-        display_name,
-        avatar_url
-      )
-    `
-    )
-    .in('task_id', taskIds);
+  let assigneesData: any[] | null = [];
+  let labelsData: any[] | null = [];
 
-  // Fetch labels for all tasks
-  const { data: labelsData } = await supabase
-    .from('task_labels')
-    .select(
-      `
-      task_id,
-      label:workspace_task_labels(
-        id,
-        name,
-        color,
-        created_at
-      )
-    `
-    )
-    .in('task_id', taskIds);
+  if (taskIds.length > 0) {
+    const [assigneesResult, labelsResult] = await Promise.all([
+      supabase
+        .from('task_assignees')
+        .select(
+          `
+          task_id,
+          user:users(
+            id,
+            display_name,
+            avatar_url
+          )
+        `
+        )
+        .in('task_id', taskIds),
+      supabase
+        .from('task_labels')
+        .select(
+          `
+          task_id,
+          label:workspace_task_labels(
+            id,
+            name,
+            color,
+            created_at
+          )
+        `
+        )
+        .in('task_id', taskIds),
+    ]);
+    assigneesData = assigneesResult.data;
+    labelsData = labelsResult.data;
+  }
+
+  const assigneesByTaskId = new Map<string, any[]>();
+  if (assigneesData) {
+    for (const assignee of assigneesData) {
+      if (!assigneesByTaskId.has(assignee.task_id)) {
+        assigneesByTaskId.set(assignee.task_id, []);
+      }
+      assigneesByTaskId.get(assignee.task_id)!.push({ user: assignee.user });
+    }
+  }
+
+  const labelsByTaskId = new Map<string, any[]>();
+  if (labelsData) {
+    for (const label of labelsData) {
+      if (!labelsByTaskId.has(label.task_id)) {
+        labelsByTaskId.set(label.task_id, []);
+      }
+      labelsByTaskId.get(label.task_id)!.push({ label: label.label });
+    }
+  }
 
   // Fetch list and board data
   const listIds = allTasks?.map((t) => t.list_id).filter(Boolean) || [];
@@ -105,36 +131,12 @@ export async function MyTasksDataLoader({
     )
     .in('id', listIds);
 
-  // Fetch projects for all tasks
-  const { data: projectsData } = await supabase
-    .from('task_project_tasks')
-    .select(
-      `
-      task_id,
-      project:task_projects(
-        id,
-        name
-      )
-    `
-    )
-    .in('task_id', taskIds);
-
   // Map the data to match the expected structure
   const tasksWithRelations = allTasks?.map((task) => ({
     ...task,
     list: listsData?.find((l) => l.id === task.list_id) || null,
-    assignees:
-      assigneesData
-        ?.filter((a) => a.task_id === task.id)
-        .map((a) => ({ user: a.user })) || null,
-    labels:
-      labelsData
-        ?.filter((l) => l.task_id === task.id)
-        .map((l) => ({ label: l.label })) || null,
-    projects:
-      projectsData
-        ?.filter((p) => p.task_id === task.id)
-        .map((p) => ({ project: p.project })) || null,
+    assignees: assigneesByTaskId.get(task.id) || [],
+    labels: labelsByTaskId.get(task.id) || [],
   }));
 
   // Filter tasks by categories

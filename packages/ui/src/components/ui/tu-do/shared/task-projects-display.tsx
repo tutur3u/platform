@@ -71,7 +71,7 @@ export function TaskProjectsDisplay({
           <span>{projects.length} projects</span>
         </Badge>
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="max-w-xs">
+      <TooltipContent side="bottom" className="max-w-xs max-h-60 overflow-auto">
         <div className="space-y-1">
           {projects.map((project) => (
             <div key={project.id} className="text-xs">
