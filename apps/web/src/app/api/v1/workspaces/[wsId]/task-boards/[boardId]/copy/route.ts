@@ -102,7 +102,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       `)
       .eq('id', boardId)
       .eq('ws_id', wsId)
-      .eq('deleted', false)
+      .is('deleted_at', null)
       .single();
 
     if (fetchError || !sourceBoard) {
