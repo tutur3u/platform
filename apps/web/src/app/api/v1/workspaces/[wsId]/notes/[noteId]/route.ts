@@ -16,10 +16,12 @@ const jsonContentSchema: z.ZodType<any> = z.lazy(() =>
 
 const updateNoteSchema = z.object({
   title: z.string().optional(),
-  content: jsonContentSchema.refine(
-    (val) => val.type === 'doc',
-    'Content must be a valid TipTap document'
-  ).optional(),
+  content: jsonContentSchema
+    .refine(
+      (val) => val.type === 'doc',
+      'Content must be a valid TipTap document'
+    )
+    .optional(),
 });
 
 export async function PUT(
