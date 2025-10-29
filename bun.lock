@@ -3,9 +3,6 @@
   "workspaces": {
     "": {
       "name": "tutur3u",
-      "dependencies": {
-        "@tanstack/react-query": "^5.90.5",
-      },
       "devDependencies": {
         "@biomejs/biome": "^2.3.2",
         "@trivago/prettier-plugin-sort-imports": "^5.2.2",

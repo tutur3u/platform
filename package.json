@@ -100,8 +100,5 @@
     "sharp",
     "supabase",
     "unrs-resolver"
-  ],
-  "dependencies": {
-    "@tanstack/react-query": "^5.90.5"
-  }
+  ]
 }
