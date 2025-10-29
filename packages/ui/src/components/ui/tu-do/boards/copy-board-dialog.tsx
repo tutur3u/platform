@@ -245,12 +245,11 @@ export function CopyBoardDialog({
                 <span className="text-muted-foreground">Copy to:</span>
                 <span className="font-medium">{selectedWorkspace.name}</span>
               </div>
-              {board.task_lists && board.task_lists.length > 0 && (
+              {board.lists && board.lists.length > 0 && (
                 <div className="mt-1 flex items-center justify-between">
                   <span className="text-muted-foreground">Includes:</span>
                   <span className="font-medium">
-                    {board.task_lists.length} columns, {board.totalTasks || 0}{' '}
-                    tasks
+                    {board.lists.length} columns
                   </span>
                 </div>
               )}

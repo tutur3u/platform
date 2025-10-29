@@ -22,7 +22,7 @@ import {
   X,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
   AlertDialog,
@@ -152,7 +152,7 @@ function saveBoardConfig(boardId: string, config: BoardViewConfig): void {
 }
 
 interface Props {
-  board: Pick<TaskBoard, 'id' | 'name' | 'ws_id'>;
+  board: Pick<WorkspaceTaskBoard, 'id' | 'name' | 'ws_id'>;
   currentUserId?: string;
   currentView: ViewType;
   onViewChange: (view: ViewType) => void;
@@ -282,7 +282,7 @@ export function BoardHeader({
   }, [board.id, currentView, filters, listStatusFilter]);
 
   async function handleEdit() {
-    if (!editedName.trim() || editedName === board.name) {
+    if (!editedName?.trim() || editedName === board.name) {
       setIsEditDialogOpen(false);
       return;
     }
@@ -407,7 +407,7 @@ export function BoardHeader({
           )}
 
           {/* List Status Filter Tabs */}
-          <div className="flex items-center rounded-md border bg-background/80 p-[0.1875rem] backdrop-blur-sm">
+          <div className="flex items-center rounded-md border bg-background/80 p-0.75 backdrop-blur-sm">
             <Button
               variant="ghost"
               size="xs"
@@ -845,7 +845,7 @@ export function BoardHeader({
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <Input
-              value={editedName}
+              value={editedName?.trim()}
               onChange={(e) => setEditedName(e.target.value)}
               placeholder="Enter board name"
               onKeyDown={(e) => {
@@ -868,7 +868,7 @@ export function BoardHeader({
             <Button
               onClick={handleEdit}
               disabled={
-                isLoading || !editedName.trim() || editedName === board.name
+                isLoading || !editedName?.trim() || editedName === board.name
               }
             >
               {isLoading ? 'Saving...' : 'Save Changes'}

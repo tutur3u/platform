@@ -81,7 +81,7 @@ export async function checkPermission({
     new Date(sessionData.start_time).getTime() + sessionData.duration * 1000
   );
 
-  const currentTime = new Date().getTime();
+  const currentTime = Date().now();
 
   if (currentTime > sessionEndTime) {
     return {
