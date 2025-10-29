@@ -1277,7 +1277,7 @@ export default function MyTasksContent({
       none: [] as TaskWithRelations[],
     };
 
-    if (!tasks) return emptyResult;
+    if (!tasks || !Array.isArray(tasks)) return emptyResult;
 
     return tasks.reduce(
       (acc, task) => {
