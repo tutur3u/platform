@@ -1,7 +1,7 @@
 'use client';
 
 import type { JSONContent } from '@tiptap/react';
-import { ListTodo, X } from '@tuturuuu/icons';
+import { NotebookPen, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -51,7 +51,7 @@ export function NoteEditDialog({
           <div className="flex items-center justify-between border-b px-4 py-2 md:px-8">
             <div className="flex items-center gap-2">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-dynamic-orange/10 ring-1 ring-dynamic-orange/20">
-                <ListTodo className="h-4 w-4 text-dynamic-orange" />
+                <NotebookPen className="h-4 w-4 text-dynamic-orange" />
               </div>
               <div className="flex min-w-0 flex-col gap-0.5">
                 <DialogTitle className="truncate font-semibold text-base text-foreground md:text-lg">
