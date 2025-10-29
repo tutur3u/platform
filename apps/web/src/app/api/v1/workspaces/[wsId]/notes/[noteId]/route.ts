@@ -15,10 +15,11 @@ const jsonContentSchema: z.ZodType<any> = z.lazy(() =>
 );
 
 const updateNoteSchema = z.object({
+  title: z.string().optional(),
   content: jsonContentSchema.refine(
     (val) => val.type === 'doc',
     'Content must be a valid TipTap document'
-  ),
+  ).optional(),
 });
 
 export async function PUT(
@@ -52,12 +53,12 @@ export async function PUT(
 
     // Parse and validate request body
     const body = await request.json();
-    const { content } = updateNoteSchema.parse(body);
+    const { title, content } = updateNoteSchema.parse(body);
 
     // Update note
     const { data: updatedNote, error: updateError } = await supabase
       .from('notes')
-      .update({ content })
+      .update({ title, content })
       .eq('id', noteId)
       .eq('ws_id', wsId)
       .eq('creator_id', user.id)

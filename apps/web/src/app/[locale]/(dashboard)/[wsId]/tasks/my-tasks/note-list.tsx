@@ -46,6 +46,7 @@ import { NoteEditDialog } from './note-edit-dialog';
 
 interface Note {
   id: string;
+  title: string | null;
   content: JSONContent;
   created_at: string;
   updated_at: string;
@@ -206,10 +207,12 @@ export default function NoteList({ wsId }: { wsId: string }) {
   const updateNoteMutation = useMutation({
     mutationFn: async ({
       noteId,
+      title,
       content,
     }: {
       noteId: string;
-      content: JSONContent;
+      title?: string;
+      content?: JSONContent;
     }) => {
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/notes/${noteId}`,
@@ -218,7 +221,7 @@ export default function NoteList({ wsId }: { wsId: string }) {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ content }),
+          body: JSON.stringify({ title, content }),
         }
       );
 
@@ -313,6 +316,7 @@ export default function NoteList({ wsId }: { wsId: string }) {
 
   const handleEditNote = (note: Note) => {
     setEditingNote(note);
+    setEditTitle(note.title || '');
     // Parse content if it's a string (safeguard for JSONB serialization issues)
     const parsedContent =
       typeof note.content === 'string'
@@ -481,7 +485,7 @@ export default function NoteList({ wsId }: { wsId: string }) {
                         }`}
                         onClick={() => handleEditNote(note)}
                       >
-                        {extractTextFromContent(note.content)}
+                        {note.title || 'Untitled Note'}
                       </p>
                       <div className="flex items-center gap-2">
                         <p className="text-muted-foreground text-xs">
@@ -569,7 +573,13 @@ export default function NoteList({ wsId }: { wsId: string }) {
           }
         }}
         title={editTitle}
-        onTitleChange={setEditTitle}
+        onTitleChange={(newTitle) => {
+          setEditTitle(newTitle);
+          updateNoteMutation.mutate({
+            noteId: editingNote?.id || '',
+            title: newTitle,
+          });
+        }}
         content={editContent}
         onContentChange={(newContent) => {
           setEditContent(newContent);

@@ -15,6 +15,7 @@ const jsonContentSchema: z.ZodType<any> = z.lazy(() =>
 );
 
 const createNoteSchema = z.object({
+  title: z.string().optional(),
   content: jsonContentSchema.refine(
     (val) => val.type === 'doc',
     'Content must be a valid TipTap document'
@@ -116,12 +117,13 @@ export async function POST(
 
     // Parse and validate request body
     const body = await request.json();
-    const { content } = createNoteSchema.parse(body);
+    const { title, content } = createNoteSchema.parse(body);
 
     // Create note
     const { data: note, error: noteError } = await supabase
       .from('notes')
       .insert({
+        title,
         content,
         ws_id: wsId,
         creator_id: user.id,
