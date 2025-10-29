@@ -140,7 +140,11 @@ export default function NotificationList({
 
     for (const notification of notifications) {
       // Only group task-related notifications
-      if (!notification.entity_type || notification.entity_type !== 'task' || !notification.entity_id) {
+      if (
+        !notification.entity_type ||
+        notification.entity_type !== 'task' ||
+        !notification.entity_id
+      ) {
         // Add as individual notification
         groups.push({
           key: notification.id,
@@ -337,7 +341,9 @@ export default function NotificationList({
                 }
                 onActionComplete={() => {
                   // Refresh notifications after action
-                  queryClient.invalidateQueries({ queryKey: ['notifications'] });
+                  queryClient.invalidateQueries({
+                    queryKey: ['notifications'],
+                  });
                 }}
               />
             )
@@ -439,16 +445,16 @@ function NotificationCard({
               await Promise.all([
                 queryClient.invalidateQueries({
                   queryKey: ['workspaces'],
-                  refetchType: 'active'
+                  refetchType: 'active',
                 }),
                 queryClient.invalidateQueries({
                   queryKey: ['notifications'],
-                  refetchType: 'active'
+                  refetchType: 'active',
                 }),
                 queryClient.refetchQueries({
                   queryKey: ['notifications'],
-                  type: 'active'
-                })
+                  type: 'active',
+                }),
               ]);
 
               toast.success(
@@ -656,11 +662,14 @@ function GroupedNotificationCard({
   const entityLink = getEntityLink(firstNotification, wsId);
 
   // Create a summary of notification types
-  const typeCount = notifications.reduce((acc, n) => {
-    const type = n.type || 'update';
-    acc[type] = (acc[type] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const typeCount = notifications.reduce(
+    (acc, n) => {
+      const type = n.type || 'update';
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
   const summaryText = Object.entries(typeCount)
     .map(([type, count]) => {
@@ -763,19 +772,23 @@ function GroupedNotificationCard({
                     {/* Show change details in grouped view */}
                     {notification.data?.changes && (
                       <div className="mt-1.5">
-                        <ChangeDetails changes={notification.data.changes} t={t} />
-                      </div>
-                    )}
-                    {notification.data?.change_type && !notification.data?.changes && (
-                      <div className="mt-1.5">
-                        <SingleChangeDetail
-                          changeType={notification.data.change_type}
-                          oldValue={notification.data.old_value}
-                          newValue={notification.data.new_value}
+                        <ChangeDetails
+                          changes={notification.data.changes}
                           t={t}
                         />
                       </div>
                     )}
+                    {notification.data?.change_type &&
+                      !notification.data?.changes && (
+                        <div className="mt-1.5">
+                          <SingleChangeDetail
+                            changeType={notification.data.change_type}
+                            oldValue={notification.data.old_value}
+                            newValue={notification.data.new_value}
+                            t={t}
+                          />
+                        </div>
+                      )}
                     <p className="mt-1 text-foreground/40 text-xs">
                       {dayjs(notification.created_at).fromNow()}
                     </p>
@@ -785,9 +798,13 @@ function GroupedNotificationCard({
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6"
-                      onClick={() => onMarkAsRead(notification.id, !notification.read_at)}
+                      onClick={() =>
+                        onMarkAsRead(notification.id, !notification.read_at)
+                      }
                       title={
-                        notification.read_at ? t('mark-as-unread') : t('mark-as-read')
+                        notification.read_at
+                          ? t('mark-as-unread')
+                          : t('mark-as-read')
                       }
                     >
                       {notification.read_at ? (
@@ -1053,7 +1070,10 @@ function formatFieldName(field: string): string {
     label_name: 'Label',
   };
 
-  return fieldMap[field] || field.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+  return (
+    fieldMap[field] ||
+    field.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
+  );
 }
 
 // Helper function to format values for display
@@ -1072,7 +1092,9 @@ function formatValue(value: any, field: string): string {
       high: 'High',
       urgent: 'Urgent',
     };
-    return priorityMap[String(value).toLowerCase()] || capitalizeFirst(String(value));
+    return (
+      priorityMap[String(value).toLowerCase()] || capitalizeFirst(String(value))
+    );
   }
 
   // Handle date fields - check if it's a valid ISO date string

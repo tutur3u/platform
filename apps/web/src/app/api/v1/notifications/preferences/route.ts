@@ -10,7 +10,12 @@ const updateSchema = z.object({
   wsId: z.string().uuid(),
   preferences: z.array(
     z.object({
-      eventType: z.enum(['task_assigned', 'task_updated', 'task_mention', 'workspace_invite']),
+      eventType: z.enum([
+        'task_assigned',
+        'task_updated',
+        'task_mention',
+        'workspace_invite',
+      ]),
       channel: z.enum(['web', 'email', 'sms', 'push']),
       enabled: z.boolean(),
     })

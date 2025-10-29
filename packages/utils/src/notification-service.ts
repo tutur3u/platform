@@ -93,7 +93,10 @@ export async function getNotifications(params: GetNotificationsParams) {
   }
 
   if (params.offset) {
-    query = query.range(params.offset, params.offset + (params.limit || 10) - 1);
+    query = query.range(
+      params.offset,
+      params.offset + (params.limit || 10) - 1
+    );
   }
 
   const { data, error, count } = await query;
@@ -112,7 +115,10 @@ export async function getNotifications(params: GetNotificationsParams) {
 /**
  * Gets the unread notification count for a user
  */
-export async function getUnreadCount(wsId: string, userId: string): Promise<number> {
+export async function getUnreadCount(
+  wsId: string,
+  userId: string
+): Promise<number> {
   const supabase = await createClient();
 
   const { count, error } = await supabase
@@ -171,7 +177,10 @@ export async function markAsUnread(notificationId: string): Promise<boolean> {
 /**
  * Marks all notifications as read for a user in a workspace
  */
-export async function markAllAsRead(wsId: string, userId: string): Promise<boolean> {
+export async function markAllAsRead(
+  wsId: string,
+  userId: string
+): Promise<boolean> {
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -192,7 +201,9 @@ export async function markAllAsRead(wsId: string, userId: string): Promise<boole
 /**
  * Deletes a notification
  */
-export async function deleteNotification(notificationId: string): Promise<boolean> {
+export async function deleteNotification(
+  notificationId: string
+): Promise<boolean> {
   const supabase = await createClient();
 
   const { error } = await supabase
@@ -240,20 +251,18 @@ export async function setNotificationPreference(
 ): Promise<boolean> {
   const supabase = await createClient();
 
-  const { error } = await supabase
-    .from('notification_preferences')
-    .upsert(
-      {
-        ws_id: wsId,
-        user_id: userId,
-        event_type: eventType,
-        channel,
-        enabled,
-      },
-      {
-        onConflict: 'ws_id,user_id,event_type,channel',
-      }
-    );
+  const { error } = await supabase.from('notification_preferences').upsert(
+    {
+      ws_id: wsId,
+      user_id: userId,
+      event_type: eventType,
+      channel,
+      enabled,
+    },
+    {
+      onConflict: 'ws_id,user_id,event_type,channel',
+    }
+  );
 
   if (error) {
     console.error('Error setting notification preference:', error);
@@ -299,7 +308,8 @@ export function extractMentions(text: string): string[] {
   if (!text) return [];
 
   // Match @[uuid] pattern
-  const uuidPattern = /@\[([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\]/gi;
+  const uuidPattern =
+    /@\[([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\]/gi;
   const matches = text.matchAll(uuidPattern);
 
   const userIds: string[] = [];

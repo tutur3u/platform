@@ -57,10 +57,7 @@ export async function PATCH(
     }
 
     if (notification.user_id !== user.id) {
-      return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // Update notification
@@ -129,10 +126,7 @@ export async function DELETE(
     }
 
     if (notification.user_id !== user.id) {
-      return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // Delete notification

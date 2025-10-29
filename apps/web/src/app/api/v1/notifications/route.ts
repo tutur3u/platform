@@ -3,8 +3,17 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const querySchema = z.object({
-  wsId: z.string().uuid().nullable().optional().transform(val => val || undefined),
-  scope: z.enum(['user', 'workspace', 'system']).nullable().optional().transform(val => val || undefined),
+  wsId: z
+    .string()
+    .uuid()
+    .nullable()
+    .optional()
+    .transform((val) => val || undefined),
+  scope: z
+    .enum(['user', 'workspace', 'system'])
+    .nullable()
+    .optional()
+    .transform((val) => val || undefined),
   limit: z
     .string()
     .nullable()
@@ -32,8 +41,12 @@ const querySchema = z.object({
     ])
     .nullable()
     .optional()
-    .transform(val => val || undefined),
-  priority: z.enum(['low', 'medium', 'high', 'urgent']).nullable().optional().transform(val => val || undefined),
+    .transform((val) => val || undefined),
+  priority: z
+    .enum(['low', 'medium', 'high', 'urgent'])
+    .nullable()
+    .optional()
+    .transform((val) => val || undefined),
 });
 
 /**
@@ -119,7 +132,9 @@ export async function GET(req: Request) {
     } else if (accessibleWorkspaceIds.length > 0) {
       // User wants all notifications across their workspaces
       // Include workspace notifications AND user-scoped notifications
-      const wsIdFilter = accessibleWorkspaceIds.map(id => `ws_id.eq.${id}`).join(',');
+      const wsIdFilter = accessibleWorkspaceIds
+        .map((id) => `ws_id.eq.${id}`)
+        .join(',');
       query = query.or(`${wsIdFilter},and(scope.eq.user,ws_id.is.null)`);
     } else {
       // No workspaces - only show user-scoped and system notifications
@@ -181,8 +196,17 @@ export async function GET(req: Request) {
 }
 
 const bulkUpdateSchema = z.object({
-  wsId: z.string().uuid().nullable().optional().transform(val => val || undefined),
-  scope: z.enum(['user', 'workspace', 'system']).nullable().optional().transform(val => val || undefined),
+  wsId: z
+    .string()
+    .uuid()
+    .nullable()
+    .optional()
+    .transform((val) => val || undefined),
+  scope: z
+    .enum(['user', 'workspace', 'system'])
+    .nullable()
+    .optional()
+    .transform((val) => val || undefined),
   action: z.enum(['mark_all_read', 'mark_all_unread']),
 });
 
@@ -249,7 +273,9 @@ export async function PATCH(req: Request) {
     } else if (accessibleWorkspaceIds.length > 0) {
       // User wants to update all notifications across their workspaces
       // Include workspace notifications AND user-scoped notifications
-      const wsIdFilter = accessibleWorkspaceIds.map(id => `ws_id.eq.${id}`).join(',');
+      const wsIdFilter = accessibleWorkspaceIds
+        .map((id) => `ws_id.eq.${id}`)
+        .join(',');
       filterCondition = `${wsIdFilter},and(scope.eq.user,ws_id.is.null)`;
     } else {
       // No workspaces - only show user-scoped and system notifications

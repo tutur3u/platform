@@ -118,7 +118,9 @@ export function useUpdateNotification() {
       await queryClient.cancelQueries({ queryKey: ['notifications'] });
 
       // Snapshot the previous value for rollback
-      const previousData = queryClient.getQueriesData({ queryKey: ['notifications'] });
+      const previousData = queryClient.getQueriesData({
+        queryKey: ['notifications'],
+      });
 
       // Optimistically update to the new state IN PLACE (maintains order)
       queryClient.setQueriesData<{
@@ -198,16 +200,16 @@ export function useMarkAllAsRead() {
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ['notifications'],
-          refetchType: 'active'
+          refetchType: 'active',
         }),
         queryClient.refetchQueries({
           queryKey: ['notifications'],
-          type: 'active'
+          type: 'active',
         }),
         queryClient.invalidateQueries({
           queryKey: ['notifications', 'unread-count'],
-          refetchType: 'active'
-        })
+          refetchType: 'active',
+        }),
       ]);
     },
   });
@@ -262,7 +264,9 @@ export function useNotificationSubscription(wsId: string, userId: string) {
         () => {
           // Invalidate on INSERT (new notifications)
           queryClient.invalidateQueries({ queryKey: ['notifications'] });
-          queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+          queryClient.invalidateQueries({
+            queryKey: ['notifications', 'unread-count'],
+          });
         }
       )
       .on(
@@ -281,7 +285,9 @@ export function useNotificationSubscription(wsId: string, userId: string) {
           // If the notification data has action_taken, it's an action completion - refetch
           if (newRecord?.data?.action_taken) {
             queryClient.invalidateQueries({ queryKey: ['notifications'] });
-            queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+            queryClient.invalidateQueries({
+              queryKey: ['notifications', 'unread-count'],
+            });
           }
           // Otherwise, the optimistic update in useUpdateNotification handles it
         }
@@ -297,7 +303,9 @@ export function useNotificationSubscription(wsId: string, userId: string) {
         () => {
           // Invalidate on DELETE
           queryClient.invalidateQueries({ queryKey: ['notifications'] });
-          queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+          queryClient.invalidateQueries({
+            queryKey: ['notifications', 'unread-count'],
+          });
         }
       )
       .subscribe();

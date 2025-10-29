@@ -34,7 +34,9 @@ export default function NotificationPopoverClient({
   const [open, setOpen] = useState(false);
   const { wsId } = useParams();
   const hasNotifications = notifications.length > 0;
-  const notificationsPageUrl = wsId ? `/${wsId}/notifications` : '/notifications';
+  const notificationsPageUrl = wsId
+    ? `/${wsId}/notifications`
+    : '/notifications';
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -57,9 +59,7 @@ export default function NotificationPopoverClient({
       <PopoverContent className="w-80 p-0 shadow-lg" align="start">
         {/* Header */}
         <div className="flex items-center justify-between border-b px-4 py-3">
-          <h3 className="font-semibold text-base">
-            {notificationsText}
-          </h3>
+          <h3 className="font-semibold text-base">{notificationsText}</h3>
           {hasNotifications && (
             <span className="rounded-full bg-dynamic-red/10 px-2 py-0.5 font-medium text-dynamic-red text-xs">
               {notifications.length}

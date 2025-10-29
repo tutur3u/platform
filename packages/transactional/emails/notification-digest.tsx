@@ -93,7 +93,8 @@ export const NotificationDigestEmail = ({
               Hi {userName},
             </Text>
             <Text className="text-[14px] text-gray-700 leading-[24px]">
-              You have {notifications.length} new notification{notifications.length !== 1 ? 's' : ''} waiting for you:
+              You have {notifications.length} new notification
+              {notifications.length !== 1 ? 's' : ''} waiting for you:
             </Text>
 
             {/* Notifications List */}
@@ -108,7 +109,8 @@ export const NotificationDigestEmail = ({
                     }}
                   >
                     <Text className="m-0 text-[12px] text-gray-500 uppercase tracking-wide">
-                      {getNotificationIcon(notification.type)} {notification.type.replace('_', ' ')}
+                      {getNotificationIcon(notification.type)}{' '}
+                      {notification.type.replace('_', ' ')}
                     </Text>
                     <Text className="mt-[8px] mb-[4px] text-[16px] font-semibold text-gray-900 leading-[20px]">
                       {notification.title}
@@ -152,7 +154,8 @@ export const NotificationDigestEmail = ({
             {/* Footer */}
             <Text className="text-center text-[12px] text-gray-500 leading-[20px]">
               You received this email because you have notifications enabled for{' '}
-              <span className="font-medium text-gray-700">{workspaceName}</span>.
+              <span className="font-medium text-gray-700">{workspaceName}</span>
+              .
             </Text>
             <Text className="text-center text-[12px] text-gray-500 leading-[20px]">
               To manage your notification preferences,{' '}
