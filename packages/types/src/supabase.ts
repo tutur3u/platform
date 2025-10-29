@@ -1045,6 +1045,10 @@ export type Database = {
         };
         Returns: number;
       };
+      hard_delete_soft_deleted_items: {
+        Args: never;
+        Returns: undefined;
+      };
       has_other_owner: {
         Args: {
           _user_id: string;
@@ -9339,11 +9343,11 @@ export type Database = {
       workspace_boards: {
         Insert: {
           allow_zero_estimates?: boolean;
-          archived?: boolean | null;
+          archived_at?: null | string;
           count_unestimated_issues?: boolean;
           created_at?: null | string;
           creator_id?: null | string;
-          deleted?: boolean | null;
+          deleted_at?: null | string;
           estimation_type?:
             | Database['public']['Enums']['estimation_type']
             | null;
@@ -9406,11 +9410,11 @@ export type Database = {
         ];
         Row: {
           allow_zero_estimates: boolean;
-          archived: boolean | null;
+          archived_at: null | string;
           count_unestimated_issues: boolean;
           created_at: null | string;
           creator_id: null | string;
-          deleted: boolean | null;
+          deleted_at: null | string;
           estimation_type:
             | Database['public']['Enums']['estimation_type']
             | null;
@@ -9422,11 +9426,11 @@ export type Database = {
         };
         Update: {
           allow_zero_estimates?: boolean;
-          archived?: boolean | null;
+          archived_at?: null | string;
           count_unestimated_issues?: boolean;
           created_at?: null | string;
           creator_id?: null | string;
-          deleted?: boolean | null;
+          deleted_at?: null | string;
           estimation_type?:
             | Database['public']['Enums']['estimation_type']
             | null;

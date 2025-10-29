@@ -15,7 +15,7 @@ export default function CountdownTimer({
 
   useEffect(() => {
     const updateTimer = () => {
-      const now = new Date().getTime();
+      const now = Date.now();
       const end = new Date(endTime).getTime();
 
       if (now >= end) {

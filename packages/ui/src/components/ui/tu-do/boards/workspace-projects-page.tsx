@@ -1,7 +1,7 @@
 import { Plus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
@@ -33,7 +33,11 @@ export default async function WorkspaceProjectsPage({
   const t = await getTranslations();
 
   const data = rawData.map(
-    (board: TaskBoard & { task_lists?: (TaskList & { tasks?: Task[] })[] }) => {
+    (
+      board: WorkspaceTaskBoard & {
+        task_lists?: (TaskList & { tasks?: Task[] })[];
+      }
+    ) => {
       // Calculate task metrics using the same logic as BoardHeader
       const allTasks =
         board.task_lists?.flatMap(
@@ -129,7 +133,7 @@ export default async function WorkspaceProjectsPage({
         task_lists: board.task_lists,
       };
     }
-  ) as (TaskBoard & {
+  ) as (WorkspaceTaskBoard & {
     href: string;
     totalTasks: number;
     completedTasks: number;
@@ -240,7 +244,7 @@ async function getData(
   }));
 
   return { data: boardsWithData, count } as {
-    data: TaskBoard[];
+    data: WorkspaceTaskBoard[];
     count: number;
   };
 }

@@ -18,7 +18,7 @@ export function Countdown({ target, onComplete, className }: CountdownProps) {
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const difference = target.getTime() - new Date().getTime();
+      const difference = target.getTime() - Date.now();
 
       if (difference <= 0) {
         onComplete?.();

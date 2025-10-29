@@ -6,11 +6,11 @@ import {
 } from '@tanstack/react-query';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task, TaskAssignee } from '@tuturuuu/types/primitives/Task';
 import type {
-  TaskBoard,
   TaskBoardStatus,
   TaskBoardStatusTemplate,
 } from '@tuturuuu/types/primitives/TaskBoard';
@@ -28,7 +28,7 @@ export async function getTaskBoard(
     .maybeSingle(); // Use maybeSingle instead of single to return null if no rows
 
   if (error) throw error;
-  return data as TaskBoard | null;
+  return data as WorkspaceTaskBoard | null;
 }
 
 export async function getTaskLists(
@@ -1315,7 +1315,7 @@ export async function createBoardWithTemplate(
     .single();
 
   if (error) throw error;
-  return data as TaskBoard;
+  return data as WorkspaceTaskBoard;
 }
 
 export async function updateTaskListStatus(

@@ -6,5 +6,6 @@
     "src/app/api/**/*": {
       "maxDuration": 300
     }
-  }
+  },
+  "bunVersion": "1.x"
 }

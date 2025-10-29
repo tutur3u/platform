@@ -822,7 +822,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
             className={cn('gap-2', 'relative w-full')}
           >
             {isRunning && (
-              <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-red-600/20 to-transparent" />
+              <div className="absolute inset-0 animate-pulse bg-linear-to-r from-red-600/20 to-transparent" />
             )}
             <div className="relative flex items-center gap-2">
               {isRunning ? (
@@ -912,7 +912,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                     {currentSession ? (
                       <div className="space-y-4 text-center">
                         <div className="relative overflow-hidden rounded-lg bg-linear-to-br from-red-50 to-red-100 @lg:p-6 p-4 dark:from-red-950/20 dark:to-red-900/20">
-                          <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-red-500/10 to-transparent opacity-30"></div>
+                          <div className="absolute inset-0 animate-pulse bg-linear-to-r from-red-500/10 to-transparent opacity-30"></div>
                           <div className="relative">
                             <div className="font-bold font-mono @lg:text-4xl text-3xl text-red-600 transition-all duration-300 dark:text-red-400">
                               {formatTime(elapsedTime)}
@@ -951,7 +951,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                             )}
                             {currentSession.task && (
                               <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-1.5 rounded-md border border-dynamic-blue/20 bg-gradient-to-r from-dynamic-blue/10 to-dynamic-blue/5 px-2 py-1">
+                                <div className="flex items-center gap-1.5 rounded-md border border-dynamic-blue/20 bg-linear-to-r from-dynamic-blue/10 to-dynamic-blue/5 px-2 py-1">
                                   <CheckCircle className="h-3 w-3 text-dynamic-blue" />
                                   <span className="font-medium @lg:text-sm text-dynamic-blue text-xs">
                                     {currentSession.task.name}
@@ -1097,7 +1097,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                                                     {task.board_name}
                                                   </span>
                                                 </div>
-                                                <div className="flex items-center gap-1.5 rounded-md border border-dynamic-green/20 bg-gradient-to-r from-dynamic-green/10 to-dynamic-green/5 px-2 py-1">
+                                                <div className="flex items-center gap-1.5 rounded-md border border-dynamic-green/20 bg-linear-to-r from-dynamic-green/10 to-dynamic-green/5 px-2 py-1">
                                                   <Tag className="h-3 w-3 text-dynamic-green" />
                                                   <span className="font-medium text-dynamic-green text-xs">
                                                     {task.list_name}
@@ -1191,7 +1191,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                               {/* Task suggestion */}
                               {showTaskSuggestion &&
                                 newSessionTitle.length > 2 && (
-                                  <div className="rounded-lg border border-dynamic-blue/30 bg-gradient-to-r from-dynamic-blue/10 to-dynamic-blue/5 p-3 shadow-sm">
+                                  <div className="rounded-lg border border-dynamic-blue/30 bg-linear-to-r from-dynamic-blue/10 to-dynamic-blue/5 p-3 shadow-sm">
                                     <div className="flex items-start justify-between gap-3">
                                       <div className="flex items-start gap-2">
                                         <div className="rounded-full bg-dynamic-blue/20 p-1">
@@ -1222,7 +1222,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
 
                               {/* Show selected task info */}
                               {selectedTaskId && !showTaskSuggestion && (
-                                <div className="rounded-lg border border-dynamic-green/30 bg-gradient-to-r from-dynamic-green/5 to-dynamic-green/3 p-4 shadow-sm">
+                                <div className="rounded-lg border border-dynamic-green/30 bg-linear-to-r from-dynamic-green/5 to-dynamic-green/3 p-4 shadow-sm">
                                   <div className="flex items-start gap-3">
                                     <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-dynamic-green/30 bg-linear-to-br from-dynamic-green/20 to-dynamic-green/10">
                                       <CheckCircle className="h-5 w-5 text-dynamic-green" />
@@ -1278,7 +1278,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                                                       {selectedTask.board_name}
                                                     </span>
                                                   </div>
-                                                  <div className="flex items-center gap-1.5 rounded-md border border-dynamic-green/20 bg-gradient-to-r from-dynamic-green/10 to-dynamic-green/5 px-2 py-1">
+                                                  <div className="flex items-center gap-1.5 rounded-md border border-dynamic-green/20 bg-linear-to-r from-dynamic-green/10 to-dynamic-green/5 px-2 py-1">
                                                     <Tag className="h-3 w-3 text-dynamic-green" />
                                                     <span className="font-medium text-dynamic-green text-xs">
                                                       {selectedTask.list_name}
@@ -1641,7 +1641,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                                     </Badge>
                                   )}
                                   {session.task && (
-                                    <div className="flex items-center gap-1.5 rounded-md border border-dynamic-blue/20 bg-gradient-to-r from-dynamic-blue/10 to-dynamic-blue/5 px-2 py-1">
+                                    <div className="flex items-center gap-1.5 rounded-md border border-dynamic-blue/20 bg-linear-to-r from-dynamic-blue/10 to-dynamic-blue/5 px-2 py-1">
                                       <CheckCircle className="h-3 w-3 text-dynamic-blue" />
                                       <span className="font-medium @lg:text-sm text-dynamic-blue text-xs">
                                         {session.task.name}

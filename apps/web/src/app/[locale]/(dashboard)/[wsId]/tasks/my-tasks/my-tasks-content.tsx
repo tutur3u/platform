@@ -245,7 +245,7 @@ export default function MyTasksContent({
         `
         )
         .eq('ws_id', selectedWorkspaceId)
-        .eq('deleted', false)
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -585,11 +585,24 @@ export default function MyTasksContent({
         );
       }
 
-      toast.success('Task created successfully!');
-      setPendingTaskTitle('');
-
-      // Refresh the page data
-      handleUpdate();
+      if (newTask) {
+        toast.success(
+          <div className="flex flex-col">
+            <span>Task created successfully!</span>
+            <Link
+              href={`/${wsId}/tasks/${newTask.id}`}
+              className="mt-1 font-bold text-dynamic-blue text-sm hover:underline"
+            >
+              Go to task
+            </Link>
+          </div>
+        );
+        setPendingTaskTitle('');
+        // Refresh the page data
+        handleUpdate();
+      } else {
+        toast.error('Fail to create task');
+      }
     } catch (error: any) {
       console.error('Error creating task:', error);
       toast.error(error.message || 'Failed to create task');
