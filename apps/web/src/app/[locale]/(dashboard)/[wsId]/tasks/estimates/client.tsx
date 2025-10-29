@@ -9,7 +9,7 @@ import {
   Target,
   TrendingUp,
 } from '@tuturuuu/icons';
-import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -34,7 +34,7 @@ import { useState } from 'react';
 
 interface Props {
   wsId: string;
-  initialBoards: Partial<TaskBoard>[];
+  initialBoards: Partial<WorkspaceTaskBoard>[];
 }
 
 const estimationTypes = [
@@ -77,10 +77,10 @@ const estimationTypes = [
 
 export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
   const router = useRouter();
-  const [boards, setBoards] = useState<Partial<TaskBoard>[]>(initialBoards);
-  const [editingBoard, setEditingBoard] = useState<Partial<TaskBoard> | null>(
-    null
-  );
+  const [boards, setBoards] =
+    useState<Partial<WorkspaceTaskBoard>[]>(initialBoards);
+  const [editingBoard, setEditingBoard] =
+    useState<Partial<WorkspaceTaskBoard> | null>(null);
   const [selectedEstimationType, setSelectedEstimationType] =
     useState<string>('none');
   const [extendedEstimation, setExtendedEstimation] = useState<boolean>(false);
@@ -257,7 +257,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
     }
   };
 
-  const openEditDialog = (board: Partial<TaskBoard>) => {
+  const openEditDialog = (board: Partial<WorkspaceTaskBoard>) => {
     setEditingBoard(board);
     // Convert null to 'none' for the select component
     const selectValue =
@@ -283,7 +283,6 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
     extendedBoards: boards.filter(
       (b) => b.estimation_type && b.extended_estimation
     ).length,
-    totalTasks: boards.reduce((sum, board) => sum + (board.task_count || 0), 0),
     estimationTypes: estimationTypes.slice(1).map((type) => ({
       ...type,
       count: boards.filter((b) => b.estimation_type === type.actualValue)
@@ -325,22 +324,6 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
               </p>
               <p className="font-bold text-2xl tabular-nums">
                 {stats.configuredBoards}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="group overflow-hidden border-l-4 border-l-dynamic-purple/70 bg-dynamic-purple/5 p-4 transition-all hover:shadow-md hover:ring-1 hover:ring-primary/15">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-purple/15">
-              <CheckSquare className="h-4 w-4 text-dynamic-purple" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-medium text-muted-foreground text-xs">
-                Total Tasks
-              </p>
-              <p className="font-bold text-2xl tabular-nums">
-                {stats.totalTasks}
               </p>
             </div>
           </div>
@@ -470,13 +453,6 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                         </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-muted-foreground text-xs">
-                        <div className="flex items-center gap-1">
-                          <CheckSquare className="h-3 w-3" />
-                          <span>
-                            {board.task_count || 0}{' '}
-                            {board.task_count === 1 ? 'task' : 'tasks'}
-                          </span>
-                        </div>
                         {board.created_at && (
                           <div className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />

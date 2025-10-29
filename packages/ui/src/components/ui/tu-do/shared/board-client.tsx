@@ -2,9 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Workspace } from '@tuturuuu/types';
+import type { Workspace, WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useBoardRealtime } from '@tuturuuu/ui/hooks/useBoardRealtime';
 import {
@@ -18,7 +17,7 @@ import { BoardViews } from './board-views';
 
 interface Props {
   workspace: Workspace;
-  initialBoard: TaskBoard;
+  initialBoard: WorkspaceTaskBoard;
   initialTasks: Task[];
   initialLists: TaskList[];
   currentUserId?: string;

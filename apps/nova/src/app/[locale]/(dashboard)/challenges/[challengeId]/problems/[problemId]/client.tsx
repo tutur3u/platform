@@ -99,9 +99,7 @@ export default function ChallengeClient({
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        endTime: new Date(
-          Math.min(new Date().getTime(), sessionEndTime)
-        ).toISOString(),
+        endTime: new Date(Math.min(Date.now(), sessionEndTime)).toISOString(),
         status: 'ENDED',
       }),
     });
@@ -204,7 +202,7 @@ export default function ChallengeClient({
       window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('click', handleLinkClick, { capture: true });
     };
-  }, [challenge.id, isNavigationConfirmed]);
+  }, [challenge.id, isNavigationConfirmed, problem.id]);
 
   return (
     <>
