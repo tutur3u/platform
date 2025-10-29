@@ -49,7 +49,7 @@ export async function GET(
       );
     }
 
-    // Fetch boards with their lists
+    // Fetch boards with their lists (exclude soft-deleted boards)
     const { data, error } = await supabase
       .from('workspace_boards')
       .select(

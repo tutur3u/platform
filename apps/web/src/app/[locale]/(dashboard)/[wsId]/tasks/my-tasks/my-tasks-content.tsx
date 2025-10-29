@@ -1291,7 +1291,7 @@ export default function MyTasksContent({
       none: [] as TaskWithRelations[],
     };
 
-    if (!tasks) return emptyResult;
+    if (!tasks || !Array.isArray(tasks)) return emptyResult;
 
     return tasks.reduce(
       (acc, task) => {
@@ -1677,7 +1677,7 @@ export default function MyTasksContent({
                                 <span className="font-bold text-dynamic-red text-xs uppercase tracking-wider">
                                   Critical Priority ({grouped.critical.length})
                                 </span>
-                                <div className="h-px flex-1 bg-gradient-to-r from-dynamic-red/30 to-transparent" />
+                                <div className="h-px flex-1 bg-linear-to-r from-dynamic-red/30 to-transparent" />
                               </div>
                               <TaskListWithCompletion
                                 tasks={grouped.critical}
@@ -1696,7 +1696,7 @@ export default function MyTasksContent({
                                 <span className="font-bold text-dynamic-orange text-xs uppercase tracking-wider">
                                   High Priority ({grouped.high.length})
                                 </span>
-                                <div className="h-px flex-1 bg-gradient-to-r from-dynamic-orange/30 to-transparent" />
+                                <div className="h-px flex-1 bg-linear-to-r from-dynamic-orange/30 to-transparent" />
                               </div>
                               <TaskListWithCompletion
                                 tasks={grouped.high}
@@ -1715,7 +1715,7 @@ export default function MyTasksContent({
                                 <span className="font-bold text-dynamic-blue text-xs uppercase tracking-wider">
                                   Normal Priority ({grouped.normal.length})
                                 </span>
-                                <div className="h-px flex-1 bg-gradient-to-r from-dynamic-blue/30 to-transparent" />
+                                <div className="h-px flex-1 bg-linear-to-r from-dynamic-blue/30 to-transparent" />
                               </div>
                               <TaskListWithCompletion
                                 tasks={grouped.normal}
@@ -1736,7 +1736,7 @@ export default function MyTasksContent({
                                   Low Priority (
                                   {grouped.low.length + grouped.none.length})
                                 </span>
-                                <div className="h-px flex-1 bg-gradient-to-r from-muted-foreground/30 to-transparent" />
+                                <div className="h-px flex-1 bg-linear-to-r from-muted-foreground/30 to-transparent" />
                               </div>
                               <TaskListWithCompletion
                                 tasks={[...grouped.low, ...grouped.none]}
@@ -1809,7 +1809,7 @@ export default function MyTasksContent({
                                 <span className="font-bold text-dynamic-red text-xs uppercase tracking-wider">
                                   Critical Priority ({grouped.critical.length})
                                 </span>
-                                <div className="h-px flex-1 bg-gradient-to-r from-dynamic-red/30 to-transparent" />
+                                <div className="h-px flex-1 bg-linear-to-r from-dynamic-red/30 to-transparent" />
                               </div>
                               <TaskListWithCompletion
                                 tasks={grouped.critical}
@@ -1828,7 +1828,7 @@ export default function MyTasksContent({
                                 <span className="font-bold text-dynamic-orange text-xs uppercase tracking-wider">
                                   High Priority ({grouped.high.length})
                                 </span>
-                                <div className="h-px flex-1 bg-gradient-to-r from-dynamic-orange/30 to-transparent" />
+                                <div className="h-px flex-1 bg-linear-to-r from-dynamic-orange/30 to-transparent" />
                               </div>
                               <TaskListWithCompletion
                                 tasks={grouped.high}
@@ -1847,7 +1847,7 @@ export default function MyTasksContent({
                                 <span className="font-bold text-dynamic-blue text-xs uppercase tracking-wider">
                                   Normal Priority ({grouped.normal.length})
                                 </span>
-                                <div className="h-px flex-1 bg-gradient-to-r from-dynamic-blue/30 to-transparent" />
+                                <div className="h-px flex-1 bg-linear-to-r from-dynamic-blue/30 to-transparent" />
                               </div>
                               <TaskListWithCompletion
                                 tasks={grouped.normal}
@@ -1868,7 +1868,7 @@ export default function MyTasksContent({
                                   Low Priority (
                                   {grouped.low.length + grouped.none.length})
                                 </span>
-                                <div className="h-px flex-1 bg-gradient-to-r from-muted-foreground/30 to-transparent" />
+                                <div className="h-px flex-1 bg-linear-to-r from-muted-foreground/30 to-transparent" />
                               </div>
                               <TaskListWithCompletion
                                 tasks={[...grouped.low, ...grouped.none]}
@@ -1941,7 +1941,7 @@ export default function MyTasksContent({
                                 <span className="font-bold text-dynamic-red text-xs uppercase tracking-wider">
                                   Critical Priority ({grouped.critical.length})
                                 </span>
-                                <div className="h-px flex-1 bg-gradient-to-r from-dynamic-red/30 to-transparent" />
+                                <div className="h-px flex-1 bg-linear-to-r from-dynamic-red/30 to-transparent" />
                               </div>
                               <TaskListWithCompletion
                                 tasks={grouped.critical}
@@ -1960,7 +1960,7 @@ export default function MyTasksContent({
                                 <span className="font-bold text-dynamic-orange text-xs uppercase tracking-wider">
                                   High Priority ({grouped.high.length})
                                 </span>
-                                <div className="h-px flex-1 bg-gradient-to-r from-dynamic-orange/30 to-transparent" />
+                                <div className="h-px flex-1 bg-linear-to-r from-dynamic-orange/30 to-transparent" />
                               </div>
                               <TaskListWithCompletion
                                 tasks={grouped.high}
@@ -1979,7 +1979,7 @@ export default function MyTasksContent({
                                 <span className="font-bold text-dynamic-blue text-xs uppercase tracking-wider">
                                   Normal Priority ({grouped.normal.length})
                                 </span>
-                                <div className="h-px flex-1 bg-gradient-to-r from-dynamic-blue/30 to-transparent" />
+                                <div className="h-px flex-1 bg-linear-to-r from-dynamic-blue/30 to-transparent" />
                               </div>
                               <TaskListWithCompletion
                                 tasks={grouped.normal}
@@ -2000,7 +2000,7 @@ export default function MyTasksContent({
                                   Low Priority (
                                   {grouped.low.length + grouped.none.length})
                                 </span>
-                                <div className="h-px flex-1 bg-gradient-to-r from-muted-foreground/30 to-transparent" />
+                                <div className="h-px flex-1 bg-linear-to-r from-muted-foreground/30 to-transparent" />
                               </div>
                               <TaskListWithCompletion
                                 tasks={[...grouped.low, ...grouped.none]}
@@ -2444,7 +2444,7 @@ export default function MyTasksContent({
                                   onClick={() =>
                                     handleStartEditTitle(originalIndex)
                                   }
-                                  className="line-clamp-2 flex-1 cursor-text break-words rounded px-2 py-1 text-left font-medium text-foreground text-sm transition hover:bg-muted/50"
+                                  className="wrap-break-word line-clamp-2 flex-1 cursor-text rounded px-2 py-1 text-left font-medium text-foreground text-sm transition hover:bg-muted/50"
                                   disabled={isCreating}
                                 >
                                   {displayIndex + 1}. {currentName}
@@ -2656,7 +2656,7 @@ export default function MyTasksContent({
                                         handleCancelEditDescription();
                                       }
                                     }}
-                                    className="min-h-[80px] w-full resize-none break-all text-sm"
+                                    className="min-h-20 w-full resize-none break-all text-sm"
                                     placeholder="Add a description..."
                                     autoFocus
                                     disabled={isCreating}
@@ -2690,7 +2690,7 @@ export default function MyTasksContent({
                                   onClick={() =>
                                     handleStartEditDescription(originalIndex)
                                   }
-                                  className="line-clamp-3 w-full cursor-text break-words rounded px-2 py-1 text-left text-foreground text-sm leading-relaxed opacity-90 transition hover:bg-muted/50"
+                                  className="wrap-break-word line-clamp-3 w-full cursor-text rounded px-2 py-1 text-left text-foreground text-sm leading-relaxed opacity-90 transition hover:bg-muted/50"
                                   disabled={isCreating}
                                 >
                                   {currentDescription || 'No description'}

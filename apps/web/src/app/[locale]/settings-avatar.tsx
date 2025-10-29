@@ -1,6 +1,5 @@
 'use client';
 
-import { ImageCropper } from '@/components/image-cropper';
 import { Loader2, UserIcon } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -23,10 +22,11 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
+import { ImageCropper } from '@/components/image-cropper';
 
 interface AvatarProps {
   user: WorkspaceUser;

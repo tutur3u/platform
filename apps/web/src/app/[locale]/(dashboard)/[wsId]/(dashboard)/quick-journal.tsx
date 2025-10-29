@@ -1030,7 +1030,7 @@ function QuickJournalContent({ wsId }: QuickJournalContentProps) {
   return (
     <>
       <Card className="group overflow-hidden border border-dynamic-blue/20 bg-background/80 shadow-sm backdrop-blur">
-        <CardHeader className="border-dynamic-blue/15 border-b bg-gradient-to-r from-dynamic-blue/10 via-dynamic-indigo/10 to-dynamic-purple/10">
+        <CardHeader className="border-dynamic-blue/15 border-b bg-linear-to-r from-dynamic-blue/10 via-dynamic-indigo/10 to-dynamic-purple/10">
           <div className="flex items-start justify-between gap-3">
             <div>
               <CardTitle className="flex items-center gap-2 font-semibold text-base">
@@ -1063,7 +1063,7 @@ function QuickJournalContent({ wsId }: QuickJournalContentProps) {
               onChange={handleEditorContentChange}
               writePlaceholder={t('placeholder')}
               readOnly={isCreating}
-              className="min-h-[160px]"
+              className="min-h-40"
             />
             <p className="text-muted-foreground text-xs">{t('helper_text')}</p>
           </div>

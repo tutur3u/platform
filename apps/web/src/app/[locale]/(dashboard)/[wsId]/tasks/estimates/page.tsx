@@ -1,6 +1,6 @@
 import { Calculator } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
@@ -36,7 +36,7 @@ export default async function TaskEstimatesPage({ params }: Props) {
   return (
     <div className="space-y-6 pb-8">
       {/* Header with gradient accent matching task-edit-dialog pattern */}
-      <div className="space-y-3 rounded-lg border border-border/50 bg-gradient-to-r from-dynamic-orange/5 via-background to-background p-6 shadow-sm">
+      <div className="space-y-3 rounded-lg border border-border/50 bg-linear-to-r from-dynamic-orange/5 via-background to-background p-6 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dynamic-orange/10 ring-1 ring-dynamic-orange/20">
             <Calculator className="h-5 w-5 text-dynamic-orange" />
@@ -61,7 +61,7 @@ export default async function TaskEstimatesPage({ params }: Props) {
 
 async function getTaskBoards(
   wsId: string
-): Promise<{ boards: Partial<TaskBoard>[] }> {
+): Promise<{ boards: Partial<WorkspaceTaskBoard>[] }> {
   const supabase = await createClient();
 
   // Get boards first
