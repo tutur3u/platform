@@ -1,6 +1,4 @@
 import type { SupportedColor } from './SupportedColors';
-import type { Task } from './Task';
-import type { TaskList } from './TaskList';
 
 // Task Board Status - Used for organizing tasks into workflow stages
 // NOTE: This is different from AI module TaskStatus which has different values
@@ -23,34 +21,3 @@ export interface TaskBoardStatusDefinition {
   color: SupportedColor;
   allow_multiple: boolean;
 }
-
-export interface TaskBoard {
-  id: string;
-  name: string;
-  archived: boolean;
-  deleted: boolean;
-  estimation_type: 'exponential' | 'fibonacci' | 'linear' | 't-shirt' | null;
-  extended_estimation: boolean;
-  allow_zero_estimates: boolean;
-  count_unestimated_issues: boolean;
-  task_count?: number;
-
-  template_id?: string;
-  ws_id: string;
-  href?: string;
-  created_at: string | null;
-  creator_id: string;
-}
-
-export type EnhancedTaskBoard = TaskBoard & {
-  href: string;
-  totalTasks: number;
-  completedTasks: number;
-  activeTasks: number;
-  overdueTasks: number;
-  progressPercentage: number;
-  highPriorityTasks: number;
-  mediumPriorityTasks: number;
-  lowPriorityTasks: number;
-  task_lists?: (TaskList & { tasks: Task[] })[];
-};

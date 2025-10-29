@@ -102,7 +102,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       `)
       .eq('id', boardId)
       .eq('ws_id', wsId)
-      .eq('deleted', false)
+      .is('deleted_at', null)
       .single();
 
     if (fetchError || !sourceBoard) {
@@ -127,8 +127,8 @@ export async function POST(req: NextRequest, { params }: Params) {
       name: newBoardName || `${sourceBoard.name} (Copy)`,
       ws_id: targetWorkspaceId,
       creator_id: user.id,
-      archived: false,
-      deleted: false,
+      archived_at: null,
+      deleted_at: null,
       created_at: new Date().toISOString(),
       template_id: sourceBoard.template_id,
     };

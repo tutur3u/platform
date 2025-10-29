@@ -132,7 +132,7 @@ export function TaskGroup({
                       </h4>
                     </div>
 
-                    <div className="flex flex-shrink-0 items-center gap-2">
+                    <div className="flex shrink-0 items-center gap-2">
                       {task.priority === 'critical' && (
                         <Badge
                           variant="destructive"
@@ -214,14 +214,14 @@ export function TaskGroup({
                   {/* Task Metadata */}
                   <div className="flex flex-wrap items-center gap-3 text-muted-foreground text-xs">
                     <span className="flex min-w-0 items-center gap-1">
-                      <LayoutGrid className="h-3 w-3 flex-shrink-0" />
+                      <LayoutGrid className="h-3 w-3 shrink-0" />
                       <span className="truncate" title={task.boardName}>
                         {task.boardName}
                       </span>
                     </span>
 
                     <span className="flex min-w-0 items-center gap-1">
-                      <LayoutList className="h-3 w-3 flex-shrink-0" />
+                      <LayoutList className="h-3 w-3 shrink-0" />
                       <span className="truncate" title={task.listName}>
                         {task.listName}
                       </span>
@@ -229,7 +229,7 @@ export function TaskGroup({
 
                     {task.end_date && (
                       <span className="flex items-center gap-1 whitespace-nowrap">
-                        <Calendar className="h-3 w-3 flex-shrink-0" />
+                        <Calendar className="h-3 w-3 shrink-0" />
                         <span>
                           {new Date(task.end_date).toLocaleDateString()}
                         </span>
@@ -257,7 +257,7 @@ export function TaskGroup({
                 </div>
 
                 {/* Action Button */}
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   <Button
                     variant="ghost"
                     size="sm"

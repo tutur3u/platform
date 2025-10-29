@@ -11,8 +11,8 @@ import {
   Flag,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
@@ -21,7 +21,7 @@ import { format } from 'date-fns';
 import { type JSX, useMemo } from 'react';
 
 interface Props {
-  board: TaskBoard;
+  board: WorkspaceTaskBoard;
   collapsed?: boolean;
   onToggleCollapsed?: () => void;
 }

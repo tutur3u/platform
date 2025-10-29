@@ -1918,7 +1918,48 @@
     "singular": "Task board",
     "create": "Create board",
     "create_description": "Create a task board",
-    "description": "Task boards are used to manage tasks that are related to a specific project or goal."
+    "description": "Task boards are used to manage tasks that are related to a specific project or goal.",
+    "row_actions": {
+      "copy": "Copy",
+      "restore": "Restore",
+      "delete_forever": "Delete Forever",
+      "unarchive": "Unarchive",
+      "archive": "Archive",
+      "toast": {
+        "delete_temp_success": "Board temporarily deleted",
+        "delete_temp_error": "Failed to delete board",
+        "delete_perm_success": "Board permanently deleted",
+        "delete_perm_error": "Failed to permanently delete board",
+        "restore_success": "Board restored successfully",
+        "restore_error": "Failed to restore board",
+        "archive_success": "Board archived successfully",
+        "archive_error": "Failed to archive board",
+        "unarchive_success": "Board unarchived successfully",
+        "unarchive_error": "Failed to unarchive board"
+      },
+      "dialog": {
+        "delete_title": "Move Board to Trash",
+        "delete_description": "Are you sure you want to delete \"{name}\"?",
+        "delete_button_moving": "Moving...",
+        "delete_button": "Move to Trash",
+        "restore_title": "Restore Board",
+        "restore_description": "Are you sure you want to restore \"{name}\"? The board will be moved back to your active boards.",
+        "restore_button_restoring": "Restoring...",
+        "restore_button": "Restore Board",
+        "delete_perm_title": "Permanently Delete Board",
+        "delete_perm_description": "Are you sure you want to permanently delete \"{name}\"? This action cannot be undone and will permanently delete the board and all its tasks.",
+        "delete_perm_button_deleting": "Deleting...",
+        "delete_perm_button": "Delete Forever",
+        "archive_title": "Archive Board",
+        "archive_description": "Are you sure you want to archive \"{name}\"? You can unarchive it later from the archived boards section.",
+        "archive_button_archiving": "Archiving...",
+        "archive_button": "Archive Board",
+        "unarchive_title": "Unarchive Board",
+        "unarchive_description": "Are you sure you want to unarchive \"{name}\"? The board will be moved back to your active boards.",
+        "unarchive_button_unarchiving": "Unarchiving...",
+        "unarchive_button": "Unarchive Board"
+      }
+    }
   },
   "ws-settings": {
     "description": "Manage the settings of your workspace.",

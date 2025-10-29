@@ -1,8 +1,8 @@
 'use client';
 
 import { Crown, FileText, TrendingUp, Users } from '@tuturuuu/icons';
+import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -44,7 +44,7 @@ import IconPicker from '../../custom/icon-picker';
 
 interface Props {
   wsId: string;
-  data?: TaskBoard;
+  data?: WorkspaceTaskBoard;
   children?: React.ReactNode;
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
@@ -192,7 +192,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
   const formContent = (
     <div className="flex h-full max-h-[min(85vh,800px)] w-full flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex-shrink-0 border-b bg-background px-4 py-4 sm:px-6 sm:py-6">
+      <div className="shrink-0 border-b bg-background px-4 py-4 sm:px-6 sm:py-6">
         <div className="text-center">
           <h2 className="font-semibold text-lg sm:text-xl">
             {isEditMode ? 'Edit Task Board' : 'Create New Task Board'}
@@ -303,7 +303,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                                         value=""
                                         className="mt-0.5 sm:mt-1"
                                       />
-                                      <Crown className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground sm:h-5 sm:w-5" />
+                                      <Crown className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground sm:h-5 sm:w-5" />
                                       <div className="min-w-0 flex-1 space-y-1 sm:space-y-2">
                                         <div className="flex flex-wrap items-center gap-2">
                                           <span className="font-medium text-sm sm:text-base">
@@ -357,7 +357,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                                             id={template.id}
                                             className="mt-0.5 sm:mt-1"
                                           />
-                                          <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground sm:h-5 sm:w-5" />
+                                          <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground sm:h-5 sm:w-5" />
                                           <div className="min-w-0 flex-1 space-y-1 sm:space-y-2">
                                             <div className="flex flex-wrap items-center gap-2">
                                               <span className="font-medium text-sm sm:text-base">
@@ -442,7 +442,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                                 >
                                   <div
                                     className={cn(
-                                      'h-2.5 w-2.5 flex-shrink-0 rounded-full border sm:h-3 sm:w-3',
+                                      'h-2.5 w-2.5 shrink-0 rounded-full border sm:h-3 sm:w-3',
                                       colorClass
                                     )}
                                   />
@@ -478,7 +478,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
       </div>
 
       {/* Fixed Footer */}
-      <div className="flex-shrink-0 border-t bg-background/95 p-4 backdrop-blur-sm sm:p-6">
+      <div className="shrink-0 border-t bg-background/95 p-4 backdrop-blur-sm sm:p-6">
         <Button
           type="submit"
           className="w-full"

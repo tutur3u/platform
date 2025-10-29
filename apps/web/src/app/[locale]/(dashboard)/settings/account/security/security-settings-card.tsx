@@ -44,7 +44,7 @@ export default async function SecuritySettingsCard({
   const hasPassword = true; // Assuming user has password - you might want to check this
 
   // Get account age
-  const accountAge = new Date().getTime() - new Date(user.created_at).getTime();
+  const accountAge = Date.now() - new Date(user.created_at).getTime();
   const accountAgeDays = Math.floor(accountAge / (1000 * 60 * 60 * 24));
 
   // Get user's sessions count (you might want to implement this)
@@ -220,7 +220,7 @@ export default async function SecuritySettingsCard({
         {(!user.email || securityLevel === 'warning') && (
           <div className="rounded-lg border border-dynamic-yellow/30 bg-dynamic-yellow/5 p-4">
             <div className="flex gap-3">
-              <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-dynamic-yellow" />
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-yellow" />
               <div className="space-y-2">
                 <div>
                   <p className="font-medium text-dynamic-yellow text-sm">
@@ -243,7 +243,7 @@ export default async function SecuritySettingsCard({
         {/* Security Tips */}
         <div className="rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-4">
           <div className="flex gap-3">
-            <Shield className="mt-0.5 h-5 w-5 flex-shrink-0 text-dynamic-blue" />
+            <Shield className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-blue" />
             <div className="space-y-2">
               <div>
                 <p className="font-medium text-dynamic-blue text-sm">

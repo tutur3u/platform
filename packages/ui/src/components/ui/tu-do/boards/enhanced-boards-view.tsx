@@ -1,13 +1,9 @@
 'use client';
 
 import {
-  Activity,
-  AlertTriangle,
   ArrowRight,
   BarChart3,
   Calendar,
-  CheckCircle2,
-  Clock,
   Copy,
   Eye,
   Filter,
@@ -16,28 +12,12 @@ import {
   RefreshCw,
   Settings2,
   SortAsc,
-  Target,
-  TrendingUp,
+  Trash2,
   X,
 } from '@tuturuuu/icons';
-import type { EnhancedTaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
-import { Badge } from '@tuturuuu/ui/badge';
+import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@tuturuuu/ui/dialog';
-// Import analytics hooks
-import {
-  useAvgDuration,
-  useOnTimeRate,
-  useTaskVelocity,
-} from '@tuturuuu/ui/hooks/use-task-analytics';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -45,15 +25,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { getFilteredMetrics } from '@tuturuuu/utils/task-helpers';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
-import { GanttChart } from './analytics/GanttChart';
-import { StatusDistribution } from './analytics/StatusDistribution';
-import { TaskCreationAnalytics } from './analytics/TaskCreationAnalytics';
-import { TaskGroup } from './analytics/TaskGroup';
-import { TaskWorkflowAnalytics } from './analytics/TaskWorkflowAnalytics';
+import { BOARD_RETENTION_DAYS } from '../../../../constants/boards';
 import { projectColumns } from './columns';
 import { CopyBoardDialog } from './copy-board-dialog';
 
@@ -72,12 +48,11 @@ const CARD_LAYOUT_OPTIONS = [
 type CardLayout = (typeof CARD_LAYOUT_OPTIONS)[number]['value'];
 
 interface EnhancedBoardsViewProps {
-  data: EnhancedTaskBoard[];
+  data: WorkspaceTaskBoard[];
   count: number;
 }
 
 // Define types for better type safety
-type TaskStatus = 'not_started' | 'active' | 'done' | 'closed';
 type FilterType = 'all' | 'completed' | 'overdue' | 'urgent';
 
 interface TaskModalState {
@@ -93,11 +68,13 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
 
   // Removed unused activeTab state - tabs are controlled by Tabs component
   const [cardLayout, setCardLayout] = useState<CardLayout>('grid-cols-3');
-  const [selectedBoard, setSelectedBoard] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showColumnSettings, setShowColumnSettings] = useState(false);
+  const [boardStatusFilter, setBoardStatusFilter] = useState<
+    'all' | 'active' | 'archived' | 'recently_deleted'
+  >('active');
 
   // Column visibility state
   const [columnVisibility, setColumnVisibility] = useState({
@@ -136,7 +113,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
   // Copy board dialog state
   const [copyBoardModal, setCopyBoardModal] = useState<{
     isOpen: boolean;
-    board: EnhancedTaskBoard | null;
+    board: WorkspaceTaskBoard | null;
   }>({
     isOpen: false,
     board: null,
@@ -159,183 +136,12 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     statusFilter: 'all',
   });
 
-  // [sidebar and modal states remain the same]
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // Memoize the selected board data to avoid repeated find operations
-  const selectedBoardData = useMemo(() => {
-    return selectedBoard ? safeData.find((b) => b.id === selectedBoard) : null;
-  }, [safeData, selectedBoard]);
-
-  // Analytics-specific metrics that respond to board selection
-  const analyticsMetrics = useMemo(
-    () => getFilteredMetrics(safeData, analyticsFilters.selectedBoard),
-    [analyticsFilters.selectedBoard, safeData]
-  );
-
-  // Get all tasks across all boards for filtering - optimized with early return
-  const allTasks = useMemo(() => {
-    if (!safeData.length) return [];
-
-    return safeData.flatMap((board) =>
-      (board.task_lists || []).flatMap((list) =>
-        (list.tasks || []).map((task) => ({
-          ...task,
-          boardId: board.id,
-          boardName: board.name,
-          listId: list.id,
-          listName: list.name,
-          listStatus: list.status,
-          boardHref: board.href,
-        }))
-      )
-    );
-  }, [safeData]);
-
-  // Use analytics hooks instead of duplicate calculations
-  const calculateAvgDuration = useAvgDuration(
-    allTasks,
-    analyticsFilters.selectedBoard
-  );
-  const calculateTaskVelocity = useTaskVelocity(
-    allTasks,
-    analyticsFilters.selectedBoard
-  );
-  const calculateOnTimeRate = useOnTimeRate(
-    allTasks,
-    analyticsFilters.selectedBoard
-  );
-
-  // Filter tasks based on modal state - optimized with early returns
-  const filteredTasks = useMemo(() => {
-    if (!allTasks.length) return [];
-
-    let tasks = allTasks;
-
-    // Filter by board if specified
-    if (taskModal.selectedBoard && taskModal.selectedBoard !== 'all') {
-      tasks = tasks.filter((task) => task.boardId === taskModal.selectedBoard);
-    }
-
-    // Filter by type with early returns for better performance
-    switch (taskModal.filterType) {
-      case 'completed':
-        return tasks.filter(
-          (task) =>
-            !!task.closed_at ||
-            task.listStatus === 'done' ||
-            task.listStatus === 'closed'
-        );
-      case 'overdue': {
-        const now = new Date();
-        return tasks.filter(
-          (task) =>
-            !task.closed_at &&
-            task.listStatus !== 'done' &&
-            task.listStatus !== 'closed' &&
-            task.end_date &&
-            new Date(task.end_date) < now
-        );
-      }
-      case 'urgent':
-        return tasks.filter(
-          (task) =>
-            task.priority === 'critical' &&
-            !task.closed_at &&
-            task.listStatus !== 'done' &&
-            task.listStatus !== 'closed'
-        );
-      default:
-        return tasks;
-    }
-  }, [allTasks, taskModal]);
-
-  // Group filtered tasks by status - optimized
-  const groupedTasks = useMemo(() => {
-    if (!filteredTasks.length) {
-      return {
-        not_started: [],
-        active: [],
-        done: [],
-        closed: [],
-      };
-    }
-
-    const groups: Record<TaskStatus, typeof filteredTasks> = {
-      not_started: [],
-      active: [],
-      done: [],
-      closed: [],
-    };
-
-    filteredTasks.forEach((task) => {
-      if (task.closed_at || task.listStatus === 'done') {
-        groups.done.push(task);
-      } else if (task.listStatus === 'closed') {
-        groups.closed.push(task);
-      } else if (task.listStatus === 'active') {
-        groups.active.push(task);
-      } else {
-        groups.not_started.push(task);
-      }
-    });
-
-    return groups;
-  }, [filteredTasks]);
-
-  const handleBoardClick = useCallback(
-    (board: (typeof safeData)[0], e?: React.MouseEvent) => {
-      if (e) {
-        e.preventDefault();
-      }
-      setSelectedBoard(board.id);
-      setSidebarOpen(true);
-    },
-    []
-  );
-
-  // Handler for table row clicks
-  const handleTableRowClick = useCallback(
-    (board: (typeof safeData)[0]) => {
-      // Check if any dialogs or alert dialogs are currently open
-      const hasOpenDialogs = document.querySelector('[role="dialog"]') !== null;
-      const hasOpenAlertDialogs =
-        document.querySelector('[role="alertdialog"]') !== null;
-      if (hasOpenDialogs || hasOpenAlertDialogs) {
-        return; // Don't trigger row click if dialogs are open
-      }
-      handleBoardClick(board);
-    },
-    [handleBoardClick]
-  );
-
-  const closeSidebar = useCallback(() => {
-    setSidebarOpen(false);
-    setSelectedBoard(null);
-  }, []);
-
-  const closeTaskModal = useCallback(() => {
-    setTaskModal((prev) => ({ ...prev, isOpen: false }));
-  }, []);
-
-  const openCopyBoardModal = useCallback((board: EnhancedTaskBoard) => {
+  const openCopyBoardModal = useCallback((board: WorkspaceTaskBoard) => {
     setCopyBoardModal({ isOpen: true, board });
   }, []);
 
   const closeCopyBoardModal = useCallback(() => {
     setCopyBoardModal({ isOpen: false, board: null });
-  }, []);
-
-  const handleTaskClick = useCallback((task: (typeof filteredTasks)[0]) => {
-    // TODO: Implement task click navigation
-    // Should navigate to the specific task's board view or open task details modal
-    // For now, log the task for debugging purposes
-    console.log('Task clicked:', task);
-
-    // TODO: Add navigation logic here:
-    // - Navigate to the task's board: router.push(`/tasks/boards/${task.board_id}?task=${task.id}`)
-    // - Or open a task details modal
-    // - Or highlight the task in the current view
   }, []);
 
   const refreshTasks = useCallback(() => {
@@ -386,16 +192,80 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     // - Save/restore user preferences
   }, []);
 
+  // Calculate days remaining for soft-deleted boards
+  const calculateDaysRemaining = useCallback((deletedAt: string | null) => {
+    if (!deletedAt) return null;
+
+    const deletedDate = new Date(deletedAt);
+    const now = new Date();
+    const daysPassed = Math.floor(
+      (now.getTime() - deletedDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const daysRemaining = (BOARD_RETENTION_DAYS ?? 30) - daysPassed;
+
+    return Math.max(0, daysRemaining);
+  }, []);
+
+  // Soft delete a board
+  const handleSoftDeleteBoard = useCallback(
+    async (boardId: string, wsId: string) => {
+      try {
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/boards/${boardId}/trash`,
+          {
+            method: 'POST',
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to delete board');
+        }
+
+        toast.success('Board moved to trash successfully');
+        // Refresh the page to show updated data
+        router.refresh();
+      } catch (error) {
+        console.error('Error deleting board:', error);
+        toast.error('Failed to delete board', {
+          description:
+            error instanceof Error
+              ? error.message
+              : 'An unexpected error occurred',
+        });
+      }
+    },
+    [router]
+  );
+
   // Apply filters to data and check if filters are active
   const { filteredData, hasActiveFilters } = useMemo(() => {
     const hasFilters =
-      searchQuery.trim() !== '' || taskModal.filterType !== 'all';
+      searchQuery.trim() !== '' ||
+      taskModal.filterType !== 'all' ||
+      boardStatusFilter !== 'all';
     let filtered = [...safeData];
+
+    // Board status filter
+    if (boardStatusFilter !== 'all') {
+      filtered = filtered.filter((board) => {
+        switch (boardStatusFilter) {
+          case 'active':
+            return !board.deleted_at && !board.archived_at;
+          case 'archived':
+            return board.archived_at && !board.deleted_at;
+          case 'recently_deleted':
+            return !!board.deleted_at;
+          default:
+            return true;
+        }
+      });
+    }
+    // When 'all' is selected, show all boards (no filtering by status)
 
     // Search filter
     if (searchQuery.trim()) {
       filtered = filtered.filter((board) =>
-        board.name.toLowerCase().includes(searchQuery.toLowerCase())
+        board.name?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
@@ -412,24 +282,16 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
 
       switch (sortBy) {
         case 'name':
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
+          aValue = a.name?.toLowerCase() || '';
+          bValue = b.name?.toLowerCase() || '';
           break;
         case 'created_at':
           aValue = new Date(a.created_at || 0).getTime();
           bValue = new Date(b.created_at || 0).getTime();
           break;
-        case 'totalTasks':
-          aValue = a.totalTasks;
-          bValue = b.totalTasks;
-          break;
-        case 'progressPercentage':
-          aValue = a.progressPercentage;
-          bValue = b.progressPercentage;
-          break;
         default:
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
+          aValue = a.name?.toLowerCase() || '';
+          bValue = b.name?.toLowerCase() || '';
       }
 
       if (sortOrder === 'desc') {
@@ -440,7 +302,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     });
 
     return { filteredData: filtered, hasActiveFilters: hasFilters };
-  }, [safeData, searchQuery, sortBy, sortOrder, taskModal]);
+  }, [safeData, searchQuery, sortBy, sortOrder, taskModal, boardStatusFilter]);
 
   return (
     <>
@@ -595,18 +457,18 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   Status
                 </label>
                 <select
-                  value={taskModal.filterType || 'all'}
+                  value={boardStatusFilter}
                   onChange={(e) =>
-                    setTaskModal({
-                      ...taskModal,
-                      filterType: e.target.value as FilterType,
-                    })
+                    setBoardStatusFilter(
+                      e.target.value as typeof boardStatusFilter
+                    )
                   }
                   className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
                 >
                   <option value="all">All Boards</option>
                   <option value="active">Active</option>
                   <option value="archived">Archived</option>
+                  <option value="recently_deleted">Recently Deleted</option>
                 </select>
               </div>
               <div className="w-32">
@@ -631,6 +493,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   setSearchQuery('');
                   setSortBy('name');
                   setSortOrder('asc');
+                  setBoardStatusFilter('all');
                   setTaskModal({ ...taskModal, filterType: 'all' });
                 }}
                 className="mt-6"
@@ -816,7 +679,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   id: false,
                   created_at: false,
                 }}
-                onRowClick={handleTableRowClick}
               />
             </TabsContent>
 
@@ -826,18 +688,9 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 className={`grid grid-cols-1 gap-6 sm:${cardLayout} lg:${cardLayout}`}
               >
                 {filteredData.map((board) => (
-                  <button
+                  <div
                     key={board.id}
-                    type="button"
                     className="group hover:-translate-y-1 relative w-full cursor-pointer rounded-xl border bg-card p-6 text-left shadow-sm transition-all duration-200 hover:border-primary/20 hover:shadow-lg"
-                    onClick={(e) => handleBoardClick(board, e)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleBoardClick(board);
-                      }
-                    }}
-                    aria-label={`View board: ${board.name}`}
                   >
                     {/* Board Header */}
                     <div className="mb-4">
@@ -846,39 +699,18 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                           <h3 className="line-clamp-2 font-semibold text-lg leading-tight transition-colors group-hover:text-primary">
                             {board.name}
                           </h3>
-                          {/* Compact Task Summary */}
-                          <div className="mt-1 flex items-center justify-start gap-3 text-left text-muted-foreground text-xs">
-                            <span className="flex items-center gap-1">
-                              <BarChart3 className="h-3 w-3" />
-                              <span className="font-medium text-foreground">
-                                {board.totalTasks}
-                              </span>
-                              tasks
-                            </span>
-                            {board.completedTasks > 0 && (
-                              <span className="flex items-center gap-1">
-                                <CheckCircle2 className="h-3 w-3 text-green-600" />
-                                <span className="font-medium text-green-600">
-                                  {board.completedTasks}
-                                </span>
-                                done
-                              </span>
-                            )}
-                            {board.overdueTasks > 0 && (
-                              <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3 text-red-600" />
-                                <span className="font-medium text-red-600">
-                                  {board.overdueTasks}
-                                </span>
-                                overdue
-                              </span>
-                            )}
-                          </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          {board.archived && (
+                          {board.archived_at && (
                             <span className="inline-flex items-center rounded-full bg-muted px-2 py-1 font-medium text-muted-foreground text-xs">
                               Archived
+                            </span>
+                          )}
+                          {board.deleted_at && (
+                            <span className="inline-flex items-center rounded-full bg-destructive/10 px-2 py-1 font-medium text-destructive text-xs">
+                              Deleted —{' '}
+                              {calculateDaysRemaining(board.deleted_at)} days
+                              left
                             </span>
                           )}
                           <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
@@ -894,12 +726,27 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                             >
                               <Copy className="h-4 w-4" />
                             </Button>
+                            {!board.deleted_at && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSoftDeleteBoard(board.id, board.ws_id);
+                                }}
+                                title="Delete board"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="sm"
                               className="h-8 w-8 p-0"
                               onClick={(e) => {
                                 e.stopPropagation();
+                                if (!board.href) return;
                                 window.location.href = board.href;
                               }}
                               title="View board"
@@ -910,103 +757,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                         </div>
                       </div>
                     </div>
-
-                    {/* Progress Section */}
-                    <div className="mb-4">
-                      <div className="mb-2 flex items-center justify-between">
-                        <span className="font-medium text-muted-foreground text-sm">
-                          Progress
-                        </span>
-                        <span className="font-bold text-sm">
-                          {board.progressPercentage}%
-                        </span>
-                      </div>
-                      <div className="h-2 w-full rounded-full bg-muted">
-                        <div
-                          className="h-2 rounded-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-500"
-                          style={{ width: `${board.progressPercentage}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Enhanced Task Stats Grid */}
-                    <div className="mb-4 grid grid-cols-2 gap-3">
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-lg bg-blue-500/10 p-2">
-                          <BarChart3 className="h-4 w-4 text-blue-500" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-lg">
-                            {board.totalTasks}
-                          </p>
-                          <p className="text-muted-foreground text-xs">
-                            Total Tasks
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-lg bg-green-500/10 p-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-lg">
-                            {board.completedTasks}
-                          </p>
-                          <p className="text-muted-foreground text-xs">
-                            Completed
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-lg bg-orange-500/10 p-2">
-                          <Activity className="h-4 w-4 text-orange-500" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-lg">
-                            {board.activeTasks}
-                          </p>
-                          <p className="text-muted-foreground text-xs">
-                            Active
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-lg bg-red-500/10 p-2">
-                          <Clock className="h-4 w-4 text-red-500" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-lg">
-                            {board.overdueTasks}
-                          </p>
-                          <p className="text-muted-foreground text-xs">
-                            Overdue
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Alert Indicators */}
-                    {(board.overdueTasks > 0 ||
-                      board.highPriorityTasks > 0) && (
-                      <div className="mb-3 flex items-center justify-start gap-3 rounded-lg bg-muted/50 p-2 text-left">
-                        {board.overdueTasks > 0 && (
-                          <div className="flex items-center gap-1 text-red-600">
-                            <Clock className="h-3 w-3" />
-                            <span className="font-medium text-xs">
-                              {board.overdueTasks} overdue
-                            </span>
-                          </div>
-                        )}
-                        {board.highPriorityTasks > 0 && (
-                          <div className="flex items-center gap-1 text-orange-600">
-                            <AlertTriangle className="h-3 w-3" />
-                            <span className="font-medium text-xs">
-                              {board.highPriorityTasks} urgent
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    )}
 
                     {/* Footer */}
                     <div className="flex items-center justify-between border-t pt-3 text-muted-foreground text-xs">
@@ -1025,7 +775,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                         <ArrowRight className="h-3 w-3 text-primary" />
                       </div>
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
 
@@ -1127,460 +877,11 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     </Select>
                   </div>
                 </div>
-
-                {/* Data Quality Indicator */}
-                <div className="mb-4 rounded-lg border bg-muted/50 p-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="rounded-full bg-green-500/10 p-1">
-                      <div className="h-2 w-2 rounded-full bg-green-500" />
-                    </div>
-                    <span className="font-medium">Data Status:</span>
-                    <span className="text-muted-foreground">
-                      {calculateAvgDuration.count > 0 ||
-                      calculateTaskVelocity.thisWeek > 0 ||
-                      calculateOnTimeRate.total > 0
-                        ? `Analyzing ${analyticsMetrics.totalTasks} tasks with completion tracking`
-                        : 'Limited data available - metrics may show N/A until tasks are completed'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Productivity Metrics - Now responsive to board selection */}
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
-                  <Card className="p-4">
-                    <div className="mb-2 flex items-center gap-2">
-                      <div className="rounded-lg bg-blue-500/10 p-2">
-                        <Target className="h-4 w-4 text-blue-500" />
-                      </div>
-                      <span className="font-medium text-sm">
-                        Completion Rate
-                      </span>
-                    </div>
-                    <p className="font-bold text-2xl text-blue-600">
-                      {Math.round(
-                        (analyticsMetrics.totalCompleted /
-                          analyticsMetrics.totalTasks) *
-                          100
-                      ) || 0}
-                      %
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      {analyticsMetrics.totalCompleted} of{' '}
-                      {analyticsMetrics.totalTasks} tasks completed
-                    </p>
-                  </Card>
-
-                  <Card className="p-4">
-                    <div className="mb-2 flex items-center gap-2">
-                      <div className="rounded-lg bg-green-500/10 p-2">
-                        <TrendingUp className="h-4 w-4 text-green-500" />
-                      </div>
-                      <span className="font-medium text-sm">Active Tasks</span>
-                    </div>
-                    <p className="font-bold text-2xl text-green-600">
-                      {analyticsMetrics.totalTasks -
-                        analyticsMetrics.totalCompleted}
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      Currently in progress
-                    </p>
-                  </Card>
-
-                  <Card className="p-4">
-                    <div className="mb-2 flex items-center gap-2">
-                      <div className="rounded-lg bg-purple-500/10 p-2">
-                        <Clock className="h-4 w-4 text-purple-500" />
-                      </div>
-                      <span className="font-medium text-sm">Avg Duration</span>
-                    </div>
-                    <p className="font-bold text-2xl text-purple-600">
-                      {calculateAvgDuration.label}
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      {calculateAvgDuration.description}
-                    </p>
-                  </Card>
-
-                  <Card className="p-4">
-                    <div className="mb-2 flex items-center gap-2">
-                      <div className="rounded-lg bg-orange-500/10 p-2">
-                        <TrendingUp className="h-4 w-4 text-orange-500" />
-                      </div>
-                      <span className="font-medium text-sm">Task Velocity</span>
-                    </div>
-                    <p className="font-bold text-2xl text-orange-600">
-                      {calculateTaskVelocity.label}
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      {calculateTaskVelocity.description}
-                    </p>
-                  </Card>
-
-                  <Card className="p-4">
-                    <div className="mb-2 flex items-center gap-2">
-                      <div className="rounded-lg bg-emerald-500/10 p-2">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                      </div>
-                      <span className="font-medium text-sm">On-Time Rate</span>
-                    </div>
-                    <p className="font-bold text-2xl text-emerald-600">
-                      {calculateOnTimeRate.label}
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      {calculateOnTimeRate.description}
-                    </p>
-                  </Card>
-                </div>
-
-                {/* Gantt Chart Timeline */}
-                <GanttChart allTasks={allTasks} filters={analyticsFilters} />
-
-                {/* Analytics Grid - Status, Priority, and Assignee Timeline */}
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                  {/* Status Distribution */}
-                  <StatusDistribution
-                    allTasks={allTasks}
-                    selectedBoard={analyticsFilters.selectedBoard}
-                  />
-
-                  {/* Priority Distribution */}
-                  <TaskWorkflowAnalytics
-                    allTasks={allTasks}
-                    selectedBoard={analyticsFilters.selectedBoard}
-                  />
-
-                  {/* Assignee Timeline */}
-                  <TaskCreationAnalytics
-                    allTasks={allTasks}
-                    selectedBoard={analyticsFilters.selectedBoard}
-                  />
-                </div>
               </div>
             </TabsContent>
           </div>
         </Tabs>
       </div>
-
-      {/* Enhanced Sidebar */}
-      {sidebarOpen && selectedBoard && (
-        <div className="fixed inset-0 z-50 flex">
-          {/* Backdrop */}
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
-            onClick={closeSidebar}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                closeSidebar();
-              }
-            }}
-            aria-label="Close sidebar"
-          />
-
-          {/* Sidebar */}
-          <div className="relative ml-auto h-full w-full max-w-md bg-background shadow-2xl">
-            <div className="flex h-full flex-col">
-              {/* Header */}
-              <div className="flex items-center justify-between border-b p-6">
-                <div className="flex items-center justify-start gap-3 text-left">
-                  <div className="rounded-lg bg-primary/10 p-2">
-                    <LayoutGrid className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="font-semibold">Board Details</h2>
-                    <p className="text-muted-foreground text-sm">
-                      Quick overview
-                    </p>
-                  </div>
-                </div>
-                <Button variant="ghost" size="sm" onClick={closeSidebar}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 space-y-6 overflow-y-auto p-6">
-                {/* Board Info */}
-                <div>
-                  <h3 className="mb-2 line-clamp-2 font-semibold text-lg">
-                    {selectedBoardData?.name || 'N/A'}
-                  </h3>
-                </div>
-
-                {/* Progress Overview */}
-                <div className="rounded-lg border p-4">
-                  <div className="mb-3 flex items-center justify-between">
-                    <h4 className="font-medium">Overall Progress</h4>
-                    <span className="font-bold text-2xl text-primary">
-                      {selectedBoardData?.progressPercentage || 0}%
-                    </span>
-                  </div>
-                  <div className="mb-3 h-3 w-full rounded-full bg-muted">
-                    <div
-                      className="h-3 rounded-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-500"
-                      style={{
-                        width: `${selectedBoardData?.progressPercentage || 0}%`,
-                      }}
-                    />
-                  </div>
-                  <div className="text-muted-foreground text-sm">
-                    {selectedBoardData?.completedTasks || 0} of{' '}
-                    {selectedBoardData?.totalTasks || 0} tasks completed
-                  </div>
-                </div>
-
-                {/* Task Breakdown */}
-                <div className="space-y-3">
-                  <h4 className="font-medium">Task Breakdown</h4>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-lg border p-3">
-                      <div className="mb-1 flex items-center gap-2">
-                        <BarChart3 className="h-4 w-4 text-blue-500" />
-                        <span className="font-medium text-sm">Total</span>
-                      </div>
-                      <p className="font-bold text-2xl">
-                        {selectedBoardData?.totalTasks || 0}
-                      </p>
-                    </div>
-
-                    <div className="rounded-lg border p-3">
-                      <div className="mb-1 flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        <span className="font-medium text-sm">Completed</span>
-                      </div>
-                      <p className="font-bold text-2xl">
-                        {selectedBoardData?.completedTasks || 0}
-                      </p>
-                    </div>
-
-                    <div className="rounded-lg border p-3">
-                      <div className="mb-1 flex items-center gap-2">
-                        <Activity className="h-4 w-4 text-blue-500" />
-                        <span className="font-medium text-sm">Active</span>
-                      </div>
-                      <p className="font-bold text-2xl">
-                        {selectedBoardData?.activeTasks || 0}
-                      </p>
-                    </div>
-
-                    <div className="rounded-lg border p-3">
-                      <div className="mb-1 flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-red-500" />
-                        <span className="font-medium text-sm">Overdue</span>
-                      </div>
-                      <p className="font-bold text-2xl">
-                        {selectedBoardData?.overdueTasks || 0}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Priority Breakdown */}
-                {((selectedBoardData?.highPriorityTasks || 0) > 0 ||
-                  (selectedBoardData?.mediumPriorityTasks || 0) > 0 ||
-                  (selectedBoardData?.lowPriorityTasks || 0) > 0) && (
-                  <div className="space-y-3">
-                    <h4 className="font-medium">Priority Breakdown</h4>
-
-                    <div className="space-y-2">
-                      {(selectedBoardData?.highPriorityTasks || 0) > 0 && (
-                        <div className="flex items-center justify-between rounded-lg bg-red-50 p-2 dark:bg-red-950/20">
-                          <div className="flex items-center gap-2">
-                            <AlertTriangle className="h-4 w-4 text-red-500" />
-                            <span className="font-medium text-sm">
-                              High Priority
-                            </span>
-                          </div>
-                          <span className="font-bold">
-                            {selectedBoardData?.highPriorityTasks || 0}
-                          </span>
-                        </div>
-                      )}
-
-                      {(selectedBoardData?.mediumPriorityTasks || 0) > 0 && (
-                        <div className="flex items-center justify-between rounded-lg bg-orange-50 p-2 dark:bg-orange-950/20">
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-orange-500" />
-                            <span className="font-medium text-sm">
-                              Medium Priority
-                            </span>
-                          </div>
-                          <span className="font-bold">
-                            {selectedBoardData?.mediumPriorityTasks || 0}
-                          </span>
-                        </div>
-                      )}
-
-                      {(selectedBoardData?.lowPriorityTasks || 0) > 0 && (
-                        <div className="flex items-center justify-between rounded-lg bg-green-50 p-2 dark:bg-green-950/20">
-                          <div className="flex items-center gap-2">
-                            <Target className="h-4 w-4 text-green-500" />
-                            <span className="font-medium text-sm">
-                              Low Priority
-                            </span>
-                          </div>
-                          <span className="font-bold">
-                            {selectedBoardData?.lowPriorityTasks || 0}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Board Meta */}
-                <div className="space-y-3">
-                  <h4 className="font-medium">Board Information</h4>
-
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Created</span>
-                      <span>
-                        {selectedBoardData?.created_at
-                          ? new Date(
-                              selectedBoardData.created_at
-                            ).toLocaleDateString()
-                          : 'N/A'}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Status</span>
-                      <span
-                        className={
-                          selectedBoardData?.archived
-                            ? 'text-muted-foreground'
-                            : 'text-green-600'
-                        }
-                      >
-                        {selectedBoardData?.archived ? 'Archived' : 'Active'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer Actions */}
-              <div className="border-t p-6">
-                <div className="flex gap-2">
-                  <Button
-                    className="flex-1"
-                    onClick={() => {
-                      router.push(selectedBoardData?.href || '');
-                    }}
-                  >
-                    <Eye className="mr-2 h-4 w-4" />
-                    Open Board
-                  </Button>
-                  <Button variant="outline" onClick={closeSidebar}>
-                    Close
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Task List Modal */}
-      <Dialog open={taskModal.isOpen} onOpenChange={closeTaskModal}>
-        <DialogContent className="flex h-[85vh] max-w-6xl flex-col p-0">
-          <div className="flex h-full flex-col">
-            {/* Header */}
-            <div className="flex-shrink-0 border-b p-6 pb-4">
-              <DialogHeader className="mb-4">
-                <DialogTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  {taskModal.filterType === 'all' && 'All Tasks'}
-                  {taskModal.filterType === 'completed' && 'Completed Tasks'}
-                  {taskModal.filterType === 'overdue' && 'Overdue Tasks'}
-                  {taskModal.filterType === 'urgent' && 'Urgent Priority Tasks'}
-                  <Badge variant="secondary" className="ml-2">
-                    {filteredTasks.length} tasks
-                  </Badge>
-                </DialogTitle>
-              </DialogHeader>
-
-              {/* Modal Controls */}
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <Select
-                    value={taskModal.selectedBoard || 'all'}
-                    onValueChange={(value) =>
-                      setTaskModal((prev) => ({
-                        ...prev,
-                        selectedBoard: value === 'all' ? null : value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="w-full sm:w-48">
-                      <SelectValue placeholder="Filter by board" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Boards</SelectItem>
-                      {safeData.map((board) => (
-                        <SelectItem key={board.id} value={board.id}>
-                          {board.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button variant="outline" size="sm" onClick={refreshTasks}>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Refresh
-                </Button>
-              </div>
-            </div>
-
-            {/* Scrollable Task Groups */}
-            <div className="flex-1 overflow-hidden">
-              <ScrollArea className="h-full">
-                <div className="space-y-4 p-6">
-                  {/* Not Started Tasks */}
-                  <TaskGroup
-                    title="Not Started"
-                    icon={<div className="h-3 w-3 rounded-full bg-gray-400" />}
-                    tasks={groupedTasks.not_started}
-                    count={groupedTasks.not_started.length}
-                    onTaskClick={handleTaskClick}
-                  />
-
-                  {/* Active Tasks */}
-                  <TaskGroup
-                    title="Active"
-                    icon={<div className="h-3 w-3 rounded-full bg-blue-500" />}
-                    tasks={groupedTasks.active}
-                    count={groupedTasks.active.length}
-                    onTaskClick={handleTaskClick}
-                  />
-
-                  {/* Done Tasks */}
-                  <TaskGroup
-                    title="Done"
-                    icon={<div className="h-3 w-3 rounded-full bg-green-500" />}
-                    tasks={groupedTasks.done}
-                    count={groupedTasks.done.length}
-                    onTaskClick={handleTaskClick}
-                  />
-
-                  {/* Closed Tasks */}
-                  <TaskGroup
-                    title="Closed"
-                    icon={
-                      <div className="h-3 w-3 rounded-full bg-purple-500" />
-                    }
-                    tasks={groupedTasks.closed}
-                    count={groupedTasks.closed.length}
-                    onTaskClick={handleTaskClick}
-                  />
-                </div>
-              </ScrollArea>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Copy Board Dialog */}
       {copyBoardModal.board && (
