@@ -5,18 +5,13 @@ import { MyTasksDataLoader } from './my-tasks-data-loader';
 
 interface Props {
   params: Promise<{
-    locale: string;
     wsId: string;
   }>;
 }
 
 export default async function MyTasksPage({ params }: Props) {
-  const { locale } = await params;
   const user = await getCurrentUser();
-
-  if (!user) {
-    redirect(`/${locale}/login`);
-  }
+  if (!user) redirect(`/login`);
 
   return (
     <WorkspaceWrapper params={params}>

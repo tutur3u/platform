@@ -46,6 +46,7 @@ export default function Login({ searchParams }: LoginProps) {
   const t = useTranslations();
   const params = use(searchParams);
   const returnUrl = params.returnUrl as string | undefined;
+  const multiAccount = params.multiAccount === 'true';
 
   const returnUrlDomain = getReturnUrlDomain(returnUrl);
 
@@ -194,10 +195,14 @@ export default function Login({ searchParams }: LoginProps) {
                   className="space-y-2"
                 >
                   <h1 className="bg-gradient-to-r from-foreground via-foreground to-foreground/60 bg-clip-text font-bold text-3xl text-transparent">
-                    {t('login.welcome')}
+                    {multiAccount
+                      ? t('account_switcher.add_account')
+                      : t('login.welcome')}
                   </h1>
                   <p className="text-muted-foreground text-sm">
-                    {t('login.sign_in_to_your_account')}
+                    {multiAccount
+                      ? t('account_switcher.add_account_description')
+                      : t('login.sign_in_to_your_account')}
                   </p>
                 </motion.div>
               </div>
