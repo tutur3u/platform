@@ -3388,7 +3388,7 @@ export function TimerControls({
                           • Break:{' '}
                           {formatDuration(
                             Math.floor(
-                              (Date().now() - pauseStartTime.getTime()) / 1000
+                              (Date.now() - pauseStartTime.getTime()) / 1000
                             )
                           )}
                         </span>
@@ -3560,7 +3560,7 @@ export function TimerControls({
                               return selectedTask ? (
                                 <div
                                   className={cn(
-                                    'flex min-h-[2.5rem] cursor-text items-center gap-2 rounded-md border px-3 py-2 transition-all duration-200',
+                                    'flex min-h-10 cursor-text items-center gap-2 rounded-md border px-3 py-2 transition-all duration-200',
                                     isDragOver
                                       ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20'
                                       : isDraggingTask
@@ -3735,7 +3735,7 @@ export function TimerControls({
                             <div
                               ref={dropdownContentRef}
                               className={cn(
-                                'absolute right-0 left-0 z-[100] rounded-md border bg-popover shadow-lg transition-all duration-200',
+                                'absolute right-0 left-0 z-100 rounded-md border bg-popover shadow-lg transition-all duration-200',
                                 dropdownPosition === 'above'
                                   ? 'bottom-full mb-1'
                                   : 'top-full mt-1'
@@ -4381,16 +4381,16 @@ export function TimerControls({
                         variant="outline"
                         size="sm"
                         onClick={() => startFromTemplate(template)}
-                        className="h-auto min-h-[2rem] w-full justify-start p-2 text-sm"
+                        className="h-auto min-h-8 w-full justify-start p-2 text-sm"
                       >
                         <div className="flex w-full min-w-0 items-center">
-                          <Copy className="mr-2 h-3 w-3 flex-shrink-0" />
+                          <Copy className="mr-2 h-3 w-3 shrink-0" />
                           <span className="flex-1 truncate text-left">
                             {template.title}
                           </span>
                           <Badge
                             variant="secondary"
-                            className="ml-2 flex-shrink-0 text-xs"
+                            className="ml-2 shrink-0 text-xs"
                           >
                             {template.usage_count}×
                           </Badge>

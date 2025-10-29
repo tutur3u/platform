@@ -213,7 +213,7 @@ export function QuickTimeTracker({
 
     const updateElapsed = () => {
       const startTime = new Date(runningSession.start_time).getTime();
-      const now = Date().now();
+      const now = Date.now();
       const elapsed = Math.floor((now - startTime) / 1000);
       setElapsedTime(elapsed);
     };
@@ -485,7 +485,7 @@ export function QuickTimeTracker({
           selectedTask.description || `Working on: ${selectedTask.name}`,
         taskId: selectedTask.id,
       });
-    } catch (error) {
+    } catch (_) {
       toast.error('Failed to start task session');
     } finally {
       // Note: setIsLoading(false) is handled in the mutation's onSettled callback
@@ -548,7 +548,7 @@ export function QuickTimeTracker({
         description: nextTask.description || `Working on: ${nextTask.name}`,
         taskId: nextTask.id,
       });
-    } catch (error) {
+    } catch (_) {
       toast.error('Failed to start task session');
     } finally {
       // Note: setIsLoading(false) is handled in the mutation's onSettled callback
@@ -662,14 +662,14 @@ export function QuickTimeTracker({
   return (
     <CommandGroup
       heading="Time Tracker"
-      className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground"
+      className="**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:text-muted-foreground"
       data-quick-timer
     >
       <div className="px-2 pb-2">
         <div className="space-y-3">
           {/* Current Session Display */}
           {runningSession ? (
-            <div className="rounded-lg border border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 p-4 dark:border-green-800 dark:from-green-950/50 dark:to-emerald-950/50">
+            <div className="rounded-lg border border-green-200 bg-linear-to-r from-green-50 to-emerald-50 p-4 dark:border-green-800 dark:from-green-950/50 dark:to-emerald-950/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500">
@@ -737,6 +737,7 @@ export function QuickTimeTracker({
                       />
                       {selectedTask && (
                         <button
+                          type="button"
                           onClick={() => {
                             setSelectedTask(null);
                             setTaskSearchQuery('');
@@ -751,6 +752,7 @@ export function QuickTimeTracker({
                     {/* Board Filter Dropdown */}
                     <div className="relative ml-2 w-32" data-board-dropdown>
                       <button
+                        type="button"
                         data-board-button
                         onClick={() => setShowBoardDropdown(!showBoardDropdown)}
                         className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
@@ -762,7 +764,7 @@ export function QuickTimeTracker({
                                 (board: any) => board.id === selectedBoardId
                               )?.name || 'All Boards'}
                         </span>
-                        <ChevronDown className="ml-2 h-3 w-3 flex-shrink-0 text-muted-foreground" />
+                        <ChevronDown className="ml-2 h-3 w-3 shrink-0 text-muted-foreground" />
                       </button>
 
                       {/* Board Dropdown */}
@@ -770,6 +772,7 @@ export function QuickTimeTracker({
                         <div className="absolute top-full right-0 z-50 mt-1 w-full rounded-md border bg-popover p-1 shadow-md">
                           <div className="max-h-32 overflow-y-auto">
                             <button
+                              type="button"
                               onClick={() => {
                                 handleBoardChange('all');
                                 setShowBoardDropdown(false);
@@ -783,6 +786,7 @@ export function QuickTimeTracker({
                             </button>
                             {boardsData?.map((board: any) => (
                               <button
+                                type="button"
                                 key={board.id}
                                 onClick={() => {
                                   handleBoardChange(board.id);
@@ -813,11 +817,12 @@ export function QuickTimeTracker({
                           filteredTasks.slice(0, 12).map((task: any) => (
                             <button
                               key={task.id}
+                              type="button"
                               onClick={() => handleTaskSelect(task)}
                               className="w-full rounded-sm p-2 text-left transition-colors hover:bg-accent"
                             >
                               <div className="flex items-center gap-2">
-                                <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border border-dynamic-blue/30 bg-linear-to-br from-dynamic-blue/20 to-dynamic-blue/10">
+                                <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-dynamic-blue/30 bg-linear-to-br from-dynamic-blue/20 to-dynamic-blue/10">
                                   <CheckCircle className="h-2.5 w-2.5 text-dynamic-blue" />
                                 </div>
                                 <div className="min-w-0 flex-1">
@@ -878,9 +883,9 @@ export function QuickTimeTracker({
 
               {/* Selected Task Display */}
               {selectedTask && (
-                <div className="rounded-lg border border-dynamic-green/30 bg-gradient-to-r from-dynamic-green/5 to-dynamic-green/3 p-3">
+                <div className="rounded-lg border border-dynamic-green/30 bg-linear-to-r from-dynamic-green/5 to-dynamic-green/3 p-3">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-dynamic-green/30 bg-linear-to-br from-dynamic-green/20 to-dynamic-green/10">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-dynamic-green/30 bg-linear-to-br from-dynamic-green/20 to-dynamic-green/10">
                       <CheckCircle className="h-4 w-4 text-dynamic-green" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -951,6 +956,7 @@ export function QuickTimeTracker({
               <div className="grid grid-cols-2 gap-2">
                 {/* Continue Last Session */}
                 <button
+                  type="button"
                   onClick={continueLastSession}
                   disabled={
                     !recentSessions?.[0] ||
@@ -967,7 +973,7 @@ export function QuickTimeTracker({
                   <div className="flex items-start gap-2">
                     <div
                       className={cn(
-                        'flex-shrink-0 rounded-full p-1 transition-colors',
+                        'shrink-0 rounded-full p-1 transition-colors',
                         recentSessions?.[0] && !runningSession
                           ? 'bg-blue-500/20 group-hover:bg-blue-500/30'
                           : 'bg-muted-foreground/20'
@@ -1028,6 +1034,7 @@ export function QuickTimeTracker({
 
                 {/* Next Task */}
                 <button
+                  type="button"
                   onClick={startNextTask}
                   disabled={
                     !nextTaskData?.nextTask ||
@@ -1044,7 +1051,7 @@ export function QuickTimeTracker({
                   <div className="flex items-start gap-2">
                     <div
                       className={cn(
-                        'flex-shrink-0 rounded-full p-1 transition-colors',
+                        'shrink-0 rounded-full p-1 transition-colors',
                         nextTaskData?.nextTask && !runningSession
                           ? 'bg-purple-500/20 group-hover:bg-purple-500/30'
                           : 'bg-muted-foreground/20'
