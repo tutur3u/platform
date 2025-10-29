@@ -1,7 +1,7 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import type { EnhancedTaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
@@ -10,7 +10,7 @@ import { ProjectRowActions } from './row-actions';
 export const projectColumns = (
   t: (key: string) => string,
   namespace: string | undefined
-): ColumnDef<EnhancedTaskBoard>[] => [
+): ColumnDef<WorkspaceTaskBoard>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (
@@ -65,107 +65,6 @@ export const projectColumns = (
         >
           {row.getValue('name') || '-'}
         </Link>
-      </div>
-    ),
-  },
-  {
-    accessorKey: 'totalTasks',
-    header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title="Total Tasks" />
-    ),
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <div className="rounded border border-dynamic-blue/20 bg-dynamic-blue/10 px-2 py-1">
-          <span className="font-medium text-dynamic-blue">
-            {row.original.totalTasks || 0}
-          </span>
-        </div>
-      </div>
-    ),
-  },
-  {
-    accessorKey: 'completedTasks',
-    header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title="Completed" />
-    ),
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <div className="rounded border border-dynamic-green/20 bg-dynamic-green/10 px-2 py-1">
-          <span className="font-medium text-dynamic-green">
-            {row.original.completedTasks || 0}
-          </span>
-        </div>
-        {row.original.totalTasks > 0 && (
-          <span className="text-muted-foreground text-xs">
-            (
-            {Math.round(
-              ((row.original.completedTasks || 0) / row.original.totalTasks) *
-                100
-            )}
-            %)
-          </span>
-        )}
-      </div>
-    ),
-  },
-  {
-    accessorKey: 'activeTasks',
-    header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title="Active" />
-    ),
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <div className="rounded border border-dynamic-orange/20 bg-dynamic-orange/10 px-2 py-1">
-          <span className="font-medium text-dynamic-orange text-sm">
-            {row.original.activeTasks || 0}
-          </span>
-        </div>
-      </div>
-    ),
-  },
-  {
-    accessorKey: 'overdueTasks',
-    header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title="Overdue" />
-    ),
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <div
-          className={`rounded border px-2 py-1 ${
-            (row.original.overdueTasks || 0) > 0
-              ? 'border-dynamic-red/20 bg-dynamic-red/10'
-              : 'border-dynamic-gray/20 bg-dynamic-gray/10'
-          }`}
-        >
-          <span
-            className={`border font-medium text-sm ${
-              (row.original.overdueTasks || 0) > 0
-                ? 'text-dynamic-red'
-                : 'text-dynamic-gray'
-            }`}
-          >
-            {row.original.overdueTasks || 0}
-          </span>
-        </div>
-      </div>
-    ),
-  },
-  {
-    accessorKey: 'progressPercentage',
-    header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title="Progress" />
-    ),
-    cell: ({ row }) => (
-      <div className="flex w-24 items-center gap-2">
-        <div className="h-2 flex-1 rounded-full bg-muted">
-          <div
-            className="h-2 rounded-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-500"
-            style={{ width: `${row.original.progressPercentage || 0}%` }}
-          />
-        </div>
-        <span className="font-medium text-sm">
-          {row.original.progressPercentage || 0}%
-        </span>
       </div>
     ),
   },

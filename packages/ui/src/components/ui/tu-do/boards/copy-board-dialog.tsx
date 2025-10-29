@@ -1,8 +1,7 @@
 'use client';
 
 import { Copy, Loader2 } from '@tuturuuu/icons';
-import type { Workspace } from '@tuturuuu/types';
-import type { EnhancedTaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import type { Workspace, WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -27,7 +26,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useId, useState } from 'react';
 
 interface CopyBoardDialogProps {
-  board: EnhancedTaskBoard;
+  board: WorkspaceTaskBoard;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }

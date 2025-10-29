@@ -11,7 +11,7 @@ import {
   RotateCcw,
   Trash2,
 } from '@tuturuuu/icons';
-import type { EnhancedTaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,17 +34,24 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { CopyBoardDialog } from './copy-board-dialog';
 import { TaskBoardForm } from './form';
 
+// Helper to safely parse JSON responses or return null on error
+async function jsonOrNull<T = unknown>(res: Response): Promise<T | null> {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 interface ProjectRowActionsProps {
-  row: Row<EnhancedTaskBoard>;
+  row: Row<WorkspaceTaskBoard>;
 }
 
 export function ProjectRowActions({ row }: ProjectRowActionsProps) {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const t = useTranslations();
 
@@ -61,21 +68,24 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
       );
 
       if (!res.ok) {
-        const error = await res.json();
+        const error = await jsonOrNull<{ error?: string; message?: string }>(
+          res
+        );
         throw new Error(
-          error.error || error.message || 'Failed to delete board'
+          error?.error || error?.message || 'Failed to soft delete board'
         );
       }
 
-      return res.json();
+      await jsonOrNull(res);
+      return;
     },
     onSuccess: () => {
-      toast.success('Board temporarily deleted');
-      router.refresh();
+      toast.success(t('ws-task-boards.row_actions.toast.delete_temp_success'));
+      setShowDeleteDialog(false);
       queryClient.invalidateQueries({ queryKey: ['boards', data.ws_id] });
     },
     onError: (error: Error) => {
-      toast.error('Failed to delete board', {
+      toast.error(t('ws-task-boards.row_actions.toast.delete_temp_error'), {
         description: error.message,
       });
     },
@@ -92,22 +102,24 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
       );
 
       if (!res.ok) {
-        const error = await res.json();
+        const error = await jsonOrNull<{ error?: string; message?: string }>(
+          res
+        );
         throw new Error(
-          error.error || error.message || 'Failed to permanently delete board'
+          error?.error || error?.message || 'Failed to permanently delete board'
         );
       }
 
-      return res.json();
+      await jsonOrNull(res);
+      return;
     },
     onSuccess: () => {
-      toast.success('Board permanently deleted');
-      router.refresh();
+      toast.success(t('ws-task-boards.row_actions.toast.delete_perm_success'));
       setShowPermanentDeleteDialog(false);
       queryClient.invalidateQueries({ queryKey: ['boards', data.ws_id] });
     },
     onError: (error: Error) => {
-      toast.error('Failed to permanently delete board', {
+      toast.error(t('ws-task-boards.row_actions.toast.delete_perm_error'), {
         description: error.message,
       });
     },
@@ -126,21 +138,24 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
       );
 
       if (!res.ok) {
-        const error = await res.json();
+        const error = await jsonOrNull<{ error?: string; message?: string }>(
+          res
+        );
         throw new Error(
-          error.error || error.message || 'Failed to restore board'
+          error?.error || error?.message || 'Failed to restore board'
         );
       }
 
-      return res.json();
+      await jsonOrNull(res);
+      return;
     },
     onSuccess: () => {
-      toast.success('Board restored successfully');
-      router.refresh();
+      toast.success(t('ws-task-boards.row_actions.toast.restore_success'));
+      setShowRestoreDialog(false);
       queryClient.invalidateQueries({ queryKey: ['boards', data.ws_id] });
     },
     onError: (error: Error) => {
-      toast.error('Failed to restore board', {
+      toast.error(t('ws-task-boards.row_actions.toast.restore_error'), {
         description: error.message,
       });
     },
@@ -157,22 +172,24 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
       );
 
       if (!res.ok) {
-        const error = await res.json();
+        const error = await jsonOrNull<{ error?: string; message?: string }>(
+          res
+        );
         throw new Error(
-          error.error || error.message || 'Failed to archive board'
+          error?.error || error?.message || 'Failed to archive board'
         );
       }
 
-      return res.json();
+      await jsonOrNull(res);
+      return;
     },
     onSuccess: () => {
-      toast.success('Board archived successfully');
-      router.refresh();
+      toast.success(t('ws-task-boards.row_actions.toast.archive_success'));
       setShowArchiveDialog(false);
       queryClient.invalidateQueries({ queryKey: ['boards', data.ws_id] });
     },
     onError: (error: Error) => {
-      toast.error('Failed to archive board', {
+      toast.error(t('ws-task-boards.row_actions.toast.archive_error'), {
         description: error.message,
       });
     },
@@ -189,22 +206,24 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
       );
 
       if (!res.ok) {
-        const error = await res.json();
+        const error = await jsonOrNull<{ error?: string; message?: string }>(
+          res
+        );
         throw new Error(
-          error.error || error.message || 'Failed to unarchive board'
+          error?.error || error?.message || 'Failed to unarchive board'
         );
       }
 
-      return res.json();
+      await jsonOrNull(res);
+      return;
     },
     onSuccess: () => {
-      toast.success('Board unarchived successfully');
+      toast.success(t('ws-task-boards.row_actions.toast.unarchive_success'));
       setShowUnarchiveDialog(false);
       queryClient.invalidateQueries({ queryKey: ['boards', data.ws_id] });
-      router.refresh();
     },
     onError: (error: Error) => {
-      toast.error('Failed to unarchive board', {
+      toast.error(t('ws-task-boards.row_actions.toast.unarchive_error'), {
         description: error.message,
       });
     },
@@ -244,7 +263,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
               <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[160px]">
+          <DropdownMenuContent align="end" className="w-40">
             {data.deleted_at ? (
               // Deleted board options
               <>
@@ -255,7 +274,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
                   }}
                 >
                   <RotateCcw className="mr-2 h-4 w-4" />
-                  Restore
+                  {t('ws-task-boards.row_actions.restore')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -266,7 +285,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
                   className="text-dynamic-red focus:text-dynamic-red"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Forever
+                  {t('ws-task-boards.row_actions.delete_forever')}
                 </DropdownMenuItem>
               </>
             ) : data.archived_at ? (
@@ -279,7 +298,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
                   }}
                 >
                   <RotateCcw className="mr-2 h-4 w-4" />
-                  Unarchive
+                  {t('ws-task-boards.row_actions.unarchive')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={(e) => {
@@ -288,7 +307,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
                   }}
                 >
                   <Copy className="mr-2 h-4 w-4" />
-                  Copy
+                  {t('ws-task-boards.row_actions.copy')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -320,7 +339,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
                   }}
                 >
                   <Copy className="mr-2 h-4 w-4" />
-                  Copy
+                  {t('ws-task-boards.row_actions.copy')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -330,7 +349,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
                   }}
                 >
                   <Archive className="mr-2 h-4 w-4" />
-                  Archive
+                  {t('ws-task-boards.row_actions.archive')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={(e) => {
@@ -366,14 +385,19 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Move Board to Trash</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t('ws-task-boards.row_actions.dialog.delete_title')}
+            </AlertDialogTitle>
             <AlertDialogDescription>
               {(() => {
                 const name = data.name ?? '';
                 const truncated = name.length > 20;
                 const display = truncated ? `${name.slice(0, 20)}…` : name;
-                return (
-                  <>Are you sure you want to delete &quot;{display}&quot;?</>
+                return t(
+                  'ws-task-boards.row_actions.dialog.delete_description',
+                  {
+                    name: display,
+                  }
                 );
               })()}
             </AlertDialogDescription>
@@ -385,7 +409,9 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
               disabled={softDeleteMutation.isPending}
               className="bg-dynamic-red text-white hover:bg-dynamic-red/90"
             >
-              {softDeleteMutation.isPending ? 'Moving...' : 'Move to Trash'}
+              {softDeleteMutation.isPending
+                ? t('ws-task-boards.row_actions.dialog.delete_button_moving')
+                : t('ws-task-boards.row_actions.dialog.delete_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -395,10 +421,19 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
       <AlertDialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Restore Board</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t('ws-task-boards.row_actions.dialog.restore_title')}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to restore &quot;{data.name.slice(0, 20)}
-              ...&quot;? The board will be moved back to your active boards.
+              {(() => {
+                const name = data.name ?? '';
+                const truncated = name.length > 20;
+                const display = truncated ? `${name.slice(0, 20)}…` : name;
+                return t(
+                  'ws-task-boards.row_actions.dialog.restore_description',
+                  { name: display }
+                );
+              })()}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -408,7 +443,11 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
               disabled={restoreMutation.isPending}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {restoreMutation.isPending ? 'Restoring...' : 'Restore Board'}
+              {restoreMutation.isPending
+                ? t(
+                    'ws-task-boards.row_actions.dialog.restore_button_restoring'
+                  )
+                : t('ws-task-boards.row_actions.dialog.restore_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -421,12 +460,19 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Permanently Delete Board</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t('ws-task-boards.row_actions.dialog.delete_perm_title')}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to permanently delete &quot;
-              {data.name.slice(0, 20)}
-              ...&quot;? This action cannot be undone and will permanently
-              delete the board and all its tasks.
+              {(() => {
+                const name = data.name ?? '';
+                const truncated = name.length > 20;
+                const display = truncated ? `${name.slice(0, 20)}…` : name;
+                return t(
+                  'ws-task-boards.row_actions.dialog.delete_perm_description',
+                  { name: display }
+                );
+              })()}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -437,8 +483,10 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
               className="bg-dynamic-red text-white hover:bg-dynamic-red/90"
             >
               {permanentDeleteMutation.isPending
-                ? 'Deleting...'
-                : 'Delete Forever'}
+                ? t(
+                    'ws-task-boards.row_actions.dialog.delete_perm_button_deleting'
+                  )
+                : t('ws-task-boards.row_actions.dialog.delete_perm_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -448,11 +496,19 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
       <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Archive Board</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t('ws-task-boards.row_actions.dialog.archive_title')}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to archive &quot;{data.name.slice(0, 20)}
-              ...&quot;? You can unarchive it later from the archived boards
-              section.
+              {(() => {
+                const name = data.name ?? '';
+                const truncated = name.length > 20;
+                const display = truncated ? `${name.slice(0, 20)}…` : name;
+                return t(
+                  'ws-task-boards.row_actions.dialog.archive_description',
+                  { name: display }
+                );
+              })()}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -462,7 +518,11 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
               disabled={archiveMutation.isPending}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {archiveMutation.isPending ? 'Archiving...' : 'Archive Board'}
+              {archiveMutation.isPending
+                ? t(
+                    'ws-task-boards.row_actions.dialog.archive_button_archiving'
+                  )
+                : t('ws-task-boards.row_actions.dialog.archive_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -475,10 +535,19 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Unarchive Board</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t('ws-task-boards.row_actions.dialog.unarchive_title')}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to unarchive &quot;{data.name.slice(0, 20)}
-              ...&quot;? The board will be moved back to your active boards.
+              {(() => {
+                const name = data.name ?? '';
+                const truncated = name.length > 20;
+                const display = truncated ? `${name.slice(0, 20)}…` : name;
+                return t(
+                  'ws-task-boards.row_actions.dialog.unarchive_description',
+                  { name: display }
+                );
+              })()}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -489,8 +558,10 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {unarchiveMutation.isPending
-                ? 'Unarchiving...'
-                : 'Unarchive Board'}
+                ? t(
+                    'ws-task-boards.row_actions.dialog.unarchive_button_unarchiving'
+                  )
+                : t('ws-task-boards.row_actions.dialog.unarchive_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

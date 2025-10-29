@@ -2003,7 +2003,48 @@
     "singular": "Bảng nhiệm vụ",
     "create": "Tạo bảng",
     "create_description": "Tạo bảng nhiệm vụ",
-    "description": "Bảng nhiệm vụ được sử dụng để quản lý các công việc liên quan đến một dự án hoặc mục tiêu cụ thể."
+    "description": "Bảng nhiệm vụ được sử dụng để quản lý các công việc liên quan đến một dự án hoặc mục tiêu cụ thể.",
+    "row_actions": {
+      "copy": "Sao chép",
+      "restore": "Khôi phục",
+      "delete_forever": "Xóa vĩnh viễn",
+      "unarchive": "Bỏ lưu trữ",
+      "archive": "Lưu trữ",
+      "toast": {
+        "delete_temp_success": "Bảng đã được chuyển vào thùng rác",
+        "delete_temp_error": "Không thể xóa bảng",
+        "delete_perm_success": "Bảng đã được xóa vĩnh viễn",
+        "delete_perm_error": "Không thể xóa vĩnh viễn bảng",
+        "restore_success": "Bảng đã được khôi phục thành công",
+        "restore_error": "Không thể khôi phục bảng",
+        "archive_success": "Bảng đã được lưu trữ thành công",
+        "archive_error": "Không thể lưu trữ bảng",
+        "unarchive_success": "Bảng đã được bỏ lưu trữ thành công",
+        "unarchive_error": "Không thể bỏ lưu trữ bảng"
+      },
+      "dialog": {
+        "delete_title": "Chuyển bảng vào thùng rác",
+        "delete_description": "Bạn có chắc chắn muốn xóa \"{name}\" không?",
+        "delete_button_moving": "Đang chuyển...",
+        "delete_button": "Chuyển vào thùng rác",
+        "restore_title": "Khôi phục bảng",
+        "restore_description": "Bạn có chắc chắn muốn khôi phục \"{name}\" không? Bảng sẽ được chuyển về danh sách bảng đang hoạt động.",
+        "restore_button_restoring": "Đang khôi phục...",
+        "restore_button": "Khôi phục bảng",
+        "delete_perm_title": "Xóa vĩnh viễn bảng",
+        "delete_perm_description": "Bạn có chắc chắn muốn xóa vĩnh viễn \"{name}\" không? Hành động này không thể hoàn tác và sẽ xóa vĩnh viễn bảng cùng tất cả nhiệm vụ của nó.",
+        "delete_perm_button_deleting": "Đang xóa...",
+        "delete_perm_button": "Xóa vĩnh viễn",
+        "archive_title": "Lưu trữ bảng",
+        "archive_description": "Bạn có chắc chắn muốn lưu trữ \"{name}\" không? Bạn có thể bỏ lưu trữ sau từ phần bảng đã lưu trữ.",
+        "archive_button_archiving": "Đang lưu trữ...",
+        "archive_button": "Lưu trữ bảng",
+        "unarchive_title": "Bỏ lưu trữ bảng",
+        "unarchive_description": "Bạn có chắc chắn muốn bỏ lưu trữ \"{name}\" không? Bảng sẽ được chuyển về danh sách bảng đang hoạt động.",
+        "unarchive_button_unarchiving": "Đang bỏ lưu trữ...",
+        "unarchive_button": "Bỏ lưu trữ bảng"
+      }
+    }
   },
   "ws-settings": {
     "description": "Quản lý các thiết lập không gian làm việc.",
