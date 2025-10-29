@@ -3580,7 +3580,6 @@ function TaskEditDialogComponent({
       {slashCommandMenu}
       {mentionSuggestionMenu}
       <Dialog
-        key="main-dialog"
         open={isOpen}
         onOpenChange={handleDialogOpenChange}
         modal={true}
