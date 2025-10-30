@@ -338,8 +338,7 @@ export function CommandBar({
                           disabled={isLoading}
                           className={cn(
                             'h-8 w-8 rounded-lg border border-border p-0 transition-colors hover:bg-muted md:h-9 md:w-9',
-                            !hasDestination &&
-                              'cursor-not-allowed opacity-50'
+                            !hasDestination && 'cursor-not-allowed opacity-50'
                           )}
                           onClick={(e) => {
                             if (!hasDestination) {
@@ -924,8 +923,9 @@ export function CommandBar({
                             <ScrollArea style={{ height: labelsScrollHeight }}>
                               <div className="space-y-0.5">
                                 {workspaceLabels.map((label) => {
-                                  const isSelected =
-                                    selectedLabelIds.includes(label.id);
+                                  const isSelected = selectedLabelIds.includes(
+                                    label.id
+                                  );
                                   return (
                                     <button
                                       key={label.id}
@@ -1016,10 +1016,10 @@ export function CommandBar({
                             <div className="space-y-3">
                               {/* Assigned Members Section */}
                               {(() => {
-                                const assignedMembers =
-                                  workspaceMembers.filter((member) =>
+                                const assignedMembers = workspaceMembers.filter(
+                                  (member) =>
                                     selectedAssigneeIds.includes(member.id)
-                                  );
+                                );
 
                                 if (assignedMembers.length > 0) {
                                   return (
@@ -1085,9 +1085,7 @@ export function CommandBar({
                                   const unassignedMembers =
                                     workspaceMembers.filter(
                                       (member) =>
-                                        !selectedAssigneeIds.includes(
-                                          member.id
-                                        )
+                                        !selectedAssigneeIds.includes(member.id)
                                     );
 
                                   const filteredMembers =

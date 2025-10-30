@@ -920,7 +920,6 @@ export default function MyTasksContent({
         ws_id: wsId,
         name: newProjectName.trim(),
       });
-      
 
       if (error) throw error;
 
@@ -1584,52 +1583,54 @@ export default function MyTasksContent({
 
       {/* Command Bar - The single entry point for creation */}
       <div className="mx-auto max-w-5xl">
-                <CommandBar
-                  value={commandBarInput}
-                  onValueChange={setCommandBarInput}
-                  onCreateNote={handleCreateNote}
-                  onCreateTask={handleCreateTask}
-                  onGenerateAI={handleGenerateAI}
-                  onOpenBoardSelector={(title, isAi) => {
-                    if (title) {
-                      setPendingTaskTitle(title);
-                      setTaskCreatorMode(isAi ? 'ai' : 'simple');
-                    } else {
-                      setPendingTaskTitle('');
-                      setTaskCreatorMode(null);
-                    }
-                    setBoardSelectorOpen(true);
-                  }}
-                  selectedDestination={selectedDestination}
-                  onClearDestination={handleClearDestination}
-                  isLoading={commandBarLoading}
-                  aiGenerateDescriptions={aiGenerateDescriptions}
-                  aiGeneratePriority={aiGeneratePriority}
-                  aiGenerateLabels={aiGenerateLabels}
-                  onAiGenerateDescriptionsChange={setAiGenerateDescriptions}
-                  onAiGeneratePriorityChange={setAiGeneratePriority}
-                  onAiGenerateLabelsChange={setAiGenerateLabels}
-                  mode={activeMode}
-                  onModeChange={setActiveMode}
-                  workspaceLabels={workspaceLabels}
-                  workspaceProjects={workspaceProjects}
-                  workspaceMembers={workspaceMembers}
-                  workspaceEstimationConfig={ boardConfig
-                      ? {
-                          estimation_type: boardConfig.estimation_type,
-                          extended_estimation: boardConfig.extended_estimation,
-                          allow_zero_estimates: boardConfig.allow_zero_estimates,
-                        }
-                      : null
-                  }
-                  wsId={wsId}
-                  onCreateNewLabel={() => setNewLabelDialogOpen(true)}
-                  onCreateNewProject={() => setNewProjectDialogOpen(true)}
-                />
-                <p className="mt-2 text-muted-foreground text-xs">
-                  Pro tip: You can further configure your task after selecting a location
-                </p>
-              </div>
+        <CommandBar
+          value={commandBarInput}
+          onValueChange={setCommandBarInput}
+          onCreateNote={handleCreateNote}
+          onCreateTask={handleCreateTask}
+          onGenerateAI={handleGenerateAI}
+          onOpenBoardSelector={(title, isAi) => {
+            if (title) {
+              setPendingTaskTitle(title);
+              setTaskCreatorMode(isAi ? 'ai' : 'simple');
+            } else {
+              setPendingTaskTitle('');
+              setTaskCreatorMode(null);
+            }
+            setBoardSelectorOpen(true);
+          }}
+          selectedDestination={selectedDestination}
+          onClearDestination={handleClearDestination}
+          isLoading={commandBarLoading}
+          aiGenerateDescriptions={aiGenerateDescriptions}
+          aiGeneratePriority={aiGeneratePriority}
+          aiGenerateLabels={aiGenerateLabels}
+          onAiGenerateDescriptionsChange={setAiGenerateDescriptions}
+          onAiGeneratePriorityChange={setAiGeneratePriority}
+          onAiGenerateLabelsChange={setAiGenerateLabels}
+          mode={activeMode}
+          onModeChange={setActiveMode}
+          workspaceLabels={workspaceLabels}
+          workspaceProjects={workspaceProjects}
+          workspaceMembers={workspaceMembers}
+          workspaceEstimationConfig={
+            boardConfig
+              ? {
+                  estimation_type: boardConfig.estimation_type,
+                  extended_estimation: boardConfig.extended_estimation,
+                  allow_zero_estimates: boardConfig.allow_zero_estimates,
+                }
+              : null
+          }
+          wsId={wsId}
+          onCreateNewLabel={() => setNewLabelDialogOpen(true)}
+          onCreateNewProject={() => setNewProjectDialogOpen(true)}
+        />
+        <p className="mt-2 text-muted-foreground text-xs">
+          Pro tip: You can further configure your task after selecting a
+          location
+        </p>
+      </div>
 
       {/* Spacer for breathing room */}
       <div className="h-4" />
