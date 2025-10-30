@@ -9,7 +9,6 @@ export class Pacman {
   private mapManager: MapManager;
   public sprite: Phaser.GameObjects.Arc;
   private direction: Direction = Direction.LEFT;
-  private nextDirection: Direction = Direction.LEFT;
   private speed: number = GAME_CONFIG.PACMAN_SPEED;
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   public alive: boolean = true;
@@ -62,16 +61,12 @@ export class Pacman {
     // Update direction only when a key is pressed
     // Pacman continues moving in the current direction until a new key is pressed or hits a wall
     if (this.cursors.left?.isDown) {
-      this.nextDirection = Direction.LEFT;
       this.direction = Direction.LEFT;
     } else if (this.cursors.right?.isDown) {
-      this.nextDirection = Direction.RIGHT;
       this.direction = Direction.RIGHT;
     } else if (this.cursors.up?.isDown) {
-      this.nextDirection = Direction.UP;
       this.direction = Direction.UP;
     } else if (this.cursors.down?.isDown) {
-      this.nextDirection = Direction.DOWN;
       this.direction = Direction.DOWN;
     }
     // No else clause - Pacman keeps moving in current direction
@@ -183,7 +178,6 @@ export class Pacman {
     this.sprite.setScale(1);
     this.sprite.setAlpha(1);
     this.direction = Direction.LEFT;
-    this.nextDirection = Direction.LEFT;
     this.alive = true;
   }
 

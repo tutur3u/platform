@@ -1,9 +1,9 @@
-import { GAME_CONFIG } from '../config';
+import { GAME_CONFIG, GHOST_COLORS } from '../config';
 import type { MapManager } from '../managers/MapManager';
 import { GhostState, GhostType } from '../types';
 import type { TilePosition } from '../types';
 import { pixelToTile, tileToPixelCentered } from '../utils/constants';
-import { findPath, getRandomNeighbor } from '../utils/pathfinding';
+import { findPath, getNeighbors } from '../utils/pathfinding';
 import type { Pacman } from './Pacman';
 import * as Phaser from 'phaser';
 
@@ -17,6 +17,9 @@ export class Ghost {
   private speed: number = GAME_CONFIG.GHOST_SPEED;
   private stateTimer: Phaser.Time.TimerEvent | null = null;
   private mapOffset: { x: number; y: number };
+  private lastDirection: TilePosition | null = null; // Track current direction
+  private lastTile: TilePosition | null = null; // Track last tile position
+  private frightenedTarget: TilePosition | null = null; // Target tile when frightened
 
   constructor(
     scene: Phaser.Scene,
@@ -69,6 +72,19 @@ export class Ghost {
   setState(state: GhostState): void {
     this.state = state;
 
+    // Reset direction tracking when changing states
+    if (state === GhostState.FRIGHTENED) {
+      // Keep current direction when entering frightened state
+      // but reset tile tracking to pick new direction immediately
+      this.lastTile = null;
+      this.frightenedTarget = null;
+    } else {
+      // Reset all tracking when exiting frightened state
+      this.lastDirection = null;
+      this.lastTile = null;
+      this.frightenedTarget = null;
+    }
+
     switch (state) {
       case GhostState.CHASE:
       case GhostState.SCATTER:
@@ -110,13 +126,7 @@ export class Ghost {
    * Reset ghost color based on type
    */
   private resetColor(): void {
-    const colors = {
-      [GhostType.BLINKY]: 0xff0000,
-      [GhostType.PINKY]: 0xffb8ff,
-      [GhostType.INKY]: 0x00ffff,
-      [GhostType.CLYDE]: 0xffb851,
-    };
-    this.sprite.setFillStyle(colors[this.type]);
+    this.sprite.setFillStyle(GHOST_COLORS[this.type]);
   }
 
   /**
@@ -144,13 +154,28 @@ export class Ghost {
     let target: TilePosition;
 
     if (this.state === GhostState.FRIGHTENED) {
-      // Random movement when frightened
+      // Random movement when frightened - choose direction at intersections
       const currentTile = this.getTilePosition();
-      const randomTarget = getRandomNeighbor(
-        currentTile,
-        this.mapManager.getMapData()!.layout
-      );
-      target = randomTarget || pacmanTile;
+
+      // Pick a new direction when we've entered a new tile (or don't have a target yet)
+      if (
+        !this.frightenedTarget ||
+        !this.lastTile ||
+        currentTile.row !== this.lastTile.row ||
+        currentTile.col !== this.lastTile.col
+      ) {
+        const nextTile = this.getFrightenedDirection(currentTile);
+        if (nextTile) {
+          this.frightenedTarget = nextTile;
+          this.lastTile = currentTile;
+        } else {
+          // Fallback if no valid direction found
+          this.frightenedTarget = pacmanTile;
+        }
+      }
+
+      // Always move towards the frightened target
+      target = this.frightenedTarget;
     } else if (this.state === GhostState.CHASE) {
       target = this.getChaseTarget(pacmanTile);
     } else {
@@ -219,6 +244,55 @@ export class Ghost {
   }
 
   /**
+   * Check if two directions are opposite
+   */
+  private isOppositeDirection(dir1: TilePosition, dir2: TilePosition): boolean {
+    return dir1.row === -dir2.row && dir1.col === -dir2.col;
+  }
+
+  /**
+   * Get a random direction for frightened ghost
+   * Excludes the opposite direction unless it's a dead end
+   */
+  private getFrightenedDirection(
+    currentTile: TilePosition
+  ): TilePosition | null {
+    const validNeighbors = getNeighbors(
+      currentTile,
+      this.mapManager.getMapData()!.layout,
+      1
+    );
+
+    if (validNeighbors.length === 0) return null;
+
+    // If only one direction (dead end), must go back
+    if (validNeighbors.length === 1) {
+      return validNeighbors[0]!;
+    }
+
+    // Filter out the opposite direction if we have a last direction
+    let availableNeighbors = validNeighbors;
+    if (this.lastDirection) {
+      availableNeighbors = validNeighbors.filter((neighbor) => {
+        const direction = {
+          row: neighbor.row - currentTile.row,
+          col: neighbor.col - currentTile.col,
+        };
+        return !this.isOppositeDirection(direction, this.lastDirection!);
+      });
+    }
+
+    // If filtering left us with no options (shouldn't happen), use all neighbors
+    if (availableNeighbors.length === 0) {
+      availableNeighbors = validNeighbors;
+    }
+
+    // Pick a random direction from available options
+    const randomIndex = Math.floor(Math.random() * availableNeighbors.length);
+    return availableNeighbors[randomIndex]!;
+  }
+
+  /**
    * Move towards target tile using pathfinding
    */
   private moveTowardsTarget(target: TilePosition): void {
@@ -226,10 +300,26 @@ export class Ghost {
     const mapData = this.mapManager.getMapData();
     if (!mapData) return;
 
-    // Find next tile in path
-    const nextTile = findPath(currentTile, target, mapData.layout);
+    let nextTile: TilePosition | null = null;
+
+    // For frightened ghosts, move directly to target without pathfinding
+    if (this.state === GhostState.FRIGHTENED) {
+      nextTile = target;
+    } else {
+      // Find next tile in path using A* pathfinding
+      // When eaten, allow pathfinding to wall tiles (ghost can enter ghost house)
+      const wallTile = this.state === GhostState.EATEN ? -1 : 1;
+      nextTile = findPath(currentTile, target, mapData.layout, wallTile);
+    }
 
     if (nextTile) {
+      // Update last direction for frightened movement
+      const direction = {
+        row: nextTile.row - currentTile.row,
+        col: nextTile.col - currentTile.col,
+      };
+      this.lastDirection = direction;
+
       // Move towards next tile (apply offset to convert to screen space)
       const nextPos = tileToPixelCentered(nextTile.row, nextTile.col);
       const targetX = nextPos.x + this.mapOffset.x;

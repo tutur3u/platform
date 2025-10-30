@@ -35,7 +35,7 @@ function findNodeByPosition(
 /**
  * Get the neighbors of a tile position
  */
-function getNeighbors(
+export function getNeighbors(
   position: TilePosition,
   mapLayout: number[][],
   wallTile: number
@@ -187,21 +187,4 @@ export function findPath(
 
   // No path found
   return null;
-}
-
-/**
- * Get a random navigable neighbor position
- * Used for random ghost movement when pathfinding fails
- */
-export function getRandomNeighbor(
-  position: TilePosition,
-  mapLayout: number[][],
-  wallTile: number = 1
-): TilePosition | null {
-  const neighbors = getNeighbors(position, mapLayout, wallTile);
-  if (neighbors.length === 0) return null;
-
-  const randomIndex = Math.floor(Math.random() * neighbors.length);
-  const neighbor = neighbors[randomIndex];
-  return neighbor ?? null;
 }
