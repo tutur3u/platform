@@ -135,9 +135,6 @@ export async function PUT(req: Request, { params }: Params) {
   // Log status changes if archived status changed
   if (typeof archived === 'boolean' && archived !== currentUser.archived) {
     const currentWorkspaceUser = await getCurrentWorkspaceUser(wsId);
-    if (!currentWorkspaceUser) {
-      console.log('No current workspace user found');
-    }
     if (currentWorkspaceUser) {
     const { error: logError } = await supabase
       .from('workspace_user_status_changes')

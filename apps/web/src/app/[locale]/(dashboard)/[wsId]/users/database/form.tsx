@@ -115,7 +115,7 @@ export default function UserForm({
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
-    defaultValues: {
+    values: {
       id: data?.id,
       full_name: data?.full_name || '',
       display_name: data?.display_name || '',
@@ -329,7 +329,7 @@ export default function UserForm({
             'Content-Type': 'application/json',
           },
           body: (() => {
-            const { is_guest, is_archived, archived_at, ...rest } =
+            const { is_guest, archived, archived_until, ...rest } =
               formData as any;
             const payload: Record<string, unknown> = {
               ...rest,
@@ -341,11 +341,11 @@ export default function UserForm({
             if (typeof is_guest === 'boolean') {
               payload.is_guest = is_guest;
             }
-            if (typeof is_archived === 'boolean') {
-              payload.is_archived = is_archived;
+            if (typeof archived === 'boolean') {
+              payload.archived = archived;
             }
-            if (archived_at) {
-              payload.archived_at = dayjs(archived_at).format(
+            if (archived_until) {
+              payload.archived_until = dayjs(archived_until).format(
                 'YYYY/MM/DD HH:mm:ss'
               );
             }
