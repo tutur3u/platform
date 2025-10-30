@@ -110,7 +110,7 @@ export async function PUT(req: Request, { params }: Params) {
     .single();
 
   if (fetchError || !currentUser) {
-    console.log(fetchError);
+    console.error(fetchError);
     return NextResponse.json(
       { message: 'Error fetching workspace user' },
       { status: 500 }
@@ -137,11 +137,8 @@ export async function PUT(req: Request, { params }: Params) {
     const currentWorkspaceUser = await getCurrentWorkspaceUser(wsId);
     if (!currentWorkspaceUser) {
       console.log('No current workspace user found');
-      return NextResponse.json(
-        { message: 'No current workspace user found' },
-        { status: 500 }
-      );
     }
+    if (currentWorkspaceUser) {
     const { error: logError } = await supabase
       .from('workspace_user_status_changes')
       .insert({
@@ -151,10 +148,15 @@ export async function PUT(req: Request, { params }: Params) {
         archived_until: archived === false ? null : archived_until || null,
         creator_id: currentWorkspaceUser.virtual_user_id,
       });
-
+      
     if (logError) {
       console.log('Failed to log status change:', logError);
       // Don't fail the request if logging fails, just log it
+    }
+    } else {
+      console.log(
+        'Skipping status change log due to missing current workspace user'
+      );
     }
   }
 

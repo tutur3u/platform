@@ -112,12 +112,6 @@ export default function UserForm({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [, setIsConverting] = useState(false);
 
-  console.log('UserForm data:', data);
-  console.log('UserForm archived_until raw:', data?.archived_until);
-  console.log(
-    'UserForm archived_until parsed:',
-    data?.archived_until ? new Date(data.archived_until) : undefined
-  );
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -151,7 +145,6 @@ export default function UserForm({
     },
   });
 
-  console.log('Form default values:', form.getValues());
 
   // Watch archived_until to auto-set archived status
   const archivedUntilValue = form.watch('archived_until');
