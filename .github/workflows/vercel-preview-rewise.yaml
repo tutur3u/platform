@@ -42,7 +42,10 @@ jobs:
         id: quick_check
         if: steps.check_commits.outputs.skip_build != 'true'
         run: |
-          git diff --name-only HEAD~ HEAD | grep -E 'apps/rewise/|packages/' > /tmp/changed_files.txt || true
+          # Compute safe base commit (handles initial commits and shallow clones)
+          BASE_COMMIT=$(git rev-parse --verify HEAD~ 2>/dev/null || echo "$GITHUB_SHA")
+
+          git diff --name-only "$BASE_COMMIT" HEAD | grep -E 'apps/rewise/|packages/' > /tmp/changed_files.txt || true
           if [ ! -s /tmp/changed_files.txt ]; then
             echo "No relevant content changes detected. Skipping build."
             echo "skip_quick=true" >> $GITHUB_OUTPUT

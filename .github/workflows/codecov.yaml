@@ -21,7 +21,8 @@ jobs:
       - name: Check for coverage-relevant changes
         id: coverage_check
         run: |
-          changed=$(git diff --name-only HEAD~ HEAD | grep -E 'apps/.*/src/|packages/.*/src/|\.test\.(ts|tsx)|\.github/workflows/codecov\.yaml' | wc -l)
+          BASE_COMMIT=$(git rev-parse --verify HEAD~ 2>/dev/null || echo "$GITHUB_SHA")
+          changed=$(git diff --name-only "$BASE_COMMIT" HEAD | grep -E 'apps/.*/src/|packages/.*/src/|\.test\.(ts|tsx)|\.github/workflows/codecov\.yaml' | wc -l)
           if [ "$changed" -eq 0 ]; then
             echo "No coverage-relevant changes detected. Skipping coverage."
             echo "skip_coverage=true" >> $GITHUB_OUTPUT

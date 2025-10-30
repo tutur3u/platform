@@ -34,7 +34,8 @@ jobs:
       - name: Check for meaningful changes
         id: change_check
         run: |
-          changed=$(git diff --name-only HEAD~ HEAD | grep -v '.github/workflows/biome-check.yaml' | grep -E '\.(ts|tsx|js|jsx|json|yaml|yml)$' | wc -l)
+          BASE_COMMIT=$(git rev-parse --verify HEAD~ 2>/dev/null || echo "$GITHUB_SHA")
+          changed=$(git diff --name-only "$BASE_COMMIT" HEAD | grep -v '.github/workflows/biome-check.yaml' | grep -E '\.(ts|tsx|js|jsx|json|yaml|yml)$' | wc -l)
           if [ "$changed" -eq 0 ]; then
             echo "No meaningful code changes detected. Skipping format check."
             echo "skip_check=true" >> $GITHUB_OUTPUT
@@ -105,7 +106,8 @@ jobs:
       - name: Check for meaningful changes
         id: change_check
         run: |
-          changed=$(git diff --name-only HEAD~ HEAD | grep -v '.github/workflows/biome-check.yaml' | grep -E '\.(ts|tsx|js|jsx|json|yaml|yml)$' | wc -l)
+          BASE_COMMIT=$(git rev-parse --verify HEAD~ 2>/dev/null || echo "$GITHUB_SHA")
+          changed=$(git diff --name-only "$BASE_COMMIT" HEAD | grep -v '.github/workflows/biome-check.yaml' | grep -E '\.(ts|tsx|js|jsx|json|yaml|yml)$' | wc -l)
           if [ "$changed" -eq 0 ]; then
             echo "No meaningful code changes detected. Skipping lint check."
             echo "skip_check=true" >> $GITHUB_OUTPUT

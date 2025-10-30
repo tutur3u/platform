@@ -27,7 +27,8 @@ jobs:
       - name: Check for migration changes
         id: migration_check
         run: |
-          changed=$(git diff --name-only HEAD~ HEAD | grep 'apps/db/supabase/migrations/\|packages/types/src/supabase.ts' | wc -l)
+          BASE_COMMIT=$(git rev-parse --verify HEAD~ 2>/dev/null || echo "$GITHUB_SHA")
+          changed=$(git diff --name-only "$BASE_COMMIT" HEAD | grep 'apps/db/supabase/migrations/\|packages/types/src/supabase.ts' | wc -l)
           if [ "$changed" -eq 0 ]; then
             echo "No migrations or type changes detected. Skipping type generation check."
             echo "skip_check=true" >> $GITHUB_OUTPUT
