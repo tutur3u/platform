@@ -430,7 +430,6 @@ export default function MyTasksContent({
     },
   });
 
-
   // Create tasks from preview mutation
   const createTasksMutation = useMutation({
     mutationFn: async (payload: {

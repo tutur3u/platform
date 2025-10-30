@@ -187,8 +187,7 @@ export function CommandBar({
           priority,
           dueDate,
           estimationPoints,
-          labelIds:
-            selectedLabelIds.length > 0 ? selectedLabelIds : undefined,
+          labelIds: selectedLabelIds.length > 0 ? selectedLabelIds : undefined,
           projectIds:
             selectedProjectIds.length > 0 ? selectedProjectIds : undefined,
           assigneeIds:
@@ -1153,7 +1152,6 @@ export function CommandBar({
 
           {/* Right Side: Create Button */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-
             {/* Create/Generate Button */}
             <Button
               onClick={handleAction}
