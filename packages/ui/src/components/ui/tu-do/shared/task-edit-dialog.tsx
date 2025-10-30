@@ -4389,7 +4389,9 @@ function TaskEditDialogComponent({
                                       className="h-auto whitespace-normal cursor-pointer gap-1 border-dynamic-sky/30 bg-dynamic-sky/10 px-2 text-dynamic-sky text-xs transition-opacity hover:opacity-80"
                                       onClick={() => toggleProject(project)}
                                     >
-                                      <span className="break-words">{project.name}</span>
+                                      <span className="break-words">
+                                        {project.name}
+                                      </span>
                                       <X className="h-2.5 w-2.5 flex-shrink-0" />
                                     </Badge>
                                   ))}
@@ -5174,7 +5176,9 @@ function TaskEditDialogComponent({
                                     onClick={() => toggleProject(project)}
                                     className="h-auto items-center whitespace-normal gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
                                   >
-                                    <span className="break-words">{project.name}</span>
+                                    <span className="break-words">
+                                      {project.name}
+                                    </span>
                                     <X className="h-3 w-3 flex-shrink-0 opacity-70" />
                                   </Button>
                                 ))}
