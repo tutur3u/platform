@@ -2,6 +2,10 @@ name: Supabase CI
 
 on:
   push:
+    paths:
+      - 'apps/db/**'
+      - 'packages/types/**'
+      - '.github/workflows/supabase-types.yaml'
   workflow_dispatch:
 
 jobs:
@@ -17,13 +21,50 @@ jobs:
       STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Check for migration changes
+        id: migration_check
+        run: |
+          # Use the push base to capture all commits in a multi-commit push
+          # Fall back to HEAD~ for single commits, then to empty tree for initial commits
+          if [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            # Multi-commit push: compare entire push range
+            BASE_COMMIT="${{ github.event.before }}"
+          elif git rev-parse --verify HEAD~ >/dev/null 2>&1; then
+            # Single commit: compare against parent
+            BASE_COMMIT="HEAD~"
+          else
+            # Initial commit: compare against empty tree to treat all files as changed
+            BASE_COMMIT=$(git hash-object -t tree /dev/null)
+          fi
+
+          echo "Comparing against base: $BASE_COMMIT"
+          changed=$(git diff --name-only "$BASE_COMMIT" HEAD | grep 'apps/db/supabase/migrations/\|packages/types/src/supabase.ts' | wc -l)
+
+          if [ "$changed" -eq 0 ]; then
+            echo "No migrations or type changes detected. Skipping type generation check."
+            echo "skip_check=true" >> $GITHUB_OUTPUT
+          else
+            echo "Migration or type changes detected in $changed files."
+            echo "skip_check=false" >> $GITHUB_OUTPUT
+          fi
+
       - uses: supabase/setup-cli@v1
+        if: steps.migration_check.outputs.skip_check != 'true'
         with:
           version: latest
 
-      - run: supabase init
-      - run: supabase db start
+      - name: Initialize Supabase
+        if: steps.migration_check.outputs.skip_check != 'true'
+        run: supabase init
+
+      - name: Start Supabase DB
+        if: steps.migration_check.outputs.skip_check != 'true'
+        run: supabase db start
       - name: Verify generated types match Postgres schema
+        if: steps.migration_check.outputs.skip_check != 'true'
         run: |
           supabase gen types typescript --local > schema.gen.ts
           if ! git diff --ignore-space-at-eol --exit-code --quiet schema.gen.ts; then
