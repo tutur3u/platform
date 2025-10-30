@@ -1,4 +1,17 @@
 {
+  "audit-log-table": {
+    "id": "ID",
+    "user_full_name": "Tên đầy đủ người dùng",
+    "archived": "Đã lưu trữ",
+    "archived_until": "Lưu trữ đến",
+    "creator_full_name": "Tên đầy đủ người tạo",
+    "created_at": "Ngày tạo",
+    "unknown_user": "Người dùng không xác định",
+    "active": "Hoạt động",
+    "dash": "—",
+    "invalid_date": "Ngày không hợp lệ",
+    "system": "Hệ thống"
+  },
   "billing": {
     "billing": "Thanh toán",
     "billing-info": "Quản lý thông tin thanh toán của bạn",
@@ -123,6 +136,7 @@
     "save": "Lưu",
     "reset": "Đặt lại",
     "cancel": "Hủy bỏ",
+    "clear": "Xóa bỏ",
     "start": "Bắt đầu",
     "upload": "Tải lên",
     "uploading": "Đang tải lên",
@@ -2340,6 +2354,11 @@
     "guest_user": "Người dùng khách",
     "guest_user_tooltip": "Nếu bật, người dùng sẽ được liên kết với nhóm khách của không gian làm việc.",
     "mark_as_guest": "Đánh dấu là khách",
+    "archived_user": "Người dùng được lưu trữ",
+    "archived_user_tooltip": "Lưu trữ vĩnh viễn người dùng này. Những người dùng được lưu trữ không thể được gán cho các nhiệm vụ mới.",
+    "mark_as_archived": "Đánh dấu là được lưu trữ",
+    "archived_at": "Được lưu trữ tạm thời cho đến",
+    "archived_at_tooltip": "Đặt ngày mà người dùng này sẽ được lưu trữ tạm thời. Sau ngày này trôi qua, người dùng sẽ tự động được lưu trữ.",
     "gender_placeholder": "Vui lòng chọn giới tính",
     "gender_options": {
       "male": "Nam",
@@ -2356,7 +2375,8 @@
     "edit_description": "Chỉnh sửa thông tin của người dùng",
     "failed_create": "Tạo người dùng thất bại",
     "failed_edit": "Chỉnh sửa người dùng thất bại",
-    "failed_delete": "Xóa người dùng trong không gian làm việc thất bại"
+    "failed_delete": "Xóa người dùng trong không gian làm việc thất bại",
+    "audit_log": "Nhật Ký Kiểm Tra"
   },
   "ws-user-attendance": {
     "singular": "Điểm danh",

@@ -3,6 +3,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
@@ -14,6 +15,7 @@ import ExportDialogContent from './export-dialog-content';
 import Filters from './filters';
 import UserForm from './form';
 import ImportDialogContent from './import-dialog-content';
+import { AuditLogTable } from './audit-log-table';
 
 export const metadata: Metadata = {
   title: 'Database',
@@ -90,6 +92,8 @@ export default async function WorkspaceUsersPage({
     href: `/${wsId}/users/database/${u.id}`,
   }));
 
+
+
   return (
     <>
       <FeatureSummary
@@ -109,56 +113,71 @@ export default async function WorkspaceUsersPage({
         }
       />
       <Separator className="my-4" />
-      <CustomDataTable
-        data={users}
-        namespace="user-data-table"
-        columnGenerator={getUserColumns}
-        extraColumns={extraFields}
-        extraData={{
-          locale,
-          wsId,
-          hasPrivateInfo,
-          hasPublicInfo,
-          canCreateUsers,
-          canUpdateUsers,
-          canDeleteUsers,
-          canCheckUserAttendance,
-        }}
-        count={count}
-        filters={<Filters wsId={wsId} searchParams={sp} />}
-        toolbarImportContent={
-          containsPermission('export_users_data') && (
-            <ImportDialogContent wsId={wsId} />
-          )
-        }
-        toolbarExportContent={
-          containsPermission('export_users_data') && (
-            <ExportDialogContent
-              wsId={wsId}
-              exportType="users"
-              searchParams={sp}
-            />
-          )
-        }
-        defaultVisibility={{
-          id: false,
-          gender: false,
-          display_name: false,
-          ethnicity: false,
-          guardian: false,
-          address: false,
-          national_id: false,
-          note: false,
-          linked_users: false,
-          group_count: false,
-          created_at: false,
-          updated_at: false,
-          avatar_url: false,
+      <Tabs defaultValue="users" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="users">
+            {t('ws-users.plural')}
+          </TabsTrigger>
+          <TabsTrigger value="audit-log">
+            {t('ws-users.audit_log')}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="users">
+          <CustomDataTable
+            data={users}
+            namespace="user-data-table"
+            columnGenerator={getUserColumns}
+            extraColumns={extraFields}
+            extraData={{
+              locale,
+              wsId,
+              hasPrivateInfo,
+              hasPublicInfo,
+              canCreateUsers,
+              canUpdateUsers,
+              canDeleteUsers,
+              canCheckUserAttendance,
+            }}
+            count={count}
+            filters={<Filters wsId={wsId} searchParams={sp} />}
+            toolbarImportContent={
+              containsPermission('export_users_data') && (
+                <ImportDialogContent wsId={wsId} />
+              )
+            }
+            toolbarExportContent={
+              containsPermission('export_users_data') && (
+                <ExportDialogContent
+                  wsId={wsId}
+                  exportType="users"
+                  searchParams={sp}
+                />
+              )
+            }
+            defaultVisibility={{
+              id: false,
+              gender: false,
+              display_name: false,
+              ethnicity: false,
+              guardian: false,
+              address: false,
+              national_id: false,
+              note: false,
+              linked_users: false,
+              group_count: false,
+              created_at: false,
+              updated_at: false,
+              avatar_url: false,
 
-          // Extra columns
-          ...Object.fromEntries(extraFields.map((field) => [field.id, false])),
-        }}
-      />
+              // Extra columns
+              ...Object.fromEntries(extraFields.map((field) => [field.id, false])),
+            }}
+          />
+        </TabsContent>
+        <TabsContent value="audit-log">
+          <AuditLogTable wsId={wsId} />
+        </TabsContent>
+      </Tabs>
     </>
   );
 }

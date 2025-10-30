@@ -1,4 +1,17 @@
 {
+  "audit-log-table": {
+    "id": "ID",
+    "user_full_name": "User Full Name",
+    "archived": "Archived",
+    "archived_until": "Archived Until",
+    "creator_full_name": "Creator Full Name",
+    "created_at": "Created At",
+    "unknown_user": "Unknown User",
+    "active": "Active",
+    "dash": "—",
+    "invalid_date": "Invalid date",
+    "system": "System"
+  },
   "billing": {
     "loading": "Loading payment details...",
     "billing": "Billing",
@@ -129,6 +142,7 @@
     "save": "Save",
     "reset": "Reset",
     "cancel": "Cancel",
+    "clear": "Clear",
     "start": "Start",
     "upload": "Upload",
     "uploading": "Uploading",
@@ -2255,6 +2269,11 @@
     "guest_user": "Guest user",
     "guest_user_tooltip": "If enabled, the user will be linked to the workspace's guest group.",
     "mark_as_guest": "Mark as guest",
+    "archived_user": "Archived user",
+    "archived_user_tooltip": "Permanently archive this user. Archived users cannot be assigned to new tasks.",
+    "mark_as_archived": "Mark as archived",
+    "archived_at": "Temporarily archived until",
+    "archived_at_tooltip": "Set a date when this user will be temporarily archived. After this date passes, the user will be automatically archived.",
     "gender_placeholder": "Please select a gender",
     "gender_options": {
       "male": "Male",
@@ -2271,7 +2290,8 @@
     "edit_description": "Edit an existing user",
     "failed_create": "Failed to create user",
     "failed_edit": "Failed to edit user",
-    "failed_delete": "Failed to delete workspace user"
+    "failed_delete": "Failed to delete workspace user",
+    "audit_log": "Audit Log"
   },
   "ws-user-attendance": {
     "singular": "Attendance",
@@ -5111,7 +5131,7 @@
       "title": "Quick Journal",
       "description": "Drop a quick idea—our AI turns it into a ready-to-track task.",
       "placeholder": "Write a thought, idea, or reminder...",
-      "helper_text": "We’ll rewrite your note into a clear title and task description automatically.",
+      "helper_text": "We'll rewrite your note into a clear title and task description automatically.",
       "select_label": "Send to list",
       "select_placeholder": "Select a task list",
       "button_label": "Generate task",
@@ -5131,7 +5151,7 @@
       "status_generating": "Rewriting your note with AI…",
       "preview_heading_ai": "{count, plural, one {AI-created task} other {AI-created tasks}}",
       "preview_heading_manual": "{count, plural, one {Task saved from your note} other {Tasks saved from your note}}",
-      "preview_subheading": "Here’s what will appear on your board.",
+      "preview_subheading": "Here's what will appear on your board.",
       "preview_description_label": "Description",
       "preview_description_empty": "No additional notes captured.",
       "preview_description_disabled": "Description generation disabled.",

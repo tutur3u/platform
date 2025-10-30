@@ -6,6 +6,7 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getCurrentWorkspaceUser } from '@tuturuuu/utils/user-helper';
 
 const userUpdateSchema = z.object({
   id: z.string().optional(),
@@ -21,6 +22,8 @@ const userUpdateSchema = z.object({
   address: z.string().nullable().optional(),
   avatar_url: z.string().nullable().optional(),
   note: z.string().nullable().optional(),
+  archived: z.boolean().optional(),
+  archived_until: z.string().nullable().optional(),
 });
 
 interface Params {
@@ -62,10 +65,10 @@ export async function PUT(req: Request, { params }: Params) {
 
   const data = await req.json();
 
-  // Extract is_guest separately before validation
-  const { is_guest, ...payloadToValidate } = data ?? {};
+  // Extract is_guest and archive-related fields separately before validation
+  const { is_guest, archived, archived_until, ...payloadToValidate } = data ?? {};
 
-  // Validate the user payload against the schema (excluding is_guest)
+  // Validate the user payload against the schema (excluding is_guest and archive fields)
   const schemaResult = userUpdateSchema.safeParse(payloadToValidate);
   if (!schemaResult.success) {
     return NextResponse.json(
@@ -82,8 +85,39 @@ export async function PUT(req: Request, { params }: Params) {
 
   const userPayload = schemaResult.data;
 
+  // If archived is explicitly set to false, clear the archived_until date
+  if (archived === false) {
+    userPayload.archived_until = null;
+  }
+
+  // Include archived status in the update payload
+  if (typeof archived === 'boolean') {
+    userPayload.archived = archived;
+  }
+  if (archived_until !== undefined) {
+    userPayload.archived_until = archived_until;
+  }
+
+
   const supabase = await createClient();
 
+  // Get current user to check status changes
+  const { data: currentUser, error: fetchError } = await supabase
+    .from('workspace_users')
+    .select('archived, archived_until')
+    .eq('ws_id', wsId)
+    .eq('id', userId)
+    .single();
+
+  if (fetchError || !currentUser) {
+    console.log(fetchError);
+    return NextResponse.json(
+      { message: 'Error fetching workspace user' },
+      { status: 500 }
+    );
+  }
+
+  // Update user
   const { error } = await supabase
     .from('workspace_users')
     .update(userPayload)
@@ -96,6 +130,33 @@ export async function PUT(req: Request, { params }: Params) {
       { message: 'Error updating workspace user' },
       { status: 500 }
     );
+  }
+
+  // Log status changes if archived status changed
+  if (typeof archived === 'boolean' && archived !== currentUser.archived) {
+
+    const currentWorkspaceUser = await getCurrentWorkspaceUser(wsId);
+    if (!currentWorkspaceUser) {
+      console.log('No current workspace user found');
+      return NextResponse.json(
+        { message: 'No current workspace user found' },
+        { status: 500 }
+      );
+    }
+    const { error: logError } = await supabase
+      .from('workspace_user_status_changes')
+      .insert({
+        user_id: userId,
+        ws_id: wsId,
+        archived: archived,
+        archived_until: archived === false ? null : (archived_until || null),
+        creator_id: currentWorkspaceUser.virtual_user_id,
+      });
+
+    if (logError) {
+      console.log('Failed to log status change:', logError);
+      // Don't fail the request if logging fails, just log it
+    }
   }
 
   // Sync guest membership based on is_guest flag when provided
