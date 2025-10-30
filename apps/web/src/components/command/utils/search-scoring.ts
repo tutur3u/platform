@@ -58,7 +58,10 @@ function scoreMatch(text: string, query: string): number {
       matchCount++;
       queryIndex++;
       consecutiveMatches++;
-      maxConsecutiveMatches = Math.max(maxConsecutiveMatches, consecutiveMatches);
+      maxConsecutiveMatches = Math.max(
+        maxConsecutiveMatches,
+        consecutiveMatches
+      );
     } else {
       consecutiveMatches = 0;
     }

@@ -55,30 +55,41 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
   }, [query]);
 
   // Handle quick task creation
-  const handleCreateTask = React.useCallback((taskName: string) => {
-    if (!wsId) return;
-    setDefaultTaskName(taskName);
-    setShowTaskForm(true);
-  }, [wsId]);
+  const handleCreateTask = React.useCallback(
+    (taskName: string) => {
+      if (!wsId) return;
+      setDefaultTaskName(taskName);
+      setShowTaskForm(true);
+    },
+    [wsId]
+  );
 
   // Handle keyboard shortcuts at input level
-  const handleInputKeyDown = React.useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Ctrl+X to clear recent items (no confirmation)
-    if (e.key === 'x' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
-      e.preventDefault();
-      e.stopPropagation();
-      clearAllRecent();
-      setRecentRefreshKey((prev) => prev + 1);
-      return;
-    }
-    // Ctrl+Enter to quickly create task from query
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && query.trim() && wsId) {
-      e.preventDefault();
-      e.stopPropagation();
-      handleCreateTask(query.trim());
-      return;
-    }
-  }, [query, wsId, handleCreateTask]);
+  const handleInputKeyDown = React.useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      // Ctrl+X to clear recent items (no confirmation)
+      if (e.key === 'x' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        clearAllRecent();
+        setRecentRefreshKey((prev) => prev + 1);
+        return;
+      }
+      // Ctrl+Enter to quickly create task from query
+      if (
+        e.key === 'Enter' &&
+        (e.ctrlKey || e.metaKey) &&
+        query.trim() &&
+        wsId
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleCreateTask(query.trim());
+        return;
+      }
+    },
+    [query, wsId, handleCreateTask]
+  );
 
   // Reset to command mode when closing task form
   const handleCloseTaskForm = () => {
@@ -172,12 +183,17 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
                   className="gap-2"
                 >
                   <Plus className="h-4 w-4" />
-                  Create task "{query.trim().slice(0, 30)}{query.trim().length > 30 ? '...' : ''}"
+                  Create task "{query.trim().slice(0, 30)}
+                  {query.trim().length > 30 ? '...' : ''}"
                 </Button>
               )}
               {hasQuery && (
                 <p className="text-muted-foreground text-xs">
-                  Tip: Press <kbd className="rounded border bg-muted px-1 font-mono text-[10px]">⌘↵</kbd> to quickly create a task
+                  Tip: Press{' '}
+                  <kbd className="rounded border bg-muted px-1 font-mono text-[10px]">
+                    ⌘↵
+                  </kbd>{' '}
+                  to quickly create a task
                 </p>
               )}
             </div>

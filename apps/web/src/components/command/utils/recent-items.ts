@@ -41,9 +41,7 @@ function getFromStorage<T>(key: string): T[] {
     if (!stored) return [];
     const items = JSON.parse(stored) as T[];
     // Filter out expired items
-    return items.filter(
-      (item: any) => !isExpired(item.timestamp)
-    );
+    return items.filter((item: any) => !isExpired(item.timestamp));
   } catch {
     return [];
   }
@@ -123,11 +121,7 @@ export function getRecentItems(limit = 5): RecentItem[] {
   const searches = getFromStorage<RecentSearch>(RECENT_SEARCHES_KEY);
 
   // Merge and sort by timestamp
-  const allItems: RecentItem[] = [
-    ...pages,
-    ...tasks,
-    ...searches,
-  ];
+  const allItems: RecentItem[] = [...pages, ...tasks, ...searches];
 
   allItems.sort((a, b) => b.timestamp - a.timestamp);
 

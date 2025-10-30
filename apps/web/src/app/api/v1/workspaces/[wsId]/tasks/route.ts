@@ -232,7 +232,7 @@ export async function POST(
       estimation_points,
       label_ids,
       project_ids,
-      assignee_ids
+      assignee_ids,
     } = body;
 
     if (!name?.trim()) {
@@ -342,7 +342,11 @@ export async function POST(
     }
 
     // Insert task assignees if provided
-    if (assignee_ids && Array.isArray(assignee_ids) && assignee_ids.length > 0) {
+    if (
+      assignee_ids &&
+      Array.isArray(assignee_ids) &&
+      assignee_ids.length > 0
+    ) {
       const assigneeInserts = assignee_ids.map((assigneeId) => ({
         task_id: data.id,
         user_id: assigneeId,

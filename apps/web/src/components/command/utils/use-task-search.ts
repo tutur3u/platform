@@ -25,7 +25,8 @@ export interface TaskSearchResult {
  */
 function isValidUUID(str: string | null): boolean {
   if (!str) return false;
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidRegex.test(str);
 }
 
@@ -51,7 +52,11 @@ function useDebounced<T>(value: T, delay: number): T {
 /**
  * Hook for searching tasks in the workspace
  */
-export function useTaskSearch(wsId: string | null, query: string, enabled: boolean) {
+export function useTaskSearch(
+  wsId: string | null,
+  query: string,
+  enabled: boolean
+) {
   const debouncedQuery = useDebounced(query.trim(), 300);
   const hasQuery = debouncedQuery.length > 0;
 
@@ -64,9 +69,7 @@ export function useTaskSearch(wsId: string | null, query: string, enabled: boole
     queryFn: async () => {
       if (!wsId) return [];
 
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks?limit=20`
-      );
+      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks?limit=20`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch recent tasks');
@@ -85,19 +88,16 @@ export function useTaskSearch(wsId: string | null, query: string, enabled: boole
     queryFn: async () => {
       if (!wsId || !debouncedQuery) return [];
 
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks/search`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            query: debouncedQuery,
-            matchCount: 20,
-          }),
-        }
-      );
+      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks/search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: debouncedQuery,
+          matchCount: 20,
+        }),
+      });
 
       if (!response.ok) {
         throw new Error('Failed to search tasks');

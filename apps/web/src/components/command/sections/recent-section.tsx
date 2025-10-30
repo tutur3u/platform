@@ -2,7 +2,11 @@
 
 import type { RecentItem } from '../utils/recent-items';
 import { getRecentItems, clearAllRecent } from '../utils/recent-items';
-import { CommandGroup, CommandItem, CommandSeparator } from '@tuturuuu/ui/command';
+import {
+  CommandGroup,
+  CommandItem,
+  CommandSeparator,
+} from '@tuturuuu/ui/command';
 import { Clock, FileText, CheckCircle2, Search, Trash2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useRouter } from 'next/navigation';
@@ -19,7 +23,12 @@ interface RecentSectionProps {
   onApplySearch?: (query: string) => void;
 }
 
-export function RecentSection({ wsId, query, onSelect, onApplySearch }: RecentSectionProps) {
+export function RecentSection({
+  wsId,
+  query,
+  onSelect,
+  onApplySearch,
+}: RecentSectionProps) {
   const router = useRouter();
   const [recentItems, setRecentItems] = React.useState<RecentItem[]>([]);
 

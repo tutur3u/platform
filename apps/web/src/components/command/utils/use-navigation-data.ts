@@ -38,7 +38,8 @@ function flattenNavigation(
     }
 
     // Add current item
-    const currentPath = parentPath.length > 0 ? [...parentPath, link.title] : [link.title];
+    const currentPath =
+      parentPath.length > 0 ? [...parentPath, link.title] : [link.title];
 
     flattened.push({
       title: link.title,
@@ -52,7 +53,9 @@ function flattenNavigation(
 
     // Process children if they exist
     if (link.children) {
-      flattened.push(...flattenNavigation(link.children, currentPath.slice(0, -1)));
+      flattened.push(
+        ...flattenNavigation(link.children, currentPath.slice(0, -1))
+      );
     }
   }
 

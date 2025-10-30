@@ -75,7 +75,9 @@ export function AddTaskForm({
   const [taskName, setTaskName] = useState(defaultTaskName || '');
 
   // Step 2: Optional Details
-  const [priority, setPriority] = useState<'critical' | 'high' | 'normal' | 'low' | null>(null);
+  const [priority, setPriority] = useState<
+    'critical' | 'high' | 'normal' | 'low' | null
+  >(null);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [estimationPoints, setEstimationPoints] = useState<number | null>(null);
@@ -140,16 +142,20 @@ export function AddTaskForm({
   });
 
   // Fetch workspace projects (only after board and list are selected)
-  const { data: workspaceProjects = [], isLoading: projectsLoading } = useQuery({
-    queryKey: ['workspace_projects', workspaceId],
-    queryFn: async () => {
-      if (!workspaceId) return [];
-      const response = await fetch(`/api/v1/workspaces/${workspaceId}/task-projects`);
-      if (!response.ok) throw new Error('Failed to fetch projects');
-      return response.json(); // API returns array directly
-    },
-    enabled: !!workspaceId && !!selectedBoardId && !!selectedListId,
-  });
+  const { data: workspaceProjects = [], isLoading: projectsLoading } = useQuery(
+    {
+      queryKey: ['workspace_projects', workspaceId],
+      queryFn: async () => {
+        if (!workspaceId) return [];
+        const response = await fetch(
+          `/api/v1/workspaces/${workspaceId}/task-projects`
+        );
+        if (!response.ok) throw new Error('Failed to fetch projects');
+        return response.json(); // API returns array directly
+      },
+      enabled: !!workspaceId && !!selectedBoardId && !!selectedListId,
+    }
+  );
 
   // Fetch workspace members (only after board and list are selected)
   const { data: workspaceMembers = [], isLoading: membersLoading } = useQuery({
@@ -312,7 +318,8 @@ export function AddTaskForm({
   });
 
   // Step navigation handlers
-  const canProceedToStep2 = selectedBoardId && selectedListId && taskName.trim();
+  const canProceedToStep2 =
+    selectedBoardId && selectedListId && taskName.trim();
 
   const handleNextStep = () => {
     if (!canProceedToStep2) {
@@ -360,8 +367,10 @@ export function AddTaskForm({
       end_date: endDate ? endDate.toISOString() : null,
       estimation_points: estimationPoints,
       label_ids: selectedLabelIds.length > 0 ? selectedLabelIds : undefined,
-      project_ids: selectedProjectIds.length > 0 ? selectedProjectIds : undefined,
-      assignee_ids: selectedAssigneeIds.length > 0 ? selectedAssigneeIds : undefined,
+      project_ids:
+        selectedProjectIds.length > 0 ? selectedProjectIds : undefined,
+      assignee_ids:
+        selectedAssigneeIds.length > 0 ? selectedAssigneeIds : undefined,
     });
   };
 
@@ -388,7 +397,9 @@ export function AddTaskForm({
 
   const handleViewTask = () => {
     if (lastCreatedTaskId && selectedBoardId) {
-      router.push(`/${wsId}/tasks/boards/${selectedBoardId}?task=${lastCreatedTaskId}`);
+      router.push(
+        `/${wsId}/tasks/boards/${selectedBoardId}?task=${lastCreatedTaskId}`
+      );
       setOpen(false);
     }
   };
@@ -424,7 +435,9 @@ export function AddTaskForm({
     const extendedValues = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
 
     if (boardConfig.extended_estimation) {
-      return boardConfig.allow_zero_estimates ? [0, ...extendedValues] : extendedValues;
+      return boardConfig.allow_zero_estimates
+        ? [0, ...extendedValues]
+        : extendedValues;
     }
 
     return boardConfig.allow_zero_estimates ? [0, ...baseValues] : baseValues;
@@ -540,21 +553,25 @@ export function AddTaskForm({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <div className={cn(
-              'flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-semibold transition-colors',
-              currentStep === 1
-                ? 'border-primary bg-primary text-primary-foreground'
-                : 'border-primary bg-primary text-primary-foreground'
-            )}>
+            <div
+              className={cn(
+                'flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-semibold transition-colors',
+                currentStep === 1
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-primary bg-primary text-primary-foreground'
+              )}
+            >
               1
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            <div className={cn(
-              'flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-semibold transition-colors',
-              currentStep === 2
-                ? 'border-primary bg-primary text-primary-foreground'
-                : 'border-muted-foreground/30 bg-muted text-muted-foreground'
-            )}>
+            <div
+              className={cn(
+                'flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-semibold transition-colors',
+                currentStep === 2
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-muted-foreground/30 bg-muted text-muted-foreground'
+              )}
+            >
               2
             </div>
           </div>
@@ -583,11 +600,18 @@ export function AddTaskForm({
                 <SelectTrigger>
                   <SelectValue placeholder="Select a board..." />
                 </SelectTrigger>
-                <SelectContent className={cn(boards && boards.length > 5 && 'max-h-[200px]')}>
+                <SelectContent
+                  className={cn(boards && boards.length > 5 && 'max-h-[200px]')}
+                >
                   {boards?.map((board: any) => (
                     <SelectItem key={board.id} value={board.id}>
                       <div className="flex items-center gap-2">
-                        <div className={cn('h-3 w-3 flex-shrink-0 rounded-full', getBoardColor(board.id))} />
+                        <div
+                          className={cn(
+                            'h-3 w-3 flex-shrink-0 rounded-full',
+                            getBoardColor(board.id)
+                          )}
+                        />
                         <span className="truncate">{board.name}</span>
                         <Badge variant="secondary" className="ml-auto text-xs">
                           {board.task_lists?.length || 0} lists
@@ -680,7 +704,12 @@ export function AddTaskForm({
                 <Flag className="h-4 w-4" />
                 Priority
               </Label>
-              <Select value={priority || 'none'} onValueChange={(value) => setPriority(value === 'none' ? null : value as any)}>
+              <Select
+                value={priority || 'none'}
+                onValueChange={(value) =>
+                  setPriority(value === 'none' ? null : (value as any))
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="No priority" />
                 </SelectTrigger>
@@ -726,7 +755,12 @@ export function AddTaskForm({
                   <Timer className="h-4 w-4" />
                   Estimation Points
                 </Label>
-                <Select value={estimationPoints?.toString() || 'none'} onValueChange={(value) => setEstimationPoints(value === 'none' ? null : Number(value))}>
+                <Select
+                  value={estimationPoints?.toString() || 'none'}
+                  onValueChange={(value) =>
+                    setEstimationPoints(value === 'none' ? null : Number(value))
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="No estimation" />
                   </SelectTrigger>
@@ -802,14 +836,20 @@ export function AddTaskForm({
                     setSelectedLabelIds([]);
                   } else {
                     setSelectedLabelIds((prev) =>
-                      prev.includes(value) ? prev.filter((id) => id !== value) : [...prev, value]
+                      prev.includes(value)
+                        ? prev.filter((id) => id !== value)
+                        : [...prev, value]
                     );
                   }
                 }}
                 disabled={labelsLoading}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={labelsLoading ? "Loading labels..." : "Select labels..."} />
+                  <SelectValue
+                    placeholder={
+                      labelsLoading ? 'Loading labels...' : 'Select labels...'
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No labels</SelectItem>
@@ -829,9 +869,15 @@ export function AddTaskForm({
               {selectedLabelIds.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   {selectedLabelIds.map((labelId) => {
-                    const label = workspaceLabels?.find((l: any) => l.id === labelId);
+                    const label = workspaceLabels?.find(
+                      (l: any) => l.id === labelId
+                    );
                     return label ? (
-                      <Badge key={labelId} variant="secondary" className="gap-1">
+                      <Badge
+                        key={labelId}
+                        variant="secondary"
+                        className="gap-1"
+                      >
                         <div
                           className="h-2 w-2 rounded-full"
                           style={{ backgroundColor: label.color || '#gray' }}
@@ -839,7 +885,11 @@ export function AddTaskForm({
                         {label.name}
                         <X
                           className="h-3 w-3 cursor-pointer"
-                          onClick={() => setSelectedLabelIds((prev) => prev.filter((id) => id !== labelId))}
+                          onClick={() =>
+                            setSelectedLabelIds((prev) =>
+                              prev.filter((id) => id !== labelId)
+                            )
+                          }
                         />
                       </Badge>
                     ) : null;
@@ -864,14 +914,22 @@ export function AddTaskForm({
                     setSelectedProjectIds([]);
                   } else {
                     setSelectedProjectIds((prev) =>
-                      prev.includes(value) ? prev.filter((id) => id !== value) : [...prev, value]
+                      prev.includes(value)
+                        ? prev.filter((id) => id !== value)
+                        : [...prev, value]
                     );
                   }
                 }}
                 disabled={projectsLoading}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={projectsLoading ? "Loading projects..." : "Select projects..."} />
+                  <SelectValue
+                    placeholder={
+                      projectsLoading
+                        ? 'Loading projects...'
+                        : 'Select projects...'
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No projects</SelectItem>
@@ -888,14 +946,24 @@ export function AddTaskForm({
               {selectedProjectIds.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   {selectedProjectIds.map((projectId) => {
-                    const project = workspaceProjects?.find((p: any) => p.id === projectId);
+                    const project = workspaceProjects?.find(
+                      (p: any) => p.id === projectId
+                    );
                     return project ? (
-                      <Badge key={projectId} variant="secondary" className="gap-1">
+                      <Badge
+                        key={projectId}
+                        variant="secondary"
+                        className="gap-1"
+                      >
                         <Box className="h-3 w-3" />
                         {project.name}
                         <X
                           className="h-3 w-3 cursor-pointer"
-                          onClick={() => setSelectedProjectIds((prev) => prev.filter((id) => id !== projectId))}
+                          onClick={() =>
+                            setSelectedProjectIds((prev) =>
+                              prev.filter((id) => id !== projectId)
+                            )
+                          }
                         />
                       </Badge>
                     ) : null;
@@ -920,14 +988,22 @@ export function AddTaskForm({
                     setSelectedAssigneeIds([]);
                   } else {
                     setSelectedAssigneeIds((prev) =>
-                      prev.includes(value) ? prev.filter((id) => id !== value) : [...prev, value]
+                      prev.includes(value)
+                        ? prev.filter((id) => id !== value)
+                        : [...prev, value]
                     );
                   }
                 }}
                 disabled={membersLoading}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={membersLoading ? "Loading members..." : "Select assignees..."} />
+                  <SelectValue
+                    placeholder={
+                      membersLoading
+                        ? 'Loading members...'
+                        : 'Select assignees...'
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No assignees</SelectItem>
@@ -937,7 +1013,9 @@ export function AddTaskForm({
                         <Avatar className="h-4 w-4">
                           <AvatarImage src={member.avatar_url} />
                           <AvatarFallback className="text-[9px]">
-                            {member.display_name?.[0] || member.email?.[0] || '?'}
+                            {member.display_name?.[0] ||
+                              member.email?.[0] ||
+                              '?'}
                           </AvatarFallback>
                         </Avatar>
                         <span>{member.display_name || member.email}</span>
@@ -949,19 +1027,31 @@ export function AddTaskForm({
               {selectedAssigneeIds.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   {selectedAssigneeIds.map((assigneeId) => {
-                    const member = workspaceMembers?.find((m: any) => m.id === assigneeId);
+                    const member = workspaceMembers?.find(
+                      (m: any) => m.id === assigneeId
+                    );
                     return member ? (
-                      <Badge key={assigneeId} variant="secondary" className="gap-1">
+                      <Badge
+                        key={assigneeId}
+                        variant="secondary"
+                        className="gap-1"
+                      >
                         <Avatar className="h-3 w-3">
                           <AvatarImage src={member.avatar_url} />
                           <AvatarFallback className="text-[8px]">
-                            {member.display_name?.[0] || member.email?.[0] || '?'}
+                            {member.display_name?.[0] ||
+                              member.email?.[0] ||
+                              '?'}
                           </AvatarFallback>
                         </Avatar>
                         {member.display_name || member.email}
                         <X
                           className="h-3 w-3 cursor-pointer"
-                          onClick={() => setSelectedAssigneeIds((prev) => prev.filter((id) => id !== assigneeId))}
+                          onClick={() =>
+                            setSelectedAssigneeIds((prev) =>
+                              prev.filter((id) => id !== assigneeId)
+                            )
+                          }
                         />
                       </Badge>
                     ) : null;
@@ -1064,11 +1154,7 @@ export function AddTaskForm({
             </div>
           ) : (
             <div className="flex gap-2">
-              <Button
-                onClick={handlePrevStep}
-                variant="outline"
-                size="sm"
-              >
+              <Button onClick={handlePrevStep} variant="outline" size="sm">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back
               </Button>
