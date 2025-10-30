@@ -6121,5 +6121,51 @@
         "impact": "Build Meaningful Things"
       }
     }
+  },
+  "command_palette": {
+    "title": "Command Center",
+    "ai_assistant": "AI Assistant",
+    "commands": "Commands",
+    "search_placeholder": "Search commands, tasks, or navigate...",
+    "ai_search_placeholder": "Ask me to create, find, summarize, or help with anything...",
+    "no_results": "No results found",
+    "no_results_for": "No matches for \"{query}\"",
+    "try_searching": "Try searching for tasks, pages, or actions",
+    "ai_tip": "Tip: Try using the AI Assistant for natural language queries",
+    "create_task": "Create task \"{taskName}\"",
+    "create_task_tip": "Tip: Press ⌘↵ to quickly create a task",
+    "clear_recent_title": "Clear Recent Items",
+    "clear_recent_confirmation": "This will clear all recent pages, tasks, and searches. Are you sure?",
+    "clear_all": "Clear All",
+    "cancel": "Cancel",
+    "navigation": "Navigation",
+    "tasks": "Tasks",
+    "recent_tasks": "Recent Tasks",
+    "recent": "Recent",
+    "quick_actions": "Quick Actions",
+    "searching_tasks": "Searching tasks...",
+    "no_tasks_found": "No tasks found matching \"{query}\"",
+    "result_count": "{count} result",
+    "result_count_plural": "{count} results",
+    "view_task": "View Task",
+    "add_another": "Add Another",
+    "keyboard_hints": {
+      "navigate": "navigate",
+      "select": "select",
+      "to_toggle": "to toggle",
+      "to_close": "to close",
+      "esc_to_close": "Press Esc to close",
+      "clear_recent": "clear recent"
+    },
+    "powered_by": "Powered by Tuturuuu Search",
+    "clear": "Clear",
+    "assigned_to_you": "Assigned to you",
+    "overdue": "Overdue",
+    "priority": {
+      "critical": "Critical",
+      "high": "High",
+      "normal": "Normal",
+      "low": "Low"
+    }
   }
 }

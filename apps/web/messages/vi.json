@@ -5905,5 +5905,51 @@
         "impact": "Xây Điều Gì Đó Thật Sự Ý Nghĩa"
       }
     }
+  },
+  "command_palette": {
+    "title": "Trung Tâm Lệnh",
+    "ai_assistant": "Trợ Lý AI",
+    "commands": "Lệnh",
+    "search_placeholder": "Tìm lệnh, nhiệm vụ, hoặc điều hướng...",
+    "ai_search_placeholder": "Hỏi tôi để tạo, tìm kiếm, tóm tắt, hoặc giúp đỡ bất cứ điều gì...",
+    "no_results": "Không tìm thấy kết quả",
+    "no_results_for": "Không có kết quả cho \"{query}\"",
+    "try_searching": "Thử tìm kiếm nhiệm vụ, trang, hoặc hành động",
+    "ai_tip": "Mẹo: Thử dùng Trợ Lý AI cho các truy vấn ngôn ngữ tự nhiên",
+    "create_task": "Tạo nhiệm vụ \"{taskName}\"",
+    "create_task_tip": "Mẹo: Nhấn ⌘↵ để nhanh chóng tạo nhiệm vụ",
+    "clear_recent_title": "Xóa Mục Gần Đây",
+    "clear_recent_confirmation": "Điều này sẽ xóa tất cả các trang, nhiệm vụ và tìm kiếm gần đây. Bạn có chắc không?",
+    "clear_all": "Xóa Tất Cả",
+    "cancel": "Hủy",
+    "navigation": "Điều Hướng",
+    "tasks": "Nhiệm Vụ",
+    "recent_tasks": "Nhiệm Vụ Gần Đây",
+    "recent": "Gần Đây",
+    "quick_actions": "Hành Động Nhanh",
+    "searching_tasks": "Đang tìm nhiệm vụ...",
+    "no_tasks_found": "Không tìm thấy nhiệm vụ nào khớp với \"{query}\"",
+    "result_count": "{count} kết quả",
+    "result_count_plural": "{count} kết quả",
+    "view_task": "Xem Nhiệm Vụ",
+    "add_another": "Thêm Nữa",
+    "keyboard_hints": {
+      "navigate": "điều hướng",
+      "select": "chọn",
+      "to_toggle": "để chuyển đổi",
+      "to_close": "để đóng",
+      "esc_to_close": "Nhấn Esc để đóng",
+      "clear_recent": "xóa gần đây"
+    },
+    "powered_by": "Được hỗ trợ bởi tìm kiếm ngữ nghĩa",
+    "clear": "Xóa",
+    "assigned_to_you": "Giao cho bạn",
+    "overdue": "Quá hạn",
+    "priority": {
+      "critical": "Khẩn Cấp",
+      "high": "Cao",
+      "normal": "Bình Thường",
+      "low": "Thấp"
+    }
   }
 }
