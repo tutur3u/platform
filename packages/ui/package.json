@@ -71,6 +71,7 @@
     "@tuturuuu/trigger": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@types/debug": "^4.1.12",
+    "browser-image-compression": "^2.0.2",
     "class-variance-authority": "^0.7.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
