@@ -10,6 +10,7 @@
   },
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
+    "dev": "tsc --project tsconfig.build.json --watch",
     "clean": "rm -rf dist .turbo",
     "prepublishOnly": "bun run clean && bun run build"
   },
