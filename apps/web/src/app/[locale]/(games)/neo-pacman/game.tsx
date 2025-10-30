@@ -44,7 +44,7 @@ export function PacmanGame() {
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
-  }, []);
+  });
 
   return (
     <div className="flex flex-col items-center justify-center">

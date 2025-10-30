@@ -117,49 +117,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createUI(): void {
-    // Score
-    this.scoreText = this.add
-      .text(10, 10, `Score: ${this.score}`, {
-        fontSize: '20px',
-        color: '#ffffff',
-        backgroundColor: '#000000',
-        padding: { x: 10, y: 5 },
-      })
-      .setScrollFactor(0)
-      .setDepth(100);
-
-    // Lives
-    this.livesText = this.add
-      .text(10, 40, `Lives: ${this.lives}`, {
-        fontSize: '20px',
-        color: '#ffffff',
-        backgroundColor: '#000000',
-        padding: { x: 10, y: 5 },
-      })
-      .setScrollFactor(0)
-      .setDepth(100);
-
-    // Ghosts eaten
-    this.add
-      .text(10, 70, `Ghosts Eaten: 0/4`, {
-        fontSize: '20px',
-        color: '#ffffff',
-        backgroundColor: '#000000',
-        padding: { x: 10, y: 5 },
-      })
-      .setScrollFactor(0)
-      .setDepth(100)
-      .setName('ghostsEatenText');
-
     // Quit button
     const quitBtn = this.add
-      .text(this.cameras.main.width - 10, 10, 'Quit', {
+      .text(10, 10, 'Quit', {
         fontSize: '20px',
         color: '#ffffff',
         backgroundColor: '#800000',
         padding: { x: 10, y: 5 },
       })
-      .setOrigin(1, 0)
       .setScrollFactor(0)
       .setDepth(100)
       .setInteractive({ useHandCursor: true });
@@ -167,6 +132,43 @@ export class GameScene extends Phaser.Scene {
     quitBtn.on('pointerover', () => {
       quitBtn.setStyle({ backgroundColor: '#ff0000' });
     });
+
+    // Score
+    this.scoreText = this.add
+      .text(this.cameras.main.width - 10, 10, `Score: ${this.score}`, {
+        fontSize: '20px',
+        color: '#ffffff',
+        backgroundColor: '#000000',
+        padding: { x: 10, y: 5 },
+      })
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setDepth(100);
+
+    // Lives
+    this.livesText = this.add
+      .text(this.cameras.main.width - 10, 40, `Lives: ${this.lives}`, {
+        fontSize: '20px',
+        color: '#ffffff',
+        backgroundColor: '#000000',
+        padding: { x: 10, y: 5 },
+      })
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setDepth(100);
+
+    // Ghosts eaten
+    this.add
+      .text(this.cameras.main.width - 10, 70, `Ghosts Eaten: 0/4`, {
+        fontSize: '20px',
+        color: '#ffffff',
+        backgroundColor: '#000000',
+        padding: { x: 10, y: 5 },
+      })
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setDepth(100)
+      .setName('ghostsEatenText');
 
     quitBtn.on('pointerout', () => {
       quitBtn.setStyle({ backgroundColor: '#800000' });
