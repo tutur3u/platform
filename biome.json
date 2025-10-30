@@ -45,12 +45,8 @@
           "level": "info",
           "fix": "safe",
           "options": {
-            "attributes": [
-              "className"
-            ],
-            "functions": [
-              "cn"
-            ]
+            "attributes": ["className"],
+            "functions": ["cn"]
           }
         }
       },
@@ -75,10 +71,7 @@
       "attributePosition": "auto",
       "bracketSpacing": true
     },
-    "globals": [
-      "React",
-      "JSX"
-    ]
+    "globals": ["React", "JSX"]
   },
   "html": {
     "formatter": {
