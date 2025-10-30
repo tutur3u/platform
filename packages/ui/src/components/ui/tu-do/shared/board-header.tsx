@@ -192,7 +192,9 @@ export function BoardHeader({
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [layoutSettingsOpen, setLayoutSettingsOpen] = useState(false);
-  const [otherBoards, setOtherBoards] = useState<Pick<WorkspaceTaskBoard, 'id' | 'name'>[]>([]);
+  const [otherBoards, setOtherBoards] = useState<
+    Pick<WorkspaceTaskBoard, 'id' | 'name'>[]
+  >([]);
   const [isFetchingBoards, setIsFetchingBoards] = useState(false);
   const [localSearchQuery, setLocalSearchQuery] = useState(
     filters.searchQuery || ''
@@ -393,9 +395,7 @@ export function BoardHeader({
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <div
-                className="group flex cursor-pointer items-center gap-2 transition-colors hover:text-foreground"
-              >
+              <div className="group flex cursor-pointer items-center gap-2 transition-colors hover:text-foreground">
                 <h1 className="truncate font-bold text-base text-foreground sm:text-xl md:text-2xl">
                   {board.name}
                 </h1>
@@ -415,7 +415,9 @@ export function BoardHeader({
                   <DropdownMenuItem
                     key={otherBoard.id}
                     onClick={() =>
-                      router.push(`/${board.ws_id}/tasks/boards/${otherBoard.id}`)
+                      router.push(
+                        `/${board.ws_id}/tasks/boards/${otherBoard.id}`
+                      )
                     }
                   >
                     {otherBoard.name}
