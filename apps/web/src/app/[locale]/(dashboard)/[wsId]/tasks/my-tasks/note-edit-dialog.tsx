@@ -58,7 +58,7 @@ export function NoteEditDialog({
                   {t('edit_dialog.title')}
                 </DialogTitle>
                 <DialogDescription className="sr-only">
-                  Edit note with title and description
+                  {t('edit_dialog.description')}
                 </DialogDescription>
               </div>
             </div>

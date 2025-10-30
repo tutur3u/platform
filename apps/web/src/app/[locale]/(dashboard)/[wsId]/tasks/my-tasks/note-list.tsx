@@ -326,6 +326,25 @@ export default function NoteList({ wsId }: { wsId: string }) {
     setIsEditDialogOpen(true);
   };
 
+  const debouncedTitleSave = useMemo(
+    () =>
+      debounce((noteId: string, title: string) => {
+        updateNoteMutation.mutate({
+          noteId,
+          title,
+        });
+      }, 1000),
+    [updateNoteMutation]
+  );
+
+  const handleAutoSaveTitle = useCallback(
+    (title: string) => {
+      if (!editingNote) return;
+      debouncedTitleSave(editingNote.id, title);
+    },
+    [editingNote, debouncedTitleSave]
+  );
+
   // Debounced auto-save handler - triggered 1 second after last change
   const debouncedAutoSave = useMemo(
     () =>
@@ -570,15 +589,15 @@ export default function NoteList({ wsId }: { wsId: string }) {
             setEditingNote(null);
             setEditTitle('');
             setEditContent(null);
+            refetchNotes();
           }
         }}
         title={editTitle}
         onTitleChange={(newTitle) => {
           setEditTitle(newTitle);
-          updateNoteMutation.mutate({
-            noteId: editingNote?.id || '',
-            title: newTitle,
-          });
+          if (newTitle) { 
+            handleAutoSaveTitle(newTitle);
+          }
         }}
         content={editContent}
         onContentChange={(newContent) => {
