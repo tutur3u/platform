@@ -48,8 +48,8 @@ export default function NotesContent({ wsId }: NotesContentProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: null,  // Create with null title as per requirements
-          content: emptyContent
+          title: null, // Create with null title as per requirements
+          content: emptyContent,
         }),
       });
       if (!response.ok) throw new Error('Failed to create note');
@@ -136,9 +136,7 @@ export default function NotesContent({ wsId }: NotesContentProps) {
       <div className="flex items-center justify-between border-b px-6 py-4">
         <div>
           <h1 className="font-bold text-2xl">{t('notes_heading')}</h1>
-          <p className="text-muted-foreground text-sm">
-            {t('description')}
-          </p>
+          <p className="text-muted-foreground text-sm">{t('description')}</p>
         </div>
         <Button
           onClick={handleCreateNewNote}
@@ -166,7 +164,7 @@ export default function NotesContent({ wsId }: NotesContentProps) {
             setEditContent(null);
             // Refresh the notes list when dialog closes
             queryClient.invalidateQueries({
-              queryKey: ['workspace', wsId, 'notes']
+              queryKey: ['workspace', wsId, 'notes'],
             });
           }
         }}

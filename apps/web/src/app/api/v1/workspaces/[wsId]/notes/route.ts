@@ -15,7 +15,7 @@ const jsonContentSchema: z.ZodType<any> = z.lazy(() =>
 );
 
 const createNoteSchema = z.object({
-  title: z.string().optional(),
+  title: z.string().nullable().optional(),
   content: jsonContentSchema.refine(
     (val) => val.type === 'doc',
     'Content must be a valid TipTap document'
@@ -117,6 +117,7 @@ export async function POST(
 
     // Parse and validate request body
     const body = await request.json();
+    console.log('body', body);
     const { title, content } = createNoteSchema.parse(body);
 
     // Create note
@@ -141,10 +142,10 @@ export async function POST(
 
     return NextResponse.json(note);
   } catch (error) {
+    console.error('Error in POST /api/v1/workspaces/[wsId]/notes:', error);
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
-    console.error('Error in POST /api/v1/workspaces/[wsId]/notes:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

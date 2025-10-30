@@ -15,7 +15,7 @@ const jsonContentSchema: z.ZodType<any> = z.lazy(() =>
 );
 
 const updateNoteSchema = z.object({
-  title: z.string().optional(),
+  title: z.string().nullable().optional(),
   content: jsonContentSchema
     .refine(
       (val) => val.type === 'doc',
@@ -81,13 +81,13 @@ export async function PUT(
 
     return NextResponse.json(updatedNote);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
     console.error(
       'Error in PUT /api/v1/workspaces/[wsId]/notes/[noteId]:',
       error
     );
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
