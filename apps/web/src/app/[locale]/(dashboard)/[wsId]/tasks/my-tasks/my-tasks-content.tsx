@@ -1,7 +1,6 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { JSONContent } from '@tiptap/react';
 import {
   Calendar,
   Clock,
@@ -46,8 +45,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CommandBar, type CommandMode, type TaskOptions } from './command-bar';
-import NoteList from './note-list';
+import { CommandBar, type TaskOptions } from './command-bar';
 import TaskList from './task-list';
 import type {
   JournalTaskResponse,
@@ -57,22 +55,6 @@ import { TaskPreviewDialog } from './task-preview-dialog';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-// Helper to convert plain text to TipTap JSONContent
-const textToJSONContent = (text: string): JSONContent => ({
-  type: 'doc',
-  content: [
-    {
-      type: 'paragraph',
-      content: [
-        {
-          type: 'text',
-          text,
-        },
-      ],
-    },
-  ],
-});
 
 interface MyTasksContentProps {
   wsId: string;
@@ -101,7 +83,6 @@ export default function MyTasksContent({
   const router = useRouter();
   const queryClient = useQueryClient();
   const { createTask, onUpdate } = useTaskDialog();
-  const [activeMode, setActiveMode] = useState<CommandMode>('task');
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>(wsId);
   const [selectedBoardId, setSelectedBoardId] = useState<string>('');
@@ -449,35 +430,6 @@ export default function MyTasksContent({
     },
   });
 
-  // Create note mutation (for CommandBar)
-  const createNoteMutation = useMutation({
-    mutationFn: async (content: string) => {
-      const jsonContent = textToJSONContent(content);
-      const response = await fetch(`/api/v1/workspaces/${wsId}/notes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: jsonContent }),
-      });
-      if (!response.ok) throw new Error('Failed to create note');
-      return response.json();
-    },
-    onSuccess: () => {
-      toast.success('Note created successfully');
-      queryClient.invalidateQueries({ queryKey: ['workspace', wsId, 'notes'] });
-    },
-    onError: () => {
-      toast.error('Failed to create note');
-    },
-  });
-
-  const handleCreateNote = async (content: string) => {
-    setCommandBarLoading(true);
-    try {
-      await createNoteMutation.mutateAsync(content);
-    } finally {
-      setCommandBarLoading(false);
-    }
-  };
 
   // Create tasks from preview mutation
   const createTasksMutation = useMutation({
@@ -749,56 +701,44 @@ export default function MyTasksContent({
 
   return (
     <div className="space-y-6">
-      {/* Header with stats - Fixed height for both modes */}
+      {/* Header with stats */}
       <div className="flex min-h-[72px] items-center justify-between px-1">
-        {activeMode === 'task' ? (
-          <>
-            <div className="fade-in slide-in-from-left-2 animate-in space-y-1 duration-300">
-              <h1 className="font-bold text-4xl tracking-tight">
-                {t('sidebar_tabs.my_tasks')}
-              </h1>
-            </div>
-            <div className="fade-in slide-in-from-right-2 flex animate-in items-center gap-2 duration-300">
-              <Badge
-                variant="destructive"
-                className="gap-1.5 rounded-full px-3 py-1.5 font-semibold shadow-sm"
-              >
-                <Clock className="h-3.5 w-3.5" />
-                <span className="hidden text-sm lg:inline">Overdue: </span>
-                <span className="text-sm">{overdueCount}</span>
-              </Badge>
-              <Badge
-                variant="secondary"
-                className="gap-1.5 rounded-full bg-dynamic-orange/10 px-3 py-1.5 font-semibold text-dynamic-orange shadow-sm"
-              >
-                <Calendar className="h-3.5 w-3.5" />
-                <span className="hidden text-sm lg:inline">Today: </span>
-                <span className="text-sm">{todayCount}</span>
-              </Badge>
-              <Badge
-                variant="secondary"
-                className="gap-1.5 rounded-full bg-dynamic-blue/10 px-3 py-1.5 font-semibold text-dynamic-blue shadow-sm"
-              >
-                <Flag className="h-3.5 w-3.5" />
-                <span className="hidden text-sm lg:inline">Upcoming: </span>
-                <span className="text-sm">{upcomingCount}</span>
-              </Badge>
-            </div>
-          </>
-        ) : (
-          <div className="fade-in slide-in-from-left-2 animate-in space-y-1 duration-300">
-            <h1 className="font-bold text-4xl tracking-tight">My Notes</h1>
-            <p className="text-lg text-muted-foreground">
-              Quick captures for thoughts and ideas
-            </p>
-          </div>
-        )}
+        <div className="fade-in slide-in-from-left-2 animate-in space-y-1 duration-300">
+          <h1 className="font-bold text-4xl tracking-tight">
+            {t('sidebar_tabs.my_tasks')}
+          </h1>
+        </div>
+        <div className="fade-in slide-in-from-right-2 flex animate-in items-center gap-2 duration-300">
+          <Badge
+            variant="destructive"
+            className="gap-1.5 rounded-full px-3 py-1.5 font-semibold shadow-sm"
+          >
+            <Clock className="h-3.5 w-3.5" />
+            <span className="hidden text-sm lg:inline">Overdue: </span>
+            <span className="text-sm">{overdueCount}</span>
+          </Badge>
+          <Badge
+            variant="secondary"
+            className="gap-1.5 rounded-full bg-dynamic-orange/10 px-3 py-1.5 font-semibold text-dynamic-orange shadow-sm"
+          >
+            <Calendar className="h-3.5 w-3.5" />
+            <span className="hidden text-sm lg:inline">Today: </span>
+            <span className="text-sm">{todayCount}</span>
+          </Badge>
+          <Badge
+            variant="secondary"
+            className="gap-1.5 rounded-full bg-dynamic-blue/10 px-3 py-1.5 font-semibold text-dynamic-blue shadow-sm"
+          >
+            <Flag className="h-3.5 w-3.5" />
+            <span className="hidden text-sm lg:inline">Upcoming: </span>
+            <span className="text-sm">{upcomingCount}</span>
+          </Badge>
+        </div>
       </div>
 
-      {/* Command Bar - The single entry point for creation */}
+      {/* Command Bar - The single entry point for task creation */}
       <div className="mx-auto max-w-5xl">
         <CommandBar
-          onCreateNote={handleCreateNote}
           onCreateTask={handleCreateTask}
           onGenerateAI={handleGenerateAI}
           onOpenBoardSelector={() => setBoardSelectorOpen(true)}
@@ -811,8 +751,6 @@ export default function MyTasksContent({
           onAiGenerateDescriptionsChange={setAiGenerateDescriptions}
           onAiGeneratePriorityChange={setAiGeneratePriority}
           onAiGenerateLabelsChange={setAiGenerateLabels}
-          mode={activeMode}
-          onModeChange={setActiveMode}
           workspaceLabels={workspaceLabels}
           workspaceProjects={workspaceProjects}
           workspaceMembers={workspaceMembers}
@@ -834,29 +772,21 @@ export default function MyTasksContent({
       {/* Spacer for breathing room */}
       <div className="h-4" />
 
-      {/* Content Area - Controlled by Command Bar mode */}
-      {activeMode === 'task' && (
-        <div className="fade-in mt-6 animate-in space-y-6 duration-300">
-          <TaskList
-            isPersonal={isPersonal}
-            commandBarLoading={commandBarLoading}
-            overdueTasks={overdueTasks}
-            todayTasks={todayTasks}
-            upcomingTasks={upcomingTasks}
-            totalActiveTasks={totalActiveTasks}
-            collapsedSections={collapsedSections}
-            toggleSection={toggleSection}
-            handleUpdate={handleUpdate}
-            setBoardSelectorOpen={setBoardSelectorOpen}
-          />
-        </div>
-      )}
-
-      {activeMode === 'note' && (
-        <div className="fade-in mt-6 animate-in duration-300">
-          <NoteList wsId={wsId} />
-        </div>
-      )}
+      {/* Content Area - Task List */}
+      <div className="fade-in mt-6 animate-in space-y-6 duration-300">
+        <TaskList
+          isPersonal={isPersonal}
+          commandBarLoading={commandBarLoading}
+          overdueTasks={overdueTasks}
+          todayTasks={todayTasks}
+          upcomingTasks={upcomingTasks}
+          totalActiveTasks={totalActiveTasks}
+          collapsedSections={collapsedSections}
+          toggleSection={toggleSection}
+          handleUpdate={handleUpdate}
+          setBoardSelectorOpen={setBoardSelectorOpen}
+        />
+      </div>
 
       {/* Board & List Selection Dialog */}
       <Dialog open={boardSelectorOpen} onOpenChange={setBoardSelectorOpen}>

@@ -5,16 +5,13 @@ import {
   Box,
   Calendar,
   Check,
-  ChevronDown,
   ChevronRight,
   Flag,
-  ListTodo,
   MapPin,
   Plus,
   Search,
   Settings,
   Sparkles,
-  StickyNote,
   Tag,
   Timer,
   UserMinus,
@@ -24,13 +21,6 @@ import {
 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
@@ -46,8 +36,6 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import type { KeyboardEvent } from 'react';
 import { useMemo, useState } from 'react';
-
-export type CommandMode = 'note' | 'task';
 
 export interface TaskOptions {
   priority?: 'critical' | 'high' | 'normal' | 'low' | null;
@@ -83,7 +71,6 @@ interface WorkspaceEstimationConfig {
 }
 
 interface CommandBarProps {
-  onCreateNote: (content: string) => Promise<void>;
   onCreateTask: (title: string, options?: TaskOptions) => void;
   onGenerateAI: (entry: string) => void;
   onOpenBoardSelector: () => void;
@@ -99,8 +86,6 @@ interface CommandBarProps {
   onAiGenerateDescriptionsChange?: (value: boolean) => void;
   onAiGeneratePriorityChange?: (value: boolean) => void;
   onAiGenerateLabelsChange?: (value: boolean) => void;
-  mode?: CommandMode;
-  onModeChange?: (mode: CommandMode) => void;
   workspaceLabels?: WorkspaceLabel[];
   workspaceProjects?: WorkspaceProject[];
   workspaceMembers?: WorkspaceMember[];
@@ -111,7 +96,6 @@ interface CommandBarProps {
 }
 
 export function CommandBar({
-  onCreateNote,
   onCreateTask,
   onGenerateAI,
   onOpenBoardSelector,
@@ -124,8 +108,6 @@ export function CommandBar({
   onAiGenerateDescriptionsChange,
   onAiGeneratePriorityChange,
   onAiGenerateLabelsChange,
-  mode: controlledMode,
-  onModeChange,
   workspaceLabels = [],
   workspaceProjects = [],
   workspaceMembers = [],
@@ -133,7 +115,6 @@ export function CommandBar({
   onCreateNewLabel,
   onCreateNewProject,
 }: CommandBarProps) {
-  const [internalMode, setInternalMode] = useState<CommandMode>('task');
   const [inputText, setInputText] = useState('');
   const [aiEnabled, setAiEnabled] = useState(false);
 
@@ -160,13 +141,6 @@ export function CommandBar({
   >('main');
   const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
 
-  // Use controlled mode if provided, otherwise use internal state
-  const mode = controlledMode ?? internalMode;
-  const setMode = (newMode: CommandMode) => {
-    setInternalMode(newMode);
-    onModeChange?.(newMode);
-  };
-
   // Calculate available estimation indices based on board config
   const availableEstimationIndices = useMemo(() => {
     return buildEstimationIndices({
@@ -190,23 +164,6 @@ export function CommandBar({
     return itemCount > 0 ? `${itemCount * ITEM_HEIGHT}px` : 'auto';
   }, [workspaceLabels.length]);
 
-  const modeConfig = useMemo(
-    () => ({
-      note: {
-        label: 'Note',
-        description: 'Quick capture for thoughts and ideas',
-        placeholder: 'Jot down a quick note...',
-      },
-      task: {
-        label: 'Task',
-        description: 'Create actionable tasks with details',
-        placeholder: "What's on your mind?",
-      },
-    }),
-    []
-  );
-
-  const currentConfig = modeConfig[mode];
   const hasDestination = Boolean(
     selectedDestination?.boardName && selectedDestination?.listName
   );
@@ -216,42 +173,37 @@ export function CommandBar({
     if (!inputText.trim()) return;
 
     try {
-      if (mode === 'note') {
-        await onCreateNote(inputText.trim());
-        setInputText('');
-      } else if (mode === 'task') {
-        if (!hasDestination) {
-          onOpenBoardSelector();
-          return;
-        }
-
-        // If AI is enabled, use AI generation
-        if (aiEnabled) {
-          onGenerateAI(inputText.trim());
-        } else {
-          // Pass optional task fields
-          const options: TaskOptions = {
-            priority,
-            dueDate,
-            estimationPoints,
-            labelIds:
-              selectedLabelIds.length > 0 ? selectedLabelIds : undefined,
-            projectIds:
-              selectedProjectIds.length > 0 ? selectedProjectIds : undefined,
-            assigneeIds:
-              selectedAssigneeIds.length > 0 ? selectedAssigneeIds : undefined,
-          };
-          onCreateTask(inputText.trim(), options);
-        }
-        setInputText('');
-        // Reset optional fields
-        setPriority(null);
-        setDueDate(null);
-        setEstimationPoints(null);
-        setSelectedLabelIds([]);
-        setSelectedProjectIds([]);
-        setSelectedAssigneeIds([]);
+      if (!hasDestination) {
+        onOpenBoardSelector();
+        return;
       }
+
+      // If AI is enabled, use AI generation
+      if (aiEnabled) {
+        onGenerateAI(inputText.trim());
+      } else {
+        // Pass optional task fields
+        const options: TaskOptions = {
+          priority,
+          dueDate,
+          estimationPoints,
+          labelIds:
+            selectedLabelIds.length > 0 ? selectedLabelIds : undefined,
+          projectIds:
+            selectedProjectIds.length > 0 ? selectedProjectIds : undefined,
+          assigneeIds:
+            selectedAssigneeIds.length > 0 ? selectedAssigneeIds : undefined,
+        };
+        onCreateTask(inputText.trim(), options);
+      }
+      setInputText('');
+      // Reset optional fields
+      setPriority(null);
+      setDueDate(null);
+      setEstimationPoints(null);
+      setSelectedLabelIds([]);
+      setSelectedProjectIds([]);
+      setSelectedAssigneeIds([]);
     } catch (error) {
       console.error('Command bar action error:', error);
     }
@@ -283,7 +235,7 @@ export function CommandBar({
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={currentConfig.placeholder}
+          placeholder="What's on your mind?"
           className="max-h-[280px] min-h-[150px] resize-none rounded-2xl border border-border/0 bg-linear-to-br from-background to-primary/15 px-4 pt-4 pb-14 text-base leading-relaxed transition-all duration-300 placeholder:text-muted-foreground/40 hover:shadow-xl focus-visible:border-white/10 focus-visible:shadow-[0_20px_50px_-15px_rgba(var(--primary)/0.15)] focus-visible:ring-0 sm:px-6 md:min-h-[200px] md:rounded-3xl md:px-8 md:pt-6 md:pb-16 md:text-lg lg:text-xl"
           disabled={isLoading}
         />
@@ -292,27 +244,25 @@ export function CommandBar({
         <div className="absolute right-3 bottom-3 left-3 flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap md:right-4 md:bottom-4 md:left-4">
           {/* Left Side: Location + Settings + AI + Destination Display */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Location Button - Only for Tasks */}
-            {mode === 'task' && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onOpenBoardSelector}
-                disabled={isLoading}
-                className={cn(
-                  'h-8 w-8 rounded-lg border p-0 transition-all md:h-9 md:w-9',
-                  hasDestination
-                    ? 'border-dynamic-blue/20 bg-dynamic-blue/5 text-dynamic-blue shadow-lg hover:bg-dynamic-blue/10 hover:shadow-xl md:border-border md:bg-transparent md:text-foreground md:shadow-none md:hover:bg-muted md:hover:shadow-none'
-                    : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
-                )}
-                title="Select destination"
-              >
-                <MapPin className="h-3.5 w-3.5 md:h-4 md:w-4" />
-              </Button>
-            )}
+            {/* Location Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onOpenBoardSelector}
+              disabled={isLoading}
+              className={cn(
+                'h-8 w-8 rounded-lg border p-0 transition-all md:h-9 md:w-9',
+                hasDestination
+                  ? 'border-dynamic-blue/20 bg-dynamic-blue/5 text-dynamic-blue shadow-lg hover:bg-dynamic-blue/10 hover:shadow-xl md:border-border md:bg-transparent md:text-foreground md:shadow-none md:hover:bg-muted md:hover:shadow-none'
+                  : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
+              )}
+              title="Select destination"
+            >
+              <MapPin className="h-3.5 w-3.5 md:h-4 md:w-4" />
+            </Button>
 
             {/* Settings Button - AI settings when AI on, Task options when AI off */}
-            {mode === 'task' && hasDestination && (
+            {hasDestination && (
               <Popover
                 open={settingsOpen}
                 onOpenChange={handleSettingsOpenChange}
@@ -1160,32 +1110,30 @@ export function CommandBar({
               </Popover>
             )}
 
-            {/* AI Toggle Button (like Claude's extended thinking) - Only for Tasks */}
-            {mode === 'task' && (
-              <Button
-                variant={aiEnabled ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setAiEnabled(!aiEnabled)}
-                disabled={isLoading}
+            {/* AI Toggle Button (like Claude's extended thinking) */}
+            <Button
+              variant={aiEnabled ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setAiEnabled(!aiEnabled)}
+              disabled={isLoading}
+              className={cn(
+                'h-8 gap-1.5 rounded-lg border px-2.5 transition-all md:h-9 md:gap-2 md:px-3',
+                aiEnabled
+                  ? 'border-dynamic-blue/20 bg-dynamic-blue/5 text-dynamic-blue shadow-lg hover:bg-dynamic-blue/10 hover:shadow-xl'
+                  : 'border-border'
+              )}
+            >
+              <Sparkles
                 className={cn(
-                  'h-8 gap-1.5 rounded-lg border px-2.5 transition-all md:h-9 md:gap-2 md:px-3',
-                  aiEnabled
-                    ? 'border-dynamic-blue/20 bg-dynamic-blue/5 text-dynamic-blue shadow-lg hover:bg-dynamic-blue/10 hover:shadow-xl'
-                    : 'border-border'
+                  'h-3.5 w-3.5 md:h-4 md:w-4',
+                  aiEnabled ? 'animate-pulse' : ''
                 )}
-              >
-                <Sparkles
-                  className={cn(
-                    'h-3.5 w-3.5 md:h-4 md:w-4',
-                    aiEnabled ? 'animate-pulse' : ''
-                  )}
-                />
-                <span className="text-xs md:text-sm">AI</span>
-              </Button>
-            )}
+              />
+              <span className="text-xs md:text-sm">AI</span>
+            </Button>
 
             {/* Destination Display - Shows selected board/list */}
-            {mode === 'task' && hasDestination && selectedDestination && (
+            {hasDestination && selectedDestination && (
               <div className="group/destination relative hidden items-center rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 transition-all hover:bg-dynamic-blue/10 md:inline-flex">
                 <span className="px-2.5 py-1.5 text-dynamic-blue text-xs md:px-3 md:py-2 md:text-sm">
                   {selectedDestination.boardName} /{' '}
@@ -1203,50 +1151,8 @@ export function CommandBar({
             )}
           </div>
 
-          {/* Right Side: Mode Selector + Create Button */}
+          {/* Right Side: Create Button */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Mode Selector Dropdown (like Claude's model selector) */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={isLoading}
-                  className="h-8 gap-1 rounded-lg px-2 transition-colors hover:bg-muted sm:gap-1.5 sm:px-2.5 md:h-9 md:px-3"
-                >
-                  {mode === 'task' ? (
-                    <ListTodo className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                  ) : (
-                    <StickyNote className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                  )}
-                  <span className="text-xs capitalize md:text-sm">{mode}</span>
-                  <ChevronDown className="h-3 w-3 opacity-50 md:h-3.5 md:w-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuItem
-                  onClick={() => setMode('task')}
-                  className="flex items-center justify-between gap-2"
-                >
-                  <div className="flex items-center gap-2">
-                    <ListTodo className="h-4 w-4" />
-                    <span>Task</span>
-                  </div>
-                  {mode === 'task' && <Check className="h-4 w-4" />}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setMode('note')}
-                  className="flex items-center justify-between gap-2"
-                >
-                  <div className="flex items-center gap-2">
-                    <StickyNote className="h-4 w-4" />
-                    <span>Note</span>
-                  </div>
-                  {mode === 'note' && <Check className="h-4 w-4" />}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
 
             {/* Create/Generate Button */}
             <Button
@@ -1260,7 +1166,7 @@ export function CommandBar({
                   <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent md:h-4 md:w-4" />
                   <span className="hidden sm:inline">Creating...</span>
                 </>
-              ) : aiEnabled && mode === 'task' ? (
+              ) : aiEnabled ? (
                 <>
                   <Sparkles className="h-3.5 w-3.5 md:h-4 md:w-4" />
                   <span>Generate</span>

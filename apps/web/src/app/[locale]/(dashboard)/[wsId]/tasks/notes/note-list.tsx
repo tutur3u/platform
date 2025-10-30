@@ -451,15 +451,13 @@ export default function NoteList({ wsId }: { wsId: string }) {
             <Badge variant="outline" className="text-xs">
               {displayedNotes.length}
             </Badge>
-            {notes.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowArchived(!showArchived)}
-              >
-                {showArchived ? t('show_active') : t('show_archived')}
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowArchived(!showArchived)}
+            >
+              {showArchived ? t('show_active') : t('show_archived')}
+            </Button>
           </div>
         </div>
 
