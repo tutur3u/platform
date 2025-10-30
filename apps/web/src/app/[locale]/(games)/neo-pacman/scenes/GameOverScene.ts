@@ -46,9 +46,7 @@ export class GameOverScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     // Message
-    const message = this.won
-      ? 'You ate all the ghosts!'
-      : 'The ghosts got you!';
+    const message = this.won ? 'You ate all the food!' : 'The ghosts got you!';
 
     this.add
       .text(width / 2, height / 2 + 40, message, {
