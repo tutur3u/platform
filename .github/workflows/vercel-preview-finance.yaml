@@ -8,6 +8,10 @@ on:
   push:
     branches-ignore:
       - production
+    paths:
+      - 'apps/finance/**'
+      - 'packages/**'
+      - '.github/workflows/vercel-preview-finance.yaml'
   workflow_dispatch:
 
 jobs:
@@ -34,38 +38,109 @@ jobs:
             echo "skip_build=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Setup bun
+      - name: Quick content change detection
+        id: quick_check
         if: steps.check_commits.outputs.skip_build != 'true'
+        run: |
+          # Compute safe base commit (handles initial commits and shallow clones)
+          BASE_COMMIT=$(git rev-parse --verify HEAD~ 2>/dev/null || echo "$GITHUB_SHA")
+
+          git diff --name-only "$BASE_COMMIT" HEAD | grep -E 'apps/finance/|packages/' > /tmp/changed_files.txt || true
+          if [ ! -s /tmp/changed_files.txt ]; then
+            echo "No relevant content changes detected. Skipping build."
+            echo "skip_quick=true" >> $GITHUB_OUTPUT
+          else
+            echo "Content changes detected in $(wc -l < /tmp/changed_files.txt) files."
+            echo "skip_quick=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup bun
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true'
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.3.1"
 
       - name: Use Node.js 24
-        if: steps.check_commits.outputs.skip_build != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true'
         uses: actions/setup-node@v6
         with:
           node-version: 24
 
+      - name: Cache dependencies
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
       - name: Install dependencies
-        if: steps.check_commits.outputs.skip_build != 'true'
-        run: bun install
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true'
+        run: bun install --frozen-lockfile
+
+      - name: Check Turborepo cache
+        id: turbo_check
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true'
+        run: |
+          # Use Turborepo dry-run to check if build is needed
+          bunx turbo build --filter=@tuturuuu/finance --dry-run=json > /tmp/turbo-plan-raw.json 2>&1 || true
+
+          # Extract JSON from output (skip any warnings/headers before the first {)
+          sed -n '/{/,$ p' /tmp/turbo-plan-raw.json > /tmp/turbo-plan.json 2>/dev/null || true
+
+          # Validate JSON structure and count uncached tasks with explicit error handling
+          if [ ! -s /tmp/turbo-plan.json ]; then
+            echo "::warning::Turborepo plan is empty or missing. Proceeding with build."
+            echo "skip_turbo=false" >> $GITHUB_OUTPUT
+          elif ! jq -e '.tasks' /tmp/turbo-plan.json >/dev/null 2>&1; then
+            echo "::warning::Invalid JSON or missing .tasks array in Turborepo plan. Proceeding with build."
+            cat /tmp/turbo-plan.json
+            echo "skip_turbo=false" >> $GITHUB_OUTPUT
+          else
+            # Count uncached tasks - capture jq exit status explicitly
+            uncached_tasks=$(jq -r '.tasks[] | select(.cache.status != "HIT") | .taskId' /tmp/turbo-plan.json 2>&1)
+            jq_exit=$?
+
+            if [ $jq_exit -ne 0 ]; then
+              echo "::warning::jq parsing failed with exit code $jq_exit. Proceeding with build."
+              echo "jq error output: $uncached_tasks"
+              echo "skip_turbo=false" >> $GITHUB_OUTPUT
+            else
+              # Ensure uncached_count is numeric (default 0)
+              uncached_count=$(echo "$uncached_tasks" | grep -c . || echo "0")
+
+              if [ "$uncached_count" -eq 0 ]; then
+                echo "All tasks cached in Turborepo. Skipping build."
+                echo "skip_turbo=true" >> $GITHUB_OUTPUT
+              else
+                echo "Found $uncached_count uncached tasks. Build required."
+                echo "skip_turbo=false" >> $GITHUB_OUTPUT
+              fi
+            fi
+          fi
+        env:
+          TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+          TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
       - name: Install Vercel CLI
-        if: steps.check_commits.outputs.skip_build != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true' && steps.turbo_check.outputs.skip_turbo != 'true'
         run: bun install --global vercel@latest
 
       - name: Pull Vercel Environment Information
-        if: steps.check_commits.outputs.skip_build != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true' && steps.turbo_check.outputs.skip_turbo != 'true'
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build workspace dependencies
-        if: steps.check_commits.outputs.skip_build != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true' && steps.turbo_check.outputs.skip_turbo != 'true'
         run: bunx turbo run build --filter=@tuturuuu/types
 
       - name: Build Project Artifacts
-        if: steps.check_commits.outputs.skip_build != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true' && steps.turbo_check.outputs.skip_turbo != 'true'
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Project Artifacts to Vercel
-        if: steps.check_commits.outputs.skip_build != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true' && steps.turbo_check.outputs.skip_turbo != 'true'
         run: vercel deploy --archive=tgz --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
