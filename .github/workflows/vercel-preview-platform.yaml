@@ -42,9 +42,21 @@ jobs:
         id: quick_check
         if: steps.check_commits.outputs.skip_build != 'true'
         run: |
-          # Check if any relevant files changed in this commit
-          # Compute safe base commit (handles initial commits and shallow clones)
-          BASE_COMMIT=$(git rev-parse --verify HEAD~ 2>/dev/null || echo "$GITHUB_SHA")
+          # Check if any relevant files changed in this commit or push
+          # Use push base for multi-commit pushes, HEAD~ for single commits, or empty tree for initial commits
+          if [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            # Multi-commit push: compare entire push range
+            BASE_COMMIT="${{ github.event.before }}"
+            echo "Comparing against push base: $BASE_COMMIT"
+          elif git rev-parse --verify HEAD~ >/dev/null 2>&1; then
+            # Single commit: compare against parent
+            BASE_COMMIT="HEAD~"
+            echo "Comparing against parent commit: HEAD~"
+          else
+            # Initial commit: compare against empty tree to ensure all files are detected as changes
+            BASE_COMMIT=$(git hash-object -t tree /dev/null)
+            echo "Initial commit detected. Comparing against empty tree: $BASE_COMMIT"
+          fi
 
           git diff --name-only "$BASE_COMMIT" HEAD | grep -E 'apps/web/|packages/' > /tmp/changed_files.txt || true
 

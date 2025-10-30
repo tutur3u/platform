@@ -88,13 +88,38 @@ jobs:
         if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true'
         run: |
           # Use Turborepo dry-run to check if build is needed
-          bunx turbo build --filter=@tuturuuu/nova --dry-run=json > /tmp/turbo-plan-raw.json 2>&1 || true
+          bunx turbo build --filter=@tuturuuu/nova --dry-run=json > /tmp/turbo-plan-raw.json 2>&1 || {
+            echo "::warning::Turborepo dry-run failed. Proceeding with build for safety."
+            echo "skip_turbo=false" >> $GITHUB_OUTPUT
+            exit 0
+          }
 
           # Extract JSON from output (skip any warnings/headers before the first {)
-          sed -n '/{/,$ p' /tmp/turbo-plan-raw.json > /tmp/turbo-plan.json 2>/dev/null || true
+          sed -n '/{/,$ p' /tmp/turbo-plan-raw.json > /tmp/turbo-plan.json 2>/dev/null || {
+            echo "::warning::Failed to extract JSON from Turborepo output. Proceeding with build for safety."
+            echo "skip_turbo=false" >> $GITHUB_OUTPUT
+            exit 0
+          }
 
-          # Check if any tasks are not cached - count uncached tasks with fallback
-          uncached_count=$(jq -r '.tasks[] | select(.cache.status != "HIT") | .taskId' /tmp/turbo-plan.json 2>/dev/null | wc -l || echo "1")
+          # Verify the output file exists and is non-empty
+          if [ ! -s /tmp/turbo-plan.json ]; then
+            echo "::warning::Turborepo plan is empty or missing. Proceeding with build for safety."
+            echo "skip_turbo=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if any tasks are not cached - count uncached tasks (no fallback)
+          uncached_tasks=$(jq -r '.tasks[] | select(.cache.status != "HIT") | .taskId' /tmp/turbo-plan.json 2>&1)
+          jq_exit=$?
+
+          if [ $jq_exit -ne 0 ]; then
+            echo "::warning::jq failed to parse Turborepo plan (exit $jq_exit). Proceeding with build for safety."
+            echo "jq output: $uncached_tasks"
+            echo "skip_turbo=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          uncached_count=$(echo "$uncached_tasks" | grep -c . || echo "0")
 
           if [ "$uncached_count" -eq 0 ]; then
             echo "All tasks cached in Turborepo. Skipping build."

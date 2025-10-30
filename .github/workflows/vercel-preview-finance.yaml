@@ -91,15 +91,35 @@ jobs:
           # Extract JSON from output (skip any warnings/headers before the first {)
           sed -n '/{/,$ p' /tmp/turbo-plan-raw.json > /tmp/turbo-plan.json 2>/dev/null || true
 
-          # Check if any tasks are not cached - count uncached tasks with fallback
-          uncached_count=$(jq -r '.tasks[] | select(.cache.status != "HIT") | .taskId' /tmp/turbo-plan.json 2>/dev/null | wc -l || echo "1")
-
-          if [ "$uncached_count" -eq 0 ]; then
-            echo "All tasks cached in Turborepo. Skipping build."
-            echo "skip_turbo=true" >> $GITHUB_OUTPUT
-          else
-            echo "Found $uncached_count uncached tasks. Build required."
+          # Validate JSON structure and count uncached tasks with explicit error handling
+          if [ ! -s /tmp/turbo-plan.json ]; then
+            echo "::warning::Turborepo plan is empty or missing. Proceeding with build."
             echo "skip_turbo=false" >> $GITHUB_OUTPUT
+          elif ! jq -e '.tasks' /tmp/turbo-plan.json >/dev/null 2>&1; then
+            echo "::warning::Invalid JSON or missing .tasks array in Turborepo plan. Proceeding with build."
+            cat /tmp/turbo-plan.json
+            echo "skip_turbo=false" >> $GITHUB_OUTPUT
+          else
+            # Count uncached tasks - capture jq exit status explicitly
+            uncached_tasks=$(jq -r '.tasks[] | select(.cache.status != "HIT") | .taskId' /tmp/turbo-plan.json 2>&1)
+            jq_exit=$?
+
+            if [ $jq_exit -ne 0 ]; then
+              echo "::warning::jq parsing failed with exit code $jq_exit. Proceeding with build."
+              echo "jq error output: $uncached_tasks"
+              echo "skip_turbo=false" >> $GITHUB_OUTPUT
+            else
+              # Ensure uncached_count is numeric (default 0)
+              uncached_count=$(echo "$uncached_tasks" | grep -c . || echo "0")
+
+              if [ "$uncached_count" -eq 0 ]; then
+                echo "All tasks cached in Turborepo. Skipping build."
+                echo "skip_turbo=true" >> $GITHUB_OUTPUT
+              else
+                echo "Found $uncached_count uncached tasks. Build required."
+                echo "skip_turbo=false" >> $GITHUB_OUTPUT
+              fi
+            fi
           fi
         env:
           TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}

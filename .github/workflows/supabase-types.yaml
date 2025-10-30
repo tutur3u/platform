@@ -27,13 +27,27 @@ jobs:
       - name: Check for migration changes
         id: migration_check
         run: |
-          BASE_COMMIT=$(git rev-parse --verify HEAD~ 2>/dev/null || echo "$GITHUB_SHA")
+          # Use the push base to capture all commits in a multi-commit push
+          # Fall back to HEAD~ for single commits, then to empty tree for initial commits
+          if [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            # Multi-commit push: compare entire push range
+            BASE_COMMIT="${{ github.event.before }}"
+          elif git rev-parse --verify HEAD~ >/dev/null 2>&1; then
+            # Single commit: compare against parent
+            BASE_COMMIT="HEAD~"
+          else
+            # Initial commit: compare against empty tree to treat all files as changed
+            BASE_COMMIT=$(git hash-object -t tree /dev/null)
+          fi
+
+          echo "Comparing against base: $BASE_COMMIT"
           changed=$(git diff --name-only "$BASE_COMMIT" HEAD | grep 'apps/db/supabase/migrations/\|packages/types/src/supabase.ts' | wc -l)
+
           if [ "$changed" -eq 0 ]; then
             echo "No migrations or type changes detected. Skipping type generation check."
             echo "skip_check=true" >> $GITHUB_OUTPUT
           else
-            echo "Migration or type changes detected. Running type generation check."
+            echo "Migration or type changes detected in $changed files."
             echo "skip_check=false" >> $GITHUB_OUTPUT
           fi
 

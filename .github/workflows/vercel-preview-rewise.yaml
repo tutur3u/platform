@@ -85,20 +85,62 @@ jobs:
         id: turbo_check
         if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true'
         run: |
-          # Use Turborepo dry-run to check if build is needed
-          bunx turbo build --filter=@tuturuuu/rewise --dry-run=json > /tmp/turbo-plan-raw.json 2>&1 || true
+          # Step 1: Run Turborepo dry-run and capture exit status
+          bunx turbo build --filter=@tuturuuu/rewise --dry-run=json > /tmp/turbo-plan-raw.json 2>&1
+          turbo_exit=$?
 
-          # Extract JSON from output (skip any warnings/headers before the first {)
-          sed -n '/{/,$ p' /tmp/turbo-plan-raw.json > /tmp/turbo-plan.json 2>/dev/null || true
+          if [ $turbo_exit -ne 0 ]; then
+            echo "::warning::Turborepo dry-run failed with exit code $turbo_exit. Proceeding with build."
+            echo "Turborepo output:"
+            cat /tmp/turbo-plan-raw.json
+            echo "skip_turbo=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
 
-          # Check if any tasks are not cached - count uncached tasks with fallback
-          uncached_count=$(jq -r '.tasks[] | select(.cache.status != "HIT") | .taskId' /tmp/turbo-plan.json 2>/dev/null | wc -l || echo "1")
+          # Step 2: Extract JSON from output and capture exit status
+          sed -n '/{/,$ p' /tmp/turbo-plan-raw.json > /tmp/turbo-plan.json 2>/dev/null
+          sed_exit=$?
+
+          if [ $sed_exit -ne 0 ]; then
+            echo "::warning::Failed to extract JSON from Turborepo output (sed exit $sed_exit). Proceeding with build."
+            echo "Raw Turborepo output:"
+            cat /tmp/turbo-plan-raw.json
+            echo "skip_turbo=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Verify extracted JSON is non-empty
+          if [ ! -s /tmp/turbo-plan.json ]; then
+            echo "::warning::Extracted JSON is empty. Proceeding with build."
+            echo "Raw Turborepo output:"
+            cat /tmp/turbo-plan-raw.json
+            echo "skip_turbo=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Step 3: Parse with jq and capture exit status
+          uncached_tasks=$(jq -r '.tasks[] | select(.cache.status != "HIT") | .taskId' /tmp/turbo-plan.json 2>&1)
+          jq_exit=$?
+
+          if [ $jq_exit -ne 0 ]; then
+            echo "::warning::jq failed to parse JSON (exit $jq_exit). Proceeding with build."
+            echo "jq error output: $uncached_tasks"
+            echo "Extracted JSON:"
+            cat /tmp/turbo-plan.json
+            echo "skip_turbo=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Count uncached tasks (only reached if all steps succeeded)
+          uncached_count=$(echo "$uncached_tasks" | grep -c . || echo "0")
 
           if [ "$uncached_count" -eq 0 ]; then
             echo "All tasks cached in Turborepo. Skipping build."
             echo "skip_turbo=true" >> $GITHUB_OUTPUT
           else
             echo "Found $uncached_count uncached tasks. Build required."
+            echo "Uncached tasks:"
+            echo "$uncached_tasks"
             echo "skip_turbo=false" >> $GITHUB_OUTPUT
           fi
         env:
