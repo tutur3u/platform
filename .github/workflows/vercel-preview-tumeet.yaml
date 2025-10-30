@@ -82,11 +82,18 @@ jobs:
         id: turbo_check
         if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true'
         run: |
-          bunx turbo build --filter=@tuturuuu/tumeet --dry-run=json > /tmp/turbo-plan.json 2>&1 || true
+          bunx turbo build --filter=@tuturuuu/tumeet --dry-run=json > /tmp/turbo-plan-raw.json 2>&1 || true
           uncached_count=$(jq -r '.tasks[] | select(.cache.status != "HIT") | .taskId' /tmp/turbo-plan.json 2>/dev/null | wc -l || echo "1")
           if [ "$uncached_count" -eq 0 ]; then
             echo "All tasks cached in Turborepo. Skipping build."
             echo "skip_turbo=true" >> $GITHUB_OUTPUT
+
+          # Extract JSON from output (skip any warnings/headers before the first {)
+          sed -n '/{/,$ p' /tmp/turbo-plan-raw.json > /tmp/turbo-plan.json 2>/dev/null || {
+            echo "::warning::Failed to extract JSON from Turborepo output, proceeding with build for safety"
+            echo "skip_turbo=false" >> $GITHUB_OUTPUT
+            exit 0
+          }
           else
             echo "Found $uncached_count uncached tasks. Build required."
             echo "skip_turbo=false" >> $GITHUB_OUTPUT

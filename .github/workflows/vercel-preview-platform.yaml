@@ -85,9 +85,12 @@ jobs:
         if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true'
         run: |
           # Use Turborepo dry-run to check if build is needed
-          bunx turbo build --filter=@tuturuuu/web --dry-run=json > /tmp/turbo-plan.json 2>&1 || true
+          bunx turbo build --filter=@tuturuuu/web --dry-run=json > /tmp/turbo-plan-raw.json 2>&1 || true
 
-          # Check if any tasks are not cached
+          # Extract JSON from output (skip any warnings/headers before the first {)
+          sed -n '/{/,$ p' /tmp/turbo-plan-raw.json > /tmp/turbo-plan.json 2>/dev/null || true
+
+          # Check if any tasks are not cached - count uncached tasks with fallback
           uncached_count=$(jq -r '.tasks[] | select(.cache.status != "HIT") | .taskId' /tmp/turbo-plan.json 2>/dev/null | wc -l || echo "1")
 
           if [ "$uncached_count" -eq 0 ]; then

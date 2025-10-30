@@ -85,8 +85,15 @@ jobs:
         if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true'
         run: |
           # Production: Conservative cache check with safety fallbacks
-          bunx turbo build --filter=@tuturuuu/web --dry-run=json > /tmp/turbo-plan.json 2>&1 || {
+          bunx turbo build --filter=@tuturuuu/web --dry-run=json > /tmp/turbo-plan-raw.json 2>&1 || {
             echo "::warning::Turborepo dry-run failed, proceeding with build for safety"
+            echo "skip_turbo=false" >> $GITHUB_OUTPUT
+            exit 0
+          }
+
+          # Extract JSON from output (skip any warnings/headers before the first {)
+          sed -n '/{/,$ p' /tmp/turbo-plan-raw.json > /tmp/turbo-plan.json 2>/dev/null || {
+            echo "::warning::Failed to extract JSON from Turborepo output, proceeding with build for safety"
             echo "skip_turbo=false" >> $GITHUB_OUTPUT
             exit 0
           }
@@ -98,6 +105,7 @@ jobs:
             exit 0
           fi
 
+          # Count uncached tasks with fallback to 1 if parsing fails
           uncached_count=$(jq -r '.tasks[] | select(.cache.status != "HIT") | .taskId' /tmp/turbo-plan.json 2>/dev/null | wc -l || echo "1")
 
           if [ "$uncached_count" -eq 0 ]; then
