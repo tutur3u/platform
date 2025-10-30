@@ -168,7 +168,6 @@ export default function GroupAttendanceClient({
   const {
     data: attendance = {} as Record<string, AttendanceEntry>,
     isLoading: isLoadingAttendance,
-    isFetching: isFetchingAttendance,
   } = useQuery({
     queryKey: attendanceKey,
     queryFn: async () => {
@@ -371,8 +370,8 @@ export default function GroupAttendanceClient({
       const newDay = new Date(calendarMonth);
       newDay.setDate(
         calendarMonth.getDate() -
-          (calendarMonth.getDay() === 0 ? 6 : calendarMonth.getDay() - 1) +
-          i
+        (calendarMonth.getDay() === 0 ? 6 : calendarMonth.getDay() - 1) +
+        i
       );
       return newDay.toLocaleString(localeStr, { weekday: 'narrow' });
     });
@@ -554,7 +553,7 @@ export default function GroupAttendanceClient({
                     )}
                   >
                     {day.getDate()}
-                    <span className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-dynamic-blue" />
+                    <span className='-translate-x-1/2 absolute bottom-0.5 left-1/2 h-1 w-1 rounded-full bg-dynamic-blue' />
                   </button>
                 );
               })}
@@ -588,13 +587,13 @@ export default function GroupAttendanceClient({
               <CardContent className="py-4">
                 <div className="grid grid-cols-2 gap-3 text-center sm:grid-cols-3 lg:grid-cols-5">
                   <div className="rounded-lg border-2 border-foreground/10 bg-foreground/5 p-3">
-                    <div className="text-foreground/60 text-sm font-medium">
+                    <div className='font-medium text-foreground/60 text-sm'>
                       {tAtt('summary_total')}
                     </div>
                     <div className="font-bold text-2xl">{summary.total}</div>
                   </div>
                   <div className="rounded-lg border-2 border-dynamic-green/20 bg-dynamic-green/10 p-3">
-                    <div className="text-dynamic-green text-sm font-medium">
+                    <div className='font-medium text-dynamic-green text-sm'>
                       {tAtt('summary_present')}
                     </div>
                     <div className="font-bold text-2xl text-dynamic-green">
@@ -602,7 +601,7 @@ export default function GroupAttendanceClient({
                     </div>
                   </div>
                   <div className="rounded-lg border-2 border-dynamic-red/20 bg-dynamic-red/10 p-3">
-                    <div className="text-dynamic-red text-sm font-medium">
+                    <div className='font-medium text-dynamic-red text-sm'>
                       {tAtt('summary_absent')}
                     </div>
                     <div className="font-bold text-2xl text-dynamic-red">
@@ -610,7 +609,7 @@ export default function GroupAttendanceClient({
                     </div>
                   </div>
                   <div className="rounded-lg border-2 border-dynamic-yellow/20 bg-dynamic-yellow/10 p-3">
-                    <div className="text-dynamic-yellow text-sm font-medium">
+                    <div className='font-medium text-dynamic-yellow text-sm'>
                       {tAtt('summary_late')}
                     </div>
                     <div className="font-bold text-2xl text-dynamic-yellow">
@@ -618,7 +617,7 @@ export default function GroupAttendanceClient({
                     </div>
                   </div>
                   <div className="rounded-lg border-2 border-foreground/15 bg-foreground/5 p-3">
-                    <div className="text-foreground/60 text-sm font-medium">
+                    <div className='font-medium text-foreground/60 text-sm'>
                       {tAtt('summary_not_marked')}
                     </div>
                     <div className="font-bold text-2xl text-foreground/70">
@@ -632,10 +631,10 @@ export default function GroupAttendanceClient({
               <CardContent className="flex gap-3 py-4">
                 <Info className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-blue" />
                 <div className="space-y-1">
-                  <div className="font-semibold text-sm text-dynamic-blue">
+                  <div className='font-semibold text-dynamic-blue text-sm'>
                     {tAtt('help_title')}
                   </div>
-                  <div className="leading-relaxed text-foreground/70 text-sm">
+                  <div className='text-foreground/70 text-sm leading-relaxed'>
                     {tAtt('help_description')}
                   </div>
                 </div>
@@ -644,217 +643,217 @@ export default function GroupAttendanceClient({
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {isLoadingAttendance
                 ? Array.from({ length: 4 }).map((_, i) => (
-                    <div
-                      key={`skeleton-${i}`}
-                      className="flex flex-col gap-4 rounded-lg border border-foreground/10 bg-foreground/5 p-4"
-                    >
-                      <div className="flex flex-col gap-4">
-                        <div className="flex items-center gap-3">
-                          <Skeleton className="h-12 w-12 shrink-0 rounded-full" />
-                          <div className="flex-1 space-y-2">
-                            <Skeleton className="h-4 w-32" />
-                            <Skeleton className="h-3 w-24" />
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <Skeleton className="h-5 w-32 self-center" />
-                          <div className="grid grid-cols-3 gap-2">
-                            <Skeleton className="h-16 rounded" />
-                            <Skeleton className="h-16 rounded" />
-                            <Skeleton className="h-16 rounded" />
-                          </div>
+                  <div
+                    key={`skeleton-${i}`}
+                    className="flex flex-col gap-4 rounded-lg border border-foreground/10 bg-foreground/5 p-4"
+                  >
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-12 w-12 shrink-0 rounded-full" />
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-24" />
                         </div>
                       </div>
-                      <Skeleton className="h-px w-full" />
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-16" />
-                        <Skeleton className="h-10 w-full rounded" />
+                      <div className="flex flex-col gap-2">
+                        <Skeleton className="h-5 w-32 self-center" />
+                        <div className="grid grid-cols-3 gap-2">
+                          <Skeleton className="h-16 rounded" />
+                          <Skeleton className="h-16 rounded" />
+                          <Skeleton className="h-16 rounded" />
+                        </div>
                       </div>
                     </div>
-                  ))
+                    <Skeleton className="h-px w-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-10 w-full rounded" />
+                    </div>
+                  </div>
+                ))
                 : members.map((m) => {
-                    const entry = getEffectiveEntry(m.id);
-                    const hasPendingChanges = pendingMap.has(m.id);
-                    return (
-                      <div
-                        key={m.id}
-                        className={cn(
-                          'relative flex flex-col gap-4 rounded-lg border p-4 shadow-sm transition-all hover:shadow-md',
-                          hasPendingChanges
-                            ? 'border-dynamic-blue/30 bg-dynamic-blue/5 ring-1 ring-dynamic-blue/20'
-                            : 'border-foreground/10 bg-foreground/5'
-                        )}
-                      >
-                        {hasPendingChanges && (
-                          <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-dynamic-blue text-white shadow-sm">
-                            <span className="text-xs font-bold">•</span>
-                          </div>
-                        )}
-                        <div className="flex flex-col gap-4">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-12 w-12 shrink-0">
-                              <AvatarImage src={m.avatar_url ?? undefined} />
-                              <AvatarFallback className="font-semibold">
-                                {(m.display_name || m.full_name || '?')
-                                  .slice(0, 1)
-                                  .toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="min-w-0 flex-1">
-                              <div className="truncate font-semibold text-base">
-                                {m.display_name || m.full_name || 'Unknown'}
-                              </div>
-                              <div className="truncate text-foreground/60 text-sm">
-                                {m.phone || tAtt('phone_fallback')}
-                              </div>
+                  const entry = getEffectiveEntry(m.id);
+                  const hasPendingChanges = pendingMap.has(m.id);
+                  return (
+                    <div
+                      key={m.id}
+                      className={cn(
+                        'relative flex flex-col gap-4 rounded-lg border p-4 shadow-sm transition-all hover:shadow-md',
+                        hasPendingChanges
+                          ? 'border-dynamic-blue/30 bg-dynamic-blue/5 ring-1 ring-dynamic-blue/20'
+                          : 'border-foreground/10 bg-foreground/5'
+                      )}
+                    >
+                      {hasPendingChanges && (
+                        <div className='-right-1 -top-1 absolute flex h-5 w-5 items-center justify-center rounded-full bg-dynamic-blue text-white shadow-sm'>
+                          <span className='font-bold text-xs'>•</span>
+                        </div>
+                      )}
+                      <div className="flex flex-col gap-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-12 w-12 shrink-0">
+                            <AvatarImage src={m.avatar_url ?? undefined} />
+                            <AvatarFallback className="font-semibold">
+                              {(m.display_name || m.full_name || '?')
+                                .slice(0, 1)
+                                .toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate font-semibold text-base">
+                              {m.display_name || m.full_name || 'Unknown'}
+                            </div>
+                            <div className="truncate text-foreground/60 text-sm">
+                              {m.phone || tAtt('phone_fallback')}
                             </div>
                           </div>
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center justify-center gap-2 text-xs font-medium text-foreground/60">
-                              <span>{tAtt('status_label')}:</span>
-                              {entry.status !== 'NONE' ? (
-                                <span
-                                  className={cn(
-                                    'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 font-semibold',
-                                    entry.status === 'PRESENT' &&
-                                      'border-dynamic-green/30 bg-dynamic-green/15 text-dynamic-green',
-                                    entry.status === 'ABSENT' &&
-                                      'border-dynamic-red/30 bg-dynamic-red/15 text-dynamic-red',
-                                    entry.status === 'LATE' &&
-                                      'border-dynamic-yellow/30 bg-dynamic-yellow/15 text-dynamic-yellow'
-                                  )}
-                                >
-                                  {entry.status === 'PRESENT' && (
-                                    <>
-                                      <Check className="h-3 w-3" />
-                                      {tAtt('present')}
-                                    </>
-                                  )}
-                                  {entry.status === 'ABSENT' && (
-                                    <>
-                                      <UserX className="h-3 w-3" />
-                                      {tAtt('absent')}
-                                    </>
-                                  )}
-                                  {entry.status === 'LATE' && (
-                                    <>
-                                      <Clock className="h-3 w-3" />
-                                      {tAtt('late')}
-                                    </>
-                                  )}
-                                </span>
-                              ) : (
-                                <span className="text-foreground/40">-</span>
-                              )}
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <Button
-                                size="sm"
-                                disabled={!canUpdateAttendance}
-                                aria-pressed={entry.status === 'PRESENT'}
-                                variant="ghost"
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <div className='flex items-center justify-center gap-2 font-medium text-foreground/60 text-xs'>
+                            <span>{tAtt('status_label')}:</span>
+                            {entry.status !== 'NONE' ? (
+                              <span
                                 className={cn(
-                                  'h-auto flex-col gap-1 border-2 py-3 transition-all',
-                                  entry.status === 'PRESENT'
-                                    ? 'border-dynamic-green/40 bg-dynamic-green/20 text-dynamic-green hover:bg-dynamic-green/30'
-                                    : 'border-dynamic-green/20 bg-dynamic-green/5 text-dynamic-green/70 hover:border-dynamic-green/40 hover:bg-dynamic-green/10 hover:text-dynamic-green'
+                                  'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 font-semibold',
+                                  entry.status === 'PRESENT' &&
+                                  'border-dynamic-green/30 bg-dynamic-green/15 text-dynamic-green',
+                                  entry.status === 'ABSENT' &&
+                                  'border-dynamic-red/30 bg-dynamic-red/15 text-dynamic-red',
+                                  entry.status === 'LATE' &&
+                                  'border-dynamic-yellow/30 bg-dynamic-yellow/15 text-dynamic-yellow'
                                 )}
-                                onClick={() => toggleStatus(m.id, 'PRESENT')}
                               >
-                                <Check className="h-5 w-5" />
-                                <span className="text-xs font-semibold">
-                                  {tAtt('present')}
-                                </span>
-                              </Button>
-                              <Button
-                                size="sm"
-                                disabled={!canUpdateAttendance}
-                                aria-pressed={entry.status === 'ABSENT'}
-                                variant="ghost"
-                                className={cn(
-                                  'h-auto flex-col gap-1 border-2 py-3 transition-all',
-                                  entry.status === 'ABSENT'
-                                    ? 'border-dynamic-red/40 bg-dynamic-red/20 text-dynamic-red hover:bg-dynamic-red/30'
-                                    : 'border-dynamic-red/20 bg-dynamic-red/5 text-dynamic-red/70 hover:border-dynamic-red/40 hover:bg-dynamic-red/10 hover:text-dynamic-red'
+                                {entry.status === 'PRESENT' && (
+                                  <>
+                                    <Check className="h-3 w-3" />
+                                    {tAtt('present')}
+                                  </>
                                 )}
-                                onClick={() => toggleStatus(m.id, 'ABSENT')}
-                              >
-                                <UserX className="h-5 w-5" />
-                                <span className="text-xs font-semibold">
-                                  {tAtt('absent')}
-                                </span>
-                              </Button>
-                              <Button
-                                size="sm"
-                                disabled={!canUpdateAttendance}
-                                aria-pressed={entry.status === 'LATE'}
-                                variant="ghost"
-                                className={cn(
-                                  'h-auto flex-col gap-1 border-2 py-3 transition-all',
-                                  entry.status === 'LATE'
-                                    ? 'border-dynamic-yellow/40 bg-dynamic-yellow/20 text-dynamic-yellow hover:bg-dynamic-yellow/30'
-                                    : 'border-dynamic-yellow/20 bg-dynamic-yellow/5 text-dynamic-yellow/70 hover:border-dynamic-yellow/40 hover:bg-dynamic-yellow/10 hover:text-dynamic-yellow'
+                                {entry.status === 'ABSENT' && (
+                                  <>
+                                    <UserX className="h-3 w-3" />
+                                    {tAtt('absent')}
+                                  </>
                                 )}
-                                onClick={() => toggleStatus(m.id, 'LATE')}
-                              >
-                                <Clock className="h-5 w-5" />
-                                <span className="text-xs font-semibold">
-                                  {tAtt('late')}
-                                </span>
-                              </Button>
-                            </div>
-                            {entry.status !== 'NONE' && (
-                              <Button
-                                size="sm"
-                                disabled={!canUpdateAttendance}
-                                variant="ghost"
-                                className={cn(
-                                  'gap-2 border-2 border-foreground/20 bg-foreground/5 transition-all hover:border-foreground/30 hover:bg-foreground/10'
+                                {entry.status === 'LATE' && (
+                                  <>
+                                    <Clock className="h-3 w-3" />
+                                    {tAtt('late')}
+                                  </>
                                 )}
-                                onClick={() =>
-                                  setLocalAttendance(m.id, { status: 'NONE' })
-                                }
-                              >
-                                <X className="h-4 w-4" />
-                                <span className="text-sm">{tAtt('clear')}</span>
-                              </Button>
+                              </span>
+                            ) : (
+                              <span className="text-foreground/40">-</span>
                             )}
                           </div>
-                        </div>
-                        <div className="border-t border-foreground/10" />
-                        <div className="flex flex-col gap-2">
-                          <Label
-                            htmlFor="notes"
-                            className="text-sm font-medium"
-                          >
-                            {tAtt('notes_placeholder')}
-                          </Label>
-                          <Textarea
-                            disabled={!canUpdateAttendance}
-                            id="notes"
-                            name="notes"
-                            value={entry.note || ''}
-                            onChange={(e) => {
-                              setLocalAttendance(m.id, {
-                                note: e.target.value,
-                              });
-                              // Auto-resize
-                              e.target.style.height = 'auto';
-                              e.target.style.height = `${e.target.scrollHeight}px`;
-                            }}
-                            onFocus={(e) => {
-                              // Auto-resize on focus
-                              e.target.style.height = 'auto';
-                              e.target.style.height = `${e.target.scrollHeight}px`;
-                            }}
-                            className="min-h-10 resize-none bg-card transition-all"
-                            rows={1}
-                            placeholder="Add notes..."
-                          />
+                          <div className="grid grid-cols-3 gap-2">
+                            <Button
+                              size="sm"
+                              disabled={!canUpdateAttendance}
+                              aria-pressed={entry.status === 'PRESENT'}
+                              variant="ghost"
+                              className={cn(
+                                'h-auto flex-col gap-1 border-2 py-3 transition-all',
+                                entry.status === 'PRESENT'
+                                  ? 'border-dynamic-green/40 bg-dynamic-green/20 text-dynamic-green hover:bg-dynamic-green/30'
+                                  : 'border-dynamic-green/20 bg-dynamic-green/5 text-dynamic-green/70 hover:border-dynamic-green/40 hover:bg-dynamic-green/10 hover:text-dynamic-green'
+                              )}
+                              onClick={() => toggleStatus(m.id, 'PRESENT')}
+                            >
+                              <Check className="h-5 w-5" />
+                              <span className='font-semibold text-xs'>
+                                {tAtt('present')}
+                              </span>
+                            </Button>
+                            <Button
+                              size="sm"
+                              disabled={!canUpdateAttendance}
+                              aria-pressed={entry.status === 'ABSENT'}
+                              variant="ghost"
+                              className={cn(
+                                'h-auto flex-col gap-1 border-2 py-3 transition-all',
+                                entry.status === 'ABSENT'
+                                  ? 'border-dynamic-red/40 bg-dynamic-red/20 text-dynamic-red hover:bg-dynamic-red/30'
+                                  : 'border-dynamic-red/20 bg-dynamic-red/5 text-dynamic-red/70 hover:border-dynamic-red/40 hover:bg-dynamic-red/10 hover:text-dynamic-red'
+                              )}
+                              onClick={() => toggleStatus(m.id, 'ABSENT')}
+                            >
+                              <UserX className="h-5 w-5" />
+                              <span className='font-semibold text-xs'>
+                                {tAtt('absent')}
+                              </span>
+                            </Button>
+                            <Button
+                              size="sm"
+                              disabled={!canUpdateAttendance}
+                              aria-pressed={entry.status === 'LATE'}
+                              variant="ghost"
+                              className={cn(
+                                'h-auto flex-col gap-1 border-2 py-3 transition-all',
+                                entry.status === 'LATE'
+                                  ? 'border-dynamic-yellow/40 bg-dynamic-yellow/20 text-dynamic-yellow hover:bg-dynamic-yellow/30'
+                                  : 'border-dynamic-yellow/20 bg-dynamic-yellow/5 text-dynamic-yellow/70 hover:border-dynamic-yellow/40 hover:bg-dynamic-yellow/10 hover:text-dynamic-yellow'
+                              )}
+                              onClick={() => toggleStatus(m.id, 'LATE')}
+                            >
+                              <Clock className="h-5 w-5" />
+                              <span className='font-semibold text-xs'>
+                                {tAtt('late')}
+                              </span>
+                            </Button>
+                          </div>
+                          {entry.status !== 'NONE' && (
+                            <Button
+                              size="sm"
+                              disabled={!canUpdateAttendance}
+                              variant="ghost"
+                              className={cn(
+                                'gap-2 border-2 border-foreground/20 bg-foreground/5 transition-all hover:border-foreground/30 hover:bg-foreground/10'
+                              )}
+                              onClick={() =>
+                                setLocalAttendance(m.id, { status: 'NONE' })
+                              }
+                            >
+                              <X className="h-4 w-4" />
+                              <span className="text-sm">{tAtt('clear')}</span>
+                            </Button>
+                          )}
                         </div>
                       </div>
-                    );
-                  })}
+                      <div className='border-foreground/10 border-t' />
+                      <div className="flex flex-col gap-2">
+                        <Label
+                          htmlFor="notes"
+                          className='font-medium text-sm'
+                        >
+                          {tAtt('notes_placeholder')}
+                        </Label>
+                        <Textarea
+                          disabled={!canUpdateAttendance}
+                          id="notes"
+                          name="notes"
+                          value={entry.note || ''}
+                          onChange={(e) => {
+                            setLocalAttendance(m.id, {
+                              note: e.target.value,
+                            });
+                            // Auto-resize
+                            e.target.style.height = 'auto';
+                            e.target.style.height = `${e.target.scrollHeight}px`;
+                          }}
+                          onFocus={(e) => {
+                            // Auto-resize on focus
+                            e.target.style.height = 'auto';
+                            e.target.style.height = `${e.target.scrollHeight}px`;
+                          }}
+                          className="min-h-10 resize-none bg-card transition-all"
+                          rows={1}
+                          placeholder="Add notes..."
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
             </div>
           </>
         )}
