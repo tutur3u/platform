@@ -114,7 +114,10 @@ export default function UserForm({
 
   console.log('UserForm data:', data);
   console.log('UserForm archived_until raw:', data?.archived_until);
-  console.log('UserForm archived_until parsed:', data?.archived_until ? new Date(data.archived_until) : undefined);
+  console.log(
+    'UserForm archived_until parsed:',
+    data?.archived_until ? new Date(data.archived_until) : undefined
+  );
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -140,9 +143,11 @@ export default function UserForm({
         (data as unknown as { is_guest?: boolean })?.is_guest ?? undefined,
       archived:
         (data as unknown as { archived?: boolean })?.archived ?? undefined,
-      archived_until: data?.archived_until && !Number.isNaN(new Date(data.archived_until).getTime())
-        ? new Date(data.archived_until)
-        : undefined,
+      archived_until:
+        data?.archived_until &&
+        !Number.isNaN(new Date(data.archived_until).getTime())
+          ? new Date(data.archived_until)
+          : undefined,
     },
   });
 
@@ -331,7 +336,8 @@ export default function UserForm({
             'Content-Type': 'application/json',
           },
           body: (() => {
-            const { is_guest, is_archived, archived_at, ...rest } = formData as any;
+            const { is_guest, is_archived, archived_at, ...rest } =
+              formData as any;
             const payload: Record<string, unknown> = {
               ...rest,
               avatar_url: avatarUrl,
@@ -346,7 +352,9 @@ export default function UserForm({
               payload.is_archived = is_archived;
             }
             if (archived_at) {
-              payload.archived_at = dayjs(archived_at).format('YYYY/MM/DD HH:mm:ss');
+              payload.archived_at = dayjs(archived_at).format(
+                'YYYY/MM/DD HH:mm:ss'
+              );
             }
 
             return JSON.stringify(payload);
@@ -734,8 +742,6 @@ export default function UserForm({
               />
             </div>
 
-
-
             {/* Guest User - Full width */}
             <div className="col-span-2">
               <FormField
@@ -816,7 +822,9 @@ export default function UserForm({
                       <FormControl>
                         <DatePicker
                           value={
-                            field.value ? dayjs(field.value).toDate() : undefined
+                            field.value
+                              ? dayjs(field.value).toDate()
+                              : undefined
                           }
                           onValueChange={field.onChange}
                           className="w-full"

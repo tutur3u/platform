@@ -23,7 +23,11 @@ interface Props {
 export async function AuditLogTable({ wsId }: Props) {
   const supabase = await createClient();
 
-  const { data: rawData, count, error } = await supabase
+  const {
+    data: rawData,
+    count,
+    error,
+  } = await supabase
     .from('workspace_user_status_changes')
     .select(
       `

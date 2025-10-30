@@ -21,24 +21,28 @@ export async function getCurrentWorkspaceUser(wsId: string): Promise<{
   workspace_users?: WorkspaceUser;
 } | null> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return null;
-  
+
   const { data: workspaceUser, error } = await supabase
     .from('workspace_user_linked_users')
-    .select('platform_user_id, virtual_user_id, ws_id, created_at, workspace_user_linked_users_virtual_user_id_fkey!inner(*)')
+    .select(
+      'platform_user_id, virtual_user_id, ws_id, created_at, workspace_user_linked_users_virtual_user_id_fkey!inner(*)'
+    )
     .eq('platform_user_id', user.id)
     .eq('ws_id', wsId)
     .limit(1)
     .maybeSingle();
-  
-    
+
   if (error || !workspaceUser) return null;
-  
+
   // Return the structure with virtual_user_id directly accessible
   // The nested workspace_users data is available if needed
-  const linkedData = workspaceUser.workspace_user_linked_users_virtual_user_id_fkey;
-  
+  const linkedData =
+    workspaceUser.workspace_user_linked_users_virtual_user_id_fkey;
+
   return {
     platform_user_id: workspaceUser.platform_user_id,
     virtual_user_id: workspaceUser.virtual_user_id,

@@ -66,7 +66,8 @@ export async function PUT(req: Request, { params }: Params) {
   const data = await req.json();
 
   // Extract is_guest and archive-related fields separately before validation
-  const { is_guest, archived, archived_until, ...payloadToValidate } = data ?? {};
+  const { is_guest, archived, archived_until, ...payloadToValidate } =
+    data ?? {};
 
   // Validate the user payload against the schema (excluding is_guest and archive fields)
   const schemaResult = userUpdateSchema.safeParse(payloadToValidate);
@@ -97,7 +98,6 @@ export async function PUT(req: Request, { params }: Params) {
   if (archived_until !== undefined) {
     userPayload.archived_until = archived_until;
   }
-
 
   const supabase = await createClient();
 
@@ -134,7 +134,6 @@ export async function PUT(req: Request, { params }: Params) {
 
   // Log status changes if archived status changed
   if (typeof archived === 'boolean' && archived !== currentUser.archived) {
-
     const currentWorkspaceUser = await getCurrentWorkspaceUser(wsId);
     if (!currentWorkspaceUser) {
       console.log('No current workspace user found');
@@ -149,7 +148,7 @@ export async function PUT(req: Request, { params }: Params) {
         user_id: userId,
         ws_id: wsId,
         archived: archived,
-        archived_until: archived === false ? null : (archived_until || null),
+        archived_until: archived === false ? null : archived_until || null,
         creator_id: currentWorkspaceUser.virtual_user_id,
       });
 
