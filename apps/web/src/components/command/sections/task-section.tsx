@@ -69,7 +69,10 @@ export function TaskSection({
   if (isLoading) {
     return (
       <CommandGroup heading="Tasks">
-        <CommandItem disabled className="justify-center text-muted-foreground text-sm">
+        <CommandItem
+          disabled
+          className="justify-center text-muted-foreground text-sm"
+        >
           <div className="flex items-center gap-2">
             <div className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
             Searching tasks...
@@ -82,7 +85,10 @@ export function TaskSection({
   if (tasks.length === 0) {
     return query.trim() ? (
       <CommandGroup heading="Tasks">
-        <CommandItem disabled className="justify-center text-muted-foreground text-sm">
+        <CommandItem
+          disabled
+          className="justify-center text-muted-foreground text-sm"
+        >
           No tasks found matching "{query}"
         </CommandItem>
       </CommandGroup>
@@ -107,7 +113,8 @@ export function TaskSection({
     <CommandGroup heading={query.trim() ? 'Tasks' : 'Recent Tasks'}>
       {tasks.map((task) => {
         const priority = task.priority ? priorityConfig[task.priority] : null;
-        const isOverdue = task.end_date && dayjs(task.end_date).isBefore(dayjs());
+        const isOverdue =
+          task.end_date && dayjs(task.end_date).isBefore(dayjs());
         const isDueSoon =
           !isOverdue &&
           task.end_date &&
@@ -133,7 +140,9 @@ export function TaskSection({
             <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               {/* Task Name */}
               <div className="flex items-start gap-2">
-                <span className={`flex-1 font-medium leading-tight ${task.completed ? 'line-through opacity-60' : ''}`}>
+                <span
+                  className={`flex-1 font-medium leading-tight ${task.completed ? 'line-through opacity-60' : ''}`}
+                >
                   {task.name}
                 </span>
                 {task.is_assigned_to_current_user && (
@@ -162,7 +171,9 @@ export function TaskSection({
               <div className="flex flex-wrap items-center gap-2">
                 {/* Priority */}
                 {priority && (
-                  <div className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-xs ${priority.bgColor}`}>
+                  <div
+                    className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-xs ${priority.bgColor}`}
+                  >
                     <priority.icon className={`h-3 w-3 ${priority.color}`} />
                     <span className={priority.color}>{priority.label}</span>
                   </div>

@@ -67,7 +67,8 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
     };
 
     document.addEventListener('keydown', down, { capture: true });
-    return () => document.removeEventListener('keydown', down, { capture: true });
+    return () =>
+      document.removeEventListener('keydown', down, { capture: true });
   }, [setOpenAction]);
 
   return (
