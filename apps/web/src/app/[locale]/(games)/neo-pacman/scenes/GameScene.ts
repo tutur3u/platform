@@ -20,7 +20,6 @@ export class GameScene extends Phaser.Scene {
   private ghosts: Ghost[] = [];
   private score: number = 0;
   private lives: number = GAME_CONFIG.INITIAL_LIVES;
-  private ghostsEatenCount: number = 0;
   private scoreText!: Phaser.GameObjects.Text;
   private livesText!: Phaser.GameObjects.Text;
   private mapId: string = '';
@@ -35,7 +34,6 @@ export class GameScene extends Phaser.Scene {
     this.mapId = data.mapId;
     this.score = 0;
     this.lives = GAME_CONFIG.INITIAL_LIVES;
-    this.ghostsEatenCount = 0;
     this.ghosts = [];
   }
 
@@ -72,7 +70,6 @@ export class GameScene extends Phaser.Scene {
 
     // Spawn food
     this.foodManager.spawnInitialFood();
-    this.foodManager.startRegeneration();
 
     // Create UI
     this.createUI();
@@ -157,19 +154,6 @@ export class GameScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(100);
 
-    // Ghosts eaten
-    this.add
-      .text(this.cameras.main.width - 10, 70, `Ghosts Eaten: 0/4`, {
-        fontSize: '20px',
-        color: '#ffffff',
-        backgroundColor: '#000000',
-        padding: { x: 10, y: 5 },
-      })
-      .setOrigin(1, 0)
-      .setScrollFactor(0)
-      .setDepth(100)
-      .setName('ghostsEatenText');
-
     quitBtn.on('pointerout', () => {
       quitBtn.setStyle({ backgroundColor: '#800000' });
     });
@@ -224,15 +208,6 @@ export class GameScene extends Phaser.Scene {
     if (ghostResult.ghostsEaten.length > 0) {
       this.score += ghostResult.points;
       this.scoreText.setText(`Score: ${this.score}`);
-
-      // Update ghosts eaten count
-      this.ghostsEatenCount += ghostResult.ghostsEaten.length;
-      const ghostsEatenText = this.children.getByName(
-        'ghostsEatenText'
-      ) as Phaser.GameObjects.Text;
-      if (ghostsEatenText) {
-        ghostsEatenText.setText(`Ghosts Eaten: ${this.ghostsEatenCount}/4`);
-      }
     }
   }
 
@@ -266,9 +241,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private checkGameState(): void {
-    // Check if player won (all ghosts eaten)
-    if (this.ghostsEatenCount >= GAME_CONFIG.GHOSTS_TO_EAT_TO_WIN) {
-      this.foodManager.stopRegeneration();
+    // Check if player won (all food eaten)
+    if (!this.foodManager.hasFood()) {
       this.scene.start('GameOverScene', {
         won: true,
         score: this.score,

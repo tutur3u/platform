@@ -9,7 +9,6 @@ export class FoodManager {
   private scene: Phaser.Scene;
   private mapManager: MapManager;
   private foodItems: FoodItem[] = [];
-  private regenTimer: Phaser.Time.TimerEvent | null = null;
   private occupiedTiles: Set<string> = new Set();
 
   constructor(scene: Phaser.Scene, mapManager: MapManager) {
@@ -150,74 +149,6 @@ export class FoodManager {
   }
 
   /**
-   * Start food regeneration timer
-   */
-  startRegeneration(): void {
-    if (this.regenTimer) {
-      this.regenTimer.destroy();
-    }
-
-    this.regenTimer = this.scene.time.addEvent({
-      delay: GAME_CONFIG.REGEN_INTERVAL,
-      callback: this.regenerateFood,
-      callbackScope: this,
-      loop: true,
-    });
-  }
-
-  /**
-   * Regenerate food on empty tiles
-   */
-  private regenerateFood(): void {
-    const navigableTiles = this.mapManager.getNavigableTiles();
-
-    for (const tile of navigableTiles) {
-      const tileKey = `${tile.row},${tile.col}`;
-
-      // Skip if tile has food
-      if (this.occupiedTiles.has(tileKey)) {
-        continue;
-      }
-
-      // Random chance to spawn food
-      if (Math.random() < GAME_CONFIG.REGEN_PROBABILITY) {
-        const random = Math.random();
-        let foodType: FoodType;
-
-        if (random < GAME_CONFIG.POWER_PELLET_RATE) {
-          foodType = FoodType.POWER_PELLET;
-        } else if (
-          random <
-          GAME_CONFIG.POWER_PELLET_RATE + GAME_CONFIG.FRUIT_RATE
-        ) {
-          foodType = FoodType.FRUIT;
-        } else if (
-          random <
-          GAME_CONFIG.POWER_PELLET_RATE +
-            GAME_CONFIG.FRUIT_RATE +
-            GAME_CONFIG.PELLET_RATE
-        ) {
-          foodType = FoodType.PELLET;
-        } else {
-          continue;
-        }
-
-        this.createFoodItem(foodType, tile);
-      }
-    }
-  }
-
-  /**
-   * Stop regeneration
-   */
-  stopRegeneration(): void {
-    if (this.regenTimer) {
-      this.regenTimer.destroy();
-      this.regenTimer = null;
-    }
-  }
-
-  /**
    * Get all food items
    */
   getAllFood(): FoodItem[] {
@@ -242,7 +173,6 @@ export class FoodManager {
    * Clean up
    */
   destroy(): void {
-    this.stopRegeneration();
     this.foodItems.forEach((food) => food.sprite?.destroy());
     this.foodItems = [];
     this.occupiedTiles.clear();

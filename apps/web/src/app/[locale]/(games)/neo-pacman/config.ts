@@ -2,7 +2,7 @@ import type { GameCallbacks } from './types';
 
 export const GAME_CONFIG = {
   // Tile configuration
-  TILE_SIZE: 20,
+  TILE_SIZE: 25,
 
   // Movement speeds (pixels per frame at 60fps)
   PACMAN_SPEED: 2.5, // 1/8 tile per frame
@@ -14,10 +14,6 @@ export const GAME_CONFIG = {
   PELLET_RATE: 0.95,
   POWER_PELLET_RATE: 0.04,
   FRUIT_RATE: 0.01,
-
-  // Food regeneration
-  REGEN_INTERVAL: 60000, // 1 minute in milliseconds
-  REGEN_PROBABILITY: 0.3, // 30% chance per empty cell
 
   // Timings
   POWER_DURATION: 10000, // 10 seconds
@@ -32,7 +28,6 @@ export const GAME_CONFIG = {
 
   // Game rules
   INITIAL_LIVES: 3,
-  GHOSTS_TO_EAT_TO_WIN: 4,
 } as const;
 
 export interface PhaserGameConfig {

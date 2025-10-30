@@ -35,9 +35,6 @@ export class CollisionManager {
 
       // Remove the food
       this.foodManager.removeFood(pacmanTile);
-
-      // Play sound effect (if implemented)
-      // this.scene.sound.play('chomp');
     }
 
     return { points: totalPoints, powerPelletEaten };
@@ -92,13 +89,5 @@ export class CollisionManager {
     }
 
     return { pacmanEaten, ghostsEaten, points };
-  }
-
-  /**
-   * Check if all ghosts have been eaten
-   */
-  checkAllGhostsEaten(ghosts: Ghost[], requiredEatenCount: number): boolean {
-    const eatenCount = ghosts.filter((ghost) => ghost.state === 'EATEN').length;
-    return eatenCount >= requiredEatenCount;
   }
 }
