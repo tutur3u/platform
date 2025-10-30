@@ -4071,7 +4071,7 @@ function TaskEditDialogComponent({
                               </span>
                             </button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-56 p-2">
+                          <PopoverContent align="start" className="w-56 p-2">
                             <div className="space-y-1">
                               {[
                                 {
@@ -4163,7 +4163,7 @@ function TaskEditDialogComponent({
                               </span>
                             </button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-3">
+                          <PopoverContent align="start" className="w-auto p-3">
                             <div className="space-y-2">
                               <Label className="text-xs">Due Date</Label>
                               <DateTimePicker
@@ -4208,7 +4208,7 @@ function TaskEditDialogComponent({
                                 </span>
                               </button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-56 p-2">
+                            <PopoverContent align="start" className="w-56 p-2">
                               <div className="space-y-1">
                                 {estimationIndices.map((idx) => (
                                   <button
@@ -4278,7 +4278,7 @@ function TaskEditDialogComponent({
                               </span>
                             </button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-72 p-3">
+                          <PopoverContent align="start" className="w-72 p-3">
                             <div className="space-y-2">
                               <Label className="text-xs">Labels</Label>
                               {selectedLabels.length > 0 && (
@@ -4377,7 +4377,7 @@ function TaskEditDialogComponent({
                               </span>
                             </button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-72 p-3">
+                          <PopoverContent align="start" className="w-72 p-3">
                             <div className="space-y-2">
                               <Label className="text-xs">Projects</Label>
                               {selectedProjects.length > 0 && (
@@ -4452,7 +4452,7 @@ function TaskEditDialogComponent({
                               </span>
                             </button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-72 p-3">
+                          <PopoverContent align="start" className="w-72 p-3">
                             <div className="space-y-2">
                               <Label className="text-xs">Assignees</Label>
                               {selectedAssignees.length > 0 && (
