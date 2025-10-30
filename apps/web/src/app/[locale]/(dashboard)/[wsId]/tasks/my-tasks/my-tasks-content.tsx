@@ -7,7 +7,6 @@ import {
   Flag,
   LayoutDashboard,
   ListTodo,
-  Plus,
   Users,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -83,7 +82,6 @@ export default function MyTasksContent({
   const router = useRouter();
   const queryClient = useQueryClient();
   const { onUpdate } = useTaskDialog();
-  const [activeMode, setActiveMode] = useState<CommandMode>('task');
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>(wsId);
   const [selectedBoardId, setSelectedBoardId] = useState<string>('');
@@ -752,7 +750,6 @@ export default function MyTasksContent({
         <CommandBar
           value={commandBarInput}
           onValueChange={setCommandBarInput}
-          onCreateNote={handleCreateNote}
           onCreateTask={handleCreateTask}
           onGenerateAI={handleGenerateAI}
           onOpenBoardSelector={(title, isAi) => {
