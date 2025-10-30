@@ -8,6 +8,7 @@ import {
   CalendarDays,
   Check,
   ChevronDown,
+  ChevronsUpDown,
   Clock,
   Flag,
   Gauge,
@@ -191,6 +192,8 @@ export function BoardHeader({
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [layoutSettingsOpen, setLayoutSettingsOpen] = useState(false);
+  const [otherBoards, setOtherBoards] = useState<Pick<WorkspaceTaskBoard, 'id' | 'name'>[]>([]);
+  const [isFetchingBoards, setIsFetchingBoards] = useState(false);
   const [localSearchQuery, setLocalSearchQuery] = useState(
     filters.searchQuery || ''
   );
@@ -281,6 +284,31 @@ export function BoardHeader({
     return () => clearTimeout(timeoutId);
   }, [board.id, currentView, filters, listStatusFilter]);
 
+  useEffect(() => {
+    async function fetchOtherBoards() {
+      if (!board.ws_id) return;
+      setIsFetchingBoards(true);
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('workspace_boards')
+          .select('id, name')
+          .eq('ws_id', board.ws_id)
+          .neq('id', board.id) // Exclude the current board
+          .order('name');
+
+        if (error) throw error;
+        setOtherBoards(data || []);
+      } catch (error) {
+        console.error('Failed to fetch other boards:', error);
+      } finally {
+        setIsFetchingBoards(false);
+      }
+    }
+
+    fetchOtherBoards();
+  }, [board.id, board.ws_id]);
+
   async function handleEdit() {
     if (!editedName?.trim() || editedName === board.name) {
       setIsEditDialogOpen(false);
@@ -363,9 +391,41 @@ export function BoardHeader({
               <ArrowLeft className="h-5 w-5" />
             </Link>
           )}
-          <h1 className="truncate font-bold text-base text-foreground sm:text-xl md:text-2xl">
-            {board.name}
-          </h1>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div
+                className="group flex cursor-pointer items-center gap-2 transition-colors hover:text-foreground"
+              >
+                <h1 className="truncate font-bold text-base text-foreground sm:text-xl md:text-2xl">
+                  {board.name}
+                </h1>
+                <ChevronsUpDown className="h-4 w-4 text-muted-foreground transition-transform group-hover:scale-110" />
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              style={{ width: 'var(--radix-dropdown-menu-trigger-width)' }}
+            >
+              {isFetchingBoards ? (
+                <DropdownMenuItem disabled>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Loading...
+                </DropdownMenuItem>
+              ) : otherBoards.length > 0 ? (
+                otherBoards.map((otherBoard) => (
+                  <DropdownMenuItem
+                    key={otherBoard.id}
+                    onClick={() =>
+                      router.push(`/${board.ws_id}/tasks/boards/${otherBoard.id}`)
+                    }
+                  >
+                    {otherBoard.name}
+                  </DropdownMenuItem>
+                ))
+              ) : (
+                <DropdownMenuItem disabled>No other boards</DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Search Bar */}
