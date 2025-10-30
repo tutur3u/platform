@@ -170,33 +170,32 @@ export default function GroupAttendanceClient({
     isLoading: isLoadingAttendance,
     isFetching: isFetchingAttendance,
   } = useQuery({
-      queryKey: attendanceKey,
-      queryFn: async () => {
-        const supabase = createClient();
-        const { data, error } = await supabase
-          .from('user_group_attendance')
-          .select('user_id,status,notes')
-          .eq('group_id', groupId)
-          .eq('date', format(currentDate, 'yyyy-MM-dd'));
-        if (error) throw error;
-        const mapped: Record<string, AttendanceEntry> = {};
-        (data || []).forEach((row: any) => {
-          mapped[row.user_id] = {
-            status: row.status as AttendanceStatus,
-            note: row.notes ?? '',
-          };
-        });
-        return mapped;
-      },
-      initialData:
-        format(currentDate, 'yyyy-MM-dd') === (initialDate || '')
-          ? initialAttendance
-          : undefined,
-      placeholderData: keepPreviousData,
-      staleTime: 30 * 1000,
-      enabled: isDateAvailable(sessions, currentDate),
-    }
-  );
+    queryKey: attendanceKey,
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('user_group_attendance')
+        .select('user_id,status,notes')
+        .eq('group_id', groupId)
+        .eq('date', format(currentDate, 'yyyy-MM-dd'));
+      if (error) throw error;
+      const mapped: Record<string, AttendanceEntry> = {};
+      (data || []).forEach((row: any) => {
+        mapped[row.user_id] = {
+          status: row.status as AttendanceStatus,
+          note: row.notes ?? '',
+        };
+      });
+      return mapped;
+    },
+    initialData:
+      format(currentDate, 'yyyy-MM-dd') === (initialDate || '')
+        ? initialAttendance
+        : undefined,
+    placeholderData: keepPreviousData,
+    staleTime: 30 * 1000,
+    enabled: isDateAvailable(sessions, currentDate),
+  });
 
   // Pending changes tracking for batch save
   type PendingAttendance = {
@@ -824,7 +823,10 @@ export default function GroupAttendanceClient({
                         </div>
                         <div className="border-t border-foreground/10" />
                         <div className="flex flex-col gap-2">
-                          <Label htmlFor="notes" className="text-sm font-medium">
+                          <Label
+                            htmlFor="notes"
+                            className="text-sm font-medium"
+                          >
                             {tAtt('notes_placeholder')}
                           </Label>
                           <Textarea
@@ -833,7 +835,9 @@ export default function GroupAttendanceClient({
                             name="notes"
                             value={entry.note || ''}
                             onChange={(e) => {
-                              setLocalAttendance(m.id, { note: e.target.value });
+                              setLocalAttendance(m.id, {
+                                note: e.target.value,
+                              });
                               // Auto-resize
                               e.target.style.height = 'auto';
                               e.target.style.height = `${e.target.scrollHeight}px`;
@@ -849,8 +853,8 @@ export default function GroupAttendanceClient({
                           />
                         </div>
                       </div>
-                );
-              })}
+                    );
+                  })}
             </div>
           </>
         )}
