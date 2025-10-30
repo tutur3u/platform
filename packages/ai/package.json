@@ -8,7 +8,7 @@
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^3.0.49",
     "@ai-sdk/anthropic": "^2.0.39",
-    "@ai-sdk/azure": "^2.0.58",
+    "@ai-sdk/azure": "^2.0.59",
     "@ai-sdk/cerebras": "^1.0.27",
     "@ai-sdk/cohere": "^2.0.16",
     "@ai-sdk/deepgram": "^1.0.15",
@@ -26,7 +26,7 @@
     "@ai-sdk/lmnt": "^1.0.15",
     "@ai-sdk/luma": "^1.0.15",
     "@ai-sdk/mistral": "^2.0.21",
-    "@ai-sdk/openai": "^2.0.57",
+    "@ai-sdk/openai": "^2.0.58",
     "@ai-sdk/openai-compatible": "^1.0.24",
     "@ai-sdk/perplexity": "^2.0.15",
     "@ai-sdk/react": "^2.0.82",

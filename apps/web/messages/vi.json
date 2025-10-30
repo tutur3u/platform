@@ -3793,12 +3793,17 @@
     "summary_total": "Tổng",
     "summary_present": "Có mặt",
     "summary_absent": "Vắng mặt",
-    "summary_not_attended": "Chưa điểm danh",
+    "summary_late": "Trễ",
+    "summary_not_marked": "Chưa điểm danh",
     "phone_fallback": "Không có số điện thoại",
     "notes_placeholder": "Ghi chú",
     "late": "Trễ",
     "present": "Có mặt",
-    "absent": "Vắng mặt"
+    "absent": "Vắng mặt",
+    "clear": "Xóa điểm danh",
+    "help_title": "Cách điểm danh",
+    "help_description": "Nhấp vào nút bên dưới tên học sinh để đánh dấu điểm danh. Xanh lá cây là có mặt, đỏ là vắng mặt, và vàng là đến trễ. Nhấp 'Lưu' khi hoàn tất.",
+    "status_label": "Trạng thái"
   },
   "workspace-education-tabs": {
     "overview": "Tổng quan",
