@@ -251,6 +251,7 @@ export default function MyTasksContent({
   const [newListDialogOpen, setNewListDialogOpen] = useState(false);
   const [newListName, setNewListName] = useState<string>('');
   const [commandBarLoading, setCommandBarLoading] = useState(false);
+  const [commandBarInput, setCommandBarInput] = useState('');
 
   // Task creation state
   const [pendingTaskTitle, setPendingTaskTitle] = useState<string>('');
@@ -707,6 +708,7 @@ export default function MyTasksContent({
       setLastResult(null);
       setPreviewEntry(null);
       setPendingTaskTitle('');
+      setCommandBarInput('');
       setTaskCreatorMode(null);
       handleUpdate();
     },
@@ -715,13 +717,15 @@ export default function MyTasksContent({
     },
   });
 
-  const handleCreateTask = async (title: string, options?: TaskOptions) => {
+  const handleCreateTask = async (
+    title: string,
+    options?: TaskOptions
+  ): Promise<boolean> => {
     // If destination is not yet confirmed, open selector first
     if (!selectedBoardId || !selectedListId) {
       setPendingTaskTitle(title);
-      setTaskCreatorMode('simple');
       setBoardSelectorOpen(true);
-      return;
+      return false;
     }
 
     // Create task directly without opening dialog
@@ -788,14 +792,18 @@ export default function MyTasksContent({
           </div>
         );
         setPendingTaskTitle('');
+        setCommandBarInput('');
         // Refresh the page data
         handleUpdate();
+        return true;
       } else {
         toast.error('Fail to create task');
+        return false;
       }
     } catch (error: any) {
       console.error('Error creating task:', error);
       toast.error(error.message || 'Failed to create task');
+      return false;
     } finally {
       setCommandBarLoading(false);
     }
@@ -833,15 +841,18 @@ export default function MyTasksContent({
     });
   };
 
-  const handleBoardSelectorConfirm = () => {
+  const handleBoardSelectorConfirm = async () => {
     setBoardSelectorOpen(false);
 
     if (pendingTaskTitle && taskCreatorMode === 'ai') {
       // Generate AI preview
       handleGenerateAI(pendingTaskTitle);
     } else if (pendingTaskTitle && taskCreatorMode === 'simple') {
-      // Open simple task creator with centralized dialog
-      createTask(selectedBoardId, selectedListId, availableLists);
+      // Create task directly
+      const success = await handleCreateTask(pendingTaskTitle);
+      if (success) {
+        setCommandBarInput('');
+      }
     }
   };
 
@@ -909,6 +920,7 @@ export default function MyTasksContent({
         ws_id: wsId,
         name: newProjectName.trim(),
       });
+      
 
       if (error) throw error;
 
@@ -1572,39 +1584,52 @@ export default function MyTasksContent({
 
       {/* Command Bar - The single entry point for creation */}
       <div className="mx-auto max-w-5xl">
-        <CommandBar
-          onCreateNote={handleCreateNote}
-          onCreateTask={handleCreateTask}
-          onGenerateAI={handleGenerateAI}
-          onOpenBoardSelector={() => setBoardSelectorOpen(true)}
-          selectedDestination={selectedDestination}
-          onClearDestination={handleClearDestination}
-          isLoading={commandBarLoading}
-          aiGenerateDescriptions={aiGenerateDescriptions}
-          aiGeneratePriority={aiGeneratePriority}
-          aiGenerateLabels={aiGenerateLabels}
-          onAiGenerateDescriptionsChange={setAiGenerateDescriptions}
-          onAiGeneratePriorityChange={setAiGeneratePriority}
-          onAiGenerateLabelsChange={setAiGenerateLabels}
-          mode={activeMode}
-          onModeChange={setActiveMode}
-          workspaceLabels={workspaceLabels}
-          workspaceProjects={workspaceProjects}
-          workspaceMembers={workspaceMembers}
-          workspaceEstimationConfig={
-            boardConfig
-              ? {
-                  estimation_type: boardConfig.estimation_type,
-                  extended_estimation: boardConfig.extended_estimation,
-                  allow_zero_estimates: boardConfig.allow_zero_estimates,
-                }
-              : null
-          }
-          wsId={wsId}
-          onCreateNewLabel={() => setNewLabelDialogOpen(true)}
-          onCreateNewProject={() => setNewProjectDialogOpen(true)}
-        />
-      </div>
+                <CommandBar
+                  value={commandBarInput}
+                  onValueChange={setCommandBarInput}
+                  onCreateNote={handleCreateNote}
+                  onCreateTask={handleCreateTask}
+                  onGenerateAI={handleGenerateAI}
+                  onOpenBoardSelector={(title, isAi) => {
+                    if (title) {
+                      setPendingTaskTitle(title);
+                      setTaskCreatorMode(isAi ? 'ai' : 'simple');
+                    } else {
+                      setPendingTaskTitle('');
+                      setTaskCreatorMode(null);
+                    }
+                    setBoardSelectorOpen(true);
+                  }}
+                  selectedDestination={selectedDestination}
+                  onClearDestination={handleClearDestination}
+                  isLoading={commandBarLoading}
+                  aiGenerateDescriptions={aiGenerateDescriptions}
+                  aiGeneratePriority={aiGeneratePriority}
+                  aiGenerateLabels={aiGenerateLabels}
+                  onAiGenerateDescriptionsChange={setAiGenerateDescriptions}
+                  onAiGeneratePriorityChange={setAiGeneratePriority}
+                  onAiGenerateLabelsChange={setAiGenerateLabels}
+                  mode={activeMode}
+                  onModeChange={setActiveMode}
+                  workspaceLabels={workspaceLabels}
+                  workspaceProjects={workspaceProjects}
+                  workspaceMembers={workspaceMembers}
+                  workspaceEstimationConfig={ boardConfig
+                      ? {
+                          estimation_type: boardConfig.estimation_type,
+                          extended_estimation: boardConfig.extended_estimation,
+                          allow_zero_estimates: boardConfig.allow_zero_estimates,
+                        }
+                      : null
+                  }
+                  wsId={wsId}
+                  onCreateNewLabel={() => setNewLabelDialogOpen(true)}
+                  onCreateNewProject={() => setNewProjectDialogOpen(true)}
+                />
+                <p className="mt-2 text-muted-foreground text-xs">
+                  Pro tip: You can further configure your task after selecting a location
+                </p>
+              </div>
 
       {/* Spacer for breathing room */}
       <div className="h-4" />
@@ -2181,10 +2206,9 @@ export default function MyTasksContent({
             </Button>
             <Button
               onClick={handleBoardSelectorConfirm}
-              disabled={!selectedBoardId || !selectedListId}
+              disabled={!selectedListId}
             >
-              <Plus className="mr-2 h-4 w-4" />
-              Continue
+              {taskCreatorMode ? 'Create task' : 'Continue'}
             </Button>
           </div>
         </DialogContent>
