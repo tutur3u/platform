@@ -53,6 +53,7 @@ interface TaskDialogState {
   collaborationMode?: boolean;
   originalPathname?: string;
   filters?: TaskFilters;
+  preserveUrl?: boolean;
 }
 
 interface TaskDialogContextValue {
@@ -60,7 +61,12 @@ interface TaskDialogContextValue {
   state: TaskDialogState;
 
   // Open dialog for editing existing task
-  openTask: (task: Task, boardId: string, availableLists?: TaskList[]) => void;
+  openTask: (
+    task: Task,
+    boardId: string,
+    availableLists?: TaskList[],
+    options?: { preserveUrl?: boolean }
+  ) => void;
 
   // Open task by ID (fetches task data first)
   openTaskById: (taskId: string) => Promise<void>;
@@ -122,7 +128,12 @@ export function TaskDialogProvider({
   const closeCallbackRef = useRef<(() => void) | null>(null);
 
   const openTask = useCallback(
-    (task: Task, boardId: string, availableLists?: TaskList[]) => {
+    (
+      task: Task,
+      boardId: string,
+      availableLists?: TaskList[],
+      options?: { preserveUrl?: boolean }
+    ) => {
       setState({
         isOpen: true,
         task,
@@ -130,6 +141,7 @@ export function TaskDialogProvider({
         mode: 'edit',
         availableLists,
         collaborationMode: !isPersonalWorkspace,
+        preserveUrl: options?.preserveUrl,
       });
     },
     [isPersonalWorkspace]

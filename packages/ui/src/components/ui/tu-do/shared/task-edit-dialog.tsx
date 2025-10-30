@@ -110,6 +110,7 @@ interface TaskEditDialogProps {
   availableLists?: TaskList[];
   onOpenTask?: (taskId: string) => void;
   filters?: TaskFilters;
+  preserveUrl?: boolean;
 }
 
 // Helper types
@@ -222,6 +223,7 @@ function TaskEditDialogComponent({
   mode = 'edit',
   collaborationMode = false,
   filters,
+  preserveUrl,
 }: TaskEditDialogProps & {
   mode?: 'edit' | 'create';
   collaborationMode?: boolean;
@@ -2556,7 +2558,7 @@ function TaskEditDialogComponent({
 
   // Sync URL with task dialog state (edit mode only)
   useEffect(() => {
-    if (!isOpen || isCreateMode || !task?.id || !workspaceId || !pathname)
+    if (preserveUrl || !isOpen || isCreateMode || !task?.id || !workspaceId || !pathname)
       return;
 
     if (!originalUrlRef.current && !pathname.match(/\/tasks\/[^/]+$/)) {
@@ -2578,7 +2580,7 @@ function TaskEditDialogComponent({
         );
       }
     };
-  }, [isOpen, task?.id, pathname, boardId, isCreateMode, workspaceId]);
+  }, [isOpen, task?.id, pathname, boardId, isCreateMode, workspaceId, preserveUrl]);
 
   // Reset state when dialog closes or opens
   const isMountedRef = useRef(true);

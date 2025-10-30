@@ -499,7 +499,7 @@ export function ListView({
                       ) {
                         return;
                       }
-                      openTask(task, boardId, lists);
+                      openTask(task, boardId, lists, { preserveUrl: true });
                     }}
                   >
                     <TableCell className="px-2.5 py-0">
@@ -668,7 +668,7 @@ export function ListView({
                           variant="ghost"
                           size="icon"
                           className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                          onClick={() => openTask(task, boardId, lists)}
+                          onClick={() => openTask(task, boardId, lists, { preserveUrl: true })}
                         >
                           <MoreHorizontal className="h-3 w-3" />
                         </Button>
