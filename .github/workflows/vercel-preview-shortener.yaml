@@ -12,6 +12,11 @@ on:
       - 'apps/shortener/**'
       - 'packages/**'
       - '.github/workflows/vercel-preview-shortener.yaml'
+  pull_request:
+    paths:
+      - 'apps/shortener/**'
+      - 'packages/**'
+      - '.github/workflows/vercel-preview-shortener.yaml'
   workflow_dispatch:
 
 jobs:
