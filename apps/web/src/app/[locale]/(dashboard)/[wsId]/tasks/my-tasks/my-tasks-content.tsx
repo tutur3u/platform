@@ -240,7 +240,7 @@ export default function MyTasksContent({
   const t = useTranslations();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { createTask, onUpdate } = useTaskDialog();
+  const { onUpdate } = useTaskDialog();
   const [activeMode, setActiveMode] = useState<CommandMode>('task');
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>(wsId);
