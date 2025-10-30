@@ -595,7 +595,7 @@ export default function NoteList({ wsId }: { wsId: string }) {
         title={editTitle}
         onTitleChange={(newTitle) => {
           setEditTitle(newTitle);
-          if (newTitle) { 
+          if (newTitle) {
             handleAutoSaveTitle(newTitle);
           }
         }}
