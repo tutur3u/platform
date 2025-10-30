@@ -38,8 +38,8 @@ export async function AuditLogTable({ wsId }: Props) {
       archived_until,
       creator_id,
       created_at,
-      user:user_id (full_name),
-      creator:creator_id (full_name)
+      user:user_id (full_name, display_name),
+      creator:creator_id (full_name, display_name)
     `,
       {
         count: 'exact',
@@ -62,8 +62,8 @@ export async function AuditLogTable({ wsId }: Props) {
     archived_until: entry.archived_until,
     creator_id: entry.creator_id,
     created_at: entry.created_at,
-    user_full_name: entry.user?.full_name,
-    creator_full_name: entry.creator?.full_name,
+    user_full_name: entry.user?.full_name || entry.user?.display_name,
+    creator_full_name: entry.creator?.full_name || entry.creator?.display_name,
   }));
 
   return (

@@ -10,7 +10,7 @@
     "active": "Active",
     "dash": "—",
     "invalid_date": "Invalid date",
-    "system": "System"
+    "system": "Unknown"
   },
   "billing": {
     "loading": "Loading payment details...",
