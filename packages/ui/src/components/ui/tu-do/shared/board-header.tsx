@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowDown,
   ArrowDownAZ,
@@ -191,12 +191,8 @@ export function BoardHeader({
   const [boardMenuOpen, setBoardMenuOpen] = useState(false);
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
-  const [layoutSettingsOpen, setLayoutSettingsOpen] = useState(false);
-  const [otherBoards, setOtherBoards] = useState<
-    Pick<WorkspaceTaskBoard, 'id' | 'name'>[]
-  >([]);
-  const [isFetchingBoards, setIsFetchingBoards] = useState(false);
-  const [localSearchQuery, setLocalSearchQuery] = useState(
+    const [layoutSettingsOpen, setLayoutSettingsOpen] = useState(false);
+    const [localSearchQuery, setLocalSearchQuery] = useState(
     filters.searchQuery || ''
   );
   const queryClient = useQueryClient();
@@ -286,30 +282,25 @@ export function BoardHeader({
     return () => clearTimeout(timeoutId);
   }, [board.id, currentView, filters, listStatusFilter]);
 
-  useEffect(() => {
-    async function fetchOtherBoards() {
-      if (!board.ws_id) return;
-      setIsFetchingBoards(true);
-      try {
-        const supabase = createClient();
-        const { data, error } = await supabase
-          .from('workspace_boards')
-          .select('id, name')
-          .eq('ws_id', board.ws_id)
-          .neq('id', board.id) // Exclude the current board
-          .order('name');
+  const { data: otherBoards = [], isLoading: isFetchingBoards } = useQuery({
+    queryKey: ['other-boards', board.ws_id, board.id],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('workspace_boards')
+        .select('id, name')
+        .eq('ws_id', board.ws_id)
+        .neq('id', board.id) // Exclude the current board
+        .order('name');
 
-        if (error) throw error;
-        setOtherBoards(data || []);
-      } catch (error) {
+      if (error) {
         console.error('Failed to fetch other boards:', error);
-      } finally {
-        setIsFetchingBoards(false);
+        throw error;
       }
-    }
-
-    fetchOtherBoards();
-  }, [board.id, board.ws_id]);
+      return data || [];
+    },
+    enabled: !!board.ws_id,
+  });
 
   async function handleEdit() {
     if (!editedName?.trim() || editedName === board.name) {
