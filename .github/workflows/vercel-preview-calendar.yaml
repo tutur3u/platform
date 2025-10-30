@@ -12,6 +12,11 @@ on:
       - 'apps/calendar/**'
       - 'packages/**'
       - '.github/workflows/vercel-preview-calendar.yaml'
+  pull_request:
+    paths:
+      - 'apps/calendar/**'
+      - 'packages/**'
+      - '.github/workflows/vercel-preview-calendar.yaml'
   workflow_dispatch:
 
 jobs:

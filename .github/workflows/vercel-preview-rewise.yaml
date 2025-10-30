@@ -12,6 +12,11 @@ on:
       - 'apps/rewise/**'
       - 'packages/**'
       - '.github/workflows/vercel-preview-rewise.yaml'
+  pull_request:
+    paths:
+      - 'apps/rewise/**'
+      - 'packages/**'
+      - '.github/workflows/vercel-preview-rewise.yaml'
   workflow_dispatch:
 
 jobs:

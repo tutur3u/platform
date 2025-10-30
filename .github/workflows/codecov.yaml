@@ -7,6 +7,12 @@ on:
       - 'packages/**/src/**'
       - '**/*.test.{ts,tsx}'
       - '.github/workflows/codecov.yaml'
+  pull_request:
+    paths:
+      - 'apps/**/src/**'
+      - 'packages/**/src/**'
+      - '**/*.test.{ts,tsx}'
+      - '.github/workflows/codecov.yaml'
 
 jobs:
   test:
