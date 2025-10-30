@@ -13080,19 +13080,10 @@ export type Database = {
         Args: { _user_id: string; _ws_id: string };
         Returns: boolean;
       };
-      has_workspace_permission:
-        | {
-            Args: { p_permission: string; p_user_id: string; p_ws_id: string };
-            Returns: boolean;
-          }
-        | {
-            Args: {
-              p_permission: Database['public']['Enums']['workspace_role_permission'];
-              p_user_id: string;
-              p_ws_id: string;
-            };
-            Returns: boolean;
-          };
+      has_workspace_permission: {
+        Args: { p_permission: string; p_user_id: string; p_ws_id: string };
+        Returns: boolean;
+      };
       insert_ai_chat_message: {
         Args: { chat_id: string; message: string; source: string };
         Returns: undefined;
@@ -13394,11 +13385,7 @@ export type Database = {
         | 'update_user_groups_posts'
         | 'delete_user_groups_posts'
         | 'create_lead_generations'
-        | 'manage_api_keys'
-        | 'view_workspaces'
-        | 'create_workspaces'
-        | 'update_workspaces'
-        | 'delete_workspaces';
+        | 'manage_api_keys';
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -13644,10 +13631,6 @@ export const Constants = {
         'delete_user_groups_posts',
         'create_lead_generations',
         'manage_api_keys',
-        'view_workspaces',
-        'create_workspaces',
-        'update_workspaces',
-        'delete_workspaces',
       ],
     },
   },
