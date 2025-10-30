@@ -92,8 +92,6 @@ export default async function WorkspaceUsersPage({
     href: `/${wsId}/users/database/${u.id}`,
   }));
 
-
-
   return (
     <>
       <FeatureSummary
@@ -115,12 +113,8 @@ export default async function WorkspaceUsersPage({
       <Separator className="my-4" />
       <Tabs defaultValue="users" className="w-full">
         <TabsList className="mb-4">
-          <TabsTrigger value="users">
-            {t('ws-users.plural')}
-          </TabsTrigger>
-          <TabsTrigger value="audit-log">
-            {t('ws-users.audit_log')}
-          </TabsTrigger>
+          <TabsTrigger value="users">{t('ws-users.plural')}</TabsTrigger>
+          <TabsTrigger value="audit-log">{t('ws-users.audit_log')}</TabsTrigger>
         </TabsList>
         <TabsContent value="users">
           <CustomDataTable
@@ -170,7 +164,9 @@ export default async function WorkspaceUsersPage({
               avatar_url: false,
 
               // Extra columns
-              ...Object.fromEntries(extraFields.map((field) => [field.id, false])),
+              ...Object.fromEntries(
+                extraFields.map((field) => [field.id, false])
+              ),
             }}
           />
         </TabsContent>

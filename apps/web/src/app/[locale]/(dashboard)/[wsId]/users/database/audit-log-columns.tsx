@@ -23,9 +23,7 @@ export const getAuditLogColumns = (
     accessorKey: 'id',
     header: t(`${namespace}.id`),
     cell: ({ row }) => (
-      <div className="text-sm text-muted-foreground">
-        {row.getValue('id')}
-      </div>
+      <div className="text-sm text-muted-foreground">{row.getValue('id')}</div>
     ),
   },
   {
@@ -64,11 +62,20 @@ export const getAuditLogColumns = (
     header: t(`${namespace}.archived_until`),
     cell: ({ row }) => {
       const date = row.getValue('archived_until') as string | null;
-      if (!date) return <div className="text-sm text-muted-foreground">{t(`${namespace}.dash`)}</div>;
+      if (!date)
+        return (
+          <div className="text-sm text-muted-foreground">
+            {t(`${namespace}.dash`)}
+          </div>
+        );
       try {
         return <div className="text-sm">{format(new Date(date), 'PPP p')}</div>;
       } catch {
-        return <div className="text-sm text-muted-foreground">{t(`${namespace}.invalid_date`)}</div>;
+        return (
+          <div className="text-sm text-muted-foreground">
+            {t(`${namespace}.invalid_date`)}
+          </div>
+        );
       }
     },
   },
@@ -93,7 +100,11 @@ export const getAuditLogColumns = (
           </div>
         );
       } catch {
-        return <div className="text-sm text-muted-foreground">{t(`${namespace}.invalid_date`)}</div>;
+        return (
+          <div className="text-sm text-muted-foreground">
+            {t(`${namespace}.invalid_date`)}
+          </div>
+        );
       }
     },
   },
