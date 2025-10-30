@@ -11,6 +11,7 @@ import {
 import { Progress } from '@tuturuuu/ui/progress';
 import { XLSX } from '@tuturuuu/ui/xlsx';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -630,7 +631,7 @@ export default function TimeTrackerManagementClient({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="space-y-6 rounded-xl border border-dynamic-border/20 bg-gradient-to-r from-dynamic-blue/5 via-dynamic-purple/5 to-dynamic-green/5 p-8">
+      <div className="space-y-6 rounded-xl border border-dynamic-border/20 bg-linear-to-r from-dynamic-blue/5 via-dynamic-purple/5 to-dynamic-green/5 p-8">
         <div className="flex items-center justify-between">
           <div className="space-y-3">
             <div className="flex items-center gap-4">
@@ -638,7 +639,7 @@ export default function TimeTrackerManagementClient({
                 <Clock className="size-8 text-dynamic-blue" />
               </div>
               <div>
-                <h1 className="bg-gradient-to-r from-dynamic-blue to-dynamic-purple bg-clip-text font-bold text-3xl text-transparent">
+                <h1 className="bg-linear-to-r from-dynamic-blue to-dynamic-purple bg-clip-text font-bold text-3xl text-transparent">
                   Time Tracker Management
                 </h1>
                 <p className="mt-1 text-base text-dynamic-muted">
@@ -652,7 +653,7 @@ export default function TimeTrackerManagementClient({
 
       {/* Error Display */}
       {error && (
-        <div className="overflow-hidden rounded-xl border border-dynamic-red/20 bg-gradient-to-r from-dynamic-red/10 to-dynamic-orange/10 p-6 transition-all duration-300">
+        <div className="overflow-hidden rounded-xl border border-dynamic-red/20 bg-linear-to-r from-dynamic-red/10 to-dynamic-orange/10 p-6 transition-all duration-300">
           <div className="flex items-center gap-4">
             <div className="rounded-lg bg-dynamic-red/20 p-2 ring-2 ring-dynamic-red/10">
               <AlertCircle className="size-5 text-dynamic-red" />
@@ -669,7 +670,7 @@ export default function TimeTrackerManagementClient({
 
       {/* Loading Overlay */}
       {isLoading && (
-        <div className="overflow-hidden rounded-xl border border-dynamic-blue/20 bg-gradient-to-r from-dynamic-blue/10 to-dynamic-purple/10 p-6 transition-all duration-300">
+        <div className="overflow-hidden rounded-xl border border-dynamic-blue/20 bg-linear-to-r from-dynamic-blue/10 to-dynamic-purple/10 p-6 transition-all duration-300">
           <div className="flex items-center gap-4">
             <div className="rounded-lg bg-dynamic-blue/20 p-2 ring-2 ring-dynamic-blue/10">
               <Loader2 className="size-5 animate-spin text-dynamic-blue" />
@@ -797,7 +798,7 @@ export default function TimeTrackerManagementClient({
       {/* Enhanced Session Details Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="flex h-[90vh] w-[95vw] max-w-2xl flex-col overflow-hidden sm:max-w-4xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl">
-          <DialogHeader className="flex-shrink-0 border-dynamic-border/20 border-b pb-4">
+          <DialogHeader className="shrink-0 border-dynamic-border/20 border-b pb-4">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-full border border-dynamic-border/20 bg-dynamic-muted/10 sm:size-12">
                 <span className="font-medium text-dynamic-foreground text-sm">
@@ -891,8 +892,8 @@ export default function TimeTrackerManagementClient({
                               )}
                             </div>
                             {session.description && (
-                              <div className="text-dynamic-muted text-sm">
-                                {session.description}
+                              <div className="whitespace-pre-wrap text-dynamic-muted text-sm">
+                                {getDescriptionText(session.description)}
                               </div>
                             )}
                           </div>

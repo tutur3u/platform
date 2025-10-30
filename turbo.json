@@ -51,6 +51,11 @@
       ]
     },
     "dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
+    },
+    "@tuturuuu/types#dev": {
       "cache": false,
       "persistent": true
     },
