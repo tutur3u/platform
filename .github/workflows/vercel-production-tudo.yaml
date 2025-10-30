@@ -11,6 +11,10 @@ on:
   push:
     branches:
       - production
+    paths:
+      - 'apps/tudo/**'
+      - 'packages/**'
+      - '.github/workflows/vercel-production-tudo.yaml'
   workflow_dispatch:
 
 jobs:

@@ -11,6 +11,10 @@ on:
   push:
     branches:
       - production
+    paths:
+      - 'apps/shortener/**'
+      - 'packages/**'
+      - '.github/workflows/vercel-production-shortener.yaml'
   workflow_dispatch:
 
 jobs:

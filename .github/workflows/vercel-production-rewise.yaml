@@ -13,6 +13,10 @@ on:
   push:
     branches:
       - production
+    paths:
+      - 'apps/rewise/**'
+      - 'packages/**'
+      - '.github/workflows/vercel-production-rewise.yaml'
   workflow_dispatch:
 
 jobs:

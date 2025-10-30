@@ -11,6 +11,10 @@ on:
   push:
     branches:
       - production
+    paths:
+      - 'apps/tumeet/**'
+      - 'packages/**'
+      - '.github/workflows/vercel-production-tumeet.yaml'
   workflow_dispatch:
 
 jobs:

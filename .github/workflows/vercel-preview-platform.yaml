@@ -8,6 +8,10 @@ on:
   push:
     branches-ignore:
       - production
+    paths:
+      - 'apps/web/**'
+      - 'packages/**'
+      - '.github/workflows/vercel-preview-platform.yaml'
   workflow_dispatch:
 
 jobs:

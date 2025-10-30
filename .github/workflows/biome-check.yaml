@@ -6,6 +6,9 @@ on:
       - 'dependabot/**'
       - 'staging'
       - 'production'
+    paths:
+      - '**/*.{ts,tsx,js,jsx,json,yaml,yml}'
+      - '.github/workflows/biome-check.yaml'
   workflow_dispatch:
 
 jobs:

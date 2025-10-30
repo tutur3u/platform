@@ -11,6 +11,10 @@ on:
   push:
     branches:
       - production
+    paths:
+      - 'apps/nova/**'
+      - 'packages/**'
+      - '.github/workflows/vercel-production-nova.yaml'
   workflow_dispatch:
 
 jobs:

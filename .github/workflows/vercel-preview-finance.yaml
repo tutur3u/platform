@@ -8,6 +8,10 @@ on:
   push:
     branches-ignore:
       - production
+    paths:
+      - 'apps/finance/**'
+      - 'packages/**'
+      - '.github/workflows/vercel-preview-finance.yaml'
   workflow_dispatch:
 
 jobs:

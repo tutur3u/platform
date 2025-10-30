@@ -11,6 +11,10 @@ on:
   push:
     branches:
       - production
+    paths:
+      - 'apps/calendar/**'
+      - 'packages/**'
+      - '.github/workflows/vercel-production-calendar.yaml'
   workflow_dispatch:
 
 jobs:

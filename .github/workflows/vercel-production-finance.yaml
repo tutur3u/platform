@@ -11,6 +11,10 @@ on:
   push:
     branches:
       - production
+    paths:
+      - 'apps/finance/**'
+      - 'packages/**'
+      - '.github/workflows/vercel-production-finance.yaml'
   workflow_dispatch:
 
 jobs:
