@@ -4386,7 +4386,7 @@ function TaskEditDialogComponent({
                                     <Badge
                                       key={project.id}
                                       variant="secondary"
-                                      className="h-auto whitespace-normal cursor-pointer gap-1 border-dynamic-sky/30 bg-dynamic-sky/10 px-2 text-dynamic-sky text-xs transition-opacity hover:opacity-80"
+                                      className="item-center h-auto cursor-pointer gap-1 whitespace-normal border-dynamic-sky/30 bg-dynamic-sky/10 px-2 text-dynamic-sky text-xs transition-opacity hover:opacity-80"
                                       onClick={() => toggleProject(project)}
                                     >
                                       <span className="break-words">
