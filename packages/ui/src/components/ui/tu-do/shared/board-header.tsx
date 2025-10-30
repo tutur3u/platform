@@ -191,8 +191,8 @@ export function BoardHeader({
   const [boardMenuOpen, setBoardMenuOpen] = useState(false);
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
-    const [layoutSettingsOpen, setLayoutSettingsOpen] = useState(false);
-    const [localSearchQuery, setLocalSearchQuery] = useState(
+  const [layoutSettingsOpen, setLayoutSettingsOpen] = useState(false);
+  const [localSearchQuery, setLocalSearchQuery] = useState(
     filters.searchQuery || ''
   );
   const queryClient = useQueryClient();
