@@ -41,8 +41,11 @@ ON DELETE CASCADE;
 
 -- Add check constraint to limit images array to maximum 5 elements
 ALTER TABLE public.support_inquiries
-ADD CONSTRAINT chk_support_inquiries_images_limit 
+ADD CONSTRAINT chk_support_inquiries_images_limit
 CHECK (array_length(images, 1) <= 5);
+
+-- Delete objects first to avoid foreign key constraint violation
+delete from storage.objects where bucket_id = 'support_inquiries';
 
 delete from storage.buckets where id = 'support_inquiries';
 

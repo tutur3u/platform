@@ -12,6 +12,11 @@ on:
       - 'apps/tudo/**'
       - 'packages/**'
       - '.github/workflows/vercel-preview-tudo.yaml'
+  pull_request:
+    paths:
+      - 'apps/tudo/**'
+      - 'packages/**'
+      - '.github/workflows/vercel-preview-tudo.yaml'
   workflow_dispatch:
 
 jobs:

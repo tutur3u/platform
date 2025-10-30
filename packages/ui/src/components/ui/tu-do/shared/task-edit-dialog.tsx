@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
@@ -4066,7 +4066,7 @@ function TaskEditDialogComponent({
                               </span>
                             </button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-56 p-2">
+                          <PopoverContent align="start" className="w-56 p-2">
                             <div className="space-y-1">
                               {[
                                 {
@@ -4158,7 +4158,7 @@ function TaskEditDialogComponent({
                               </span>
                             </button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-3">
+                          <PopoverContent align="start" className="w-auto p-3">
                             <div className="space-y-2">
                               <Label className="text-xs">Due Date</Label>
                               <DateTimePicker
@@ -4203,7 +4203,7 @@ function TaskEditDialogComponent({
                                 </span>
                               </button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-56 p-2">
+                            <PopoverContent align="start" className="w-56 p-2">
                               <div className="space-y-1">
                                 {estimationIndices.map((idx) => (
                                   <button
@@ -4273,7 +4273,7 @@ function TaskEditDialogComponent({
                               </span>
                             </button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-72 p-3">
+                          <PopoverContent align="start" className="w-72 p-3">
                             <div className="space-y-2">
                               <Label className="text-xs">Labels</Label>
                               {selectedLabels.length > 0 && (
@@ -4372,7 +4372,7 @@ function TaskEditDialogComponent({
                               </span>
                             </button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-72 p-3">
+                          <PopoverContent align="start" className="w-72 p-3">
                             <div className="space-y-2">
                               <Label className="text-xs">Projects</Label>
                               {selectedProjects.length > 0 && (
@@ -4381,11 +4381,13 @@ function TaskEditDialogComponent({
                                     <Badge
                                       key={project.id}
                                       variant="secondary"
-                                      className="h-6 cursor-pointer gap-1 border-dynamic-sky/30 bg-dynamic-sky/10 px-2 text-dynamic-sky text-xs transition-opacity hover:opacity-80"
+                                      className="item-center h-auto cursor-pointer gap-1 whitespace-normal border-dynamic-sky/30 bg-dynamic-sky/10 px-2 text-dynamic-sky text-xs transition-opacity hover:opacity-80"
                                       onClick={() => toggleProject(project)}
                                     >
-                                      {project.name}
-                                      <X className="h-2.5 w-2.5" />
+                                      <span className="break-words">
+                                        {project.name}
+                                      </span>
+                                      <X className="h-2.5 w-2.5 flex-shrink-0" />
                                     </Badge>
                                   ))}
                                 </div>
@@ -4409,8 +4411,10 @@ function TaskEditDialogComponent({
                                         onClick={() => toggleProject(project)}
                                         className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
                                       >
-                                        {project.name}
-                                        <Plus className="ml-auto h-4 w-4" />
+                                        <span className="flex-1 whitespace-normal break-words">
+                                          {project.name}
+                                        </span>
+                                        <Plus className="ml-auto h-4 w-4 flex-shrink-0" />
                                       </button>
                                     ))}
                                 </div>
@@ -4445,7 +4449,7 @@ function TaskEditDialogComponent({
                               </span>
                             </button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-72 p-3">
+                          <PopoverContent align="start" className="w-72 p-3">
                             <div className="space-y-2">
                               <Label className="text-xs">Assignees</Label>
                               {selectedAssignees.length > 0 && (
@@ -5165,10 +5169,12 @@ function TaskEditDialogComponent({
                                     variant="default"
                                     size="xs"
                                     onClick={() => toggleProject(project)}
-                                    className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
+                                    className="h-auto items-center whitespace-normal gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
                                   >
-                                    {project.name}
-                                    <X className="h-3 w-3 opacity-70" />
+                                    <span className="break-words">
+                                      {project.name}
+                                    </span>
+                                    <X className="h-3 w-3 flex-shrink-0 opacity-70" />
                                   </Button>
                                 ))}
                               </div>
@@ -5227,8 +5233,8 @@ function TaskEditDialogComponent({
                                         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-dynamic-orange/10">
                                           <ListTodo className="h-4 w-4 text-dynamic-orange" />
                                         </div>
-                                        <div className="flex-1 truncate">
-                                          <span className="block truncate text-sm">
+                                        <div className="flex-1">
+                                          <span className="block whitespace-normal break-words text-sm">
                                             {project.name}
                                           </span>
                                           {project.status && (
