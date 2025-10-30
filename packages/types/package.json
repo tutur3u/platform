@@ -10,11 +10,12 @@
   },
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
+    "dev": "tsc --project tsconfig.build.json --watch",
     "clean": "rm -rf dist .turbo",
     "prepublishOnly": "bun run clean && bun run build"
   },
   "dependencies": {
-    "@tiptap/react": "^3.9.0",
+    "@tiptap/react": "^3.9.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "zod": "^4.1.12"
