@@ -136,20 +136,20 @@ export async function PUT(req: Request, { params }: Params) {
   if (typeof archived === 'boolean' && archived !== currentUser.archived) {
     const currentWorkspaceUser = await getCurrentWorkspaceUser(wsId);
     if (currentWorkspaceUser) {
-    const { error: logError } = await supabase
-      .from('workspace_user_status_changes')
-      .insert({
-        user_id: userId,
-        ws_id: wsId,
-        archived: archived,
-        archived_until: archived === false ? null : archived_until || null,
-        creator_id: currentWorkspaceUser.virtual_user_id,
-      });
-      
-    if (logError) {
-      console.log('Failed to log status change:', logError);
-      // Don't fail the request if logging fails, just log it
-    }
+      const { error: logError } = await supabase
+        .from('workspace_user_status_changes')
+        .insert({
+          user_id: userId,
+          ws_id: wsId,
+          archived: archived,
+          archived_until: archived === false ? null : archived_until || null,
+          creator_id: currentWorkspaceUser.virtual_user_id,
+        });
+
+      if (logError) {
+        console.log('Failed to log status change:', logError);
+        // Don't fail the request if logging fails, just log it
+      }
     } else {
       console.log(
         'Skipping status change log due to missing current workspace user'
