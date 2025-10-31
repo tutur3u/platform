@@ -104,14 +104,6 @@ jobs:
         id: turbo_check
         if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true'
         run: |
-          # Force build for staging branch
-          CURRENT_BRANCH=${GITHUB_REF#refs/heads/}
-          if [ "$CURRENT_BRANCH" = "staging" ]; then
-            echo "Staging branch detected. Forcing build regardless of cache."
-            echo "skip_turbo=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
           # Use Turborepo dry-run to check if build is needed
           bunx turbo build --filter=@tuturuuu/web --dry-run=json > /tmp/turbo-plan-raw.json 2>&1 || true
 
