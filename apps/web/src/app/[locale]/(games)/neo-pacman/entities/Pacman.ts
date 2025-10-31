@@ -116,10 +116,22 @@ export class Pacman {
       // If trying to turn (nextDirection != direction), keep going in current direction
       if (this.nextDirection !== this.direction) {
         // Try to continue in current direction
-        const currentDirectionTile = this.getNextTile(currentTile, this.direction);
-        if (currentDirectionTile && !this.mapManager.isWall(currentDirectionTile.row, currentDirectionTile.col)) {
+        const currentDirectionTile = this.getNextTile(
+          currentTile,
+          this.direction
+        );
+        if (
+          currentDirectionTile &&
+          !this.mapManager.isWall(
+            currentDirectionTile.row,
+            currentDirectionTile.col
+          )
+        ) {
           // Can continue in current direction
-          const nextPos = tileToPixelCentered(currentDirectionTile.row, currentDirectionTile.col);
+          const nextPos = tileToPixelCentered(
+            currentDirectionTile.row,
+            currentDirectionTile.col
+          );
           this.sprite.setPosition(
             nextPos.x + this.mapOffset.x,
             nextPos.y + this.mapOffset.y
