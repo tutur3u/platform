@@ -13083,14 +13083,6 @@ export type Database = {
         Args: { p_permission: string; p_user_id: string; p_ws_id: string };
         Returns: boolean;
       };
-      has_workspace_permission: {
-        Args: {
-          p_permission: string;
-          p_user_id: string;
-          p_ws_id: string;
-        };
-        Returns: boolean;
-      };
       insert_ai_chat_message: {
         Args: { chat_id: string; message: string; source: string };
         Returns: undefined;
