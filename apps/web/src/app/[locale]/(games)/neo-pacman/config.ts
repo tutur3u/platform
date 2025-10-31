@@ -6,9 +6,9 @@ export const GAME_CONFIG = {
 
   // Movement speeds (pixels per frame at 60fps)
   PACMAN_SPEED: 2.5, // 1/8 tile per frame
-  GHOST_SPEED: 2.0,
+  GHOST_SPEED: 2.5,
   GHOST_FRIGHTENED_SPEED: 1.0,
-  GHOST_EATEN_SPEED: 4.0,
+  GHOST_EATEN_SPEED: 0,
 
   // Food spawn rates (initial spawn)
   PELLET_RATE: 0.95,

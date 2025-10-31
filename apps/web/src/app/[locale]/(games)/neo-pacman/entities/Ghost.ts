@@ -11,6 +11,7 @@ export class Ghost {
   private scene: Phaser.Scene;
   private mapManager: MapManager;
   public sprite: Phaser.GameObjects.Arc;
+  public body: Phaser.Physics.Arcade.Body;
   public type: GhostType;
   public state: GhostState = GhostState.SCATTER;
   private homePosition: TilePosition;
@@ -39,6 +40,12 @@ export class Ghost {
     // Create ghost sprite
     this.sprite = scene.add.circle(x, y, GAME_CONFIG.TILE_SIZE / 2 - 2, color);
 
+    // Enable physics on Ghost
+    scene.physics.add.existing(this.sprite);
+    this.body = this.sprite.body as Phaser.Physics.Arcade.Body;
+    this.body.setCollideWorldBounds(true);
+    this.body.setCircle(GAME_CONFIG.TILE_SIZE / 2 - 2);
+
     // Store home position (convert from screen space to map space)
     this.homePosition = pixelToTile(x - this.mapOffset.x, y - this.mapOffset.y);
 
@@ -57,12 +64,11 @@ export class Ghost {
       callback: () => {
         if (this.state === GhostState.SCATTER) {
           this.setState(GhostState.CHASE);
-          this.stateTimer?.reset({
-            delay: GAME_CONFIG.GHOST_CHASE_TIME,
-            callback: () => this.startStateCycling(),
-          });
+        } else if (this.state === GhostState.CHASE) {
+          this.setState(GhostState.SCATTER);
         }
       },
+      loop: true,
     });
   }
 
@@ -135,17 +141,19 @@ export class Ghost {
   update(pacman: Pacman): void {
     if (this.state === GhostState.EATEN) {
       // Move back to home
-      this.moveTowardsTarget(this.homePosition);
+      const homePosition = tileToPixelCentered(
+        this.homePosition.row,
+        this.homePosition.col
+      );
+      this.sprite.setPosition(
+        homePosition.x + this.mapOffset.x,
+        homePosition.y + this.mapOffset.y
+      );
 
-      // Check if reached home
-      const currentTile = this.getTilePosition();
-      if (
-        currentTile.row === this.homePosition.row &&
-        currentTile.col === this.homePosition.col
-      ) {
+      this.scene.time.delayedCall(1000, () => {
         this.setState(GhostState.SCATTER);
         this.resetColor();
-      }
+      });
       return;
     }
 
@@ -298,19 +306,12 @@ export class Ghost {
   private moveTowardsTarget(target: TilePosition): void {
     const currentTile = this.getTilePosition();
     const mapData = this.mapManager.getMapData();
-    if (!mapData) return;
-
-    let nextTile: TilePosition | null = null;
-
-    // For frightened ghosts, move directly to target without pathfinding
-    if (this.state === GhostState.FRIGHTENED) {
-      nextTile = target;
-    } else {
-      // Find next tile in path using A* pathfinding
-      // When eaten, allow pathfinding to wall tiles (ghost can enter ghost house)
-      const wallTile = this.state === GhostState.EATEN ? -1 : 1;
-      nextTile = findPath(currentTile, target, mapData.layout, wallTile);
+    if (!mapData) {
+      this.body.setVelocity(0, 0);
+      return;
     }
+
+    const nextTile = findPath(currentTile, target, mapData.layout, 1);
 
     if (nextTile) {
       // Update last direction for frightened movement
@@ -330,12 +331,16 @@ export class Ghost {
       const distance = Math.sqrt(dx * dx + dy * dy);
 
       if (distance > 0) {
-        const moveX = (dx / distance) * this.speed;
-        const moveY = (dy / distance) * this.speed;
+        // Use physics velocity for movement
+        const velocityX = (dx / distance) * this.speed * 60;
+        const velocityY = (dy / distance) * this.speed * 60;
 
-        this.sprite.x += moveX;
-        this.sprite.y += moveY;
+        this.body.setVelocity(velocityX, velocityY);
+      } else {
+        this.body.setVelocity(0, 0);
       }
+    } else {
+      this.body.setVelocity(0, 0);
     }
   }
 

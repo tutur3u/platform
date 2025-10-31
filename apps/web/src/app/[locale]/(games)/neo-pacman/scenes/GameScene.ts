@@ -53,23 +53,16 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#000000');
 
     // Spawn Pacman
-    const pacmanSpawn = this.mapManager.getRandomSpawnPoint();
-    if (pacmanSpawn) {
-      const pacmanPos = tileToPixelCentered(pacmanSpawn.row, pacmanSpawn.col);
-      const offset = this.mapManager.getMapOffset();
-      this.pacman = new Pacman(
-        this,
-        pacmanPos.x + offset.x,
-        pacmanPos.y + offset.y,
-        this.mapManager
-      );
-    }
+    this.spawnPacman();
 
     // Spawn ghosts
     this.spawnGhosts();
 
     // Spawn food
     this.foodManager.spawnInitialFood();
+
+    // Setup physics collisions
+    this.setupPhysicsCollisions();
 
     // Create UI
     this.createUI();
@@ -81,6 +74,20 @@ export class GameScene extends Phaser.Scene {
       callbackScope: this,
       loop: true,
     });
+  }
+
+  private spawnPacman(): void {
+    const pacmanSpawn = this.mapManager.getRandomSpawnPoint();
+    if (pacmanSpawn) {
+      const pacmanPos = tileToPixelCentered(pacmanSpawn.row, pacmanSpawn.col);
+      const offset = this.mapManager.getMapOffset();
+      this.pacman = new Pacman(
+        this,
+        pacmanPos.x + offset.x,
+        pacmanPos.y + offset.y,
+        this.mapManager
+      );
+    }
   }
 
   private spawnGhosts(): void {
@@ -110,6 +117,19 @@ export class GameScene extends Phaser.Scene {
       );
 
       this.ghosts.push(ghost);
+    });
+  }
+
+  private setupPhysicsCollisions(): void {
+    const wallsGroup = this.mapManager.getWallsGroup();
+    if (!wallsGroup) return;
+
+    // Pacman collides with walls
+    this.physics.add.collider(this.pacman.sprite, wallsGroup);
+
+    // Ghosts collide with walls (except when in EATEN state - handled in movement logic)
+    this.ghosts.forEach((ghost) => {
+      this.physics.add.collider(ghost.sprite, wallsGroup);
     });
   }
 

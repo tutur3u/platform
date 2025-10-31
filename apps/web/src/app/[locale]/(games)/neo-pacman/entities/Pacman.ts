@@ -8,6 +8,7 @@ export class Pacman {
   private scene: Phaser.Scene;
   private mapManager: MapManager;
   public sprite: Phaser.GameObjects.Arc;
+  public body: Phaser.Physics.Arcade.Body;
   private direction: Direction = Direction.LEFT;
   private speed: number = GAME_CONFIG.PACMAN_SPEED;
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -33,6 +34,12 @@ export class Pacman {
       GAME_CONFIG.TILE_SIZE / 2 - 2,
       0xffff00
     );
+
+    // Enable physics on Pacman
+    scene.physics.add.existing(this.sprite);
+    this.body = this.sprite.body as Phaser.Physics.Arcade.Body;
+    this.body.setCollideWorldBounds(true);
+    this.body.setCircle(GAME_CONFIG.TILE_SIZE / 2 - 2);
 
     // Setup keyboard input
     this.cursors = scene.input.keyboard!.createCursorKeys();
@@ -73,45 +80,28 @@ export class Pacman {
   }
 
   /**
-   * Get next X position based on direction
-   */
-  private getNextX(dir: Direction): number {
-    switch (dir) {
-      case Direction.LEFT:
-        return this.sprite.x - this.speed;
-      case Direction.RIGHT:
-        return this.sprite.x + this.speed;
-      default:
-        return this.sprite.x;
-    }
-  }
-
-  /**
-   * Get next Y position based on direction
-   */
-  private getNextY(dir: Direction): number {
-    switch (dir) {
-      case Direction.UP:
-        return this.sprite.y - this.speed;
-      case Direction.DOWN:
-        return this.sprite.y + this.speed;
-      default:
-        return this.sprite.y;
-    }
-  }
-
-  /**
    * Move Pacman in current direction
    */
   private move(): void {
-    if (this.direction === Direction.NONE) return;
+    if (this.direction === Direction.NONE) {
+      this.body.setVelocity(0, 0);
+      return;
+    }
 
-    const nextX = this.getNextX(this.direction);
-    const nextY = this.getNextY(this.direction);
-
-    // Check if next position is valid
-    if (!this.mapManager.isWallAtPixel(nextX, nextY)) {
-      this.sprite.setPosition(nextX, nextY);
+    // Set velocity based on direction - physics engine handles collision
+    switch (this.direction) {
+      case Direction.LEFT:
+        this.body.setVelocity(-this.speed * 60, 0);
+        break;
+      case Direction.RIGHT:
+        this.body.setVelocity(this.speed * 60, 0);
+        break;
+      case Direction.UP:
+        this.body.setVelocity(0, -this.speed * 60);
+        break;
+      case Direction.DOWN:
+        this.body.setVelocity(0, this.speed * 60);
+        break;
     }
   }
 
@@ -159,6 +149,7 @@ export class Pacman {
   die(): void {
     this.alive = false;
     this.direction = Direction.NONE;
+    this.body.setVelocity(0, 0);
 
     // Death animation
     this.scene.tweens.add({
@@ -177,6 +168,7 @@ export class Pacman {
     this.sprite.setPosition(x, y);
     this.sprite.setScale(1);
     this.sprite.setAlpha(1);
+    this.body.setVelocity(0, 0);
     this.direction = Direction.LEFT;
     this.alive = true;
   }

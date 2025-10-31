@@ -8,6 +8,7 @@ export class MapManager {
   private scene: Phaser.Scene;
   private mapData: MapData | null = null;
   private wallTiles: Phaser.GameObjects.Rectangle[] = [];
+  private wallsGroup: Phaser.Physics.Arcade.StaticGroup | null = null;
   private mapOffsetX: number = 0;
   private mapOffsetY: number = 0;
 
@@ -42,6 +43,9 @@ export class MapManager {
     this.mapData = mapData;
     this.wallTiles = [];
 
+    // Create physics group for walls
+    this.wallsGroup = this.scene.physics.add.staticGroup();
+
     // Calculate offset to center the map on screen
     const mapWidthInPixels = mapData.width * GAME_CONFIG.TILE_SIZE;
     const mapHeightInPixels = mapData.height * GAME_CONFIG.TILE_SIZE;
@@ -62,6 +66,9 @@ export class MapManager {
             GAME_CONFIG.TILE_SIZE - 2,
             0x2121de // Blue wall color
           );
+
+          // Add physics body to wall
+          this.wallsGroup.add(wall);
           this.wallTiles.push(wall);
         }
       }
@@ -190,11 +197,20 @@ export class MapManager {
   }
 
   /**
+   * Get walls physics group for collision detection
+   */
+  getWallsGroup(): Phaser.Physics.Arcade.StaticGroup | null {
+    return this.wallsGroup;
+  }
+
+  /**
    * Clean up
    */
   destroy(): void {
     this.wallTiles.forEach((wall) => wall.destroy());
     this.wallTiles = [];
+    this.wallsGroup?.clear(true, true);
+    this.wallsGroup = null;
     this.mapData = null;
   }
 }

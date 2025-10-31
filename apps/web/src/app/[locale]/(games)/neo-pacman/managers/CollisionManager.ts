@@ -59,23 +59,9 @@ export class CollisionManager {
       return { pacmanEaten: false, ghostsEaten: [], points: 0 };
     }
 
-    const pacmanPos = pacman.getPosition();
-
     for (const ghost of ghosts) {
-      const ghostPos = ghost.getPosition();
-
-      // Calculate distance
-      const distance = Phaser.Math.Distance.Between(
-        pacmanPos.x,
-        pacmanPos.y,
-        ghostPos.x,
-        ghostPos.y
-      );
-
-      // Collision threshold (about half a tile)
-      const collisionDistance = 10;
-
-      if (distance < collisionDistance) {
+      // Use physics overlap check for more accurate collision
+      if (this.scene.physics.overlap(pacman.sprite, ghost.sprite)) {
         if (ghost.canBeEaten()) {
           // Pacman eats ghost
           ghost.getEaten();
