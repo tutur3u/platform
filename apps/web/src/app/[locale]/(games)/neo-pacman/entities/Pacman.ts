@@ -1,7 +1,7 @@
 import { GAME_CONFIG } from '../config';
 import type { MapManager } from '../managers/MapManager';
-import { Direction } from '../types';
-import { pixelToTile } from '../utils/constants';
+import { Direction, type TilePosition } from '../types';
+import { pixelToTile, tileToPixelCentered } from '../utils/constants';
 import * as Phaser from 'phaser';
 
 export class Pacman {
@@ -10,10 +10,12 @@ export class Pacman {
   public sprite: Phaser.GameObjects.Arc;
   public body: Phaser.Physics.Arcade.Body;
   private direction: Direction = Direction.LEFT;
+  private nextDirection: Direction = Direction.LEFT;
   private speed: number = GAME_CONFIG.PACMAN_SPEED;
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   public alive: boolean = true;
   private mapOffset: { x: number; y: number };
+  private moveTimer: number = 0; // Frames until next move
 
   constructor(
     scene: Phaser.Scene,
@@ -62,46 +64,96 @@ export class Pacman {
   }
 
   /**
-   * Handle keyboard input
+   * Handle keyboard input - queue direction changes
    */
   private handleInput(): void {
-    // Update direction only when a key is pressed
-    // Pacman continues moving in the current direction until a new key is pressed or hits a wall
+    // Queue direction changes - will be applied when possible
     if (this.cursors.left?.isDown) {
-      this.direction = Direction.LEFT;
+      this.nextDirection = Direction.LEFT;
     } else if (this.cursors.right?.isDown) {
-      this.direction = Direction.RIGHT;
+      this.nextDirection = Direction.RIGHT;
     } else if (this.cursors.up?.isDown) {
-      this.direction = Direction.UP;
+      this.nextDirection = Direction.UP;
     } else if (this.cursors.down?.isDown) {
-      this.direction = Direction.DOWN;
+      this.nextDirection = Direction.DOWN;
     }
-    // No else clause - Pacman keeps moving in current direction
   }
 
   /**
-   * Move Pacman in current direction
+   * Move Pacman in current direction using grid-based movement
    */
   private move(): void {
-    if (this.direction === Direction.NONE) {
-      this.body.setVelocity(0, 0);
+    if (this.nextDirection === Direction.NONE) {
       return;
     }
 
-    // Set velocity based on direction - physics engine handles collision
-    switch (this.direction) {
+    // Decrement move timer
+    this.moveTimer--;
+
+    // Only move when timer reaches 0
+    if (this.moveTimer > 0) {
+      return;
+    }
+
+    // Reset timer for next move
+    this.moveTimer = this.speed;
+
+    // Get current tile position
+    const currentTile = this.getTilePosition();
+    const nextTile = this.getNextTile(currentTile, this.nextDirection);
+
+    if (nextTile && !this.mapManager.isWall(nextTile.row, nextTile.col)) {
+      // Move to next tile center
+      const nextPos = tileToPixelCentered(nextTile.row, nextTile.col);
+      this.sprite.setPosition(
+        nextPos.x + this.mapOffset.x,
+        nextPos.y + this.mapOffset.y
+      );
+      // Successfully moved, update direction
+      this.direction = this.nextDirection;
+    } else {
+      // Can't move in nextDirection (wall or out of bounds)
+      // If trying to turn (nextDirection != direction), keep going in current direction
+      if (this.nextDirection !== this.direction) {
+        // Try to continue in current direction
+        const currentDirectionTile = this.getNextTile(currentTile, this.direction);
+        if (currentDirectionTile && !this.mapManager.isWall(currentDirectionTile.row, currentDirectionTile.col)) {
+          // Can continue in current direction
+          const nextPos = tileToPixelCentered(currentDirectionTile.row, currentDirectionTile.col);
+          this.sprite.setPosition(
+            nextPos.x + this.mapOffset.x,
+            nextPos.y + this.mapOffset.y
+          );
+        } else {
+          // Can't continue in current direction either, stop
+          this.direction = Direction.NONE;
+          this.nextDirection = Direction.NONE;
+        }
+      } else {
+        // Moving straight ahead but hit a wall, stop
+        this.direction = Direction.NONE;
+      }
+    }
+  }
+
+  /**
+   * Get the next tile in a given direction
+   */
+  private getNextTile(
+    currentTile: TilePosition,
+    direction: Direction
+  ): TilePosition | null {
+    switch (direction) {
       case Direction.LEFT:
-        this.body.setVelocity(-this.speed * 60, 0);
-        break;
+        return { row: currentTile.row, col: currentTile.col - 1 };
       case Direction.RIGHT:
-        this.body.setVelocity(this.speed * 60, 0);
-        break;
+        return { row: currentTile.row, col: currentTile.col + 1 };
       case Direction.UP:
-        this.body.setVelocity(0, -this.speed * 60);
-        break;
+        return { row: currentTile.row - 1, col: currentTile.col };
       case Direction.DOWN:
-        this.body.setVelocity(0, this.speed * 60);
-        break;
+        return { row: currentTile.row + 1, col: currentTile.col };
+      default:
+        return null;
     }
   }
 
@@ -149,7 +201,6 @@ export class Pacman {
   die(): void {
     this.alive = false;
     this.direction = Direction.NONE;
-    this.body.setVelocity(0, 0);
 
     // Death animation
     this.scene.tweens.add({
@@ -168,7 +219,6 @@ export class Pacman {
     this.sprite.setPosition(x, y);
     this.sprite.setScale(1);
     this.sprite.setAlpha(1);
-    this.body.setVelocity(0, 0);
     this.direction = Direction.LEFT;
     this.alive = true;
   }

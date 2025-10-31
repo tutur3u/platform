@@ -4,11 +4,11 @@ export const GAME_CONFIG = {
   // Tile configuration
   TILE_SIZE: 25,
 
-  // Movement speeds (pixels per frame at 60fps)
-  PACMAN_SPEED: 2.5, // 1/8 tile per frame
-  GHOST_SPEED: 2.5,
-  GHOST_FRIGHTENED_SPEED: 1.0,
-  GHOST_EATEN_SPEED: 0,
+  // Movement speeds (frames per tile move - lower = faster)
+  PACMAN_SPEED: 10, // Move 1 tile every 10 frames (6 tiles/sec at 60fps)
+  GHOST_SPEED: 10,
+  GHOST_FRIGHTENED_SPEED: 20, // Slower when frightened
+  GHOST_EATEN_SPEED: 5, // Faster return to home
 
   // Food spawn rates (initial spawn)
   PELLET_RATE: 0.95,

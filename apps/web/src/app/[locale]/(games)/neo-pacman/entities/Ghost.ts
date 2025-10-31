@@ -21,6 +21,7 @@ export class Ghost {
   private lastDirection: TilePosition | null = null; // Track current direction
   private lastTile: TilePosition | null = null; // Track last tile position
   private frightenedTarget: TilePosition | null = null; // Target tile when frightened
+  private moveTimer: number = 0; // Frames until next move
 
   constructor(
     scene: Phaser.Scene,
@@ -140,19 +141,15 @@ export class Ghost {
    */
   update(pacman: Pacman): void {
     if (this.state === GhostState.EATEN) {
-      // Move back to home
-      const homePosition = tileToPixelCentered(
-        this.homePosition.row,
-        this.homePosition.col
-      );
-      this.sprite.setPosition(
-        homePosition.x + this.mapOffset.x,
-        homePosition.y + this.mapOffset.y
-      );
-
       this.scene.time.delayedCall(1000, () => {
-        this.setState(GhostState.SCATTER);
-        this.resetColor();
+        const homePosition = tileToPixelCentered(
+          this.homePosition.row,
+          this.homePosition.col
+        );
+        this.reset(
+          homePosition.x + this.mapOffset.x,
+          homePosition.y + this.mapOffset.y
+        );
       });
       return;
     }
@@ -301,15 +298,25 @@ export class Ghost {
   }
 
   /**
-   * Move towards target tile using pathfinding
+   * Move towards target tile using pathfinding and grid-based movement
    */
   private moveTowardsTarget(target: TilePosition): void {
     const currentTile = this.getTilePosition();
     const mapData = this.mapManager.getMapData();
     if (!mapData) {
-      this.body.setVelocity(0, 0);
       return;
     }
+
+    // Decrement move timer
+    this.moveTimer--;
+
+    // Only move when timer reaches 0
+    if (this.moveTimer > 0) {
+      return;
+    }
+
+    // Reset timer for next move
+    this.moveTimer = this.speed;
 
     const nextTile = findPath(currentTile, target, mapData.layout, 1);
 
@@ -321,26 +328,12 @@ export class Ghost {
       };
       this.lastDirection = direction;
 
-      // Move towards next tile (apply offset to convert to screen space)
+      // Move to next tile center instantly
       const nextPos = tileToPixelCentered(nextTile.row, nextTile.col);
-      const targetX = nextPos.x + this.mapOffset.x;
-      const targetY = nextPos.y + this.mapOffset.y;
-
-      const dx = targetX - this.sprite.x;
-      const dy = targetY - this.sprite.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      if (distance > 0) {
-        // Use physics velocity for movement
-        const velocityX = (dx / distance) * this.speed * 60;
-        const velocityY = (dy / distance) * this.speed * 60;
-
-        this.body.setVelocity(velocityX, velocityY);
-      } else {
-        this.body.setVelocity(0, 0);
-      }
-    } else {
-      this.body.setVelocity(0, 0);
+      this.sprite.setPosition(
+        nextPos.x + this.mapOffset.x,
+        nextPos.y + this.mapOffset.y
+      );
     }
   }
 
@@ -381,6 +374,14 @@ export class Ghost {
    */
   isDangerous(): boolean {
     return this.state === GhostState.CHASE || this.state === GhostState.SCATTER;
+  }
+
+  reset(x: number, y: number): void {
+    this.sprite.setPosition(x, y);
+    this.sprite.setScale(1);
+    this.sprite.setAlpha(1);
+    this.setState(GhostState.SCATTER);
+    this.resetColor();
   }
 
   /**
