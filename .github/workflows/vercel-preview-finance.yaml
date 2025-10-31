@@ -12,11 +12,6 @@ on:
       - "apps/finance/**"
       - "packages/**"
       - ".github/workflows/vercel-preview-finance.yaml"
-  pull_request:
-    paths:
-      - "apps/finance/**"
-      - "packages/**"
-      - ".github/workflows/vercel-preview-finance.yaml"
   workflow_dispatch:
 
 jobs:

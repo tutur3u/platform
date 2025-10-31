@@ -12,11 +12,6 @@ on:
       - "apps/web/**"
       - "packages/**"
       - ".github/workflows/vercel-preview-platform.yaml"
-  pull_request:
-    paths:
-      - "apps/web/**"
-      - "packages/**"
-      - ".github/workflows/vercel-preview-platform.yaml"
   workflow_dispatch:
 
 jobs:

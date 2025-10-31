@@ -12,11 +12,6 @@ on:
       - "apps/tumeet/**"
       - "packages/**"
       - ".github/workflows/vercel-preview-tumeet.yaml"
-  pull_request:
-    paths:
-      - "apps/tumeet/**"
-      - "packages/**"
-      - ".github/workflows/vercel-preview-tumeet.yaml"
   workflow_dispatch:
 
 jobs:
