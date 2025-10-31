@@ -112,7 +112,6 @@ export default function UserForm({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [, setIsConverting] = useState(false);
 
-
   const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
@@ -144,7 +143,6 @@ export default function UserForm({
           : undefined,
     },
   });
-
 
   // Watch archived_until to auto-set archived status
   const archivedUntilValue = form.watch('archived_until');
