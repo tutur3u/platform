@@ -14,11 +14,6 @@ on:
       - 'apps/nova/**'
       - 'packages/**'
       - '.github/workflows/vercel-preview-nova.yaml'
-  pull_request:
-    paths:
-      - 'apps/nova/**'
-      - 'packages/**'
-      - '.github/workflows/vercel-preview-nova.yaml'
   workflow_dispatch:
 
 jobs:

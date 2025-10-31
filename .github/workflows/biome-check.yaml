@@ -9,10 +9,6 @@ on:
     paths:
       - '**/*.{ts,tsx,js,jsx,json,yaml,yml}'
       - '.github/workflows/biome-check.yaml'
-  pull_request:
-    paths:
-      - '**/*.{ts,tsx,js,jsx,json,yaml,yml}'
-      - '.github/workflows/biome-check.yaml'
   workflow_dispatch:
 
 jobs:
