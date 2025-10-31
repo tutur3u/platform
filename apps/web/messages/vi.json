@@ -5970,6 +5970,9 @@
       "high": "Cao",
       "normal": "Bình Thường",
       "low": "Thấp"
-    }
+    },
+    "workspaces": "Không Gian Làm Việc",
+    "loading_workspaces": "Đang tải không gian làm việc...",
+    "personal": "Cá Nhân"
   }
 }

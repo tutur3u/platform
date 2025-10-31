@@ -6186,6 +6186,9 @@
       "high": "High",
       "normal": "Normal",
       "low": "Low"
-    }
+    },
+    "workspaces": "Workspaces",
+    "loading_workspaces": "Loading workspaces...",
+    "personal": "Personal"
   }
 }

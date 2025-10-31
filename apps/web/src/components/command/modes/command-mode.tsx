@@ -1,22 +1,24 @@
 'use client';
 
-import type { NavLink } from '@/components/navigation';
 import { Plus, Sparkles } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
   CommandEmpty,
   CommandInput,
   CommandList,
 } from '@tuturuuu/ui/command';
-import { Button } from '@tuturuuu/ui/button';
 import * as React from 'react';
+import type { NavLink } from '@/components/navigation';
+import { AddTaskForm } from '../add-task-form';
 import { NavigationSection } from '../sections/navigation-section';
 import { RecentSection } from '../sections/recent-section';
 import { TaskSection } from '../sections/task-section';
+import { WorkspaceSection } from '../sections/workspace-section';
 import { addRecentSearch, clearAllRecent } from '../utils/recent-items';
 import { useNavigationData } from '../utils/use-navigation-data';
 import { useTaskSearch } from '../utils/use-task-search';
-import { AddTaskForm } from '../add-task-form';
+import { useWorkspaceSearch } from '../utils/use-workspace-search';
 
 interface CommandModeProps {
   wsId: string | null;
@@ -37,6 +39,11 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
   const { tasks, isLoading: isLoadingTasks } = useTaskSearch(
     wsId,
     query,
+    true // enabled
+  );
+
+  // Fetch workspaces
+  const { workspaces, isLoading: isLoadingWorkspaces } = useWorkspaceSearch(
     true // enabled
   );
 
@@ -99,7 +106,8 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
 
   // Calculate result counts for display
   const hasQuery = query.trim().length > 0;
-  const totalResults = flattenedNav.length + (tasks?.length || 0);
+  const totalResults =
+    flattenedNav.length + (tasks?.length || 0) + (workspaces?.length || 0);
 
   // Show task form if in task creation mode
   if (showTaskForm && wsId) {
@@ -209,6 +217,14 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
               onApplySearch={setQuery}
             />
           )}
+
+          {/* Workspace Results */}
+          <WorkspaceSection
+            workspaces={workspaces}
+            isLoading={isLoadingWorkspaces}
+            query={query}
+            onSelect={onClose}
+          />
 
           {/* Navigation Results */}
           <NavigationSection
