@@ -41,7 +41,7 @@ export async function getCurrentWorkspaceUser(wsId: string): Promise<{
   // Return the structure with virtual_user_id directly accessible
   // The nested workspace_users data is available if needed
   const linkedData =
-    workspaceUser.workspace_user_linked_users_virtual_user_id_fkey;
+    workspaceUser.workspace_users;
 
   return {
     platform_user_id: workspaceUser.platform_user_id,
