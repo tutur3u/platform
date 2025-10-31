@@ -76,7 +76,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
-    "dayjs": "^1.11.18",
+    "dayjs": "^1.11.19",
     "debug": "^4.4.3",
     "embla-carousel-react": "^8.6.0",
     "eventemitter3": "^5.0.1",
@@ -130,12 +130,12 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "@vitejs/plugin-react": "^5.1.0",
     "autoprefixer": "^10.4.21",
-    "jsdom": "^27.0.1",
+    "jsdom": "^27.1.0",
     "postcss": "^8.5.6",
     "postcss-load-config": "^6.0.1",
     "tailwindcss": "^4.1.16",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.5"
+    "vitest": "^4.0.6"
   },
   "exports": {
     "./globals.css": "./src/globals.css",

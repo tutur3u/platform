@@ -35,7 +35,7 @@
     "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/vercel": "workspace:*",
     "@types/negotiator": "^0.6.4",
-    "dayjs": "^1.11.18",
+    "dayjs": "^1.11.19",
     "nanoid": "^5.1.6",
     "negotiator": "^1.0.0",
     "next": "^16.0.1",

@@ -24,7 +24,7 @@
     "@types/node": "^24.9.2",
     "@types/react": "^19.2.2",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.5"
+    "vitest": "^4.0.6"
   },
   "exports": {
     "./*": "./src/*.ts"

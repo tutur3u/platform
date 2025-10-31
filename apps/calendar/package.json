@@ -19,7 +19,7 @@
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/vercel": "workspace:*",
-    "dayjs": "^1.11.18",
+    "dayjs": "^1.11.19",
     "negotiator": "^1.0.0",
     "next": "^16.0.1",
     "next-intl": "^4.4.0",
