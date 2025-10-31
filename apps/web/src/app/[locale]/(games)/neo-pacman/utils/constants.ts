@@ -1,5 +1,5 @@
-import type { Position, TilePosition } from '../types';
 import { GAME_CONFIG } from '../config';
+import type { Position, TilePosition } from '../types';
 
 /**
  * Convert pixel position to tile position
