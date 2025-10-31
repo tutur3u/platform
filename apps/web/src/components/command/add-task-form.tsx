@@ -1,5 +1,3 @@
-'use client';
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
@@ -18,10 +16,8 @@ import {
   Timer,
   Type,
   UserCircle,
-  Users,
   X,
 } from '@tuturuuu/icons';
-import type { Task } from '@tuturuuu/types/primitives/Task';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -43,8 +39,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import {
   getTaskDefaults,
-  saveTaskDefaults,
   isValidDefault,
+  saveTaskDefaults,
 } from './utils/task-defaults';
 
 interface BoardWithLists {
@@ -86,7 +82,6 @@ export function AddTaskForm({
   const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<string[]>([]);
 
   // UI state
-  const [showTasks, setShowTasks] = useState(false);
   const [showSuccessOptions, setShowSuccessOptions] = useState(false);
   const [lastCreatedTask, setLastCreatedTask] = useState<string>('');
   const [lastCreatedTaskId, setLastCreatedTaskId] = useState<string>('');
@@ -188,7 +183,6 @@ export function AddTaskForm({
         // Apply saved defaults
         setSelectedBoardId(defaults.boardId);
         setSelectedListId(defaults.listId);
-        setShowTasks(true);
       }
     }
   }, [boards, wsId, selectedBoardId]);
@@ -205,35 +199,6 @@ export function AddTaskForm({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [setOpen]);
-
-  // Get tasks for selected board/list
-  const {
-    data: tasksData,
-    isLoading: tasksLoading,
-    error: tasksError,
-  } = useQuery<{
-    tasks: Task[];
-  }>({
-    queryKey: ['tasks', wsId, selectedBoardId, selectedListId],
-    queryFn: async () => {
-      if (!selectedBoardId && !selectedListId) return { tasks: [] };
-
-      const params = new URLSearchParams();
-      if (selectedListId) params.append('listId', selectedListId);
-      else if (selectedBoardId) params.append('boardId', selectedBoardId);
-
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks?${params.toString()}`
-      );
-      if (!response.ok) throw new Error('Failed to fetch tasks');
-      return response.json();
-    },
-    enabled: !!(selectedBoardId || selectedListId),
-    retry: 2,
-    retryDelay: 1000,
-  });
-
-  const tasks = tasksData?.tasks;
 
   const createTaskMutation = useMutation({
     mutationFn: async (data: {
@@ -555,7 +520,7 @@ export function AddTaskForm({
           <div className="flex items-center gap-2">
             <div
               className={cn(
-                'flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-semibold transition-colors',
+                'flex h-8 w-8 items-center justify-center rounded-full border-2 font-semibold text-xs transition-colors',
                 currentStep === 1
                   ? 'border-primary bg-primary text-primary-foreground'
                   : 'border-primary bg-primary text-primary-foreground'
@@ -566,7 +531,7 @@ export function AddTaskForm({
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
             <div
               className={cn(
-                'flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-semibold transition-colors',
+                'flex h-8 w-8 items-center justify-center rounded-full border-2 font-semibold text-xs transition-colors',
                 currentStep === 2
                   ? 'border-primary bg-primary text-primary-foreground'
                   : 'border-muted-foreground/30 bg-muted text-muted-foreground'
@@ -594,7 +559,6 @@ export function AddTaskForm({
                 onValueChange={(value) => {
                   setSelectedBoardId(value);
                   setSelectedListId('');
-                  setShowTasks(false);
                 }}
               >
                 <SelectTrigger>
@@ -608,7 +572,7 @@ export function AddTaskForm({
                       <div className="flex items-center gap-2">
                         <div
                           className={cn(
-                            'h-3 w-3 flex-shrink-0 rounded-full',
+                            'h-3 w-3 shrink-0 rounded-full',
                             getBoardColor(board.id)
                           )}
                         />
@@ -645,7 +609,6 @@ export function AddTaskForm({
                     value={selectedListId}
                     onValueChange={(value) => {
                       setSelectedListId(value);
-                      setShowTasks(true);
                     }}
                   >
                     <SelectTrigger>
