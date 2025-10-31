@@ -12,6 +12,13 @@ on:
       - "apps/rewise/**"
       - "packages/**"
       - ".github/workflows/vercel-preview-rewise.yaml"
+  pull_request:
+    branches-ignore:
+      - production
+    paths:
+      - "apps/rewise/**"
+      - "packages/**"
+      - ".github/workflows/vercel-preview-rewise.yaml"
   workflow_dispatch:
 
 jobs:
@@ -46,7 +53,14 @@ jobs:
           .github/scripts/deployment-hash.sh \
             --app rewise \
             --branch "${GITHUB_REF#refs/heads/}" \
-            --mode check
+            --mode check 2>&1 | tee /tmp/hash-check.log || true
+
+          # Capture hash check details for PR comment
+          if [ -f /tmp/hash-check.log ]; then
+            echo "hash_log<<EOF" >> $GITHUB_OUTPUT
+            cat /tmp/hash-check.log >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
 
       - name: Setup bun
         if: steps.check_commits.outputs.skip_build != 'true' && steps.hash_check.outputs.needs_deployment != 'false'
@@ -125,7 +139,127 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .deployment-hashes/
-          git diff --quiet && git diff --staged --quiet || \
-            git commit -m "chore: update deployment hash for rewise on ${GITHUB_REF#refs/heads/}"
-          git push || true
+
+          # Retry logic for concurrent workflow commits
+          for i in {1..5}; do
+            git add .deployment-hashes/
+
+            # Check if there are changes to commit
+            if git diff --quiet && git diff --staged --quiet; then
+              echo "No changes to commit"
+              exit 0
+            fi
+
+            git commit -m "chore: update deployment hash for rewise on ${GITHUB_REF#refs/heads/}" || true
+
+            # Pull latest changes and rebase
+            git pull --rebase origin "${GITHUB_REF#refs/heads/}" || true
+
+            # Try to push
+            if git push origin HEAD:"${GITHUB_REF#refs/heads/}"; then
+              echo "Successfully pushed hash updates"
+              exit 0
+            fi
+
+            echo "Push failed, retrying in $((i * 2)) seconds... (attempt $i/5)"
+            sleep $((i * 2))
+          done
+
+          echo "Failed to push after 5 attempts, but continuing workflow"
+          exit 0
+
+      - name: Comment deployment status on PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const app = 'rewise';
+            const skipBuild = '${{ steps.check_commits.outputs.skip_build }}';
+            const needsDeployment = '${{ steps.hash_check.outputs.needs_deployment }}';
+            const hashChanged = '${{ steps.hash_check.outputs.hash_changed }}';
+            const lastFailed = '${{ steps.hash_check.outputs.last_failed }}';
+            const deployUrl = '${{ steps.deploy.outputs.url }}';
+            const hashLog = `${{ steps.hash_check.outputs.hash_log }}`;
+            const jobStatus = '${{ job.status }}';
+
+            let emoji = '🔍';
+            let status = 'Checking';
+            let details = [];
+
+            if (skipBuild === 'true') {
+              emoji = '⏭️';
+              status = 'Skipped - Newer Commit';
+              details.push('A newer commit exists on this branch. Deployment skipped.');
+            } else if (needsDeployment === 'false') {
+              emoji = '✅';
+              status = 'No Deployment Needed';
+              details.push('**Hash Status:** Unchanged');
+              details.push('**Reason:** No code changes detected since last deployment');
+            } else if (jobStatus === 'success' && deployUrl) {
+              emoji = '🚀';
+              status = 'Deployed Successfully';
+              if (hashChanged === 'true') {
+                details.push('**Hash Status:** Changed');
+              }
+              if (lastFailed === 'true') {
+                details.push('**Reason:** Retrying after previous failure');
+              }
+              details.push(`**Deployment URL:** ${deployUrl}`);
+            } else if (jobStatus === 'failure') {
+              emoji = '❌';
+              status = 'Deployment Failed';
+              details.push('**Status:** Build or deployment encountered errors');
+              details.push('Check the [workflow logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.');
+            } else if (needsDeployment === 'true') {
+              emoji = '⚙️';
+              status = 'Deployment In Progress';
+              if (hashChanged === 'true') {
+                details.push('**Hash Status:** Changed');
+              }
+              if (lastFailed === 'true') {
+                details.push('**Reason:** Retrying after previous failure');
+              }
+            }
+
+            const body = `### ${emoji} Rewise Preview Deployment - ${status}
+
+            ${details.join('\n')}
+
+            <details>
+            <summary>Hash Check Details</summary>
+
+            \`\`\`
+            ${hashLog || 'No hash check details available'}
+            \`\`\`
+            </details>
+
+            ---
+            *Workflow: [${context.workflow}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) • Commit: ${context.sha.substring(0, 7)}*`;
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('Rewise Preview Deployment')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
