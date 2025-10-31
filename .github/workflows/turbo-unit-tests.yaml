@@ -4,24 +4,24 @@ on:
   push:
     branches: ["main"]
     paths:
-      - 'apps/**/src/**'
-      - 'packages/**/src/**'
-      - '**/*.test.{ts,tsx}'
-      - '**/package.json'
-      - 'bun.lockb'
-      - 'turbo.json'
-      - '**/tsconfig*.json'
-      - '.github/workflows/turbo-unit-tests.yaml'
+      - "apps/**/src/**"
+      - "packages/**/src/**"
+      - "**/*.test.{ts,tsx}"
+      - "**/package.json"
+      - "bun.lockb"
+      - "turbo.json"
+      - "**/tsconfig*.json"
+      - ".github/workflows/turbo-unit-tests.yaml"
   pull_request:
     paths:
-      - 'apps/**/src/**'
-      - 'packages/**/src/**'
-      - '**/*.test.{ts,tsx}'
-      - '**/package.json'
-      - 'bun.lockb'
-      - 'turbo.json'
-      - '**/tsconfig*.json'
-      - '.github/workflows/turbo-unit-tests.yaml'
+      - "apps/**/src/**"
+      - "packages/**/src/**"
+      - "**/*.test.{ts,tsx}"
+      - "**/package.json"
+      - "bun.lockb"
+      - "turbo.json"
+      - "**/tsconfig*.json"
+      - ".github/workflows/turbo-unit-tests.yaml"
 
 jobs:
   build:
@@ -99,7 +99,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.test_check.outputs.skip_tests != 'true'
-        run: bun install --frozen-lockfile
+        run: bun install
 
       - name: Build workspace dependencies
         if: steps.test_check.outputs.skip_tests != 'true'

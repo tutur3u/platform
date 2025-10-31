@@ -9,14 +9,14 @@ on:
     branches-ignore:
       - production
     paths:
-      - 'apps/tumeet/**'
-      - 'packages/**'
-      - '.github/workflows/vercel-preview-tumeet.yaml'
+      - "apps/tumeet/**"
+      - "packages/**"
+      - ".github/workflows/vercel-preview-tumeet.yaml"
   pull_request:
     paths:
-      - 'apps/tumeet/**'
-      - 'packages/**'
-      - '.github/workflows/vercel-preview-tumeet.yaml'
+      - "apps/tumeet/**"
+      - "packages/**"
+      - ".github/workflows/vercel-preview-tumeet.yaml"
   workflow_dispatch:
 
 jobs:
@@ -86,7 +86,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true'
-        run: bun install --frozen-lockfile
+        run: bun install
 
       - name: Check Turborepo cache
         id: turbo_check
