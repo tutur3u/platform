@@ -46,6 +46,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import Link from 'next/link';
 import type { ComponentProps, ElementType } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -1792,7 +1793,7 @@ export function TimerControls({
         setSessionMode('task');
         setSelectedTaskId(task.id);
         setNewSessionTitle(`Working on: ${task.name}`);
-        setNewSessionDescription(task.description || '');
+        setNewSessionDescription(getDescriptionText(task.description) || '');
 
         // Exit search mode and show selected task
         setIsSearchMode(false);
@@ -4034,8 +4035,10 @@ export function TimerControls({
                                             <ExternalLink className="h-3 w-3 text-muted-foreground" />
                                           </div>
                                           {task.description && (
-                                            <p className="mt-1 line-clamp-2 text-muted-foreground text-xs">
-                                              {task.description}
+                                            <p className="mt-1 line-clamp-2 whitespace-pre-wrap text-muted-foreground text-xs">
+                                              {getDescriptionText(
+                                                task.description
+                                              )}
                                             </p>
                                           )}
 
