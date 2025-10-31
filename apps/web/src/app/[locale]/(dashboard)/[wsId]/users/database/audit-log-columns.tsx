@@ -44,12 +44,12 @@ export const getAuditLogColumns = (
         <div className="flex items-center gap-2">
           {isArchived ? (
             <>
-              <div className="h-2 w-2 rounded-full bg-orange-500" />
+              <div className="h-2 w-2 rounded-full bg-dynamic-orange" />
               <span className="text-sm">{t(`${namespace}.archived`)}</span>
             </>
           ) : (
             <>
-              <div className="h-2 w-2 rounded-full bg-green-500" />
+              <div className="h-2 w-2 rounded-full bg-dynamic-green" />
               <span className="text-sm">{t(`${namespace}.active`)}</span>
             </>
           )}

@@ -29,7 +29,7 @@ export async function getCurrentWorkspaceUser(wsId: string): Promise<{
   const { data: workspaceUser, error } = await supabase
     .from('workspace_user_linked_users')
     .select(
-      'platform_user_id, virtual_user_id, ws_id, created_at, workspace_user_linked_users_virtual_user_id_fkey!inner(*)'
+      'platform_user_id, virtual_user_id, ws_id, created_at, workspace_users!virtual_user_id(*)'
     )
     .eq('platform_user_id', user.id)
     .eq('ws_id', wsId)

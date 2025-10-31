@@ -1,8 +1,7 @@
-'use server';
-
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getAuditLogColumns } from './audit-log-columns';
+import { z } from 'zod';
 
 interface AuditLogEntry {
   id: string;
@@ -18,10 +17,23 @@ interface AuditLogEntry {
 
 interface Props {
   wsId: string;
+  page?: number;
+  pageSize?: number;
 }
 
-export async function AuditLogTable({ wsId }: Props) {
+const AuditLogSearchParamsSchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(10),
+});
+
+export async function AuditLogTable({ wsId, page = 1, pageSize = 10 }: Props) {
   const supabase = await createClient();
+
+  // Validate pagination params
+  const validatedParams = AuditLogSearchParamsSchema.parse({ page, pageSize });
+
+  const start = (validatedParams.page - 1) * validatedParams.pageSize;
+  const end = validatedParams.page * validatedParams.pageSize;
 
   const {
     data: rawData,
@@ -47,7 +59,7 @@ export async function AuditLogTable({ wsId }: Props) {
     )
     .eq('ws_id', wsId)
     .order('created_at', { ascending: false })
-    .limit(100);
+    .range(start, end - 1);
 
   if (error) {
     console.error('Error fetching audit log:', error);
