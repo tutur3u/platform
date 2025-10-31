@@ -9,14 +9,14 @@ on:
     branches-ignore:
       - production
     paths:
-      - 'apps/web/**'
-      - 'packages/**'
-      - '.github/workflows/vercel-preview-platform.yaml'
+      - "apps/web/**"
+      - "packages/**"
+      - ".github/workflows/vercel-preview-platform.yaml"
   pull_request:
     paths:
-      - 'apps/web/**'
-      - 'packages/**'
-      - '.github/workflows/vercel-preview-platform.yaml'
+      - "apps/web/**"
+      - "packages/**"
+      - ".github/workflows/vercel-preview-platform.yaml"
   workflow_dispatch:
 
 jobs:
@@ -47,6 +47,14 @@ jobs:
         id: quick_check
         if: steps.check_commits.outputs.skip_build != 'true'
         run: |
+          # Force build for staging branch
+          CURRENT_BRANCH=${GITHUB_REF#refs/heads/}
+          if [ "$CURRENT_BRANCH" = "staging" ]; then
+            echo "Staging branch detected. Forcing build regardless of content changes."
+            echo "skip_quick=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
           # Check if any relevant files changed in this commit or push
           # Use push base for multi-commit pushes, HEAD~ for single commits, or empty tree for initial commits
           if [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
@@ -98,12 +106,20 @@ jobs:
 
       - name: Install dependencies
         if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true'
-        run: bun install --frozen-lockfile
+        run: bun install
 
       - name: Check Turborepo cache
         id: turbo_check
         if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true'
         run: |
+          # Force build for staging branch
+          CURRENT_BRANCH=${GITHUB_REF#refs/heads/}
+          if [ "$CURRENT_BRANCH" = "staging" ]; then
+            echo "Staging branch detected. Forcing build regardless of cache."
+            echo "skip_turbo=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
           # Use Turborepo dry-run to check if build is needed
           bunx turbo build --filter=@tuturuuu/web --dry-run=json > /tmp/turbo-plan-raw.json 2>&1 || true
 

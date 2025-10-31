@@ -14,9 +14,9 @@ on:
     branches:
       - production
     paths:
-      - 'apps/rewise/**'
-      - 'packages/**'
-      - '.github/workflows/vercel-production-rewise.yaml'
+      - "apps/rewise/**"
+      - "packages/**"
+      - ".github/workflows/vercel-production-rewise.yaml"
   workflow_dispatch:
 
 jobs:
@@ -83,7 +83,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true'
-        run: bun install --frozen-lockfile
+        run: bun install
 
       - name: Check Turborepo cache (conservative)
         id: turbo_check

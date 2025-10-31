@@ -3,16 +3,16 @@ name: Run tests and upload coverage
 on:
   push:
     paths:
-      - 'apps/**/src/**'
-      - 'packages/**/src/**'
-      - '**/*.test.{ts,tsx}'
-      - '.github/workflows/codecov.yaml'
+      - "apps/**/src/**"
+      - "packages/**/src/**"
+      - "**/*.test.{ts,tsx}"
+      - ".github/workflows/codecov.yaml"
   pull_request:
     paths:
-      - 'apps/**/src/**'
-      - 'packages/**/src/**'
-      - '**/*.test.{ts,tsx}'
-      - '.github/workflows/codecov.yaml'
+      - "apps/**/src/**"
+      - "packages/**/src/**"
+      - "**/*.test.{ts,tsx}"
+      - ".github/workflows/codecov.yaml"
 
 jobs:
   test:
@@ -62,7 +62,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.coverage_check.outputs.skip_coverage != 'true'
-        run: bun install --frozen-lockfile
+        run: bun install
 
       - name: Build workspace dependencies
         if: steps.coverage_check.outputs.skip_coverage != 'true'
