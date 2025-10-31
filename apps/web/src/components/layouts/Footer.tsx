@@ -1,5 +1,5 @@
 import FooterCTA from './FooterCTA';
-import { Facebook, IconGitHub, Instagram, Linkedin } from '@ncthub/ui/icons';
+import { Facebook, Github, Instagram, Linkedin } from '@ncthub/ui/icons';
 import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -9,11 +9,11 @@ export default async function Footer() {
 
   return (
     <div className="w-full px-0 text-center md:px-4 lg:px-10">
-      <Separator className="mt-8 mb-5 bg-foreground/5" />
+      <Separator className="bg-foreground/5 mb-5 mt-8" />
       {/* Client component with motion */}
       <FooterCTA />
 
-      <Separator className="mt-8 h-1 bg-gradient-to-r from-[#5FC6E5] to-[#FBC821] blur-sm" />
+      <Separator className="bg-linear-to-r mt-8 h-1 from-[#5FC6E5] to-[#FBC821] blur-sm" />
 
       <div className="flex flex-col items-center justify-between gap-12 px-4 py-8 md:px-32 md:py-24 lg:flex-row">
         <div className="flex w-fit flex-col items-center gap-6">
@@ -60,7 +60,7 @@ export default async function Footer() {
               href="https://www.facebook.com/rmit.nct"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-foreground/50 transition-colors hover:text-foreground"
+              className="text-foreground/50 hover:text-foreground transition-colors"
               aria-label="Facebook"
             >
               <Facebook className="h-6 w-6" />
@@ -69,7 +69,7 @@ export default async function Footer() {
               href="https://instagram.com/rmitnct"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-foreground/50 transition-colors hover:text-foreground"
+              className="text-foreground/50 hover:text-foreground transition-colors"
               aria-label="Instagram"
             >
               <Instagram className="h-6 w-6" />
@@ -78,7 +78,7 @@ export default async function Footer() {
               href="https://linkedin.com/company/rmit-nct"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-foreground/50 transition-colors hover:text-foreground"
+              className="text-foreground/50 hover:text-foreground transition-colors"
               aria-label="LinkedIn"
             >
               <Linkedin className="h-6 w-6" />
@@ -87,10 +87,10 @@ export default async function Footer() {
               href="https://github.com/rmit-nct/hub"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-foreground/50 transition-colors hover:text-foreground"
+              className="text-foreground/50 hover:text-foreground transition-colors"
               aria-label="GitHub"
             >
-              <IconGitHub className="h-6 w-6" />
+              <Github className="h-6 w-6" />
             </Link>
           </div>
         </div>
@@ -154,7 +154,7 @@ export default async function Footer() {
               Our Address:
             </div>
 
-            <div className="text-left text-foreground/50 hover:text-foreground/80">
+            <div className="text-foreground/50 hover:text-foreground/80 text-left">
               702 Nguyen Van Linh, Tan Hung Ward, <br /> Ho Chi Minh City,
               Vietnam
             </div>
@@ -162,7 +162,7 @@ export default async function Footer() {
         </div>
       </div>
 
-      <div className="p-4 text-center text-sm text-balance opacity-80 md:px-32 xl:px-64">
+      <div className="text-balance p-4 text-center text-sm opacity-80 md:px-32 xl:px-64">
         {t('common.copyright')}
       </div>
     </div>
