@@ -43,6 +43,7 @@ const SearchParamsSchema = z.object({
     .union([z.string(), z.array(z.string())])
     .transform((val) => (Array.isArray(val) ? val : val ? [val] : []))
     .default([]),
+  tab: z.enum(['users', 'audit-log']).default('users'),
 });
 
 interface Props {
