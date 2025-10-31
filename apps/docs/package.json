@@ -2,7 +2,7 @@
   "name": "@ncthub/docs",
   "private": true,
   "scripts": {
-    "docs:dev": "mint dev --port 3333"
+    "dev": "mintlify dev"
   },
   "devDependencies": {
     "mintlify": "^3.0.98"
