@@ -2,7 +2,7 @@
 
 import { useAtTop } from '@/lib/hooks/use-at-bottom';
 import { Button, type ButtonProps } from '@ncthub/ui/button';
-import { IconArrowDown } from '@ncthub/ui/icons';
+import { ArrowDown } from '@ncthub/ui/icons';
 import { cn } from '@ncthub/utils/format';
 import { useEffect, useState } from 'react';
 
@@ -22,7 +22,7 @@ export function ScrollToTopButton({ className, ...props }: ButtonProps) {
   return (
     <Button
       className={cn(
-        'flex-none bg-background/20 backdrop-blur-lg transition-opacity duration-300',
+        'bg-background/20 flex-none backdrop-blur-lg transition-opacity duration-300',
         className
       )}
       onClick={() => {
@@ -36,7 +36,7 @@ export function ScrollToTopButton({ className, ...props }: ButtonProps) {
       disabled={isAtTop}
       {...props}
     >
-      <IconArrowDown className="rotate-180" />
+      <ArrowDown className="rotate-180" />
       <span className="sr-only">Scroll to top</span>
     </Button>
   );
