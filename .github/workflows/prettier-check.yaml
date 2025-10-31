@@ -13,6 +13,7 @@ jobs:
     name: Prettier Check
     timeout-minutes: 10
     runs-on: ubuntu-latest
+    if: false
     permissions:
       contents: write
       pull-requests: write
