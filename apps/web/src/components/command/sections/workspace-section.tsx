@@ -63,7 +63,7 @@ export function WorkspaceSection({
         >
           <div className="flex items-center gap-2">
             <div className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-            {t('loading-workspaces')}
+            {t('loading_workspaces')}
           </div>
         </CommandItem>
       </CommandGroup>

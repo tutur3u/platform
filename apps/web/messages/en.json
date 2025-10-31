@@ -114,6 +114,7 @@
     "theme": "Theme",
     "light": "Light",
     "dark": "Dark",
+    "switch_to": "Switch to {theme}",
     "standard": "Standard",
     "pink": "Pink",
     "purple": "Purple",
@@ -6189,6 +6190,7 @@
     },
     "workspaces": "Workspaces",
     "loading_workspaces": "Loading workspaces...",
-    "personal": "Personal"
+    "personal": "Personal",
+    "current_theme": "Current"
   }
 }

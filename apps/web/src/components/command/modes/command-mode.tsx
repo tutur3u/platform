@@ -12,6 +12,7 @@ import * as React from 'react';
 import type { NavLink } from '@/components/navigation';
 import { AddTaskForm } from '../add-task-form';
 import { NavigationSection } from '../sections/navigation-section';
+import { QuickActionsSection } from '../sections/quick-actions-section';
 import { RecentSection } from '../sections/recent-section';
 import { TaskSection } from '../sections/task-section';
 import { WorkspaceSection } from '../sections/workspace-section';
@@ -45,6 +46,12 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
   // Fetch workspaces
   const { workspaces, isLoading: isLoadingWorkspaces } = useWorkspaceSearch(
     true // enabled
+  );
+
+  // Get current workspace name for context
+  const currentWorkspace = React.useMemo(
+    () => workspaces.find((ws) => ws.id === wsId),
+    [workspaces, wsId]
   );
 
   // Track search queries
@@ -218,6 +225,9 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
             />
           )}
 
+          {/* Quick Actions (shown when no query) */}
+          <QuickActionsSection query={query} onSelect={onClose} />
+
           {/* Workspace Results */}
           <WorkspaceSection
             workspaces={workspaces}
@@ -238,6 +248,7 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
             tasks={tasks}
             isLoading={isLoadingTasks}
             wsId={wsId}
+            workspaceName={currentWorkspace?.name}
             query={query}
             onSelect={onClose}
           />

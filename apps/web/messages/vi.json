@@ -115,6 +115,7 @@
     "theme": "Giao diện",
     "light": "Sáng",
     "dark": "Tối",
+    "switch_to": "Chuyển sang chế độ {theme}",
     "standard": "Tiêu chuẩn",
     "pink": "Hồng",
     "purple": "Tím",
@@ -5973,6 +5974,7 @@
     },
     "workspaces": "Không Gian Làm Việc",
     "loading_workspaces": "Đang tải không gian làm việc...",
-    "personal": "Cá Nhân"
+    "personal": "Cá Nhân",
+    "current_theme": "Hiện tại"
   }
 }

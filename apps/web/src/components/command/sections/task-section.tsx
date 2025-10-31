@@ -1,23 +1,22 @@
 'use client';
 
-import type { TaskSearchResult } from '../utils/use-task-search';
-import { addRecentTask } from '../utils/recent-items';
-import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
-import { Badge } from '@tuturuuu/ui/badge';
 import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowRight,
+  ArrowUp,
   CheckCircle2,
   Circle,
   Clock,
   ExternalLink,
-  AlertTriangle,
-  ArrowUp,
-  ArrowRight,
-  ArrowDown,
 } from '@tuturuuu/icons';
-import { useRouter } from 'next/navigation';
-import * as React from 'react';
+import { Badge } from '@tuturuuu/ui/badge';
+import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { useRouter } from 'next/navigation';
+import { addRecentTask } from '../utils/recent-items';
+import type { TaskSearchResult } from '../utils/use-task-search';
 
 dayjs.extend(relativeTime);
 
@@ -25,6 +24,7 @@ interface TaskSectionProps {
   tasks: TaskSearchResult[];
   isLoading: boolean;
   wsId: string | null;
+  workspaceName?: string;
   query: string;
   onSelect?: () => void;
 }
@@ -61,6 +61,7 @@ export function TaskSection({
   tasks,
   isLoading,
   wsId,
+  workspaceName,
   query,
   onSelect,
 }: TaskSectionProps) {
@@ -109,8 +110,12 @@ export function TaskSection({
     onSelect?.();
   };
 
+  const headingText = query.trim()
+    ? `Tasks${workspaceName ? ` • ${workspaceName}` : ''}`
+    : `Recent Tasks${workspaceName ? ` • ${workspaceName}` : ''}`;
+
   return (
-    <CommandGroup heading={query.trim() ? 'Tasks' : 'Recent Tasks'}>
+    <CommandGroup heading={headingText}>
       {tasks.map((task) => {
         const priority = task.priority ? priorityConfig[task.priority] : null;
         const isOverdue =
@@ -199,11 +204,11 @@ export function TaskSection({
 
                 {/* Assignees */}
                 {task.assignees && task.assignees.length > 0 && (
-                  <div className="flex -space-x-1">
+                  <div className="-space-x-1 flex">
                     {task.assignees.slice(0, 3).map((assignee) => (
                       <div
                         key={assignee.id}
-                        className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-muted text-[10px] font-medium"
+                        className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-muted font-medium text-[10px]"
                         title={assignee.display_name || 'User'}
                       >
                         {assignee.display_name?.[0]?.toUpperCase() || '?'}
