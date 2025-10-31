@@ -1492,6 +1492,65 @@ export type Database = {
           },
         ];
       };
+      email_blacklist: {
+        Row: {
+          added_by_user_id: string | null;
+          created_at: string;
+          entry_type: Database['public']['Enums']['blacklist_entry_type'];
+          id: string;
+          reason: string | null;
+          updated_at: string;
+          value: string;
+        };
+        Insert: {
+          added_by_user_id?: string | null;
+          created_at?: string;
+          entry_type: Database['public']['Enums']['blacklist_entry_type'];
+          id?: string;
+          reason?: string | null;
+          updated_at?: string;
+          value: string;
+        };
+        Update: {
+          added_by_user_id?: string | null;
+          created_at?: string;
+          entry_type?: Database['public']['Enums']['blacklist_entry_type'];
+          id?: string;
+          reason?: string | null;
+          updated_at?: string;
+          value?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'email_blacklist_added_by_user_id_fkey';
+            columns: ['added_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'email_blacklist_added_by_user_id_fkey';
+            columns: ['added_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'email_blacklist_added_by_user_id_fkey';
+            columns: ['added_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'email_blacklist_added_by_user_id_fkey';
+            columns: ['added_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       external_user_monthly_report_logs: {
         Row: {
           content: string;
@@ -12414,6 +12473,7 @@ export type Database = {
         Args: { p_indicator_id: string };
         Returns: boolean;
       };
+      check_email_blocked: { Args: { p_email: string }; Returns: boolean };
       check_guest_group: { Args: { group_id: string }; Returns: boolean };
       check_guest_lead_eligibility: {
         Args: { p_user_id: string; p_ws_id: string };
@@ -12642,6 +12702,16 @@ export type Database = {
           count: number;
           device_type: string;
         }[];
+      };
+      get_email_block_statuses: {
+        Args: { p_emails: string[] };
+        Returns: Database['public']['CompositeTypes']['email_block_status'][];
+        SetofOptions: {
+          from: '*';
+          to: 'email_block_status';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
       };
       get_finance_invoices_count: { Args: { ws_id: string }; Returns: number };
       get_guest_user_leads: {
@@ -13283,6 +13353,7 @@ export type Database = {
         | 'multi_choice_quiz'
         | 'paragraph_quiz'
         | 'flashcards';
+      blacklist_entry_type: 'email' | 'domain';
       calendar_hour_type: 'WORK' | 'PERSONAL' | 'MEETING';
       calendar_hours: 'work_hours' | 'personal_hours' | 'meeting_hours';
       certificate_templates: 'original' | 'modern' | 'elegant';
@@ -13387,7 +13458,11 @@ export type Database = {
         | 'manage_api_keys';
     };
     CompositeTypes: {
-      [_ in never]: never;
+      email_block_status: {
+        email: string | null;
+        is_blocked: boolean | null;
+        reason: string | null;
+      };
     };
   };
 };
@@ -13524,6 +13599,7 @@ export const Constants = {
         'paragraph_quiz',
         'flashcards',
       ],
+      blacklist_entry_type: ['email', 'domain'],
       calendar_hour_type: ['WORK', 'PERSONAL', 'MEETING'],
       calendar_hours: ['work_hours', 'personal_hours', 'meeting_hours'],
       certificate_templates: ['original', 'modern', 'elegant'],
