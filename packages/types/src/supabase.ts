@@ -996,6 +996,8 @@ export type Database = {
         };
         Returns: {
           address: string;
+          archived: boolean;
+          archived_until: string;
           avatar_url: string;
           balance: number;
           birthday: string;
