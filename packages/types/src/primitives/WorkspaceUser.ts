@@ -20,6 +20,8 @@ export interface WorkspaceUser {
   note?: string | null;
   ws_id?: string | null;
   default_workspace_id?: string | null;
+  archived?: boolean | null;
+  archived_until?: string | null;
   linked_users?: {
     id: string;
     display_name: string | null;

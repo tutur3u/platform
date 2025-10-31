@@ -44,6 +44,7 @@ import {
   Logs,
   Mail,
   Mails,
+  MailX,
   MessageCircleIcon,
   Package,
   PencilLine,
@@ -208,21 +209,21 @@ export async function WorkspaceNavigationLinks({
       requireRootMember: true,
       children: isTuturuuuUser
         ? [
-            {
-              title: t('calendar-tabs.calendar'),
-              href: `/${personalOrWsId}/calendar`,
-              icon: <Calendar className="h-4 w-4" />,
-              requireRootMember: true,
-              matchExact: true,
-            },
-            {
-              title: t('calendar-tabs.sync-history'),
-              href: `/${personalOrWsId}/calendar/history/sync`,
-              icon: <Activity className="h-4 w-4" />,
-              requireRootWorkspace: true,
-              requireRootMember: true,
-            },
-          ]
+          {
+            title: t('calendar-tabs.calendar'),
+            href: `/${personalOrWsId}/calendar`,
+            icon: <Calendar className="h-4 w-4" />,
+            requireRootMember: true,
+            matchExact: true,
+          },
+          {
+            title: t('calendar-tabs.sync-history'),
+            href: `/${personalOrWsId}/calendar/history/sync`,
+            icon: <Activity className="h-4 w-4" />,
+            requireRootWorkspace: true,
+            requireRootMember: true,
+          },
+        ]
         : undefined,
     },
     {
@@ -930,22 +931,22 @@ export async function WorkspaceNavigationLinks({
         },
         ...(!isPersonal
           ? [
-              {
-                title: t('workspace-settings-layout.members'),
-                href: `/${personalOrWsId}/members`,
-                icon: <Users className="h-5 w-5" />,
-                disabled:
-                  ENABLE_AI_ONLY ||
-                  withoutPermission('manage_workspace_members'),
-              },
-              {
-                title: t('workspace-settings-layout.workspace_roles'),
-                href: `/${personalOrWsId}/roles`,
-                icon: <UserLock className="h-5 w-5" />,
-                disabled:
-                  ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
-              },
-            ]
+            {
+              title: t('workspace-settings-layout.members'),
+              href: `/${personalOrWsId}/members`,
+              icon: <Users className="h-5 w-5" />,
+              disabled:
+                ENABLE_AI_ONLY ||
+                withoutPermission('manage_workspace_members'),
+            },
+            {
+              title: t('workspace-settings-layout.workspace_roles'),
+              href: `/${personalOrWsId}/roles`,
+              icon: <UserLock className="h-5 w-5" />,
+              disabled:
+                ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
+            },
+          ]
           : []),
         {
           title: t('workspace-settings-layout.reports'),
@@ -969,20 +970,20 @@ export async function WorkspaceNavigationLinks({
         },
         allowDiscordIntegrations
           ? {
-              title: t('sidebar_tabs.integrations'),
-              icon: <Bot className="h-5 w-5" />,
-              href: `/${personalOrWsId}/integrations`,
-              aliases: [`/${personalOrWsId}/integrations/discord`],
-              children: [
-                {
-                  title: 'Discord',
-                  href: `/${personalOrWsId}/integrations/discord`,
-                  icon: <Bot className="h-5 w-5" />,
-                  disabled: !allowDiscordIntegrations,
-                },
-              ],
-              disabled: !allowDiscordIntegrations,
-            }
+            title: t('sidebar_tabs.integrations'),
+            icon: <Bot className="h-5 w-5" />,
+            href: `/${personalOrWsId}/integrations`,
+            aliases: [`/${personalOrWsId}/integrations/discord`],
+            children: [
+              {
+                title: 'Discord',
+                href: `/${personalOrWsId}/integrations/discord`,
+                icon: <Bot className="h-5 w-5" />,
+                disabled: !allowDiscordIntegrations,
+              },
+            ],
+            disabled: !allowDiscordIntegrations,
+          }
           : null,
         {
           title: t('workspace-settings-layout.api_keys'),
@@ -1029,6 +1030,11 @@ export async function WorkspaceNavigationLinks({
               title: t('infrastructure-tabs.workspaces'),
               href: `/${personalOrWsId}/infrastructure/workspaces`,
               icon: <Blocks className="h-5 w-5" />,
+            },
+            {
+              title: t('infrastructure-tabs.email_blacklist'),
+              href: `/${personalOrWsId}/infrastructure/email-blacklist`,
+              icon: <MailX className="h-5 w-5" />,
             },
             {
               title: t('infrastructure-tabs.timezones'),
