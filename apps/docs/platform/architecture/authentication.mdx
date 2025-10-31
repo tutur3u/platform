@@ -481,7 +481,7 @@ Protect routes using Next.js middleware:
 import { createDynamicClient } from '@tuturuuu/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const supabase = createDynamicClient();
 
   const {

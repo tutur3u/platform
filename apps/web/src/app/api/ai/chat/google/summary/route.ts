@@ -1,10 +1,8 @@
 import { createPATCH } from '@ncthub/ai/chat/google/summary/route';
 
-export const config = {
-  maxDuration: 90,
-  preferredRegion: 'sin1',
-  runtime: 'edge',
-};
+export const runtime = 'edge';
+export const maxDuration = 60;
+export const preferredRegion = 'sin1';
 
 const PATCH = createPATCH({
   serverAPIKeyFallback: true,

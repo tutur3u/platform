@@ -1,7 +1,7 @@
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
 import { Locale, defaultLocale, supportedLocales } from './i18n/routing';
 import { match } from '@formatjs/intl-localematcher';
-import { updateSession } from '@ncthub/supabase/next/middleware';
+import { updateSession } from '@ncthub/supabase/next/proxy';
 import { SupabaseUser } from '@ncthub/supabase/next/user';
 import Negotiator from 'negotiator';
 import createIntlMiddleware from 'next-intl/middleware';
