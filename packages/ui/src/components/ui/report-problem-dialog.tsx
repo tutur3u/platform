@@ -30,6 +30,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn, isValidBlobUrl } from '@tuturuuu/utils/format';
+import imageCompression from 'browser-image-compression';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import type React from 'react';
@@ -40,10 +41,20 @@ interface ReportProblemFormData {
   product: Product | '';
   type: SupportType | '';
   suggestion: string;
-  images: File[];
+  media: File[];
 }
 
-const MAX_IMAGE_SIZE = 1024 * 1024; // 1MB
+const MAX_MEDIA_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILES = 10;
+
+// Allowed media types
+const ALLOWED_IMAGE_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif',
+];
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
 
 // Zod schema for form validation
 const reportProblemSchema = z.object({
@@ -74,14 +85,23 @@ const reportProblemSchema = z.object({
     .trim()
     .min(1, 'Please describe the issue or suggestion')
     .max(1000, 'Suggestion must be at most 1000 characters'),
-  images: z
+  media: z
     .array(z.instanceof(File))
-    .max(5, 'You can upload up to 5 images')
-    .refine((files) => files.every((f) => f.type.startsWith('image/')), {
-      message: 'Only image files are allowed',
-    })
-    .refine((files) => files.every((f) => f.size <= MAX_IMAGE_SIZE), {
-      message: 'Each image must be 1MB or less',
+    .max(MAX_FILES, `You can upload up to ${MAX_FILES} files`)
+    .refine(
+      (files) =>
+        files.every(
+          (f) =>
+            ALLOWED_IMAGE_TYPES.includes(f.type) ||
+            ALLOWED_VIDEO_TYPES.includes(f.type)
+        ),
+      {
+        message:
+          'Only image (PNG, JPEG, WebP, GIF) and video (MP4, WebM, MOV) files are allowed',
+      }
+    )
+    .refine((files) => files.every((f) => f.size <= MAX_MEDIA_SIZE), {
+      message: 'Each file must be 5MB or less',
     }),
 });
 
@@ -126,53 +146,33 @@ export function ReportProblemDialog({
 }: ReportProblemDialogProps) {
   const t = useTranslations('common');
   const suggestionId = useId();
-  const imageUploadId = useId();
+  const mediaUploadId = useId();
+
+  // Internal state for uncontrolled mode
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  // Use controlled or uncontrolled mode
+  const isControlled = open !== undefined;
+  const dialogOpen = isControlled ? open : internalOpen;
+
   const [formData, setFormData] = useState<ReportProblemFormData>({
     product: '',
     type: '',
     suggestion: '',
-    images: [],
+    media: [],
   });
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [mediaPreviews, setMediaPreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{
     product?: string;
     type?: string;
     suggestion?: string;
-    images?: string;
+    media?: string;
   }>({});
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const imagePreviewsRef = useRef<string[]>([]);
-
-  // Load form data from localStorage on mount
-  useEffect(() => {
-    const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData);
-        setFormData({
-          product: parsed.product || '',
-          type: parsed.type || '',
-          suggestion: parsed.suggestion || '',
-          images: [], // Don't restore files from localStorage
-        });
-      } catch (error) {
-        console.error('Failed to parse saved form data:', error);
-      }
-    }
-  }, []);
-
-  // Save form data to localStorage whenever it changes
-  useEffect(() => {
-    const dataToSave = {
-      product: formData.product,
-      type: formData.type,
-      suggestion: formData.suggestion,
-      // Don't save files to localStorage
-    };
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
-  }, [formData.product, formData.type, formData.suggestion]);
+  const mediaPreviewsRef = useRef<string[]>([]);
 
   const validateForm = () => {
     const result = reportProblemSchema.safeParse(formData);
@@ -185,7 +185,7 @@ export function ReportProblemDialog({
       product?: string;
       type?: string;
       suggestion?: string;
-      images?: string;
+      media?: string;
     } = {};
     for (const issue of result.error.issues) {
       if (issue.path[0] === 'product' && !fieldErrors.product) {
@@ -197,8 +197,8 @@ export function ReportProblemDialog({
       if (issue.path[0] === 'suggestion' && !fieldErrors.suggestion) {
         fieldErrors.suggestion = issue.message;
       }
-      if (issue.path[0] === 'images' && !fieldErrors.images) {
-        fieldErrors.images = issue.message;
+      if (issue.path[0] === 'media' && !fieldErrors.media) {
+        fieldErrors.media = issue.message;
       }
     }
     setValidationErrors(fieldErrors);
@@ -244,60 +244,251 @@ export function ReportProblemDialog({
     event.preventDefault();
     setIsDragOver(false);
 
-    const files = Array.from(event.dataTransfer.files).filter((file) =>
-      file.type.startsWith('image/')
+    const files = Array.from(event.dataTransfer.files).filter(
+      (file) =>
+        ALLOWED_IMAGE_TYPES.includes(file.type) ||
+        ALLOWED_VIDEO_TYPES.includes(file.type)
     );
 
     if (files.length > 0) {
-      processImageFiles(files);
+      processMediaFiles(files);
     }
   };
 
-  const processImageFiles = (files: File[]) => {
-    // Filter invalid files by type/size
-    const validFiles = files.filter(
-      (file) => file.type.startsWith('image/') && file.size <= MAX_IMAGE_SIZE
+  const compressImage = async (file: File): Promise<File> => {
+    try {
+      const options = {
+        maxSizeMB: 5,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+        initialQuality: 0.8,
+      };
+      const compressedBlob = await imageCompression(file, options);
+
+      // Convert Blob back to File with original name and type
+      const compressedFile = new File([compressedBlob], file.name, {
+        type: compressedBlob.type || file.type,
+        lastModified: Date.now(),
+      });
+
+      return compressedFile;
+    } catch (error) {
+      console.error('Image compression failed:', error);
+      return file; // Return original if compression fails
+    }
+  };
+
+  const compressVideo = async (file: File): Promise<File> => {
+    try {
+      // Create video element to load the file
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.muted = true;
+
+      const videoUrl = URL.createObjectURL(file);
+      video.src = videoUrl;
+
+      // Wait for video to load metadata
+      await new Promise((resolve, reject) => {
+        video.onloadedmetadata = resolve;
+        video.onerror = reject;
+      });
+
+      // Calculate target dimensions (max 1280x720 to reduce file size)
+      let targetWidth = video.videoWidth;
+      let targetHeight = video.videoHeight;
+      const maxWidth = 1280;
+      const maxHeight = 720;
+
+      if (targetWidth > maxWidth || targetHeight > maxHeight) {
+        const aspectRatio = targetWidth / targetHeight;
+        if (aspectRatio > maxWidth / maxHeight) {
+          targetWidth = maxWidth;
+          targetHeight = Math.round(maxWidth / aspectRatio);
+        } else {
+          targetHeight = maxHeight;
+          targetWidth = Math.round(maxHeight * aspectRatio);
+        }
+      }
+
+      // Create canvas for video processing
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        throw new Error('Could not get canvas context');
+      }
+
+      // Set up MediaRecorder with compression settings
+      const stream = canvas.captureStream(30); // 30 FPS
+      const mimeType = MediaRecorder.isTypeSupported('video/webm; codecs=vp9')
+        ? 'video/webm; codecs=vp9'
+        : MediaRecorder.isTypeSupported('video/webm; codecs=vp8')
+          ? 'video/webm; codecs=vp8'
+          : 'video/webm';
+
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType,
+        videoBitsPerSecond: 1000000, // 1 Mbps for good quality with compression
+      });
+
+      const chunks: Blob[] = [];
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+
+      // Start recording
+      mediaRecorder.start();
+
+      // Play video and draw frames to canvas
+      video.currentTime = 0;
+      await video.play();
+
+      const drawFrame = () => {
+        if (video.ended || video.paused) {
+          return;
+        }
+        ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+        requestAnimationFrame(drawFrame);
+      };
+
+      drawFrame();
+
+      // Wait for video to finish
+      await new Promise((resolve) => {
+        video.onended = resolve;
+      });
+
+      // Stop recording
+      mediaRecorder.stop();
+
+      // Wait for final data
+      const compressedBlob = await new Promise<Blob>((resolve) => {
+        mediaRecorder.onstop = () => {
+          resolve(new Blob(chunks, { type: mimeType }));
+        };
+      });
+
+      // Clean up
+      URL.revokeObjectURL(videoUrl);
+      video.remove();
+      canvas.remove();
+
+      // Convert to File
+      const fileExtension = mimeType.includes('webm') ? 'webm' : 'mp4';
+      const fileName = file.name.replace(/\.[^/.]+$/, `.${fileExtension}`);
+      const compressedFile = new File([compressedBlob], fileName, {
+        type: mimeType,
+        lastModified: Date.now(),
+      });
+
+      // Only return compressed version if it's actually smaller
+      return compressedFile.size < file.size ? compressedFile : file;
+    } catch (error) {
+      console.error('Video compression failed:', error);
+      return file; // Return original if compression fails
+    }
+  };
+
+  const processMediaFiles = async (files: File[]) => {
+    // First filter by type only
+    const validTypeFiles = files.filter(
+      (file) =>
+        ALLOWED_IMAGE_TYPES.includes(file.type) ||
+        ALLOWED_VIDEO_TYPES.includes(file.type)
     );
-    const rejectedCount = files.length - validFiles.length;
-    if (rejectedCount > 0) {
+
+    const invalidTypeCount = files.length - validTypeFiles.length;
+    if (invalidTypeCount > 0) {
       setValidationErrors((prev) => ({
         ...prev,
-        images: 'Some files were rejected (only images up to 1MB).',
+        media: `${invalidTypeCount} file(s) rejected: only images (PNG, JPEG, WebP, GIF) and videos (MP4, WebM, MOV) are allowed.`,
       }));
-    } else if (validationErrors.images) {
-      setValidationErrors((prev) => ({ ...prev, images: undefined }));
     }
 
-    const maxImages = 5;
-    const currentImageCount = formData.images.length;
-    const availableSlots = maxImages - currentImageCount;
-    const filesToAdd = validFiles.slice(0, availableSlots);
-    const overflow = validFiles.length - filesToAdd.length;
+    const currentMediaCount = formData.media.length;
+    const availableSlots = MAX_FILES - currentMediaCount;
+    const filesToProcess = validTypeFiles.slice(0, availableSlots);
+    const overflow = validTypeFiles.length - filesToProcess.length;
 
     if (overflow > 0) {
       setValidationErrors((prev) => ({
         ...prev,
-        images: `You can upload up to ${maxImages} images. ${overflow} images were rejected.`,
+        media: `You can upload up to ${MAX_FILES} files. ${overflow} file(s) were rejected.`,
       }));
     }
 
-    if (filesToAdd.length > 0) {
-      const newImages = [...formData.images, ...filesToAdd];
-      setFormData((prev) => ({ ...prev, images: newImages }));
+    if (filesToProcess.length > 0) {
+      setIsCompressing(true);
+      try {
+        // Compress images and videos first, then check size
+        const processedWithSize = await Promise.all(
+          filesToProcess.map(async (file) => {
+            let processedFile = file;
 
-      // Create preview URLs
-      const newPreviews = filesToAdd.map((file) => URL.createObjectURL(file));
-      setImagePreviews((prev) => {
-        const updated = [...prev, ...newPreviews];
-        imagePreviewsRef.current = updated;
-        return updated;
-      });
+            // Compress images before size check
+            if (ALLOWED_IMAGE_TYPES.includes(file.type)) {
+              processedFile = await compressImage(file);
+            }
+            // Compress videos before size check
+            else if (ALLOWED_VIDEO_TYPES.includes(file.type)) {
+              processedFile = await compressVideo(file);
+            }
+
+            return {
+              file: processedFile,
+              isValid: processedFile.size <= MAX_MEDIA_SIZE,
+              originalName: file.name,
+            };
+          })
+        );
+
+        // Filter out files that are still too large after compression
+        const validFiles = processedWithSize.filter((item) => item.isValid);
+        const rejectedBySize = processedWithSize.filter(
+          (item) => !item.isValid
+        );
+
+        if (rejectedBySize.length > 0) {
+          const rejectedNames = rejectedBySize
+            .map((item) => item.originalName)
+            .join(', ');
+          setValidationErrors((prev) => ({
+            ...prev,
+            media: `${rejectedBySize.length} file(s) rejected (exceeded 5MB even after compression): ${rejectedNames}`,
+          }));
+        } else if (validationErrors.media && invalidTypeCount === 0) {
+          setValidationErrors((prev) => ({ ...prev, media: undefined }));
+        }
+
+        if (validFiles.length > 0) {
+          const acceptedFiles = validFiles.map((item) => item.file);
+          const newMedia = [...formData.media, ...acceptedFiles];
+          setFormData((prev) => ({ ...prev, media: newMedia }));
+
+          // Create preview URLs
+          const newPreviews = acceptedFiles.map((file) =>
+            URL.createObjectURL(file)
+          );
+          setMediaPreviews((prev) => {
+            const updated = [...prev, ...newPreviews];
+            mediaPreviewsRef.current = updated;
+            return updated;
+          });
+        }
+      } finally {
+        setIsCompressing(false);
+      }
     }
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMediaUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    processImageFiles(files);
+    processMediaFiles(files);
 
     // Reset file input
     if (fileInputRef.current) {
@@ -305,18 +496,18 @@ export function ReportProblemDialog({
     }
   };
 
-  const removeImage = (index: number) => {
+  const removeMedia = (index: number) => {
     // Revoke the object URL to free memory
-    if (imagePreviews[index]) {
-      URL.revokeObjectURL(imagePreviews[index]);
+    if (mediaPreviews[index]) {
+      URL.revokeObjectURL(mediaPreviews[index]);
     }
 
-    const newImages = formData.images.filter((_, i) => i !== index);
-    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    const newMedia = formData.media.filter((_, i) => i !== index);
+    const newPreviews = mediaPreviews.filter((_, i) => i !== index);
 
-    setFormData((prev) => ({ ...prev, images: newImages }));
-    setImagePreviews(newPreviews);
-    imagePreviewsRef.current = newPreviews;
+    setFormData((prev) => ({ ...prev, media: newMedia }));
+    setMediaPreviews(newPreviews);
+    mediaPreviewsRef.current = newPreviews;
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -342,9 +533,9 @@ export function ReportProblemDialog({
       }`;
       apiFormData.append('subject', subject);
 
-      // Append images
-      formData.images.forEach((image, index) => {
-        apiFormData.append(`image_${index}`, image);
+      // Append media files
+      formData.media.forEach((file, index) => {
+        apiFormData.append(`media_${index}`, file);
       });
 
       // Submit to API
@@ -361,17 +552,8 @@ export function ReportProblemDialog({
         throw new Error(result.message || 'Failed to submit report');
       }
 
-      // Clear form data after successful submission
-      setFormData({ product: '', type: '', suggestion: '', images: [] });
-      setImagePreviews([]);
-      imagePreviewsRef.current = [];
-      setValidationErrors({});
-      localStorage.removeItem(LOCAL_STORAGE_KEY);
-
-      // Close dialog
-      if (onOpenChange) {
-        onOpenChange(false);
-      }
+      // Close dialog (which will also trigger cleanup)
+      handleOpenChange(false);
     } catch (error) {
       console.error('Failed to submit report:', error);
       toast.error('Failed to submit report. Please try again.');
@@ -381,32 +563,47 @@ export function ReportProblemDialog({
   };
 
   const handleOpenChange = (newOpen: boolean) => {
+    // Update internal state for uncontrolled mode
+    if (!isControlled) {
+      setInternalOpen(newOpen);
+    }
+
+    // Notify parent if handler exists (controlled mode)
     if (onOpenChange) {
       onOpenChange(newOpen);
     }
 
-    // Clean up object URLs when dialog closes
+    // Clean up and reset everything when dialog closes
     if (!newOpen) {
-      imagePreviews.forEach((url) => {
+      // Revoke all object URLs to free memory
+      mediaPreviews.forEach((url) => {
         URL.revokeObjectURL(url);
       });
-      imagePreviewsRef.current = [];
+
+      // Clear all form state
+      setFormData({ product: '', type: '', suggestion: '', media: [] });
+      setMediaPreviews([]);
+      mediaPreviewsRef.current = [];
       setValidationErrors({});
       setIsDragOver(false);
+      setIsCompressing(false);
+
+      // Clear localStorage
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
     }
   };
 
   // Clean up object URLs on unmount
   useEffect(() => {
     return () => {
-      imagePreviewsRef.current.forEach((url) => {
+      mediaPreviewsRef.current.forEach((url) => {
         URL.revokeObjectURL(url);
       });
     };
   }, []);
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
       {showTrigger && (
         <DialogTrigger asChild>
           {trigger || (
@@ -532,32 +729,34 @@ export function ReportProblemDialog({
 
             <div className="space-y-4">
               <Label className="font-medium text-sm">
-                {t('screenshots-optional')} ({formData.images.length}/5)
+                {t('media-optional')} ({formData.media.length}/{MAX_FILES})
               </Label>
 
-              {formData.images.length < 5 && (
+              {formData.media.length < MAX_FILES && (
                 <button
                   type="button"
                   className={cn(
                     'relative mt-2 w-full rounded-lg border-2 border-dashed transition-all duration-200',
                     isDragOver
                       ? 'border-orange-400 bg-orange-50 dark:bg-orange-950/20'
-                      : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500'
+                      : 'border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500',
+                    isCompressing && 'pointer-events-none opacity-50'
                   )}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
-                  aria-label="Click to upload or drag and drop images"
+                  aria-label="Click to upload or drag and drop media files"
+                  disabled={isCompressing}
                 >
                   <Input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
                     multiple
-                    onChange={handleImageUpload}
-                    disabled={isSubmitting}
+                    onChange={handleMediaUpload}
+                    disabled={isSubmitting || isCompressing}
                     className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                    id={imageUploadId}
+                    id={mediaUploadId}
                   />
                   <div className="flex flex-col items-center justify-center px-4 py-8 text-center">
                     <div
@@ -576,56 +775,75 @@ export function ReportProblemDialog({
                       />
                     </div>
                     <p className="mb-1 font-medium text-sm">
-                      {isDragOver
-                        ? 'Drop images here'
-                        : 'Click to upload or drag and drop'}
+                      {isCompressing
+                        ? 'Compressing...'
+                        : isDragOver
+                          ? 'Drop files here'
+                          : 'Click to upload or drag and drop'}
                     </p>
                     <p className="text-muted-foreground text-xs">
-                      PNG, JPG, GIF up to 1MB each
+                      Images (PNG, JPG, GIF, WebP) or Videos (MP4, WebM, MOV) up
+                      to 5MB each
                     </p>
                   </div>
                 </button>
               )}
 
-              {validationErrors.images && (
+              {validationErrors.media && (
                 <div className="text-red-600 text-sm">
-                  {validationErrors.images}
+                  {validationErrors.media}
                 </div>
               )}
 
-              {imagePreviews.length > 0 && (
+              {mediaPreviews.length > 0 && (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                  {imagePreviews.map((preview, index) => (
-                    <div key={preview} className="group relative">
-                      <div className="aspect-square overflow-hidden rounded-lg border-2 border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
-                        <Image
-                          src={
-                            isValidBlobUrl(preview)
-                              ? preview
-                              : '/placeholder.svg'
-                          }
-                          alt={t('screenshot-alt', { number: index + 1 })}
-                          className="h-full w-full object-cover"
-                          width={100}
-                          height={100}
-                        />
+                  {mediaPreviews.map((preview, index) => {
+                    const file = formData.media[index];
+                    const isVideo =
+                      file && ALLOWED_VIDEO_TYPES.includes(file.type);
+
+                    return (
+                      <div key={preview} className="group relative">
+                        <div className="aspect-square overflow-hidden rounded-lg border-2 border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+                          {isVideo ? (
+                            <video
+                              src={isValidBlobUrl(preview) ? preview : ''}
+                              className="h-full w-full object-cover"
+                              controls={false}
+                              muted
+                              playsInline
+                            />
+                          ) : (
+                            <Image
+                              src={
+                                isValidBlobUrl(preview)
+                                  ? preview
+                                  : '/placeholder.svg'
+                              }
+                              alt={t('media-alt', { number: index + 1 })}
+                              className="h-full w-full object-cover"
+                              width={100}
+                              height={100}
+                            />
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="-top-2 -right-2 absolute h-6 w-6 rounded-full opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
+                          onClick={() => removeMedia(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
                       </div>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="-top-2 -right-2 absolute h-6 w-6 rounded-full opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
-                        onClick={() => removeImage(index)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
 
-            <div className="flex w-full flex-col-reverse gap-3 border-t pt-4 sm:flex-row">
+            <div className="flex w-full flex-col-reverse gap-3 border-t pt-4 sm:flex-row sm:justify-end">
               <Button
                 type="button"
                 variant="outline"

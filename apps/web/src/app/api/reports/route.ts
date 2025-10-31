@@ -6,6 +6,7 @@ import {
 import type { Product, SupportType } from '@tuturuuu/types';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import sharp from 'sharp';
 
 // Runtime representation of the Product enum values
 // This ensures we don't have to manually maintain the list
@@ -62,33 +63,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Extract images (max 5), validate type/size
+    // Extract media files (max 10), validate type/size
     const ALLOWED_IMAGE_TYPES = new Set([
       'image/png',
       'image/jpeg',
       'image/webp',
+      'image/gif',
     ]);
-    const MAX_IMAGE_SIZE_BYTES = 1024 * 1024; // 1MB
-    const images: File[] = [];
-    for (let i = 0; i < 5; i++) {
-      const value = formData.get(`image_${i}`);
+    const ALLOWED_VIDEO_TYPES = new Set([
+      'video/mp4',
+      'video/webm',
+      'video/quicktime',
+    ]);
+    const MAX_MEDIA_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+    const MAX_FILES = 10;
+    const mediaFiles: File[] = [];
+
+    for (let i = 0; i < MAX_FILES; i++) {
+      const value = formData.get(`media_${i}`);
       if (value instanceof File) {
-        if (!ALLOWED_IMAGE_TYPES.has(value.type)) {
+        if (
+          !ALLOWED_IMAGE_TYPES.has(value.type) &&
+          !ALLOWED_VIDEO_TYPES.has(value.type)
+        ) {
           return NextResponse.json(
             {
               success: false,
-              message: `Unsupported image type: ${value.type}`,
+              message: `Unsupported file type: ${value.type}. Only images (PNG, JPEG, WebP, GIF) and videos (MP4, WebM, MOV) are allowed.`,
             },
             { status: 400 }
           );
         }
-        if (value.size > MAX_IMAGE_SIZE_BYTES) {
+        if (value.size > MAX_MEDIA_SIZE_BYTES) {
           return NextResponse.json(
-            { success: false, message: 'Image exceeds 1MB limit.' },
+            { success: false, message: 'File exceeds 5MB limit.' },
             { status: 400 }
           );
         }
-        images.push(value);
+        mediaFiles.push(value);
       }
     }
 
@@ -135,53 +147,84 @@ export async function POST(request: NextRequest) {
 
     const inquiryId = insertData.id;
 
-    // Upload images to storage bucket if any
-    const uploadedImageNames: string[] = [];
+    // Upload media files to storage bucket if any
+    const uploadedMediaNames: string[] = [];
 
-    if (images.length > 0) {
+    if (mediaFiles.length > 0) {
       // Use dynamic client for storage operations
       const storageClient = await createDynamicClient();
 
-      for (const image of images) {
+      for (const file of mediaFiles) {
         try {
+          let fileToUpload: File | Buffer = file;
+          let contentType = file.type;
+
+          // Compress images on the server side
+          if (ALLOWED_IMAGE_TYPES.has(file.type)) {
+            try {
+              const arrayBuffer = await file.arrayBuffer();
+              const buffer = Buffer.from(arrayBuffer);
+
+              // Compress image with Sharp (70% quality)
+              const compressedBuffer = await sharp(buffer)
+                .resize(1920, 1920, {
+                  fit: 'inside',
+                  withoutEnlargement: true,
+                })
+                .jpeg({ quality: 70 })
+                .toBuffer();
+
+              fileToUpload = compressedBuffer;
+              contentType = 'image/jpeg'; // Convert all images to JPEG for consistency
+            } catch (compressionError) {
+              console.error(
+                'Image compression failed, using original:',
+                compressionError
+              );
+              // Use original file if compression fails
+            }
+          }
+
           // Generate unique filename
-          const fileExtension = image.name.split('.').pop();
+          const fileExtension =
+            contentType === 'image/jpeg' ? 'jpg' : file.name.split('.').pop();
           const fileName = `${generateRandomUUID()}.${fileExtension}`;
           const storagePath = `${inquiryId}/${fileName}`;
 
           // Upload to support_inquiries bucket
           const { error: uploadError } = await storageClient.storage
             .from('support_inquiries')
-            .upload(storagePath, image, {
+            .upload(storagePath, fileToUpload, {
               cacheControl: '3600',
               upsert: false,
+              contentType,
             });
 
           if (uploadError) {
-            console.error('Error uploading image:', uploadError);
-            // Continue with other images even if one fails
+            console.error('Error uploading file:', uploadError);
+            // Continue with other files even if one fails
             continue;
           }
 
-          uploadedImageNames.push(fileName);
+          uploadedMediaNames.push(fileName);
         } catch (uploadError) {
-          console.error('Error uploading image:', uploadError);
+          console.error('Error uploading file:', uploadError);
         }
       }
 
-      // Update the support inquiry with image filenames
-      if (uploadedImageNames.length > 0) {
+      // Update the support inquiry with media filenames
+      if (uploadedMediaNames.length > 0) {
         const { error: updateError } = await sbAdmin
           .from('support_inquiries')
-          .update({ images: uploadedImageNames })
+          .update({ images: uploadedMediaNames })
           .eq('id', inquiryId);
 
         if (updateError) {
           console.error(
-            'Error updating support inquiry with images:',
+            'Error updating support inquiry with media files:',
             updateError
           );
-          // Don't fail the entire request if image update fails
+          // Don't fail the entire request if media update fails
         }
       }
     }
@@ -190,13 +233,13 @@ export async function POST(request: NextRequest) {
       inquiryId,
       product,
       suggestion,
-      imageCount: images.length,
-      uploadedImages: uploadedImageNames,
+      mediaCount: mediaFiles.length,
+      uploadedMedia: uploadedMediaNames,
       userId: user?.id || 'anonymous',
-      images: images.map((img) => ({
-        name: img.name,
-        size: img.size,
-        type: img.type,
+      mediaFiles: mediaFiles.map((file) => ({
+        name: file.name,
+        size: file.size,
+        type: file.type,
       })),
     });
 
@@ -204,7 +247,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Report submitted successfully',
       reportId: inquiryId,
-      uploadedImages: uploadedImageNames,
+      uploadedMedia: uploadedMediaNames,
     });
   } catch (error) {
     console.error('Error processing report submission:', error);
