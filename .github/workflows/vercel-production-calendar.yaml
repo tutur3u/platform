@@ -12,9 +12,9 @@ on:
     branches:
       - production
     paths:
-      - "apps/calendar/**"
-      - "packages/**"
-      - ".github/workflows/vercel-production-calendar.yaml"
+      - 'apps/calendar/**'
+      - 'packages/**'
+      - '.github/workflows/vercel-production-calendar.yaml'
   workflow_dispatch:
 
 jobs:
@@ -81,7 +81,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.check_commits.outputs.skip_build != 'true' && steps.quick_check.outputs.skip_quick != 'true'
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: Check Turborepo cache (conservative)
         id: turbo_check
