@@ -5,6 +5,6 @@
     "docs:dev": "mint dev --port 3333"
   },
   "devDependencies": {
-    "mintlify": "^3.0.0"
+    "mintlify": "^3.0.98"
   }
 }

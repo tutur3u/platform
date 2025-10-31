@@ -6,7 +6,7 @@
   "exports": {
     "./next/client": "./src/next/client.ts",
     "./next/common": "./src/next/common.ts",
-    "./next/middleware": "./src/next/middleware.ts",
+    "./next/proxy": "./src/next/proxy.ts",
     "./next/realtime": "./src/next/realtime.ts",
     "./next/server": "./src/next/server.ts",
     "./next/user": "./src/next/user.ts"

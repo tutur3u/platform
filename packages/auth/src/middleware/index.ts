@@ -1,4 +1,4 @@
-import { updateSession } from '@ncthub/supabase/next/middleware';
+import { updateSession } from '@ncthub/supabase/next/proxy';
 import { SupabaseUser } from '@ncthub/supabase/next/user';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
