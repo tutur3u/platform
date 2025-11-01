@@ -44,7 +44,7 @@ export async function POST(
     // Verify note exists in this workspace
     const { data: note, error: noteError } = await supabase
       .from('notes')
-      .select('id, content, creator_id, ws_id, archived')
+      .select('id, title, content, creator_id, ws_id, archived')
       .eq('id', noteId)
       .eq('ws_id', wsId)
       .single();
@@ -96,7 +96,7 @@ export async function POST(
     const { data: task, error: taskError } = await supabase
       .from('tasks')
       .insert({
-        name: getDescriptionText(note.content).slice(0, 255) || 'Untitled Task',
+        name: note.title || 'Untitled Task',
         description:
           (getDescriptionText(note.content).length || 0) > 255
             ? getDescriptionText(note.content)

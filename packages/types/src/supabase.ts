@@ -1183,13 +1183,19 @@ export type Database = {
           query_text: string;
         };
         Returns: {
+          board_id: string;
+          board_name: string;
           closed_at: string;
           completed_at: string;
+          created_at: string;
           description: string;
           end_date: string;
           id: string;
           list_id: string;
+          list_name: string;
+          list_status: Database['public']['Enums']['task_board_status'];
           name: string;
+          priority: Database['public']['Enums']['task_priority'];
           similarity: number;
           start_date: string;
         }[];
@@ -4823,6 +4829,7 @@ export type Database = {
           creator_id?: string;
           deleted?: boolean | null;
           id?: string;
+          title?: null | string;
           updated_at?: null | string;
           ws_id: string;
         };
@@ -4877,6 +4884,7 @@ export type Database = {
           creator_id: string;
           deleted: boolean | null;
           id: string;
+          title: null | string;
           updated_at: null | string;
           ws_id: string;
         };
@@ -4887,6 +4895,7 @@ export type Database = {
           creator_id?: string;
           deleted?: boolean | null;
           id?: string;
+          title?: null | string;
           updated_at?: null | string;
           ws_id?: string;
         };

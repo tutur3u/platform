@@ -63,6 +63,7 @@ import {
   SquaresIntersect,
   SquareUserRound,
   Star,
+  StickyNote,
   SwatchBook,
   Tags,
   TextSelect,
@@ -150,6 +151,11 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/tasks/my-tasks`,
           icon: <UserRound className="h-4 w-4" />,
           matchExact: true,
+        },
+        {
+          title: t('sidebar_tabs.notes'),
+          href: `/${personalOrWsId}/tasks/notes`,
+          icon: <StickyNote className="h-4 w-4" />,
         },
         {
           title: t('sidebar_tabs.all_boards'),
