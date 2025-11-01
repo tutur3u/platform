@@ -202,16 +202,6 @@ export function TaskSection({
 
               {/* Metadata Row */}
               <div className="flex flex-wrap items-center gap-2">
-                {/* Priority */}
-                {priority && (
-                  <div
-                    className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-xs ${priority.bgColor}`}
-                  >
-                    <priority.icon className={`h-3 w-3 ${priority.color}`} />
-                    <span className={priority.color}>{priority.label}</span>
-                  </div>
-                )}
-
                 {/* List Status */}
                 {listStatus && (
                   <div
@@ -221,6 +211,16 @@ export function TaskSection({
                       className={`h-2 w-2 fill-current ${listStatus.color}`}
                     />
                     <span className={listStatus.color}>{listStatus.label}</span>
+                  </div>
+                )}
+
+                {/* Priority */}
+                {priority && (
+                  <div
+                    className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-xs ${priority.bgColor}`}
+                  >
+                    <priority.icon className={`h-3 w-3 ${priority.color}`} />
+                    <span className={priority.color}>{priority.label}</span>
                   </div>
                 )}
 
