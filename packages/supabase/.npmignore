@@ -1,0 +1,31 @@
+# Config files
+tsconfig.json
+vitest.config.ts
+biome.json
+
+# Build artifacts
+.turbo/
+node_modules/
+
+# Tests
+**/__tests__/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Development files
+.DS_Store
+.env
+.env.local
+*.log
+
+# Git
+.git
+.gitignore
+
+# Documentation (keep README.md)
+CONTRIBUTING.md
+
+# JSR-specific
+jsr.json

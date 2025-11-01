@@ -3,15 +3,25 @@
 import NotificationPreferencesTable from '@/components/notifications/notification-preferences-table';
 import BrowserNotificationPermission from '@/components/notifications/browser-notification-permission';
 import AdvancedNotificationSettings from '@/components/notifications/advanced-notification-settings';
-import { useUpdateAccountNotificationPreferences } from '@/hooks/useAccountNotificationPreferences';
-import { useAccountNotificationPreferences } from '@/hooks/useAccountNotificationPreferences';
+import AccountNotificationStatus from '@/components/notifications/account-notification-status';
+import WorkspaceNotificationToggle from '@/components/notifications/workspace-notification-toggle';
+import {
+  useNotificationPreferences,
+  useUpdateNotificationPreferences,
+} from '@/hooks/useNotificationPreferences';
 import type { DigestFrequency } from '@/hooks/useAccountNotificationPreferences';
 
-export default function NotificationsCard() {
-  const { data: preferences } = useAccountNotificationPreferences();
-  const updatePreferences = useUpdateAccountNotificationPreferences();
+interface WorkspaceNotificationSettingsProps {
+  wsId: string;
+}
 
-  // Extract advanced settings from preferences
+export default function WorkspaceNotificationSettings({
+  wsId,
+}: WorkspaceNotificationSettingsProps) {
+  const { data: preferences } = useNotificationPreferences({ wsId });
+  const updatePreferences = useUpdateNotificationPreferences();
+
+  // Extract advanced settings from preferences (workspace-scoped)
   const digestFrequency =
     (preferences?.[0]?.digest_frequency as DigestFrequency) || 'immediate';
   const quietHoursStart = preferences?.[0]?.quiet_hours_start || null;
@@ -24,20 +34,28 @@ export default function NotificationsCard() {
     quietHoursEnd?: string;
     timezone?: string;
   }) => {
-    // Update all account preferences with the new advanced settings
+    // Update preferences with new advanced settings
+    // We need to update all existing preferences with the new settings
     await updatePreferences.mutateAsync({
+      wsId,
       preferences: [], // Empty array since we're only updating advanced settings
       ...settings,
     });
   };
 
   return (
-    <div className="space-y-6">
+    <>
+      {/* Account Notification Status */}
+      <AccountNotificationStatus />
+
+      {/* Workspace Notification Toggle */}
+      <WorkspaceNotificationToggle wsId={wsId} />
+
       {/* Browser Permission */}
       <BrowserNotificationPermission />
 
       {/* Notification Preferences Table */}
-      <NotificationPreferencesTable scope="account" />
+      <NotificationPreferencesTable scope="workspace" wsId={wsId} />
 
       {/* Advanced Settings */}
       <AdvancedNotificationSettings
@@ -47,6 +65,6 @@ export default function NotificationsCard() {
         timezone={timezone}
         onUpdate={handleAdvancedUpdate}
       />
-    </div>
+    </>
   );
 }

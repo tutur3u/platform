@@ -4,6 +4,7 @@ import {
   Activity,
   Archive,
   Banknote,
+  Bell,
   Blocks,
   Bolt,
   BookKey,
@@ -136,6 +137,12 @@ export async function WorkspaceNavigationLinks({
       href: `/${personalOrWsId}`,
       icon: <ChartArea className="h-5 w-5" />,
       matchExact: true,
+    },
+    {
+      title: t('sidebar_tabs.notifications'),
+      href: `/${personalOrWsId}/notifications`,
+      aliases: [`/${personalOrWsId}/notifications`],
+      icon: <Bell className="h-5 w-5" />,
     },
     null,
     {
@@ -918,6 +925,7 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/teams`,
         `/${personalOrWsId}/roles`,
         `/${personalOrWsId}/settings/reports`,
+        `/${personalOrWsId}/settings/notifications`,
         `/${personalOrWsId}/billing`,
         `/${personalOrWsId}/usage`,
         `/${personalOrWsId}/api-keys`,
@@ -960,6 +968,11 @@ export async function WorkspaceNavigationLinks({
           disabled:
             ENABLE_AI_ONLY || withoutPermission('manage_user_report_templates'),
           requireRootMember: true,
+        },
+        {
+          title: t('workspace-settings-layout.notifications'),
+          href: `/${personalOrWsId}/settings/notifications`,
+          icon: <Bell className="h-5 w-5" />,
         },
         {
           title: t('sidebar_tabs.billing'),

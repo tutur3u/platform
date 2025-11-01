@@ -292,6 +292,7 @@ Follow Conventional Commits & Branch naming (see `apps/docs/git-conventions.mdx`
 - Provide `aria-label` or text content for icon-only buttons.
 - Color choices must respect contrast (WCAG AA). If uncertain, note for human review.
 - **Dialog Components**: Always use `@tuturuuu/ui/dialog` components instead of native browser dialogs (`alert()`, `confirm()`, `prompt()`). Native dialogs are not accessible, not customizable, and break the design system.
+- **Icons**: Always use lucide-react icons via `@tuturuuu/icons` (wrapper package). NEVER use emojis in UI code—they render inconsistently across platforms and lack semantic meaning for accessibility.
 
 #### 5.7 Security & Secrets
 - Only reference environment variables by name—never inline secret values.

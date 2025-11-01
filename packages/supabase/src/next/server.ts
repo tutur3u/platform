@@ -59,6 +59,25 @@ export function createAdminClient<T = Database>({
   return createGenericClient<T>(true);
 }
 
+export function createAnonClient<T = Database>():
+  | SupabaseClient<T>
+  | Promise<SupabaseClient<T>> {
+  const { url, key } = checkEnvVariables({ useSecretKey: false });
+  return createBrowserClient<T>(url, key, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${key}`,
+      },
+    },
+    // disable client-side session behaviors in server functions
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
+  });
+}
+
 export function createClient<T = Database>(): Promise<SupabaseClient<T>> {
   return createGenericClient<T>(false);
 }

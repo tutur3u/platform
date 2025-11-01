@@ -676,7 +676,7 @@
     },
     "packages/supabase": {
       "name": "@tuturuuu/supabase",
-      "version": "0.1.1",
+      "version": "0.2.3",
       "dependencies": {
         "@supabase/ssr": "^0.7.0",
         "@supabase/supabase-js": "^2.78.0",
@@ -690,8 +690,16 @@
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^24.9.2",
         "@types/react": "^19.2.2",
+        "next": "^16.0.0",
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0",
         "typescript": "^5.9.3",
         "vitest": "^4.0.6",
+      },
+      "peerDependencies": {
+        "next": ">=15.0.0",
+        "react": ">=18.0.0",
+        "react-dom": ">=18.0.0",
       },
     },
     "packages/transactional": {
