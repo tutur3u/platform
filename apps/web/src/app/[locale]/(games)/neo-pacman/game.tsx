@@ -19,6 +19,18 @@ export function PacmanGame() {
       return;
     }
 
+    // Calculate responsive dimensions
+    const getGameDimensions = () => {
+      const maxWidth = 700;
+      const maxHeight = 700;
+      const padding = 32; // Account for padding on mobile
+      const availableWidth = Math.min(window.innerWidth - padding, maxWidth);
+      const availableHeight = Math.min(window.innerHeight * 0.9, maxHeight);
+      const size = Math.min(availableWidth, availableHeight);
+
+      return { width: size, height: size };
+    };
+
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
       parent: parentRef.current,
@@ -40,7 +52,22 @@ export function PacmanGame() {
 
     gameRef.current = new Phaser.Game(config);
 
+    // Handle window resize
+    const handleResize = () => {
+      if (parentRef.current) {
+        const { width: newWidth, height: newHeight } = getGameDimensions();
+        parentRef.current.style.width = `${newWidth}px`;
+        parentRef.current.style.height = `${newHeight}px`;
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    gameRef.current.events.once('ready', () => {
+      handleResize();
+    });
+
     return () => {
+      window.removeEventListener('resize', handleResize);
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
@@ -50,13 +77,12 @@ export function PacmanGame() {
     <div className="flex flex-col items-center justify-center">
       <div className="relative">
         {/* Glow effect behind the game */}
-        <div className="absolute -inset-4 rounded-2xl bg-linear-to-r from-yellow-400/20 via-blue-500/20 to-purple-500/20 opacity-75 blur-2xl" />
+        <div className="bg-linear-to-r absolute -inset-4 rounded-2xl from-yellow-400/20 via-blue-500/20 to-purple-500/20 opacity-75 blur-2xl" />
 
         {/* Game container */}
         <div
           ref={parentRef}
           className="relative overflow-hidden rounded-xl border-4 border-yellow-500 bg-black shadow-[0_0_50px_rgba(251,191,36,0.3)] transition-all hover:border-yellow-400 hover:shadow-[0_0_60px_rgba(251,191,36,0.4)]"
-          style={{ width: '700px', height: '700px' }}
         />
       </div>
     </div>
