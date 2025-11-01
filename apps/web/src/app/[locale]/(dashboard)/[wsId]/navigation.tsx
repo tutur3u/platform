@@ -919,6 +919,7 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/teams`,
         `/${personalOrWsId}/roles`,
         `/${personalOrWsId}/settings/reports`,
+        `/${personalOrWsId}/settings/notifications`,
         `/${personalOrWsId}/billing`,
         `/${personalOrWsId}/usage`,
         `/${personalOrWsId}/api-keys`,
@@ -961,6 +962,11 @@ export async function WorkspaceNavigationLinks({
           disabled:
             ENABLE_AI_ONLY || withoutPermission('manage_user_report_templates'),
           requireRootMember: true,
+        },
+        {
+          title: t('workspace-settings-layout.notifications'),
+          href: `/${personalOrWsId}/settings/notifications`,
+          icon: <Bell className="h-5 w-5" />,
         },
         {
           title: t('sidebar_tabs.billing'),

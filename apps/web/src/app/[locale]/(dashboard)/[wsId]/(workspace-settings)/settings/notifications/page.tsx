@@ -1,5 +1,5 @@
-import NotificationPreferencesCard from '@/components/notifications/notification-preferences-card';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import WorkspaceNotificationSettings from '@/components/notifications/workspace-notification-settings';
 
 interface NotificationSettingsPageProps {
   params: Promise<{
@@ -24,7 +24,7 @@ export default async function NotificationSettingsPage({
             </p>
           </div>
 
-          <NotificationPreferencesCard wsId={wsId} />
+          <WorkspaceNotificationSettings wsId={wsId} />
         </div>
       )}
     </WorkspaceWrapper>

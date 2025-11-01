@@ -177,6 +177,7 @@ bun trigger:deploy
 7. **NEVER** use hard-coded Tailwind color classes (`text-blue-500`, `bg-purple-300`) - use `dynamic-*` tokens
 8. **NEVER** hand-edit generated type files in `packages/types/src/supabase.ts`
 9. **NEVER** import from `@tuturuuu/ui/toast` (deprecated) - use `@tuturuuu/ui/sonner`
+10. **NEVER** use emojis in UI code - use lucide-react icons via `@tuturuuu/icons`
 
 ### Mandatory Actions
 
@@ -365,6 +366,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@tuturuuu/ui/d
   </DialogContent>
 </Dialog>
 ```
+
+#### Icons
+
+**FORBIDDEN**: Emojis in UI code (e.g., `"📋"`, `"✅"`, `"🔒"`)
+
+**REQUIRED**: lucide-react icons via `@tuturuuu/icons` wrapper
+
+```tsx
+import { CheckCircle, Lock, Clipboard } from '@tuturuuu/icons';
+
+<CheckCircle className="h-5 w-5" />
+```
+
+**Rationale**: Emojis render inconsistently across platforms, lack semantic meaning for screen readers, and don't respect theme/color customization.
 
 #### Toast Notifications
 

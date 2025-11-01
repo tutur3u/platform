@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-export type NotificationChannel = 'web' | 'email' | 'sms' | 'push';
+export type NotificationChannel = 'web' | 'email' | 'push';
 export type NotificationEventType =
   // Task assignment and general updates
   | 'task_assigned'
@@ -33,6 +33,11 @@ export interface NotificationPreference {
   event_type: NotificationEventType;
   channel: NotificationChannel;
   enabled: boolean;
+  scope?: 'user' | 'workspace' | 'system';
+  digest_frequency?: 'immediate' | 'hourly' | 'daily' | 'weekly';
+  quiet_hours_start?: string | null;
+  quiet_hours_end?: string | null;
+  timezone?: string;
   created_at: string;
   updated_at: string;
 }
@@ -74,6 +79,10 @@ export function useUpdateNotificationPreferences() {
     mutationFn: async ({
       wsId,
       preferences,
+      digestFrequency,
+      quietHoursStart,
+      quietHoursEnd,
+      timezone,
     }: {
       wsId: string;
       preferences: Array<{
@@ -81,11 +90,22 @@ export function useUpdateNotificationPreferences() {
         channel: NotificationChannel;
         enabled: boolean;
       }>;
+      digestFrequency?: 'immediate' | 'hourly' | 'daily' | 'weekly';
+      quietHoursStart?: string;
+      quietHoursEnd?: string;
+      timezone?: string;
     }) => {
       const response = await fetch('/api/v1/notifications/preferences', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wsId, preferences }),
+        body: JSON.stringify({
+          wsId,
+          preferences,
+          digestFrequency,
+          quietHoursStart,
+          quietHoursEnd,
+          timezone,
+        }),
       });
 
       if (!response.ok) {
@@ -105,17 +125,19 @@ export function useUpdateNotificationPreferences() {
 
 /**
  * Helper hook to get preference value for a specific event type and channel
+ * Note: This assumes the preference exists in the database.
+ * The UI should create missing preferences on initialization.
  */
 export function usePreferenceValue(
   preferences: NotificationPreference[] | undefined,
   eventType: NotificationEventType,
   channel: NotificationChannel
 ): boolean {
-  if (!preferences) return true; // Default to enabled if no preferences set
+  if (!preferences) return true;
 
   const preference = preferences.find(
     (p) => p.event_type === eventType && p.channel === channel
   );
 
-  return preference?.enabled ?? true; // Default to enabled
+  return preference?.enabled ?? true;
 }
