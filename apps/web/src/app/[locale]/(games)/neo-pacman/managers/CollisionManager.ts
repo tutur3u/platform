@@ -1,43 +1,32 @@
+import type { Food } from '../entities/Food';
 import type { Ghost } from '../entities/Ghost';
 import type { Pacman } from '../entities/Pacman';
-import { FoodType } from '../types';
-import type { FoodManager } from './FoodManager';
-import * as Phaser from 'phaser';
 
 export class CollisionManager {
-  private scene: Phaser.Scene;
-  private foodManager: FoodManager;
-
-  constructor(scene: Phaser.Scene, foodManager: FoodManager) {
-    this.scene = scene;
-    this.foodManager = foodManager;
-  }
+  constructor() {}
 
   /**
    * Check collision between Pacman and food
    */
-  checkPacmanFoodCollision(pacman: Pacman): {
+  checkPacmanFoodCollision(
+    pacman: Pacman,
+    foods: Food[]
+  ): {
+    foodsEaten: Food[];
     points: number;
-    powerPelletEaten: boolean;
   } {
-    let totalPoints = 0;
-    let powerPelletEaten = false;
+    const foodsEaten: Food[] = [];
+    let points = 0;
 
     const pacmanTile = pacman.getTilePosition();
-    const food = this.foodManager.getFoodAt(pacmanTile);
-
-    if (food) {
-      totalPoints = food.points;
-
-      if (food.type === FoodType.POWER_PELLET) {
-        powerPelletEaten = true;
+    for (const food of foods) {
+      if (food.isAtPosition(pacmanTile)) {
+        foodsEaten.push(food);
+        points += food.points;
       }
-
-      // Remove the food
-      this.foodManager.removeFood(pacmanTile);
     }
 
-    return { points: totalPoints, powerPelletEaten };
+    return { foodsEaten, points };
   }
 
   /**
@@ -59,9 +48,13 @@ export class CollisionManager {
       return { pacmanEaten: false, ghostsEaten: [], points: 0 };
     }
 
+    const pacmanTile = pacman.getTilePosition();
     for (const ghost of ghosts) {
-      // Use physics overlap check for more accurate collision
-      if (this.scene.physics.overlap(pacman.sprite, ghost.sprite)) {
+      const ghostTile = ghost.getTilePosition();
+      if (
+        pacmanTile.row === ghostTile.row &&
+        pacmanTile.col === ghostTile.col
+      ) {
         if (ghost.canBeEaten()) {
           // Pacman eats ghost
           ghost.getEaten();

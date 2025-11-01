@@ -4,7 +4,7 @@ import { Pacman } from '../entities/Pacman';
 import { CollisionManager } from '../managers/CollisionManager';
 import { FoodManager } from '../managers/FoodManager';
 import { MapManager } from '../managers/MapManager';
-import { GhostType } from '../types';
+import { FoodType, GhostType } from '../types';
 import * as Phaser from 'phaser';
 
 interface GameData {
@@ -59,9 +59,9 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     // Initialize managers
+    this.collisionManager = new CollisionManager();
     this.mapManager = new MapManager(this);
     this.foodManager = new FoodManager(this, this.mapManager);
-    this.collisionManager = new CollisionManager(this, this.foodManager);
 
     // Load and create map
     const mapData = this.mapManager.loadMap(this.mapId);
@@ -195,31 +195,44 @@ export class GameScene extends Phaser.Scene {
     });
 
     // Check food collision
-    const foodResult = this.collisionManager.checkPacmanFoodCollision(
-      this.pacman
-    );
-    if (foodResult.points > 0) {
-      this.score += foodResult.points;
+    const { foodsEaten, points } =
+      this.collisionManager.checkPacmanFoodCollision(
+        this.pacman,
+        this.foodManager.getAllFood()
+      );
+    if (points > 0) {
+      this.score += points;
       this.scoreText.setText(`Score: ${this.score}`);
 
+      foodsEaten.forEach((food) => {
+        this.foodManager.removeFood(food.position);
+      });
+
       // Power pellet eaten - make ghosts frightened
-      if (foodResult.powerPelletEaten) {
+      const powerPelletEaten = foodsEaten.some(
+        (food) => food.type === FoodType.POWER_PELLET
+      );
+      if (powerPelletEaten) {
         this.ghosts.forEach((ghost) => ghost.makeFrightened());
       }
     }
 
     // Check ghost collision
-    const ghostResult = this.collisionManager.checkPacmanGhostCollision(
+    const {
+      pacmanEaten,
+      ghostsEaten,
+      points: ghostPoints,
+    } = this.collisionManager.checkPacmanGhostCollision(
       this.pacman,
       this.ghosts
     );
 
-    if (ghostResult.pacmanEaten) {
+    if (pacmanEaten) {
       this.handlePacmanDeath();
     }
 
-    if (ghostResult.ghostsEaten.length > 0) {
-      this.score += ghostResult.points;
+    if (ghostsEaten.length > 0) {
+      this.score += ghostPoints;
       this.scoreText.setText(`Score: ${this.score}`);
     }
   }
