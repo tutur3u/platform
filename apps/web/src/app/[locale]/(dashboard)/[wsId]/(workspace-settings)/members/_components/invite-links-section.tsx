@@ -259,7 +259,7 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
           {canManageMembers && (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
-                <Button className="shrink-0 bg-gradient-to-r from-dynamic-blue to-dynamic-purple shadow-lg transition-all hover:shadow-xl">
+                <Button className="shrink-0 bg-linear-to-r from-dynamic-blue to-dynamic-purple shadow-lg transition-all hover:shadow-xl">
                   <Plus className="mr-2 h-4 w-4" />
                   {t('ws-invite-links.create-link')}
                 </Button>

@@ -1000,7 +1000,7 @@ export default function EditableReportPreview({
                             aria-pressed={isSelected}
                           >
                             {/* Timeline icon container */}
-                            <div className="relative flex-shrink-0">
+                            <div className="relative shrink-0">
                               {/* Timeline line - only between items, not after the last one */}
                               {idx < logsQuery.data!.length - 1 && (
                                 <div

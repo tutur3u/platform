@@ -121,7 +121,7 @@ function VoterList({
                 key={index}
                 className="flex items-center gap-2 py-0.5 text-muted-foreground text-xs"
               >
-                <div className="flex h-2 w-2 flex-shrink-0 rounded-full bg-dynamic-purple/60" />
+                <div className="flex h-2 w-2 shrink-0 rounded-full bg-dynamic-purple/60" />
                 <span className="min-w-0 truncate">
                   {voter.name || 'Anonymous'}
                 </span>
@@ -415,7 +415,7 @@ export default function MultipleChoiceVote({
                   </div>
                 </div>
 
-                <div className="ml-2 flex min-w-[80px] flex-shrink-0 flex-col items-end justify-between sm:min-w-[90px]">
+                <div className="ml-2 flex min-w-[80px] shrink-0 flex-col items-end justify-between sm:min-w-[90px]">
                   <span
                     className={cn(
                       'w-full text-center text-dynamic-purple text-xs'

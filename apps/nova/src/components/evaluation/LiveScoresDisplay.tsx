@@ -146,7 +146,7 @@ export function LiveScoresDisplay({
             <div className="flex items-center gap-2">
               <div className="h-3 flex-1 overflow-hidden rounded-full bg-dynamic-purple/20 shadow-inner">
                 <div
-                  className="h-full bg-gradient-to-r from-dynamic-purple via-dynamic-indigo to-dynamic-blue shadow-sm transition-all duration-1000 ease-out"
+                  className="h-full bg-linear-to-r from-dynamic-purple via-dynamic-indigo to-dynamic-blue shadow-sm transition-all duration-1000 ease-out"
                   style={{
                     width: `${evaluationPreview.criteriaScores.percentage}%`,
                   }}
@@ -256,8 +256,8 @@ export function LiveResultsPreview({
                           className={cn(
                             'h-full transition-all duration-500 ease-out',
                             evaluationPreview.generationPhase
-                              ? 'bg-gradient-to-r from-dynamic-indigo to-dynamic-blue'
-                              : 'bg-gradient-to-r from-dynamic-indigo to-dynamic-green'
+                              ? 'bg-linear-to-r from-dynamic-indigo to-dynamic-blue'
+                              : 'bg-linear-to-r from-dynamic-indigo to-dynamic-green'
                           )}
                           style={{
                             width: evaluationPreview.generationPhase

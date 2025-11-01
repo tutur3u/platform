@@ -12,7 +12,7 @@ export default function FarmGamePage() {
       <div className="flex w-full max-w-7xl flex-col items-center justify-center">
         {/* Header */}
         <div className="mb-6 text-center">
-          <div className="mb-2 bg-gradient-to-r from-dynamic-green to-dynamic-blue bg-clip-text font-bold text-3xl text-transparent">
+          <div className="mb-2 bg-linear-to-r from-dynamic-green to-dynamic-blue bg-clip-text font-bold text-3xl text-transparent">
             🌾 Farm Game
           </div>
           <div className="text-dynamic-gray/70 text-sm">

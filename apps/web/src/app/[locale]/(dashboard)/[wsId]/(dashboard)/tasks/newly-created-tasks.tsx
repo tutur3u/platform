@@ -67,7 +67,7 @@ export default async function NewlyCreatedTasks({
 
   return (
     <Card className="group overflow-hidden border-dynamic-green/20 transition-all duration-300 hover:border-dynamic-green/30 hover:shadow-lg">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-green/20 border-b bg-gradient-to-r from-dynamic-green/5 via-dynamic-green/3 to-dynamic-cyan/5 p-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-green/20 border-b bg-linear-to-r from-dynamic-green/5 via-dynamic-green/3 to-dynamic-cyan/5 p-4">
         <CardTitle className="flex items-center gap-3 font-semibold text-base">
           <div className="rounded-xl bg-linear-to-br from-dynamic-green/20 to-dynamic-green/10 p-2 text-dynamic-green shadow-sm ring-1 ring-dynamic-green/20">
             <CheckCircle className="h-4 w-4" />
@@ -110,7 +110,7 @@ export default async function NewlyCreatedTasks({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-dynamic-green/30 bg-gradient-to-r from-dynamic-green/5 to-dynamic-green/10 text-dynamic-green transition-all duration-200 hover:scale-105 hover:border-dynamic-green/40 hover:bg-dynamic-green/20 hover:shadow-md"
+                  className="border-dynamic-green/30 bg-linear-to-r from-dynamic-green/5 to-dynamic-green/10 text-dynamic-green transition-all duration-200 hover:scale-105 hover:border-dynamic-green/40 hover:bg-dynamic-green/20 hover:shadow-md"
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   {t('create_task')}

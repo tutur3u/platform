@@ -80,7 +80,7 @@ export function EvaluationProgress({
                 stage.status === 'error' && 'border-red-200 bg-red-50'
               )}
             >
-              <div className="mt-0.5 flex-shrink-0">
+              <div className="mt-0.5 shrink-0">
                 <Icon
                   className={cn(
                     'h-4 w-4',

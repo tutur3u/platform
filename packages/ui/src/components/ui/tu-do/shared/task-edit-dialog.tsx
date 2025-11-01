@@ -4392,7 +4392,7 @@ function TaskEditDialogComponent({
                                       <span className="break-words">
                                         {project.name}
                                       </span>
-                                      <X className="h-2.5 w-2.5 flex-shrink-0" />
+                                      <X className="h-2.5 w-2.5 shrink-0" />
                                     </Badge>
                                   ))}
                                 </div>
@@ -4419,7 +4419,7 @@ function TaskEditDialogComponent({
                                         <span className="flex-1 whitespace-normal break-words">
                                           {project.name}
                                         </span>
-                                        <Plus className="ml-auto h-4 w-4 flex-shrink-0" />
+                                        <Plus className="ml-auto h-4 w-4 shrink-0" />
                                       </button>
                                     ))}
                                 </div>
@@ -5174,12 +5174,12 @@ function TaskEditDialogComponent({
                                     variant="default"
                                     size="xs"
                                     onClick={() => toggleProject(project)}
-                                    className="h-auto items-center whitespace-normal gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
+                                    className="h-auto items-center gap-1.5 whitespace-normal rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
                                   >
                                     <span className="break-words">
                                       {project.name}
                                     </span>
-                                    <X className="h-3 w-3 flex-shrink-0 opacity-70" />
+                                    <X className="h-3 w-3 shrink-0 opacity-70" />
                                   </Button>
                                 ))}
                               </div>

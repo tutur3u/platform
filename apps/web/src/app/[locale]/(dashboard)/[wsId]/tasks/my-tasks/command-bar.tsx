@@ -1263,7 +1263,7 @@ export function CommandBar({
               onClick={handleAction}
               disabled={!canExecute || isLoading}
               size="sm"
-              className="h-8 shrink-0 gap-1.5 rounded-lg bg-gradient-to-r from-primary to-primary/90 px-3 font-semibold text-xs shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] disabled:opacity-50 sm:gap-2 sm:px-4 md:h-9 md:text-sm"
+              className="h-8 shrink-0 gap-1.5 rounded-lg bg-linear-to-r from-primary to-primary/90 px-3 font-semibold text-xs shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] disabled:opacity-50 sm:gap-2 sm:px-4 md:h-9 md:text-sm"
             >
               {isLoading ? (
                 <>

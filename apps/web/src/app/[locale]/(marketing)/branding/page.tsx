@@ -154,7 +154,7 @@ const BrandingPage = () => {
               className="mb-6 text-balance font-bold text-4xl tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
             >
               {t('branding.hero.title')}{' '}
-              <span className="animate-gradient bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+              <span className="animate-gradient bg-linear-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
                 Guidelines
               </span>
             </motion.h1>
@@ -184,7 +184,7 @@ const BrandingPage = () => {
               <div className="flex-1">
                 <h2 className="mb-2 font-bold text-3xl sm:text-4xl">
                   Tuturuuu{' '}
-                  <span className="bg-gradient-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
+                  <span className="bg-linear-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
                     Logo
                   </span>
                 </h2>
@@ -236,7 +236,7 @@ const BrandingPage = () => {
               <div className="flex-1">
                 <h2 className="mb-2 font-bold text-3xl sm:text-4xl">
                   Mira AI{' '}
-                  <span className="bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
+                  <span className="bg-linear-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
                     Logo
                   </span>
                 </h2>
@@ -286,7 +286,7 @@ const BrandingPage = () => {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               Color{' '}
-              <span className="bg-gradient-to-r from-dynamic-orange via-dynamic-red to-dynamic-pink bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-dynamic-orange via-dynamic-red to-dynamic-pink bg-clip-text text-transparent">
                 Palette
               </span>
             </h2>
@@ -437,7 +437,7 @@ const BrandingPage = () => {
             className="mb-16 text-center"
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
-              <span className="bg-gradient-to-r from-dynamic-cyan via-dynamic-blue to-dynamic-purple bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-dynamic-cyan via-dynamic-blue to-dynamic-purple bg-clip-text text-transparent">
                 Typography
               </span>
             </h2>
@@ -511,7 +511,7 @@ const BrandingPage = () => {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               Usage{' '}
-              <span className="bg-gradient-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
                 Guidelines
               </span>
             </h2>
@@ -591,7 +591,7 @@ const BrandingPage = () => {
                       <li key={ruleIndex} className="flex items-start gap-3">
                         <span
                           className={cn(
-                            'mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full',
+                            'mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full',
                             `bg-dynamic-${guideline.color}`
                           )}
                         />
