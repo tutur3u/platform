@@ -106,7 +106,7 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
         <CommandGroup>
           <CommandItem
             onSelect={handleAddTask}
-            className="group cursor-pointer border-transparent border-l-2 transition-all duration-200 hover:border-dynamic-green/30 hover:bg-linear-to-r hover:from-dynamic-green/5 hover:to-dynamic-emerald/5"
+            className="group cursor-pointer border-transparent border-l-2 transition-all duration-200 hover:border-dynamic-green/30 hover:bg-gradient-to-r hover:from-dynamic-green/5 hover:to-dynamic-emerald/5"
           >
             <div className="flex w-full items-center gap-4">
               <div className="relative">
@@ -131,7 +131,7 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
 
           <CommandItem
             onSelect={handleQuickTimeTracker}
-            className="group cursor-pointer border-transparent border-l-2 transition-all duration-200 hover:border-dynamic-purple/30 hover:bg-linear-to-r hover:from-dynamic-purple/5 hover:to-dynamic-pink/5"
+            className="group cursor-pointer border-transparent border-l-2 transition-all duration-200 hover:border-dynamic-purple/30 hover:bg-gradient-to-r hover:from-dynamic-purple/5 hover:to-dynamic-pink/5"
           >
             <div className="flex w-full items-center gap-4">
               <div className="relative">
@@ -168,7 +168,7 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
 
           <CommandItem
             onSelect={handleTimeTracker}
-            className="group cursor-pointer border-transparent border-l-2 transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-linear-to-r hover:from-dynamic-blue/5 hover:to-dynamic-purple/5"
+            className="group cursor-pointer border-transparent border-l-2 transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-gradient-to-r hover:from-dynamic-blue/5 hover:to-dynamic-purple/5"
           >
             <div className="flex w-full items-center gap-4">
               <div className="relative">
@@ -201,7 +201,7 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
 
           <CommandItem
             onSelect={handleCalendar}
-            className="group cursor-pointer border-transparent border-l-2 transition-all duration-200 hover:border-dynamic-orange/30 hover:bg-linear-to-r hover:from-dynamic-orange/5 hover:to-dynamic-pink/5"
+            className="group cursor-pointer border-transparent border-l-2 transition-all duration-200 hover:border-dynamic-orange/30 hover:bg-gradient-to-r hover:from-dynamic-orange/5 hover:to-dynamic-pink/5"
           >
             <div className="flex w-full items-center gap-4">
               <div className="relative">

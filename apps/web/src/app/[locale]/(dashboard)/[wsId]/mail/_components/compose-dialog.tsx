@@ -425,7 +425,7 @@ export function ComposeDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[80vh] flex-col overflow-hidden sm:max-w-4xl">
-        <DialogHeader className="shrink-0">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Send className="h-5 w-5" />
             {t('mail.compose_email')}
@@ -691,7 +691,7 @@ export function ComposeDialog({
               )}
             </div>
 
-            <div className="flex shrink-0 justify-end gap-2 border-t pt-4">
+            <div className="flex flex-shrink-0 justify-end gap-2 border-t pt-4">
               <Button
                 type="button"
                 variant="outline"

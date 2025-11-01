@@ -215,7 +215,7 @@ export default async function TimeTrackingMetrics({
 
   return (
     <Card className="overflow-hidden border-dynamic-purple/20 transition-all duration-300">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-purple/20 border-b bg-linear-to-r from-dynamic-purple/5 to-dynamic-blue/5 p-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-purple/20 border-b bg-gradient-to-r from-dynamic-purple/5 to-dynamic-blue/5 p-4">
         <CardTitle className="flex items-center gap-2 font-semibold text-base">
           <div className="rounded-lg bg-dynamic-purple/10 p-1.5 text-dynamic-purple">
             <ClockFading className="h-4 w-4" />
@@ -244,7 +244,7 @@ export default async function TimeTrackingMetrics({
       <CardContent className="space-y-6 p-6">
         {/* Currently Running Session */}
         {!noData && runningSession && (
-          <div className="relative rounded-xl border border-dynamic-green/20 bg-linear-to-r from-dynamic-green/5 to-dynamic-emerald/5 p-4">
+          <div className="relative rounded-xl border border-dynamic-green/20 bg-gradient-to-r from-dynamic-green/5 to-dynamic-emerald/5 p-4">
             <div className="absolute top-3 right-3">
               <div className="flex items-center gap-1">
                 <div className="h-2 w-2 animate-pulse rounded-full bg-dynamic-green" />
@@ -460,7 +460,7 @@ export default async function TimeTrackingMetrics({
                 </p>
                 <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-dynamic-green/10">
                   <div
-                    className="h-full rounded-full bg-linear-to-r from-dynamic-green to-dynamic-teal transition-all duration-500"
+                    className="h-full rounded-full bg-gradient-to-r from-dynamic-green to-dynamic-teal transition-all duration-500"
                     style={{ width: `${Math.min(productivityScore, 100)}%` }}
                   />
                 </div>
@@ -598,7 +598,7 @@ export default async function TimeTrackingMetrics({
               <Link href={`/${wsId}/time-tracker`}>
                 <Button
                   size="lg"
-                  className="bg-linear-to-r from-dynamic-purple to-dynamic-blue text-white hover:from-dynamic-purple/90 hover:to-dynamic-blue/90"
+                  className="bg-gradient-to-r from-dynamic-purple to-dynamic-blue text-white hover:from-dynamic-purple/90 hover:to-dynamic-blue/90"
                 >
                   <PlayCircle className="mr-2 h-5 w-5" />
                   {t('start_your_first_timer')}

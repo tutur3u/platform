@@ -45,7 +45,7 @@ export default function StatsOverview({
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
       <Card className="overflow-hidden border-dynamic-blue/20 bg-linear-to-br from-dynamic-blue/5 to-dynamic-purple/5 transition-all duration-300 hover:shadow-dynamic-blue/10 hover:shadow-lg">
-        <CardHeader className="flex flex-row items-center justify-between border-dynamic-blue/20 border-b bg-linear-to-r from-dynamic-blue/10 to-dynamic-purple/10 pb-4">
+        <CardHeader className="flex flex-row items-center justify-between border-dynamic-blue/20 border-b bg-gradient-to-r from-dynamic-blue/10 to-dynamic-purple/10 pb-4">
           <CardTitle className="font-semibold text-dynamic-blue text-sm">
             Total{' '}
             {period === 'day'
@@ -70,7 +70,7 @@ export default function StatsOverview({
           </p>
           <div className="mt-4 h-1 rounded-full bg-dynamic-blue/20">
             <div
-              className="h-1 rounded-full bg-linear-to-r from-dynamic-blue to-dynamic-purple transition-all duration-700"
+              className="h-1 rounded-full bg-gradient-to-r from-dynamic-blue to-dynamic-purple transition-all duration-700"
               style={{ width: stats.totalSessions > 0 ? '100%' : '0%' }}
             />
           </div>
@@ -78,7 +78,7 @@ export default function StatsOverview({
       </Card>
 
       <Card className="overflow-hidden border-dynamic-green/20 bg-linear-to-br from-dynamic-green/5 to-dynamic-blue/5 transition-all duration-300 hover:shadow-dynamic-green/10 hover:shadow-lg">
-        <CardHeader className="flex flex-row items-center justify-between border-dynamic-green/20 border-b bg-linear-to-r from-dynamic-green/10 to-dynamic-blue/10 pb-4">
+        <CardHeader className="flex flex-row items-center justify-between border-dynamic-green/20 border-b bg-gradient-to-r from-dynamic-green/10 to-dynamic-blue/10 pb-4">
           <CardTitle className="font-semibold text-dynamic-green text-sm">
             Active Sessions
           </CardTitle>
@@ -105,7 +105,7 @@ export default function StatsOverview({
           )}
           <div className="mt-4 h-1 rounded-full bg-dynamic-green/20">
             <div
-              className="h-1 rounded-full bg-linear-to-r from-dynamic-green to-dynamic-blue transition-all duration-700"
+              className="h-1 rounded-full bg-gradient-to-r from-dynamic-green to-dynamic-blue transition-all duration-700"
               style={{ width: stats.activeSessions > 0 ? '100%' : '15%' }}
             />
           </div>
@@ -113,7 +113,7 @@ export default function StatsOverview({
       </Card>
 
       <Card className="overflow-hidden border-dynamic-yellow/20 bg-linear-to-br from-dynamic-yellow/5 to-dynamic-orange/5 transition-all duration-300 hover:shadow-dynamic-yellow/10 hover:shadow-lg">
-        <CardHeader className="flex flex-row items-center justify-between border-dynamic-yellow/20 border-b bg-linear-to-r from-dynamic-yellow/10 to-dynamic-orange/10 pb-4">
+        <CardHeader className="flex flex-row items-center justify-between border-dynamic-yellow/20 border-b bg-gradient-to-r from-dynamic-yellow/10 to-dynamic-orange/10 pb-4">
           <CardTitle className="font-semibold text-dynamic-yellow text-sm">
             Today's Work
           </CardTitle>
@@ -142,7 +142,7 @@ export default function StatsOverview({
             </div>
             <div className="h-1 rounded-full bg-dynamic-yellow/20">
               <div
-                className="h-1 rounded-full bg-linear-to-r from-dynamic-yellow to-dynamic-orange transition-all duration-700"
+                className="h-1 rounded-full bg-gradient-to-r from-dynamic-yellow to-dynamic-orange transition-all duration-700"
                 style={{
                   width: `${Math.min(100, (stats.todayTime / (8 * 3600)) * 100)}%`,
                 }}
@@ -153,7 +153,7 @@ export default function StatsOverview({
       </Card>
 
       <Card className="overflow-hidden border-dynamic-purple/20 bg-linear-to-br from-dynamic-purple/5 to-dynamic-pink/5 transition-all duration-300 hover:shadow-dynamic-purple/10 hover:shadow-lg">
-        <CardHeader className="flex flex-row items-center justify-between border-dynamic-purple/20 border-b bg-linear-to-r from-dynamic-purple/10 to-dynamic-pink/10 pb-4">
+        <CardHeader className="flex flex-row items-center justify-between border-dynamic-purple/20 border-b bg-gradient-to-r from-dynamic-purple/10 to-dynamic-pink/10 pb-4">
           <CardTitle className="font-semibold text-dynamic-purple text-sm">
             {period === 'day'
               ? 'Daily Average'
@@ -187,7 +187,7 @@ export default function StatsOverview({
           </p>
           <div className="mt-4 h-1 rounded-full bg-dynamic-purple/20">
             <div
-              className="h-1 rounded-full bg-linear-to-r from-dynamic-purple to-dynamic-pink transition-all duration-700"
+              className="h-1 rounded-full bg-gradient-to-r from-dynamic-purple to-dynamic-pink transition-all duration-700"
               style={{
                 width:
                   period === 'day'

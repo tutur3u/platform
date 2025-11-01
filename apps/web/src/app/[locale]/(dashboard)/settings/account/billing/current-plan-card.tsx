@@ -41,7 +41,7 @@ export default async function CurrentPlanCard() {
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader className="bg-linear-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20">
+      <CardHeader className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20">
         <div className="flex items-center gap-3">
           <div className="rounded-full bg-amber-100 p-2 dark:bg-amber-900/30">
             <Crown className="h-5 w-5 text-amber-600 dark:text-amber-400" />
@@ -59,7 +59,7 @@ export default async function CurrentPlanCard() {
         <div className="space-y-3 text-center">
           <Badge
             variant="default"
-            className="bg-linear-to-r from-blue-600 to-purple-600 text-white"
+            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
           >
             {t('free-plan')}
           </Badge>
@@ -97,7 +97,7 @@ export default async function CurrentPlanCard() {
         </div>
 
         {/* Upgrade Preview */}
-        <div className="rounded-lg border bg-linear-to-r from-purple-50 to-blue-50 p-4 dark:from-purple-950/20 dark:to-blue-950/20">
+        <div className="rounded-lg border bg-gradient-to-r from-purple-50 to-blue-50 p-4 dark:from-purple-950/20 dark:to-blue-950/20">
           <p className="mb-2 font-medium text-muted-foreground text-xs">
             Next tier: {t('pro-plan')}
           </p>

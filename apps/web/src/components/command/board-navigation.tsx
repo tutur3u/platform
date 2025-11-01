@@ -32,7 +32,7 @@ function BoardItem({ board, onSelect, getBoardColor }: BoardItemProps) {
     <CommandItem
       key={board.id}
       onSelect={() => onSelect(board.id)}
-      className="command-item group cursor-pointer border-transparent border-l-2 transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-linear-to-r hover:from-dynamic-blue/5 hover:to-dynamic-purple/5"
+      className="command-item group cursor-pointer border-transparent border-l-2 transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-gradient-to-r hover:from-dynamic-blue/5 hover:to-dynamic-purple/5"
     >
       <div className="flex w-full items-center gap-4">
         <div className="relative">
@@ -370,7 +370,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
           <div className="relative">
             {/* Top scroll indicator */}
             {boards.length > 4 && canScrollUp && (
-              <div className="absolute top-0 right-0 left-0 z-10 flex justify-center bg-linear-to-b from-background to-transparent pb-2">
+              <div className="absolute top-0 right-0 left-0 z-10 flex justify-center bg-gradient-to-b from-background to-transparent pb-2">
                 <ChevronUp className="h-4 w-4 animate-bounce text-muted-foreground" />
               </div>
             )}
@@ -404,7 +404,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
 
             {/* Bottom scroll indicator */}
             {boards.length > 4 && canScrollDown && (
-              <div className="absolute right-0 bottom-0 left-0 z-10 flex justify-center bg-linear-to-t from-background to-transparent pt-2">
+              <div className="absolute right-0 bottom-0 left-0 z-10 flex justify-center bg-gradient-to-t from-background to-transparent pt-2">
                 <ChevronDown className="h-4 w-4 animate-bounce text-muted-foreground" />
               </div>
             )}

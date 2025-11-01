@@ -164,8 +164,7 @@ export async function POST(req: Request, { params }: Params) {
   const data = validationResult.data;
 
   const supabase = await createClient();
-  // Separate control flags from user payload
-  // Do NOT allow archived or archived_until during creation
+  // Separate control flag from user payload
   const { is_guest, ...userPayload } = data ?? {};
 
   // Create user and get the new id

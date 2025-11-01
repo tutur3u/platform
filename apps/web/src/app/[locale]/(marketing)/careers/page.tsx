@@ -319,7 +319,7 @@ export default function CareersPage() {
               className="mb-6 text-balance font-bold text-4xl tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl"
             >
               Build the{' '}
-              <span className="animate-gradient bg-linear-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+              <span className="animate-gradient bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
                 Future
               </span>
               <br />
@@ -418,7 +418,7 @@ export default function CareersPage() {
               <div className="grid gap-8 lg:grid-cols-2">
                 <div>
                   <h2 className="mb-4 font-bold text-3xl sm:text-4xl">
-                    <span className="bg-linear-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+                    <span className="bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
                       Our Mission
                     </span>
                   </h2>
@@ -428,7 +428,7 @@ export default function CareersPage() {
                     work and eliminates context-switching friction.
                   </p>
                   <h2 className="mb-4 font-bold text-3xl sm:text-4xl">
-                    <span className="bg-linear-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
+                    <span className="bg-gradient-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
                       Our Vision
                     </span>
                   </h2>
@@ -491,7 +491,7 @@ export default function CareersPage() {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               Core{' '}
-              <span className="bg-linear-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
                 Beliefs
               </span>
             </h2>
@@ -555,7 +555,7 @@ export default function CareersPage() {
             </Badge>
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               Building{' '}
-              <span className="bg-linear-to-r from-dynamic-cyan via-dynamic-blue to-dynamic-purple bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-cyan via-dynamic-blue to-dynamic-purple bg-clip-text text-transparent">
                 Mira & Aurora
               </span>
             </h2>
@@ -711,7 +711,7 @@ export default function CareersPage() {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               Open{' '}
-              <span className="bg-linear-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
                 Opportunities
               </span>
             </h2>
@@ -819,7 +819,7 @@ export default function CareersPage() {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               Our{' '}
-              <span className="bg-linear-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
                 Culture
               </span>
             </h2>
@@ -875,7 +875,7 @@ export default function CareersPage() {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               Benefits &{' '}
-              <span className="bg-linear-to-r from-dynamic-green via-dynamic-emerald to-dynamic-cyan bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-green via-dynamic-emerald to-dynamic-cyan bg-clip-text text-transparent">
                 Perks
               </span>
             </h2>
@@ -926,7 +926,7 @@ export default function CareersPage() {
             </Badge>
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               World-Class{' '}
-              <span className="bg-linear-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
                 Technology
               </span>
             </h2>

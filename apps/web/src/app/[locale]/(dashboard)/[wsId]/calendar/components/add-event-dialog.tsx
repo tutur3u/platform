@@ -466,7 +466,7 @@ export default function AddEventDialog({
                 }}
               >
                 {/* Track */}
-                <div className="absolute top-3 right-0 left-0 z-10 h-2 rounded-full bg-linear-to-r from-red-500 via-orange-400 to-green-500 opacity-60" />
+                <div className="absolute top-3 right-0 left-0 z-10 h-2 rounded-full bg-gradient-to-r from-red-500 via-orange-400 to-green-500 opacity-60" />
                 {/* Thumb: selected icon in a styled circle */}
                 <div
                   style={{ left: `calc(${getSliderPosition()}% - 14px)` }}

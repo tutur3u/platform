@@ -87,9 +87,9 @@ const getScrollShadowClasses = (
 ) => {
   return cn(
     scrollState?.top &&
-      'before:pointer-events-none before:absolute before:top-0 before:right-0 before:left-0 before:h-3 before:bg-linear-to-b before:from-muted/80 before:to-transparent',
+      'before:pointer-events-none before:absolute before:top-0 before:right-0 before:left-0 before:h-3 before:bg-gradient-to-b before:from-muted/80 before:to-transparent',
     scrollState?.bottom &&
-      'after:pointer-events-none after:absolute after:right-0 after:bottom-0 after:left-0 after:h-3 after:bg-linear-to-t after:from-muted/80 after:to-transparent'
+      'after:pointer-events-none after:absolute after:right-0 after:bottom-0 after:left-0 after:h-3 after:bg-gradient-to-t after:from-muted/80 after:to-transparent'
   );
 };
 

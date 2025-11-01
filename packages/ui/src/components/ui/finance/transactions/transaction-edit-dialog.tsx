@@ -410,7 +410,7 @@ export function TransactionEditDialog({
           {/* Main content area */}
           <div className="flex min-w-0 flex-1 flex-col bg-background">
             {/* Header with gradient */}
-            <div className="flex items-center justify-between border-b bg-linear-to-r from-dynamic-blue/5 via-background to-background px-4 py-3 backdrop-blur-sm md:px-8 md:py-4">
+            <div className="flex items-center justify-between border-b bg-gradient-to-r from-dynamic-blue/5 via-background to-background px-4 py-3 backdrop-blur-sm md:px-8 md:py-4">
               <div className="flex items-center gap-2 md:gap-3">
                 <div
                   className={cn(

@@ -59,7 +59,7 @@ export function MailList({
           <div className="flex w-full items-start gap-3">
             {/* <div className="flex items-center pt-1">
               {!item.read && (
-                <span className="flex h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-sm" />
+                <span className="flex h-2.5 w-2.5 flex-shrink-0 rounded-full bg-primary shadow-sm" />
               )}
             </div> */}
 

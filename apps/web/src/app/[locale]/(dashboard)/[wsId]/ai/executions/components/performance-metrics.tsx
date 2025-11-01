@@ -320,7 +320,7 @@ export function PerformanceMetrics({
                 'Total number of AI executions'}
             </p>
           </CardContent>
-          <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-primary/5 to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent" />
         </Card>
 
         <Card className="relative overflow-hidden">
@@ -336,7 +336,7 @@ export function PerformanceMetrics({
               {formatCost(totalCost * 26000, 'VND')}
             </p>
           </CardContent>
-          <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-success/5 to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-success/5 to-transparent" />
         </Card>
 
         <Card className="relative overflow-hidden">
@@ -355,7 +355,7 @@ export function PerformanceMetrics({
                 'Total tokens processed across all executions'}
             </p>
           </CardContent>
-          <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-warning/5 to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-warning/5 to-transparent" />
         </Card>
 
         <Card className="relative overflow-hidden">
@@ -378,7 +378,7 @@ export function PerformanceMetrics({
               {t('tokens')}
             </p>
           </CardContent>
-          <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-info/5 to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-info/5 to-transparent" />
         </Card>
       </div>
 
@@ -400,7 +400,7 @@ export function PerformanceMetrics({
                 executions per day
               </p>
             </CardContent>
-            <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-primary/5 to-transparent" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent" />
           </Card>
 
           <Card className="relative overflow-hidden">
@@ -418,7 +418,7 @@ export function PerformanceMetrics({
                 average daily spending
               </p>
             </CardContent>
-            <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-success/5 to-transparent" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-success/5 to-transparent" />
           </Card>
 
           <Card className="relative overflow-hidden">
@@ -436,7 +436,7 @@ export function PerformanceMetrics({
                 per execution
               </p>
             </CardContent>
-            <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-warning/5 to-transparent" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-warning/5 to-transparent" />
           </Card>
 
           <Card className="relative overflow-hidden">
@@ -457,7 +457,7 @@ export function PerformanceMetrics({
                 vs previous week
               </p>
             </CardContent>
-            <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-info/5 to-transparent" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-info/5 to-transparent" />
           </Card>
         </div>
       )}

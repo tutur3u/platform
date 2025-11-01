@@ -484,7 +484,7 @@ export function ListView({
                       'hover:bg-muted/50 hover:shadow-sm',
                       task.closed_at && 'opacity-60 saturate-50',
                       selectedTasks.has(task.id) &&
-                        'bg-linear-to-r from-primary/10 via-primary/5 to-transparent shadow-sm ring-1 ring-primary/20',
+                        'bg-gradient-to-r from-primary/10 via-primary/5 to-transparent shadow-sm ring-1 ring-primary/20',
                       task.end_date &&
                         new Date(task.end_date) < new Date() &&
                         !task.closed_at &&
@@ -682,7 +682,7 @@ export function ListView({
 
           {/* Infinite scroll loading indicator */}
           {hasMore && (
-            <div className="flex items-center justify-center border-t bg-linear-to-b from-background to-muted/20 py-4">
+            <div className="flex items-center justify-center border-t bg-gradient-to-b from-background to-muted/20 py-4">
               <div className="flex items-center gap-2.5 rounded-lg border bg-background px-4 py-2 shadow-sm">
                 <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                 <span className="font-medium text-muted-foreground text-xs">

@@ -134,7 +134,7 @@ export default function AboutPage() {
               className="mb-6 text-balance font-bold text-4xl tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
             >
               {t('hero.title.part1')}{' '}
-              <span className="bg-linear-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
                 {t('hero.title.highlight')}
               </span>
               <br />
@@ -196,7 +196,7 @@ export default function AboutPage() {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               {t('vision.title.part1')}{' '}
-              <span className="bg-linear-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
                 {t('vision.title.highlight')}
               </span>
             </h2>
@@ -256,7 +256,7 @@ export default function AboutPage() {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               {t('coreBeliefs.title.part1')}{' '}
-              <span className="bg-linear-to-r from-dynamic-orange via-dynamic-red to-dynamic-pink bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-orange via-dynamic-red to-dynamic-pink bg-clip-text text-transparent">
                 {t('coreBeliefs.title.highlight')}
               </span>
             </h2>
@@ -357,7 +357,7 @@ export default function AboutPage() {
             </Badge>
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               {t('problem.title.part1')}{' '}
-              <span className="bg-linear-to-r from-dynamic-red via-dynamic-orange to-dynamic-yellow bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-red via-dynamic-orange to-dynamic-yellow bg-clip-text text-transparent">
                 {t('problem.title.highlight')}
               </span>
             </h2>
@@ -442,7 +442,7 @@ export default function AboutPage() {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               {t('ecosystem.title.part1')}{' '}
-              <span className="bg-linear-to-r from-dynamic-cyan via-dynamic-blue to-dynamic-purple bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-cyan via-dynamic-blue to-dynamic-purple bg-clip-text text-transparent">
                 {t('ecosystem.title.highlight')}
               </span>
             </h2>
@@ -602,7 +602,7 @@ export default function AboutPage() {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               {t('techStack.title.part1')}{' '}
-              <span className="bg-linear-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
                 {t('techStack.title.highlight')}
               </span>
             </h2>
@@ -706,7 +706,7 @@ export default function AboutPage() {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               {t('features.title.part1')}{' '}
-              <span className="bg-linear-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
                 {t('features.title.highlight')}
               </span>
             </h2>
@@ -833,7 +833,7 @@ export default function AboutPage() {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               {t('timeline.title.part1')}{' '}
-              <span className="bg-linear-to-r from-dynamic-yellow via-dynamic-orange to-dynamic-red bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-yellow via-dynamic-orange to-dynamic-red bg-clip-text text-transparent">
                 {t('timeline.title.highlight')}
               </span>
             </h2>
@@ -844,7 +844,7 @@ export default function AboutPage() {
 
           <div className="relative">
             {/* Timeline line - hidden on mobile, visible on md+ */}
-            <div className="-translate-x-1/2 absolute top-0 bottom-0 left-1/2 hidden w-0.5 bg-linear-to-b from-dynamic-purple via-dynamic-blue to-dynamic-green md:block" />
+            <div className="-translate-x-1/2 absolute top-0 bottom-0 left-1/2 hidden w-0.5 bg-gradient-to-b from-dynamic-purple via-dynamic-blue to-dynamic-green md:block" />
 
             <div className="space-y-8 md:space-y-12">
               {[
@@ -999,7 +999,7 @@ export default function AboutPage() {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               {t('community.title.part1')}{' '}
-              <span className="bg-linear-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
                 {t('community.title.highlight')}
               </span>
             </h2>

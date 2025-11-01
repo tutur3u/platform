@@ -290,7 +290,7 @@ export default function ContactPage() {
               className="mb-6 text-balance font-bold text-4xl tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl"
             >
               {t('hero.title.part1')}{' '}
-              <span className="animate-gradient bg-linear-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+              <span className="animate-gradient bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
                 {t('hero.title.highlight')}
               </span>
             </motion.h1>
@@ -386,7 +386,7 @@ export default function ContactPage() {
               viewport={{ once: true }}
             >
               <h2 className="mb-6 font-bold text-3xl">
-                <span className="bg-linear-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
                   {t('form.title')}
                 </span>
               </h2>
@@ -629,7 +629,7 @@ export default function ContactPage() {
               {/* Why Choose Us */}
               <div>
                 <h2 className="mb-6 font-bold text-3xl">
-                  <span className="bg-linear-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
                     {t('highlights.title')}
                   </span>
                 </h2>
@@ -680,7 +680,7 @@ export default function ContactPage() {
               {/* Founder Contact */}
               <div>
                 <h2 className="mb-6 font-bold text-3xl">
-                  <span className="bg-linear-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
                     {t('founder.title')}
                   </span>
                 </h2>

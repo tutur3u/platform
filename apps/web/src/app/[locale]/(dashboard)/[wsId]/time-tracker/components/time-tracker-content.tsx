@@ -956,7 +956,7 @@ export default function TimeTrackerContent({
                               <div className="flex items-start gap-4">
                                 <div
                                   className={cn(
-                                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border',
+                                    'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border',
                                     task.is_assigned_to_current_user
                                       ? 'border-blue-300 bg-linear-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700'
                                       : 'border-blue-200/60 bg-linear-to-br from-blue-50 to-blue-100 dark:border-blue-700/60 dark:from-blue-900/50 dark:to-blue-800/50'
@@ -1060,7 +1060,7 @@ export default function TimeTrackerContent({
                                     </div>
                                   )}
                                 </div>
-                                <div className="flex shrink-0 items-center gap-1.5 text-gray-400 text-xs opacity-0 transition-opacity group-hover:opacity-100">
+                                <div className="flex flex-shrink-0 items-center gap-1.5 text-gray-400 text-xs opacity-0 transition-opacity group-hover:opacity-100">
                                   <span className="font-medium">Drag</span>
                                   <svg
                                     className="h-3.5 w-3.5"

@@ -196,7 +196,7 @@ export default function CopyLinkButton({
                       {format.path}
                       {planId}
                     </span>
-                    <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground" />
+                    <ExternalLink className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
                   </div>
                 </div>
                 <div className="w-full font-medium text-dynamic-purple text-xs">

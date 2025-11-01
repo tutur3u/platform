@@ -204,7 +204,7 @@ export function BillingClient({
                     key={index}
                     className="flex items-center text-card-foreground"
                   >
-                    <CheckCircle className="mr-3 h-5 w-5 shrink-0 text-primary" />
+                    <CheckCircle className="mr-3 h-5 w-5 flex-shrink-0 text-primary" />
                     <span className="text-sm">{feature}</span>
                   </li>
                 ))}
@@ -300,7 +300,7 @@ export function BillingClient({
                   <ul className="mb-6">
                     {plan.features.map((feature, index) => (
                       <li key={index} className="mb-2 flex items-start">
-                        <CheckCircle className="mt-0.5 mr-2 h-5 w-5 shrink-0 text-primary" />
+                        <CheckCircle className="mt-0.5 mr-2 h-5 w-5 flex-shrink-0 text-primary" />
                         <span className="text-card-foreground">{feature}</span>
                       </li>
                     ))}

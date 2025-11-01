@@ -452,7 +452,7 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
                 </div>
 
                 <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                  <Palette className="h-3 w-3 shrink-0" />
+                  <Palette className="h-3 w-3 flex-shrink-0" />
                   <span className="truncate font-mono">
                     {label.color.toUpperCase()}
                   </span>

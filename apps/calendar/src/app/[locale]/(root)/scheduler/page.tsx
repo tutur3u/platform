@@ -164,7 +164,7 @@ export default function SchedulerPage() {
               <SparklesIcon className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="bg-linear-to-r from-dynamic-blue to-dynamic-purple bg-clip-text font-bold text-3xl text-transparent">
+              <h1 className="bg-gradient-to-r from-dynamic-blue to-dynamic-purple bg-clip-text font-bold text-3xl text-transparent">
                 AI Task Scheduler
               </h1>
               <p className="text-muted-foreground">
@@ -228,7 +228,7 @@ export default function SchedulerPage() {
                         <Button
                           onClick={() => setIsLockedEventModalOpen(true)}
                           size="sm"
-                          className="bg-linear-to-r from-blue-500 to-indigo-600 text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-indigo-700"
+                          className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-indigo-700"
                         >
                           <PlusIcon className="mr-2 h-4 w-4" />
                           Add Locked Event
@@ -606,7 +606,7 @@ function LockedEventForm({
         </Button>
         <Button
           type="submit"
-          className="bg-linear-to-r from-blue-500 to-indigo-600 text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-indigo-700"
+          className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-indigo-700"
         >
           Add Locked Event
         </Button>

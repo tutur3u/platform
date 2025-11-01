@@ -79,7 +79,7 @@ export default function TimeTrackerWrapper({
     return (
       <div className="space-y-6">
         {/* Mode Switcher */}
-        <Card className="border-orange-200 bg-linear-to-r from-orange-50 to-amber-50 dark:border-orange-800 dark:from-orange-950/20 dark:to-amber-950/20">
+        <Card className="border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 dark:border-orange-800 dark:from-orange-950/20 dark:to-amber-950/20">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -116,7 +116,7 @@ export default function TimeTrackerWrapper({
   return (
     <div className="space-y-6">
       {/* Mode Switcher */}
-      <Card className="border-blue-200 bg-linear-to-r from-blue-50 to-indigo-50 dark:border-blue-800 dark:from-blue-950/20 dark:to-indigo-950/20">
+      <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 dark:border-blue-800 dark:from-blue-950/20 dark:to-indigo-950/20">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">

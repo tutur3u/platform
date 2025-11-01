@@ -231,7 +231,7 @@ export function TranscriptViewer({
                             className="group flex gap-4 rounded-lg border bg-background p-3 transition-colors hover:bg-muted/20"
                           >
                             {/* Timestamp */}
-                            <div className="w-24 shrink-0 font-mono text-muted-foreground text-xs">
+                            <div className="w-24 flex-shrink-0 font-mono text-muted-foreground text-xs">
                               <div className="sticky top-0">
                                 <div className="font-medium">
                                   {formatTime(segment.start)}

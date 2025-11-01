@@ -172,7 +172,7 @@ export default function SecurityPage() {
               className="mb-6 text-balance font-bold text-4xl tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl"
             >
               Your Security is Our{' '}
-              <span className="animate-gradient bg-linear-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
+              <span className="animate-gradient bg-gradient-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
                 Top Priority
               </span>
             </motion.h1>
@@ -202,7 +202,7 @@ export default function SecurityPage() {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               Built on{' '}
-              <span className="bg-linear-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
                 Security
               </span>
             </h2>
@@ -270,7 +270,7 @@ export default function SecurityPage() {
                   </motion.div>
 
                   <h2 className="mb-4 font-bold text-3xl sm:text-4xl">
-                    <span className="bg-linear-to-r from-dynamic-red via-dynamic-orange to-dynamic-yellow bg-clip-text text-transparent">
+                    <span className="bg-gradient-to-r from-dynamic-red via-dynamic-orange to-dynamic-yellow bg-clip-text text-transparent">
                       Report a Vulnerability
                     </span>
                   </h2>
@@ -379,7 +379,7 @@ export default function SecurityPage() {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               Trusted{' '}
-              <span className="bg-linear-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
                 Globally
               </span>
             </h2>

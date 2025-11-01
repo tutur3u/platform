@@ -13,7 +13,7 @@ export default async function AccountStatusSection({
   const t = await getTranslations('settings-account');
 
   return (
-    <div className="rounded-lg border bg-linear-to-r from-emerald-50/50 to-green-50/50 p-4 dark:from-emerald-950/20 dark:to-green-950/20">
+    <div className="rounded-lg border bg-gradient-to-r from-emerald-50/50 to-green-50/50 p-4 dark:from-emerald-950/20 dark:to-green-950/20">
       <div className="mb-3 flex items-center gap-2">
         <div className="rounded-full bg-emerald-100 p-1.5 dark:bg-emerald-900/30">
           <Settings className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />

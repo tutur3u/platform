@@ -34,7 +34,7 @@ export default function CalendarClientPage({
           <Button
             variant="default"
             size="sm"
-            className="w-full bg-linear-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 md:w-fit"
+            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 md:w-fit"
           >
             <Sparkles className="mr-2 h-4 w-4" />
             Auto-Schedule

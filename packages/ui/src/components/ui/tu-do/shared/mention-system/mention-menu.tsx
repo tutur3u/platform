@@ -56,11 +56,11 @@ export function MentionMenu({
         left: position.left,
       }}
     >
-      <div className="shrink-0 border-dynamic-border/60 border-b px-3 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+      <div className="flex-shrink-0 border-dynamic-border/60 border-b px-3 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">
         Mention people, workspaces, projects, dates, or tasks
       </div>
       {isLoading && (
-        <div className="flex shrink-0 items-center gap-2 px-3 py-2 text-muted-foreground text-xs">
+        <div className="flex flex-shrink-0 items-center gap-2 px-3 py-2 text-muted-foreground text-xs">
           <Loader2 className="h-3 w-3 animate-spin" />
           Fetching latest context…
         </div>

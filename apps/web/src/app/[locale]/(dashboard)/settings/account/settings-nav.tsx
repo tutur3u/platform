@@ -82,7 +82,7 @@ export default function SettingsNav({ className }: SettingsNavProps) {
             <div className="flex min-w-0 flex-1 items-center space-x-3">
               <div
                 className={cn(
-                  'shrink-0 rounded-md p-1.5 transition-colors',
+                  'flex-shrink-0 rounded-md p-1.5 transition-colors',
                   isActive
                     ? 'bg-dynamic-blue/20 text-dynamic-blue'
                     : 'bg-foreground/10 text-foreground group-hover:bg-foreground/20 group-hover:text-foreground'
@@ -114,7 +114,7 @@ export default function SettingsNav({ className }: SettingsNavProps) {
 
             <ChevronRight
               className={cn(
-                'h-4 w-4 shrink-0 transition-all duration-200 ease-in-out',
+                'h-4 w-4 flex-shrink-0 transition-all duration-200 ease-in-out',
                 isActive
                   ? 'translate-x-0.5 text-dynamic-blue'
                   : 'text-foreground/40 group-hover:translate-x-0.5 group-hover:text-foreground'

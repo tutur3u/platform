@@ -196,7 +196,7 @@ export default function BugBountyPage() {
               className="mb-6 text-balance font-bold text-4xl tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl"
             >
               Thank You for Your{' '}
-              <span className="animate-gradient bg-linear-to-r from-dynamic-yellow via-dynamic-orange to-dynamic-red bg-clip-text text-transparent">
+              <span className="animate-gradient bg-gradient-to-r from-dynamic-yellow via-dynamic-orange to-dynamic-red bg-clip-text text-transparent">
                 Security Contribution
               </span>
             </motion.h1>
@@ -231,7 +231,7 @@ export default function BugBountyPage() {
                   whileHover={{ scale: 1.05 }}
                   className="relative"
                 >
-                  <div className="absolute inset-0 rounded-full bg-linear-to-r from-dynamic-yellow/30 via-dynamic-orange/30 to-dynamic-red/30 blur-2xl" />
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-dynamic-yellow/30 via-dynamic-orange/30 to-dynamic-red/30 blur-2xl" />
                   <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-linear-to-br from-dynamic-yellow via-dynamic-orange to-dynamic-red shadow-lg">
                     <Trophy className="h-12 w-12 text-white" />
                   </div>
@@ -291,7 +291,7 @@ export default function BugBountyPage() {
             </Badge>
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               Vulnerability{' '}
-              <span className="bg-linear-to-r from-dynamic-red via-dynamic-orange to-dynamic-yellow bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-red via-dynamic-orange to-dynamic-yellow bg-clip-text text-transparent">
                 Discovery
               </span>
             </h2>
@@ -428,7 +428,7 @@ export default function BugBountyPage() {
                   </motion.div>
 
                   <h2 className="mb-4 font-bold text-3xl sm:text-4xl">
-                    <span className="bg-linear-to-r from-dynamic-purple via-dynamic-pink to-dynamic-red bg-clip-text text-transparent">
+                    <span className="bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-red bg-clip-text text-transparent">
                       Join Our Bug Bounty Program
                     </span>
                   </h2>

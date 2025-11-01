@@ -136,7 +136,7 @@ export function ProgressIndicator({
                   <div className="h-8 w-8 rounded-full bg-dynamic-green/60" />
                 </div>
               </div>
-              <span className="bg-linear-to-r from-dynamic-green to-dynamic-emerald bg-clip-text font-bold text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-green to-dynamic-emerald bg-clip-text font-bold text-transparent">
                 ✨ Evaluation Complete!
               </span>
             </div>
@@ -150,7 +150,7 @@ export function ProgressIndicator({
                   <div className="h-8 w-8 animate-spin rounded-full border-2 border-dynamic-blue/30 border-t-transparent opacity-60" />
                 </div>
               </div>
-              <span className="bg-linear-to-r from-dynamic-blue via-dynamic-purple to-dynamic-indigo bg-clip-text font-bold text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-blue via-dynamic-purple to-dynamic-indigo bg-clip-text font-bold text-transparent">
                 🤖 AI Evaluation in Progress
               </span>
             </div>
@@ -219,13 +219,13 @@ export function ProgressIndicator({
                     ? 'bg-dynamic-red'
                     : isWarning
                       ? 'bg-dynamic-amber'
-                      : 'bg-linear-to-r from-dynamic-blue via-dynamic-purple to-dynamic-indigo'
+                      : 'bg-gradient-to-r from-dynamic-blue via-dynamic-purple to-dynamic-indigo'
               )}
             />
             {!isEvaluationComplete && overallProgress > 0 && (
               <div className="absolute inset-0 overflow-hidden rounded-full">
                 <div
-                  className="h-full animate-pulse bg-linear-to-r from-transparent via-white/30 to-transparent"
+                  className="h-full animate-pulse bg-gradient-to-r from-transparent via-white/30 to-transparent"
                   style={{ width: `${overallProgress}%` }}
                 />
               </div>

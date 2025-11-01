@@ -1,17 +1,4 @@
 {
-  "audit-log-table": {
-    "id": "ID",
-    "user_full_name": "User Full Name",
-    "archived": "Archived",
-    "archived_until": "Archived Until",
-    "creator_full_name": "Creator Full Name",
-    "created_at": "Created At",
-    "unknown_user": "Unknown User",
-    "active": "Active",
-    "dash": "—",
-    "invalid_date": "Invalid date",
-    "system": "Unknown"
-  },
   "billing": {
     "loading": "Loading payment details...",
     "billing": "Billing",
@@ -114,7 +101,6 @@
     "theme": "Theme",
     "light": "Light",
     "dark": "Dark",
-    "switch_to": "Switch to {theme}",
     "standard": "Standard",
     "pink": "Pink",
     "purple": "Purple",
@@ -145,7 +131,6 @@
     "save": "Save",
     "reset": "Reset",
     "cancel": "Cancel",
-    "clear": "Clear",
     "start": "Start",
     "upload": "Upload",
     "uploading": "Uploading",
@@ -2273,11 +2258,6 @@
     "guest_user": "Guest user",
     "guest_user_tooltip": "If enabled, the user will be linked to the workspace's guest group.",
     "mark_as_guest": "Mark as guest",
-    "archived_user": "Archived user",
-    "archived_user_tooltip": "Permanently archive this user. Archived users cannot be assigned to new tasks.",
-    "mark_as_archived": "Mark as archived",
-    "archived_at": "Temporarily archived until",
-    "archived_at_tooltip": "Set a date when this user will be temporarily archived. After this date passes, the user will be automatically archived.",
     "gender_placeholder": "Please select a gender",
     "gender_options": {
       "male": "Male",
@@ -2294,8 +2274,7 @@
     "edit_description": "Edit an existing user",
     "failed_create": "Failed to create user",
     "failed_edit": "Failed to edit user",
-    "failed_delete": "Failed to delete workspace user",
-    "audit_log": "Audit Log"
+    "failed_delete": "Failed to delete workspace user"
   },
   "ws-user-attendance": {
     "singular": "Attendance",
@@ -5135,7 +5114,7 @@
       "title": "Quick Journal",
       "description": "Drop a quick idea—our AI turns it into a ready-to-track task.",
       "placeholder": "Write a thought, idea, or reminder...",
-      "helper_text": "We'll rewrite your note into a clear title and task description automatically.",
+      "helper_text": "We’ll rewrite your note into a clear title and task description automatically.",
       "select_label": "Send to list",
       "select_placeholder": "Select a task list",
       "button_label": "Generate task",
@@ -5155,7 +5134,7 @@
       "status_generating": "Rewriting your note with AI…",
       "preview_heading_ai": "{count, plural, one {AI-created task} other {AI-created tasks}}",
       "preview_heading_manual": "{count, plural, one {Task saved from your note} other {Tasks saved from your note}}",
-      "preview_subheading": "Here's what will appear on your board.",
+      "preview_subheading": "Here’s what will appear on your board.",
       "preview_description_label": "Description",
       "preview_description_empty": "No additional notes captured.",
       "preview_description_disabled": "Description generation disabled.",
@@ -6143,55 +6122,5 @@
         "impact": "Build Meaningful Things"
       }
     }
-  },
-  "command_palette": {
-    "title": "Command Center",
-    "ai_assistant": "AI Assistant",
-    "commands": "Commands",
-    "search_placeholder": "Search commands, tasks, or navigate...",
-    "ai_search_placeholder": "Ask me to create, find, summarize, or help with anything...",
-    "no_results": "No results found",
-    "no_results_for": "No matches for \"{query}\"",
-    "try_searching": "Try searching for tasks, pages, or actions",
-    "ai_tip": "Tip: Try using the AI Assistant for natural language queries",
-    "create_task": "Create task \"{taskName}\"",
-    "create_task_tip": "Tip: Press ⌘↵ to quickly create a task",
-    "clear_recent_title": "Clear Recent Items",
-    "clear_recent_confirmation": "This will clear all recent pages, tasks, and searches. Are you sure?",
-    "clear_all": "Clear All",
-    "cancel": "Cancel",
-    "navigation": "Navigation",
-    "tasks": "Tasks",
-    "recent_tasks": "Recent Tasks",
-    "recent": "Recent",
-    "quick_actions": "Quick Actions",
-    "searching_tasks": "Searching tasks...",
-    "no_tasks_found": "No tasks found matching \"{query}\"",
-    "result_count": "{count} result",
-    "result_count_plural": "{count} results",
-    "view_task": "View Task",
-    "add_another": "Add Another",
-    "keyboard_hints": {
-      "navigate": "navigate",
-      "select": "select",
-      "to_toggle": "to toggle",
-      "to_close": "to close",
-      "esc_to_close": "Press Esc to close",
-      "clear_recent": "clear recent"
-    },
-    "powered_by": "Powered by Tuturuuu Search",
-    "clear": "Clear",
-    "assigned_to_you": "Assigned to you",
-    "overdue": "Overdue",
-    "priority": {
-      "critical": "Critical",
-      "high": "High",
-      "normal": "Normal",
-      "low": "Low"
-    },
-    "workspaces": "Workspaces",
-    "loading_workspaces": "Loading workspaces...",
-    "personal": "Personal",
-    "current_theme": "Current"
   }
 }

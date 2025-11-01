@@ -23,13 +23,13 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@ai-sdk/google": "^2.0.26",
+    "@ai-sdk/google": "^2.0.25",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "dayjs": "^1.11.19",
+    "dayjs": "^1.11.18",
     "next": "^16.0.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

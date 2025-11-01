@@ -276,7 +276,7 @@ export default function VietnameseWomensDayPage() {
             className="mb-12 font-bold text-3xl tracking-tight sm:text-6xl md:text-7xl lg:text-8xl"
           >
             {t('hero.title.part1')}{' '}
-            <span className="bg-linear-to-r from-dynamic-pink via-dynamic-purple to-dynamic-red bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-red bg-clip-text text-transparent">
               {t('hero.title.highlight')}
             </span>
             <br />
@@ -296,7 +296,7 @@ export default function VietnameseWomensDayPage() {
           >
             <Button
               size="lg"
-              className="group relative overflow-hidden bg-linear-to-r from-dynamic-cyan to-dynamic-purple px-8 py-6 shadow-lg transition-all hover:shadow-xl sm:w-auto"
+              className="group relative overflow-hidden bg-gradient-to-r from-dynamic-cyan to-dynamic-purple px-8 py-6 shadow-lg transition-all hover:shadow-xl sm:w-auto"
               asChild
             >
               <Link href="/careers">
@@ -323,13 +323,13 @@ export default function VietnameseWomensDayPage() {
       {/* Decorative Divider */}
       <div className="relative mx-auto max-w-4xl px-4 py-8">
         <div className="flex items-center gap-4">
-          <div className="h-px flex-1 bg-linear-to-r from-transparent via-dynamic-pink/30 to-transparent" />
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-dynamic-pink/30 to-transparent" />
           <div className="flex gap-2">
             <div className="h-2 w-2 animate-pulse rounded-full bg-dynamic-pink/50" />
             <div className="h-2 w-2 animate-pulse rounded-full bg-dynamic-purple/50 delay-150" />
             <div className="h-2 w-2 animate-pulse rounded-full bg-dynamic-blue/50 delay-300" />
           </div>
-          <div className="h-px flex-1 bg-linear-to-r from-transparent via-dynamic-purple/30 to-transparent" />
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-dynamic-purple/30 to-transparent" />
         </div>
       </div>
 
@@ -354,16 +354,16 @@ export default function VietnameseWomensDayPage() {
               <div className="relative">
                 <div className="mb-6 text-6xl text-dynamic-pink/40">"</div>
 
-                <p className="mb-6 bg-linear-to-r from-dynamic-pink via-dynamic-purple to-dynamic-pink bg-clip-text pb-4 font-bold text-2xl text-transparent sm:text-3xl md:text-4xl">
+                <p className="mb-6 bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-pink bg-clip-text pb-4 font-bold text-2xl text-transparent sm:text-3xl md:text-4xl">
                   {t('quote.text')}
                 </p>
 
                 <div className="flex items-center justify-center gap-2 text-foreground/60">
-                  <div className="h-px w-8 bg-linear-to-r from-transparent to-dynamic-purple/50" />
+                  <div className="h-px w-8 bg-gradient-to-r from-transparent to-dynamic-purple/50" />
                   <span className="font-medium text-sm">
                     {t('quote.author')}
                   </span>
-                  <div className="h-px w-8 bg-linear-to-l from-transparent to-dynamic-pink/50" />
+                  <div className="h-px w-8 bg-gradient-to-l from-transparent to-dynamic-pink/50" />
                 </div>
               </div>
             </Card>
@@ -380,7 +380,7 @@ export default function VietnameseWomensDayPage() {
             viewport={{ once: true }}
             className="mb-16 text-center"
           >
-            <h2 className="mb-4 bg-linear-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text pb-4 font-bold text-4xl text-transparent sm:text-5xl lg:text-6xl">
+            <h2 className="mb-4 bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text pb-4 font-bold text-4xl text-transparent sm:text-5xl lg:text-6xl">
               {t('womenInLeadership.title')}
             </h2>
             <p className="mx-auto max-w-3xl text-foreground/70 text-lg">
@@ -536,7 +536,7 @@ export default function VietnameseWomensDayPage() {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl lg:text-6xl">
               {t('impact.title.part1')}{' '}
-              <span className="bg-linear-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
                 {t('impact.title.highlight')}
               </span>
             </h2>
@@ -600,7 +600,7 @@ export default function VietnameseWomensDayPage() {
                   <div
                     className={cn(
                       'mb-3 font-bold text-5xl',
-                      `bg-linear-to-r ${stat.gradient} bg-clip-text text-transparent`
+                      `bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`
                     )}
                   >
                     <AnimatedCounter value={t(stat.titleKey as any)} />
@@ -613,7 +613,7 @@ export default function VietnameseWomensDayPage() {
                   <div
                     className={cn(
                       'mx-auto mb-4 h-1 w-16 rounded-full',
-                      `bg-linear-to-r ${stat.gradient}`
+                      `bg-gradient-to-r ${stat.gradient}`
                     )}
                   />
 
@@ -636,7 +636,7 @@ export default function VietnameseWomensDayPage() {
             viewport={{ once: true }}
             className="mb-16 text-center"
           >
-            <h2 className="mb-4 bg-linear-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text pb-4 font-bold text-4xl text-transparent sm:text-5xl lg:text-6xl">
+            <h2 className="mb-4 bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text pb-4 font-bold text-4xl text-transparent sm:text-5xl lg:text-6xl">
               {t('values.title')}
             </h2>
             <p className="mx-auto max-w-2xl text-foreground/70 text-lg">
@@ -766,7 +766,7 @@ export default function VietnameseWomensDayPage() {
                     <div className="mb-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-dynamic-purple/10">
                       <Sparkles className="h-6 w-6 text-dynamic-purple" />
                     </div>
-                    <h2 className="bg-linear-to-r from-dynamic-purple to-dynamic-pink bg-clip-text pb-4 text-center font-bold text-transparent text-xl md:text-balance md:text-start md:text-3xl">
+                    <h2 className="bg-gradient-to-r from-dynamic-purple to-dynamic-pink bg-clip-text pb-4 text-center font-bold text-transparent text-xl md:text-balance md:text-start md:text-3xl">
                       {t('ceo.messageTitle')}
                     </h2>
                   </div>
@@ -803,9 +803,9 @@ export default function VietnameseWomensDayPage() {
       <div className="relative mx-auto max-w-4xl px-4 py-12">
         <div className="flex items-center justify-center gap-4">
           <Heart className="h-5 w-5 text-dynamic-pink/40" />
-          <div className="h-px w-32 bg-linear-to-r from-dynamic-pink/30 to-dynamic-purple/30" />
+          <div className="h-px w-32 bg-gradient-to-r from-dynamic-pink/30 to-dynamic-purple/30" />
           <Sparkles className="h-5 w-5 text-dynamic-purple/40" />
-          <div className="h-px w-32 bg-linear-to-r from-dynamic-purple/30 to-dynamic-blue/30" />
+          <div className="h-px w-32 bg-gradient-to-r from-dynamic-purple/30 to-dynamic-blue/30" />
           <Star className="h-5 w-5 text-dynamic-blue/40" />
         </div>
       </div>
@@ -819,7 +819,7 @@ export default function VietnameseWomensDayPage() {
             viewport={{ once: true }}
             className="mb-16 text-center"
           >
-            <h2 className="mb-4 bg-linear-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text pb-4 font-bold text-4xl text-transparent sm:text-5xl lg:text-6xl">
+            <h2 className="mb-4 bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text pb-4 font-bold text-4xl text-transparent sm:text-5xl lg:text-6xl">
               {t('achievements.title')}
             </h2>
             <p className="mx-auto max-w-2xl text-foreground/70 text-lg">
@@ -829,7 +829,7 @@ export default function VietnameseWomensDayPage() {
 
           <div className="relative">
             {/* Timeline Line */}
-            <div className="-translate-x-1/2 absolute top-0 left-1/2 hidden h-full w-px bg-linear-to-b from-dynamic-pink via-dynamic-purple to-dynamic-blue lg:block" />
+            <div className="-translate-x-1/2 absolute top-0 left-1/2 hidden h-full w-px bg-gradient-to-b from-dynamic-pink via-dynamic-purple to-dynamic-blue lg:block" />
 
             <div className="space-y-12">
               {[
@@ -910,7 +910,7 @@ export default function VietnameseWomensDayPage() {
                         <div
                           className={cn(
                             'mb-3 inline-block font-bold text-3xl',
-                            `bg-linear-to-r ${achievement.gradient} bg-clip-text text-transparent`
+                            `bg-gradient-to-r ${achievement.gradient} bg-clip-text text-transparent`
                           )}
                         >
                           {t(
@@ -937,13 +937,13 @@ export default function VietnameseWomensDayPage() {
                     <div
                       className={cn(
                         'h-full w-full rounded-full',
-                        `bg-linear-to-r ${achievement.gradient} shadow-lg`
+                        `bg-gradient-to-r ${achievement.gradient} shadow-lg`
                       )}
                     />
                     <div
                       className={cn(
                         'absolute inset-0 animate-ping rounded-full opacity-75',
-                        `bg-linear-to-r ${achievement.gradient}`
+                        `bg-gradient-to-r ${achievement.gradient}`
                       )}
                     />
                   </div>
@@ -963,7 +963,7 @@ export default function VietnameseWomensDayPage() {
             viewport={{ once: true }}
             className="mb-16 text-center"
           >
-            <h2 className="mb-4 bg-linear-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text pb-4 font-bold text-4xl text-transparent sm:text-5xl lg:text-6xl">
+            <h2 className="mb-4 bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text pb-4 font-bold text-4xl text-transparent sm:text-5xl lg:text-6xl">
               {t('globalImpact.title')}
             </h2>
             <p className="mx-auto max-w-2xl text-foreground/70 text-lg">
@@ -1008,14 +1008,14 @@ export default function VietnameseWomensDayPage() {
                   <div
                     className={cn(
                       'mx-auto mb-6 h-2 w-24 rounded-full',
-                      `bg-linear-to-r ${item.gradient}`
+                      `bg-gradient-to-r ${item.gradient}`
                     )}
                   />
 
                   <h3
                     className={cn(
                       'mb-4 font-bold text-2xl',
-                      `bg-linear-to-r ${item.gradient} bg-clip-text text-transparent`
+                      `bg-gradient-to-r ${item.gradient} bg-clip-text text-transparent`
                     )}
                   >
                     {t(`globalImpact.${item.key}.title` as any)}
@@ -1070,7 +1070,7 @@ export default function VietnameseWomensDayPage() {
             viewport={{ once: true }}
             className="mb-12 text-center"
           >
-            <h2 className="mb-4 bg-linear-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text pb-4 font-bold text-4xl text-transparent sm:text-5xl lg:text-6xl">
+            <h2 className="mb-4 bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text pb-4 font-bold text-4xl text-transparent sm:text-5xl lg:text-6xl">
               {t('team.title')}
             </h2>
             <p className="mx-auto max-w-2xl text-foreground/70 text-lg">
@@ -1090,11 +1090,11 @@ export default function VietnameseWomensDayPage() {
                   loading="eager"
                   priority
                 />
-                <div className="absolute inset-0 bg-linear-to-t from-dynamic-pink/10 via-dynamic-pink/5 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-dynamic-pink/10 via-dynamic-pink/5 to-transparent" />
               </div>
 
               <div className="p-8 text-center">
-                <h3 className="mb-3 bg-linear-to-r from-dynamic-purple to-dynamic-pink bg-clip-text font-bold text-2xl text-transparent">
+                <h3 className="mb-3 bg-gradient-to-r from-dynamic-purple to-dynamic-pink bg-clip-text font-bold text-2xl text-transparent">
                   {t('team.imageTitle')}
                 </h3>
                 <p className="mx-auto max-w-2xl text-foreground/80">
@@ -1115,7 +1115,7 @@ export default function VietnameseWomensDayPage() {
             viewport={{ once: true }}
             className="mb-16 text-center"
           >
-            <h2 className="mb-4 bg-linear-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text pb-4 font-bold text-4xl text-transparent sm:text-5xl lg:text-6xl">
+            <h2 className="mb-4 bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text pb-4 font-bold text-4xl text-transparent sm:text-5xl lg:text-6xl">
               {t('diversity.title')}
             </h2>
           </motion.div>
@@ -1173,7 +1173,7 @@ export default function VietnameseWomensDayPage() {
                   <h3
                     className={cn(
                       'mb-4 text-center font-bold text-2xl',
-                      `bg-linear-to-r ${item.gradient} bg-clip-text text-transparent`
+                      `bg-gradient-to-r ${item.gradient} bg-clip-text text-transparent`
                     )}
                   >
                     {t(`diversity.items.${item.key}.title` as any)}
@@ -1189,7 +1189,7 @@ export default function VietnameseWomensDayPage() {
                     <div
                       className={cn(
                         'h-1 w-16 rounded-full transition-all group-hover:w-24',
-                        `bg-linear-to-r ${item.gradient}`
+                        `bg-gradient-to-r ${item.gradient}`
                       )}
                     />
                   </div>
@@ -1209,7 +1209,7 @@ export default function VietnameseWomensDayPage() {
             viewport={{ once: true }}
             className="mb-12 text-center"
           >
-            <h2 className="mb-4 bg-linear-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-purple bg-clip-text pb-4 font-bold text-4xl text-transparent sm:text-5xl lg:text-6xl">
+            <h2 className="mb-4 bg-gradient-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-purple bg-clip-text pb-4 font-bold text-4xl text-transparent sm:text-5xl lg:text-6xl">
               {t('maleColleagues.title')}
             </h2>
             <p className="mx-auto max-w-2xl text-foreground/70 text-lg">
@@ -1236,7 +1236,7 @@ export default function VietnameseWomensDayPage() {
                   loading="eager"
                   priority
                 />
-                <div className="absolute inset-0 bg-linear-to-t from-dynamic-blue/10 via-dynamic-blue/5 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-dynamic-blue/10 via-dynamic-blue/5 to-transparent" />
               </div>
             </Card>
           </motion.div>
@@ -1317,7 +1317,7 @@ export default function VietnameseWomensDayPage() {
                     />
                     <div
                       className={cn(
-                        'absolute inset-0 bg-linear-to-t via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100',
+                        'absolute inset-0 bg-gradient-to-t via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100',
                         `from-black/20`
                       )}
                     />
@@ -1330,7 +1330,7 @@ export default function VietnameseWomensDayPage() {
                       <div
                         className={cn(
                           'inline-block rounded-full px-4 py-1.5',
-                          `bg-linear-to-r ${colleague.gradient}`
+                          `bg-gradient-to-r ${colleague.gradient}`
                         )}
                       >
                         <span className="font-bold text-sm text-white">
@@ -1351,7 +1351,7 @@ export default function VietnameseWomensDayPage() {
                       <div
                         className={cn(
                           'h-1 w-12 rounded-full',
-                          `bg-linear-to-r ${colleague.gradient}`
+                          `bg-gradient-to-r ${colleague.gradient}`
                         )}
                       />
                     </div>
@@ -1381,7 +1381,7 @@ export default function VietnameseWomensDayPage() {
       <section className="relative px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
         <div className="mx-auto max-w-7xl">
           <div className="mb-16 text-center">
-            <h2 className="mb-4 bg-linear-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text pb-4 font-bold text-4xl text-transparent sm:text-5xl lg:text-6xl">
+            <h2 className="mb-4 bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text pb-4 font-bold text-4xl text-transparent sm:text-5xl lg:text-6xl">
               {t('partnerships.title')}
             </h2>
             <p className="mx-auto max-w-2xl text-foreground/70 text-lg">
@@ -1601,7 +1601,7 @@ export default function VietnameseWomensDayPage() {
           whileInView={{ opacity: 1, scaleX: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="h-px w-full bg-linear-to-r from-transparent via-dynamic-pink/40 to-transparent"
+          className="h-px w-full bg-gradient-to-r from-transparent via-dynamic-pink/40 to-transparent"
         />
       </div>
 
@@ -1615,11 +1615,11 @@ export default function VietnameseWomensDayPage() {
               )}
             >
               <div className="relative text-center">
-                <div className="mb-6 inline-block rounded-2xl bg-linear-to-r from-dynamic-pink to-dynamic-purple p-4 shadow-lg">
+                <div className="mb-6 inline-block rounded-2xl bg-gradient-to-r from-dynamic-pink to-dynamic-purple p-4 shadow-lg">
                   <Rocket className="h-12 w-12 text-white" />
                 </div>
 
-                <h2 className="mb-4 bg-linear-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text pb-4 font-bold text-2xl text-transparent md:text-4xl">
+                <h2 className="mb-4 bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text pb-4 font-bold text-2xl text-transparent md:text-4xl">
                   {t('cta.title')}
                 </h2>
 
@@ -1630,7 +1630,7 @@ export default function VietnameseWomensDayPage() {
                 <div className="mb-8 flex flex-wrap items-center justify-center gap-4">
                   <Button
                     size="lg"
-                    className="bg-linear-to-r from-dynamic-pink to-dynamic-purple shadow-lg transition-all hover:shadow-xl"
+                    className="bg-gradient-to-r from-dynamic-pink to-dynamic-purple shadow-lg transition-all hover:shadow-xl"
                     asChild
                   >
                     <Link href="/careers">

@@ -117,25 +117,25 @@ export function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
           <CardContent>
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
               <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-900">
-                <CheckCircle className="h-5 w-5 shrink-0 text-green-500" />
+                <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-500" />
                 <span className="font-medium text-sm">
                   {t('steps.create-workspace')}
                 </span>
               </div>
               <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-900">
-                <CheckCircle className="h-5 w-5 shrink-0 text-blue-500" />
+                <CheckCircle className="h-5 w-5 flex-shrink-0 text-blue-500" />
                 <span className="font-medium text-sm">
                   {t('steps.setup-profile')}
                 </span>
               </div>
               <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-900">
-                <CheckCircle className="h-5 w-5 shrink-0 text-purple-500" />
+                <CheckCircle className="h-5 w-5 flex-shrink-0 text-purple-500" />
                 <span className="font-medium text-sm">
                   {t('steps.configure-settings')}
                 </span>
               </div>
               <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-900">
-                <CheckCircle className="h-5 w-5 shrink-0 text-indigo-500" />
+                <CheckCircle className="h-5 w-5 flex-shrink-0 text-indigo-500" />
                 <span className="font-medium text-sm">
                   {t('steps.start-collaborating')}
                 </span>

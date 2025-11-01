@@ -30,9 +30,6 @@ interface DateTimePickerProps {
   disabled?: boolean;
   showFooterControls?: boolean;
   allowClear?: boolean;
-  side?: 'top' | 'right' | 'bottom' | 'left';
-  align?: 'start' | 'center' | 'end';
-  collisionPadding?: number;
 }
 
 // Utility to find the nearest scrollable parent
@@ -64,9 +61,6 @@ export function DateTimePicker({
   disabled = false,
   showFooterControls = true,
   allowClear = true,
-  side = 'bottom',
-  align = 'start',
-  collisionPadding = 16,
 }: DateTimePickerProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(date);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -325,11 +319,11 @@ export function DateTimePicker({
         </PopoverTrigger>
         <PopoverContent
           className="flex max-h-[85vh] w-auto max-w-[calc(100vw-1rem)] flex-col p-0 sm:max-w-[calc(100vw-2rem)]"
-          align={align}
-          side={side}
+          align="start"
+          side="bottom"
           sideOffset={4}
           avoidCollisions={true}
-          collisionPadding={collisionPadding}
+          collisionPadding={8}
           aria-label="Date and time selector"
         >
           {showTimeSelect ? (
@@ -364,7 +358,7 @@ export function DateTimePicker({
                   onSubmit={(date) => {
                     handleSelect(date);
                   }}
-                  autoFocus
+                  initialFocus
                   disabled={
                     minDate || maxDate
                       ? [
@@ -536,7 +530,7 @@ export function DateTimePicker({
                 handleSelect(date);
                 setIsCalendarOpen(false);
               }}
-              autoFocus
+              initialFocus
               disabled={
                 minDate || maxDate
                   ? [

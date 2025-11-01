@@ -77,7 +77,7 @@ export default async function IntegrationsPage({ params }: Props) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="space-y-6 rounded-xl border border-dynamic-border/20 bg-linear-to-r from-dynamic-blue/5 via-dynamic-purple/5 to-dynamic-green/5 p-8">
+      <div className="space-y-6 rounded-xl border border-dynamic-border/20 bg-gradient-to-r from-dynamic-blue/5 via-dynamic-purple/5 to-dynamic-green/5 p-8">
         <div className="flex items-center justify-between">
           <div className="space-y-3">
             <div className="flex items-center gap-4">
@@ -85,7 +85,7 @@ export default async function IntegrationsPage({ params }: Props) {
                 <Settings className="size-8 text-dynamic-blue" />
               </div>
               <div>
-                <h1 className="bg-linear-to-r from-dynamic-blue to-dynamic-purple bg-clip-text font-bold text-3xl text-transparent">
+                <h1 className="bg-gradient-to-r from-dynamic-blue to-dynamic-purple bg-clip-text font-bold text-3xl text-transparent">
                   Integrations
                 </h1>
                 <p className="mt-1 text-base text-dynamic-muted">
@@ -102,11 +102,11 @@ export default async function IntegrationsPage({ params }: Props) {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {integrations.map((integration) => {
           const colorClasses = {
-            blue: 'border-dynamic-blue/20 bg-linear-to-r from-dynamic-blue/5 to-dynamic-purple/5',
+            blue: 'border-dynamic-blue/20 bg-gradient-to-r from-dynamic-blue/5 to-dynamic-purple/5',
             green:
-              'border-dynamic-green/20 bg-linear-to-r from-dynamic-green/5 to-dynamic-blue/5',
+              'border-dynamic-green/20 bg-gradient-to-r from-dynamic-green/5 to-dynamic-blue/5',
             purple:
-              'border-dynamic-purple/20 bg-linear-to-r from-dynamic-purple/5 to-dynamic-pink/5',
+              'border-dynamic-purple/20 bg-gradient-to-r from-dynamic-purple/5 to-dynamic-pink/5',
           };
 
           const iconBgClasses = {

@@ -117,7 +117,7 @@ export default async function LinkShortenerPage({
               </div>
             </div>
             <div className="space-y-2">
-              <h1 className="bg-linear-to-r from-foreground via-foreground to-foreground/60 bg-clip-text font-bold text-5xl tracking-tight">
+              <h1 className="bg-gradient-to-r from-foreground via-foreground to-foreground/60 bg-clip-text font-bold text-5xl tracking-tight">
                 {t('link-shortener.plural')}
               </h1>
               <p className="max-w-2xl text-muted-foreground text-xl">

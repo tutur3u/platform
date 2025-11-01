@@ -521,7 +521,7 @@ export default function LinkedProductsClient({
                 className="group flex items-center justify-between rounded-xl border border-border/50 bg-card/50 p-4 backdrop-blur-sm transition-all duration-200 hover:border-border hover:bg-card/80 hover:shadow-black/5 hover:shadow-lg md:p-6"
               >
                 <div className="flex items-center space-x-4">
-                  {/* <div className="shrink-0 rounded-lg bg-primary/10 p-2.5 group-hover:bg-primary/15 transition-colors">
+                  {/* <div className="flex-shrink-0 rounded-lg bg-primary/10 p-2.5 group-hover:bg-primary/15 transition-colors">
                                         <Box className="h-6 w-6 text-primary" />
                                     </div> */}
                   <div className="min-w-0 flex-1">

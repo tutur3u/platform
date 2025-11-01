@@ -29,7 +29,6 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import * as z from 'zod';
-import React from 'react';
 
 interface Props {
   wsId: string;
@@ -60,8 +59,6 @@ const FormSchema = z.object({
   address: z.string().optional(),
   note: z.string().optional(),
   is_guest: z.boolean().optional(),
-  archived: z.boolean().optional(),
-  archived_until: z.date().optional(),
 });
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
@@ -134,23 +131,8 @@ export default function UserForm({
       // Initialize from provided data (if present), else undefined so edits don't change unless toggled
       is_guest:
         (data as unknown as { is_guest?: boolean })?.is_guest ?? undefined,
-      archived:
-        (data as unknown as { archived?: boolean })?.archived ?? undefined,
-      archived_until:
-        data?.archived_until &&
-        !Number.isNaN(new Date(data.archived_until).getTime())
-          ? new Date(data.archived_until)
-          : undefined,
     },
   });
-
-  // Watch archived_until to auto-set archived status
-  const archivedUntilValue = form.watch('archived_until');
-  React.useEffect(() => {
-    if (archivedUntilValue) {
-      form.setValue('archived', true);
-    }
-  }, [archivedUntilValue, form]);
 
   const compressAndResizeImage = (blob: Blob): Promise<Blob> => {
     return new Promise((resolve, reject) => {
@@ -327,8 +309,7 @@ export default function UserForm({
             'Content-Type': 'application/json',
           },
           body: (() => {
-            const { is_guest, archived, archived_until, ...rest } =
-              formData as any;
+            const { is_guest, ...rest } = formData as any;
             const payload: Record<string, unknown> = {
               ...rest,
               avatar_url: avatarUrl,
@@ -339,15 +320,6 @@ export default function UserForm({
             if (typeof is_guest === 'boolean') {
               payload.is_guest = is_guest;
             }
-            if (typeof archived === 'boolean') {
-              payload.archived = archived;
-            }
-            if (archived_until) {
-              payload.archived_until = dayjs(archived_until).format(
-                'YYYY/MM/DD HH:mm:ss'
-              );
-            }
-
             return JSON.stringify(payload);
           })(),
         }
@@ -622,7 +594,7 @@ export default function UserForm({
                   </FormLabel>
                   <FormControl>
                     <DatePicker
-                      value={
+                      defaultValue={
                         field.value ? dayjs(field.value).toDate() : undefined
                       }
                       onValueChange={field.onChange}
@@ -762,71 +734,6 @@ export default function UserForm({
                 )}
               />
             </div>
-
-            {/* Archived Status - Only show when editing */}
-            {data?.id && (
-              <div className="col-span-1">
-                <FormField
-                  control={form.control}
-                  name="archived"
-                  render={({ field }) => (
-                    <FormItem className="gap-4">
-                      <FormLabel>
-                        <LabelWithTooltip
-                          label={t('ws-users.archived_user')}
-                          tooltip={t('ws-users.archived_user_tooltip')}
-                        />
-                      </FormLabel>
-                      <FormControl>
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={!!field.value}
-                            onCheckedChange={field.onChange}
-                            disabled={!!archivedUntilValue}
-                          />
-                          <span className="text-muted-foreground text-sm">
-                            {t('ws-users.mark_as_archived')}
-                          </span>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
-
-            {/* Archived At - Only show when editing */}
-            {data?.id && (
-              <div className="col-span-1">
-                <FormField
-                  control={form.control}
-                  name="archived_until"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        <LabelWithTooltip
-                          label={t('ws-users.archived_at')}
-                          tooltip={t('ws-users.archived_at_tooltip')}
-                        />
-                      </FormLabel>
-                      <FormControl>
-                        <DatePicker
-                          value={
-                            field.value
-                              ? dayjs(field.value).toDate()
-                              : undefined
-                          }
-                          onValueChange={field.onChange}
-                          className="w-full"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
           </div>
 
           <div className="flex justify-center gap-2">
