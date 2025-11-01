@@ -49,13 +49,6 @@ export interface FoodItem {
   sprite?: Phaser.GameObjects.GameObject;
 }
 
-export interface GameCallbacks {
-  onScoreChange?: (score: number) => void;
-  onLivesChange?: (lives: number) => void;
-  onGameOver?: (won: boolean) => void;
-  onPowerPelletEaten?: () => void;
-}
-
 export interface MapDataJson {
   name: string;
   difficulty: 'Easy' | 'Medium' | 'Hard' | 'Expert';

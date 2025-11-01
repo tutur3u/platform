@@ -1,5 +1,3 @@
-import type { GameCallbacks } from './types';
-
 export const GAME_CONFIG = {
   // Tile configuration
   TILE_SIZE: 25,
@@ -29,11 +27,6 @@ export const GAME_CONFIG = {
   // Game rules
   INITIAL_LIVES: 3,
 } as const;
-
-export interface PhaserGameConfig {
-  mapId: string;
-  callbacks?: GameCallbacks;
-}
 
 // Wall tile representation
 export const TILE_WALL = 1;

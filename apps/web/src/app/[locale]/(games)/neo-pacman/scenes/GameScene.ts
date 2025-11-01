@@ -5,7 +5,7 @@ import { CollisionManager } from '../managers/CollisionManager';
 import { FoodManager } from '../managers/FoodManager';
 import { MapManager } from '../managers/MapManager';
 import { GhostType } from '../types';
-import { tileToPixelCentered } from '../utils/constants';
+import { tileToPixelCentered } from '../utils/helpers';
 import * as Phaser from 'phaser';
 
 interface GameData {

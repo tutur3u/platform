@@ -1,7 +1,7 @@
 import { GAME_CONFIG, TILE_EMPTY, TILE_WALL } from '../config';
 import { MAPS_DATA } from '../maps';
 import type { MapData, TilePosition } from '../types';
-import { tileToPixel } from '../utils/constants';
+import { tileToPixel } from '../utils/helpers';
 import * as Phaser from 'phaser';
 
 export class MapManager {

@@ -2,7 +2,7 @@ import { GAME_CONFIG } from '../config';
 import type { MapManager } from '../managers/MapManager';
 import { GhostState, GhostType } from '../types';
 import type { TilePosition } from '../types';
-import { pixelToTile, tileToPixelCentered } from '../utils/constants';
+import { pixelToTile, tileToPixelCentered } from '../utils/helpers';
 import { findPath, getNeighbors } from '../utils/pathfinding';
 import type { Pacman } from './Pacman';
 import * as Phaser from 'phaser';
