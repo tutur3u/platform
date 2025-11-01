@@ -116,7 +116,7 @@ export default function ExpandableTaskList({
     };
 
     const boardId = task.list?.board?.id || '';
-    openTask(transformedTask as any, boardId);
+    openTask(transformedTask as any, boardId, undefined, { preserveUrl: true });
   };
 
   const getPriorityColor = (priority: string | null) => {
