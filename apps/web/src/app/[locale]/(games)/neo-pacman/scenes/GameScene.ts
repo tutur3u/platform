@@ -249,17 +249,7 @@ export class GameScene extends Phaser.Scene {
 
     if (this.lives > 0) {
       // Respawn after delay
-      this.time.delayedCall(1000, () => {
-        const pacmanSpawn = this.mapManager.getRandomSpawnPoint();
-        if (pacmanSpawn) {
-          const pacmanPos = tileToPixelCentered(
-            pacmanSpawn.row,
-            pacmanSpawn.col
-          );
-          const offset = this.mapManager.getMapOffset();
-          this.pacman.reset(pacmanPos.x + offset.x, pacmanPos.y + offset.y);
-        }
-      });
+      this.time.delayedCall(1000, () => this.reset());
     } else {
       // Game over
       this.time.delayedCall(1000, () => {
@@ -398,6 +388,25 @@ export class GameScene extends Phaser.Scene {
       this.quitDialog = null;
       this.isPaused = false;
     }
+  }
+
+  reset(): void {
+    // Reset Pacman position
+    const pacmanSpawn = this.mapManager.getRandomSpawnPoint();
+    if (pacmanSpawn) {
+      const pacmanPos = tileToPixelCentered(pacmanSpawn.row, pacmanSpawn.col);
+      const offset = this.mapManager.getMapOffset();
+      this.pacman.reset(pacmanPos.x + offset.x, pacmanPos.y + offset.y);
+    }
+
+    // Reset all ghosts to center spawn
+    const centerSpawn = this.mapManager.getCenterSpawnPoint();
+    const mapOffset = this.mapManager.getMapOffset();
+    const ghostPos = tileToPixelCentered(centerSpawn.row, centerSpawn.col);
+
+    this.ghosts.forEach((ghost) => {
+      ghost.reset(ghostPos.x + mapOffset.x, ghostPos.y + mapOffset.y);
+    });
   }
 
   shutdown(): void {
