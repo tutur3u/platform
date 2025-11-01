@@ -60,7 +60,7 @@ export class FoodManager {
       return;
     }
 
-    const food = new Food(this.scene, tile, foodType, this.mapManager);
+    const food = new Food(this.scene, this.mapManager, foodType, tile);
 
     this.foodItems.push(food);
     this.occupiedTiles.add(tileKey);

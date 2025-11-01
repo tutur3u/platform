@@ -13,6 +13,7 @@ export class Ghost {
   public sprite: Phaser.GameObjects.Sprite;
   public body: Phaser.Physics.Arcade.Body;
   public type: GhostType;
+  public position: TilePosition;
   public state: GhostState = GhostState.SCATTER;
   private homePosition: TilePosition;
   private speed: number = GAME_CONFIG.GHOST_SPEED;
@@ -26,14 +27,14 @@ export class Ghost {
 
   constructor(
     scene: Phaser.Scene,
-    x: number,
-    y: number,
+    mapManager: MapManager,
     type: GhostType,
-    mapManager: MapManager
+    position: TilePosition
   ) {
     this.scene = scene;
     this.mapManager = mapManager;
     this.type = type;
+    this.position = position;
 
     // Get map offset for proper positioning
     this.mapOffset = mapManager.getMapOffset();
@@ -42,7 +43,12 @@ export class Ghost {
     this.normalTexture = this.getTextureKey(type);
 
     // Create ghost sprite
-    this.sprite = scene.add.sprite(x, y, this.normalTexture);
+    const pos = tileToPixelCentered(position.row, position.col);
+    this.sprite = scene.add.sprite(
+      pos.x + this.mapOffset.x,
+      pos.y + this.mapOffset.y,
+      this.normalTexture
+    );
     this.sprite.setDisplaySize(
       GAME_CONFIG.TILE_SIZE - 4,
       GAME_CONFIG.TILE_SIZE - 4
@@ -54,7 +60,7 @@ export class Ghost {
     this.body.setCircle(GAME_CONFIG.TILE_SIZE / 2 - 2);
 
     // Store home position (convert from screen space to map space)
-    this.homePosition = pixelToTile(x - this.mapOffset.x, y - this.mapOffset.y);
+    this.homePosition = position;
 
     // Start state cycling
     this.startStateCycling();
@@ -163,16 +169,7 @@ export class Ghost {
    */
   update(pacman: Pacman): void {
     if (this.state === GhostState.EATEN) {
-      this.scene.time.delayedCall(1000, () => {
-        const homePosition = tileToPixelCentered(
-          this.homePosition.row,
-          this.homePosition.col
-        );
-        this.reset(
-          homePosition.x + this.mapOffset.x,
-          homePosition.y + this.mapOffset.y
-        );
-      });
+      this.scene.time.delayedCall(1000, () => this.reset(this.homePosition));
       return;
     }
 
@@ -398,8 +395,12 @@ export class Ghost {
     return this.state === GhostState.CHASE || this.state === GhostState.SCATTER;
   }
 
-  reset(x: number, y: number): void {
-    this.sprite.setPosition(x, y);
+  reset(tilePosition?: TilePosition): void {
+    if (tilePosition) {
+      this.position = tilePosition;
+    }
+    const pos = tileToPixelCentered(this.position.row, this.position.col);
+    this.sprite.setPosition(pos.x + this.mapOffset.x, pos.y + this.mapOffset.y);
     this.sprite.setAlpha(1);
     this.setState(GhostState.SCATTER);
   }

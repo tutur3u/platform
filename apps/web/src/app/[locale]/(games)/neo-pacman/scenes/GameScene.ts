@@ -5,7 +5,6 @@ import { CollisionManager } from '../managers/CollisionManager';
 import { FoodManager } from '../managers/FoodManager';
 import { MapManager } from '../managers/MapManager';
 import { GhostType } from '../types';
-import { tileToPixelCentered } from '../utils/helpers';
 import * as Phaser from 'phaser';
 
 interface GameData {
@@ -100,33 +99,16 @@ export class GameScene extends Phaser.Scene {
   private spawnPacman(): void {
     const pacmanSpawn = this.mapManager.getRandomSpawnPoint();
     if (pacmanSpawn) {
-      const pacmanPos = tileToPixelCentered(pacmanSpawn.row, pacmanSpawn.col);
-      const offset = this.mapManager.getMapOffset();
-      this.pacman = new Pacman(
-        this,
-        pacmanPos.x + offset.x,
-        pacmanPos.y + offset.y,
-        this.mapManager
-      );
+      this.pacman = new Pacman(this, this.mapManager, pacmanSpawn);
     }
   }
 
   private spawnGhosts(): void {
     const centerSpawn = this.mapManager.getCenterSpawnPoint();
-    const mapOffset = this.mapManager.getMapOffset();
     const ghostTypes = Object.values(GhostType);
 
     ghostTypes.forEach((type) => {
-      const pos = tileToPixelCentered(centerSpawn.row, centerSpawn.col);
-
-      const ghost = new Ghost(
-        this,
-        pos.x + mapOffset.x,
-        pos.y + mapOffset.y,
-        type,
-        this.mapManager
-      );
-
+      const ghost = new Ghost(this, this.mapManager, type, centerSpawn);
       this.ghosts.push(ghost);
     });
   }
@@ -391,22 +373,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   reset(): void {
-    // Reset Pacman position
-    const pacmanSpawn = this.mapManager.getRandomSpawnPoint();
-    if (pacmanSpawn) {
-      const pacmanPos = tileToPixelCentered(pacmanSpawn.row, pacmanSpawn.col);
-      const offset = this.mapManager.getMapOffset();
-      this.pacman.reset(pacmanPos.x + offset.x, pacmanPos.y + offset.y);
-    }
-
-    // Reset all ghosts to center spawn
-    const centerSpawn = this.mapManager.getCenterSpawnPoint();
-    const mapOffset = this.mapManager.getMapOffset();
-    const ghostPos = tileToPixelCentered(centerSpawn.row, centerSpawn.col);
-
-    this.ghosts.forEach((ghost) => {
-      ghost.reset(ghostPos.x + mapOffset.x, ghostPos.y + mapOffset.y);
-    });
+    this.pacman.reset();
+    this.ghosts.forEach((ghost) => ghost.reset());
   }
 
   shutdown(): void {

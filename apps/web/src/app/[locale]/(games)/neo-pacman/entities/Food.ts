@@ -14,9 +14,9 @@ export class Food {
 
   constructor(
     scene: Phaser.Scene,
-    position: TilePosition,
+    mapManager: MapManager,
     type: FoodType,
-    mapManager: MapManager
+    position: TilePosition
   ) {
     this.scene = scene;
     this.mapManager = mapManager;

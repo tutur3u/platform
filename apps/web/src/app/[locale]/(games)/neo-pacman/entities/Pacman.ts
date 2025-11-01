@@ -9,6 +9,7 @@ export class Pacman {
   private mapManager: MapManager;
   public sprite: Phaser.GameObjects.Sprite;
   public body: Phaser.Physics.Arcade.Body;
+  public position: TilePosition;
   private direction: Direction = Direction.LEFT;
   private nextDirection: Direction = Direction.LEFT;
   private speed: number = GAME_CONFIG.PACMAN_SPEED;
@@ -19,12 +20,12 @@ export class Pacman {
 
   constructor(
     scene: Phaser.Scene,
-    x: number,
-    y: number,
-    mapManager: MapManager
+    mapManager: MapManager,
+    position: TilePosition
   ) {
     this.scene = scene;
     this.mapManager = mapManager;
+    this.position = position;
 
     // Get map offset for proper positioning
     this.mapOffset = mapManager.getMapOffset();
@@ -33,7 +34,12 @@ export class Pacman {
     this.createAnimations();
 
     // Create Pacman as a sprite
-    this.sprite = scene.add.sprite(x, y, 'pacman-left-1');
+    const pos = tileToPixelCentered(position.row, position.col);
+    this.sprite = scene.add.sprite(
+      pos.x + this.mapOffset.x,
+      pos.y + this.mapOffset.y,
+      'pacman-left-1'
+    );
     this.sprite.setDisplaySize(
       GAME_CONFIG.TILE_SIZE - 4,
       GAME_CONFIG.TILE_SIZE - 4
@@ -263,8 +269,12 @@ export class Pacman {
   /**
    * Reset Pacman to a position
    */
-  reset(x: number, y: number): void {
-    this.sprite.setPosition(x, y);
+  reset(tilePosition?: TilePosition): void {
+    if (tilePosition) {
+      this.position = tilePosition;
+    }
+    const pos = tileToPixelCentered(this.position.row, this.position.col);
+    this.sprite.setPosition(pos.x + this.mapOffset.x, pos.y + this.mapOffset.y);
     this.sprite.setAlpha(1);
     this.direction = Direction.LEFT;
     this.alive = true;
