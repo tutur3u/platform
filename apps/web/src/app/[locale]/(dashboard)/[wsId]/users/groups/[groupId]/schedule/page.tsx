@@ -35,6 +35,11 @@ export default async function UserGroupDetailsPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId, locale }) => {
+        // Layout handles group selection when groupId is '~'
+        if (groupId === '~') {
+          return null;
+        }
+
         const { containsPermission } = await getPermissions({ wsId });
 
         const canCheckUserAttendance = containsPermission(
