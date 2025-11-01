@@ -1,6 +1,6 @@
 import { GAME_CONFIG } from '../config';
 import type { MapManager } from '../managers/MapManager';
-import { GhostState, GhostType } from '../types';
+import { Direction, GhostState, GhostType } from '../types';
 import type { TilePosition } from '../types';
 import { pixelToTile, tileToPixelCentered } from '../utils/helpers';
 import { findPath, getNeighbors } from '../utils/pathfinding';
@@ -13,9 +13,8 @@ export class Ghost {
   public sprite: Phaser.GameObjects.Sprite;
   public body: Phaser.Physics.Arcade.Body;
   public type: GhostType;
-  public position: TilePosition;
+  public homePosition: TilePosition;
   public state: GhostState = GhostState.SCATTER;
-  private homePosition: TilePosition;
   private speed: number = GAME_CONFIG.GHOST_SPEED;
   private stateTimer: Phaser.Time.TimerEvent | null = null;
   private mapOffset: { x: number; y: number };
@@ -34,7 +33,7 @@ export class Ghost {
     this.scene = scene;
     this.mapManager = mapManager;
     this.type = type;
-    this.position = position;
+    this.homePosition = position;
 
     // Get map offset for proper positioning
     this.mapOffset = mapManager.getMapOffset();
@@ -58,9 +57,6 @@ export class Ghost {
     scene.physics.add.existing(this.sprite);
     this.body = this.sprite.body as Phaser.Physics.Arcade.Body;
     this.body.setCircle(GAME_CONFIG.TILE_SIZE / 2 - 2);
-
-    // Store home position (convert from screen space to map space)
-    this.homePosition = position;
 
     // Start state cycling
     this.startStateCycling();
@@ -175,6 +171,7 @@ export class Ghost {
 
     // Determine target based on state and ghost type
     const pacmanTile = pacman.getTilePosition();
+    const pacmanDirection = pacman.direction;
     let target: TilePosition;
 
     if (this.state === GhostState.FRIGHTENED) {
@@ -201,7 +198,7 @@ export class Ghost {
       // Always move towards the frightened target
       target = this.frightenedTarget;
     } else if (this.state === GhostState.CHASE) {
-      target = this.getChaseTarget(pacmanTile);
+      target = this.getChaseTarget(pacmanTile, pacmanDirection);
     } else {
       // SCATTER - go to home corner
       target = this.getScatterTarget();
@@ -213,18 +210,40 @@ export class Ghost {
   /**
    * Get chase target based on ghost personality
    */
-  private getChaseTarget(pacmanTile: TilePosition): TilePosition {
+  private getChaseTarget(
+    pacmanTile: TilePosition,
+    pacmanDirection: Direction
+  ): TilePosition {
     switch (this.type) {
       case GhostType.BLINKY:
         // Directly chase Pacman
         return pacmanTile;
 
       case GhostType.PINKY:
-        // Target 4 tiles ahead of Pacman
-        return {
-          row: Math.max(0, pacmanTile.row - 4),
-          col: pacmanTile.col,
-        };
+        switch (pacmanDirection) {
+          case Direction.UP:
+            return {
+              row: pacmanTile.row,
+              col: Math.max(0, pacmanTile.col - 4),
+            };
+          case Direction.DOWN:
+            return {
+              row: pacmanTile.row,
+              col: Math.max(0, pacmanTile.col + 4),
+            };
+          case Direction.LEFT:
+            return {
+              row: Math.max(0, pacmanTile.row - 4),
+              col: pacmanTile.col,
+            };
+          case Direction.RIGHT:
+            return {
+              row: Math.max(0, pacmanTile.row - 4),
+              col: pacmanTile.col,
+            };
+          default:
+            return pacmanTile;
+        }
 
       case GhostType.INKY:
         // Target based on Blinky's position (simplified)
@@ -360,7 +379,6 @@ export class Ghost {
    * Get current tile position
    */
   getTilePosition(): TilePosition {
-    // Convert from screen space to map space before getting tile position
     return pixelToTile(
       this.sprite.x - this.mapOffset.x,
       this.sprite.y - this.mapOffset.y
@@ -371,7 +389,10 @@ export class Ghost {
    * Get pixel position
    */
   getPosition() {
-    return { x: this.sprite.x, y: this.sprite.y };
+    return {
+      x: this.sprite.x - this.mapOffset.x,
+      y: this.sprite.y - this.mapOffset.y,
+    };
   }
 
   /**
@@ -395,11 +416,14 @@ export class Ghost {
     return this.state === GhostState.CHASE || this.state === GhostState.SCATTER;
   }
 
-  reset(tilePosition?: TilePosition): void {
-    if (tilePosition) {
-      this.position = tilePosition;
+  reset(position?: TilePosition): void {
+    if (position) {
+      this.homePosition = position;
     }
-    const pos = tileToPixelCentered(this.position.row, this.position.col);
+    const pos = tileToPixelCentered(
+      this.homePosition.row,
+      this.homePosition.col
+    );
     this.sprite.setPosition(pos.x + this.mapOffset.x, pos.y + this.mapOffset.y);
     this.sprite.setAlpha(1);
     this.setState(GhostState.SCATTER);
