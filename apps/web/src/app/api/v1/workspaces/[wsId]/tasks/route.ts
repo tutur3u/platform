@@ -179,6 +179,35 @@ export async function GET(
           ) || false,
       })) || [];
 
+    // Prioritize tasks by list status for command center (no specific filters)
+    // active/not_started tasks appear first, then done/closed
+    const shouldPrioritizeByStatus = !listId && !boardId;
+
+    if (shouldPrioritizeByStatus && tasks.length > 0) {
+      const statusPriority: Record<string, number> = {
+        active: 1,
+        not_started: 2,
+        done: 3,
+        closed: 4,
+      };
+
+      tasks.sort((a, b) => {
+        const aPriority = statusPriority[a.list_status || ''] || 99;
+        const bPriority = statusPriority[b.list_status || ''] || 99;
+
+        // First sort by status priority
+        if (aPriority !== bPriority) {
+          return aPriority - bPriority;
+        }
+
+        // Then by creation date (newest first)
+        return (
+          new Date(b.created_at || 0).getTime() -
+          new Date(a.created_at || 0).getTime()
+        );
+      });
+    }
+
     return NextResponse.json({ tasks });
   } catch (error) {
     console.error('Error fetching tasks:', error);

@@ -5,6 +5,7 @@ import {
   ArrowDown,
   ArrowRight,
   ArrowUp,
+  Calendar,
   CheckCircle2,
   Circle,
   Clock,
@@ -54,6 +55,30 @@ const priorityConfig = {
     color: 'text-dynamic-gray',
     bgColor: 'bg-dynamic-gray/10',
     label: 'Low',
+  },
+};
+
+// List status configuration
+const listStatusConfig = {
+  not_started: {
+    color: 'text-dynamic-gray',
+    bgColor: 'bg-dynamic-gray/10',
+    label: 'Not Started',
+  },
+  active: {
+    color: 'text-dynamic-blue',
+    bgColor: 'bg-dynamic-blue/10',
+    label: 'Active',
+  },
+  done: {
+    color: 'text-dynamic-green',
+    bgColor: 'bg-dynamic-green/10',
+    label: 'Done',
+  },
+  closed: {
+    color: 'text-dynamic-purple',
+    bgColor: 'bg-dynamic-purple/10',
+    label: 'Closed',
   },
 };
 
@@ -118,6 +143,9 @@ export function TaskSection({
     <CommandGroup heading={headingText}>
       {tasks.map((task) => {
         const priority = task.priority ? priorityConfig[task.priority] : null;
+        const listStatus = task.list_status
+          ? listStatusConfig[task.list_status as keyof typeof listStatusConfig]
+          : null;
         const isOverdue =
           task.end_date && dayjs(task.end_date).isBefore(dayjs());
         const isDueSoon =
@@ -184,6 +212,18 @@ export function TaskSection({
                   </div>
                 )}
 
+                {/* List Status */}
+                {listStatus && (
+                  <div
+                    className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-xs ${listStatus.bgColor}`}
+                  >
+                    <Circle
+                      className={`h-2 w-2 fill-current ${listStatus.color}`}
+                    />
+                    <span className={listStatus.color}>{listStatus.label}</span>
+                  </div>
+                )}
+
                 {/* Due Date */}
                 {task.end_date && (
                   <div
@@ -199,6 +239,14 @@ export function TaskSection({
                     <span>
                       {isOverdue ? 'Overdue' : dayjs(task.end_date).fromNow()}
                     </span>
+                  </div>
+                )}
+
+                {/* Created Date */}
+                {task.created_at && (
+                  <div className="flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-muted-foreground text-xs">
+                    <Calendar className="h-3 w-3" />
+                    <span>Created {dayjs(task.created_at).fromNow()}</span>
                   </div>
                 )}
 

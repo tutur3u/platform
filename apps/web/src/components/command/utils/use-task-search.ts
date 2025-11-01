@@ -12,6 +12,7 @@ export interface TaskSearchResult {
   completed: boolean;
   start_date?: string;
   end_date?: string;
+  created_at?: string;
   assignees?: {
     id: string;
     display_name?: string;
