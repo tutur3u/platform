@@ -116,12 +116,8 @@ export class GameScene extends Phaser.Scene {
     const mapOffset = this.mapManager.getMapOffset();
     const ghostTypes = Object.values(GhostType);
 
-    ghostTypes.forEach((type, index) => {
-      const offset = index - 1.5; // Spread ghosts around center
-      const pos = tileToPixelCentered(
-        centerSpawn.row,
-        centerSpawn.col + Math.floor(offset)
-      );
+    ghostTypes.forEach((type) => {
+      const pos = tileToPixelCentered(centerSpawn.row, centerSpawn.col);
 
       const ghost = new Ghost(
         this,

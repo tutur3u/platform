@@ -44,7 +44,7 @@ export class Pacman {
     this.body = this.sprite.body as Phaser.Physics.Arcade.Body;
     this.body.setCollideWorldBounds(true);
     this.body.setCircle(GAME_CONFIG.TILE_SIZE / 2 - 2);
-    this.body.setOffset(2, 2);
+    this.body.setOffset(GAME_CONFIG.TILE_SIZE / 2, GAME_CONFIG.TILE_SIZE / 2);
 
     // Start with left animation
     this.sprite.play('pacman-left');
