@@ -35,14 +35,6 @@ export interface PhaserGameConfig {
   callbacks?: GameCallbacks;
 }
 
-// Ghost colors for rendering
-export const GHOST_COLORS = {
-  BLINKY: 0xff0000, // Red
-  PINKY: 0xffb8ff, // Pink
-  INKY: 0x00ffff, // Cyan
-  CLYDE: 0xffb851, // Orange
-} as const;
-
 // Wall tile representation
 export const TILE_WALL = 1;
 export const TILE_EMPTY = 0;

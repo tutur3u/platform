@@ -7,7 +7,7 @@ import * as Phaser from 'phaser';
 export class Pacman {
   private scene: Phaser.Scene;
   private mapManager: MapManager;
-  public sprite: Phaser.GameObjects.Arc;
+  public sprite: Phaser.GameObjects.Sprite;
   public body: Phaser.Physics.Arcade.Body;
   private direction: Direction = Direction.LEFT;
   private nextDirection: Direction = Direction.LEFT;
@@ -29,12 +29,14 @@ export class Pacman {
     // Get map offset for proper positioning
     this.mapOffset = mapManager.getMapOffset();
 
-    // Create Pacman as a yellow circle
-    this.sprite = scene.add.circle(
-      x,
-      y,
-      GAME_CONFIG.TILE_SIZE / 2 - 2,
-      0xffff00
+    // Create Pacman animations for each direction
+    this.createAnimations();
+
+    // Create Pacman as a sprite
+    this.sprite = scene.add.sprite(x, y, 'pacman-left-1');
+    this.sprite.setDisplaySize(
+      GAME_CONFIG.TILE_SIZE - 4,
+      GAME_CONFIG.TILE_SIZE - 4
     );
 
     // Enable physics on Pacman
@@ -42,9 +44,38 @@ export class Pacman {
     this.body = this.sprite.body as Phaser.Physics.Arcade.Body;
     this.body.setCollideWorldBounds(true);
     this.body.setCircle(GAME_CONFIG.TILE_SIZE / 2 - 2);
+    this.body.setOffset(2, 2);
+
+    // Start with left animation
+    this.sprite.play('pacman-left');
 
     // Setup keyboard input
     this.cursors = scene.input.keyboard!.createCursorKeys();
+  }
+
+  /**
+   * Create animations for each direction
+   */
+  private createAnimations(): void {
+    const directions = ['up', 'down', 'left', 'right'];
+
+    directions.forEach((direction) => {
+      // Check if animation already exists
+      if (this.scene.anims.exists(`pacman-${direction}`)) {
+        return;
+      }
+
+      this.scene.anims.create({
+        key: `pacman-${direction}`,
+        frames: [
+          { key: `pacman-${direction}-1` },
+          { key: `pacman-${direction}-2` },
+          { key: `pacman-${direction}-3` },
+        ],
+        frameRate: 10,
+        repeat: -1,
+      });
+    });
   }
 
   /**
@@ -170,22 +201,30 @@ export class Pacman {
   }
 
   /**
-   * Update sprite rotation based on direction
+   * Update sprite animation based on direction
    */
   private updateRotation(): void {
+    let animKey: string;
     switch (this.direction) {
       case Direction.RIGHT:
-        this.sprite.setRotation(0);
+        animKey = 'pacman-right';
         break;
       case Direction.DOWN:
-        this.sprite.setRotation(Math.PI / 2);
+        animKey = 'pacman-down';
         break;
       case Direction.LEFT:
-        this.sprite.setRotation(Math.PI);
+        animKey = 'pacman-left';
         break;
       case Direction.UP:
-        this.sprite.setRotation(-Math.PI / 2);
+        animKey = 'pacman-up';
         break;
+      default:
+        return;
+    }
+
+    // Only change animation if it's different from current
+    if (this.sprite.anims.currentAnim?.key !== animKey) {
+      this.sprite.play(animKey);
     }
   }
 
@@ -217,7 +256,6 @@ export class Pacman {
     // Death animation
     this.scene.tweens.add({
       targets: this.sprite,
-      scale: { from: 1, to: 0 },
       alpha: { from: 1, to: 0 },
       duration: 500,
       ease: 'Power2',
@@ -229,10 +267,10 @@ export class Pacman {
    */
   reset(x: number, y: number): void {
     this.sprite.setPosition(x, y);
-    this.sprite.setScale(1);
     this.sprite.setAlpha(1);
     this.direction = Direction.LEFT;
     this.alive = true;
+    this.sprite.play('pacman-left');
   }
 
   /**

@@ -1,4 +1,4 @@
-import { GAME_CONFIG, GHOST_COLORS } from '../config';
+import { GAME_CONFIG } from '../config';
 import { Ghost } from '../entities/Ghost';
 import { Pacman } from '../entities/Pacman';
 import { CollisionManager } from '../managers/CollisionManager';
@@ -35,6 +35,27 @@ export class GameScene extends Phaser.Scene {
     this.score = 0;
     this.lives = GAME_CONFIG.INITIAL_LIVES;
     this.ghosts = [];
+  }
+
+  preload(): void {
+    // Load Pacman animations for each direction
+    for (let i = 1; i <= 3; i++) {
+      this.load.image(`pacman-up-${i}`, `/neo-pacman/pacman-up/${i}.png`);
+      this.load.image(`pacman-down-${i}`, `/neo-pacman/pacman-down/${i}.png`);
+      this.load.image(`pacman-left-${i}`, `/neo-pacman/pacman-left/${i}.png`);
+      this.load.image(`pacman-right-${i}`, `/neo-pacman/pacman-right/${i}.png`);
+    }
+
+    // Load ghost images
+    this.load.image('blinky', '/neo-pacman/ghosts/blinky.png');
+    this.load.image('pinky', '/neo-pacman/ghosts/pinky.png');
+    this.load.image('inky', '/neo-pacman/ghosts/inky.png');
+    this.load.image('clyde', '/neo-pacman/ghosts/clyde.png');
+    this.load.image('blue_ghost', '/neo-pacman/ghosts/blue_ghost.png');
+
+    // Load food images
+    this.load.image('apple', '/neo-pacman/other/apple.png');
+    this.load.image('dot', '/neo-pacman/other/dot.png');
   }
 
   create(): void {
@@ -93,14 +114,9 @@ export class GameScene extends Phaser.Scene {
   private spawnGhosts(): void {
     const centerSpawn = this.mapManager.getCenterSpawnPoint();
     const mapOffset = this.mapManager.getMapOffset();
-    const ghostTypes = [
-      { type: GhostType.BLINKY, color: GHOST_COLORS.BLINKY },
-      { type: GhostType.PINKY, color: GHOST_COLORS.PINKY },
-      { type: GhostType.INKY, color: GHOST_COLORS.INKY },
-      { type: GhostType.CLYDE, color: GHOST_COLORS.CLYDE },
-    ];
+    const ghostTypes = Object.values(GhostType);
 
-    ghostTypes.forEach((ghostConfig, index) => {
+    ghostTypes.forEach((type, index) => {
       const offset = index - 1.5; // Spread ghosts around center
       const pos = tileToPixelCentered(
         centerSpawn.row,
@@ -111,8 +127,7 @@ export class GameScene extends Phaser.Scene {
         this,
         pos.x + mapOffset.x,
         pos.y + mapOffset.y,
-        ghostConfig.type,
-        ghostConfig.color,
+        type,
         this.mapManager
       );
 

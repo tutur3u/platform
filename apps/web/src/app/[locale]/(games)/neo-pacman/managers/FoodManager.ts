@@ -70,12 +70,14 @@ export class FoodManager {
     switch (foodType) {
       case FoodType.PELLET:
         points = GAME_CONFIG.PELLET_POINTS;
-        sprite = this.scene.add.circle(adjustedX, adjustedY, 3, 0xffb897);
+        sprite = this.scene.add.image(adjustedX, adjustedY, 'dot');
+        (sprite as Phaser.GameObjects.Image).setDisplaySize(8, 8);
         break;
 
       case FoodType.POWER_PELLET:
         points = GAME_CONFIG.POWER_PELLET_POINTS;
-        sprite = this.scene.add.circle(adjustedX, adjustedY, 7, 0xffb897);
+        sprite = this.scene.add.image(adjustedX, adjustedY, 'dot');
+        (sprite as Phaser.GameObjects.Image).setDisplaySize(16, 16);
         // Add pulsing animation
         this.scene.tweens.add({
           targets: sprite,
@@ -88,20 +90,16 @@ export class FoodManager {
 
       case FoodType.FRUIT:
         points = GAME_CONFIG.FRUIT_POINTS;
-        // Create a simple fruit representation (red square)
-        sprite = this.scene.add.rectangle(
-          adjustedX,
-          adjustedY,
-          12,
-          12,
-          0xff0000
-        );
+        // Use apple image for fruits
+        sprite = this.scene.add.image(adjustedX, adjustedY, 'apple');
+        (sprite as Phaser.GameObjects.Image).setDisplaySize(16, 16);
         break;
 
       default:
         // Fallback to pellet
         points = GAME_CONFIG.PELLET_POINTS;
-        sprite = this.scene.add.circle(adjustedX, adjustedY, 3, 0xffb897);
+        sprite = this.scene.add.image(adjustedX, adjustedY, 'dot');
+        (sprite as Phaser.GameObjects.Image).setDisplaySize(8, 8);
         break;
     }
 

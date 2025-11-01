@@ -1,4 +1,4 @@
-import { GAME_CONFIG, GHOST_COLORS } from '../config';
+import { GAME_CONFIG } from '../config';
 import type { MapManager } from '../managers/MapManager';
 import { GhostState, GhostType } from '../types';
 import type { TilePosition } from '../types';
@@ -10,7 +10,7 @@ import * as Phaser from 'phaser';
 export class Ghost {
   private scene: Phaser.Scene;
   private mapManager: MapManager;
-  public sprite: Phaser.GameObjects.Arc;
+  public sprite: Phaser.GameObjects.Sprite;
   public body: Phaser.Physics.Arcade.Body;
   public type: GhostType;
   public state: GhostState = GhostState.SCATTER;
@@ -22,13 +22,13 @@ export class Ghost {
   private lastTile: TilePosition | null = null; // Track last tile position
   private frightenedTarget: TilePosition | null = null; // Target tile when frightened
   private moveTimer: number = 0; // Frames until next move
+  private normalTexture: string; // Store normal texture key
 
   constructor(
     scene: Phaser.Scene,
     x: number,
     y: number,
     type: GhostType,
-    color: number,
     mapManager: MapManager
   ) {
     this.scene = scene;
@@ -38,20 +38,46 @@ export class Ghost {
     // Get map offset for proper positioning
     this.mapOffset = mapManager.getMapOffset();
 
+    // Get texture key based on ghost type
+    this.normalTexture = this.getTextureKey(type);
+
     // Create ghost sprite
-    this.sprite = scene.add.circle(x, y, GAME_CONFIG.TILE_SIZE / 2 - 2, color);
+    this.sprite = scene.add.sprite(x, y, this.normalTexture);
+    this.sprite.setDisplaySize(
+      GAME_CONFIG.TILE_SIZE - 4,
+      GAME_CONFIG.TILE_SIZE - 4
+    );
 
     // Enable physics on Ghost
     scene.physics.add.existing(this.sprite);
     this.body = this.sprite.body as Phaser.Physics.Arcade.Body;
     this.body.setCollideWorldBounds(true);
     this.body.setCircle(GAME_CONFIG.TILE_SIZE / 2 - 2);
+    this.body.setOffset(2, 2);
 
     // Store home position (convert from screen space to map space)
     this.homePosition = pixelToTile(x - this.mapOffset.x, y - this.mapOffset.y);
 
     // Start state cycling
     this.startStateCycling();
+  }
+
+  /**
+   * Get texture key based on ghost type
+   */
+  private getTextureKey(type: GhostType): string {
+    switch (type) {
+      case GhostType.BLINKY:
+        return 'blinky';
+      case GhostType.PINKY:
+        return 'pinky';
+      case GhostType.INKY:
+        return 'inky';
+      case GhostType.CLYDE:
+        return 'clyde';
+      default:
+        return 'blinky';
+    }
   }
 
   /**
@@ -96,18 +122,24 @@ export class Ghost {
       case GhostState.CHASE:
       case GhostState.SCATTER:
         this.speed = GAME_CONFIG.GHOST_SPEED;
+        this.sprite.setTexture(this.normalTexture);
         this.sprite.setAlpha(1);
         break;
 
       case GhostState.FRIGHTENED:
         this.speed = GAME_CONFIG.GHOST_FRIGHTENED_SPEED;
-        this.sprite.setFillStyle(0x0000ff); // Blue when frightened
+        this.sprite.setTexture('blue_ghost');
         this.sprite.setAlpha(0.7);
         break;
 
       case GhostState.EATEN:
         this.speed = GAME_CONFIG.GHOST_EATEN_SPEED;
-        this.sprite.setAlpha(0.3);
+        this.scene.tweens.add({
+          targets: this.sprite,
+          alpha: { from: 1, to: 0 },
+          duration: 500,
+          ease: 'Power2',
+        });
         break;
     }
   }
@@ -123,17 +155,9 @@ export class Ghost {
       this.scene.time.delayedCall(GAME_CONFIG.POWER_DURATION, () => {
         if (this.state === GhostState.FRIGHTENED) {
           this.setState(GhostState.SCATTER);
-          this.resetColor();
         }
       });
     }
-  }
-
-  /**
-   * Reset ghost color based on type
-   */
-  private resetColor(): void {
-    this.sprite.setFillStyle(GHOST_COLORS[this.type]);
   }
 
   /**
@@ -378,10 +402,8 @@ export class Ghost {
 
   reset(x: number, y: number): void {
     this.sprite.setPosition(x, y);
-    this.sprite.setScale(1);
     this.sprite.setAlpha(1);
     this.setState(GhostState.SCATTER);
-    this.resetColor();
   }
 
   /**
