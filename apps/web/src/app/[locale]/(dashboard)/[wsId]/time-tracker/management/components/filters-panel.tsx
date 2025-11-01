@@ -50,7 +50,7 @@ export default function FiltersPanel({
 
   return (
     <Card className="overflow-hidden border-dynamic-purple/20 transition-all duration-300">
-      <CardHeader className="border-dynamic-purple/20 border-b bg-gradient-to-r from-dynamic-purple/5 to-dynamic-blue/5 p-6">
+      <CardHeader className="border-dynamic-purple/20 border-b bg-linear-to-r from-dynamic-purple/5 to-dynamic-blue/5 p-6">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-3 text-dynamic-foreground">
             <div className="rounded-lg bg-dynamic-purple/10 p-2 text-dynamic-purple">

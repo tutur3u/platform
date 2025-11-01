@@ -72,6 +72,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import timezone from 'dayjs/plugin/timezone';
@@ -277,7 +278,7 @@ const StackedSessionItem = ({
           <div className="min-w-0 flex-1 space-y-2 md:space-y-2.5">
             {/* Title row with duration on mobile */}
             <div className="flex items-start justify-between gap-2">
-              <h4 className="min-w-0 flex-1 break-words font-semibold text-base leading-tight md:text-lg">
+              <h4 className="wrap-break-word min-w-0 flex-1 font-semibold text-base leading-tight md:text-lg">
                 {stackedSession?.title}
               </h4>
               {/* Duration badge - visible on mobile */}
@@ -332,8 +333,8 @@ const StackedSessionItem = ({
 
             {/* Description */}
             {stackedSession?.description && (
-              <p className="line-clamp-2 text-muted-foreground text-sm leading-relaxed">
-                {stackedSession?.description}
+              <p className="line-clamp-2 whitespace-pre-wrap text-muted-foreground text-sm leading-relaxed">
+                {getDescriptionText(stackedSession.description)}
               </p>
             )}
 
@@ -350,7 +351,7 @@ const StackedSessionItem = ({
                 </Badge>
               )}
               {stackedSession?.task && (
-                <div className="flex min-w-0 items-center gap-1.5 rounded-md border border-dynamic-blue/20 bg-gradient-to-r from-dynamic-blue/10 to-dynamic-blue/5 px-2 py-1">
+                <div className="flex min-w-0 items-center gap-1.5 rounded-md border border-dynamic-blue/20 bg-linear-to-r from-dynamic-blue/10 to-dynamic-blue/5 px-2 py-1">
                   <CheckCircle className="h-3 w-3 shrink-0 text-dynamic-blue" />
                   <span className="truncate font-medium text-dynamic-blue text-xs">
                     {stackedSession?.task.name}
@@ -767,8 +768,8 @@ const StackedSessionItem = ({
                               {session.description &&
                                 session.description !==
                                   stackedSession?.description && (
-                                  <p className="mt-1 line-clamp-1 text-muted-foreground text-xs">
-                                    {session.description}
+                                  <p className="mt-1 line-clamp-1 whitespace-pre-wrap text-muted-foreground text-xs">
+                                    {getDescriptionText(session.description)}
                                   </p>
                                 )}
                             </div>
@@ -2015,7 +2016,7 @@ export function SessionHistory({
                               <span className="text-muted-foreground text-sm">
                                 {percentage.toFixed(1)}%
                               </span>
-                              <span className="min-w-[4rem] text-right font-semibold">
+                              <span className="min-w-16 text-right font-semibold">
                                 {formatDuration(cat.duration)}
                               </span>
                             </div>

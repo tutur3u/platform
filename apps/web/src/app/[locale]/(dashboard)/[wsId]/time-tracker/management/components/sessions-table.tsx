@@ -194,7 +194,7 @@ export default function SessionsTable({
 
   return (
     <Card className="overflow-hidden border-dynamic-blue/20 transition-all duration-300">
-      <CardHeader className="border-dynamic-blue/20 border-b bg-gradient-to-r from-dynamic-blue/5 to-dynamic-purple/5 p-6">
+      <CardHeader className="border-dynamic-blue/20 border-b bg-linear-to-r from-dynamic-blue/5 to-dynamic-purple/5 p-6">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-3 text-dynamic-foreground">
             <div className="rounded-lg bg-dynamic-blue/10 p-2 text-dynamic-blue">
@@ -354,7 +354,7 @@ export default function SessionsTable({
                     key={`grouped-session-${index}`}
                     className={`group grid grid-cols-12 gap-4 rounded-lg border border-dynamic-border/10 bg-dynamic-background p-4 transition-all duration-200 hover:border-dynamic-blue/20 hover:bg-dynamic-blue/5 hover:shadow-sm ${
                       isFirstOfPeriod
-                        ? 'border-dynamic-blue/20 bg-gradient-to-r from-dynamic-blue/5 to-transparent'
+                        ? 'border-dynamic-blue/20 bg-linear-to-r from-dynamic-blue/5 to-transparent'
                         : ''
                     }`}
                   >
@@ -447,7 +447,7 @@ export default function SessionsTable({
                         <div className="flex items-center gap-2">
                           <div className="h-1.5 w-16 rounded-full bg-dynamic-muted/20">
                             <div
-                              className="h-1.5 rounded-full bg-gradient-to-r from-dynamic-blue to-dynamic-purple transition-all duration-300"
+                              className="h-1.5 rounded-full bg-linear-to-r from-dynamic-blue to-dynamic-purple transition-all duration-300"
                               style={{
                                 width: `${Math.min(100, (session.totalDuration / (8 * 3600)) * 100)}%`,
                               }}

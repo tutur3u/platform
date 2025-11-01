@@ -24,12 +24,12 @@ export function CommandHeader({
 }: CommandHeaderProps) {
   return (
     <div className="relative">
-      <div className="absolute inset-0 bg-gradient-to-r from-dynamic-blue/5 via-dynamic-purple/5 to-dynamic-pink/5" />
+      <div className="absolute inset-0 bg-linear-to-r from-dynamic-blue/5 via-dynamic-purple/5 to-dynamic-pink/5" />
       <div className="relative flex items-center border-dynamic-gray/10 border-b px-4">
         {isLoading ? (
           <div className="mr-3 rounded-lg p-2">
             <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-dynamic-blue/20 to-dynamic-purple/20 blur-sm" />
+              <div className="absolute inset-0 rounded-full bg-linear-to-r from-dynamic-blue/20 to-dynamic-purple/20 blur-sm" />
               <Loader className="relative h-4 w-4 animate-spin text-dynamic-blue" />
             </div>
           </div>
@@ -76,7 +76,7 @@ export function CommandHeader({
                 Clear
               </button>
             )}
-            <div className="rounded-md border border-dynamic-gray/10 bg-gradient-to-r from-dynamic-gray/10 to-dynamic-gray/5 px-3 py-1.5 font-medium text-dynamic-gray text-xs">
+            <div className="rounded-md border border-dynamic-gray/10 bg-linear-to-r from-dynamic-gray/10 to-dynamic-gray/5 px-3 py-1.5 font-medium text-dynamic-gray text-xs">
               ⌘K
             </div>
           </div>

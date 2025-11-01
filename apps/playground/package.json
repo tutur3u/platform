@@ -23,14 +23,14 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@ai-sdk/google": "^2.0.24",
+    "@ai-sdk/google": "^2.0.26",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "dayjs": "^1.11.18",
-    "next": "^16.0.0",
+    "dayjs": "^1.11.19",
+    "next": "^16.0.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "zod": "^4.1.12"
@@ -38,7 +38,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.16",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^24.9.1",
+    "@types/node": "^24.9.2",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "postcss": "^8.5.6",

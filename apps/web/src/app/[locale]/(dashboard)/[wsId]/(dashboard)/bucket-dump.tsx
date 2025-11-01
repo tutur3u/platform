@@ -430,7 +430,7 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
   return (
     <>
       <Card className="group overflow-hidden border border-dynamic-purple/20 bg-background/80 shadow-sm backdrop-blur">
-        <CardHeader className="border-dynamic-purple/15 border-b bg-gradient-to-r from-dynamic-purple/10 via-dynamic-pink/10 to-dynamic-orange/10">
+        <CardHeader className="border-dynamic-purple/15 border-b bg-linear-to-r from-dynamic-purple/10 via-dynamic-pink/10 to-dynamic-orange/10">
           <div className="flex items-start justify-between gap-3">
             <div>
               <CardTitle className="flex items-center gap-2 font-semibold text-base">
@@ -649,7 +649,7 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="z-[9999]">
+                <SelectContent className="z-9999">
                   <SelectItem value="task">
                     {t('conversion_dialog.type_task')}
                   </SelectItem>
@@ -677,7 +677,7 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
                         placeholder={t('conversion_dialog.list_placeholder')}
                       />
                     </SelectTrigger>
-                    <SelectContent className="z-[9999]">
+                    <SelectContent className="z-9999">
                       {listOptions.map((option) => (
                         <SelectItem key={option.id} value={option.id}>
                           {option.boardName} • {option.name}
@@ -734,7 +734,7 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
                   placeholder={t(
                     'conversion_dialog.project_description_placeholder'
                   )}
-                  className="min-h-[80px] resize-none"
+                  className="min-h-20 resize-none"
                   disabled={isConverting}
                 />
               </div>

@@ -46,6 +46,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import Link from 'next/link';
 import type { ComponentProps, ElementType } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -1724,7 +1725,7 @@ export function TimerControls({
       clearPausedSessionFromStorage();
 
       const pauseDuration = pauseStartTime
-        ? Math.floor((new Date().getTime() - pauseStartTime.getTime()) / 1000)
+        ? Math.floor((Date.now() - pauseStartTime.getTime()) / 1000)
         : 0;
 
       // Invalidate the running session query to update sidebar
@@ -1792,7 +1793,7 @@ export function TimerControls({
         setSessionMode('task');
         setSelectedTaskId(task.id);
         setNewSessionTitle(`Working on: ${task.name}`);
-        setNewSessionDescription(task.description || '');
+        setNewSessionDescription(getDescriptionText(task.description) || '');
 
         // Exit search mode and show selected task
         setIsSearchMode(false);
@@ -2132,7 +2133,7 @@ export function TimerControls({
                       onChange={(e) =>
                         setCustomTimerSettings((prev) => ({
                           ...prev,
-                          targetDuration: parseInt(e.target.value) || 60,
+                          targetDuration: parseInt(e.target.value, 10) || 60,
                         }))
                       }
                     />
@@ -2147,7 +2148,7 @@ export function TimerControls({
                       onChange={(e) =>
                         setCustomTimerSettings((prev) => ({
                           ...prev,
-                          intervalFrequency: parseInt(e.target.value) || 25,
+                          intervalFrequency: parseInt(e.target.value, 10) || 25,
                         }))
                       }
                     />
@@ -2163,7 +2164,8 @@ export function TimerControls({
                     onChange={(e) =>
                       setCustomTimerSettings((prev) => ({
                         ...prev,
-                        intervalBreakDuration: parseInt(e.target.value) || 5,
+                        intervalBreakDuration:
+                          parseInt(e.target.value, 10) || 5,
                       }))
                     }
                   />
@@ -2218,7 +2220,7 @@ export function TimerControls({
                     onChange={(e) =>
                       setCustomTimerSettings((prev) => ({
                         ...prev,
-                        countdownDuration: parseInt(e.target.value) || 25,
+                        countdownDuration: parseInt(e.target.value, 10) || 25,
                       }))
                     }
                   />
@@ -2415,7 +2417,7 @@ export function TimerControls({
                   onChange={(e) =>
                     setPomodoroSettings((prev) => ({
                       ...prev,
-                      focusTime: parseInt(e.target.value) || 25,
+                      focusTime: parseInt(e.target.value, 10) || 25,
                     }))
                   }
                 />
@@ -2430,7 +2432,7 @@ export function TimerControls({
                   onChange={(e) =>
                     setPomodoroSettings((prev) => ({
                       ...prev,
-                      shortBreakTime: parseInt(e.target.value) || 5,
+                      shortBreakTime: parseInt(e.target.value, 10) || 5,
                     }))
                   }
                 />
@@ -2445,7 +2447,7 @@ export function TimerControls({
                   onChange={(e) =>
                     setPomodoroSettings((prev) => ({
                       ...prev,
-                      longBreakTime: parseInt(e.target.value) || 15,
+                      longBreakTime: parseInt(e.target.value, 10) || 15,
                     }))
                   }
                 />
@@ -2462,7 +2464,7 @@ export function TimerControls({
                 onChange={(e) =>
                   setPomodoroSettings((prev) => ({
                     ...prev,
-                    sessionsUntilLongBreak: parseInt(e.target.value) || 4,
+                    sessionsUntilLongBreak: parseInt(e.target.value, 10) || 4,
                   }))
                 }
               />
@@ -3086,7 +3088,7 @@ export function TimerControls({
               >
                 <div
                   className={cn(
-                    'absolute inset-0 animate-pulse bg-gradient-to-r opacity-30',
+                    'absolute inset-0 animate-pulse bg-linear-to-r opacity-30',
                     timerMode === TimerMode.pomodoro &&
                       countdownState.sessionType === 'focus'
                       ? 'from-green-500/10 to-transparent'
@@ -3257,7 +3259,7 @@ export function TimerControls({
                   )}
                   {currentSession.task && (
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1.5 rounded-md border border-dynamic-blue/20 bg-gradient-to-r from-dynamic-blue/10 to-dynamic-blue/5 px-2 py-1">
+                      <div className="flex items-center gap-1.5 rounded-md border border-dynamic-blue/20 bg-linear-to-r from-dynamic-blue/10 to-dynamic-blue/5 px-2 py-1">
                         <CheckCircle className="h-3 w-3 text-dynamic-blue" />
                         <span className="font-medium text-dynamic-blue text-sm">
                           {currentSession.task.name}
@@ -3368,7 +3370,7 @@ export function TimerControls({
             /* Paused Session Display */
             <div className="space-y-6 text-center">
               <div className="relative overflow-hidden rounded-lg bg-linear-to-br from-amber-50 to-amber-100 p-6 dark:from-amber-950/20 dark:to-amber-900/20">
-                <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-transparent"></div>
+                <div className="absolute inset-0 bg-linear-to-r from-amber-500/5 to-transparent"></div>
                 <div className="relative">
                   <div className="mb-3 flex items-center justify-center gap-2">
                     <Pause className="h-5 w-5 text-amber-600 dark:text-amber-400" />
@@ -3387,9 +3389,7 @@ export function TimerControls({
                           • Break:{' '}
                           {formatDuration(
                             Math.floor(
-                              (new Date().getTime() -
-                                pauseStartTime.getTime()) /
-                                1000
+                              (Date.now() - pauseStartTime.getTime()) / 1000
                             )
                           )}
                         </span>
@@ -3423,7 +3423,7 @@ export function TimerControls({
                   )}
                   {pausedSession.task && (
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1.5 rounded-md border border-dynamic-blue/20 bg-gradient-to-r from-dynamic-blue/10 to-dynamic-blue/5 px-2 py-1">
+                      <div className="flex items-center gap-1.5 rounded-md border border-dynamic-blue/20 bg-linear-to-r from-dynamic-blue/10 to-dynamic-blue/5 px-2 py-1">
                         <CheckCircle className="h-3 w-3 text-dynamic-blue" />
                         <span className="font-medium text-dynamic-blue text-sm">
                           {pausedSession.task.name}
@@ -3561,7 +3561,7 @@ export function TimerControls({
                               return selectedTask ? (
                                 <div
                                   className={cn(
-                                    'flex min-h-[2.5rem] cursor-text items-center gap-2 rounded-md border px-3 py-2 transition-all duration-200',
+                                    'flex min-h-10 cursor-text items-center gap-2 rounded-md border px-3 py-2 transition-all duration-200',
                                     isDragOver
                                       ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20'
                                       : isDraggingTask
@@ -3736,7 +3736,7 @@ export function TimerControls({
                             <div
                               ref={dropdownContentRef}
                               className={cn(
-                                'absolute right-0 left-0 z-[100] rounded-md border bg-popover shadow-lg transition-all duration-200',
+                                'absolute right-0 left-0 z-100 rounded-md border bg-popover shadow-lg transition-all duration-200',
                                 dropdownPosition === 'above'
                                   ? 'bottom-full mb-1'
                                   : 'top-full mt-1'
@@ -4035,8 +4035,10 @@ export function TimerControls({
                                             <ExternalLink className="h-3 w-3 text-muted-foreground" />
                                           </div>
                                           {task.description && (
-                                            <p className="mt-1 line-clamp-2 text-muted-foreground text-xs">
-                                              {task.description}
+                                            <p className="mt-1 line-clamp-2 whitespace-pre-wrap text-muted-foreground text-xs">
+                                              {getDescriptionText(
+                                                task.description
+                                              )}
                                             </p>
                                           )}
 
@@ -4102,7 +4104,7 @@ export function TimerControls({
                                                     {task.board_name}
                                                   </span>
                                                 </div>
-                                                <div className="flex items-center gap-1.5 rounded-md border border-dynamic-green/20 bg-gradient-to-r from-dynamic-green/10 to-dynamic-green/5 px-2 py-1">
+                                                <div className="flex items-center gap-1.5 rounded-md border border-dynamic-green/20 bg-linear-to-r from-dynamic-green/10 to-dynamic-green/5 px-2 py-1">
                                                   <Tag className="h-3 w-3 text-dynamic-green" />
                                                   <span className="font-medium text-dynamic-green text-xs">
                                                     {task.list_name}
@@ -4206,7 +4208,7 @@ export function TimerControls({
 
                     {/* Task suggestion */}
                     {showTaskSuggestion && newSessionTitle.length > 2 && (
-                      <div className="rounded-lg border border-dynamic-blue/30 bg-gradient-to-r from-dynamic-blue/10 to-dynamic-blue/5 p-3 shadow-sm">
+                      <div className="rounded-lg border border-dynamic-blue/30 bg-linear-to-r from-dynamic-blue/10 to-dynamic-blue/5 p-3 shadow-sm">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-start gap-2">
                             <div className="rounded-full bg-dynamic-blue/20 p-1">
@@ -4238,7 +4240,7 @@ export function TimerControls({
                     {selectedTaskId &&
                       selectedTaskId !== 'none' &&
                       !showTaskSuggestion && (
-                        <div className="rounded-lg border border-dynamic-green/30 bg-gradient-to-r from-dynamic-green/5 to-dynamic-green/3 p-4 shadow-sm">
+                        <div className="rounded-lg border border-dynamic-green/30 bg-linear-to-r from-dynamic-green/5 to-dynamic-green/3 p-4 shadow-sm">
                           <div className="flex items-start gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-dynamic-green/30 bg-linear-to-br from-dynamic-green/20 to-dynamic-green/10">
                               <CheckCircle className="h-5 w-5 text-dynamic-green" />
@@ -4294,7 +4296,7 @@ export function TimerControls({
                                               {selectedTask.board_name}
                                             </span>
                                           </div>
-                                          <div className="flex items-center gap-1.5 rounded-md border border-dynamic-green/20 bg-gradient-to-r from-dynamic-green/10 to-dynamic-green/5 px-2 py-1">
+                                          <div className="flex items-center gap-1.5 rounded-md border border-dynamic-green/20 bg-linear-to-r from-dynamic-green/10 to-dynamic-green/5 px-2 py-1">
                                             <Tag className="h-3 w-3 text-dynamic-green" />
                                             <span className="font-medium text-dynamic-green text-xs">
                                               {selectedTask.list_name}
@@ -4382,16 +4384,16 @@ export function TimerControls({
                         variant="outline"
                         size="sm"
                         onClick={() => startFromTemplate(template)}
-                        className="h-auto min-h-[2rem] w-full justify-start p-2 text-sm"
+                        className="h-auto min-h-8 w-full justify-start p-2 text-sm"
                       >
                         <div className="flex w-full min-w-0 items-center">
-                          <Copy className="mr-2 h-3 w-3 flex-shrink-0" />
+                          <Copy className="mr-2 h-3 w-3 shrink-0" />
                           <span className="flex-1 truncate text-left">
                             {template.title}
                           </span>
                           <Badge
                             variant="secondary"
-                            className="ml-2 flex-shrink-0 text-xs"
+                            className="ml-2 shrink-0 text-xs"
                           >
                             {template.usage_count}×
                           </Badge>

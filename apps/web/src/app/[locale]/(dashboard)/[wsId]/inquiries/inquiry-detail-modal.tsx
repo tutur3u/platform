@@ -5,6 +5,7 @@ import {
   ClockIcon,
   ExternalLinkIcon,
   Loader2,
+  PlayIcon,
   XIcon,
   ZoomInIcon,
 } from '@tuturuuu/icons';
@@ -26,21 +27,27 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ExtendedSupportInquiry } from './page';
 
-// Custom hook for generating signed URLs
-function useSignedImageUrls(
+// Helper function to determine if a file is a video based on extension
+function isVideoFile(filename: string): boolean {
+  const videoExtensions = ['.mp4', '.webm', '.mov'];
+  return videoExtensions.some((ext) => filename.toLowerCase().endsWith(ext));
+}
+
+// Custom hook for generating signed URLs for media files (images and videos)
+function useSignedMediaUrls(
   inquiryId: string,
-  images: string[] | null
+  mediaFiles: string[] | null
 ): {
-  imageUrls: Record<string, string>;
+  mediaUrls: Record<string, string>;
   isLoading: boolean;
 } {
-  const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
+  const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const supabase = createDynamicClient();
 
   const generateSignedUrls = useCallback(async () => {
-    if (!images || images.length === 0) {
-      setImageUrls({});
+    if (!mediaFiles || mediaFiles.length === 0) {
+      setMediaUrls({});
       setIsLoading(false);
       return;
     }
@@ -48,34 +55,34 @@ function useSignedImageUrls(
     setIsLoading(true);
     const urls: Record<string, string> = {};
 
-    for (const imagePath of images) {
+    for (const mediaPath of mediaFiles) {
       try {
         const { data, error } = await supabase.storage
           .from('support_inquiries')
-          .createSignedUrl(`${inquiryId}/${imagePath}`, 300); // 5 minutes = 300 seconds
+          .createSignedUrl(`${inquiryId}/${mediaPath}`, 300); // 5 minutes = 300 seconds
 
         if (data?.signedUrl && !error) {
-          urls[imagePath] = data.signedUrl;
+          urls[mediaPath] = data.signedUrl;
         }
       } catch (error) {
         console.error(
-          'Error generating signed URL for image:',
-          imagePath,
+          'Error generating signed URL for media:',
+          mediaPath,
           error
         );
       }
     }
 
-    setImageUrls(urls);
+    setMediaUrls(urls);
     setIsLoading(false);
-  }, [images, supabase, inquiryId]);
+  }, [mediaFiles, supabase, inquiryId]);
 
-  // Generate URLs when images change
+  // Generate URLs when media files change
   useEffect(() => {
     generateSignedUrls();
   }, [generateSignedUrls]);
 
-  return { imageUrls, isLoading };
+  return { mediaUrls, isLoading };
 }
 
 interface InquiryDetailModalProps {
@@ -123,12 +130,15 @@ export function InquiryDetailModal({
   onUpdate,
 }: InquiryDetailModalProps) {
   const router = useRouter();
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<{
+    url: string;
+    isVideo: boolean;
+  } | null>(null);
   const [isResolvingUpdating, setIsResolvingUpdating] = useState(false);
   const hasMarkedAsRead = useRef(false);
 
   const inquiryId = inquiry.id;
-  const { imageUrls, isLoading } = useSignedImageUrls(
+  const { mediaUrls, isLoading } = useSignedMediaUrls(
     inquiryId,
     inquiry.images
   );
@@ -195,15 +205,18 @@ export function InquiryDetailModal({
     updateInquiry({ is_resolved: false });
   };
 
-  const handleImageClick = (imagePath: string) => {
-    const signedUrl = imageUrls[imagePath];
+  const handleMediaClick = (mediaPath: string) => {
+    const signedUrl = mediaUrls[mediaPath];
     if (signedUrl) {
-      setSelectedImage(signedUrl);
+      setSelectedMedia({
+        url: signedUrl,
+        isVideo: isVideoFile(mediaPath),
+      });
     }
   };
 
-  const closeImageViewer = () => {
-    setSelectedImage(null);
+  const closeMediaViewer = () => {
+    setSelectedMedia(null);
   };
 
   return (
@@ -380,33 +393,65 @@ export function InquiryDetailModal({
                       <div className="flex items-center justify-center gap-2 rounded-lg border bg-muted/20 py-8">
                         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                         <p className="text-muted-foreground text-sm">
-                          Loading images...
+                          Loading media...
                         </p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                        {inquiry.images.map((imagePath, index) => {
-                          const imageUrl = imageUrls[imagePath];
-                          if (!imageUrl) return null;
+                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                        {inquiry.images.map((mediaPath, index) => {
+                          const mediaUrl = mediaUrls[mediaPath];
+                          if (!mediaUrl) return null;
+
+                          const isVideo = isVideoFile(mediaPath);
+
                           return (
                             <button
-                              key={`${inquiry.id}-image-${index}`}
+                              key={`${inquiry.id}-media-${index}`}
                               type="button"
-                              className="group relative aspect-square overflow-hidden rounded-lg border bg-muted/50 transition-all hover:border-foreground/20 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-foreground/20"
-                              onClick={() => handleImageClick(imagePath)}
+                              className="group relative aspect-square overflow-hidden rounded-lg border bg-muted/50 transition-all hover:border-foreground/20 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-dynamic-blue/50"
+                              onClick={() => handleMediaClick(mediaPath)}
                             >
-                              <Image
-                                src={
-                                  imageUrl ||
-                                  '/placeholder.svg?height=300&width=300'
-                                }
-                                alt={`Attachment ${index + 1}`}
-                                className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-                                width={300}
-                                height={300}
-                              />
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/40">
-                                <ZoomInIcon className="h-8 w-8 text-white opacity-0 transition-opacity group-hover:opacity-100" />
+                              {isVideo ? (
+                                <>
+                                  <video
+                                    src={mediaUrl}
+                                    className="h-full w-full object-cover"
+                                    muted
+                                    playsInline
+                                  />
+                                  {/* Video indicator badge */}
+                                  <div className="absolute top-2 right-2 rounded bg-black/70 px-2 py-1 backdrop-blur-sm">
+                                    <span className="font-medium text-white text-xs">
+                                      VIDEO
+                                    </span>
+                                  </div>
+                                </>
+                              ) : (
+                                <Image
+                                  src={
+                                    mediaUrl ||
+                                    '/placeholder.svg?height=300&width=300'
+                                  }
+                                  alt={`Attachment ${index + 1}`}
+                                  className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                                  width={300}
+                                  height={300}
+                                />
+                              )}
+                              {/* Hover overlay with icon */}
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/50">
+                                {isVideo ? (
+                                  <div className="flex flex-col items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90">
+                                      <PlayIcon className="ml-0.5 h-6 w-6 text-black" />
+                                    </div>
+                                    <span className="font-medium text-white text-xs">
+                                      Play Video
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <ZoomInIcon className="h-8 w-8 text-white opacity-0 transition-opacity group-hover:opacity-100" />
+                                )}
                               </div>
                             </button>
                           );
@@ -421,32 +466,82 @@ export function InquiryDetailModal({
         </DialogContent>
       </Dialog>
 
-      {/* Image Viewer Dialog - Enhanced */}
-      {selectedImage && (
-        <Dialog open={!!selectedImage} onOpenChange={closeImageViewer}>
-          <DialogContent className="max-h-[95vh] max-w-[95vw] overflow-hidden bg-black/95 p-4 backdrop-blur-xl">
+      {/* Media Viewer Dialog - Enhanced */}
+      {selectedMedia && (
+        <Dialog open={!!selectedMedia} onOpenChange={closeMediaViewer}>
+          <DialogContent className="h-[100vh] max-h-screen w-[100vw] max-w-none overflow-hidden border-0 bg-black/98 p-0 backdrop-blur-xl">
             <DialogHeader className="sr-only">
-              <DialogTitle>Image Viewer</DialogTitle>
+              <DialogTitle>Media Viewer</DialogTitle>
             </DialogHeader>
-            <div className="relative flex h-full items-center justify-center">
-              <Image
-                src={selectedImage || '/placeholder.svg'}
-                alt="Full size attachment"
-                className="max-h-full max-w-full rounded-lg object-contain shadow-2xl"
-                width={1200}
-                height={1200}
-              />
-              <Button
-                variant="secondary"
-                size="sm"
-                className="absolute top-4 right-4 bg-dynamic-orange text-white shadow-lg hover:bg-dynamic-orange/90"
-                onClick={() => {
-                  window.open(selectedImage, '_blank');
-                }}
-              >
-                <ExternalLinkIcon className="mr-2 h-4 w-4" />
-                Open in New Tab
-              </Button>
+
+            {/* Close button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 right-4 z-50 h-10 w-10 rounded-full bg-white/10 text-white backdrop-blur-md transition-all hover:bg-white/20 hover:text-white"
+              onClick={closeMediaViewer}
+            >
+              <XIcon className="h-5 w-5" />
+            </Button>
+
+            {/* Open in new tab button */}
+            <Button
+              variant="secondary"
+              size="sm"
+              className="absolute top-4 left-4 z-50 bg-white/10 text-white shadow-lg backdrop-blur-md hover:bg-white/20"
+              onClick={() => {
+                window.open(selectedMedia.url, '_blank');
+              }}
+            >
+              <ExternalLinkIcon className="mr-2 h-4 w-4" />
+              Open in New Tab
+            </Button>
+
+            <div className="relative flex h-full w-full items-center justify-center p-4 md:p-8">
+              {selectedMedia.isVideo ? (
+                <div className="relative w-full max-w-7xl">
+                  {/* Video badge */}
+                  <div className="mb-4 flex items-center gap-2">
+                    <div className="rounded-full bg-dynamic-red/20 px-3 py-1 backdrop-blur-sm">
+                      <span className="flex items-center gap-1.5 font-medium text-dynamic-red text-sm">
+                        <PlayIcon className="h-4 w-4" />
+                        Video Attachment
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Video player */}
+                  <video
+                    src={selectedMedia.url}
+                    className="w-full rounded-lg shadow-2xl ring-1 ring-white/10"
+                    controls
+                    autoPlay
+                    playsInline
+                    controlsList="nodownload"
+                    style={{
+                      maxHeight: 'calc(100vh - 180px)',
+                    }}
+                  />
+
+                  {/* Video info */}
+                  <div className="mt-4 rounded-lg bg-white/5 p-4 backdrop-blur-sm">
+                    <p className="text-center text-muted-foreground text-sm">
+                      Use the video controls to play, pause, adjust volume, or
+                      view fullscreen
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex max-h-full max-w-full flex-col items-center gap-4">
+                  <Image
+                    src={selectedMedia.url || '/placeholder.svg'}
+                    alt="Full size attachment"
+                    className="max-h-[calc(100vh-120px)] max-w-full rounded-lg object-contain shadow-2xl ring-1 ring-white/10"
+                    width={1920}
+                    height={1080}
+                  />
+                </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>

@@ -101,7 +101,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       .select('id, ws_id')
       .eq('id', boardId)
       .eq('ws_id', wsId)
-      .eq('deleted', false)
+      .is('deleted_at', null)
       .single();
 
     if (!existingBoard) {

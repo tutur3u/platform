@@ -21,9 +21,9 @@ import type {
   Database,
   TaskProjectWithRelations,
   Workspace,
+  WorkspaceTaskBoard,
 } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -642,7 +642,7 @@ export function TaskProjectDetail({
 
   // Create virtual board object for BoardHeader
   // BoardHeader requires: id, name, and ws_id
-  const virtualBoard: Pick<TaskBoard, 'id' | 'name' | 'ws_id'> = {
+  const virtualBoard: Pick<WorkspaceTaskBoard, 'id' | 'name' | 'ws_id'> = {
     id: project.id,
     name: project.name,
     ws_id: wsId,

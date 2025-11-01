@@ -470,7 +470,7 @@ export default function ContributorsPage() {
               className="mb-6 text-balance font-bold text-4xl tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl"
             >
               Meet Our{' '}
-              <span className="animate-gradient bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+              <span className="animate-gradient bg-linear-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
                 Contributors
               </span>
             </motion.h1>
@@ -576,7 +576,7 @@ export default function ContributorsPage() {
             >
               <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
                 Community{' '}
-                <span className="bg-gradient-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
+                <span className="bg-linear-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
                   Impact
                 </span>
               </h2>
@@ -689,7 +689,7 @@ export default function ContributorsPage() {
               </Badge>
               <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
                 Top{' '}
-                <span className="bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+                <span className="bg-linear-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
                   Contributors
                 </span>
               </h2>
@@ -788,7 +788,7 @@ export default function ContributorsPage() {
               </Badge>
               <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
                 Contribution{' '}
-                <span className="bg-gradient-to-r from-dynamic-cyan via-dynamic-blue to-dynamic-purple bg-clip-text text-transparent">
+                <span className="bg-linear-to-r from-dynamic-cyan via-dynamic-blue to-dynamic-purple bg-clip-text text-transparent">
                   Analytics
                 </span>
               </h2>

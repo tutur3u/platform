@@ -42,7 +42,7 @@ export async function checkPermission({
     };
   }
 
-  const isAdmin = roleData && roleData.allow_challenge_management;
+  const isAdmin = roleData?.allow_challenge_management;
 
   // Admin users can always submit without restrictions
   if (isAdmin) {
@@ -81,7 +81,7 @@ export async function checkPermission({
     new Date(sessionData.start_time).getTime() + sessionData.duration * 1000
   );
 
-  const currentTime = new Date().getTime();
+  const currentTime = Date.now();
 
   if (currentTime > sessionEndTime) {
     return {

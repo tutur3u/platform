@@ -403,7 +403,7 @@ export function EnhancedExecutionCharts({
                 'Total number of AI executions'}
             </p>
           </CardContent>
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-primary/5 to-transparent" />
         </Card>
 
         <Card className="relative overflow-hidden">
@@ -433,7 +433,7 @@ export function EnhancedExecutionCharts({
               {formatCost(totalCost * 26000, 'VND')}
             </p>
           </CardContent>
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-success/5 to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-success/5 to-transparent" />
         </Card>
 
         <Card className="relative overflow-hidden">
@@ -451,7 +451,7 @@ export function EnhancedExecutionCharts({
               {t('total_tokens_description') || 'Total tokens processed'}
             </p>
           </CardContent>
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-warning/5 to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-warning/5 to-transparent" />
         </Card>
 
         <Card className="relative overflow-hidden">
@@ -469,7 +469,7 @@ export function EnhancedExecutionCharts({
               {avgTokensPerExecution.toLocaleString()} {t('tokens') || 'tokens'}
             </p>
           </CardContent>
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-info/5 to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-info/5 to-transparent" />
         </Card>
       </div>
 

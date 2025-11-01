@@ -10,8 +10,8 @@ import {
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import AdminTaskEmbeddings from './admin-task-embeddings';
 import WorkspaceAvatarSettings from './avatar';
 import BasicInfo from './basic-info';
@@ -49,10 +49,6 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
     secrets
       .find((s) => s.name === 'PREVENT_WORKSPACE_DELETION')
       ?.value?.toLowerCase() === 'true';
-
-  const enableAvatar = Boolean(
-    secrets.find((s) => s.name === 'ENABLE_AVATAR')?.value
-  );
 
   const enableLogo = Boolean(
     secrets.find((s) => s.name === 'ENABLE_LOGO')?.value
@@ -99,12 +95,10 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
           isPersonal={id === 'personal'}
         />
 
-        {enableAvatar && (
-          <WorkspaceAvatarSettings
-            workspace={ws}
-            allowEdit={ws?.role === 'OWNER'}
-          />
-        )}
+        <WorkspaceAvatarSettings
+          workspace={ws}
+          allowEdit={ws?.role === 'OWNER'}
+        />
 
         {enableLogo && (
           <WorkspaceLogoSettings

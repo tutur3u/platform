@@ -16,6 +16,7 @@ export type WorkspaceUserRole = 'MEMBER' | 'ADMIN' | 'OWNER';
 export type WorkspaceFlashcard = Tables<'workspace_flashcards'>;
 export type WorkspaceQuiz = Tables<'workspace_quizzes'>;
 export type WorkspaceTaskBoard = Tables<'workspace_boards'> & {
+  href?: string;
   lists?: Partial<WorkspaceTaskList>[];
 };
 export type WorkspaceTaskList = Tables<'task_lists'> & {
@@ -90,6 +91,9 @@ export type TaskWithRelations = {
       created_at: string;
     } | null;
   }> | null;
+  projects?: Array<{
+    project: TaskProject | null;
+  }>;
 };
 
 export type WorkspaceCalendarEvent = Tables<'workspace_calendar_events'>;
