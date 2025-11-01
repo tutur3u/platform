@@ -540,12 +540,12 @@ export default function PromptForm({ problem, session, submissions }: Props) {
           onValueChange={setActiveTab}
           className="flex h-full w-full flex-col"
         >
-          <TabsList className="grid h-12 w-full grid-cols-2 gap-2 border border-foreground/10 bg-gradient-to-r from-background/80 via-background/95 to-background/80 shadow-lg backdrop-blur-sm">
+          <TabsList className="grid h-12 w-full grid-cols-2 gap-2 border border-foreground/10 bg-linear-to-r from-background/80 via-background/95 to-background/80 shadow-lg backdrop-blur-sm">
             <TabsTrigger
               value="prompt"
               className={cn(
                 'relative border-2 bg-background font-medium text-foreground transition-all duration-300',
-                'data-[state=active]:border-dynamic-blue/30 data-[state=active]:bg-gradient-to-r data-[state=active]:from-dynamic-blue/10 data-[state=active]:to-dynamic-blue/15 data-[state=active]:text-dynamic-blue',
+                'data-[state=active]:border-dynamic-blue/30 data-[state=active]:bg-linear-to-r data-[state=active]:from-dynamic-blue/10 data-[state=active]:to-dynamic-blue/15 data-[state=active]:text-dynamic-blue',
                 'hover:border-foreground/30 hover:bg-background/80',
                 'focus-visible:ring-2 focus-visible:ring-dynamic-blue/50 focus-visible:ring-offset-2'
               )}
@@ -560,7 +560,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
               value="submissions"
               className={cn(
                 'relative border-2 bg-background font-medium text-foreground transition-all duration-300',
-                'data-[state=active]:border-dynamic-green/30 data-[state=active]:bg-gradient-to-r data-[state=active]:from-dynamic-green/10 data-[state=active]:to-dynamic-green/15 data-[state=active]:text-dynamic-green',
+                'data-[state=active]:border-dynamic-green/30 data-[state=active]:bg-linear-to-r data-[state=active]:from-dynamic-green/10 data-[state=active]:to-dynamic-green/15 data-[state=active]:text-dynamic-green',
                 'hover:border-foreground/30 hover:bg-background/80',
                 'focus-visible:ring-2 focus-visible:ring-dynamic-green/50 focus-visible:ring-offset-2'
               )}

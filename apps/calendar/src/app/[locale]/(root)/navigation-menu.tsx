@@ -45,7 +45,7 @@ export function MainNavigationMenu() {
           </NavigationMenuTrigger>
           <NavigationMenuContent>
             <ul className="grid w-[400px] gap-3 rounded-xl border-0 bg-white/95 p-6 shadow-xl backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px] xl:w-[1000px] xl:grid-cols-3 dark:bg-gray-900/95">
-              <Card className="col-span-full mb-2 bg-gradient-to-r from-blue-50 to-purple-50 p-4 dark:from-blue-950/20 dark:to-purple-950/20">
+              <Card className="col-span-full mb-2 bg-linear-to-r from-blue-50 to-purple-50 p-4 dark:from-blue-950/20 dark:to-purple-950/20">
                 <div className="flex items-center gap-2 font-semibold text-blue-700 text-sm dark:text-blue-300">
                   <Zap className="h-4 w-4" />
                   <span>Featured Products</span>
@@ -77,7 +77,7 @@ export function MainNavigationMenu() {
           </NavigationMenuTrigger>
           <NavigationMenuContent>
             <ul className="grid w-[400px] gap-3 rounded-xl border-0 bg-white/95 p-6 shadow-xl backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px] dark:bg-gray-900/95">
-              <Card className="col-span-full mb-2 bg-gradient-to-r from-green-50 to-emerald-50 p-4 dark:from-green-950/20 dark:to-emerald-950/20">
+              <Card className="col-span-full mb-2 bg-linear-to-r from-green-50 to-emerald-50 p-4 dark:from-green-950/20 dark:to-emerald-950/20">
                 <div className="flex items-center gap-2 font-semibold text-green-700 text-sm dark:text-green-300">
                   <Building className="h-4 w-4" />
                   <span>Industry Solutions</span>
@@ -103,7 +103,7 @@ export function MainNavigationMenu() {
           </NavigationMenuTrigger>
           <NavigationMenuContent>
             <ul className="grid w-[400px] gap-3 rounded-xl border-0 bg-white/95 p-6 shadow-xl backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px] dark:bg-gray-900/95">
-              <Card className="col-span-full mb-2 bg-gradient-to-r from-orange-50 to-amber-50 p-4 dark:from-orange-950/20 dark:to-amber-950/20">
+              <Card className="col-span-full mb-2 bg-linear-to-r from-orange-50 to-amber-50 p-4 dark:from-orange-950/20 dark:to-amber-950/20">
                 <div className="flex items-center gap-2 font-semibold text-orange-700 text-sm dark:text-orange-300">
                   <BookText className="h-4 w-4" />
                   <span>Learning Resources</span>

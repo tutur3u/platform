@@ -172,7 +172,7 @@ export default async function InquiriesPage({
         return (
           <div className="container mx-auto px-4 py-6 md:px-8">
             {/* Enhanced Header with gradient */}
-            <div className="mb-6 rounded-lg border bg-gradient-to-r from-dynamic-orange/5 via-background to-background p-6 backdrop-blur-sm md:mb-8 md:p-8">
+            <div className="mb-6 rounded-lg border bg-linear-to-r from-dynamic-orange/5 via-background to-background p-6 backdrop-blur-sm md:mb-8 md:p-8">
               <div className="flex items-center gap-3 md:gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-dynamic-orange/10 ring-1 ring-dynamic-orange/20 md:h-14 md:w-14">
                   <svg

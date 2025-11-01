@@ -20,7 +20,7 @@
     "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/google": "workspace:*",
-    "dayjs": "^1.11.18"
+    "dayjs": "^1.11.19"
   },
   "devDependencies": {
     "@trigger.dev/build": "^4.0.5",

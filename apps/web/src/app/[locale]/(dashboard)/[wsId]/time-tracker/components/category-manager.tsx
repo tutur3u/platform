@@ -209,14 +209,14 @@ export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
         <CardHeader>
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <CardTitle className="flex items-center gap-2">
-              <LayoutGrid className="h-5 w-5 flex-shrink-0" />
+              <LayoutGrid className="h-5 w-5 shrink-0" />
               <span>Category Management</span>
             </CardTitle>
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 onClick={() => setIsCopyDialogOpen(true)}
-                className="flex-shrink-0"
+                className="shrink-0"
               >
                 <Copy className="mr-2 h-4 w-4" />
                 <span className="hidden sm:inline">Copy from Workspace</span>
@@ -224,7 +224,7 @@ export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
               </Button>
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button onClick={openAddDialog} className="flex-shrink-0">
+                  <Button onClick={openAddDialog} className="shrink-0">
                     <Plus className="mr-2 h-4 w-4" />
                     <span className="hidden sm:inline">Add Category</span>
                     <span className="sm:hidden">Add</span>
@@ -262,7 +262,7 @@ export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
                       <div className="flex min-w-0 flex-1 items-start gap-3">
                         <div
                           className={cn(
-                            'h-6 w-6 flex-shrink-0 rounded-full',
+                            'h-6 w-6 shrink-0 rounded-full',
                             getCategoryColor(category.color || 'BLUE')
                           )}
                         />
