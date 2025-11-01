@@ -78,7 +78,7 @@ export async function MeetTogetherPage({
           {/* Main heading */}
           <h1 className="mb-6 text-balance text-center font-bold text-4xl text-foreground leading-tight tracking-tight md:text-5xl lg:text-left lg:text-6xl">
             {t('headline-p1')}{' '}
-            <GradientHeadline className="bg-gradient-to-r from-dynamic-blue via-dynamic-purple to-dynamic-green bg-clip-text">
+            <GradientHeadline className="bg-linear-to-r from-dynamic-blue via-dynamic-purple to-dynamic-green bg-clip-text">
               {t('headline-p2')}
             </GradientHeadline>
           </h1>

@@ -45,7 +45,7 @@ export const TaskCardMetadata = memo(function TaskCardMetadata({
 
         {/* Project indicator */}
         {!task.closed_at && task.projects && task.projects.length > 0 && (
-          <div className="min-w-0 flex-shrink-0">
+          <div className="min-w-0 shrink-0">
             <Badge
               variant="secondary"
               className={cn(
@@ -63,7 +63,7 @@ export const TaskCardMetadata = memo(function TaskCardMetadata({
 
         {/* Estimation Points */}
         {!task.closed_at && task.estimation_points && (
-          <div className="min-w-0 flex-shrink-0">
+          <div className="min-w-0 shrink-0">
             <TaskEstimationDisplay
               points={task.estimation_points}
               size="sm"
@@ -75,7 +75,7 @@ export const TaskCardMetadata = memo(function TaskCardMetadata({
 
         {/* Labels */}
         {!task.closed_at && task.labels && task.labels.length > 0 && (
-          <div className="flex min-w-0 flex-shrink-0 flex-wrap gap-1">
+          <div className="flex min-w-0 shrink-0 flex-wrap gap-1">
             {/* Sort labels for deterministic display order */}
             <TaskLabelsDisplay
               labels={[...task.labels].sort((a, b) =>
@@ -92,7 +92,7 @@ export const TaskCardMetadata = memo(function TaskCardMetadata({
             descriptionMeta.hasImages ||
             descriptionMeta.hasVideos ||
             descriptionMeta.hasLinks) && (
-            <div className="flex min-w-0 flex-shrink-0 items-center gap-0.5">
+            <div className="flex min-w-0 shrink-0 items-center gap-0.5">
               {descriptionMeta.hasText && (
                 <div
                   className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"

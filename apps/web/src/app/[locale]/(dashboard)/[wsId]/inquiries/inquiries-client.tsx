@@ -146,7 +146,7 @@ export function InquiriesClient({
       <div className="space-y-4 md:space-y-6">
         {/* Filters - Enhanced styling */}
         <Card className="border-border/60 bg-linear-to-br from-muted/30 to-muted/10 shadow-sm transition-shadow hover:shadow-md">
-          <CardHeader className="border-border/50 border-b bg-gradient-to-b from-background/95 to-background/80 backdrop-blur-md">
+          <CardHeader className="border-border/50 border-b bg-linear-to-b from-background/95 to-background/80 backdrop-blur-md">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/10">
                 <FilterIcon className="h-4 w-4 text-dynamic-orange" />

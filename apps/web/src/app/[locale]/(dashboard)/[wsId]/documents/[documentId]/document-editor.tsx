@@ -347,7 +347,7 @@ export function DocumentEditor({
 
   return (
     <div className="-m-4 flex h-screen flex-col overflow-hidden">
-      <div className="z-50 flex-shrink-0 border-b bg-background">
+      <div className="z-50 shrink-0 border-b bg-background">
         <div className="flex items-center justify-between px-4 py-2">
           <div className="flex items-center gap-4">
             <Button

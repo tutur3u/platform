@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",
-    "@supabase/supabase-js": "^2.77.0",
+    "@supabase/supabase-js": "^2.78.0",
     "@tuturuuu/types": "workspace:*",
     "next": "^16.0.1",
     "react": "^19.2.0",
@@ -24,7 +24,7 @@
     "@types/node": "^24.9.2",
     "@types/react": "^19.2.2",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.5"
+    "vitest": "^4.0.6"
   },
   "exports": {
     "./*": "./src/*.ts"

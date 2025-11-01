@@ -48,13 +48,13 @@ interface TaskListProps {
 const getCategoryColor = (category: 'work' | 'personal' | 'meeting') => {
   switch (category) {
     case 'work':
-      return 'bg-gradient-to-r from-blue-500/10 to-blue-600/10 text-blue-700 border-blue-200 dark:border-blue-800';
+      return 'bg-linear-to-r from-blue-500/10 to-blue-600/10 text-blue-700 border-blue-200 dark:border-blue-800';
     case 'personal':
-      return 'bg-gradient-to-r from-green-500/10 to-emerald-600/10 text-green-700 border-green-200 dark:border-green-800';
+      return 'bg-linear-to-r from-green-500/10 to-emerald-600/10 text-green-700 border-green-200 dark:border-green-800';
     case 'meeting':
-      return 'bg-gradient-to-r from-orange-500/10 to-amber-600/10 text-orange-700 border-orange-200 dark:border-orange-800';
+      return 'bg-linear-to-r from-orange-500/10 to-amber-600/10 text-orange-700 border-orange-200 dark:border-orange-800';
     default:
-      return 'bg-gradient-to-r from-gray-500/10 to-gray-600/10 text-gray-700 border-gray-200 dark:border-gray-800';
+      return 'bg-linear-to-r from-gray-500/10 to-gray-600/10 text-gray-700 border-gray-200 dark:border-gray-800';
   }
 };
 
@@ -74,15 +74,15 @@ const getCategoryIcon = (category: 'work' | 'personal' | 'meeting') => {
 const getPriorityColor = (priority: TaskPriority) => {
   switch (priority) {
     case 'critical':
-      return 'bg-gradient-to-r from-red-500/10 to-rose-600/10 text-red-700 border-red-200 dark:border-red-800';
+      return 'bg-linear-to-r from-red-500/10 to-rose-600/10 text-red-700 border-red-200 dark:border-red-800';
     case 'high':
-      return 'bg-gradient-to-r from-orange-500/10 to-amber-600/10 text-orange-700 border-orange-200 dark:border-orange-800';
+      return 'bg-linear-to-r from-orange-500/10 to-amber-600/10 text-orange-700 border-orange-200 dark:border-orange-800';
     case 'normal':
-      return 'bg-gradient-to-r from-blue-500/10 to-blue-600/10 text-blue-700 border-blue-200 dark:border-blue-800';
+      return 'bg-linear-to-r from-blue-500/10 to-blue-600/10 text-blue-700 border-blue-200 dark:border-blue-800';
     case 'low':
-      return 'bg-gradient-to-r from-gray-500/10 to-gray-600/10 text-gray-700 border-gray-200 dark:border-gray-800';
+      return 'bg-linear-to-r from-gray-500/10 to-gray-600/10 text-gray-700 border-gray-200 dark:border-gray-800';
     default:
-      return 'bg-gradient-to-r from-gray-500/10 to-gray-600/10 text-gray-700 border-gray-200 dark:border-gray-800';
+      return 'bg-linear-to-r from-gray-500/10 to-gray-600/10 text-gray-700 border-gray-200 dark:border-gray-800';
   }
 };
 
@@ -203,7 +203,7 @@ export function TaskList({
             <Button
               onClick={onAddTask}
               size="lg"
-              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-purple-700"
+              className="bg-linear-to-r from-blue-500 to-purple-600 text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-purple-700"
             >
               <PlusIcon className="mr-2 h-5 w-5" />
               Add Task
@@ -213,7 +213,7 @@ export function TaskList({
         <CardContent>
           <div className="grid grid-cols-2 gap-6 md:grid-cols-6">
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-linear-to-r from-blue-600 to-blue-700 bg-clip-text font-bold text-3xl text-transparent">
                 {tasks.length}
               </div>
               <div className="font-medium text-muted-foreground text-sm">
@@ -221,7 +221,7 @@ export function TaskList({
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-linear-to-r from-green-600 to-emerald-700 bg-clip-text font-bold text-3xl text-transparent">
                 {completedTasks}
               </div>
               <div className="font-medium text-muted-foreground text-sm">
@@ -229,7 +229,7 @@ export function TaskList({
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-orange-600 to-amber-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-linear-to-r from-orange-600 to-amber-700 bg-clip-text font-bold text-3xl text-transparent">
                 {totalDuration}h
               </div>
               <div className="font-medium text-muted-foreground text-sm">
@@ -237,7 +237,7 @@ export function TaskList({
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-red-600 to-rose-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-linear-to-r from-red-600 to-rose-700 bg-clip-text font-bold text-3xl text-transparent">
                 {priorityStats.critical}
               </div>
               <div className="font-medium text-muted-foreground text-sm">
@@ -245,7 +245,7 @@ export function TaskList({
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-orange-600 to-amber-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-linear-to-r from-orange-600 to-amber-700 bg-clip-text font-bold text-3xl text-transparent">
                 {priorityStats.high}
               </div>
               <div className="font-medium text-muted-foreground text-sm">
@@ -253,7 +253,7 @@ export function TaskList({
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-purple-600 to-pink-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-linear-to-r from-purple-600 to-pink-700 bg-clip-text font-bold text-3xl text-transparent">
                 {tasks.filter((t) => t.deadline).length}
               </div>
               <div className="font-medium text-muted-foreground text-sm">
@@ -288,7 +288,7 @@ export function TaskList({
               <Button
                 onClick={onAddTask}
                 size="lg"
-                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-purple-700"
+                className="bg-linear-to-r from-blue-500 to-purple-600 text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-purple-700"
               >
                 <PlusIcon className="mr-2 h-5 w-5" />
                 Create Your First Task
@@ -392,7 +392,7 @@ export function TaskList({
                                 className="h-3 bg-gray-200 dark:bg-gray-700"
                               />
                               <div
-                                className={`absolute inset-0 rounded-full bg-gradient-to-r ${
+                                className={`absolute inset-0 rounded-full bg-linear-to-r ${
                                   isCompleted
                                     ? 'from-green-500 to-emerald-600'
                                     : 'from-blue-500 to-purple-600'
@@ -617,7 +617,7 @@ export function TaskList({
             <Button
               onClick={onSchedule}
               size="lg"
-              className="h-12 w-full bg-gradient-to-r from-blue-500 to-purple-600 font-semibold text-lg text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-purple-700"
+              className="h-12 w-full bg-linear-to-r from-blue-500 to-purple-600 font-semibold text-lg text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-purple-700"
               disabled={isScheduling}
             >
               {isScheduling ? (

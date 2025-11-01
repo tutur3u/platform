@@ -45,7 +45,7 @@
     "@upstash/qstash": "^2.8.4",
     "canvas-confetti": "^1.9.4",
     "date-fns": "^4.1.0",
-    "dayjs": "^1.11.18",
+    "dayjs": "^1.11.19",
     "framer-motion": "^12.23.24",
     "jotai": "^2.15.0",
     "juice": "^11.0.3",
@@ -57,7 +57,7 @@
     "next-themes": "^0.4.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-hook-form": "^7.65.0",
+    "react-hook-form": "^7.66.0",
     "sharp": "^0.34.4",
     "use-debounce": "^10.0.6",
     "uuid": "^13.0.0",
@@ -79,10 +79,10 @@
     "@types/uuid": "^11.0.0",
     "@vitejs/plugin-react": "^5.1.0",
     "autoprefixer": "^10.4.21",
-    "jsdom": "^27.0.1",
+    "jsdom": "^27.1.0",
     "postcss": "^8.5.6",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.5"
+    "vitest": "^4.0.6"
   },
   "packageManager": "bun@1.3.1"
 }

@@ -270,7 +270,7 @@ export default function TaskListWithCompletion({
                           {task.name}
                         </h4>
                         {/* Right side: Board → List → Due → Assignees → Estimation */}
-                        <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs">
+                        <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs">
                           {/* Board name */}
                           {task.list?.board?.id && task.list?.board?.ws_id && (
                             <Link
@@ -344,7 +344,7 @@ export default function TaskListWithCompletion({
                                   </Avatar>
                                 ))}
                                 {task.assignees.length > 2 && (
-                                  <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-gradient-to-br from-primary/20 to-primary/10 font-bold text-[8px] text-primary shadow-sm ring-1 ring-border/50">
+                                  <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-linear-to-br from-primary/20 to-primary/10 font-bold text-[8px] text-primary shadow-sm ring-1 ring-border/50">
                                     +{task.assignees.length - 2}
                                   </div>
                                 )}
@@ -471,7 +471,7 @@ export default function TaskListWithCompletion({
                               </Avatar>
                             ))}
                             {task.assignees.length > 2 && (
-                              <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-gradient-to-br from-primary/20 to-primary/10 font-bold text-[8px] text-primary shadow-sm ring-1 ring-border/50">
+                              <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-linear-to-br from-primary/20 to-primary/10 font-bold text-[8px] text-primary shadow-sm ring-1 ring-border/50">
                                 +{task.assignees.length - 2}
                               </div>
                             )}

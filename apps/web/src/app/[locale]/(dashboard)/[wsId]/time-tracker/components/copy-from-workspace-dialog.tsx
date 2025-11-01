@@ -376,7 +376,7 @@ export function CopyFromWorkspaceDialog({
                           <div className="flex min-w-0 flex-1 items-start gap-3">
                             <div
                               className={cn(
-                                'mt-0.5 h-4 w-4 flex-shrink-0 rounded-full',
+                                'mt-0.5 h-4 w-4 shrink-0 rounded-full',
                                 getCategoryColor(category.color || 'BLUE')
                               )}
                             />
@@ -419,7 +419,7 @@ export function CopyFromWorkspaceDialog({
                           <div className="flex min-w-0 flex-1 items-start gap-3">
                             <div
                               className={cn(
-                                'mt-0.5 h-4 w-4 flex-shrink-0 rounded-full',
+                                'mt-0.5 h-4 w-4 shrink-0 rounded-full',
                                 getCategoryColor(category.color || 'BLUE')
                               )}
                             />

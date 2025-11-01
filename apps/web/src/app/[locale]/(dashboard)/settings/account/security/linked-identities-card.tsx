@@ -540,7 +540,7 @@ export default function LinkedIdentitiesCard({
         {!canUnlink && identities.length === 1 && (
           <div className="rounded-lg border border-dynamic-amber/30 bg-dynamic-amber/5 p-4 dark:border-dynamic-amber/50 dark:bg-dynamic-amber/10">
             <div className="flex gap-2">
-              <Shield className="mt-0.5 h-5 w-5 flex-shrink-0 text-dynamic-amber dark:text-dynamic-amber/80" />
+              <Shield className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-amber dark:text-dynamic-amber/80" />
               <div className="space-y-1">
                 <p className="font-medium text-dynamic-amber text-sm dark:text-dynamic-amber/90">
                   {t('account-security-notice')}

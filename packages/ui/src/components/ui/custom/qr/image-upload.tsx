@@ -381,7 +381,7 @@ function QRImageUpload({
       ) : (
         <div className="rounded-lg border p-4">
           <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <Image
                 src={imageSettings.src}
                 alt="Upload preview"
