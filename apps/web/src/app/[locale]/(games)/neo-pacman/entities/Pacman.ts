@@ -44,6 +44,7 @@ export class Pacman {
       GAME_CONFIG.TILE_SIZE - 4,
       GAME_CONFIG.TILE_SIZE - 4
     );
+    this.sprite.setDepth(10); // Ensure Pacman renders above food
 
     // Enable physics on Pacman
     scene.physics.add.existing(this.sprite);

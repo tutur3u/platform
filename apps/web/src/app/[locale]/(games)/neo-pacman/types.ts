@@ -42,13 +42,6 @@ export enum FoodType {
   FRUIT = 'FRUIT',
 }
 
-export interface FoodItem {
-  type: FoodType;
-  position: TilePosition;
-  points: number;
-  sprite?: Phaser.GameObjects.GameObject;
-}
-
 export interface MapDataJson {
   name: string;
   difficulty: 'Easy' | 'Medium' | 'Hard' | 'Expert';

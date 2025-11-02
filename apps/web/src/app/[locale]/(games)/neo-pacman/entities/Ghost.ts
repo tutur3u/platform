@@ -52,6 +52,7 @@ export class Ghost {
       GAME_CONFIG.TILE_SIZE - 4,
       GAME_CONFIG.TILE_SIZE - 4
     );
+    this.sprite.setDepth(10); // Ensure ghosts render above food
 
     // Enable physics on Ghost
     scene.physics.add.existing(this.sprite);

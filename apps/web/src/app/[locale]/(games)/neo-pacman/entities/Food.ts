@@ -61,6 +61,9 @@ export class Food {
         this.sprite.setDisplaySize(8, 8);
         break;
     }
+
+    // Set depth to ensure food renders below entities
+    this.sprite.setDepth(1);
   }
 
   /**
