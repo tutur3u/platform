@@ -35,7 +35,7 @@ const reasons = [
       'Marketing & Communications Department',
     ],
     buttonText: 'View JD Booklet',
-    link: 'https://rmiteduau.sharepoint.com/:b:/s/NCT-NeoCultureTechClubCoreTeam/EX81wrOHTbxBj27UFScQWucBbRqAlE8jllWjm_K80NO6Vg?e=jjbzkN',
+    link: 'https://drive.google.com/file/d/14kWxUjhau_xaohVEj5LvsmmcfeYCElI4/view?usp=sharing',
     isExternal: true,
     badgeText: 'Find Your Role',
   },
