@@ -39,7 +39,8 @@ export enum GhostType {
 export enum FoodType {
   PELLET = 'PELLET',
   POWER_PELLET = 'POWER_PELLET',
-  FRUIT = 'FRUIT',
+  APPLE = 'APPLE',
+  STRAWBERRY = 'STRAWBERRY',
 }
 
 export interface MapDataJson {

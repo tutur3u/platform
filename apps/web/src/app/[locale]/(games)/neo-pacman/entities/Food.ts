@@ -31,12 +31,6 @@ export class Food {
 
     // Create sprite and set points based on food type
     switch (type) {
-      case FoodType.PELLET:
-        this.points = GAME_CONFIG.PELLET_POINTS;
-        this.sprite = scene.add.image(adjustedX, adjustedY, 'dot');
-        this.sprite.setDisplaySize(32, 32);
-        break;
-
       case FoodType.POWER_PELLET:
         this.points = GAME_CONFIG.POWER_PELLET_POINTS;
         this.sprite = scene.add.circle(adjustedX, adjustedY, 8, 0xffffff);
@@ -49,16 +43,23 @@ export class Food {
         });
         break;
 
-      case FoodType.FRUIT:
-        this.points = GAME_CONFIG.FRUIT_POINTS;
+      case FoodType.APPLE:
+        this.points = GAME_CONFIG.APPLE_POINTS;
         this.sprite = scene.add.image(adjustedX, adjustedY, 'apple');
         this.sprite.setDisplaySize(16, 16);
         break;
 
+      case FoodType.STRAWBERRY:
+        this.points = GAME_CONFIG.STRAWBERRY_POINTS;
+        this.sprite = scene.add.image(adjustedX, adjustedY, 'strawberry');
+        this.sprite.setDisplaySize(16, 16);
+        break;
+
+      case FoodType.PELLET:
       default:
         this.points = GAME_CONFIG.PELLET_POINTS;
         this.sprite = scene.add.image(adjustedX, adjustedY, 'dot');
-        this.sprite.setDisplaySize(8, 8);
+        this.sprite.setDisplaySize(32, 32);
         break;
     }
 

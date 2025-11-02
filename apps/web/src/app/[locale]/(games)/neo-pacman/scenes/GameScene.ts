@@ -55,6 +55,7 @@ export class GameScene extends Phaser.Scene {
     // Load food images
     this.load.image('apple', '/neo-pacman/other/apple.png');
     this.load.image('dot', '/neo-pacman/other/dot.png');
+    this.load.image('strawberry', '/neo-pacman/other/strawberry.png');
   }
 
   create(): void {

@@ -70,7 +70,7 @@ export class MenuScene extends Phaser.Scene {
       .text(
         width / 2,
         height - 50,
-        'Use Arrow Keys to move Pacman | Eat all ghosts to win!',
+        'Use Arrow Keys to move Pacman | Eat all foods to win!',
         {
           fontSize: '16px',
           color: '#aaaaaa',
