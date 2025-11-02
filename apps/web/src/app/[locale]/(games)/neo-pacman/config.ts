@@ -9,8 +9,7 @@ export const GAME_CONFIG = {
   GHOST_EATEN_SPEED: 5, // Faster return to home
 
   // Food spawn rates (initial spawn)
-  PELLET_RATE: 0.95,
-  POWER_PELLET_RATE: 0.04,
+  PELLET_RATE: 0.99,
   FRUIT_RATE: 0.01,
 
   // Timings

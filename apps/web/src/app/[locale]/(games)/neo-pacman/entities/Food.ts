@@ -10,7 +10,7 @@ export class Food {
   public position: TilePosition;
   public type: FoodType;
   public points: number;
-  public sprite: Phaser.GameObjects.Image;
+  public sprite: Phaser.GameObjects.Image | Phaser.GameObjects.Arc;
 
   constructor(
     scene: Phaser.Scene,
@@ -34,13 +34,12 @@ export class Food {
       case FoodType.PELLET:
         this.points = GAME_CONFIG.PELLET_POINTS;
         this.sprite = scene.add.image(adjustedX, adjustedY, 'dot');
-        this.sprite.setDisplaySize(8, 8);
+        this.sprite.setDisplaySize(32, 32);
         break;
 
       case FoodType.POWER_PELLET:
         this.points = GAME_CONFIG.POWER_PELLET_POINTS;
-        this.sprite = scene.add.image(adjustedX, adjustedY, 'dot');
-        this.sprite.setDisplaySize(16, 16);
+        this.sprite = scene.add.circle(adjustedX, adjustedY, 4, 0xffb897);
         this.scene.tweens.add({
           targets: this.sprite,
           scale: { from: 1, to: 1.3 },
