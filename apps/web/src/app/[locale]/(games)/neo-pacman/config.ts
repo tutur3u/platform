@@ -8,10 +8,6 @@ export const GAME_CONFIG = {
   GHOST_FRIGHTENED_SPEED: 20, // Slower when frightened
   GHOST_EATEN_SPEED: 5, // Faster return to home
 
-  // Food spawn rates (initial spawn)
-  PELLET_RATE: 0.99,
-  FRUIT_RATE: 0.01,
-
   // Timings
   POWER_DURATION: 10000, // 10 seconds
   GHOST_CHASE_TIME: 20000, // 20 seconds
@@ -26,7 +22,3 @@ export const GAME_CONFIG = {
   // Game rules
   INITIAL_LIVES: 3,
 } as const;
-
-// Wall tile representation
-export const TILE_WALL = 1;
-export const TILE_EMPTY = 0;

@@ -1,8 +1,16 @@
-import { GAME_CONFIG, TILE_EMPTY, TILE_WALL } from '../config';
+import { GAME_CONFIG } from '../config';
 import { MAPS_DATA } from '../maps';
 import type { MapData, TilePosition } from '../types';
+import { GhostType, TileType } from '../types';
 import { tileToPixel } from '../utils/helpers';
 import * as Phaser from 'phaser';
+
+export interface MapEntities {
+  pacmanSpawn: TilePosition | null;
+  ghostSpawns: Map<GhostType, TilePosition>;
+  foodPositions: TilePosition[];
+  powerPelletPositions: TilePosition[];
+}
 
 export class MapManager {
   private scene: Phaser.Scene;
@@ -11,6 +19,7 @@ export class MapManager {
   private wallsGroup: Phaser.Physics.Arcade.StaticGroup | null = null;
   private mapOffsetX: number = 0;
   private mapOffsetY: number = 0;
+  private mapEntities: MapEntities | null = null;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -37,11 +46,19 @@ export class MapManager {
   }
 
   /**
-   * Create tilemap visuals in the scene
+   * Create tilemap visuals and process all entities in ONE PASS
    */
   createTilemap(mapData: MapData): void {
     this.mapData = mapData;
     this.wallTiles = [];
+
+    // Initialize entity storage
+    this.mapEntities = {
+      pacmanSpawn: null,
+      ghostSpawns: new Map<GhostType, TilePosition>(),
+      foodPositions: [],
+      powerPelletPositions: [],
+    };
 
     // Create physics group for walls
     this.wallsGroup = this.scene.physics.add.staticGroup();
@@ -55,21 +72,65 @@ export class MapManager {
     this.mapOffsetX = (sceneWidth - mapWidthInPixels) / 2;
     this.mapOffsetY = (sceneHeight - mapHeightInPixels) / 2;
 
+    // SINGLE PASS: Process all tiles and extract entity positions
     for (let row = 0; row < mapData.height; row++) {
       for (let col = 0; col < mapData.width; col++) {
-        if (mapData.layout[row]?.[col] === TILE_WALL) {
-          const pos = tileToPixel(row, col);
-          const wall = this.scene.add.rectangle(
-            pos.x + GAME_CONFIG.TILE_SIZE / 2 + this.mapOffsetX,
-            pos.y + GAME_CONFIG.TILE_SIZE / 2 + this.mapOffsetY,
-            GAME_CONFIG.TILE_SIZE - 2,
-            GAME_CONFIG.TILE_SIZE - 2,
-            0x2121de // Blue wall color
-          );
+        const tileType = mapData.layout[row]?.[col];
+        const tilePos: TilePosition = { row, col };
 
-          // Add physics body to wall
-          this.wallsGroup.add(wall);
-          this.wallTiles.push(wall);
+        switch (tileType) {
+          case TileType.WALL:
+            // Create wall visual and physics
+            const pos = tileToPixel(row, col);
+            const wall = this.scene.add.rectangle(
+              pos.x + GAME_CONFIG.TILE_SIZE / 2 + this.mapOffsetX,
+              pos.y + GAME_CONFIG.TILE_SIZE / 2 + this.mapOffsetY,
+              GAME_CONFIG.TILE_SIZE - 2,
+              GAME_CONFIG.TILE_SIZE - 2,
+              0x2121de // Blue wall color
+            );
+            this.wallsGroup.add(wall);
+            this.wallTiles.push(wall);
+            break;
+
+          case TileType.FOOD:
+            // Store food position
+            this.mapEntities.foodPositions.push(tilePos);
+            break;
+
+          case TileType.POWER_PELLET:
+            // Store power pellet position
+            this.mapEntities.powerPelletPositions.push(tilePos);
+            break;
+
+          case TileType.PACMAN:
+            // Store Pacman spawn position
+            this.mapEntities.pacmanSpawn = tilePos;
+            break;
+
+          case TileType.GHOST_BLINKY:
+            this.mapEntities.ghostSpawns.set(GhostType.BLINKY, tilePos);
+            break;
+
+          case TileType.GHOST_PINKY:
+            this.mapEntities.ghostSpawns.set(GhostType.PINKY, tilePos);
+            break;
+
+          case TileType.GHOST_INKY:
+            this.mapEntities.ghostSpawns.set(GhostType.INKY, tilePos);
+            break;
+
+          case TileType.GHOST_CLYDE:
+            this.mapEntities.ghostSpawns.set(GhostType.CLYDE, tilePos);
+            break;
+
+          case TileType.EMPTY:
+            // Empty tiles (paths around ghost house) - no action needed
+            break;
+
+          default:
+            // Unknown tile type - ignore
+            break;
         }
       }
     }
@@ -88,7 +149,8 @@ export class MapManager {
     ) {
       return true;
     }
-    return this.mapData.layout[row]?.[col] === TILE_WALL;
+    // Only TileType.WALL (1) is considered a wall
+    return this.mapData.layout[row]?.[col] === TileType.WALL;
   }
 
   /**
@@ -117,7 +179,9 @@ export class MapManager {
 
     for (let row = 0; row < this.mapData.height; row++) {
       for (let col = 0; col < this.mapData.width; col++) {
-        if (this.mapData.layout[row]?.[col] === TILE_EMPTY) {
+        // Any tile that's not a wall is navigable
+        const tileType = this.mapData.layout[row]?.[col];
+        if (tileType !== TileType.WALL) {
           navigable.push({ row, col });
         }
       }
@@ -173,6 +237,13 @@ export class MapManager {
    */
   getMapData(): MapData | null {
     return this.mapData;
+  }
+
+  /**
+   * Get all entity positions extracted from the map
+   */
+  getMapEntities(): MapEntities | null {
+    return this.mapEntities;
   }
 
   /**

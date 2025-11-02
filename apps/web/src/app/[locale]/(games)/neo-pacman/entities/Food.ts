@@ -39,7 +39,7 @@ export class Food {
 
       case FoodType.POWER_PELLET:
         this.points = GAME_CONFIG.POWER_PELLET_POINTS;
-        this.sprite = scene.add.circle(adjustedX, adjustedY, 4, 0xffb897);
+        this.sprite = scene.add.circle(adjustedX, adjustedY, 8, 0xffffff);
         this.scene.tweens.add({
           targets: this.sprite,
           scale: { from: 1, to: 1.3 },

@@ -47,3 +47,15 @@ export interface MapDataJson {
   difficulty: 'Easy' | 'Medium' | 'Hard' | 'Expert';
   data: number[][];
 }
+
+export enum TileType {
+  EMPTY = 0,
+  WALL = 1,
+  FOOD = 2,
+  POWER_PELLET = 3,
+  PACMAN = 4,
+  GHOST_BLINKY = 5,
+  GHOST_PINKY = 6,
+  GHOST_INKY = 7,
+  GHOST_CLYDE = 8,
+}

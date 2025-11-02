@@ -1,4 +1,3 @@
-import { GAME_CONFIG } from '../config';
 import { Food } from '../entities/Food';
 import type { TilePosition } from '../types';
 import { FoodType } from '../types';
@@ -17,42 +16,23 @@ export class FoodManager {
   }
 
   /**
-   * Spawn initial food on the map
+   * Spawn initial food on the map using positions from map data
    */
   spawnInitialFood(): void {
-    const navigableTiles = this.mapManager.getNavigableTiles();
-    const mapData = this.mapManager.getMapData();
-    if (!mapData) return;
+    const entities = this.mapManager.getMapEntities();
+    if (!entities) {
+      console.warn('No map entities found, cannot spawn food');
+      return;
+    }
 
-    const fourCorners = [
-      { row: 1, col: 1 }, // Top left
-      { row: 1, col: mapData.width - 2 }, // Top right
-      { row: mapData.height - 2, col: 1 }, // Bottom left
-      { row: mapData.height - 2, col: mapData.width - 2 }, // Bottom right
-    ];
+    // Spawn power pellets at defined positions
+    for (const tile of entities.powerPelletPositions) {
+      this.createFoodItem(FoodType.POWER_PELLET, tile);
+    }
 
-    const cornerSet = new Set(
-      fourCorners.map((corner) => `${corner.row},${corner.col}`)
-    );
-
-    for (const tile of navigableTiles) {
-      const tileKey = `${tile.row},${tile.col}`;
-      let foodType: FoodType | null = null;
-
-      if (cornerSet.has(tileKey)) {
-        foodType = FoodType.POWER_PELLET;
-      } else {
-        const random = Math.random();
-        if (random < GAME_CONFIG.FRUIT_RATE) {
-          foodType = FoodType.FRUIT;
-        } else if (random < GAME_CONFIG.FRUIT_RATE + GAME_CONFIG.PELLET_RATE) {
-          foodType = FoodType.PELLET;
-        }
-      }
-
-      if (foodType !== null) {
-        this.createFoodItem(foodType, tile);
-      }
+    // Spawn regular food at defined positions
+    for (const tile of entities.foodPositions) {
+      this.createFoodItem(FoodType.PELLET, tile);
     }
   }
 

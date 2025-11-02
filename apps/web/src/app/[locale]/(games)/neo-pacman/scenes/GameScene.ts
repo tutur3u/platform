@@ -97,19 +97,41 @@ export class GameScene extends Phaser.Scene {
   }
 
   private spawnPacman(): void {
-    const pacmanSpawn = this.mapManager.getRandomSpawnPoint();
-    if (pacmanSpawn) {
-      this.pacman = new Pacman(this, this.mapManager, pacmanSpawn);
+    const entities = this.mapManager.getMapEntities();
+    if (!entities?.pacmanSpawn) {
+      console.warn('No Pacman spawn point defined in map, using fallback');
+      const fallbackSpawn = this.mapManager.getRandomSpawnPoint();
+      if (fallbackSpawn) {
+        this.pacman = new Pacman(this, this.mapManager, fallbackSpawn);
+      }
+      return;
     }
+
+    this.pacman = new Pacman(this, this.mapManager, entities.pacmanSpawn);
   }
 
   private spawnGhosts(): void {
-    const centerSpawn = this.mapManager.getCenterSpawnPoint();
+    const entities = this.mapManager.getMapEntities();
+    if (!entities) {
+      console.warn('No map entities found');
+      return;
+    }
+
     const ghostTypes = Object.values(GhostType);
 
     ghostTypes.forEach((type) => {
-      const ghost = new Ghost(this, this.mapManager, type, centerSpawn);
-      this.ghosts.push(ghost);
+      const spawnPos = entities.ghostSpawns.get(type);
+      if (spawnPos) {
+        const ghost = new Ghost(this, this.mapManager, type, spawnPos);
+        this.ghosts.push(ghost);
+      } else {
+        console.warn(
+          `No spawn point defined for ghost type: ${type}, using center as fallback`
+        );
+        const centerSpawn = this.mapManager.getCenterSpawnPoint();
+        const ghost = new Ghost(this, this.mapManager, type, centerSpawn);
+        this.ghosts.push(ghost);
+      }
     });
   }
 
