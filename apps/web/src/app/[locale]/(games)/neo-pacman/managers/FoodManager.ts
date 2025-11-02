@@ -1,3 +1,4 @@
+import { GAME_CONFIG } from '../config';
 import { Food } from '../entities/Food';
 import type { TilePosition } from '../types';
 import { FoodType } from '../types';
@@ -101,6 +102,43 @@ export class FoodManager {
    */
   hasFood(): boolean {
     return this.foodItems.length > 0;
+  }
+
+  /**
+   * Spawn fruits based on defined rates in tiles with no food
+   */
+  spawnFruits(): void {
+    const navigableTiles = this.mapManager.getNavigableTiles();
+
+    // Filter tiles that have no food
+    const emptyTiles = navigableTiles.filter((tile) => {
+      const tileKey = `${tile.row},${tile.col}`;
+      return !this.occupiedTiles.has(tileKey);
+    });
+
+    if (emptyTiles.length === 0) {
+      return; // No empty tiles available
+    }
+
+    // Try to spawn apple
+    if (Math.random() < GAME_CONFIG.APPLE_SPAWN_RATE) {
+      const randomIndex = Math.floor(Math.random() * emptyTiles.length);
+      const tile = emptyTiles[randomIndex];
+      if (tile) {
+        this.createFoodItem(FoodType.APPLE, tile);
+        // Remove tile from available list for next spawn
+        emptyTiles.splice(randomIndex, 1);
+      }
+    }
+
+    // Try to spawn strawberry (only if there are still empty tiles)
+    if (emptyTiles.length > 0 && Math.random() < GAME_CONFIG.STRAWBERRY_SPAWN_RATE) {
+      const randomIndex = Math.floor(Math.random() * emptyTiles.length);
+      const tile = emptyTiles[randomIndex];
+      if (tile) {
+        this.createFoodItem(FoodType.STRAWBERRY, tile);
+      }
+    }
   }
 
   /**

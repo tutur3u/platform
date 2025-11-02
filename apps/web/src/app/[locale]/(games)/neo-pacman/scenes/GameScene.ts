@@ -4,7 +4,7 @@ import { Pacman } from '../entities/Pacman';
 import { CollisionManager } from '../managers/CollisionManager';
 import { FoodManager } from '../managers/FoodManager';
 import { MapManager } from '../managers/MapManager';
-import { FoodType, GhostType } from '../types';
+import { FoodType, GhostState, GhostType } from '../types';
 import * as Phaser from 'phaser';
 
 interface GameData {
@@ -26,6 +26,10 @@ export class GameScene extends Phaser.Scene {
   private isPaused: boolean = false;
   private isReady: boolean = false;
   private readyText: Phaser.GameObjects.Text | null = null;
+  private currentGhostPhase: GhostState = GhostState.SCATTER;
+  private gameStateTimer!: Phaser.Time.TimerEvent;
+  private fruitSpawnTimer!: Phaser.Time.TimerEvent;
+  private ghostPhaseTimer!: Phaser.Time.TimerEvent;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -36,6 +40,7 @@ export class GameScene extends Phaser.Scene {
     this.score = 0;
     this.lives = GAME_CONFIG.INITIAL_LIVES;
     this.ghosts = [];
+    this.currentGhostPhase = GhostState.SCATTER;
   }
 
   preload(): void {
@@ -90,13 +95,8 @@ export class GameScene extends Phaser.Scene {
     // Create UI
     this.createUI();
 
-    // Setup game over check
-    this.time.addEvent({
-      delay: 100,
-      callback: this.checkGameState,
-      callbackScope: this,
-      loop: true,
-    });
+    // Initialize game timers
+    this.initGameTimers();
 
     // Show ready message and start game after delay
     this.showReadyMessage();
@@ -244,6 +244,9 @@ export class GameScene extends Phaser.Scene {
     // Set ready state
     this.isReady = true;
 
+    // Pause game timers
+    this.pauseGameTimers();
+
     // Create ready text in center of screen
     const width = this.cameras.main.width;
     const height = this.cameras.main.height;
@@ -267,6 +270,8 @@ export class GameScene extends Phaser.Scene {
         this.readyText = null;
       }
       this.isReady = false;
+      // Resume game timers
+      this.resumeGameTimers();
     });
   }
 
@@ -275,6 +280,7 @@ export class GameScene extends Phaser.Scene {
 
     // Pause the game
     this.isPaused = true;
+    this.pauseGameTimers();
 
     const width = this.cameras.main.width;
     const height = this.cameras.main.height;
@@ -386,6 +392,114 @@ export class GameScene extends Phaser.Scene {
       this.quitDialog.destroy();
       this.quitDialog = null;
       this.isPaused = false;
+      this.resumeGameTimers();
+    }
+  }
+
+  private switchGhostPhase(): void {
+    // Toggle between chase and scatter
+    if (this.currentGhostPhase === GhostState.SCATTER) {
+      this.currentGhostPhase = GhostState.CHASE;
+      this.ghostPhaseTimer.reset({
+        delay: GAME_CONFIG.GHOST_CHASE_TIME,
+        callback: () => this.switchGhostPhase(),
+        callbackScope: this,
+        loop: true,
+      });
+    } else {
+      this.currentGhostPhase = GhostState.SCATTER;
+      this.ghostPhaseTimer.reset({
+        delay: GAME_CONFIG.GHOST_SCATTER_TIME,
+        callback: () => this.switchGhostPhase(),
+        callbackScope: this,
+        loop: true,
+      });
+    }
+
+    // Apply phase to all ghosts
+    this.ghosts.forEach((ghost) => {
+      if (
+        ghost.state === GhostState.CHASE ||
+        ghost.state === GhostState.SCATTER
+      ) {
+        ghost.setState(this.currentGhostPhase);
+      }
+    });
+  }
+
+  private initGameTimers(): void {
+    this.gameStateTimer = this.time.addEvent({
+      delay: 100,
+      callback: this.checkGameState,
+      callbackScope: this,
+      loop: true,
+    });
+    this.fruitSpawnTimer = this.time.addEvent({
+      delay: GAME_CONFIG.FRUIT_SPAWN_INTERVAL,
+      callback: () => {
+        this.foodManager.spawnFruits();
+      },
+      callbackScope: this,
+      loop: true,
+    });
+    this.ghostPhaseTimer = this.time.addEvent({
+      delay: GAME_CONFIG.GHOST_SCATTER_TIME,
+      callback: () => this.switchGhostPhase(),
+      callbackScope: this,
+      loop: true,
+    });
+  }
+
+  private resetGameTimers(): void {
+    if (this.gameStateTimer) {
+      this.gameStateTimer.reset({
+        delay: 100,
+        callback: this.checkGameState,
+        callbackScope: this,
+        loop: true,
+      });
+    }
+    if (this.fruitSpawnTimer) {
+      this.fruitSpawnTimer.reset({
+        delay: GAME_CONFIG.FRUIT_SPAWN_INTERVAL,
+        callback: () => {
+          this.foodManager.spawnFruits();
+        },
+        callbackScope: this,
+        loop: true,
+      });
+    }
+    if (this.ghostPhaseTimer) {
+      this.ghostPhaseTimer.reset({
+        delay: GAME_CONFIG.GHOST_SCATTER_TIME,
+        callback: () => this.switchGhostPhase(),
+        callbackScope: this,
+        loop: true,
+      });
+    }
+  }
+
+  private pauseGameTimers(): void {
+    if (this.gameStateTimer) {
+      this.gameStateTimer.paused = true;
+    }
+    if (this.fruitSpawnTimer) {
+      this.fruitSpawnTimer.paused = true;
+    }
+    if (this.ghostPhaseTimer) {
+      this.ghostPhaseTimer.paused = true;
+    }
+  }
+
+  private resumeGameTimers(): void {
+    if (this.gameStateTimer) {
+      this.gameStateTimer.paused = false;
+    }
+    if (this.fruitSpawnTimer) {
+      this.fruitSpawnTimer.paused = false;
+    }
+    if (this.ghostPhaseTimer) {
+      this.ghostPhaseTimer.paused = false;
     }
   }
 
@@ -419,7 +533,9 @@ export class GameScene extends Phaser.Scene {
         (food) => food.type === FoodType.POWER_PELLET
       );
       if (powerPelletEaten) {
-        this.ghosts.forEach((ghost) => ghost.makeFrightened());
+        this.ghosts.forEach((ghost) =>
+          ghost.makeFrightened(this.currentGhostPhase)
+        );
       }
     }
 
@@ -446,6 +562,11 @@ export class GameScene extends Phaser.Scene {
   reset(): void {
     this.pacman.reset();
     this.ghosts.forEach((ghost) => ghost.reset());
+
+    // Reset ghost phase to scatter
+    this.currentGhostPhase = GhostState.SCATTER;
+    this.resetGameTimers();
+
     this.showReadyMessage();
   }
 

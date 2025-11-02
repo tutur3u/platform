@@ -16,7 +16,6 @@ export class Ghost {
   public homePosition: TilePosition;
   public state: GhostState = GhostState.SCATTER;
   private speed: number = GAME_CONFIG.GHOST_SPEED;
-  private stateTimer: Phaser.Time.TimerEvent | null = null;
   private mapOffset: { x: number; y: number };
   private lastDirection: TilePosition | null = null; // Track current direction
   private lastTile: TilePosition | null = null; // Track last tile position
@@ -126,14 +125,14 @@ export class Ghost {
   /**
    * Make ghost frightened (power pellet eaten)
    */
-  makeFrightened(): void {
+  makeFrightened(returnPhase: GhostState): void {
     if (this.state !== GhostState.EATEN) {
       this.setState(GhostState.FRIGHTENED);
 
-      // Return to normal after duration
+      // Return to the provided phase after duration
       this.scene.time.delayedCall(GAME_CONFIG.POWER_DURATION, () => {
         if (this.state === GhostState.FRIGHTENED) {
-          this.setState(GhostState.SCATTER);
+          this.setState(returnPhase);
         }
       });
     }
@@ -143,20 +142,6 @@ export class Ghost {
    * Update ghost AI and movement
    */
   update(pacman: Pacman): void {
-    if (!this.stateTimer) {
-      this.stateTimer = this.scene.time.addEvent({
-        delay: GAME_CONFIG.GHOST_SCATTER_TIME,
-        callback: () => {
-          if (this.state === GhostState.SCATTER) {
-            this.setState(GhostState.CHASE);
-          } else if (this.state === GhostState.CHASE) {
-            this.setState(GhostState.SCATTER);
-          }
-        },
-        loop: true,
-      });
-    }
-
     if (this.state === GhostState.EATEN) {
       this.scene.time.delayedCall(1000, () => this.reset(this.homePosition));
       return;
@@ -420,20 +405,12 @@ export class Ghost {
     this.sprite.setPosition(pos.x + this.mapOffset.x, pos.y + this.mapOffset.y);
     this.sprite.setAlpha(1);
     this.setState(GhostState.SCATTER);
-
-    if (this.stateTimer) {
-      this.stateTimer.destroy();
-      this.stateTimer = null;
-    }
   }
 
   /**
    * Clean up
    */
   destroy(): void {
-    if (this.stateTimer) {
-      this.stateTimer.destroy();
-    }
     this.sprite.destroy();
   }
 }

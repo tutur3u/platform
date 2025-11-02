@@ -12,12 +12,17 @@ export const GAME_CONFIG = {
   POWER_DURATION: 10000, // 10 seconds
   GHOST_CHASE_TIME: 20000, // 20 seconds
   GHOST_SCATTER_TIME: 7000, // 7 seconds
+  FRUIT_SPAWN_INTERVAL: 30000, // 30 seconds
+
+  // Fruit spawn rates
+  APPLE_SPAWN_RATE: 0.05,
+  STRAWBERRY_SPAWN_RATE: 0.15,
 
   // Scoring
   PELLET_POINTS: 10,
   POWER_PELLET_POINTS: 50,
-  APPLE_POINTS: 100,
   GHOST_POINTS: 200,
+  APPLE_POINTS: 700,
   STRAWBERRY_POINTS: 300,
 
   // Game rules
