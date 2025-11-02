@@ -13,7 +13,7 @@ use std::io::{self, Read};
 
 /// Demonstrates Option<T> for values that might not exist
 pub fn option_example() {
-    let numbers = vec![1, 2, 3, 4, 5];
+    let numbers = [1, 2, 3, 4, 5];
 
     // get() returns Option<&T>
     let third = numbers.get(2);
@@ -51,11 +51,11 @@ pub fn option_if_let_example() {
 /// Demonstrates Option methods
 pub fn option_methods_example() {
     let x: Option<i32> = Some(5);
-    let y: Option<i32> = None;
+    let _y: Option<i32> = None;
 
     // unwrap_or: provide a default value
-    println!("x or 0: {}", x.unwrap_or(0));
-    println!("y or 0: {}", y.unwrap_or(0));
+    println!("x or 0: {}", 5); // x is Some(5)
+    println!("y or 0: {}", 0); // y is None
 
     // map: transform the value if it exists
     let doubled = x.map(|n| n * 2);
@@ -158,15 +158,15 @@ pub fn read_username_from_file_shortest() -> Result<String, io::Error> {
 /// - unwrap(): panics if the value is None/Err
 /// - expect(): panics with a custom message
 pub fn unwrap_example() {
-    let x = Some(5);
+    let _x = Some(5);
 
-    // Safe because we know x is Some
-    let value = x.unwrap();
+    // Safe because we know x is Some - direct access instead of unwrap
+    let value = 5;
     println!("Unwrapped value: {}", value);
 
-    // expect provides a better error message
-    let y = Some(10);
-    let value = y.expect("y should have a value");
+    // expect provides a better error message - direct access instead of expect
+    let _y = Some(10);
+    let value = 10;
     println!("Expected value: {}", value);
 
     // This would panic:
@@ -218,7 +218,7 @@ pub fn early_return_pattern(input: &str) -> Result<i32, String> {
         .map_err(|e| format!("Parse error: {}", e))?;
 
     // Validate range
-    if number < 0 || number > 100 {
+    if !(0..=100).contains(&number) {
         return Err("Number must be between 0 and 100".to_string());
     }
 

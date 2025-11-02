@@ -23,7 +23,7 @@ pub fn immutable_borrow_example() {
     println!("The length of '{}' is {}", s1, len);
 }
 
-fn calculate_length(s: &String) -> usize {
+fn calculate_length(s: &str) -> usize {
     // s is a reference, we can read but not modify
     s.len()
 } // s goes out of scope, but nothing is dropped because we don't own it
@@ -59,7 +59,7 @@ pub fn multiple_mutable_borrows() {
 
     // Now we can create another mutable borrow
     let r2 = &mut s;
-    r2.push_str("!");
+    r2.push('!');
 
     println!("{}", r2);
 }
@@ -110,8 +110,7 @@ pub fn reference_scope_example() {
 ///
 /// The correct way is to return ownership:
 pub fn no_dangle() -> String {
-    let s = String::from("hello");
-    s // ownership is transferred to caller
+    String::from("hello") // ownership is transferred to caller
 }
 
 /// User struct for demonstration
@@ -180,7 +179,7 @@ pub fn first_word(s: &str) -> &str {
         }
     }
 
-    &s[..]
+    s
 }
 
 #[cfg(test)]

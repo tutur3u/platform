@@ -86,8 +86,7 @@ pub fn ownership_return_example() {
 }
 
 fn gives_ownership() -> String {
-    let some_string = String::from("yours");
-    some_string // ownership moves to caller
+    String::from("yours") // ownership moves to caller
 }
 
 fn takes_and_gives_back(a_string: String) -> String {
@@ -101,7 +100,7 @@ pub fn stack_vs_heap_example() {
     // Stack: Fixed size, known at compile time, fast
     let x = 5; // i32, stored on stack
     let y = true; // bool, stored on stack
-    let z = 3.14; // f64, stored on stack
+    let z = std::f64::consts::PI; // f64, stored on stack
 
     // Heap: Dynamic size, slower, needs ownership management
     let s = String::from("hello"); // String data on heap

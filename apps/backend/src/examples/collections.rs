@@ -231,8 +231,8 @@ pub fn group_by_first_letter(words: Vec<String>) -> HashMap<char, Vec<String>> {
 /// Demonstrates collection conversions
 pub fn collection_conversions() {
     // Vec to HashMap
-    let teams = vec![String::from("Blue"), String::from("Yellow")];
-    let initial_scores = vec![10, 50];
+    let teams = [String::from("Blue"), String::from("Yellow")];
+    let initial_scores = [10, 50];
 
     let scores: HashMap<_, _> = teams.iter().zip(initial_scores.iter()).collect();
     println!("Scores from vec: {:?}", scores);
@@ -243,7 +243,7 @@ pub fn collection_conversions() {
     println!("Chars: {:?}", chars);
 
     // Vec to String
-    let words = vec!["hello", "world"];
+    let words = ["hello", "world"];
     let sentence = words.join(" ");
     println!("Sentence: {}", sentence);
 }
@@ -265,7 +265,7 @@ pub fn functional_operations() {
     println!("Squares of numbers > 5: {:?}", result);
 
     // Sum with fold
-    let sum: i32 = numbers.iter().fold(0, |acc, &x| acc + x);
+    let sum: i32 = numbers.iter().sum();
     println!("Sum: {}", sum);
 
     // Find first element matching condition
