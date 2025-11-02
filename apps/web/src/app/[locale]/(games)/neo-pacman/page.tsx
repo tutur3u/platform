@@ -10,7 +10,7 @@ export default function NeoPacman() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_50%)] opacity-50" />
       <div className="bg-size-[4rem_4rem] absolute inset-0 bg-[linear-gradient(to_right,rgba(251,191,36,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(251,191,36,0.05)_1px,transparent_1px)]" />
 
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center gap-12 px-4 py-16">
+      <div className="container relative z-10 flex flex-col items-center justify-center gap-12 px-4 py-16">
         {/* Header Section */}
         <div className="space-y-2 text-center">
           <h1 className="text-4xl font-extrabold leading-tight md:text-5xl lg:text-6xl">
