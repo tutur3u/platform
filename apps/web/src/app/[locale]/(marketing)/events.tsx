@@ -27,7 +27,7 @@ type EventType = {
 
 const EventImages: EventType[] = [
   {
-    src: '/club-day/clubday.png',
+    src: '/club-day/sem-c-2025.png',
     title: 'Club Day Semester C 2025',
     description: 'Join us for an exciting club day experience',
     date: 'November 2025',
