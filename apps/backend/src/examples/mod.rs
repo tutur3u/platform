@@ -6,7 +6,11 @@
 #![allow(dead_code)]
 
 pub mod borrowing;
+pub mod closures_iterators;
 pub mod collections;
+pub mod concurrency;
 pub mod errors;
+pub mod lifetimes;
 pub mod ownership;
+pub mod smart_pointers;
 pub mod traits;

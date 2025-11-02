@@ -13,10 +13,11 @@ authors = ["Tuturuuu Team"]
 # Tokio: Async runtime for Rust - enables asynchronous programming
 # Features: 'full' includes all tokio features for learning
 tokio = { version = "1.48.0", features = ["full"] }
+tokio-stream = "0.1.17"
 
 # Axum: Modern web framework built on tokio
 # Easy to learn, type-safe, and performant
-axum = "0.8.6"
+axum = { version = "0.8.6", features = ["ws"] }
 
 # Serde: Serialization/deserialization framework
 # Essential for working with JSON, TOML, and other formats
@@ -36,7 +37,41 @@ tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
 dotenvy = "0.15.7"
 
 # Chrono: Date and time library
-chrono = "0.4.42"
+chrono = { version = "0.4.42", features = ["serde"] }
+
+# SQLx: Async SQL toolkit for Rust with compile-time checked queries
+# Features: PostgreSQL driver, runtime tokio, TLS via rustls, migrations
+sqlx = { version = "0.8.6", features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "migrate"] }
+
+# JWT: JSON Web Token implementation for authentication
+# Note: Using 9.3.0 as 10.x has compilation issues in some environments
+jsonwebtoken = "9.3.0"
+
+# Bcrypt: Password hashing library for secure password storage
+bcrypt = "0.17.1"
+
+# Validator: Struct validation for request data
+validator = { version = "0.20.0", features = ["derive"] }
+
+# UUID: Universally Unique Identifier generation
+uuid = { version = "1.18.1", features = ["v4", "serde"] }
+
+# Async-trait: Trait with async methods
+async-trait = "0.1.89"
+
+# Multer: Multipart form-data parser for file uploads
+multer = "3.1.0"
+
+# Axum-extra: Additional utilities for Axum
+axum-extra = { version = "0.12.1", features = ["typed-header"] }
+
+# Futures: Async utilities and combinators
+futures = "0.3.31"
+
+# Thiserror: Derive macro for error types
+thiserror = "2.0.17"
 
 [dev-dependencies]
 # Dependencies used only for testing
+# HTTPs testing client for integration tests
+reqwest = { version = "0.12.24", features = ["json"] }

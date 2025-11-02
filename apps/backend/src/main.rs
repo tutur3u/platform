@@ -37,8 +37,11 @@ use tracing::{Level, info};
 
 // Import our custom modules
 // These are defined in separate files in the src/ directory
+mod config;
+mod db;
 mod examples;
 mod handlers;
+mod middleware;
 mod models;
 
 // ============================================================================
@@ -113,6 +116,39 @@ async fn main() {
     // The _ = means we're ignoring the result (it's ok if .env doesn't exist)
     let _ = dotenvy::dotenv();
 
+    // Load configuration
+    let config = config::Config::from_env().expect("Failed to load configuration");
+    config.validate().expect("Invalid configuration");
+
+    info!("Configuration loaded successfully");
+    info!("Environment: {}", config.environment);
+    info!("Server will listen on {}", config.server_address());
+
+    // Initialize database connection pool (optional - only if DATABASE_URL is set)
+    let db_pool = if let Ok(database_url) = std::env::var("DATABASE_URL") {
+        info!("Initializing database connection pool...");
+        match db::init_pool(&database_url).await {
+            Ok(pool) => {
+                info!("Database connection pool initialized");
+
+                // Run migrations (optional - comment out if not needed)
+                // info!("Running database migrations...");
+                // db::run_migrations(&pool).await.expect("Failed to run migrations");
+                // info!("Migrations completed");
+
+                Some(pool)
+            }
+            Err(e) => {
+                tracing::warn!("Failed to initialize database pool: {}", e);
+                tracing::warn!("Running without database support");
+                None
+            }
+        }
+    } else {
+        tracing::warn!("DATABASE_URL not set - running without database support");
+        None
+    };
+
     // Initialize application state
     // This is shared across all request handlers
     let app_state = AppState {
@@ -131,9 +167,12 @@ async fn main() {
         ])),
     };
 
+    // Initialize WebSocket state for real-time communication
+    let ws_state = handlers::WebSocketState::new();
+
     // Build our application with routes
     // Router is the main type for composing handlers
-    let app = Router::new()
+    let mut app = Router::new()
         // Basic routes
         .route("/", get(root_handler))
         .route("/health", get(health_check))
@@ -143,7 +182,7 @@ async fn main() {
         // Counter demonstration (shows state management)
         .route("/counter", get(get_counter))
         .route("/counter/increment", post(increment_counter))
-        // User CRUD operations
+        // User CRUD operations (legacy in-memory)
         .route("/users", get(list_users))
         .route("/users/:id", get(get_user))
         .route("/users", post(create_user))
@@ -151,6 +190,66 @@ async fn main() {
         .route("/examples", get(examples_handler))
         // Share state with all handlers
         .with_state(app_state);
+
+    // Create WebSocket routes with their own state
+    let ws_routes = Router::new()
+        .route("/ws", get(handlers::ws_echo_handler))
+        .route("/ws/broadcast", get(handlers::ws_broadcast_handler))
+        .route("/ws/room/:room_name", get(handlers::ws_room_handler))
+        .route("/ws/stats", get(handlers::ws_stats_handler))
+        .with_state(ws_state);
+
+    // Merge WebSocket routes
+    app = app.merge(ws_routes);
+
+    // Add auth routes if database is available
+    if let Some(pool) = db_pool {
+        info!("Enabling authentication and CRUD routes");
+
+        // Public auth routes (no authentication required)
+        let auth_routes = Router::new()
+            .route("/api/auth/register", post(handlers::register))
+            .route("/api/auth/login", post(handlers::login))
+            .route("/api/auth/logout", post(handlers::logout))
+            .layer(axum::Extension(pool.clone()));
+
+        // Protected routes (require authentication)
+        let protected_routes = Router::new()
+            // User routes
+            .route("/api/users", get(handlers::list_users))
+            .route("/api/users/search", get(handlers::search_users))
+            .route("/api/users/:id", get(handlers::get_user))
+            .route("/api/users/:id", axum::routing::put(handlers::update_user))
+            .route(
+                "/api/users/:id",
+                axum::routing::delete(handlers::delete_user),
+            )
+            .route("/api/users/:id/password", post(handlers::change_password))
+            // Post routes
+            .route("/api/posts", post(handlers::create_post))
+            .route("/api/posts/:id", axum::routing::put(handlers::update_post))
+            .route(
+                "/api/posts/:id",
+                axum::routing::delete(handlers::delete_post),
+            )
+            // Auth "me" endpoint
+            .route("/api/auth/me", get(handlers::me))
+            .layer(axum::middleware::from_fn(middleware::auth_middleware))
+            .layer(axum::Extension(pool.clone()));
+
+        // Public post routes (no authentication required)
+        let public_post_routes = Router::new()
+            .route("/api/posts", get(handlers::list_posts))
+            .route("/api/posts/search", get(handlers::search_posts))
+            .route("/api/posts/:id", get(handlers::get_post))
+            .route("/api/posts/:id/like", post(handlers::like_post))
+            .layer(axum::Extension(pool));
+
+        app = app
+            .merge(auth_routes)
+            .merge(protected_routes)
+            .merge(public_post_routes);
+    }
 
     // Get port from environment or use default
     let port = std::env::var("PORT")
@@ -195,17 +294,51 @@ async fn root_handler() -> Json<serde_json::Value> {
         "message": "Welcome to Tuturuuu Rust Backend!",
         "version": "0.1.0",
         "docs": "/examples",
-        "endpoints": [
-            "GET /health - Health check",
-            "GET /greet?name=Name - Personalized greeting",
-            "GET /echo/:message - Echo a message",
-            "GET /counter - Get current counter value",
-            "POST /counter/increment - Increment counter",
-            "GET /users - List all users",
-            "GET /users/:id - Get user by ID",
-            "POST /users - Create new user",
-            "GET /examples - View learning examples"
-        ]
+        "endpoints": {
+            "basic": [
+                "GET / - This endpoint",
+                "GET /health - Health check",
+                "GET /examples - View learning examples"
+            ],
+            "demo": [
+                "GET /greet?name=Name - Personalized greeting",
+                "GET /echo/:message - Echo a message",
+                "GET /counter - Get current counter value",
+                "POST /counter/increment - Increment counter",
+                "GET /users - List all users (in-memory)",
+                "GET /users/:id - Get user by ID (in-memory)",
+                "POST /users - Create new user (in-memory)"
+            ],
+            "auth": [
+                "POST /api/auth/register - Register new user",
+                "POST /api/auth/login - Login with email/password",
+                "GET /api/auth/me - Get current user (requires auth)",
+                "POST /api/auth/logout - Logout"
+            ],
+            "users": [
+                "GET /api/users - List all users (requires admin/moderator)",
+                "GET /api/users/:id - Get user by ID (requires auth)",
+                "PUT /api/users/:id - Update user (requires auth)",
+                "DELETE /api/users/:id - Delete user (requires auth)",
+                "POST /api/users/:id/password - Change password (requires auth)",
+                "GET /api/users/search?q=query - Search users (requires admin/moderator)"
+            ],
+            "posts": [
+                "GET /api/posts - List all posts (public)",
+                "GET /api/posts/:id - Get post by ID or slug (public)",
+                "POST /api/posts - Create new post (requires auth)",
+                "PUT /api/posts/:id - Update post (requires auth)",
+                "DELETE /api/posts/:id - Delete post (requires auth)",
+                "POST /api/posts/:id/like - Like a post (public)",
+                "GET /api/posts/search?q=query - Search posts (public)"
+            ],
+            "websockets": [
+                "WS /ws - Echo WebSocket (sends back any message received)",
+                "WS /ws/broadcast - Broadcast WebSocket (messages sent to all clients)",
+                "WS /ws/room/:room_name - Room-based WebSocket (messages only in room)",
+                "GET /ws/stats - WebSocket connection statistics"
+            ]
+        }
     }))
 }
 

@@ -1,18 +1,14 @@
 //! # HTTP Request Handlers
 //!
 //! This module contains handler functions for processing HTTP requests.
-//! As you add more routes to your application, organize them here.
-//!
-//! ## Example Structure
-//!
-//! ```
-//! handlers/
-//! ├── mod.rs           # This file
-//! ├── users.rs         # User-related handlers
-//! ├── auth.rs          # Authentication handlers
-//! └── posts.rs         # Post-related handlers
-//! ```
 
-// Add submodules here as your application grows
-// pub mod users;
-// pub mod auth;
+pub mod auth;
+pub mod posts;
+pub mod users;
+pub mod websocket;
+
+// Re-export handler functions
+pub use auth::*;
+pub use posts::*;
+pub use users::*;
+pub use websocket::*;
