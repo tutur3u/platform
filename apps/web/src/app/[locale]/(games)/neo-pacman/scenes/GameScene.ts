@@ -24,6 +24,8 @@ export class GameScene extends Phaser.Scene {
   private mapId: string = '';
   private quitDialog: Phaser.GameObjects.Container | null = null;
   private isPaused: boolean = false;
+  private isReady: boolean = false;
+  private readyText: Phaser.GameObjects.Text | null = null;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -95,6 +97,9 @@ export class GameScene extends Phaser.Scene {
       callbackScope: this,
       loop: true,
     });
+
+    // Show ready message and start game after delay
+    this.showReadyMessage();
   }
 
   private spawnPacman(): void {
@@ -206,60 +211,6 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  update(): void {
-    if (!this.pacman || this.isPaused) return;
-
-    // Update Pacman
-    this.pacman.update();
-
-    // Update ghosts
-    this.ghosts.forEach((ghost) => {
-      ghost.update(this.pacman);
-    });
-
-    // Check food collision
-    const { foodsEaten, points } =
-      this.collisionManager.checkPacmanFoodCollision(
-        this.pacman,
-        this.foodManager.getAllFood()
-      );
-    if (points > 0) {
-      this.score += points;
-      this.scoreText.setText(`Score: ${this.score}`);
-
-      foodsEaten.forEach((food) => {
-        this.foodManager.removeFood(food.position);
-      });
-
-      // Power pellet eaten - make ghosts frightened
-      const powerPelletEaten = foodsEaten.some(
-        (food) => food.type === FoodType.POWER_PELLET
-      );
-      if (powerPelletEaten) {
-        this.ghosts.forEach((ghost) => ghost.makeFrightened());
-      }
-    }
-
-    // Check ghost collision
-    const {
-      pacmanEaten,
-      ghostsEaten,
-      points: ghostPoints,
-    } = this.collisionManager.checkPacmanGhostCollision(
-      this.pacman,
-      this.ghosts
-    );
-
-    if (pacmanEaten) {
-      this.handlePacmanDeath();
-    }
-
-    if (ghostsEaten.length > 0) {
-      this.score += ghostPoints;
-      this.scoreText.setText(`Score: ${this.score}`);
-    }
-  }
-
   private handlePacmanDeath(): void {
     this.pacman.die();
     this.lives--;
@@ -287,6 +238,36 @@ export class GameScene extends Phaser.Scene {
         score: this.score,
       });
     }
+  }
+
+  private showReadyMessage(): void {
+    // Set ready state
+    this.isReady = true;
+
+    // Create ready text in center of screen
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    this.readyText = this.add
+      .text(width / 2, height / 2, 'READY!!!', {
+        fontSize: '64px',
+        color: '#ffff00',
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 6,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(150);
+
+    // Hide message and start game after 2 seconds
+    this.time.delayedCall(2000, () => {
+      if (this.readyText) {
+        this.readyText.destroy();
+        this.readyText = null;
+      }
+      this.isReady = false;
+    });
   }
 
   private showQuitDialog(): void {
@@ -408,9 +389,64 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  update(): void {
+    if (!this.pacman || this.isPaused || this.isReady) return;
+
+    // Update Pacman
+    this.pacman.update();
+
+    // Update ghosts
+    this.ghosts.forEach((ghost) => {
+      ghost.update(this.pacman);
+    });
+
+    // Check food collision
+    const { foodsEaten, points } =
+      this.collisionManager.checkPacmanFoodCollision(
+        this.pacman,
+        this.foodManager.getAllFood()
+      );
+    if (points > 0) {
+      this.score += points;
+      this.scoreText.setText(`Score: ${this.score}`);
+
+      foodsEaten.forEach((food) => {
+        this.foodManager.removeFood(food.position);
+      });
+
+      // Power pellet eaten - make ghosts frightened
+      const powerPelletEaten = foodsEaten.some(
+        (food) => food.type === FoodType.POWER_PELLET
+      );
+      if (powerPelletEaten) {
+        this.ghosts.forEach((ghost) => ghost.makeFrightened());
+      }
+    }
+
+    // Check ghost collision
+    const {
+      pacmanEaten,
+      ghostsEaten,
+      points: ghostPoints,
+    } = this.collisionManager.checkPacmanGhostCollision(
+      this.pacman,
+      this.ghosts
+    );
+
+    if (pacmanEaten) {
+      this.handlePacmanDeath();
+    }
+
+    if (ghostsEaten.length > 0) {
+      this.score += ghostPoints;
+      this.scoreText.setText(`Score: ${this.score}`);
+    }
+  }
+
   reset(): void {
     this.pacman.reset();
     this.ghosts.forEach((ghost) => ghost.reset());
+    this.showReadyMessage();
   }
 
   shutdown(): void {

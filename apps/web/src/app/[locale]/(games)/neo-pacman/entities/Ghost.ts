@@ -58,9 +58,6 @@ export class Ghost {
     scene.physics.add.existing(this.sprite);
     this.body = this.sprite.body as Phaser.Physics.Arcade.Body;
     this.body.setCircle(GAME_CONFIG.TILE_SIZE / 2 - 2);
-
-    // Start state cycling
-    this.startStateCycling();
   }
 
   /**
@@ -79,25 +76,6 @@ export class Ghost {
       default:
         return 'blinky';
     }
-  }
-
-  /**
-   * Start cycling between CHASE and SCATTER states
-   */
-  private startStateCycling(): void {
-    this.setState(GhostState.SCATTER);
-
-    this.stateTimer = this.scene.time.addEvent({
-      delay: GAME_CONFIG.GHOST_SCATTER_TIME,
-      callback: () => {
-        if (this.state === GhostState.SCATTER) {
-          this.setState(GhostState.CHASE);
-        } else if (this.state === GhostState.CHASE) {
-          this.setState(GhostState.SCATTER);
-        }
-      },
-      loop: true,
-    });
   }
 
   /**
@@ -165,6 +143,20 @@ export class Ghost {
    * Update ghost AI and movement
    */
   update(pacman: Pacman): void {
+    if (!this.stateTimer) {
+      this.stateTimer = this.scene.time.addEvent({
+        delay: GAME_CONFIG.GHOST_SCATTER_TIME,
+        callback: () => {
+          if (this.state === GhostState.SCATTER) {
+            this.setState(GhostState.CHASE);
+          } else if (this.state === GhostState.CHASE) {
+            this.setState(GhostState.SCATTER);
+          }
+        },
+        loop: true,
+      });
+    }
+
     if (this.state === GhostState.EATEN) {
       this.scene.time.delayedCall(1000, () => this.reset(this.homePosition));
       return;
@@ -428,6 +420,11 @@ export class Ghost {
     this.sprite.setPosition(pos.x + this.mapOffset.x, pos.y + this.mapOffset.y);
     this.sprite.setAlpha(1);
     this.setState(GhostState.SCATTER);
+
+    if (this.stateTimer) {
+      this.stateTimer.destroy();
+      this.stateTimer = null;
+    }
   }
 
   /**

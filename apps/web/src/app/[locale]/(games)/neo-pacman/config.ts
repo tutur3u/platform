@@ -4,7 +4,7 @@ export const GAME_CONFIG = {
 
   // Movement speeds (frames per tile move - lower = faster)
   PACMAN_SPEED: 10, // Move 1 tile every 10 frames (6 tiles/sec at 60fps)
-  GHOST_SPEED: 15,
+  GHOST_SPEED: 10,
   GHOST_FRIGHTENED_SPEED: 20, // Slower when frightened
   GHOST_EATEN_SPEED: 5, // Faster return to home
 
