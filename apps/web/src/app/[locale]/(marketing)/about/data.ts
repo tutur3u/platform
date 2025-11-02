@@ -105,7 +105,7 @@ export const members: {
     role: 'Head of Marcom',
     departments: ['Executive Board', 'Marketing'],
     image: '/members/gen7/nhat.png',
-    bio: 'Creative storyteller and brand strategist who amplifies our voice in the tech community. Minh crafts compelling narratives that showcase our impact and attract like-minded innovators.',
+    bio: 'Creative storyteller and brand strategist who amplifies our voice in the tech community. Nhat crafts compelling narratives that showcase our impact and attract like-minded innovators.',
     quote: 'Strive not to be a success, but rather to be of value.',
     generation: 7,
     socials: {
