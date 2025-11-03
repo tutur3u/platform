@@ -1710,7 +1710,8 @@
     "expired": "Đã hết hạn",
     "never_used": "Chưa sử dụng",
     "no_expiration": "Không bao giờ hết hạn",
-    "expires_in": "còn {days} ngày"
+    "expires_in": "còn {days} ngày",
+    "value": "Giá trị"
   },
   "workspace-role-data-table": {
     "id": "Mã số",

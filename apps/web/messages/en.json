@@ -1618,7 +1618,8 @@
     "expired": "Expired",
     "never_used": "Never used",
     "no_expiration": "Never expires",
-    "expires_in": "in {days} days"
+    "expires_in": "in {days} days",
+    "value": "Value"
   },
   "workspace-role-data-table": {
     "id": "ID",
