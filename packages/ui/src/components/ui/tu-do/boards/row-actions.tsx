@@ -1,6 +1,5 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Row } from '@tanstack/react-table';
 import {
   Archive,
@@ -31,203 +30,29 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/sonner';
-import { useTranslations } from 'next-intl';
+import { useBoardActions } from '@tuturuuu/ui/hooks/use-board-actions';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { CopyBoardDialog } from './copy-board-dialog';
 import { TaskBoardForm } from './form';
-
-// Helper to safely parse JSON responses or return null on error
-async function jsonOrNull<T = unknown>(res: Response): Promise<T | null> {
-  try {
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
 
 interface ProjectRowActionsProps {
   row: Row<WorkspaceTaskBoard>;
 }
 
 export function ProjectRowActions({ row }: ProjectRowActionsProps) {
-  const queryClient = useQueryClient();
   const t = useTranslations();
-
+  const router = useRouter();
   const data = row.original;
-
-  // Soft delete mutation
-  const softDeleteMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(
-        `/api/v1/workspaces/${data.ws_id}/boards/${data.id}/trash`,
-        {
-          method: 'POST',
-        }
-      );
-
-      if (!res.ok) {
-        const error = await jsonOrNull<{ error?: string; message?: string }>(
-          res
-        );
-        throw new Error(
-          error?.error || error?.message || 'Failed to soft delete board'
-        );
-      }
-
-      await jsonOrNull(res);
-      return;
-    },
-    onSuccess: () => {
-      toast.success(t('ws-task-boards.row_actions.toast.delete_temp_success'));
-      setShowDeleteDialog(false);
-      queryClient.invalidateQueries({ queryKey: ['boards', data.ws_id] });
-    },
-    onError: (error: Error) => {
-      toast.error(t('ws-task-boards.row_actions.toast.delete_temp_error'), {
-        description: error.message,
-      });
-    },
-  });
-
-  // Permanent delete mutation
-  const permanentDeleteMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(
-        `/api/v1/workspaces/${data.ws_id}/boards/${data.id}`,
-        {
-          method: 'DELETE',
-        }
-      );
-
-      if (!res.ok) {
-        const error = await jsonOrNull<{ error?: string; message?: string }>(
-          res
-        );
-        throw new Error(
-          error?.error || error?.message || 'Failed to permanently delete board'
-        );
-      }
-
-      await jsonOrNull(res);
-      return;
-    },
-    onSuccess: () => {
-      toast.success(t('ws-task-boards.row_actions.toast.delete_perm_success'));
-      setShowPermanentDeleteDialog(false);
-      queryClient.invalidateQueries({ queryKey: ['boards', data.ws_id] });
-    },
-    onError: (error: Error) => {
-      toast.error(t('ws-task-boards.row_actions.toast.delete_perm_error'), {
-        description: error.message,
-      });
-    },
-  });
-
-  // Restore mutation
-  const restoreMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(
-        `/api/v1/workspaces/${data.ws_id}/boards/${data.id}`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ restore: true }),
-        }
-      );
-
-      if (!res.ok) {
-        const error = await jsonOrNull<{ error?: string; message?: string }>(
-          res
-        );
-        throw new Error(
-          error?.error || error?.message || 'Failed to restore board'
-        );
-      }
-
-      await jsonOrNull(res);
-      return;
-    },
-    onSuccess: () => {
-      toast.success(t('ws-task-boards.row_actions.toast.restore_success'));
-      setShowRestoreDialog(false);
-      queryClient.invalidateQueries({ queryKey: ['boards', data.ws_id] });
-    },
-    onError: (error: Error) => {
-      toast.error(t('ws-task-boards.row_actions.toast.restore_error'), {
-        description: error.message,
-      });
-    },
-  });
-
-  // Archive mutation
-  const archiveMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(
-        `/api/v1/workspaces/${data.ws_id}/boards/${data.id}/archive`,
-        {
-          method: 'POST',
-        }
-      );
-
-      if (!res.ok) {
-        const error = await jsonOrNull<{ error?: string; message?: string }>(
-          res
-        );
-        throw new Error(
-          error?.error || error?.message || 'Failed to archive board'
-        );
-      }
-
-      await jsonOrNull(res);
-      return;
-    },
-    onSuccess: () => {
-      toast.success(t('ws-task-boards.row_actions.toast.archive_success'));
-      setShowArchiveDialog(false);
-      queryClient.invalidateQueries({ queryKey: ['boards', data.ws_id] });
-    },
-    onError: (error: Error) => {
-      toast.error(t('ws-task-boards.row_actions.toast.archive_error'), {
-        description: error.message,
-      });
-    },
-  });
-
-  // Unarchive mutation
-  const unarchiveMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(
-        `/api/v1/workspaces/${data.ws_id}/boards/${data.id}/archive`,
-        {
-          method: 'DELETE',
-        }
-      );
-
-      if (!res.ok) {
-        const error = await jsonOrNull<{ error?: string; message?: string }>(
-          res
-        );
-        throw new Error(
-          error?.error || error?.message || 'Failed to unarchive board'
-        );
-      }
-
-      await jsonOrNull(res);
-      return;
-    },
-    onSuccess: () => {
-      toast.success(t('ws-task-boards.row_actions.toast.unarchive_success'));
-      setShowUnarchiveDialog(false);
-      queryClient.invalidateQueries({ queryKey: ['boards', data.ws_id] });
-    },
-    onError: (error: Error) => {
-      toast.error(t('ws-task-boards.row_actions.toast.unarchive_error'), {
-        description: error.message,
-      });
-    },
-  });
+  const {
+    softDeleteBoard,
+    permanentDeleteBoard,
+    restoreBoard,
+    archiveBoard,
+    unarchiveBoard,
+  } = useBoardActions(data.ws_id);
 
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -237,6 +62,9 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showUnarchiveDialog, setShowUnarchiveDialog] = useState(false);
   const [showCopyDialog, setShowCopyDialog] = useState(false);
+
+  // No need for onSuccess callback - mutations handle invalidation
+  // React Query will automatically refetch and update the UI
 
   if (!data.id || !data.ws_id) return null;
 
@@ -381,7 +209,6 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
         onOpenChange={setShowCopyDialog}
       />
 
-      {/* Soft Delete Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -405,19 +232,15 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => softDeleteMutation.mutate()}
-              disabled={softDeleteMutation.isPending}
+              onClick={() => softDeleteBoard(data.id)}
               className="bg-dynamic-red text-white hover:bg-dynamic-red/90"
             >
-              {softDeleteMutation.isPending
-                ? t('ws-task-boards.row_actions.dialog.delete_button_moving')
-                : t('ws-task-boards.row_actions.dialog.delete_button')}
+              {t('ws-task-boards.row_actions.dialog.delete_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Restore Dialog */}
       <AlertDialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -439,21 +262,15 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => restoreMutation.mutate()}
-              disabled={restoreMutation.isPending}
+              onClick={() => restoreBoard(data.id)}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {restoreMutation.isPending
-                ? t(
-                    'ws-task-boards.row_actions.dialog.restore_button_restoring'
-                  )
-                : t('ws-task-boards.row_actions.dialog.restore_button')}
+              {t('ws-task-boards.row_actions.dialog.restore_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Permanent Delete Dialog */}
       <AlertDialog
         open={showPermanentDeleteDialog}
         onOpenChange={setShowPermanentDeleteDialog}
@@ -478,21 +295,15 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => permanentDeleteMutation.mutate()}
-              disabled={permanentDeleteMutation.isPending}
+              onClick={() => permanentDeleteBoard(data.id)}
               className="bg-dynamic-red text-white hover:bg-dynamic-red/90"
             >
-              {permanentDeleteMutation.isPending
-                ? t(
-                    'ws-task-boards.row_actions.dialog.delete_perm_button_deleting'
-                  )
-                : t('ws-task-boards.row_actions.dialog.delete_perm_button')}
+              {t('ws-task-boards.row_actions.dialog.delete_perm_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Archive Dialog */}
       <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -514,21 +325,15 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => archiveMutation.mutate()}
-              disabled={archiveMutation.isPending}
+              onClick={() => archiveBoard(data.id)}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {archiveMutation.isPending
-                ? t(
-                    'ws-task-boards.row_actions.dialog.archive_button_archiving'
-                  )
-                : t('ws-task-boards.row_actions.dialog.archive_button')}
+              {t('ws-task-boards.row_actions.dialog.archive_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Unarchive Dialog */}
       <AlertDialog
         open={showUnarchiveDialog}
         onOpenChange={setShowUnarchiveDialog}
@@ -553,15 +358,10 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => unarchiveMutation.mutate()}
-              disabled={unarchiveMutation.isPending}
+              onClick={() => unarchiveBoard(data.id)}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {unarchiveMutation.isPending
-                ? t(
-                    'ws-task-boards.row_actions.dialog.unarchive_button_unarchiving'
-                  )
-                : t('ws-task-boards.row_actions.dialog.unarchive_button')}
+              {t('ws-task-boards.row_actions.dialog.unarchive_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

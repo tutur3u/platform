@@ -2,65 +2,65 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-// Schema for validating route params
 const paramsSchema = z.object({
-  wsId: z.string().uuid('Invalid workspace ID'),
-  boardId: z.string().uuid('Invalid board ID'),
+  wsId: z.string().uuid(),
+  boardId: z.string().uuid(),
 });
 
-type BoardParams = z.infer<typeof paramsSchema>;
+async function authorize(wsId: string) {
+  console.log('Authorizing request for workspace:', wsId);
+  const supabase = await createClient();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
 
+  if (userError) {
+    console.error('Error getting user:', userError);
+    return { user: null, error: NextResponse.json({ error: 'Internal server error' }, { status: 500 }) };
+  }
+
+  if (!user) {
+    console.log('No user found, returning unauthorized');
+    return { user: null, error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
+  }
+
+  console.log('User found:', user.id);
+
+  const { data: memberCheck, error: memberError } = await supabase
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', wsId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (memberError) {
+    console.error('Error checking workspace membership:', memberError);
+    return { user: null, error: NextResponse.json({ error: 'Internal server error' }, { status: 500 }) };
+  }
+
+  if (!memberCheck) {
+    console.log('User is not a member of the workspace, returning forbidden');
+    return { user: null, error: NextResponse.json({ error: "You don't have access to this workspace" }, { status: 403 }) };
+  }
+
+  console.log('User is a member of the workspace');
+  return { user, error: null };
+}
+
+// POST handler for archiving
 export async function POST(
-  _: NextRequest,
-  { params }: { params: Promise<BoardParams> }
+  req: NextRequest,
+  context: { params: Promise<{ wsId: string; boardId: string }> }
 ) {
   try {
-    const rawParams = await params;
-
-    // Validate params using Zod schema
-    const validation = paramsSchema.safeParse(rawParams);
-    if (!validation.success) {
-      const errorMessage = validation.error.issues
-        .map((e) => e.message)
-        .join(', ');
-      return NextResponse.json({ error: errorMessage }, { status: 400 });
-    }
-
-    const { wsId, boardId } = validation.data;
+    const resolvedParams = await context.params;
+    const { wsId, boardId } = paramsSchema.parse(resolvedParams);
+    const { error } = await authorize(wsId);
+    if (error) return error;
 
     const supabase = await createClient();
 
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Please sign in to archive boards' },
-        { status: 401 }
-      );
-    }
-
-    // Verify workspace access
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (!memberCheck) {
-      return NextResponse.json(
-        { error: "You don't have access to this workspace" },
-        { status: 403 }
-      );
-    }
-
-    // Verify board exists and belongs to workspace
     const { data: board, error: boardCheckError } = await supabase
       .from('workspace_boards')
-      .select('id, ws_id, archived_at, deleted_at')
+      .select('id, archived_at, deleted_at')
       .eq('id', boardId)
       .eq('ws_id', wsId)
       .single();
@@ -69,42 +69,27 @@ export async function POST(
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
-    // Check if already archived
     if (board.archived_at) {
-      return NextResponse.json(
-        { error: 'Board is already archived' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Board is already archived' }, { status: 400 });
     }
 
-    // Check if board is deleted
     if (board.deleted_at) {
-      return NextResponse.json(
-        { error: 'Cannot archive a deleted board' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Cannot archive a deleted board' }, { status: 400 });
     }
 
-    // Archive the board by setting archived_at timestamp
     const { error: archiveError } = await supabase
       .from('workspace_boards')
       .update({ archived_at: new Date().toISOString() })
       .eq('id', boardId);
 
     if (archiveError) {
-      console.error('Supabase error:', archiveError);
-      return NextResponse.json(
-        { error: 'Failed to archive board' },
-        { status: 500 }
-      );
+      console.error('Error archiving board:', archiveError);
+      return NextResponse.json({ error: 'Failed to archive board' }, { status: 500 });
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Board archived successfully',
-    });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error archiving board:', error);
+    console.error('Error in POST archive handler:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -112,57 +97,22 @@ export async function POST(
   }
 }
 
+// DELETE handler for unarchiving
 export async function DELETE(
-  _: NextRequest,
-  { params }: { params: Promise<BoardParams> }
+  req: NextRequest,
+  context: { params: Promise<{ wsId: string; boardId: string }> }
 ) {
   try {
-    const rawParams = await params;
-
-    // Validate params using Zod schema
-    const validation = paramsSchema.safeParse(rawParams);
-    if (!validation.success) {
-      const errorMessage = validation.error.issues
-        .map((e) => e.message)
-        .join(', ');
-      return NextResponse.json({ error: errorMessage }, { status: 400 });
-    }
-
-    const { wsId, boardId } = validation.data;
+    const resolvedParams = await context.params;
+    const { wsId, boardId } = paramsSchema.parse(resolvedParams);
+    const { error } = await authorize(wsId);
+    if (error) return error;
 
     const supabase = await createClient();
 
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Please sign in to unarchive boards' },
-        { status: 401 }
-      );
-    }
-
-    // Verify workspace access
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (!memberCheck) {
-      return NextResponse.json(
-        { error: "You don't have access to this workspace" },
-        { status: 403 }
-      );
-    }
-
-    // Verify board exists and belongs to workspace
     const { data: board, error: boardCheckError } = await supabase
       .from('workspace_boards')
-      .select('id, ws_id, archived_at, deleted_at')
+      .select('id, archived_at, deleted_at')
       .eq('id', boardId)
       .eq('ws_id', wsId)
       .single();
@@ -171,42 +121,27 @@ export async function DELETE(
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
     }
 
-    // Check if board is not archived
     if (!board.archived_at) {
-      return NextResponse.json(
-        { error: 'Board is not archived' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Board is not archived' }, { status: 400 });
     }
 
-    // Check if board is deleted
     if (board.deleted_at) {
-      return NextResponse.json(
-        { error: 'Cannot unarchive a deleted board' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Cannot unarchive a deleted board' }, { status: 400 });
     }
 
-    // Unarchive the board by setting archived_at to null
     const { error: unarchiveError } = await supabase
       .from('workspace_boards')
       .update({ archived_at: null })
       .eq('id', boardId);
 
     if (unarchiveError) {
-      console.error('Supabase error:', unarchiveError);
-      return NextResponse.json(
-        { error: 'Failed to unarchive board' },
-        { status: 500 }
-      );
+      console.error('Error unarchiving board:', unarchiveError);
+      return NextResponse.json({ error: 'Failed to unarchive board' }, { status: 500 });
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Board unarchived successfully',
-    });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error unarchiving board:', error);
+    console.error('Error in DELETE archive handler:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -1,9 +1,10 @@
+import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import { Plus } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
@@ -17,158 +18,6 @@ interface Props {
     page?: string;
     pageSize?: string;
   };
-}
-
-export default async function WorkspaceProjectsPage({
-  wsId,
-  searchParams,
-}: Props) {
-  const { withoutPermission } = await getPermissions({
-    wsId,
-  });
-
-  if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
-
-  const { data: rawData, count } = await getData(wsId, searchParams);
-  const t = await getTranslations();
-
-  const data = rawData.map(
-    (
-      board: WorkspaceTaskBoard & {
-        task_lists?: (TaskList & { tasks?: Task[] })[];
-      }
-    ) => {
-      // Calculate task metrics using the same logic as BoardHeader
-      const allTasks =
-        board.task_lists?.flatMap(
-          (list: TaskList & { tasks?: Task[] }) => list.tasks || []
-        ) || [];
-      const totalTasks = allTasks.length;
-
-      // Use same logic as BoardHeader: completed = tasks that are archived OR in 'done'/'closed' lists
-      const completedTasks = allTasks.filter((task: Task) => {
-        const taskList = board.task_lists?.find(
-          (list: TaskList & { tasks?: Task[] }) => list.id === task.list_id
-        );
-        return (
-          task.closed_at ||
-          taskList?.status === 'done' ||
-          taskList?.status === 'closed'
-        );
-      }).length;
-
-      const activeTasks = allTasks.filter((task: Task) => {
-        const taskList = board.task_lists?.find(
-          (list: TaskList & { tasks?: Task[] }) => list.id === task.list_id
-        );
-        return !task.closed_at && taskList?.status === 'active';
-      }).length;
-
-      const overdueTasks = allTasks.filter((task: Task) => {
-        const taskList = board.task_lists?.find(
-          (list: TaskList & { tasks?: Task[] }) => list.id === task.list_id
-        );
-        return (
-          !task.closed_at &&
-          taskList?.status !== 'done' &&
-          taskList?.status !== 'closed' &&
-          task.end_date &&
-          new Date(task.end_date) < new Date()
-        );
-      }).length;
-
-      const progressPercentage =
-        totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
-      // Priority breakdown for non-completed tasks
-      const highPriorityTasks = allTasks.filter((task: Task) => {
-        const taskList = board.task_lists?.find(
-          (list: TaskList & { tasks?: Task[] }) => list.id === task.list_id
-        );
-        return (
-          task.priority === 'critical' &&
-          !task.closed_at &&
-          taskList?.status !== 'done' &&
-          taskList?.status !== 'closed'
-        );
-      }).length;
-
-      const mediumPriorityTasks = allTasks.filter((task: Task) => {
-        const taskList = board.task_lists?.find(
-          (list: TaskList & { tasks?: Task[] }) => list.id === task.list_id
-        );
-        return (
-          task.priority === 'high' &&
-          !task.closed_at &&
-          taskList?.status !== 'done' &&
-          taskList?.status !== 'closed'
-        );
-      }).length;
-
-      const lowPriorityTasks = allTasks.filter((task: Task) => {
-        const taskList = board.task_lists?.find(
-          (list: TaskList & { tasks?: Task[] }) => list.id === task.list_id
-        );
-        return (
-          task.priority === 'normal' &&
-          !task.closed_at &&
-          taskList?.status !== 'done' &&
-          taskList?.status !== 'closed'
-        );
-      }).length;
-
-      return {
-        ...board,
-        href: `/${wsId}/tasks/boards/${board.id}`,
-        // Task metrics
-        totalTasks,
-        completedTasks,
-        activeTasks,
-        overdueTasks,
-        progressPercentage,
-        highPriorityTasks,
-        mediumPriorityTasks,
-        lowPriorityTasks,
-        // Include task_lists for the modal functionality
-        task_lists: board.task_lists,
-      };
-    }
-  ) as (WorkspaceTaskBoard & {
-    href: string;
-    totalTasks: number;
-    completedTasks: number;
-    activeTasks: number;
-    overdueTasks: number;
-    progressPercentage: number;
-    highPriorityTasks: number;
-    mediumPriorityTasks: number;
-    lowPriorityTasks: number;
-  })[];
-
-  return (
-    <div className="space-y-6">
-      {/* Header Section */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-2">
-          <h1 className="font-bold text-2xl tracking-tight">
-            {t('ws-task-boards.plural')}
-          </h1>
-          <p className="text-muted-foreground">
-            {t('ws-task-boards.description')}
-          </p>
-        </div>
-        <TaskBoardForm wsId={wsId}>
-          <Button className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            {t('ws-task-boards.create')}
-          </Button>
-        </TaskBoardForm>
-      </div>
-
-      {/* Enhanced Boards View */}
-      <EnhancedBoardsView data={data} count={count} />
-    </div>
-  );
 }
 
 async function getData(
@@ -247,4 +96,53 @@ async function getData(
     data: WorkspaceTaskBoard[];
     count: number;
   };
+}
+
+export default async function WorkspaceProjectsPage({
+  wsId,
+  searchParams,
+}: Props) {
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
+
+  const queryClient = new QueryClient();
+  const q = searchParams.q || '';
+  const page = searchParams.page || '1';
+  const pageSize = searchParams.pageSize || '10';
+
+  // Prefetch with the exact same query key structure that the client will use
+  await queryClient.prefetchQuery({
+    queryKey: ['boards', wsId, q, page, pageSize],
+    queryFn: () => getData(wsId, { q, page, pageSize }),
+  });
+
+  const t = await getTranslations();
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-2">
+          <h1 className="font-bold text-2xl tracking-tight">
+            {t('ws-task-boards.plural')}
+          </h1>
+          <p className="text-muted-foreground">
+            {t('ws-task-boards.description')}
+          </p>
+        </div>
+        <TaskBoardForm wsId={wsId}>
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            {t('ws-task-boards.create')}
+          </Button>
+        </TaskBoardForm>
+      </div>
+
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <EnhancedBoardsView wsId={wsId} />
+      </HydrationBoundary>
+    </div>
+  );
 }
