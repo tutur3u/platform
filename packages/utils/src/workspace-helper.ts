@@ -9,7 +9,7 @@ import type {
 } from '@tuturuuu/types';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { notFound, redirect } from 'next/navigation';
-import { DEV_MODE, ROOT_WORKSPACE_ID, resolveWorkspaceId } from './constants';
+import { ROOT_WORKSPACE_ID, resolveWorkspaceId } from './constants';
 import { isValidTuturuuuEmail } from './email/client';
 import { permissions as rolePermissions } from './permissions';
 
@@ -164,9 +164,9 @@ export async function getWorkspaceInvites() {
 
   const emailInvitesQuery = user.email
     ? supabase
-        .from('workspace_email_invites')
-        .select('...workspaces(id, name), created_at')
-        .ilike('email', `%${user.email}%`)
+      .from('workspace_email_invites')
+      .select('...workspaces(id, name), created_at')
+      .ilike('email', `%${user.email}%`)
     : null;
 
   // use promise.all to run both queries in parallel
@@ -436,8 +436,8 @@ export async function getPermissions({
   const permissions = isCreator
     ? rolePermissions({ wsId: resolvedWorkspaceId, user }).map(({ id }) => id)
     : [...permissionsData, ...defaultData]
-        .map(({ permission }) => permission)
-        .filter((value, index, self) => self.indexOf(value) === index);
+      .map(({ permission }) => permission)
+      .filter((value, index, self) => self.indexOf(value) === index);
 
   const containsPermission = (permission: PermissionId) =>
     permissions.includes(permission);
