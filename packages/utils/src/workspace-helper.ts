@@ -9,7 +9,7 @@ import type {
 } from '@tuturuuu/types';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { notFound, redirect } from 'next/navigation';
-import { ROOT_WORKSPACE_ID, resolveWorkspaceId } from './constants';
+import { DEV_MODE, ROOT_WORKSPACE_ID, resolveWorkspaceId } from './constants';
 import { isValidTuturuuuEmail } from './email/client';
 import { permissions as rolePermissions } from './permissions';
 
