@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import { ImageResponse } from 'next/og';
 
 export const dynamic = 'force-static';
@@ -125,7 +124,8 @@ export async function GET() {
                 left: '50%',
               }}
             />
-            <Image
+            {/** biome-ignore lint/performance/noImgElement: <cannot use Next.js Image on server> */}
+            <img
               alt="Tuturuuu Logo"
               width="320"
               height="320"

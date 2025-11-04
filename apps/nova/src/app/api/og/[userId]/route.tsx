@@ -1,6 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
-import Image from 'next/image';
 import { ImageResponse } from 'next/og';
 
 export const dynamic = 'force-dynamic';
@@ -239,7 +238,8 @@ export async function GET(
                 left: '50%',
               }}
             />
-            <Image
+            {/** biome-ignore lint/performance/noImgElement: <cannot use Next.js Image on server> */}
+            <img
               alt="User Avatar"
               width="320"
               height="320"
