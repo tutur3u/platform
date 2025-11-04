@@ -6,12 +6,14 @@ use crate::models::{User, UserRole};
 use sqlx::PgPool;
 use uuid::Uuid;
 
+#[allow(dead_code)]
 /// User repository for database operations
 #[derive(Clone)]
 pub struct UserRepository {
     pool: PgPool,
 }
 
+#[allow(dead_code)]
 impl UserRepository {
     /// Create a new user repository
     pub fn new(pool: PgPool) -> Self {

@@ -26,6 +26,7 @@ impl Default for PaginationParams {
     }
 }
 
+#[allow(dead_code)]
 impl PaginationParams {
     /// Get page number (defaults to 1)
     pub fn page(&self) -> u32 {
@@ -58,6 +59,7 @@ pub struct PaginatedResponse<T> {
     pub total_pages: u32,
 }
 
+#[allow(dead_code)]
 impl<T> PaginatedResponse<T> {
     /// Create a new paginated response
     pub fn new(data: Vec<T>, page: u32, per_page: u32, total: u64) -> Self {
@@ -73,20 +75,17 @@ impl<T> PaginatedResponse<T> {
 }
 
 /// Sort order
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[allow(dead_code)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum SortOrder {
     Asc,
+    #[default]
     Desc,
 }
 
-impl Default for SortOrder {
-    fn default() -> Self {
-        SortOrder::Desc
-    }
-}
-
 /// Generic API response wrapper
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApiResponse<T> {
     pub success: bool,
@@ -94,6 +93,7 @@ pub struct ApiResponse<T> {
     pub message: Option<String>,
 }
 
+#[allow(dead_code)]
 impl<T> ApiResponse<T> {
     /// Create a successful response
     pub fn success(data: T) -> Self {
@@ -114,6 +114,7 @@ impl<T> ApiResponse<T> {
     }
 }
 
+#[allow(dead_code)]
 impl ApiResponse<()> {
     /// Create an error response
     pub fn error(message: String) -> Self {
@@ -126,6 +127,7 @@ impl ApiResponse<()> {
 }
 
 /// Error response
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ErrorResponse {
     pub error: String,
@@ -133,6 +135,7 @@ pub struct ErrorResponse {
     pub code: Option<String>,
 }
 
+#[allow(dead_code)]
 impl ErrorResponse {
     /// Create a simple error response
     pub fn new(error: String) -> Self {
@@ -163,12 +166,14 @@ impl ErrorResponse {
 }
 
 /// ID path parameter
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IdParam {
     pub id: Uuid,
 }
 
 /// Search query parameters
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SearchParams {
     pub q: String,
@@ -177,6 +182,7 @@ pub struct SearchParams {
 }
 
 /// Filter parameters for posts
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PostFilterParams {
     pub author_id: Option<Uuid>,
@@ -189,6 +195,7 @@ pub struct PostFilterParams {
 }
 
 /// Filter parameters for users
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserFilterParams {
     pub role: Option<String>,
@@ -201,6 +208,7 @@ pub struct UserFilterParams {
 }
 
 /// Bulk operation request
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct BulkOperationRequest {
     #[validate(length(min = 1, max = 100))]
@@ -209,6 +217,7 @@ pub struct BulkOperationRequest {
 }
 
 /// Bulk operation response
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BulkOperationResponse {
     pub success_count: usize,
@@ -217,6 +226,7 @@ pub struct BulkOperationResponse {
 }
 
 /// Health check response
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HealthCheckResponse {
     pub status: String,
@@ -226,6 +236,7 @@ pub struct HealthCheckResponse {
 }
 
 /// Database status
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DatabaseStatus {
     pub connected: bool,
@@ -233,6 +244,7 @@ pub struct DatabaseStatus {
 }
 
 /// Statistics response
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StatsResponse {
     pub total_users: u64,

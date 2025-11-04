@@ -55,7 +55,7 @@
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^24.9.2",
+    "@types/node": "^24.10.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.6"
   },

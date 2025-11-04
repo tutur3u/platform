@@ -172,7 +172,7 @@ pub async fn create_post(
     .bind(&post_data.content)
     .bind(&post_data.excerpt)
     .bind(status)
-    .bind(&post_data.tags.unwrap_or_default())
+    .bind(post_data.tags.unwrap_or_default())
     .bind(&post_data.featured_image_url)
     .bind(published_at)
     .bind(now)
@@ -258,22 +258,22 @@ pub async fn update_post(
         param_count += 1;
     }
 
-    if let Some(excerpt) = &update_data.excerpt {
+    if update_data.excerpt.is_some() {
         updates.push(format!("excerpt = ${}", param_count));
         param_count += 1;
     }
 
-    if let Some(status) = &update_data.status {
+    if update_data.status.is_some() {
         updates.push(format!("status = ${}", param_count));
         param_count += 1;
     }
 
-    if let Some(tags) = &update_data.tags {
+    if update_data.tags.is_some() {
         updates.push(format!("tags = ${}", param_count));
         param_count += 1;
     }
 
-    if let Some(featured_image_url) = &update_data.featured_image_url {
+    if update_data.featured_image_url.is_some() {
         updates.push(format!("featured_image_url = ${}", param_count));
         param_count += 1;
     }

@@ -51,7 +51,7 @@ pub fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
 ///
 /// Here, the returned reference will always be valid for as long as `x` is valid,
 /// regardless of how long `y` is valid.
-pub fn first_word<'a, 'b>(x: &'a str, _y: &'b str) -> &'a str {
+pub fn first_word<'a>(x: &'a str, _y: &str) -> &'a str {
     x.split_whitespace().next().unwrap_or("")
 }
 
@@ -96,7 +96,6 @@ impl<'a> ImportantExcerpt<'a> {
 ///
 /// Rust's compiler can infer lifetimes in many cases using "lifetime elision rules".
 /// These functions demonstrate when you DON'T need explicit lifetime annotations.
-
 /// Rule 1: Each parameter that is a reference gets its own lifetime parameter
 /// Rule 2: If there's exactly one input lifetime, it's assigned to all output lifetimes
 ///
@@ -220,9 +219,8 @@ impl<'a, T> Node<'a, T> {
 /// # Common Lifetime Patterns
 ///
 /// Collection of common patterns you'll encounter.
-
 /// Pattern 1: Factory function returning a struct with a lifetime
-pub fn create_excerpt(text: &str) -> ImportantExcerpt {
+pub fn create_excerpt(text: &str) -> ImportantExcerpt<'_> {
     ImportantExcerpt {
         part: text.split('.').next().unwrap_or(text),
     }
@@ -256,7 +254,7 @@ impl<'a> Iterator for Words<'a> {
     }
 }
 
-pub fn split_into_words(text: &str) -> Words {
+pub fn split_into_words(text: &str) -> Words<'_> {
     Words { text }
 }
 
@@ -290,7 +288,6 @@ impl<'a> QueryBuilder<'a> {
 }
 
 /// # Common Lifetime Mistakes and Solutions
-
 /// MISTAKE: Returning a reference to a local variable
 /// This would not compile:
 /// ```compile_fail

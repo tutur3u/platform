@@ -79,6 +79,7 @@ impl std::fmt::Display for PostStatus {
     }
 }
 
+#[allow(dead_code)]
 impl Post {
     /// Create a new draft post
     pub fn new(author_id: Uuid, title: String, content: String) -> Self {
@@ -174,6 +175,7 @@ impl Post {
 
 /// Post summary for list views
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct PostSummary {
     pub id: Uuid,
     pub author_id: Uuid,
@@ -212,6 +214,7 @@ impl From<Post> for PostSummary {
 
 /// Create post request
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct CreatePost {
     pub title: String,
     pub content: String,
@@ -222,6 +225,7 @@ pub struct CreatePost {
 
 /// Update post request
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct UpdatePost {
     pub title: Option<String>,
     pub content: Option<String>,
@@ -230,6 +234,7 @@ pub struct UpdatePost {
     pub tags: Option<Vec<String>>,
 }
 
+#[allow(dead_code)]
 impl UpdatePost {
     /// Check if the update contains any changes
     pub fn has_changes(&self) -> bool {
@@ -263,6 +268,7 @@ impl UpdatePost {
 }
 
 /// Generate a URL-friendly slug from a title
+#[allow(dead_code)]
 fn slugify(text: &str) -> String {
     text.to_lowercase()
         .chars()
