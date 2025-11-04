@@ -42,7 +42,8 @@ export function TaskDialogManager() {
       if (previousUrlRef.current === null && pathname !== taskUrl) {
         // First time opening from a different page, store previous URL and navigate to task URL
         previousUrlRef.current =
-          pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
+          pathname +
+          (searchParams.toString() ? `?${searchParams.toString()}` : '');
         router.push(taskUrl);
       } else if (previousUrlRef.current !== null && pathname !== taskUrl) {
         // Dialog is open and user navigated away (e.g. browser back)
