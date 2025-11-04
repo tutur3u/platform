@@ -1,5 +1,3 @@
-import type { NavLink } from '@/components/navigation';
-import { DEV_MODE } from '@/constants/common';
 import {
   Activity,
   Archive,
@@ -84,12 +82,14 @@ import {
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
-  resolveWorkspaceId,
   ROOT_WORKSPACE_ID,
+  resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
+import type { NavLink } from '@/components/navigation';
+import { DEV_MODE } from '@/constants/common';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -104,6 +104,11 @@ export async function WorkspaceNavigationLinks({
 }) {
   const t = await getTranslations();
   const resolvedWorkspaceId = resolveWorkspaceId(wsId);
+
+  const { withoutPermission: withoutRootPermission } = await getPermissions({
+    wsId: ROOT_WORKSPACE_ID,
+  });
+
   const { withoutPermission } = await getPermissions({
     wsId: resolvedWorkspaceId,
   });
@@ -1010,7 +1015,7 @@ export async function WorkspaceNavigationLinks({
           title: t('workspace-settings-layout.secrets'),
           href: `/${personalOrWsId}/secrets`,
           icon: <BookKey className="h-5 w-5" />,
-          disabled: withoutPermission('manage_workspace_secrets'),
+          disabled: withoutRootPermission('manage_workspace_secrets'),
           requireRootMember: true,
         },
         {
@@ -1092,6 +1097,43 @@ export async function WorkspaceNavigationLinks({
     },
   ];
 
+  /**
+   * Remove consecutive nulls to avoid repeated separators in navigation.
+   * Also removes leading and trailing nulls.
+   * @param arr - Array of NavLinks and nulls (where null represents a separator)
+   * @returns Cleaned array with no consecutive nulls and no leading/trailing nulls
+   */
+  const removeConsecutiveNulls = (
+    arr: (NavLink | null)[]
+  ): (NavLink | null)[] => {
+    const withoutConsecutive = arr.reduce<(NavLink | null)[]>(
+      (acc, item, index) => {
+        // Skip null if previous item was also null
+        if (item === null && index > 0 && arr[index - 1] === null) {
+          return acc;
+        }
+        acc.push(item);
+        return acc;
+      },
+      []
+    );
+
+    // Remove leading nulls
+    while (withoutConsecutive.length > 0 && withoutConsecutive[0] === null) {
+      withoutConsecutive.shift();
+    }
+
+    // Remove trailing nulls
+    while (
+      withoutConsecutive.length > 0 &&
+      withoutConsecutive[withoutConsecutive.length - 1] === null
+    ) {
+      withoutConsecutive.pop();
+    }
+
+    return withoutConsecutive;
+  };
+
   // Preserve null entries as separators; rendering components handle them
-  return navLinks satisfies (NavLink | null)[];
+  return removeConsecutiveNulls(navLinks) satisfies (NavLink | null)[];
 }
