@@ -9,7 +9,7 @@ interface Props {
   t: any;
   defaultValue?: string;
   className?: string;
-  // eslint-disable-next-line no-unused-vars
+
   onSearch?: (query: string) => void;
 }
 

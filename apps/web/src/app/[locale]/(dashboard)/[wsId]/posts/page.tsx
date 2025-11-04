@@ -1,6 +1,6 @@
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Metadata } from 'next';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import PostsClient from './client';
 import type { PostEmail } from './types';
 
@@ -104,8 +104,8 @@ async function getPostsData(
   }
 
   if (page && pageSize) {
-    const parsedPage = Number.parseInt(page);
-    const parsedSize = Number.parseInt(pageSize);
+    const parsedPage = Number.parseInt(page, 10);
+    const parsedSize = Number.parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
     const end = start + parsedSize - 1; // Fix: end should be start + size - 1
     queryBuilder.range(start, end).limit(parsedSize);

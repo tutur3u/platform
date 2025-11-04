@@ -94,7 +94,7 @@ export default function TeamsLeaderboardClient({
     }
 
     setFilteredData(filtered);
-  }, [searchQuery, data, currentTeamId]);
+  }, [searchQuery, data]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1) return;
@@ -233,7 +233,7 @@ export default function TeamsLeaderboardClient({
               />
 
               <div className="mt-6">
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-foreground/[0.025] px-4 py-2 text-center backdrop-blur-xl dark:bg-foreground/5">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-foreground/2.5 px-4 py-2 text-center backdrop-blur-xl dark:bg-foreground/5">
                   <div className="flex-none text-muted-foreground text-sm">
                     <span className="font-semibold text-primary">
                       {basicInfo.totalParticipants}

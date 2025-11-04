@@ -38,8 +38,8 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import DOMPurify from 'dompurify';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -85,7 +85,7 @@ function EmailChips({
   return (
     <div>
       <FormLabel>{label}</FormLabel>
-      <div className="flex min-h-[40px] flex-wrap items-center gap-2 rounded border bg-background px-2 py-1">
+      <div className="flex min-h-10 flex-wrap items-center gap-2 rounded border bg-background px-2 py-1">
         {value.map((email) => (
           <span
             key={email}
@@ -302,11 +302,7 @@ export function ComposeDialog({
         let contentHtml = '';
 
         // Check if we have valid content to convert
-        if (
-          contentValue &&
-          contentValue.content &&
-          Array.isArray(contentValue.content)
-        ) {
+        if (contentValue?.content && Array.isArray(contentValue.content)) {
           try {
             contentHtml = generateHTML(contentValue, extensions);
           } catch (error) {
@@ -628,7 +624,6 @@ export function ComposeDialog({
                     ) : sanitizedHtml.trim().length > 0 ? (
                       <div
                         className="prose wrap-break-word max-w-full prose-a:text-dynamic-blue prose-blockquote:text-foreground prose-h1:text-foreground prose-h2:text-foreground prose-h3:text-foreground prose-h4:text-foreground prose-h5:text-foreground prose-h6:text-foreground prose-strong:text-foreground text-foreground prose-a:underline"
-                        // biome-ignore lint/security/noDangerouslySetInnerHtml: <html content is sanitized>
                         dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
                       />
                     ) : (

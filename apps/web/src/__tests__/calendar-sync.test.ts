@@ -314,10 +314,7 @@ describe('Calendar Sync Routes', () => {
       expect(existing.data).toEqual(existingEvent);
 
       // Then update
-      const result = await mockSupabase
-        .from('events')
-        .update(partialUpdate)
-        .eq('id', eventId);
+      await mockSupabase.from('events').update(partialUpdate).eq('id', eventId);
       expect(mockUpdate).toHaveBeenCalledWith('id', eventId);
     });
   });

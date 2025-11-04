@@ -1,8 +1,8 @@
+import { createPolarClient } from '@/lib/polar';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { checkTuturuuuAdmin } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { createPolarClient } from '@/lib/polar';
 import { BillingClient } from './billing-client';
 import BillingHistory from './billing-history';
 
@@ -25,9 +25,7 @@ const fetchProducts = async ({
         process.env.NODE_ENV === 'development'
           ? true
           : // If the workspace is the root workspace and the sandbox is true, use sandbox
-            wsId === ROOT_WORKSPACE_ID && sandbox
-            ? true
-            : false,
+            !!(wsId === ROOT_WORKSPACE_ID && sandbox),
     });
 
     const res = await polarClient.products.list({ isArchived: false });
@@ -87,9 +85,7 @@ const fetchSubscription = async ({
       process.env.NODE_ENV === 'development'
         ? true
         : // If the workspace is the root workspace and the sandbox is true, use sandbox
-          wsId === ROOT_WORKSPACE_ID && sandbox
-          ? true // Enable sandbox for root workspace
-          : false, // Otherwise, use production
+          !!(wsId === ROOT_WORKSPACE_ID && sandbox), // Otherwise, use production
   });
 
   const polarProduct = await polarClient.products.get({

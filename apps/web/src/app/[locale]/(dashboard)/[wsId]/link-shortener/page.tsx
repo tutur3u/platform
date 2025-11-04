@@ -360,8 +360,8 @@ async function getData(
   const supabase = await createClient();
   const sbAdmin = await createAdminClient();
 
-  const limit = parseInt(pageSize);
-  const offset = (parseInt(page) - 1) * limit;
+  const limit = parseInt(pageSize, 10);
+  const offset = (parseInt(page, 10) - 1) * limit;
 
   const {
     data: { user },

@@ -36,7 +36,7 @@ interface FileUploaderProps extends HTMLAttributes<HTMLDivElement> {
    * @default undefined
    * @example onValueChange={(files) => setFiles(files)}
    */
-  // eslint-disable-next-line no-unused-vars
+
   onValueChange?: (files: StatedFile[]) => void;
 
   /**
@@ -45,7 +45,7 @@ interface FileUploaderProps extends HTMLAttributes<HTMLDivElement> {
    * @default undefined
    * @example onUpload={(files) => uploadFiles(files)}
    */
-  // eslint-disable-next-line no-unused-vars
+
   onUpload?: (files: StatedFile[]) => Promise<void>;
 
   /**

@@ -162,7 +162,7 @@ export function AIEmailDrafter({
           } else {
             // Regular content line - accumulate
             if (currentLine) {
-              currentLine += ' ' + trimmedLine;
+              currentLine += ` ${trimmedLine}`;
             } else {
               currentLine = trimmedLine;
             }

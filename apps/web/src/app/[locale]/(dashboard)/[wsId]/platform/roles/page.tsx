@@ -272,8 +272,8 @@ async function getPlatformUserData({
     if (q) {
       const { data, error } = await sbAdmin.rpc('search_users', {
         search_query: q,
-        page_number: parseInt(page),
-        page_size: parseInt(pageSize),
+        page_number: parseInt(page, 10),
+        page_size: parseInt(pageSize, 10),
         role_filter: role && role !== 'all' ? role : undefined,
         enabled_filter: enabled ? enabled === 'true' : undefined,
       });
@@ -355,8 +355,8 @@ async function getPlatformUserData({
     }
 
     // Handle pagination
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
+    const parsedPage = parseInt(page, 10);
+    const parsedSize = parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize - 1;
     queryBuilder.range(start, end);

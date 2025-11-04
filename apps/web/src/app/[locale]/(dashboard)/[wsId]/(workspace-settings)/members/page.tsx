@@ -1,3 +1,4 @@
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
   createAdminClient,
   createClient,
@@ -9,9 +10,8 @@ import {
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { redirect } from 'next/navigation';
 import InviteLinksSection from './_components/invite-links-section';
 import InviteMemberButton from './_components/invite-member-button';
 import MemberList from './_components/member-list';
@@ -60,7 +60,7 @@ export default async function WorkspaceMembersPage({
         return (
           <div className="space-y-8">
             {/* Header Section with gradient background */}
-            <div className="relative overflow-hidden rounded-xl border border-border bg-linear-to-br from-background via-background to-foreground/[0.02] p-6 shadow-sm">
+            <div className="relative overflow-hidden rounded-xl border border-border bg-linear-to-br from-background via-background to-foreground/2 p-6 shadow-sm">
               {/* Decorative elements */}
               <div className="-right-4 -top-4 pointer-events-none absolute h-32 w-32 rounded-full bg-dynamic-blue/5 blur-2xl" />
               <div className="-bottom-4 -left-4 pointer-events-none absolute h-32 w-32 rounded-full bg-dynamic-purple/5 blur-2xl" />
@@ -136,10 +136,7 @@ export default async function WorkspaceMembersPage({
   );
 }
 
-const getMembers = async (
-  wsId: string,
-  { status, roles }: { status: string; roles: string }
-) => {
+const getMembers = async (wsId: string, { status }: { status: string }) => {
   const supabase = await createClient();
   const sbAdmin = await createAdminClient();
 

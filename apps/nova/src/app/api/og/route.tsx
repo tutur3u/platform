@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { ImageResponse } from 'next/og';
 
 export const dynamic = 'force-static';
@@ -124,7 +125,8 @@ export async function GET() {
                 left: '50%',
               }}
             />
-            <img
+            <Image
+              alt="Tuturuuu Logo"
               width="320"
               height="320"
               src="https://tuturuuu.com/media/logos/light.png"

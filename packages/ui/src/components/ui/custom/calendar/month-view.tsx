@@ -11,9 +11,9 @@ export const MonthView: React.FC<{
   currentDate: Date;
   setCurrentDate: React.Dispatch<React.SetStateAction<Date>>;
   attendanceData?: WorkspaceUserAttendance[];
-  // eslint-disable-next-line no-unused-vars
+
   onDateClick?: (date: Date) => void;
-  // eslint-disable-next-line no-unused-vars
+
   onDayHeaderClick?: (dayIndex: number, monthDate: Date) => void;
   onYearViewClick: () => void;
   hideControls?: boolean;

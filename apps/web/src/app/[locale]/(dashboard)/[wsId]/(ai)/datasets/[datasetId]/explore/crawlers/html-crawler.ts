@@ -22,24 +22,23 @@ interface HtmlCrawlerProps {
   // Add new limit options
   maxPages?: number;
   maxArticles?: number;
-  // eslint-disable-next-line no-unused-vars
+
   onProgress: (progress: number, status: string) => void;
 
   onUrlFetch?: (
-    // eslint-disable-next-line no-unused-vars
     url: string,
-    // eslint-disable-next-line no-unused-vars
+
     success: boolean,
-    // eslint-disable-next-line no-unused-vars
+
     subPages?: { total: number; processed: number }
   ) => void;
-  // eslint-disable-next-line no-unused-vars
+
   onQueueUpdate?: (urls: string[]) => void;
-  // eslint-disable-next-line no-unused-vars
+
   onPageProgress?: (progress: PageProgress) => void;
-  // eslint-disable-next-line no-unused-vars
+
   onTotalPages?: (pages: number) => void;
-  // eslint-disable-next-line no-unused-vars
+
   onUrlProgress?: (url: string, progress: number, subStatus?: string) => void;
 }
 
@@ -351,12 +350,12 @@ export class HtmlCrawler extends BaseCrawler {
 
     // Extract the page number from href (p367_9Lua-gao.html -> 367)
     const match = lastLink.getAttribute('href')?.match(/p(\d+)_/);
-    return match ? parseInt(match?.[1] || '1') : 1;
+    return match ? parseInt(match?.[1] || '1', 10) : 1;
   }
 
   private async fetchPaginatedUrls(
     url: string,
-    // eslint-disable-next-line no-unused-vars
+
     onProgress: (progress: number, status: string) => void
   ): Promise<string[]> {
     // Fetch first page to analyze pagination

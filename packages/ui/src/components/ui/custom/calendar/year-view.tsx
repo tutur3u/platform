@@ -1,13 +1,13 @@
 import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
+import { cn } from '@tuturuuu/utils/format';
 import { useMemo } from 'react';
 import { Button } from '../../button';
-import { cn } from '@tuturuuu/utils/format';
 
 export const YearView: React.FC<{
   locale: string;
   currentDate: Date;
   setCurrentDate: React.Dispatch<React.SetStateAction<Date>>;
-  // eslint-disable-next-line no-unused-vars
+
   handleMonthClick: (month: number) => void;
 }> = ({ locale, currentDate, setCurrentDate, handleMonthClick }) => {
   const thisYear = currentDate.getFullYear();

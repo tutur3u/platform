@@ -10,7 +10,6 @@ interface Params {
 export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient();
 
-  // eslint-disable-next-line no-unused-vars
   const { moduleId: _, quiz_options, ...rest } = await req.json();
   const { setId: id } = await params;
 

@@ -44,13 +44,13 @@ export default function RoleFormPermissionsSection({
             )
           )}
           onChange={(value) => {
-            groups.forEach((group) =>
+            groups.forEach((group) => {
               group.permissions.forEach((permission) => {
                 form.setValue(`permissions.${permission.id}`, value, {
                   shouldDirty: true,
                 });
-              })
-            );
+              });
+            });
             form.trigger('permissions');
           }}
         />

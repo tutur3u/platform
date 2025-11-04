@@ -445,7 +445,6 @@ function ThreadMessageItem({
           ) : message.isOriginal && mail.html_payload ? (
             <div
               className="prose prose-sm wrap-break-word max-w-full prose-a:text-dynamic-blue prose-blockquote:text-foreground prose-strong:text-foreground text-foreground prose-a:underline"
-              // biome-ignore lint/security/noDangerouslySetInnerHtml: content is sanitized
               dangerouslySetInnerHTML={{
                 __html: DOMPurify.sanitize(message.content),
               }}
@@ -454,7 +453,6 @@ function ThreadMessageItem({
             // Handle HTML content in threaded messages
             <div
               className="prose prose-sm wrap-break-word max-w-full prose-a:text-dynamic-blue prose-blockquote:text-foreground prose-strong:text-foreground text-foreground prose-a:underline"
-              // biome-ignore lint/security/noDangerouslySetInnerHtml: content is sanitized
               dangerouslySetInnerHTML={{
                 __html: DOMPurify.sanitize(
                   isCollapsed
@@ -500,7 +498,7 @@ function AddressChips({
   const t = useTranslations('mail');
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs">
-      <span className="min-w-[40px] font-medium text-muted-foreground">
+      <span className="min-w-10 font-medium text-muted-foreground">
         {label.replace(/:/g, '')}:
       </span>
       {parsed.length === 0 ? (
@@ -953,7 +951,7 @@ export function MailDisplay({
                 {confidentialMode ? (
                   <>
                     <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="min-w-[40px] font-medium text-muted-foreground">
+                      <span className="min-w-10 font-medium text-muted-foreground">
                         {t('from_label').replace(/:/g, '')}:
                       </span>
                       <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs opacity-70 shadow-sm">
@@ -961,7 +959,7 @@ export function MailDisplay({
                       </span>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="min-w-[40px] font-medium text-muted-foreground">
+                      <span className="min-w-10 font-medium text-muted-foreground">
                         {t('to_label').replace(/:/g, '')}:
                       </span>
                       <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs opacity-70 shadow-sm">
@@ -1047,7 +1045,6 @@ export function MailDisplay({
                 <div
                   className="prose wrap-break-word max-w-full bg-background prose-a:text-dynamic-blue prose-blockquote:text-foreground prose-strong:text-foreground text-foreground prose-a:underline"
                   style={{ padding: '1.5rem' }}
-                  // biome-ignore lint/security/noDangerouslySetInnerHtml: <html content is sanitized>
                   dangerouslySetInnerHTML={{
                     __html: confidentialMode
                       ? `<div class="text-center text-muted-foreground py-8">

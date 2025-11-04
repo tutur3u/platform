@@ -31,7 +31,7 @@ interface Props<T> {
   createDescription?: string;
   requireExpansion?: boolean;
   forceDefault?: boolean;
-  // eslint-disable-next-line no-unused-vars
+
   setOpen?: (open: boolean) => void;
 }
 

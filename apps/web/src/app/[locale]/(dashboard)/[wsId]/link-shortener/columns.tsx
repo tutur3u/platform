@@ -35,7 +35,6 @@ type ShortenedLink = Tables<'shortened_links'> & {
   click_count?: number;
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: <translation function is not typed>
 const copyToClipboard = async (text: string, t: any) => {
   try {
     await navigator.clipboard.writeText(text);
@@ -54,7 +53,6 @@ const copyToClipboard = async (text: string, t: any) => {
 };
 
 // Component to handle the short URL display and avoid hydration mismatch
-// biome-ignore lint/suspicious/noExplicitAny: <translation function is not typed>
 function ShortUrlDisplay({ slug, t }: { slug: string; t: any }) {
   const [shortUrl, setShortUrl] = useState('');
 
@@ -105,7 +103,6 @@ function CreatorDisplay({
   t,
 }: {
   creator?: ShortenedLink['creator'];
-  // biome-ignore lint/suspicious/noExplicitAny: <translation function is not typed>
   t: any;
 }) {
   if (!creator) {
@@ -154,7 +151,6 @@ function CreatorDisplay({
 }
 
 export const linkShortenerColumns = (
-  // biome-ignore lint/suspicious/noExplicitAny: <translation function is not typed>
   t: any,
   namespace: string | undefined
 ): ColumnDef<ShortenedLink>[] => [

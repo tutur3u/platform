@@ -28,7 +28,7 @@ export type WhiteboardFormValues = z.infer<typeof formSchema>;
 interface WhiteboardFormProps {
   defaultValues?: WhiteboardFormValues;
   whiteboardId?: string;
-  // eslint-disable-next-line no-unused-vars
+
   onSubmit: (values: WhiteboardFormValues) => void;
   isSubmitting: boolean;
 }

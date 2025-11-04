@@ -33,7 +33,7 @@ const testSchema = new Schema({
         { tag: 'h3', attrs: { level: 3 } },
       ],
       toDOM(node) {
-        return ['h' + node.attrs.level, 0];
+        return [`h${node.attrs.level}`, 0];
       },
     },
     blockquote: {

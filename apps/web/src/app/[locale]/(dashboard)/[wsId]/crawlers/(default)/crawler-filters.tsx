@@ -24,7 +24,7 @@ export default function CrawlerFilters({ wsId }: { wsId: string }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchDomains = async () => {
+  const fetchDomains = useCallback(async () => {
     try {
       const res = await fetch(`/api/${wsId}/crawlers/domains`);
       if (!res.ok) throw new Error('Failed to fetch domains');
@@ -40,11 +40,11 @@ export default function CrawlerFilters({ wsId }: { wsId: string }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [wsId, toast]);
 
   useEffect(() => {
     fetchDomains();
-  }, [wsId]);
+  }, [fetchDomains]);
 
   const refreshDomains = async () => {
     setRefreshing(true);

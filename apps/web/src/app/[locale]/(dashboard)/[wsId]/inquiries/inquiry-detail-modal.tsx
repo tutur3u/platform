@@ -224,7 +224,7 @@ export function InquiryDetailModal({
       <Dialog open={isOpen} onOpenChange={onClose} modal={true}>
         <DialogContent
           showCloseButton={false}
-          className="!inset-0 !left-0 !top-0 !max-w-none !translate-x-0 !translate-y-0 !rounded-none data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2 flex h-screen max-h-screen w-screen gap-0 border-0 p-0"
+          className="data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2 inset-0! top-0! left-0! flex h-screen max-h-screen w-screen max-w-none! translate-x-0! translate-y-0! gap-0 rounded-none! border-0 p-0"
         >
           {/* Main content area */}
           <div className="flex min-w-0 flex-1 flex-col bg-background">
@@ -469,7 +469,7 @@ export function InquiryDetailModal({
       {/* Media Viewer Dialog - Enhanced */}
       {selectedMedia && (
         <Dialog open={!!selectedMedia} onOpenChange={closeMediaViewer}>
-          <DialogContent className="h-[100vh] max-h-screen w-[100vw] max-w-none overflow-hidden border-0 bg-black/98 p-0 backdrop-blur-xl">
+          <DialogContent className="h-screen max-h-screen w-screen max-w-none overflow-hidden border-0 bg-black/98 p-0 backdrop-blur-xl">
             <DialogHeader className="sr-only">
               <DialogTitle>Media Viewer</DialogTitle>
             </DialogHeader>
@@ -521,7 +521,13 @@ export function InquiryDetailModal({
                     style={{
                       maxHeight: 'calc(100vh - 180px)',
                     }}
-                  />
+                  >
+                    <track
+                      kind="captions"
+                      srcLang="en"
+                      label="English captions"
+                    />
+                  </video>
 
                   {/* Video info */}
                   <div className="mt-4 rounded-lg bg-white/5 p-4 backdrop-blur-sm">

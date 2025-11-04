@@ -30,8 +30,7 @@ export default function WhitelistDomainClient({ wsId, onFinish }: Props) {
         description: t('common.domain_added'),
       });
       onFinish?.();
-      // eslint-disable-next-line no-unused-vars
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: t('common.error'),
         description: t('common.error_adding_domain'),

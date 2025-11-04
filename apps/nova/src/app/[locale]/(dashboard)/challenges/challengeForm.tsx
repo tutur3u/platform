@@ -205,8 +205,7 @@ export default function ChallengeForm({
       }
 
       form.clearErrors('whitelistedEmails');
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
+    } catch (_error) {
       // Email validation failed
       form.setError('whitelistedEmails', {
         message: 'Invalid email address',
@@ -306,7 +305,9 @@ export default function ChallengeForm({
                               type="number"
                               {...field}
                               onChange={(e) =>
-                                field.onChange(parseInt(e.target.value) || 1)
+                                field.onChange(
+                                  parseInt(e.target.value, 10) || 1
+                                )
                               }
                             />
                           </FormControl>
@@ -329,7 +330,9 @@ export default function ChallengeForm({
                               type="number"
                               {...field}
                               onChange={(e) =>
-                                field.onChange(parseInt(e.target.value) || 1)
+                                field.onChange(
+                                  parseInt(e.target.value, 10) || 1
+                                )
                               }
                             />
                           </FormControl>

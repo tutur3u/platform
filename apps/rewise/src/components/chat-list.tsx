@@ -1,3 +1,5 @@
+import { ChatMessage } from '@/components/chat-message';
+import { OnlineUsers } from '@/components/online-users';
 import type { UIMessage } from '@tuturuuu/ai/types';
 import { Box, Globe, Lock, Sparkle } from '@tuturuuu/icons';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
@@ -5,8 +7,6 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
-import { ChatMessage } from '@/components/chat-message';
-import { OnlineUsers } from '@/components/online-users';
 
 interface PresenceUser {
   id: string;
@@ -40,7 +40,7 @@ export interface ChatListProps {
   summarizing?: boolean;
   presenceState?: RealtimePresenceState<PresenceState>;
   currentUserId?: string;
-  // eslint-disable-next-line no-unused-vars
+
   setInput: (input: string) => void;
 }
 
