@@ -152,40 +152,31 @@ export const CustomImage = (options: ImageOptions = {}) => {
                 const items = event.clipboardData?.items;
                 if (!items) return false;
 
-                // Collect all image files first
-                const imageFiles: File[] = [];
-                for (let i = 0; i < items.length; i++) {
-                  const item = items[i];
-                  if (!item) continue;
+                // Filter and collect image files
+                const images = Array.from(items)
+                  .map((item) =>
+                    item.type.startsWith('image/') ? item.getAsFile() : null
+                  )
+                  .filter((file): file is File => file !== null);
 
-                  if (item.type.startsWith('image/')) {
-                    const file = item.getAsFile();
-                    if (file) {
-                      imageFiles.push(file);
-                    }
-                  }
-                }
+                if (images.length === 0) return false;
 
-                // If no images found, let default paste behavior handle it
-                if (imageFiles.length === 0) return false;
-
-                // Prevent default paste behavior
                 event.preventDefault();
+
+                const { state } = view;
+                const { from, to } = state.selection;
+
+                // Get container width for default size (60%)
+                const editorElement = view.dom as HTMLElement;
+                const containerWidth =
+                  editorElement.querySelector('.ProseMirror')?.clientWidth ||
+                  editorElement.clientWidth ||
+                  800;
+                const defaultWidth =
+                  (SIZE_PERCENTAGES.md / 100) * containerWidth; // md = 60%
 
                 // Process images asynchronously
                 (async () => {
-                  const { state } = view;
-                  const { from, to } = state.selection;
-
-                  // Get container width for default size (60%)
-                  const editorElement = view.dom as HTMLElement;
-                  const containerWidth =
-                    editorElement.querySelector('.ProseMirror')?.clientWidth ||
-                    editorElement.clientWidth ||
-                    800;
-                  const defaultWidth =
-                    (SIZE_PERCENTAGES.md / 100) * containerWidth; // md = 60%
-
                   // Delete selected content if there's a selection (replace it)
                   let currentPos = from;
                   if (from !== to) {
@@ -195,26 +186,26 @@ export const CustomImage = (options: ImageOptions = {}) => {
                   }
 
                   // Process all images sequentially
-                  for (const file of imageFiles) {
+                  for (const image of images) {
                     try {
                       console.log('Processing pasted image:', {
-                        name: file.name,
-                        type: file.type,
-                        size: file.size,
+                        name: image.name,
+                        type: image.type,
+                        size: image.size,
                       });
 
                       // Validate file size (max 5MB for images)
                       const maxSize = 5 * 1024 * 1024;
-                      if (file.size > maxSize) {
+                      if (image.size > maxSize) {
                         console.error(
                           'Image size must be less than 5MB:',
-                          file.name
+                          image.name
                         );
                         continue;
                       }
 
                       // Upload the image
-                      const url = await onImageUpload(file);
+                      const url = await onImageUpload(image);
 
                       // Get fresh state after upload
                       const currentState = view.state;
@@ -242,7 +233,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
                     } catch (error) {
                       console.error(
                         'Failed to upload pasted image:',
-                        file.name,
+                        image.name,
                         error
                       );
                     }

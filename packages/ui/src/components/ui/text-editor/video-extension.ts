@@ -105,24 +105,15 @@ export const Video = (options: VideoOptions = {}) =>
                 const items = event.clipboardData?.items;
                 if (!items) return false;
 
-                // Collect all video files first
-                const videoFiles: File[] = [];
-                for (let i = 0; i < items.length; i++) {
-                  const item = items[i];
-                  if (!item) continue;
+                // Filter and collect video files
+                const videos = Array.from(items)
+                  .map((item) =>
+                    item.type.startsWith('video/') ? item.getAsFile() : null
+                  )
+                  .filter((file): file is File => file !== null);
 
-                  if (item.type.startsWith('video/')) {
-                    const file = item.getAsFile();
-                    if (file) {
-                      videoFiles.push(file);
-                    }
-                  }
-                }
+                if (videos.length === 0) return false;
 
-                // If no videos found, let default paste behavior handle it
-                if (videoFiles.length === 0) return false;
-
-                // Prevent default paste behavior
                 event.preventDefault();
 
                 // Process videos asynchronously
@@ -139,26 +130,26 @@ export const Video = (options: VideoOptions = {}) =>
                   }
 
                   // Process all videos sequentially
-                  for (const file of videoFiles) {
+                  for (const video of videos) {
                     try {
                       console.log('Processing pasted video:', {
-                        name: file.name,
-                        type: file.type,
-                        size: file.size,
+                        name: video.name,
+                        type: video.type,
+                        size: video.size,
                       });
 
                       // Validate file size (max 50MB for videos)
                       const maxSize = 50 * 1024 * 1024;
-                      if (file.size > maxSize) {
+                      if (video.size > maxSize) {
                         console.error(
                           'Video size must be less than 50MB:',
-                          file.name
+                          video.name
                         );
                         continue;
                       }
 
                       // Upload the video
-                      const url = await onVideoUpload(file);
+                      const url = await onVideoUpload(video);
 
                       // Get fresh state after upload
                       const currentState = view.state;
@@ -183,7 +174,7 @@ export const Video = (options: VideoOptions = {}) =>
                     } catch (error) {
                       console.error(
                         'Failed to upload pasted video:',
-                        file.name,
+                        video.name,
                         error
                       );
                     }
