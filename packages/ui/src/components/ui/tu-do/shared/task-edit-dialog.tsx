@@ -3579,12 +3579,7 @@ function TaskEditDialogComponent({
     <>
       {slashCommandMenu}
       {mentionSuggestionMenu}
-      <Dialog
-        key="main-dialog"
-        open={isOpen}
-        onOpenChange={handleDialogOpenChange}
-        modal={true}
-      >
+      <Dialog open={isOpen} onOpenChange={handleDialogOpenChange} modal={true}>
         <DialogContent
           showCloseButton={false}
           className="data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2 inset-0! top-0! left-0! flex h-screen max-h-screen w-screen max-w-none! translate-x-0! translate-y-0! gap-0 rounded-none! border-0 p-0"
@@ -4392,7 +4387,7 @@ function TaskEditDialogComponent({
                                       <span className="break-words">
                                         {project.name}
                                       </span>
-                                      <X className="h-2.5 w-2.5 flex-shrink-0" />
+                                      <X className="h-2.5 w-2.5 shrink-0" />
                                     </Badge>
                                   ))}
                                 </div>
@@ -4419,7 +4414,7 @@ function TaskEditDialogComponent({
                                         <span className="flex-1 whitespace-normal break-words">
                                           {project.name}
                                         </span>
-                                        <Plus className="ml-auto h-4 w-4 flex-shrink-0" />
+                                        <Plus className="ml-auto h-4 w-4 shrink-0" />
                                       </button>
                                     ))}
                                 </div>
@@ -5174,12 +5169,12 @@ function TaskEditDialogComponent({
                                     variant="default"
                                     size="xs"
                                     onClick={() => toggleProject(project)}
-                                    className="h-auto items-center whitespace-normal gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
+                                    className="h-auto items-center gap-1.5 whitespace-normal rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
                                   >
                                     <span className="break-words">
                                       {project.name}
                                     </span>
-                                    <X className="h-3 w-3 flex-shrink-0 opacity-70" />
+                                    <X className="h-3 w-3 shrink-0 opacity-70" />
                                   </Button>
                                 ))}
                               </div>

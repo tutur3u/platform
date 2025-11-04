@@ -48,7 +48,7 @@ const Countdown = () => {
   if (!timeLeft) {
     return (
       <Card className="mb-4 overflow-hidden border-dynamic-green/20 transition-all duration-300">
-        <CardHeader className="flex flex-row items-center space-y-0 border-dynamic-green/20 border-b bg-gradient-to-r from-dynamic-green/5 to-dynamic-emerald/5 p-4">
+        <CardHeader className="flex flex-row items-center space-y-0 border-dynamic-green/20 border-b bg-linear-to-r from-dynamic-green/5 to-dynamic-emerald/5 p-4">
           <div className="flex items-center gap-2">
             <div className="rounded-lg bg-dynamic-green/10 p-1.5 text-dynamic-green">
               <Clock className="h-4 w-4" />
@@ -102,7 +102,7 @@ const Countdown = () => {
 
   return (
     <Card className="mb-4 overflow-hidden border-dynamic-red/20 shadow-lg transition-all duration-300">
-      <CardHeader className="flex flex-row items-center space-y-0 border-dynamic-red/20 border-b bg-gradient-to-r from-dynamic-red/5 to-dynamic-orange/5 p-4">
+      <CardHeader className="flex flex-row items-center space-y-0 border-dynamic-red/20 border-b bg-linear-to-r from-dynamic-red/5 to-dynamic-orange/5 p-4">
         <div className="flex items-center gap-2">
           <div className="rounded-lg bg-dynamic-red/10 p-1.5 text-dynamic-red">
             <Clock className="h-4 w-4 animate-pulse" />
@@ -132,7 +132,7 @@ const Countdown = () => {
             </div>
           </div>
 
-          <div className="space-y-3 rounded-lg bg-gradient-to-r from-dynamic-red/5 to-dynamic-orange/5 p-4">
+          <div className="space-y-3 rounded-lg bg-linear-to-r from-dynamic-red/5 to-dynamic-orange/5 p-4">
             <h3 className="font-bold text-dynamic-red text-sm uppercase tracking-wide">
               🎯 60-Day Make or Break Mission
             </h3>
@@ -162,7 +162,7 @@ const Countdown = () => {
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-dynamic-gray/10">
                 <div
-                  className="h-full bg-gradient-to-r from-dynamic-red to-dynamic-orange transition-all duration-300 ease-out"
+                  className="h-full bg-linear-to-r from-dynamic-red to-dynamic-orange transition-all duration-300 ease-out"
                   style={{ width: `${progress}%` }}
                 />
               </div>

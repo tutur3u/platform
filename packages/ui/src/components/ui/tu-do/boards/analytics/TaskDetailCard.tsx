@@ -68,7 +68,7 @@ export function TaskDetailCard({
         }}
       >
         {/* Compact Header */}
-        <div className="rounded-t-lg border-gray-100 border-b bg-gradient-to-r from-blue-50 to-indigo-50 p-3 dark:border-gray-800 dark:from-blue-900/20 dark:to-indigo-900/20">
+        <div className="rounded-t-lg border-gray-100 border-b bg-linear-to-r from-blue-50 to-indigo-50 p-3 dark:border-gray-800 dark:from-blue-900/20 dark:to-indigo-900/20">
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1">
               <h4 className="truncate font-semibold text-gray-800 text-sm dark:text-gray-100">

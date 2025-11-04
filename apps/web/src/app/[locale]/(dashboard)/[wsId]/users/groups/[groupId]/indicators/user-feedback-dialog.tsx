@@ -381,7 +381,7 @@ export default function UserFeedbackDialog({
                       {/* Feedback item */}
                       <div className="flex gap-4">
                         {/* Timeline number */}
-                        <div className="relative z-10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-muted font-medium text-sm">
+                        <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-sm">
                           {feedbacks.length - index}
                         </div>
 

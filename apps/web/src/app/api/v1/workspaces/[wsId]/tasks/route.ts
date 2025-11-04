@@ -179,6 +179,35 @@ export async function GET(
           ) || false,
       })) || [];
 
+    // Prioritize tasks by list status for command center (no specific filters)
+    // active/not_started tasks appear first, then done/closed
+    const shouldPrioritizeByStatus = !listId && !boardId;
+
+    if (shouldPrioritizeByStatus && tasks.length > 0) {
+      const statusPriority: Record<string, number> = {
+        active: 1,
+        not_started: 2,
+        done: 3,
+        closed: 4,
+      };
+
+      tasks.sort((a, b) => {
+        const aPriority = statusPriority[a.list_status || ''] || 99;
+        const bPriority = statusPriority[b.list_status || ''] || 99;
+
+        // First sort by status priority
+        if (aPriority !== bPriority) {
+          return aPriority - bPriority;
+        }
+
+        // Then by creation date (newest first)
+        return (
+          new Date(b.created_at || 0).getTime() -
+          new Date(a.created_at || 0).getTime()
+        );
+      });
+    }
+
     return NextResponse.json({ tasks });
   } catch (error) {
     console.error('Error fetching tasks:', error);
@@ -222,7 +251,18 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { name, description, listId, priority } = body;
+    const {
+      name,
+      description,
+      listId,
+      priority,
+      start_date,
+      end_date,
+      estimation_points,
+      label_ids,
+      project_ids,
+      assignee_ids,
+    } = body;
 
     if (!name?.trim()) {
       return NextResponse.json(
@@ -261,6 +301,9 @@ export async function POST(
         description: description?.trim() || null,
         list_id: listId,
         priority: priority || null,
+        start_date: start_date || null,
+        end_date: end_date || null,
+        estimation_points: estimation_points || null,
         created_at: new Date().toISOString(),
         deleted_at: null,
         completed: false,
@@ -274,6 +317,7 @@ export async function POST(
         completed,
         start_date,
         end_date,
+        estimation_points,
         created_at,
         list_id,
         task_lists (
@@ -291,6 +335,61 @@ export async function POST(
       .single();
 
     if (error) throw error;
+
+    // Insert task labels if provided
+    if (label_ids && Array.isArray(label_ids) && label_ids.length > 0) {
+      const labelInserts = label_ids.map((labelId) => ({
+        task_id: data.id,
+        label_id: labelId,
+      }));
+
+      const { error: labelError } = await supabase
+        .from('task_labels')
+        .insert(labelInserts);
+
+      if (labelError) {
+        console.error('Failed to insert task labels:', labelError);
+        // Continue execution - labels are optional metadata
+      }
+    }
+
+    // Insert task projects if provided
+    if (project_ids && Array.isArray(project_ids) && project_ids.length > 0) {
+      const projectInserts = project_ids.map((projectId) => ({
+        task_id: data.id,
+        project_id: projectId,
+      }));
+
+      const { error: projectError } = await supabase
+        .from('task_project_tasks')
+        .insert(projectInserts);
+
+      if (projectError) {
+        console.error('Failed to insert task projects:', projectError);
+        // Continue execution - projects are optional metadata
+      }
+    }
+
+    // Insert task assignees if provided
+    if (
+      assignee_ids &&
+      Array.isArray(assignee_ids) &&
+      assignee_ids.length > 0
+    ) {
+      const assigneeInserts = assignee_ids.map((assigneeId) => ({
+        task_id: data.id,
+        user_id: assigneeId,
+      }));
+
+      const { error: assigneeError } = await supabase
+        .from('task_assignees')
+        .insert(assigneeInserts);
+
+      if (assigneeError) {
+        console.error('Failed to insert task assignees:', assigneeError);
+        // Continue execution - assignees are optional metadata
+      }
+    }
 
     // Generate embedding (non-blocking)
     generateTaskEmbedding({
@@ -311,6 +410,7 @@ export async function POST(
       completed: data.completed,
       start_date: data.start_date,
       end_date: data.end_date,
+      estimation_points: data.estimation_points,
       created_at: data.created_at,
       list_id: data.list_id,
       board_name: data.task_lists?.workspace_boards?.name,

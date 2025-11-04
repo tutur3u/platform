@@ -28,6 +28,7 @@ interface SearchParams {
   pageSize?: number;
   includedGroups?: string | string[];
   excludedGroups?: string | string[];
+  tab?: string;
 }
 
 const SearchParamsSchema = z.object({
@@ -42,6 +43,7 @@ const SearchParamsSchema = z.object({
     .union([z.string(), z.array(z.string())])
     .transform((val) => (Array.isArray(val) ? val : val ? [val] : []))
     .default([]),
+  tab: z.enum(['users', 'audit-log']).default('users'),
 });
 
 interface Props {
@@ -111,7 +113,7 @@ export default async function WorkspaceUsersPage({
         }
       />
       <Separator className="my-4" />
-      <Tabs defaultValue="users" className="w-full">
+      <Tabs defaultValue={sp.tab || 'users'} className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="users">{t('ws-users.plural')}</TabsTrigger>
           <TabsTrigger value="audit-log">{t('ws-users.audit_log')}</TabsTrigger>
@@ -171,7 +173,7 @@ export default async function WorkspaceUsersPage({
           />
         </TabsContent>
         <TabsContent value="audit-log">
-          <AuditLogTable wsId={wsId} />
+          <AuditLogTable wsId={wsId} page={sp.page} pageSize={sp.pageSize} />
         </TabsContent>
       </Tabs>
     </>

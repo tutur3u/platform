@@ -8,7 +8,7 @@
   "dependencies": {
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "dayjs": "^1.11.18",
+    "dayjs": "^1.11.19",
     "next": "^16.0.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -17,7 +17,7 @@
   "devDependencies": {
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^24.9.2",
+    "@types/node": "^24.10.0",
     "@types/react": "^19.2.2",
     "typescript": "^5.9.3"
   },

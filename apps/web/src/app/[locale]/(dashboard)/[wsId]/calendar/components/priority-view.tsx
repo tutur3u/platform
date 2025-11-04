@@ -195,7 +195,7 @@ export default function PriorityView({
             />
           </div>
           {isSearchFocused && (
-            <div className="-z-10 absolute inset-0 animate-pulse bg-gradient-to-r from-blue-500/5 to-purple-500/5" />
+            <div className="-z-10 absolute inset-0 animate-pulse bg-linear-to-r from-blue-500/5 to-purple-500/5" />
           )}
         </div>
         {searchError && (
@@ -244,7 +244,7 @@ export default function PriorityView({
                           className="group/task relative overflow-hidden rounded-lg border border-border/50 bg-background/60 p-3 transition-all duration-200 hover:border-border hover:bg-background/80 hover:shadow-sm"
                           style={{ animationDelay: `${taskIndex * 50}ms` }}
                         >
-                          <div className="-z-10 absolute inset-0 bg-gradient-to-r from-accent/5 to-accent/10 opacity-0 transition-opacity duration-200 group-hover/task:opacity-100" />
+                          <div className="-z-10 absolute inset-0 bg-linear-to-r from-accent/5 to-accent/10 opacity-0 transition-opacity duration-200 group-hover/task:opacity-100" />
                           <div className="flex h-full min-h-[64px] flex-col">
                             <div className="flex w-full items-start justify-between">
                               <div className="min-w-0 flex-1">

@@ -15,6 +15,7 @@ import NewlyCreatedTasks from './tasks/newly-created-tasks';
 import TasksAssignedToMe from './tasks/tasks-assigned-to-me';
 import TimeTrackingMetrics from './time-tracker/time-tracking-metrics';
 import RecentTumeetPlans from './tumeet/recent-plans';
+import UserGroupQuickActions from './user-groups/quick-actions';
 
 export const metadata: Metadata = {
   title: 'Workspace Details',
@@ -55,46 +56,51 @@ export default async function WorkspaceHomePage({ params }: Props) {
           <>
             {isInternalUser && wsId === ROOT_WORKSPACE_ID && <Countdown />}
             {currentUser && (
-              <div className="grid gap-4 pb-4 md:grid-cols-2">
-                {!isPersonal && (
+              <>
+                <Suspense fallback={null}>
+                  <UserGroupQuickActions wsId={wsId} />
+                </Suspense>
+                <div className="grid gap-4 pb-4 md:grid-cols-2">
+                  {!isPersonal && (
+                    <Suspense fallback={<DashboardCardSkeleton />}>
+                      <NewlyCreatedTasks wsId={wsId} />
+                    </Suspense>
+                  )}
+
                   <Suspense fallback={<DashboardCardSkeleton />}>
-                    <NewlyCreatedTasks wsId={wsId} />
+                    <TasksAssignedToMe
+                      wsId={wsId}
+                      userId={currentUser.id}
+                      isPersonal={workspace.personal}
+                    />
                   </Suspense>
-                )}
 
-                <Suspense fallback={<DashboardCardSkeleton />}>
-                  <TasksAssignedToMe
-                    wsId={wsId}
-                    userId={currentUser.id}
-                    isPersonal={workspace.personal}
-                  />
-                </Suspense>
+                  <Suspense fallback={<DashboardCardSkeleton />}>
+                    <UpcomingCalendarEvents
+                      wsId={wsId}
+                      showNavigation={!disableCalendar}
+                    />
+                  </Suspense>
 
-                <Suspense fallback={<DashboardCardSkeleton />}>
-                  <UpcomingCalendarEvents
-                    wsId={wsId}
-                    showNavigation={!disableCalendar}
-                  />
-                </Suspense>
+                  <Suspense fallback={<DashboardCardSkeleton />}>
+                    <TimeTrackingMetrics
+                      wsId={wsId}
+                      userId={currentUser.id}
+                      isPersonal={workspace.personal}
+                    />
+                  </Suspense>
 
-                <Suspense fallback={<DashboardCardSkeleton />}>
-                  <TimeTrackingMetrics
-                    wsId={wsId}
-                    userId={currentUser.id}
-                    isPersonal={workspace.personal}
-                  />
-                </Suspense>
-
-                <Suspense fallback={<DashboardCardSkeleton />}>
-                  <RecentTumeetPlans
-                    className={
-                      disableCalendar || isPersonal
-                        ? 'col-span-1'
-                        : 'col-span-full'
-                    }
-                  />
-                </Suspense>
-              </div>
+                  <Suspense fallback={<DashboardCardSkeleton />}>
+                    <RecentTumeetPlans
+                      className={
+                        disableCalendar || isPersonal
+                          ? 'col-span-1'
+                          : 'col-span-full'
+                      }
+                    />
+                  </Suspense>
+                </div>
+              </>
             )}
           </>
         );

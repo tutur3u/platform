@@ -443,7 +443,7 @@ export function TaskModal({
             </Button>
             <Button
               type="submit"
-              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700"
+              className="bg-linear-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700"
             >
               <PlusIcon className="mr-2 h-4 w-4" />
               Create Task

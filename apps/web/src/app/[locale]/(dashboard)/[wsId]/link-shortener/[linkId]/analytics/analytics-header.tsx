@@ -38,7 +38,7 @@ export function AnalyticsHeader({ link }: AnalyticsHeaderProps) {
       </div>
       <div className="flex-1 space-y-2">
         <div className="flex items-center gap-3">
-          <h1 className="bg-gradient-to-r from-foreground via-foreground to-foreground/60 bg-clip-text font-bold text-4xl tracking-tight">
+          <h1 className="bg-linear-to-r from-foreground via-foreground to-foreground/60 bg-clip-text font-bold text-4xl tracking-tight">
             {t('link-shortener.analytics.title')}
           </h1>
           <Badge

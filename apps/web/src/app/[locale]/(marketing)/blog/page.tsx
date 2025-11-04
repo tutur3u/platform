@@ -193,7 +193,7 @@ export default function BlogPage() {
               className="mb-6 text-balance font-bold text-4xl tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl"
             >
               Insights &{' '}
-              <span className="animate-gradient bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+              <span className="animate-gradient bg-linear-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
                 Innovation
               </span>
             </motion.h1>
@@ -322,7 +322,7 @@ export default function BlogPage() {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               What We&apos;ll{' '}
-              <span className="bg-gradient-to-r from-dynamic-cyan via-dynamic-blue to-dynamic-purple bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-dynamic-cyan via-dynamic-blue to-dynamic-purple bg-clip-text text-transparent">
                 Cover
               </span>
             </h2>
@@ -387,7 +387,7 @@ export default function BlogPage() {
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               Upcoming{' '}
-              <span className="bg-gradient-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
                 Articles
               </span>
             </h2>

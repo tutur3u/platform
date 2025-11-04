@@ -235,7 +235,7 @@ export default function PartnersPage() {
               className="mb-6 text-balance font-bold text-4xl text-foreground tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl"
             >
               Our{' '}
-              <span className="animate-gradient bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+              <span className="animate-gradient bg-linear-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
                 Partners
               </span>
             </motion.h1>
@@ -353,7 +353,7 @@ export default function PartnersPage() {
             </motion.div>
             <h2 className="mb-4 font-bold text-3xl text-foreground sm:text-4xl lg:text-5xl xl:text-6xl">
               Leading{' '}
-              <span className="bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
                 Partnerships
               </span>
             </h2>
@@ -451,7 +451,7 @@ export default function PartnersPage() {
                             <div
                               className={`absolute inset-0 bg-linear-to-br ${colors.gradient} to-background opacity-40 transition-opacity duration-700 group-hover:opacity-60`}
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
+                            <div className="absolute inset-0 bg-linear-to-t from-background via-transparent to-transparent opacity-60" />
 
                             {/* Sparkle Effects in Corners */}
                             <motion.div
@@ -512,7 +512,7 @@ export default function PartnersPage() {
                                     className="flex items-start gap-2 text-sm"
                                   >
                                     <ArrowRight
-                                      className={`mt-0.5 h-4 w-4 flex-shrink-0 transition-transform duration-300 group-hover:translate-x-1 ${
+                                      className={`mt-0.5 h-4 w-4 shrink-0 transition-transform duration-300 group-hover:translate-x-1 ${
                                         partner.color === 'purple'
                                           ? 'text-dynamic-purple'
                                           : partner.color === 'orange'
@@ -575,7 +575,7 @@ export default function PartnersPage() {
                 }}
                 className="-translate-y-1/2 absolute top-1/2 left-[30%]"
               >
-                <div className="h-3 w-3 rounded-full bg-gradient-to-r from-dynamic-cyan to-dynamic-blue shadow-dynamic-cyan/50 shadow-lg" />
+                <div className="h-3 w-3 rounded-full bg-linear-to-r from-dynamic-cyan to-dynamic-blue shadow-dynamic-cyan/50 shadow-lg" />
               </motion.div>
               <motion.div
                 animate={{
@@ -590,7 +590,7 @@ export default function PartnersPage() {
                 }}
                 className="-translate-y-1/2 absolute top-1/2 right-[30%]"
               >
-                <div className="h-3 w-3 rounded-full bg-gradient-to-r from-dynamic-purple to-dynamic-pink shadow-dynamic-purple/50 shadow-lg" />
+                <div className="h-3 w-3 rounded-full bg-linear-to-r from-dynamic-purple to-dynamic-pink shadow-dynamic-purple/50 shadow-lg" />
               </motion.div>
             </div>
           </div>
@@ -606,7 +606,7 @@ export default function PartnersPage() {
           >
             <h2 className="mb-4 font-bold text-3xl text-foreground sm:text-4xl lg:text-5xl xl:text-6xl">
               Our{' '}
-              <span className="bg-gradient-to-r from-dynamic-cyan via-dynamic-blue to-dynamic-purple bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-dynamic-cyan via-dynamic-blue to-dynamic-purple bg-clip-text text-transparent">
                 Ecosystem
               </span>
             </h2>
@@ -747,7 +747,7 @@ export default function PartnersPage() {
                           />
 
                           {/* Bottom Fade */}
-                          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-background via-background/50 to-transparent opacity-70" />
+                          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-linear-to-t from-background via-background/50 to-transparent opacity-70" />
 
                           {/* Floating Sparkle */}
                           <motion.div
@@ -806,7 +806,7 @@ export default function PartnersPage() {
                                 className="flex items-start gap-1.5 text-xs"
                               >
                                 <ArrowRight
-                                  className={`mt-0.5 h-3 w-3 flex-shrink-0 transition-transform duration-300 group-hover:translate-x-0.5 ${colors.icon}`}
+                                  className={`mt-0.5 h-3 w-3 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5 ${colors.icon}`}
                                 />
                                 <span className="line-clamp-1 text-muted-foreground">
                                   {highlight}
@@ -901,7 +901,7 @@ export default function PartnersPage() {
                   className="mb-6 font-bold text-3xl text-foreground sm:text-4xl lg:text-5xl xl:text-6xl"
                 >
                   Interested in{' '}
-                  <span className="bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+                  <span className="bg-linear-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
                     Partnering?
                   </span>
                 </motion.h2>

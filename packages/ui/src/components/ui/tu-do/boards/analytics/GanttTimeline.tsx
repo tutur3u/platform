@@ -195,7 +195,7 @@ export function GanttTimeline({
 
                             {/* Progress indicator for active tasks */}
                             {task.status === 'active' && (
-                              <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                              <div className="absolute inset-0 animate-pulse bg-linear-to-r from-transparent via-white/20 to-transparent" />
                             )}
                           </>
                         )}
@@ -323,7 +323,7 @@ export function GanttTimeline({
               <span>Status Change</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="h-1 w-3 rounded bg-gradient-to-r from-gray-300 via-blue-400 to-green-400"></div>
+              <div className="h-1 w-3 rounded bg-linear-to-r from-gray-300 via-blue-400 to-green-400"></div>
               <span>Lifecycle Phases</span>
             </div>
             <div className="flex items-center gap-2">
