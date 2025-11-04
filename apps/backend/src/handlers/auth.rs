@@ -3,7 +3,7 @@
 //! Handlers for user authentication (login, register, token refresh).
 
 use crate::middleware::error::{AppError, Result};
-use crate::models::{Claims, LoginRequest, RegisterRequest, TokenPair, TokenType, User, UserRole};
+use crate::models::{Claims, LoginRequest, RegisterRequest, TokenPair, User, UserRole};
 use axum::{Extension, Json};
 use chrono::Utc;
 use jsonwebtoken::{EncodingKey, Header, encode};
