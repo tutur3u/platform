@@ -38,8 +38,8 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import DOMPurify from 'dompurify';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -627,7 +627,7 @@ export function ComposeDialog({
                       </div>
                     ) : sanitizedHtml.trim().length > 0 ? (
                       <div
-                        className="prose max-w-full break-words prose-a:text-dynamic-blue prose-blockquote:text-foreground prose-h1:text-foreground prose-h2:text-foreground prose-h3:text-foreground prose-h4:text-foreground prose-h5:text-foreground prose-h6:text-foreground prose-strong:text-foreground text-foreground prose-a:underline"
+                        className="prose wrap-break-word max-w-full prose-a:text-dynamic-blue prose-blockquote:text-foreground prose-h1:text-foreground prose-h2:text-foreground prose-h3:text-foreground prose-h4:text-foreground prose-h5:text-foreground prose-h6:text-foreground prose-strong:text-foreground text-foreground prose-a:underline"
                         // biome-ignore lint/security/noDangerouslySetInnerHtml: <html content is sanitized>
                         dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
                       />

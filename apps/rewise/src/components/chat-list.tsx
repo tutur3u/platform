@@ -1,5 +1,3 @@
-import { ChatMessage } from '@/components/chat-message';
-import { OnlineUsers } from '@/components/online-users';
 import type { UIMessage } from '@tuturuuu/ai/types';
 import { Box, Globe, Lock, Sparkle } from '@tuturuuu/icons';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
@@ -7,6 +5,8 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
+import { ChatMessage } from '@/components/chat-message';
+import { OnlineUsers } from '@/components/online-users';
 
 interface PresenceUser {
   id: string;
@@ -136,7 +136,7 @@ export function ChatList({
                 {!chatSummary && summarizing ? (
                   <div className="h-32 w-full animate-pulse rounded border bg-foreground/5" />
                 ) : (
-                  <div className="w-full whitespace-pre-wrap break-words rounded border bg-foreground/5 p-2 text-start font-normal text-lg">
+                  <div className="wrap-break-word w-full whitespace-pre-wrap rounded border bg-foreground/5 p-2 text-start font-normal text-lg">
                     {chatSummary?.trim()}
                   </div>
                 )}
