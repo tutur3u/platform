@@ -521,7 +521,10 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                   >
                     <SelectValue placeholder="Select estimation method" />
                   </SelectTrigger>
-                  <SelectContent align="end" className="w-[var(--radix-select-trigger-width)]">
+                  <SelectContent
+                    align="end"
+                    className="w-[var(--radix-select-trigger-width)]"
+                  >
                     {estimationTypes.map((type) => (
                       <SelectItem
                         key={type.value}
