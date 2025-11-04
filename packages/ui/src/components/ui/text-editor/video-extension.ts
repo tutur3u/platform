@@ -1,3 +1,4 @@
+import type { EditorView } from '@tiptap/pm/view';
 import { Node, nodeInputRule } from '@tiptap/react';
 import { Plugin, PluginKey } from 'prosemirror-state';
 
@@ -18,143 +19,284 @@ declare module '@tiptap/core' {
 
 const VIDEO_INPUT_REGEX = /!\[(.+|:?)]\((\S+)(?:(?:\s+)["'](\S+)["'])?\)/;
 
-export const Video = Node.create({
-  name: 'video',
+interface VideoOptions {
+  onVideoUpload?: (file: File) => Promise<string>;
+}
 
-  group: 'block',
+export const Video = (options: VideoOptions = {}) =>
+  Node.create({
+    name: 'video',
 
-  addAttributes() {
-    return {
-      src: {
-        default: null,
-        parseHTML: (el) => (el as HTMLSpanElement).getAttribute('src'),
-        renderHTML: (attrs) => ({ src: attrs.src }),
-      },
-    };
-  },
+    group: 'block',
 
-  parseHTML() {
-    return [
-      {
-        tag: 'video',
-        getAttrs: (el) => ({
-          src: (el as HTMLVideoElement).getAttribute('src'),
-        }),
-      },
-    ];
-  },
-
-  renderHTML({ HTMLAttributes }) {
-    return [
-      'video',
-      { controls: 'true', style: 'width: 100%', ...HTMLAttributes },
-      ['source', HTMLAttributes],
-    ];
-  },
-
-  addCommands() {
-    return {
-      setVideo:
-        (src: string) =>
-        ({ commands }) =>
-          commands.insertContent({
-            type: this.name,
-            attrs: { src },
-          }),
-
-      toggleVideo:
-        (src?: string) =>
-        ({ commands }) =>
-          commands.toggleNode(this.name, 'paragraph', src ? { src } : {}),
-    };
-  },
-
-  addInputRules() {
-    return [
-      nodeInputRule({
-        find: VIDEO_INPUT_REGEX,
-        type: this.type,
-        getAttributes: (match) => {
-          const [, , src] = match;
-
-          return { src };
+    addAttributes() {
+      return {
+        src: {
+          default: null,
+          parseHTML: (el) => (el as HTMLSpanElement).getAttribute('src'),
+          renderHTML: (attrs) => ({ src: attrs.src }),
         },
-      }),
-    ];
-  },
+      };
+    },
 
-  addProseMirrorPlugins() {
-    return [
-      new Plugin({
-        key: new PluginKey('videoDropPlugin'),
+    parseHTML() {
+      return [
+        {
+          tag: 'video',
+          getAttrs: (el) => ({
+            src: (el as HTMLVideoElement).getAttribute('src'),
+          }),
+        },
+      ];
+    },
 
-        props: {
-          handleDOMEvents: {
-            drop(view, event) {
-              const { schema } = view.state;
-              const hasFiles = event.dataTransfer?.files?.length;
+    renderHTML({ HTMLAttributes }) {
+      return [
+        'video',
+        { controls: 'true', style: 'width: 100%', ...HTMLAttributes },
+        ['source', HTMLAttributes],
+      ];
+    },
 
-              if (!hasFiles) return false;
+    addCommands() {
+      return {
+        setVideo:
+          (src: string) =>
+          ({ commands }) =>
+            commands.insertContent({
+              type: this.name,
+              attrs: { src },
+            }),
 
-              const videos = Array.from(event.dataTransfer.files).filter(
-                (file) => /video/i.test(file.type)
-              );
+        toggleVideo:
+          (src?: string) =>
+          ({ commands }) =>
+            commands.toggleNode(this.name, 'paragraph', src ? { src } : {}),
+      };
+    },
 
-              if (videos.length === 0) return false;
+    addInputRules() {
+      return [
+        nodeInputRule({
+          find: VIDEO_INPUT_REGEX,
+          type: this.type,
+          getAttributes: (match) => {
+            const [, , src] = match;
 
-              event.preventDefault();
+            return { src };
+          },
+        }),
+      ];
+    },
 
-              const coordinates = view.posAtCoords({
-                left: event.clientX,
-                top: event.clientY,
-              });
+    addProseMirrorPlugins() {
+      const { onVideoUpload } = options;
 
-              if (!coordinates || typeof coordinates.pos !== 'number') {
-                return true;
-              }
+      return [
+        // Video paste plugin with upload
+        new Plugin({
+          key: new PluginKey('videoPastePlugin'),
 
-              const initialPos = coordinates.pos;
+          props: {
+            handleDOMEvents: {
+              paste: (view: EditorView, event: ClipboardEvent) => {
+                if (!onVideoUpload) return false;
 
-              // Process files sequentially to avoid transaction conflicts
-              (async () => {
-                let currentPos = initialPos;
-                for (const video of videos) {
-                  try {
-                    const dataUrl = await new Promise<string>(
-                      (resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                          if (typeof e.target?.result === 'string') {
-                            resolve(e.target.result);
-                          } else {
-                            reject(new Error('Failed to read file'));
-                          }
-                        };
-                        reader.onerror = reject;
-                        reader.readAsDataURL(video);
-                      }
-                    );
+                const items = event.clipboardData?.items;
+                if (!items) return false;
 
-                    const node = schema.nodes.video?.create({ src: dataUrl });
-                    if (!node) continue;
+                // Collect all video files first
+                const videoFiles: File[] = [];
+                for (let i = 0; i < items.length; i++) {
+                  const item = items[i];
+                  if (!item) continue;
 
-                    // Create fresh transaction from current view state
-                    const tr = view.state.tr.insert(currentPos, node);
-                    view.dispatch(tr);
-
-                    // Update position for next insertion, mapping through the transaction
-                    currentPos = tr.mapping.map(currentPos) + node.nodeSize;
-                  } catch (error) {
-                    console.error('Failed to process video:', error);
+                  if (item.type.startsWith('video/')) {
+                    const file = item.getAsFile();
+                    if (file) {
+                      videoFiles.push(file);
+                    }
                   }
                 }
-              })();
 
-              return true;
+                // If no videos found, let default paste behavior handle it
+                if (videoFiles.length === 0) return false;
+
+                // Prevent default paste behavior
+                event.preventDefault();
+
+                // Process videos asynchronously
+                (async () => {
+                  const { state } = view;
+                  const { from, to } = state.selection;
+
+                  // Delete selected content if there's a selection (replace it)
+                  let currentPos = from;
+                  if (from !== to) {
+                    const deleteTr = view.state.tr.delete(from, to);
+                    view.dispatch(deleteTr);
+                    currentPos = from;
+                  }
+
+                  // Process all videos sequentially
+                  for (const file of videoFiles) {
+                    try {
+                      console.log('Processing pasted video:', {
+                        name: file.name,
+                        type: file.type,
+                        size: file.size,
+                      });
+
+                      // Validate file size (max 50MB for videos)
+                      const maxSize = 50 * 1024 * 1024;
+                      if (file.size > maxSize) {
+                        console.error(
+                          'Video size must be less than 50MB:',
+                          file.name
+                        );
+                        continue;
+                      }
+
+                      // Upload the video
+                      const url = await onVideoUpload(file);
+
+                      // Get fresh state after upload
+                      const currentState = view.state;
+                      const videoNode = currentState.schema.nodes.video;
+
+                      if (!videoNode) {
+                        console.error(
+                          'Video node not found. Available nodes:',
+                          Object.keys(currentState.schema.nodes)
+                        );
+                        continue;
+                      }
+
+                      // Create and insert the video node
+                      const node = videoNode.create({ src: url });
+
+                      const tr = view.state.tr.insert(currentPos, node);
+                      view.dispatch(tr);
+
+                      // Update position for next insertion, mapping through the transaction
+                      currentPos = tr.mapping.map(currentPos) + node.nodeSize;
+                    } catch (error) {
+                      console.error(
+                        'Failed to upload pasted video:',
+                        file.name,
+                        error
+                      );
+                    }
+                  }
+                })();
+
+                return true;
+              },
             },
           },
-        },
-      }),
-    ];
-  },
-});
+        }),
+
+        // Video drop plugin with upload
+        new Plugin({
+          key: new PluginKey('videoDropPlugin'),
+
+          props: {
+            handleDOMEvents: {
+              drop(view, event) {
+                const { schema } = view.state;
+                const hasFiles = event.dataTransfer?.files?.length;
+
+                if (!hasFiles) return false;
+
+                const videos = Array.from(event.dataTransfer.files).filter(
+                  (file) => /video/i.test(file.type)
+                );
+
+                if (videos.length === 0) return false;
+
+                event.preventDefault();
+
+                const coordinates = view.posAtCoords({
+                  left: event.clientX,
+                  top: event.clientY,
+                });
+
+                if (!coordinates || typeof coordinates.pos !== 'number') {
+                  return true;
+                }
+
+                const initialPos = coordinates.pos;
+
+                // Process files sequentially to avoid transaction conflicts
+                (async () => {
+                  let currentPos = initialPos;
+                  for (const video of videos) {
+                    try {
+                      console.log('Processing dropped video:', {
+                        name: video.name,
+                        type: video.type,
+                        size: video.size,
+                      });
+
+                      // If upload callback is provided, use it; otherwise use data URL
+                      let url: string;
+                      if (onVideoUpload) {
+                        // Validate file size (max 50MB)
+                        const maxSize = 50 * 1024 * 1024;
+                        if (video.size > maxSize) {
+                          console.error(
+                            'Video size must be less than 50MB:',
+                            video.name
+                          );
+                          continue;
+                        }
+                        url = await onVideoUpload(video);
+                      } else {
+                        // Fallback to data URL
+                        url = await new Promise<string>((resolve, reject) => {
+                          const reader = new FileReader();
+                          reader.onload = (e) => {
+                            if (typeof e.target?.result === 'string') {
+                              resolve(e.target.result);
+                            } else {
+                              reject(new Error('Failed to read file'));
+                            }
+                          };
+                          reader.onerror = reject;
+                          reader.readAsDataURL(video);
+                        });
+                      }
+
+                      const node = schema.nodes.video?.create({ src: url });
+                      if (!node) {
+                        console.error(
+                          'Video node not found. Available nodes:',
+                          Object.keys(schema.nodes)
+                        );
+                        continue;
+                      }
+
+                      // Create fresh transaction from current view state
+                      const tr = view.state.tr.insert(currentPos, node);
+                      view.dispatch(tr);
+
+                      // Update position for next insertion, mapping through the transaction
+                      currentPos = tr.mapping.map(currentPos) + node.nodeSize;
+                    } catch (error) {
+                      console.error(
+                        'Failed to process dropped video:',
+                        video.name,
+                        error
+                      );
+                    }
+                  }
+                })();
+
+                return true;
+              },
+            },
+          },
+        }),
+      ];
+    },
+  });

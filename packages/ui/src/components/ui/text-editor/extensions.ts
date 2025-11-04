@@ -29,6 +29,7 @@ interface EditorExtensionsOptions {
   doc?: Y.Doc | null;
   provider?: SupabaseProvider | null;
   onImageUpload?: (file: File) => Promise<string>;
+  onVideoUpload?: (file: File) => Promise<string>;
 }
 
 export function getEditorExtensions({
@@ -37,6 +38,7 @@ export function getEditorExtensions({
   doc = null,
   provider = null,
   onImageUpload,
+  onVideoUpload,
 }: EditorExtensionsOptions = {}): Extensions {
   return [
     ...(doc
@@ -163,16 +165,16 @@ export function getEditorExtensions({
       },
     }),
     CustomImage({ onImageUpload }),
+    Video({ onVideoUpload }).configure({
+      HTMLAttributes: {
+        class: 'rounded-md my-4',
+      },
+    }),
     Youtube.configure({
       controls: true,
       nocookie: true,
       width: 640,
       height: 360,
-      HTMLAttributes: {
-        class: 'rounded-md my-4',
-      },
-    }),
-    Video.configure({
       HTMLAttributes: {
         class: 'rounded-md my-4',
       },

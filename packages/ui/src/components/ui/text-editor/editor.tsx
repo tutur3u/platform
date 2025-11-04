@@ -9,7 +9,6 @@ import {
 } from '@tiptap/react';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type SupabaseProvider from '@tuturuuu/ui/hooks/supabase-provider';
-import { toast } from '@tuturuuu/ui/sonner';
 import { debounce } from 'lodash';
 import { TextSelection } from 'prosemirror-state';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -89,7 +88,6 @@ export function RichTextEditor({
   yjsProvider = null,
   allowCollaboration = false,
 }: RichTextEditorProps) {
-  const [isUploadingPastedImage, setIsUploadingPastedImage] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dragCounterRef = useRef(0);
 
@@ -236,6 +234,7 @@ export function RichTextEditor({
       doc: allowCollaboration && yjsDoc ? yjsDoc : undefined,
       provider: allowCollaboration && yjsProvider ? yjsProvider : undefined,
       onImageUpload: onImageUploadRef.current,
+      onVideoUpload: onImageUploadRef.current,
     }),
     content: allowCollaboration ? undefined : content,
     editable: !readOnly,
@@ -415,114 +414,6 @@ export function RichTextEditor({
 
         return false;
       },
-      handlePaste: (view, event) => {
-        // Handle image and video paste
-        const items = event.clipboardData?.items;
-        if (!items || !onImageUploadRef.current || !workspaceIdRef.current)
-          return false;
-
-        for (let i = 0; i < items.length; i++) {
-          const item = items[i];
-          if (!item) continue;
-
-          // Debug: Log the MIME type to console
-          console.log('Pasted item type:', item.type);
-
-          const isImage = item.type.startsWith('image/');
-          const isVideo = item.type.startsWith('video/');
-
-          if (isImage || isVideo) {
-            event.preventDefault();
-            const file = item.getAsFile();
-            if (!file) continue;
-
-            console.log('Detected file:', {
-              name: file.name,
-              type: file.type,
-              size: file.size,
-              isImage,
-              isVideo,
-            });
-
-            // Validate file size (max 50MB for videos, 5MB for images)
-            const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
-            if (file.size > maxSize) {
-              toast.error(
-                isVideo
-                  ? 'Video size must be less than 50MB'
-                  : 'Image size must be less than 5MB'
-              );
-              return true;
-            }
-
-            // Upload file asynchronously
-            setIsUploadingPastedImage(true);
-            onImageUploadRef
-              .current(file)
-              .then((url) => {
-                const { state } = view;
-                const { from } = state.selection;
-
-                if (isImage) {
-                  // CustomImage extension uses 'imageResize' node name
-                  const imageNode = state.schema.nodes.imageResize;
-                  if (imageNode) {
-                    // Get container width for default size (60%)
-                    const editorElement = view.dom as HTMLElement;
-                    const containerWidth =
-                      editorElement.querySelector('.ProseMirror')
-                        ?.clientWidth ||
-                      editorElement.clientWidth ||
-                      800;
-                    const defaultWidth = (60 / 100) * containerWidth; // md = 60%
-
-                    const transaction = state.tr.insert(
-                      from,
-                      imageNode.create({ src: url, width: defaultWidth })
-                    );
-                    view.dispatch(transaction);
-                    toast.success('Image uploaded successfully');
-                  } else {
-                    console.error(
-                      'Available nodes:',
-                      Object.keys(state.schema.nodes)
-                    );
-                    toast.error('Image node not found');
-                  }
-                } else if (isVideo) {
-                  // Video node
-                  const videoNode = state.schema.nodes.video;
-                  if (videoNode) {
-                    const transaction = state.tr.insert(
-                      from,
-                      videoNode.create({ src: url })
-                    );
-                    view.dispatch(transaction);
-                    toast.success('Video uploaded successfully');
-                  } else {
-                    console.error(
-                      'Available nodes:',
-                      Object.keys(state.schema.nodes)
-                    );
-                    toast.error('Video node not found');
-                  }
-                }
-              })
-              .catch((error) => {
-                console.error('Failed to upload pasted file:', error);
-                toast.error(
-                  `Failed to upload ${isVideo ? 'video' : 'image'}. Please try again.`
-                );
-              })
-              .finally(() => {
-                setIsUploadingPastedImage(false);
-              });
-
-            return true;
-          }
-        }
-        return false;
-      },
     },
     onCreate: ({ editor }) => {
       if (externalEditorRef) {
@@ -680,14 +571,6 @@ export function RichTextEditor({
         />
       )}
       <EditorContent editor={editor} className="h-full" />
-      {isUploadingPastedImage && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-sm">
-          <div className="flex items-center gap-2 rounded-lg border bg-background px-4 py-2 shadow-lg">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-dynamic-orange border-t-transparent" />
-            <span className="text-sm">Uploading media...</span>
-          </div>
-        </div>
-      )}
       {isDraggingOver && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center border-4 border-dynamic-blue border-dashed bg-dynamic-blue/10 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-3 rounded-lg border-2 border-dynamic-blue bg-background/90 px-8 py-6 shadow-xl">
