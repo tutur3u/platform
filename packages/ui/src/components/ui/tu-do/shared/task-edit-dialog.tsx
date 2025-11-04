@@ -2554,8 +2554,6 @@ function TaskEditDialogComponent({
     doc,
   ]);
 
-
-
   // Reset state when dialog closes or opens
   const isMountedRef = useRef(true);
 
