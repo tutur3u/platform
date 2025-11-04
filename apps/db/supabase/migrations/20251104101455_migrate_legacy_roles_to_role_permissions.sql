@@ -14,13 +14,28 @@ BEGIN
     WHERE ws.ws_id = has_workspace_secret.ws_id
       AND ws.name = has_workspace_secret.secret_name
       AND ws.value = 'true'
-      AND public.can_access_workspace(has_workspace_secret.ws_id)
+      AND public.is_org_member(auth.uid(), has_workspace_secret.ws_id)
   );
 END;
 $function$;
 
 --
 -- Migrate legacy role-based policies to permission-based policies
+--
+-- This migration replaces role-based RLS policies (using get_user_role()) with
+-- permission-based policies (using has_workspace_permission()).
+--
+-- Key changes:
+-- 1. All policies now check for specific permissions instead of roles
+-- 2. Each DROP policy is immediately followed by its corresponding CREATE policy
+-- 3. Missing policies have been added (e.g., workspace_invites SELECT, INSERT, DELETE)
+-- 4. Policy names follow consistent naming: "Allow [permission holders] to [action]"
+--
+-- Permission mappings:
+-- - 'manage_workspace_roles' -> Role and permission management
+-- - 'manage_workspace_members' -> Member and invite management
+-- - 'manage_workspace_settings' -> Workspace configuration
+-- - 'manage_workspace_secrets' -> Platform-level secrets (root workspace only)
 --
 
 -- timezones
@@ -80,10 +95,7 @@ with check (
 );
 
 -- workspace_members
-drop policy "Allow update for workspace members" on "public"."workspace_members";
-
-drop policy "Enable delete for organization members" on "public"."workspace_members";
-
+-- INSERT policy
 drop policy if exists "Enable insert with personal workspace constraints" on "public"."workspace_members";
 
 create policy "Allow workspace managers to insert members with constraints"
@@ -124,6 +136,9 @@ with check (
   )
 );
 
+-- UPDATE policy
+drop policy "Allow update for workspace members" on "public"."workspace_members";
+
 create policy "Allow workspace managers to update members"
 on "public"."workspace_members"
 as permissive
@@ -138,6 +153,9 @@ with check (
   OR (auth.uid() = user_id)
 );
 
+-- DELETE policy
+drop policy "Enable delete for organization members" on "public"."workspace_members";
+
 create policy "Allow workspace managers to delete members"
 on "public"."workspace_members"
 as permissive
@@ -149,6 +167,7 @@ using (
 );
 
 -- workspaces
+-- UPDATE policy
 drop policy if exists "Allow update for workspace owners or admins" on "public"."workspaces";
 
 create policy "Allow workspace settings managers to update"
@@ -165,6 +184,7 @@ with check (
   AND public.has_workspace_permission(id, auth.uid(), 'manage_workspace_settings')
 );
 
+-- DELETE policy
 drop policy if exists "Allow delete for workspace owners" on "public"."workspaces";
 drop policy if exists "Enable delete for workspace owners" on "public"."workspaces";
 
@@ -180,6 +200,42 @@ using (
 );
 
 -- workspace_invites
+-- Note: Previously had 4 policies (SELECT, INSERT, UPDATE, DELETE)
+-- Migrating all to permission-based model for consistency
+
+-- SELECT policy
+drop policy if exists "Enable read access for organization members and current user" on "public"."workspace_invites";
+
+create policy "Allow members to view invites"
+on "public"."workspace_invites"
+as permissive
+for select
+to authenticated
+using (
+  (auth.uid() = user_id)
+  OR is_org_member(auth.uid(), ws_id)
+);
+
+-- INSERT policy
+drop policy if exists "Enable insert for workspace members" on "public"."workspace_invites";
+
+create policy "Allow member managers to insert invites"
+on "public"."workspace_invites"
+as permissive
+for insert
+to authenticated
+with check (
+  public.has_workspace_permission(ws_id, auth.uid(), 'manage_workspace_members')
+  AND is_org_member(auth.uid(), ws_id)
+  AND (NOT is_org_member(user_id, ws_id))
+  AND (NOT EXISTS (
+    SELECT 1 FROM workspace_secrets wss
+    WHERE wss.ws_id = workspace_invites.ws_id
+    AND wss.name = 'DISABLE_INVITE'
+  ))
+);
+
+-- UPDATE policy
 drop policy if exists "Allow update for workspace members" on "public"."workspace_invites";
 
 create policy "Allow member managers to update invites"
@@ -196,9 +252,25 @@ with check (
   AND is_org_member(auth.uid(), ws_id)
 );
 
+-- DELETE policy
+drop policy if exists "Enable delete for organization members and current user" on "public"."workspace_invites";
+
+create policy "Allow member managers to delete invites"
+on "public"."workspace_invites"
+as permissive
+for delete
+to authenticated
+using (
+  (auth.uid() = user_id)
+  OR (
+    public.has_workspace_permission(ws_id, auth.uid(), 'manage_workspace_members')
+    AND is_org_member(auth.uid(), ws_id)
+  )
+);
+
 -- workspace_email_invites
+-- INSERT policy
 drop policy if exists "Enable insert for organization members and current user" on "public"."workspace_email_invites";
-drop policy if exists "Allow update for workspace members" on "public"."workspace_email_invites";
 
 create policy "Allow member managers to send email invites"
 on "public"."workspace_email_invites"
@@ -218,6 +290,9 @@ with check (
     )
   )
 );
+
+-- UPDATE policy
+drop policy if exists "Allow update for workspace members" on "public"."workspace_email_invites";
 
 create policy "Allow member managers to update email invites"
 on "public"."workspace_email_invites"
@@ -283,6 +358,7 @@ using (public.has_workspace_permission(ws_id, auth.uid(), 'manage_workspace_role
 with check (public.has_workspace_permission(ws_id, auth.uid(), 'manage_workspace_roles'));
 
 -- workspace_default_permissions
+-- Note: Multiple legacy policies being replaced with single permission-based policy
 drop policy if exists "Allow workspace owners to manage default permissions" on "public"."workspace_default_permissions";
 drop policy if exists "Allow workspace owners to have full permissions" on "public"."workspace_default_permissions";
 
@@ -404,6 +480,7 @@ with check (
 );
 
 -- workspace_user_status_changes
+-- Note: Multiple legacy policies being replaced with single permission-based policy
 drop policy if exists "Allow all access for workspace admins" on "public"."workspace_user_status_changes";
 drop policy if exists "Enable all access for root platform admins" on "public"."workspace_user_status_changes";
 
