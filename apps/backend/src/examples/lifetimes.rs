@@ -222,7 +222,7 @@ impl<'a, T> Node<'a, T> {
 /// Collection of common patterns you'll encounter.
 
 /// Pattern 1: Factory function returning a struct with a lifetime
-pub fn create_excerpt(text: &str) -> ImportantExcerpt {
+pub fn create_excerpt(text: &str) -> ImportantExcerpt<'_> {
     ImportantExcerpt {
         part: text.split('.').next().unwrap_or(text),
     }
@@ -256,7 +256,7 @@ impl<'a> Iterator for Words<'a> {
     }
 }
 
-pub fn split_into_words(text: &str) -> Words {
+pub fn split_into_words(text: &str) -> Words<'_> {
     Words { text }
 }
 

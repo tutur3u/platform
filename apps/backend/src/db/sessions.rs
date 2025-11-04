@@ -6,12 +6,14 @@ use crate::models::Session;
 use sqlx::PgPool;
 use uuid::Uuid;
 
+#[allow(dead_code)]
 /// Session repository for database operations
 #[derive(Clone)]
 pub struct SessionRepository {
     pool: PgPool,
 }
 
+#[allow(dead_code)]
 impl SessionRepository {
     /// Create a new session repository
     pub fn new(pool: PgPool) -> Self {

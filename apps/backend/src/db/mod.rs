@@ -53,6 +53,7 @@ pub async fn init_pool(database_url: &str) -> Result<PgPool, sqlx::Error> {
 /// # Errors
 ///
 /// Returns an error if migrations fail
+#[allow(dead_code)]
 pub async fn run_migrations(pool: &PgPool) -> Result<(), sqlx::migrate::MigrateError> {
     sqlx::migrate!("./migrations").run(pool).await
 }
@@ -66,6 +67,7 @@ pub async fn run_migrations(pool: &PgPool) -> Result<(), sqlx::migrate::MigrateE
 /// # Returns
 ///
 /// True if database is healthy, false otherwise
+#[allow(dead_code)]
 pub async fn health_check(pool: &PgPool) -> bool {
     sqlx::query("SELECT 1").fetch_one(pool).await.is_ok()
 }

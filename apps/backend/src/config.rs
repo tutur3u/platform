@@ -69,6 +69,7 @@ pub enum Environment {
     Test,
 }
 
+#[allow(dead_code)]
 impl Environment {
     /// Check if running in development mode
     pub fn is_development(&self) -> bool {
