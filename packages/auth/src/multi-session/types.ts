@@ -1,4 +1,7 @@
-import type { Session, User } from '@supabase/supabase-js';
+import type {
+  SupabaseSession,
+  SupabaseUser,
+} from '@tuturuuu/supabase/next/user';
 
 /**
  * Metadata for a stored account including workspace and route context
@@ -87,8 +90,8 @@ export interface AccountOperationResult {
  * Decrypted session with user info
  */
 export interface DecryptedAccountSession {
-  session: Session;
-  user: User;
+  session: SupabaseSession;
+  user: SupabaseUser;
   metadata: AccountMetadata;
 }
 
