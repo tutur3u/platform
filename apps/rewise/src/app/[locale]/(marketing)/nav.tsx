@@ -111,9 +111,6 @@ export function Nav({
     if (link?.requireRootMember && !isValidTuturuuuEmail(currentUser?.email))
       return null;
 
-    // If the link is only allowed for certain roles, check if the current role is allowed
-    if (link?.allowedRoles && link.allowedRoles.length > 0) return null;
-
     const chatId = searchParams.get('id');
 
     const isActive = link.aliases

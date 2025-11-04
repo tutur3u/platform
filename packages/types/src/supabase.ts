@@ -9513,21 +9513,18 @@ export type Database = {
       workspace_members: {
         Row: {
           created_at: string | null;
-          role_title: string;
           sort_key: number | null;
           user_id: string;
           ws_id: string;
         };
         Insert: {
           created_at?: string | null;
-          role_title?: string;
           sort_key?: number | null;
           user_id?: string;
           ws_id: string;
         };
         Update: {
           created_at?: string | null;
-          role_title?: string;
           sort_key?: number | null;
           user_id?: string;
           ws_id?: string;
@@ -12143,6 +12140,19 @@ export type Database = {
           link_count: number | null;
           logo_url: string | null;
           name: string | null;
+        };
+        Relationships: [];
+      };
+      workspace_members_and_invites: {
+        Row: {
+          avatar_url: string | null;
+          created_at: string | null;
+          display_name: string | null;
+          email: string | null;
+          handle: string | null;
+          id: string | null;
+          pending: boolean | null;
+          ws_id: string | null;
         };
         Relationships: [];
       };

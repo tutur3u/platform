@@ -1,11 +1,11 @@
 'use client';
 
-import type { Workspace, WorkspaceInfo } from '@/lib/invite/types';
 import { ArrowRight, Check, Users } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import type { Workspace, WorkspaceInfo } from '@/lib/invite/types';
 
 interface Props {
   code: string;
@@ -128,7 +128,7 @@ export default function JoinWorkspaceClient({
     return null;
   }
 
-  const { workspace: ws, memberCount, roleTitle } = workspaceInfo;
+  const { workspace: ws, memberCount } = workspaceInfo;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background to-foreground/5 p-4">
@@ -159,12 +159,6 @@ export default function JoinWorkspaceClient({
             </p>
 
             <div className="flex items-center justify-center gap-6 text-sm">
-              {roleTitle && (
-                <div className="flex items-center gap-1 text-foreground/80">
-                  <span className="font-semibold">Role:</span>
-                  <span>{roleTitle}</span>
-                </div>
-              )}
               <div className="flex items-center gap-1 text-foreground/80">
                 <Users className="h-4 w-4" />
                 <span>{memberCount} members</span>

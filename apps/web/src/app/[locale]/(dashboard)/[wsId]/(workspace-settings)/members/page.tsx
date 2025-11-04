@@ -1,4 +1,3 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
   createAdminClient,
   createClient,
@@ -10,8 +9,9 @@ import {
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import InviteLinksSection from './_components/invite-links-section';
 import InviteMemberButton from './_components/invite-member-button';
 import MemberList from './_components/member-list';
@@ -155,7 +155,7 @@ const getMembers = async (
   const queryBuilder = supabase
     .from('workspace_members_and_invites')
     .select(
-      'id, handle, email, display_name, avatar_url, pending, role, role_title, created_at',
+      'id, handle, email, display_name, avatar_url, pending, created_at',
       {
         count: 'exact',
       }
@@ -167,8 +167,6 @@ const getMembers = async (
 
   if (status && status !== 'all')
     queryBuilder.eq('pending', status === 'invited');
-
-  if (roles) queryBuilder.in('role', roles.split(','));
 
   const { data, error } = await queryBuilder;
   if (error) throw error;

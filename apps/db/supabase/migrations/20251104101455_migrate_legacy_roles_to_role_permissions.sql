@@ -95,7 +95,7 @@ with check (
   AND (
     -- Allow if it's a non-personal workspace OR user is workspace owner
     (
-      (is_personal_workspace(ws_id) = false) 
+      (is_personal_workspace(ws_id) = false)
       OR is_workspace_owner(ws_id, auth.uid())
     )
     AND (
@@ -605,18 +605,18 @@ BEGIN
       INSERT INTO public.workspaces (name, creator_id, personal)
       VALUES ('Personal', user_record.id, true)
       RETURNING id INTO new_ws_id;
-      
+
       -- Add user as member
       INSERT INTO public.workspace_members (ws_id, user_id)
       VALUES (new_ws_id, user_record.id);
-      
+
       -- Return success
       user_id := user_record.id;
       workspace_id := new_ws_id;
       success := true;
       error_message := NULL;
       RETURN NEXT;
-      
+
     EXCEPTION WHEN OTHERS THEN
       -- Return failure
       user_id := user_record.id;
@@ -635,6 +635,8 @@ GRANT EXECUTE ON FUNCTION public.create_missing_personal_workspaces() TO authent
 --
 -- Drop role columns from workspace invite tables
 --
+
+alter table if exists "public"."workspace_members" drop column if exists "role_title";
 
 -- workspace_invites
 alter table if exists "public"."workspace_invites" drop constraint if exists "workspace_invites_role_fkey";
@@ -682,3 +684,34 @@ GROUP BY wil.id, wil.ws_id, wil.code, wil.creator_id, wil.max_uses, wil.expires_
 --
 
 drop table if exists public.workspace_default_roles;
+
+--
+-- Recreate workspace_members_and_invites view without role columns
+--
+
+create or replace view "public"."workspace_members_and_invites" as
+SELECT
+  wi.ws_id,
+  u.id,
+  u.handle,
+  NULL::text AS email,
+  u.display_name,
+  u.avatar_url,
+  COALESCE(wm.created_at, wi.created_at) AS created_at,
+  (wm.user_id IS NULL) AS pending
+FROM workspace_invites wi
+LEFT JOIN users u ON wi.user_id = u.id
+LEFT JOIN workspace_members wm ON wi.user_id = wm.user_id AND wi.ws_id = wm.ws_id
+
+UNION ALL
+
+SELECT
+  wei.ws_id,
+  NULL::uuid AS id,
+  NULL::text AS handle,
+  wei.email,
+  NULL::text AS display_name,
+  NULL::text AS avatar_url,
+  wei.created_at,
+  true AS pending
+FROM workspace_email_invites wei;

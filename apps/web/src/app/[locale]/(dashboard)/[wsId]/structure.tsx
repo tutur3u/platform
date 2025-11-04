@@ -327,7 +327,6 @@ export function Structure({
         return [];
 
       if (link.requireRootWorkspace && !isRootWorkspace) return [];
-      // Do not filter by allowedRoles here; this is handled in `Navigation` where role context exists
 
       if (link.children && link.children.length > 1) {
         const filteredChildren = getFilteredLinks(link.children);
