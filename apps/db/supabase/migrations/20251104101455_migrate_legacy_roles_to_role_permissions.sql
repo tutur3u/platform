@@ -13,6 +13,7 @@ BEGIN
     FROM public.workspace_secrets ws
     WHERE ws.ws_id = has_workspace_secret.ws_id
       AND ws.name = has_workspace_secret.secret_name
+      AND ws.value = 'true'
       AND public.can_access_workspace(has_workspace_secret.ws_id)
   );
 END;
@@ -30,8 +31,8 @@ on "public"."timezones"
 as permissive
 for all
 to authenticated
-using (public.has_workspace_permission('00000000-0000-0000-0000-000000000000'::uuid, auth.uid(), 'manage_roles'::text))
-with check (public.has_workspace_permission('00000000-0000-0000-0000-000000000000'::uuid, auth.uid(), 'manage_roles'::text));
+using (public.has_workspace_permission('00000000-0000-0000-0000-000000000000'::uuid, auth.uid(), 'manage_workspace_roles'::text))
+with check (public.has_workspace_permission('00000000-0000-0000-0000-000000000000'::uuid, auth.uid(), 'manage_workspace_roles'::text));
 
 -- workspace_education_access_requests
 drop policy "Enable platform admins to update requests" on "public"."workspace_education_access_requests";
@@ -41,8 +42,8 @@ on "public"."workspace_education_access_requests"
 as permissive
 for all
 to authenticated
-using (public.has_workspace_permission('00000000-0000-0000-0000-000000000000'::uuid, auth.uid(), 'manage_roles'::text))
-with check (public.has_workspace_permission('00000000-0000-0000-0000-000000000000'::uuid, auth.uid(), 'manage_roles'::text));
+using (public.has_workspace_permission('00000000-0000-0000-0000-000000000000'::uuid, auth.uid(), 'manage_workspace_roles'::text))
+with check (public.has_workspace_permission('00000000-0000-0000-0000-000000000000'::uuid, auth.uid(), 'manage_workspace_roles'::text));
 
 drop policy "Enable workspace owners to create requests" on "public"."workspace_education_access_requests";
 
@@ -51,7 +52,7 @@ on "public"."workspace_education_access_requests"
 as permissive
 for insert
 to authenticated
-with check (public.has_workspace_permission(ws_id, auth.uid(), 'manage_roles'::text));
+with check (public.has_workspace_permission(ws_id, auth.uid(), 'manage_workspace_roles'::text));
 
 drop policy "Enable workspace owners to view own requests" on "public"."workspace_education_access_requests";
 
@@ -60,7 +61,7 @@ on "public"."workspace_education_access_requests"
 as permissive
 for select
 to authenticated
-using (public.has_workspace_permission(ws_id, auth.uid(), 'manage_roles'::text));
+using (public.has_workspace_permission(ws_id, auth.uid(), 'manage_workspace_roles'::text));
 
 -- workspace_subscription_products
 drop policy "only allow admin to insert" on "public"."workspace_subscription_products";
@@ -74,7 +75,7 @@ with check (
   public.has_workspace_permission(
     '00000000-0000-0000-0000-000000000000'::uuid,
     auth.uid(),
-    'manage_roles'
+    'manage_workspace_roles'
   )
 );
 
@@ -244,8 +245,8 @@ on "public"."workspace_roles"
 as permissive
 for all
 to authenticated
-using (public.has_workspace_permission(ws_id, auth.uid(), 'manage_roles'))
-with check (public.has_workspace_permission(ws_id, auth.uid(), 'manage_roles'));
+using (public.has_workspace_permission(ws_id, auth.uid(), 'manage_workspace_roles'))
+with check (public.has_workspace_permission(ws_id, auth.uid(), 'manage_workspace_roles'));
 
 -- workspace_role_members
 drop policy if exists "Allow workspace owners to have full permissions" on "public"."workspace_role_members";
@@ -259,14 +260,14 @@ using (
   public.has_workspace_permission(
     (SELECT wr.ws_id FROM workspace_roles wr WHERE wr.id = workspace_role_members.role_id),
     auth.uid(),
-    'manage_roles'
+    'manage_workspace_roles'
   )
 )
 with check (
   public.has_workspace_permission(
     (SELECT wr.ws_id FROM workspace_roles wr WHERE wr.id = workspace_role_members.role_id),
     auth.uid(),
-    'manage_roles'
+    'manage_workspace_roles'
   )
 );
 
@@ -278,8 +279,8 @@ on "public"."workspace_role_permissions"
 as permissive
 for all
 to authenticated
-using (public.has_workspace_permission(ws_id, auth.uid(), 'manage_roles'))
-with check (public.has_workspace_permission(ws_id, auth.uid(), 'manage_roles'));
+using (public.has_workspace_permission(ws_id, auth.uid(), 'manage_workspace_roles'))
+with check (public.has_workspace_permission(ws_id, auth.uid(), 'manage_workspace_roles'));
 
 -- workspace_default_permissions
 drop policy if exists "Allow workspace owners to manage default permissions" on "public"."workspace_default_permissions";
@@ -291,7 +292,7 @@ as permissive
 for all
 to authenticated
 using (
-  public.has_workspace_permission(ws_id, auth.uid(), 'manage_roles')
+  public.has_workspace_permission(ws_id, auth.uid(), 'manage_workspace_roles')
   OR (
     EXISTS (
       SELECT wss.id FROM workspaces wss
@@ -301,7 +302,7 @@ using (
   )
 )
 with check (
-  public.has_workspace_permission(ws_id, auth.uid(), 'manage_roles')
+  public.has_workspace_permission(ws_id, auth.uid(), 'manage_workspace_roles')
   OR (
     EXISTS (
       SELECT wss.id FROM workspaces wss
