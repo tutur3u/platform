@@ -11,7 +11,7 @@
   "dependencies": {
     "@polar-sh/checkout": "^0.1.14",
     "@polar-sh/nextjs": "^0.7.0",
-    "@polar-sh/sdk": "^0.40.3",
+    "@polar-sh/sdk": "^0.41.0",
     "dodopayments": "^2.4.2",
     "dodopayments-checkout": "^1.3.1"
   },
