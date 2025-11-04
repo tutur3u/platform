@@ -1,11 +1,11 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "tutur3u",
       "devDependencies": {
-        "@biomejs/biome": "^2.3.2",
-        "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+        "@biomejs/biome": "^2.3.3",
         "@tuturuuu/typescript-config": "workspace:*",
         "@vitest/coverage-v8": "^4.0.6",
         "turbo": "^2.6.0",
@@ -43,7 +43,7 @@
         "@tailwindcss/postcss": "^4.1.16",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/negotiator": "^0.6.4",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/react": "^19.2.2",
         "@types/react-dom": "^19.2.2",
         "postcss": "^8.5.6",
@@ -77,7 +77,7 @@
       "devDependencies": {
         "@tailwindcss/postcss": "^4.1.16",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/react": "^19.2.2",
         "@types/react-dom": "^19.2.2",
         "postcss": "^8.5.6",
@@ -112,7 +112,7 @@
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/negotiator": "^0.6.4",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/react": "^19.2.2",
         "@types/react-dom": "^19.2.2",
         "postcss": "^8.5.6",
@@ -171,7 +171,7 @@
         "@types/js-cookie": "^3.0.6",
         "@types/lodash": "^4.17.20",
         "@types/negotiator": "^0.6.4",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/react": "^19.2.2",
         "@types/react-dom": "^19.2.2",
         "@types/uuid": "^11.0.0",
@@ -187,7 +187,7 @@
       "name": "@tuturuuu/playground",
       "version": "0.1.0",
       "dependencies": {
-        "@ai-sdk/google": "^2.0.26",
+        "@ai-sdk/google": "^2.0.27",
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
@@ -202,7 +202,7 @@
       "devDependencies": {
         "@tailwindcss/postcss": "^4.1.16",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/react": "^19.2.2",
         "@types/react-dom": "^19.2.2",
         "postcss": "^8.5.6",
@@ -261,7 +261,7 @@
         "@types/js-cookie": "^3.0.6",
         "@types/lodash": "^4.17.20",
         "@types/negotiator": "^0.6.4",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/react": "^19.2.2",
         "@types/react-dom": "^19.2.2",
         "@types/uuid": "^11.0.0",
@@ -292,7 +292,7 @@
       "devDependencies": {
         "@tailwindcss/postcss": "^4.1.16",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/react": "^19.2.2",
         "@types/react-dom": "^19.2.2",
         "postcss": "^8.5.6",
@@ -329,7 +329,7 @@
         "@tailwindcss/postcss": "^4.1.16",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/negotiator": "^0.6.4",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/react": "^19.2.2",
         "@types/react-dom": "^19.2.2",
         "postcss": "^8.5.6",
@@ -367,7 +367,7 @@
       "devDependencies": {
         "@tailwindcss/postcss": "^4.1.16",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/react": "^19.2.2",
         "@types/react-dom": "^19.2.2",
         "postcss": "^8.5.6",
@@ -378,7 +378,7 @@
       "name": "@tuturuuu/web",
       "version": "0.14.0",
       "dependencies": {
-        "@ai-sdk/google": "^2.0.26",
+        "@ai-sdk/google": "^2.0.27",
         "@aws-sdk/client-ses": "^3.922.0",
         "@deepgram/sdk": "^4.11.2",
         "@dnd-kit/core": "^6.3.1",
@@ -424,7 +424,7 @@
         "@tuturuuu/vercel": "workspace:*",
         "@upstash/qstash": "^2.8.4",
         "@upstash/redis": "^1.35.6",
-        "ai": "^5.0.86",
+        "ai": "^5.0.87",
         "canvas-confetti": "^1.9.4",
         "client-only": "^0.0.1",
         "cmdk": "^1.1.1",
@@ -437,7 +437,7 @@
         "dompurify": "^3.3.0",
         "framer-motion": "^12.23.24",
         "html2canvas-pro": "^1.5.12",
-        "isomorphic-dompurify": "^2.30.1",
+        "isomorphic-dompurify": "^2.31.0",
         "jotai": "^2.15.1",
         "juice": "^11.0.3",
         "lodash": "^4.17.21",
@@ -488,7 +488,7 @@
         "@types/js-cookie": "^3.0.6",
         "@types/lodash": "^4.17.20",
         "@types/negotiator": "^0.6.4",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/papaparse": "^5.3.16",
         "@types/react": "^19.2.2",
         "@types/react-dom": "^19.2.2",
@@ -506,37 +506,37 @@
       "name": "@tuturuuu/ai",
       "version": "0.0.10",
       "dependencies": {
-        "@ai-sdk/amazon-bedrock": "^3.0.50",
-        "@ai-sdk/anthropic": "^2.0.40",
-        "@ai-sdk/azure": "^2.0.60",
-        "@ai-sdk/cerebras": "^1.0.28",
-        "@ai-sdk/cohere": "^2.0.17",
-        "@ai-sdk/deepgram": "^1.0.16",
-        "@ai-sdk/deepinfra": "^1.0.26",
-        "@ai-sdk/deepseek": "^1.0.26",
-        "@ai-sdk/elevenlabs": "^1.0.17",
-        "@ai-sdk/fal": "^1.0.20",
-        "@ai-sdk/fireworks": "^1.0.26",
-        "@ai-sdk/gateway": "^2.0.5",
-        "@ai-sdk/gladia": "^1.0.16",
-        "@ai-sdk/google": "^2.0.26",
-        "@ai-sdk/google-vertex": "^3.0.56",
-        "@ai-sdk/groq": "^2.0.27",
-        "@ai-sdk/hume": "^1.0.16",
-        "@ai-sdk/lmnt": "^1.0.16",
-        "@ai-sdk/luma": "^1.0.16",
-        "@ai-sdk/mistral": "^2.0.22",
-        "@ai-sdk/openai": "^2.0.59",
-        "@ai-sdk/openai-compatible": "^1.0.25",
-        "@ai-sdk/perplexity": "^2.0.16",
-        "@ai-sdk/react": "^2.0.86",
-        "@ai-sdk/replicate": "^1.0.16",
-        "@ai-sdk/revai": "^1.0.16",
-        "@ai-sdk/togetherai": "^1.0.26",
-        "@ai-sdk/xai": "^2.0.30",
+        "@ai-sdk/amazon-bedrock": "^3.0.51",
+        "@ai-sdk/anthropic": "^2.0.41",
+        "@ai-sdk/azure": "^2.0.63",
+        "@ai-sdk/cerebras": "^1.0.29",
+        "@ai-sdk/cohere": "^2.0.18",
+        "@ai-sdk/deepgram": "^1.0.17",
+        "@ai-sdk/deepinfra": "^1.0.27",
+        "@ai-sdk/deepseek": "^1.0.27",
+        "@ai-sdk/elevenlabs": "^1.0.18",
+        "@ai-sdk/fal": "^1.0.21",
+        "@ai-sdk/fireworks": "^1.0.27",
+        "@ai-sdk/gateway": "^2.0.6",
+        "@ai-sdk/gladia": "^1.0.17",
+        "@ai-sdk/google": "^2.0.27",
+        "@ai-sdk/google-vertex": "^3.0.57",
+        "@ai-sdk/groq": "^2.0.28",
+        "@ai-sdk/hume": "^1.0.17",
+        "@ai-sdk/lmnt": "^1.0.17",
+        "@ai-sdk/luma": "^1.0.17",
+        "@ai-sdk/mistral": "^2.0.23",
+        "@ai-sdk/openai": "^2.0.62",
+        "@ai-sdk/openai-compatible": "^1.0.26",
+        "@ai-sdk/perplexity": "^2.0.17",
+        "@ai-sdk/react": "^2.0.87",
+        "@ai-sdk/replicate": "^1.0.17",
+        "@ai-sdk/revai": "^1.0.17",
+        "@ai-sdk/togetherai": "^1.0.27",
+        "@ai-sdk/xai": "^2.0.31",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
-        "ai": "^5.0.86",
+        "ai": "^5.0.87",
         "dayjs": "^1.11.19",
         "next": "^16.0.1",
         "react": "^19.2.0",
@@ -548,7 +548,7 @@
       "devDependencies": {
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/react": "^19.2.2",
         "typescript": "^5.9.3",
       },
@@ -568,7 +568,7 @@
       "devDependencies": {
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/react": "^19.2.2",
         "typescript": "^5.9.3",
       },
@@ -588,7 +588,7 @@
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/react": "^19.2.2",
         "@types/react-dom": "^19.2.2",
         "typescript": "^5.9.3",
@@ -611,7 +611,7 @@
       "devDependencies": {
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/react": "^19.2.2",
         "@vitejs/plugin-react": "^5.1.0",
         "typescript": "^5.9.3",
@@ -628,7 +628,7 @@
       "devDependencies": {
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/react": "^19.2.2",
         "@vitejs/plugin-react": "^5.1.0",
         "typescript": "^5.9.3",
@@ -651,7 +651,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@polar-sh/checkout": "^0.1.14",
-        "@polar-sh/nextjs": "^0.6.0",
+        "@polar-sh/nextjs": "^0.7.0",
         "@polar-sh/sdk": "^0.40.3",
         "dodopayments": "^2.4.2",
         "dodopayments-checkout": "^1.3.1",
@@ -669,7 +669,7 @@
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "typescript": "^5.9.3",
         "vitest": "^4.0.6",
       },
@@ -688,7 +688,7 @@
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/react": "^19.2.2",
         "typescript": "^5.9.3",
         "vitest": "^4.0.6",
@@ -704,7 +704,7 @@
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/react": "^19.2.2",
       },
     },
@@ -712,7 +712,7 @@
       "name": "@tuturuuu/trigger",
       "version": "0.1.0",
       "dependencies": {
-        "@trigger.dev/sdk": "^4.0.5",
+        "@trigger.dev/sdk": "^4.0.6",
         "@tuturuuu/google": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
@@ -720,7 +720,7 @@
         "dayjs": "^1.11.19",
       },
       "devDependencies": {
-        "@trigger.dev/build": "^4.0.5",
+        "@trigger.dev/build": "^4.0.6",
         "@tuturuuu/typescript-config": "workspace:*",
       },
     },
@@ -735,7 +735,7 @@
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/react": "^19.2.2",
         "typescript": "^5.9.3",
       },
@@ -860,7 +860,7 @@
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/lodash": "^4.17.20",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/react": "^19.2.2",
         "@types/react-dom": "^19.2.2",
         "@types/react-resizable": "^3.0.8",
@@ -906,7 +906,7 @@
       "devDependencies": {
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/react": "^19.2.2",
         "@vitejs/plugin-react": "^5.1.0",
         "typescript": "^5.9.3",
@@ -924,7 +924,7 @@
       "devDependencies": {
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "@types/react": "^19.2.2",
         "@vitejs/plugin-react": "^5.1.0",
         "typescript": "^5.9.3",
@@ -936,7 +936,7 @@
       "version": "0.0.1",
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^24.9.2",
+        "@types/node": "^24.10.0",
         "typescript": "^5.9.3",
       },
     },
@@ -1501,7 +1501,7 @@
 
     "@polar-sh/checkout": ["@polar-sh/checkout@0.1.14", "", { "dependencies": { "@polar-sh/sdk": "^0.39.1", "@polar-sh/ui": "^0.1.2", "event-source-plus": "^0.1.12", "eventemitter3": "^5.0.1", "markdown-to-jsx": "^7.7.17", "react-hook-form": "^7.65.0" }, "peerDependencies": { "@stripe/react-stripe-js": "^3.6.0 || ^4.0.2", "@stripe/stripe-js": "^7.1.0", "react": "^18 || ^19" } }, "sha512-O5ylbVSCTXq7S+DSaC2c0m4ihb7b9ONFYpkX1WnvxEa1gnmy/DOJcqk6pjkuwb598a2frb0/WjZY+oXGoh2xhQ=="],
 
-    "@polar-sh/nextjs": ["@polar-sh/nextjs@0.6.0", "", { "dependencies": { "@polar-sh/adapter-utils": "0.3.0", "@polar-sh/sdk": "^0.40.2" }, "peerDependencies": { "next": "^15.0.0 || ^16.0.0" } }, "sha512-f59PEZ6mauCLS07Qbd7mmkZqmVwbZnvguhGXpb+kCIA+HrsI6AE5B+JU+pxE5pNCng0U/e+9/RoANbp7BcsPEw=="],
+    "@polar-sh/nextjs": ["@polar-sh/nextjs@0.7.0", "", { "dependencies": { "@polar-sh/adapter-utils": "0.3.0", "@polar-sh/sdk": "^0.40.2" }, "peerDependencies": { "next": "^15.0.0 || ^16.0.0" } }, "sha512-Xvy8tigqWSyyVdXl5GpGrKDehB9CzYhqfEHG7hWbiWerWZ7xgd/2gSLmGkGhRJeby04qtlaEufb4GfX9v7YREg=="],
 
     "@polar-sh/sdk": ["@polar-sh/sdk@0.40.3", "", { "dependencies": { "standardwebhooks": "^1.0.0", "zod": "^3.25.76" } }, "sha512-RDCqxg+scC9oPwwXj9KdL4NM44h7l8iu4PvlzPP7Z6E+0aOuBh/zskruoNUvna0WWvx8IP2I0JOkmHCJ0pgkuQ=="],
 
@@ -2038,8 +2038,6 @@
     "@trigger.dev/core": ["@trigger.dev/core@4.0.6", "", { "dependencies": { "@bugsnag/cuid": "^3.1.1", "@electric-sql/client": "1.0.14", "@google-cloud/precise-date": "^4.0.0", "@jsonhero/path": "^1.0.21", "@opentelemetry/api": "1.9.0", "@opentelemetry/api-logs": "0.203.0", "@opentelemetry/core": "2.0.1", "@opentelemetry/exporter-logs-otlp-http": "0.203.0", "@opentelemetry/exporter-trace-otlp-http": "0.203.0", "@opentelemetry/instrumentation": "0.203.0", "@opentelemetry/resources": "2.0.1", "@opentelemetry/sdk-logs": "0.203.0", "@opentelemetry/sdk-trace-base": "2.0.1", "@opentelemetry/sdk-trace-node": "2.0.1", "@opentelemetry/semantic-conventions": "1.36.0", "dequal": "^2.0.3", "eventsource": "^3.0.5", "eventsource-parser": "^3.0.0", "execa": "^8.0.1", "humanize-duration": "^3.27.3", "jose": "^5.4.0", "nanoid": "3.3.8", "prom-client": "^15.1.0", "socket.io": "4.7.4", "socket.io-client": "4.7.5", "std-env": "^3.8.1", "superjson": "^2.2.1", "tinyexec": "^0.3.2", "uncrypto": "^0.1.3", "zod": "3.25.76", "zod-error": "1.5.0", "zod-validation-error": "^1.5.0" } }, "sha512-V4w0Wmvw4fst0dbQ7LjmYuaWyLVlwNcLc6f2EB39XqoS7PVQGfRm6KCFWc0sG5x9xa/RBpusXcwmRK0C5QgW9g=="],
 
     "@trigger.dev/sdk": ["@trigger.dev/sdk@4.0.6", "", { "dependencies": { "@opentelemetry/api": "1.9.0", "@opentelemetry/semantic-conventions": "1.36.0", "@trigger.dev/core": "4.0.6", "chalk": "^5.2.0", "cronstrue": "^2.21.0", "debug": "^4.3.4", "evt": "^2.4.13", "slug": "^6.0.0", "ulid": "^2.3.0", "uncrypto": "^0.1.3", "uuid": "^9.0.0", "ws": "^8.11.0" }, "peerDependencies": { "ai": "^4.2.0 || ^5.0.0", "zod": "^3.0.0 || ^4.0.0" }, "optionalPeers": ["ai"] }, "sha512-jf10/JLoU2Xl8lH5CNM1220PyUHSJiRWfheZBvPh9bu8u0/AvhhJMKqeo3gQyuFjV1xd3BKrMeMULaq2Uy2olQ=="],
-
-    "@trivago/prettier-plugin-sort-imports": ["@trivago/prettier-plugin-sort-imports@5.2.2", "", { "dependencies": { "@babel/generator": "^7.26.5", "@babel/parser": "^7.26.7", "@babel/traverse": "^7.26.7", "@babel/types": "^7.26.7", "javascript-natural-sort": "^0.7.1", "lodash": "^4.17.21" }, "peerDependencies": { "@vue/compiler-sfc": "3.x", "prettier": "2.x - 3.x", "prettier-plugin-svelte": "3.x", "svelte": "4.x || 5.x" }, "optionalPeers": ["@vue/compiler-sfc", "prettier-plugin-svelte", "svelte"] }, "sha512-fYDQA9e6yTNmA13TLVSA+WMQRc5Bn/c0EUBditUHNfMMxN7M82c38b1kEggVE3pLpZ0FwkwJkUEKMiOi52JXFA=="],
 
     "@trpc/client": ["@trpc/client@11.7.1", "", { "peerDependencies": { "@trpc/server": "11.7.1", "typescript": ">=5.7.2" } }, "sha512-uOnAjElKI892/U6aQMcBHYs3x7mme3Cvv1F87ytBL56rBvs7+DyK7r43zgaXKf13+GtPEI6ex5xjVUfyDW8XcQ=="],
 
@@ -2898,8 +2896,6 @@
     "istanbul-reports": ["istanbul-reports@3.2.0", "", { "dependencies": { "html-escaper": "^2.0.0", "istanbul-lib-report": "^3.0.0" } }, "sha512-HGYWWS/ehqTV3xN10i23tkPkpH46MLCIMFNCaaKNavAXTF1RkqxawEPtnjnGZ6XKSInBKkiOA5BKS+aZiY3AvA=="],
 
     "jackspeak": ["jackspeak@4.1.1", "", { "dependencies": { "@isaacs/cliui": "^8.0.2" } }, "sha512-zptv57P3GpL+O0I7VdMJNBZCu+BPHVQUk55Ft8/QCJjTVxrnJHuVuX/0Bl2A6/+2oyR/ZMEuFKwmzqqZ/U5nPQ=="],
-
-    "javascript-natural-sort": ["javascript-natural-sort@0.7.1", "", {}, "sha512-nO6jcEfZWQXDhOiBtG2KvKyEptz7RVbpGP4vTD2hLBdmNQSsCiicO2Ioinv6UI4y9ukqnBpy+XZ9H6uLNgJTlw=="],
 
     "jiti": ["jiti@2.4.2", "", { "bin": { "jiti": "lib/jiti-cli.mjs" } }, "sha512-rg9zJN+G4n2nfJl5MW3BMygZX56zKPNVEYYqq7adpmMh4Jn2QNEwhvQlFy6jPVdcod7txZtKHWnyZiA3a0zP7A=="],
 
@@ -3937,6 +3933,12 @@
 
     "@trigger.dev/sdk/uuid": ["uuid@9.0.1", "", { "bin": { "uuid": "dist/bin/uuid" } }, "sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA=="],
 
+    "@types/cors/@types/node": ["@types/node@24.9.2", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-uWN8YqxXxqFMX2RqGOrumsKeti4LlmIMIyV0lgut4jx7KQBcBiW6vkDtIBvHnHIquwNfJhk8v2OtmO8zXWHfPA=="],
+
+    "@types/papaparse/@types/node": ["@types/node@24.9.2", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-uWN8YqxXxqFMX2RqGOrumsKeti4LlmIMIyV0lgut4jx7KQBcBiW6vkDtIBvHnHIquwNfJhk8v2OtmO8zXWHfPA=="],
+
+    "@types/ws/@types/node": ["@types/node@24.9.2", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-uWN8YqxXxqFMX2RqGOrumsKeti4LlmIMIyV0lgut4jx7KQBcBiW6vkDtIBvHnHIquwNfJhk8v2OtmO8zXWHfPA=="],
+
     "accepts/mime-types": ["mime-types@2.1.35", "", { "dependencies": { "mime-db": "1.52.0" } }, "sha512-ZDY+bPm5zTTF+YpCrAU9nK0UgICYPT0QtT1NZWFv4s++TNkcgVaT0g6+4R2uI4MjQjzysHB1zxuWL50hzaeXiw=="],
 
     "accepts/negotiator": ["negotiator@0.6.3", "", {}, "sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg=="],
@@ -3958,6 +3960,8 @@
     "dom-serializer/entities": ["entities@4.5.0", "", {}, "sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw=="],
 
     "duplexer2/readable-stream": ["readable-stream@2.3.8", "", { "dependencies": { "core-util-is": "~1.0.0", "inherits": "~2.0.3", "isarray": "~1.0.0", "process-nextick-args": "~2.0.0", "safe-buffer": "~5.1.1", "string_decoder": "~1.1.1", "util-deprecate": "~1.0.1" } }, "sha512-8p0AUk4XODgIewSi0l8Epjs+EVnWiK7NoDIEGU0HhE7+ZyY8D1IMY7odu5lRrFXGg71L15KG8QrPmum45RTtdA=="],
+
+    "engine.io/@types/node": ["@types/node@24.9.2", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-uWN8YqxXxqFMX2RqGOrumsKeti4LlmIMIyV0lgut4jx7KQBcBiW6vkDtIBvHnHIquwNfJhk8v2OtmO8zXWHfPA=="],
 
     "engine.io/cookie": ["cookie@0.7.2", "", {}, "sha512-yki5XnKuf750l50uGTllt6kKILY4nQ1eNIQatoXEByZ5dWgnKqbnqmTrBE5B4N7lrMJKQ2ytWMiTO2o0v6Ew/w=="],
 
@@ -4018,6 +4022,8 @@
     "postcss/nanoid": ["nanoid@3.3.11", "", { "bin": { "nanoid": "bin/nanoid.cjs" } }, "sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w=="],
 
     "pretty-format/react-is": ["react-is@17.0.2", "", {}, "sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w=="],
+
+    "protobufjs/@types/node": ["@types/node@24.9.2", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-uWN8YqxXxqFMX2RqGOrumsKeti4LlmIMIyV0lgut4jx7KQBcBiW6vkDtIBvHnHIquwNfJhk8v2OtmO8zXWHfPA=="],
 
     "react-email/commander": ["commander@13.1.0", "", {}, "sha512-/rFeCpNJQbhSZjGVwO9RFV3xPqbnERS8MmIQzCtD/zl6gpJuV/bMLuN92oG3F7d8oDEHHRrujSXNUr8fpjntKw=="],
 
@@ -4220,6 +4226,8 @@
     "@aws-crypto/sha256-browser/@smithy/util-utf8/@smithy/util-buffer-from/@smithy/is-array-buffer": ["@smithy/is-array-buffer@2.2.0", "", { "dependencies": { "tslib": "^2.6.2" } }, "sha512-GGP3O9QFD24uGeAXYUjwSTXARoqpZykHadOmA8G5vfJPK0/DC67qa//0qvqrJzL1xc8WQWX7/yc7fwudjPHPhA=="],
 
     "@aws-crypto/util/@smithy/util-utf8/@smithy/util-buffer-from/@smithy/is-array-buffer": ["@smithy/is-array-buffer@2.2.0", "", { "dependencies": { "tslib": "^2.6.2" } }, "sha512-GGP3O9QFD24uGeAXYUjwSTXARoqpZykHadOmA8G5vfJPK0/DC67qa//0qvqrJzL1xc8WQWX7/yc7fwudjPHPhA=="],
+
+    "@trigger.dev/core/socket.io/engine.io/@types/node": ["@types/node@24.9.2", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-uWN8YqxXxqFMX2RqGOrumsKeti4LlmIMIyV0lgut4jx7KQBcBiW6vkDtIBvHnHIquwNfJhk8v2OtmO8zXWHfPA=="],
 
     "@trigger.dev/core/socket.io/engine.io/cookie": ["cookie@0.4.2", "", {}, "sha512-aSWTXFzaKWkvHO1Ny/s+ePFpvKsPnjc551iI41v3ny/ow6tBG5Vd+FuqGNhh1LxOmVzOlGUriIlOaokOvhaStA=="],
 

@@ -1,0 +1,83 @@
+# This file defines the Rust project configuration and dependencies
+# Learn more: https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[package]
+name = "backend"
+version = "0.1.0"
+edition = "2024"
+authors = ["Tuturuuu Team"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# Tokio: Async runtime for Rust - enables asynchronous programming
+# Features: 'full' includes all tokio features for learning
+tokio = { version = "1.48.0", features = ["full"] }
+tokio-stream = "0.1.17"
+
+# Axum: Modern web framework built on tokio
+# Easy to learn, type-safe, and performant
+axum = { version = "0.8.6", features = ["ws"] }
+
+# Serde: Serialization/deserialization framework
+# Essential for working with JSON, TOML, and other formats
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+
+# Tower: Modular components for building network services
+# Used by axum for middleware and services
+tower = "0.5.2"
+tower-http = { version = "0.6.6", features = ["cors", "trace"] }
+
+# Tracing: Application-level tracing for debugging and monitoring
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
+
+# Dotenv: Load environment variables from .env files
+dotenvy = "0.15.7"
+
+# Chrono: Date and time library
+chrono = { version = "0.4.42", features = ["serde"] }
+
+# SQLx: Async SQL toolkit for Rust with compile-time checked queries
+# Features: PostgreSQL driver, runtime tokio, TLS via rustls, migrations
+# Note: default-features = false to exclude MySQL driver and avoid RUSTSEC-2023-0071
+#       (rsa 0.9.8 vulnerability in sqlx-mysql). We only use PostgreSQL, so MySQL is not needed.
+#       The "any" feature in default features pulls in all database drivers including MySQL.
+sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "migrate", "macros", "json"] }
+
+# JWT: JSON Web Token implementation for authentication
+# Note: Using 9.3.0 as 10.x has compilation issues in some environments
+jsonwebtoken = "9.3.0"
+
+# Bcrypt: Password hashing library for secure password storage
+bcrypt = "0.17.1"
+
+# Validator: Struct validation for request data
+validator = { version = "0.20.0", features = ["derive"] }
+
+# UUID: Universally Unique Identifier generation
+uuid = { version = "1.18.1", features = ["v4", "serde"] }
+
+# Async-trait: Trait with async methods
+async-trait = "0.1.89"
+
+# Multer: Multipart form-data parser for file uploads
+multer = "3.1.0"
+
+# Axum-extra: Additional utilities for Axum
+axum-extra = { version = "0.12.1", features = ["typed-header"] }
+
+# Futures: Async utilities and combinators
+futures = "0.3.31"
+
+# Thiserror: Derive macro for error types
+thiserror = "2.0.17"
+
+[dev-dependencies]
+# Dependencies used only for testing
+# HTTPs testing client for integration tests
+reqwest = { version = "0.12.24", features = ["json"] }
+
+# Serial test: Run tests serially to avoid environment variable conflicts
+serial_test = "3.2.0"

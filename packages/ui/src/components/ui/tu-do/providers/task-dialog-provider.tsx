@@ -53,6 +53,7 @@ interface TaskDialogState {
   collaborationMode?: boolean;
   originalPathname?: string;
   filters?: TaskFilters;
+  previousUrl?: string;
 }
 
 interface TaskDialogContextValue {
@@ -60,7 +61,12 @@ interface TaskDialogContextValue {
   state: TaskDialogState;
 
   // Open dialog for editing existing task
-  openTask: (task: Task, boardId: string, availableLists?: TaskList[]) => void;
+  openTask: (
+    task: Task,
+    boardId: string,
+    availableLists?: TaskList[],
+    options?: { preserveUrl?: boolean }
+  ) => void;
 
   // Open task by ID (fetches task data first)
   openTaskById: (taskId: string) => Promise<void>;

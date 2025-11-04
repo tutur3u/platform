@@ -44,6 +44,7 @@ import {
   Logs,
   Mail,
   Mails,
+  MailX,
   MessageCircleIcon,
   Package,
   PencilLine,
@@ -1035,6 +1036,11 @@ export async function WorkspaceNavigationLinks({
               title: t('infrastructure-tabs.workspaces'),
               href: `/${personalOrWsId}/infrastructure/workspaces`,
               icon: <Blocks className="h-5 w-5" />,
+            },
+            {
+              title: t('infrastructure-tabs.email_blacklist'),
+              href: `/${personalOrWsId}/infrastructure/email-blacklist`,
+              icon: <MailX className="h-5 w-5" />,
             },
             {
               title: t('infrastructure-tabs.timezones'),
