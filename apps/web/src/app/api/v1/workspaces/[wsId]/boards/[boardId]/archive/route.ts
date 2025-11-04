@@ -10,16 +10,28 @@ const paramsSchema = z.object({
 async function authorize(wsId: string) {
   console.log('Authorizing request for workspace:', wsId);
   const supabase = await createClient();
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
   if (userError) {
     console.error('Error getting user:', userError);
-    return { user: null, error: NextResponse.json({ error: 'Internal server error' }, { status: 500 }) };
+    return {
+      user: null,
+      error: NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      ),
+    };
   }
 
   if (!user) {
     console.log('No user found, returning unauthorized');
-    return { user: null, error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
+    return {
+      user: null,
+      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
   }
 
   console.log('User found:', user.id);
@@ -33,12 +45,24 @@ async function authorize(wsId: string) {
 
   if (memberError) {
     console.error('Error checking workspace membership:', memberError);
-    return { user: null, error: NextResponse.json({ error: 'Internal server error' }, { status: 500 }) };
+    return {
+      user: null,
+      error: NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      ),
+    };
   }
 
   if (!memberCheck) {
     console.log('User is not a member of the workspace, returning forbidden');
-    return { user: null, error: NextResponse.json({ error: "You don't have access to this workspace" }, { status: 403 }) };
+    return {
+      user: null,
+      error: NextResponse.json(
+        { error: "You don't have access to this workspace" },
+        { status: 403 }
+      ),
+    };
   }
 
   console.log('User is a member of the workspace');
@@ -70,11 +94,17 @@ export async function POST(
     }
 
     if (board.archived_at) {
-      return NextResponse.json({ error: 'Board is already archived' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Board is already archived' },
+        { status: 400 }
+      );
     }
 
     if (board.deleted_at) {
-      return NextResponse.json({ error: 'Cannot archive a deleted board' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Cannot archive a deleted board' },
+        { status: 400 }
+      );
     }
 
     const { error: archiveError } = await supabase
@@ -84,7 +114,10 @@ export async function POST(
 
     if (archiveError) {
       console.error('Error archiving board:', archiveError);
-      return NextResponse.json({ error: 'Failed to archive board' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Failed to archive board' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ success: true });
@@ -122,11 +155,17 @@ export async function DELETE(
     }
 
     if (!board.archived_at) {
-      return NextResponse.json({ error: 'Board is not archived' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Board is not archived' },
+        { status: 400 }
+      );
     }
 
     if (board.deleted_at) {
-      return NextResponse.json({ error: 'Cannot unarchive a deleted board' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Cannot unarchive a deleted board' },
+        { status: 400 }
+      );
     }
 
     const { error: unarchiveError } = await supabase
@@ -136,7 +175,10 @@ export async function DELETE(
 
     if (unarchiveError) {
       console.error('Error unarchiving board:', unarchiveError);
-      return NextResponse.json({ error: 'Failed to unarchive board' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Failed to unarchive board' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ success: true });
