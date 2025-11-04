@@ -52,6 +52,7 @@ pub struct Config {
     pub max_file_size_bytes: usize,
 
     /// CORS allowed origin
+    #[allow(dead_code)]
     pub cors_origin: String,
 
     /// Application environment (development, production, test)
