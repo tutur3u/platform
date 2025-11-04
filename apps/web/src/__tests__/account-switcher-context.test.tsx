@@ -130,7 +130,12 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 describe('AccountSwitcherContext', () => {
   beforeEach(() => {
     // Clear localStorage before each test
-    localStorage.clear();
+    if (
+      typeof localStorage !== 'undefined' &&
+      typeof localStorage.clear === 'function'
+    ) {
+      localStorage.clear();
+    }
     vi.clearAllMocks();
     eventHandler = null;
 
@@ -193,7 +198,12 @@ describe('AccountSwitcherContext', () => {
   });
 
   afterEach(() => {
-    localStorage.clear();
+    if (
+      typeof localStorage !== 'undefined' &&
+      typeof localStorage.clear === 'function'
+    ) {
+      localStorage.clear();
+    }
   });
 
   describe('Initialization', () => {
