@@ -1124,7 +1124,6 @@ function TaskEditDialogComponent({
   const previousSlashHighlightRef = useRef(0);
   const previousSlashQueryRef = useRef('');
   const previousMentionQueryRef = useRef('');
-  const originalUrlRef = useRef<string | null>(null);
 
   const suggestionMenuWidth = 360;
 
@@ -2553,32 +2552,6 @@ function TaskEditDialogComponent({
     queryClient,
     doc,
   ]);
-
-  // Sync URL with task dialog state (edit mode only)
-  useEffect(() => {
-    if (!isOpen || isCreateMode || !task?.id || !workspaceId || !pathname)
-      return;
-
-    if (!originalUrlRef.current && !pathname.match(/\/tasks\/[^/]+$/)) {
-      originalUrlRef.current = pathname;
-    }
-
-    const newUrl = `/${workspaceId}/tasks/${task.id}`;
-    window.history.replaceState(null, '', newUrl);
-
-    return () => {
-      if (originalUrlRef.current) {
-        window.history.replaceState(null, '', originalUrlRef.current);
-        originalUrlRef.current = null;
-      } else if (boardId) {
-        window.history.replaceState(
-          null,
-          '',
-          `/${workspaceId}/tasks/boards/${boardId}`
-        );
-      }
-    };
-  }, [isOpen, task?.id, pathname, boardId, isCreateMode, workspaceId]);
 
   // Reset state when dialog closes or opens
   const isMountedRef = useRef(true);

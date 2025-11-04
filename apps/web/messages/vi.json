@@ -1314,6 +1314,7 @@
     "backups": "Sao lưu",
     "integrations": "Dịch vụ tích hợp",
     "ai_whitelisted_emails": "Email nằm trong danh sách trắng của AI",
+    "email_blacklist": "Danh sách đen email",
     "translations": "Bản dịch"
   },
   "basic-data-table": {
@@ -1445,6 +1446,52 @@
     "source_email": "Email nguồn",
     "created_at": "Ngày tạo"
   },
+  "email-blacklist": {
+    "plural": "Danh sách chặn Email",
+    "singular": "Mục chặn Email",
+    "description": "Quản lý các địa chỉ email và tên miền bị chặn để ngăn chặn đăng ký hoặc giao tiếp không mong muốn.",
+    "create": "Thêm mục chặn",
+    "create_description": "Chặn địa chỉ email cụ thể hoặc toàn bộ tên miền khỏi nền tảng.",
+    "entry-type": "Loại mục",
+    "select-entry-type": "Chọn loại mục",
+    "email": "Địa chỉ Email",
+    "domain": "Tên miền",
+    "value": "Giá trị",
+    "reason": "Lý do",
+    "reason-placeholder": "Tại sao mục này bị chặn? (tùy chọn)",
+    "reason-description": "Giải thích tùy chọn về lý do mục này bị chặn.",
+    "email-description": "Chặn một địa chỉ email cụ thể",
+    "domain-description": "Chặn tất cả địa chỉ email từ một tên miền",
+    "value-email-hint": "Nhập địa chỉ email đầy đủ để chặn (vd: user@example.com)",
+    "value-domain-hint": "Nhập tên miền để chặn (vd: example.com)",
+    "invalid-email": "Vui lòng nhập địa chỉ email hợp lệ",
+    "invalid-domain": "Vui lòng nhập tên miền hợp lệ (vd: example.com)",
+    "entry-created": "Đã thêm mục",
+    "entry-created-description": "Mục chặn email đã được tạo thành công.",
+    "entry-updated": "Đã cập nhật mục",
+    "entry-updated-description": "Mục chặn email đã được cập nhật thành công.",
+    "entry-deleted": "Đã xóa mục",
+    "has-been-updated": "đã được cập nhật thành công",
+    "has-been-deleted": "đã được xóa khỏi danh sách chặn",
+    "edit-entry": "Chỉnh sửa mục chặn",
+    "edit-entry-description": "Cập nhật lý do cho mục chặn này.",
+    "delete-failed": "Xóa thất bại",
+    "delete-error": "Không thể xóa mục chặn",
+    "operation-failed": "Thao tác thất bại",
+    "network-error": "Đã xảy ra lỗi mạng. Vui lòng thử lại.",
+    "error": "Lỗi"
+  },
+  "email-blacklist-data-table": {
+    "id": "Mã số",
+    "entry_type": "Loại",
+    "value": "Giá trị",
+    "reason": "Lý do",
+    "email": "Email",
+    "domain": "Tên miền",
+    "created_at": "Ngày tạo",
+    "updated_at": "Ngày cập nhật",
+    "added_by": "Người thêm"
+  },
   "post-email-data-table": {
     "id": "Mã số",
     "recipient": "Người nhận",
@@ -1542,6 +1589,21 @@
     "creator_name": "Tên người tạo",
     "updated_at": "Cập nhật lúc",
     "created_at": "Tạo lúc"
+  },
+  "workspace-settings": {
+    "infrastructure": {
+      "email-blacklist": {
+        "title": "Danh sách đen email",
+        "description": "Quản lý các email và tên miền bị chặn để ngăn chặn đăng ký.",
+        "type": "Loại",
+        "value": "Giá trị",
+        "reason": "Lý do",
+        "added-by": "Người thêm",
+        "created-at": "Ngày tạo",
+        "actions": "Hành động",
+        "no-results": "Không tìm thấy mục nào trong danh sách đen."
+      }
+    }
   },
   "wallet-data-table": {
     "id": "Mã số",
@@ -1710,7 +1772,8 @@
     "expired": "Đã hết hạn",
     "never_used": "Chưa sử dụng",
     "no_expiration": "Không bao giờ hết hạn",
-    "expires_in": "còn {days} ngày"
+    "expires_in": "còn {days} ngày",
+    "value": "Giá trị"
   },
   "workspace-role-data-table": {
     "id": "Mã số",

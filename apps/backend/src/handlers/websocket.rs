@@ -267,16 +267,14 @@ async fn handle_socket_room(socket: WebSocket, state: WebSocketState, room: Stri
     let mut send_task = tokio::spawn(async move {
         while let Ok(msg) = rx.recv().await {
             // Only forward messages for this room
-            if msg.starts_with(&format!("room:{}:", room_clone)) {
-                if let Some(content) = msg.strip_prefix(&format!("room:{}:", room_clone)) {
-                    if sender
-                        .send(Message::Text(content.to_string().into()))
-                        .await
-                        .is_err()
-                    {
-                        break;
-                    }
-                }
+            if msg.starts_with(&format!("room:{}:", room_clone))
+                && let Some(content) = msg.strip_prefix(&format!("room:{}:", room_clone))
+                && sender
+                    .send(Message::Text(content.to_string().into()))
+                    .await
+                    .is_err()
+            {
+                break;
             }
         }
     });

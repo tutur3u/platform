@@ -63,22 +63,19 @@ pub async fn optional_auth_middleware(mut request: Request, next: Next) -> Respo
         .headers()
         .get(AUTHORIZATION)
         .and_then(|h| h.to_str().ok())
+        && auth_header.starts_with("Bearer ")
     {
-        if auth_header.starts_with("Bearer ") {
-            let token = auth_header.trim_start_matches("Bearer ");
+        let token = auth_header.trim_start_matches("Bearer ");
 
-            if let Ok(jwt_secret) = std::env::var("JWT_SECRET") {
-                if let Ok(token_data) = decode::<Claims>(
-                    token,
-                    &DecodingKey::from_secret(jwt_secret.as_bytes()),
-                    &Validation::default(),
-                ) {
-                    // Only store if valid and not expired
-                    if !token_data.claims.is_expired() {
-                        request.extensions_mut().insert(token_data.claims);
-                    }
-                }
-            }
+        if let Ok(jwt_secret) = std::env::var("JWT_SECRET")
+            && let Ok(token_data) = decode::<Claims>(
+                token,
+                &DecodingKey::from_secret(jwt_secret.as_bytes()),
+                &Validation::default(),
+            )
+            && !token_data.claims.is_expired()
+        {
+            request.extensions_mut().insert(token_data.claims);
         }
     }
 

@@ -61,6 +61,7 @@ pub enum UserRole {
     Moderator,
 }
 
+#[allow(dead_code)]
 impl UserRole {
     /// Check if the role has admin privileges
     pub fn is_admin(&self) -> bool {
@@ -96,6 +97,7 @@ impl std::str::FromStr for UserRole {
     }
 }
 
+#[allow(dead_code)]
 impl User {
     /// Create a new user with default values
     ///
@@ -162,6 +164,7 @@ impl User {
 ///
 /// This struct is safe to return in API responses
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct PublicUser {
     pub id: Uuid,
     pub email: String,
@@ -175,11 +178,13 @@ pub struct PublicUser {
 
 /// User profile update data
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct UserUpdate {
     pub name: Option<String>,
     pub avatar_url: Option<String>,
 }
 
+#[allow(dead_code)]
 impl UserUpdate {
     /// Check if the update contains any changes
     pub fn has_changes(&self) -> bool {

@@ -10,6 +10,21 @@ import {
 } from '../../providers/task-dialog-provider';
 import { TaskDialogManager } from '../task-dialog-manager';
 
+// Mock Next.js navigation
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    refresh: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+  usePathname: () => '/workspace-1/tasks',
+  useSearchParams: () => new URLSearchParams(),
+  useParams: () => ({ wsId: 'workspace-1' }),
+}));
+
 // Mock the TaskEditDialog component since it's lazy-loaded
 vi.mock('../task-edit-dialog', () => ({
   TaskEditDialog: ({

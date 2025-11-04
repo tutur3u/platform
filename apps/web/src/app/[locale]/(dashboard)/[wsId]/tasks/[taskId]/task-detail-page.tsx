@@ -3,6 +3,8 @@
 import { Loader2 } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
+import { useTaskDialogContext } from '@tuturuuu/ui/tu-do/providers/task-dialog-provider';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface TaskDetailPageProps {
@@ -19,8 +21,11 @@ export default function TaskDetailPage({
   wsId,
 }: TaskDetailPageProps) {
   const { openTask, onUpdate, onClose } = useTaskDialog();
+  const { state: dialogState } = useTaskDialogContext();
+  const router = useRouter();
   const hasRedirectedRef = useRef(false);
   const [isNavigating, setIsNavigating] = useState(false);
+  const wasOpenOnMount = useRef(dialogState.isOpen);
 
   // Handle navigation back to board view
   const navigateToBoard = useCallback(() => {
@@ -29,20 +34,16 @@ export default function TaskDetailPage({
       return;
     }
 
-    console.log('🔙 Starting navigation with full page refresh...', {
-      from: 'task detail page',
-      to: `/${wsId}/tasks/boards/${boardId}`,
-    });
-
     hasRedirectedRef.current = true;
     setIsNavigating(true);
 
-    const targetUrl = `/${wsId}/tasks/boards/${boardId}`;
-    console.log('🔀 Full page refresh to:', targetUrl);
-
-    // Do a full page refresh to ensure everything is properly cleaned up
-    window.location.href = targetUrl;
-  }, [wsId, boardId]);
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      const targetUrl = `/${wsId}/tasks/boards/${boardId}`;
+      router.push(targetUrl);
+    }
+  }, [wsId, boardId, router]);
 
   // Register update callback to redirect after task update
   const handleUpdate = useCallback(() => {
@@ -58,6 +59,8 @@ export default function TaskDetailPage({
 
   // Register the update and close callbacks
   useEffect(() => {
+    if (wasOpenOnMount.current) return;
+
     console.log('✅ Registering task detail page callbacks');
     onUpdate(handleUpdate);
     onClose(handleClose);
@@ -65,6 +68,8 @@ export default function TaskDetailPage({
 
   // Open task dialog on mount
   useEffect(() => {
+    if (wasOpenOnMount.current) return;
+
     openTask(task, boardId);
   }, [task, boardId, openTask]);
 
