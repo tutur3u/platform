@@ -1,7 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getPermissions} from '@tuturuuu/utils/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -49,12 +49,8 @@ export default async function EmailBlacklistPage({
       {async ({ wsId, locale }) => {
         const t = await getTranslations();
 
-
-
         const { containsPermission } = await getPermissions({ wsId });
-        const canViewInfrastructure = containsPermission(
-          'view_infrastructure'
-        );
+        const canViewInfrastructure = containsPermission('view_infrastructure');
         if (!canViewInfrastructure) {
           notFound();
         }
@@ -65,32 +61,32 @@ export default async function EmailBlacklistPage({
 
         return (
           <>
-          <FeatureSummary
-            pluralTitle={t('email-blacklist.plural')}
-            singularTitle={t('email-blacklist.singular')}
-            description={t('email-blacklist.description')}
-            createTitle={t('email-blacklist.create')}
-            createDescription={t('email-blacklist.create_description')}
-            form={<EmailBlacklistForm />}
-          />
-          <Separator className="my-4" />
-          <CustomDataTable
-            data={data}
-            namespace="email-blacklist-data-table"
-            columnGenerator={getEmailBlacklistColumns}
-            extraData={{
-              locale,
-            }}
-            count={count}
-            defaultVisibility={{
-              id: false,
-              created_at: false,
-              updated_at: false,
-              added_by_user_id: false,
-            }}
-            filters={<Filters />}
-          />
-        </>
+            <FeatureSummary
+              pluralTitle={t('email-blacklist.plural')}
+              singularTitle={t('email-blacklist.singular')}
+              description={t('email-blacklist.description')}
+              createTitle={t('email-blacklist.create')}
+              createDescription={t('email-blacklist.create_description')}
+              form={<EmailBlacklistForm />}
+            />
+            <Separator className="my-4" />
+            <CustomDataTable
+              data={data}
+              namespace="email-blacklist-data-table"
+              columnGenerator={getEmailBlacklistColumns}
+              extraData={{
+                locale,
+              }}
+              count={count}
+              defaultVisibility={{
+                id: false,
+                created_at: false,
+                updated_at: false,
+                added_by_user_id: false,
+              }}
+              filters={<Filters />}
+            />
+          </>
         );
       }}
     </WorkspaceWrapper>

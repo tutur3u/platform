@@ -80,7 +80,10 @@ export default function EmailBlacklistForm({
   const entryType = form.watch('entry_type');
 
   // Validate value based on entry type
-  const validateValue = (value: string, type: 'email' | 'domain'): string | null => {
+  const validateValue = (
+    value: string,
+    type: 'email' | 'domain'
+  ): string | null => {
     if (type === 'email') {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(value)) {
@@ -205,9 +208,7 @@ export default function EmailBlacklistForm({
                 <Input
                   {...field}
                   placeholder={
-                    entryType === 'email'
-                      ? 'user@example.com'
-                      : 'example.com'
+                    entryType === 'email' ? 'user@example.com' : 'example.com'
                   }
                   disabled={!!data?.id || isLoading}
                   type={entryType === 'email' ? 'email' : 'text'}

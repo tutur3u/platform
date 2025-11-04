@@ -57,9 +57,12 @@ export function EmailBlacklistRowActions({
 
     setIsDeleting(true);
     try {
-      const res = await fetch(`/api/v1/infrastructure/email-blacklist/${entry.id}`, {
-        method: 'DELETE',
-      });
+      const res = await fetch(
+        `/api/v1/infrastructure/email-blacklist/${entry.id}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
       if (res.ok) {
         toast.success(t('email-blacklist.entry-deleted'), {
