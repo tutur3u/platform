@@ -1,3 +1,5 @@
+import type { NavLink } from '@/components/navigation';
+import { DEV_MODE } from '@/constants/common';
 import {
   Activity,
   Archive,
@@ -82,14 +84,12 @@ import {
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
-  ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
+  ROOT_WORKSPACE_ID,
 } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
-import type { NavLink } from '@/components/navigation';
-import { DEV_MODE } from '@/constants/common';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -425,7 +425,7 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/users/attendance`,
           icon: <UserCheck className="h-5 w-5" />,
           disabled:
-            withoutPermission('manage_users') ||
+            withoutPermission('manage_users') &&
             withoutPermission('check_user_attendance'),
         },
         {
@@ -433,16 +433,16 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/users/database`,
           icon: <BookUser className="h-5 w-5" />,
           disabled:
-            withoutPermission('manage_users') ||
-            (withoutPermission('view_users_private_info') &&
-              withoutPermission('view_users_public_info')),
+            withoutPermission('manage_users') &&
+            withoutPermission('view_users_private_info') &&
+            withoutPermission('view_users_public_info'),
         },
         {
           title: t('workspace-users-tabs.groups'),
           href: `/${personalOrWsId}/users/groups`,
           icon: <Users className="h-5 w-5" />,
           disabled:
-            withoutPermission('manage_users') ||
+            withoutPermission('manage_users') &&
             withoutPermission('view_user_groups'),
         },
         {
@@ -450,7 +450,7 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/users/group-tags`,
           icon: <Tags className="h-5 w-5" />,
           disabled:
-            withoutPermission('manage_users') ||
+            withoutPermission('manage_users') &&
             withoutPermission('view_user_groups'),
         },
         {
