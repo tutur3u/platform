@@ -269,6 +269,7 @@ impl Config {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
     use std::env;
 
     /// Helper to set test environment variables
@@ -289,6 +290,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_config_from_env() {
         setup_test_env();
         let config = Config::from_env().expect("Should load config");
@@ -325,6 +327,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_server_address() {
         setup_test_env();
         let config = Config::from_env().unwrap();
@@ -332,6 +335,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_validation_short_jwt_secret() {
         setup_test_env();
         unsafe {
@@ -342,6 +346,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_validation_negative_expiration() {
         setup_test_env();
         unsafe {
@@ -352,6 +357,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_validation_large_file_size() {
         setup_test_env();
         unsafe {
@@ -362,6 +368,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_validation_invalid_database_url() {
         setup_test_env();
         unsafe {
