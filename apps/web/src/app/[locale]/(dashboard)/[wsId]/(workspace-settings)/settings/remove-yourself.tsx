@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertTriangle, UserMinus } from '@tuturuuu/icons';
-import type { Workspace, WorkspaceUserRole } from '@tuturuuu/types';
+import type { Workspace } from '@tuturuuu/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,17 +16,12 @@ import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 interface Props {
-  workspace?:
-    | (Workspace & {
-        role: WorkspaceUserRole;
-        joined: boolean;
-      })
-    | null;
+  workspace?: (Workspace & { joined: boolean }) | null;
 }
 
 export default function RemoveYourself({ workspace }: Props) {

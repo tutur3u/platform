@@ -1,5 +1,5 @@
 import { User as UserIcon } from '@tuturuuu/icons';
-import type { Workspace, WorkspaceUserRole } from '@tuturuuu/types';
+import type { Workspace } from '@tuturuuu/types';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { cn } from '@tuturuuu/utils/format';
@@ -11,7 +11,7 @@ import InviteMemberButton from './invite-member-button';
 import { MemberSettingsButton } from './member-settings-button';
 
 interface Props {
-  workspace?: (Workspace & { role: WorkspaceUserRole }) | null;
+  workspace?: Workspace | null;
   members: User[];
   invited?: boolean;
   loading?: boolean;
