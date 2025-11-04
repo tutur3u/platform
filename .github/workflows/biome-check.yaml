@@ -2,17 +2,6 @@ name: Biome Check
 
 on:
   push:
-    branches-ignore:
-      - 'dependabot/**'
-      - 'staging'
-      - 'production'
-    paths:
-      - '**/*.{ts,tsx,js,jsx,json,yaml,yml}'
-      - '.github/workflows/biome-check.yaml'
-  pull_request:
-    paths:
-      - '**/*.{ts,tsx,js,jsx,json,yaml,yml}'
-      - '.github/workflows/biome-check.yaml'
   workflow_dispatch:
 
 jobs:
@@ -63,22 +52,22 @@ jobs:
           biome_output=$(biome format . 2>&1)
           biome_exit_code=$?
           set -e
-          
+
           echo "exit_code=$biome_exit_code" >> $GITHUB_OUTPUT
-          
+
           # Save output to file for debugging
           echo "$biome_output" > format_output.txt
-          
+
           # Parse biome output for statistics
           # Strip ANSI color codes first, then parse
           clean_output=$(echo "$biome_output" | sed 's/\x1b\[[0-9;]*m//g')
 
           files_checked=$(echo "$clean_output" | grep "Checked [0-9]* files" | sed 's/Checked \([0-9]*\) files.*/\1/' || echo "0")
           errors=$(echo "$clean_output" | grep "Found [0-9]* errors" | sed 's/Found \([0-9]*\) errors.*/\1/' || echo "0")
-          
+
           echo "files_checked=$files_checked" >> $GITHUB_OUTPUT
           echo "errors=$errors" >> $GITHUB_OUTPUT
-          
+
           # Check if there are any issues
           if [ "$biome_exit_code" -ne 0 ]; then
             echo "has_issues=true" >> $GITHUB_OUTPUT
@@ -135,12 +124,12 @@ jobs:
           biome_output=$(biome lint . 2>&1)
           biome_exit_code=$?
           set -e
-          
+
           echo "exit_code=$biome_exit_code" >> $GITHUB_OUTPUT
-          
+
           # Save output to file for debugging
           echo "$biome_output" > lint_output.txt
-          
+
           # Parse biome output for statistics
           # Strip ANSI color codes first, then parse
           clean_output=$(echo "$biome_output" | sed 's/\x1b\[[0-9;]*m//g')
@@ -149,19 +138,19 @@ jobs:
           errors=$(echo "$clean_output" | grep "Found [0-9]* errors" | sed 's/Found \([0-9]*\) errors.*/\1/' || echo "0")
           warnings=$(echo "$clean_output" | grep "Found [0-9]* warnings" | sed 's/Found \([0-9]*\) warnings.*/\1/' || echo "0")
           total_issues=$((errors + warnings))
-          
+
           echo "files_checked=$files_checked" >> $GITHUB_OUTPUT
           echo "errors=$errors" >> $GITHUB_OUTPUT
           echo "warnings=$warnings" >> $GITHUB_OUTPUT
           echo "total_issues=$total_issues" >> $GITHUB_OUTPUT
-          
+
           # Check if there are any issues
           if [ "$biome_exit_code" -ne 0 ]; then
             echo "has_issues=true" >> $GITHUB_OUTPUT
           else
             echo "has_issues=false" >> $GITHUB_OUTPUT
           fi
-  
+
   apply-format:
     name: Apply Format
     runs-on: ubuntu-latest
@@ -205,8 +194,8 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: 'style: apply biome formatting'
-          title: 'style: apply biome formatting for ${{ github.ref_name }}'
+          commit-message: "style: apply biome formatting"
+          title: "style: apply biome formatting for ${{ github.ref_name }}"
           body: |
             This PR fixes code formatting issues using Biome.
 
@@ -310,7 +299,7 @@ jobs:
           script: |
             // Get PR number from context or search for PR associated with this branch
             let prNumber = null;
-            
+
             if (context.issue && context.issue.number) {
               prNumber = context.issue.number;
             } else {
@@ -331,23 +320,23 @@ jobs:
                 return; // Exit if no PR is found
               }
             }
-            
+
             if (!prNumber) {
               console.log('No PR found to comment on');
               return;
             }
-            
+
             // Get outputs from both jobs
             const formatFilesChecked = '${{ needs.format.outputs.files_checked }}';
             const formatErrors = '${{ needs.format.outputs.errors }}';
             const formatHasIssues = '${{ needs.format.outputs.has_issues }}';
-            
+
             const lintFilesChecked = '${{ needs.lint.outputs.files_checked }}';
             const lintErrors = '${{ needs.lint.outputs.errors }}';
             const lintWarnings = '${{ needs.lint.outputs.warnings }}';
             const lintTotalIssues = '${{ needs.lint.outputs.total_issues }}';
             const lintHasIssues = '${{ needs.lint.outputs.has_issues }}';
-            
+
             // Calculate overall status
             const formatErrorsCount = parseInt(formatErrors) || 0;
             const lintErrorsCount = parseInt(lintErrors) || 0;
@@ -355,18 +344,18 @@ jobs:
             const lintIssueCount = parseInt(lintTotalIssues) || 0;
             const totalIssuesAcrossJobs = formatErrorsCount + lintIssueCount;
             const overallSuccess = formatHasIssues === 'false' && lintHasIssues === 'false';
-            
+
             let body;
 
             const timestamp = new Date().toLocaleString();
 
             const issueIcon = totalIssuesAcrossJobs > 50 ? '🚨' : totalIssuesAcrossJobs > 20 ? '⚠️' : totalIssuesAcrossJobs > 10 ? '🔍' : '🔧';
-            
+
             const formatStatus = formatErrorsCount > 0 ? '🔴 Issues found' : '✅ Passed';
             const lintErrorsStatus = lintErrorsCount > 0 ? '🔴 Needs fixing' : '✅ None';
             const lintWarningsStatus = lintWarningsCount > 0 ? '🟡 Consider fixing' : '✅ None';
             const lintStatus = lintIssueCount > 0 ? '🔴 Issues found' : '✅ Passed';
-            
+
             const nextSteps = overallSuccess ?
               '### 🎉 All Issues Resolved!\n\nYour code is now **100% clean**! Great job! 🏆' :
               '### 📋 Next Steps\n' +
@@ -374,7 +363,7 @@ jobs:
                 '\nRun the following command to fix format issues:\n```bash\nbiome format --write\n```' : '') +
               (lintHasIssues === 'true' ?
                 '\nRun the following command to fix lint issues:\n```bash\nbiome lint --write\n```' : '');
-            
+
             body = `
             ## ${issueIcon} Biome Check Report
 

@@ -2,26 +2,6 @@ name: Test
 
 on:
   push:
-    branches: ["main"]
-    paths:
-      - 'apps/**/src/**'
-      - 'packages/**/src/**'
-      - '**/*.test.{ts,tsx}'
-      - '**/package.json'
-      - 'bun.lockb'
-      - 'turbo.json'
-      - '**/tsconfig*.json'
-      - '.github/workflows/turbo-unit-tests.yaml'
-  pull_request:
-    paths:
-      - 'apps/**/src/**'
-      - 'packages/**/src/**'
-      - '**/*.test.{ts,tsx}'
-      - '**/package.json'
-      - 'bun.lockb'
-      - 'turbo.json'
-      - '**/tsconfig*.json'
-      - '.github/workflows/turbo-unit-tests.yaml'
 
 jobs:
   build:
