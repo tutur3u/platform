@@ -1,3 +1,4 @@
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createPolarClient } from '@/lib/polar';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -147,84 +148,95 @@ export default async function BillingPage({
   params: Promise<{ wsId: string }>;
   searchParams: Promise<{ sandbox: string }>;
 }) {
-  const { wsId } = await params;
-  const { sandbox } = await searchParams;
-
-  const enableSandbox = sandbox === 'true';
-  const isTuturuuuAdmin = await checkTuturuuuAdmin();
-  const [products, subscription, isCreator, subscriptionHistory] =
-    await Promise.all([
-      fetchProducts({ wsId, sandbox: enableSandbox }),
-      fetchSubscription({ wsId, sandbox: enableSandbox }),
-      checkCreator(wsId),
-      fetchWorkspaceSubscriptions(wsId),
-    ]);
-
-  const currentPlan = subscription?.product
-    ? {
-        name: subscription.product.name || 'No Plan',
-        price:
-          subscription.product.price &&
-          'priceAmount' in subscription.product.price
-            ? `$${(subscription.product.price.priceAmount / 100).toFixed(2)}`
-            : 'Free',
-        billingCycle:
-          subscription.product.price?.type === 'recurring'
-            ? subscription.product.price?.recurringInterval || 'month'
-            : 'one-time',
-        startDate: subscription.currentPeriodStart
-          ? new Date(subscription.currentPeriodStart).toLocaleDateString()
-          : '-',
-        nextBillingDate: subscription.currentPeriodEnd
-          ? new Date(subscription.currentPeriodEnd).toLocaleDateString()
-          : '-',
-        status: subscription.status || 'inactive',
-        features: [
-          subscription.product.description || 'Standard features',
-          'Customer support',
-          'Access to platform features',
-        ],
-      }
-    : {
-        name: 'Free Plan',
-        price: '$0',
-        billingCycle: 'month',
-        startDate: '-',
-        nextBillingDate: '-',
-        status: 'active',
-        features: ['Basic features', 'Limited usage', 'Community support'],
-      };
-
-  const billingHistory = subscriptionHistory.map((sub, index) => ({
-    id: sub.id ?? `SUB-${sub.product_id?.slice(-6) || index}`,
-    created_at: sub.created_at,
-    product_id: sub.product_id,
-    status: sub.status ?? 'unknown',
-    cancel_at_period_end: sub.cancel_at_period_end,
-    product: sub.workspace_subscription_products
-      ? {
-          name: sub.workspace_subscription_products.name || 'Unknown Plan',
-          description: sub.workspace_subscription_products.description,
-          price: sub.workspace_subscription_products.price || 0,
-          recurring_interval:
-            sub.workspace_subscription_products.recurring_interval || 'month',
-        }
-      : null,
-  }));
-
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-8">
-      <BillingClient
-        currentPlan={currentPlan}
-        isAdmin={isTuturuuuAdmin}
-        products={products}
-        product_id={subscription?.product.id || ''}
-        wsId={wsId}
-        activeSubscriptionId={subscription?.polar_subscription_id || ''}
-        isCreator={isCreator}
-      />
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+        const { sandbox } = await searchParams;
 
-      <BillingHistory billingHistory={billingHistory} />
-    </div>
+        const enableSandbox = sandbox === 'true';
+        const isTuturuuuAdmin = await checkTuturuuuAdmin();
+        const [products, subscription, isCreator, subscriptionHistory] =
+          await Promise.all([
+            fetchProducts({ wsId, sandbox: enableSandbox }),
+            fetchSubscription({ wsId, sandbox: enableSandbox }),
+            checkCreator(wsId),
+            fetchWorkspaceSubscriptions(wsId),
+          ]);
+
+        const currentPlan = subscription?.product
+          ? {
+              name: subscription.product.name || 'No Plan',
+              price:
+                subscription.product.price &&
+                'priceAmount' in subscription.product.price
+                  ? `$${(subscription.product.price.priceAmount / 100).toFixed(2)}`
+                  : 'Free',
+              billingCycle:
+                subscription.product.price?.type === 'recurring'
+                  ? subscription.product.price?.recurringInterval || 'month'
+                  : 'one-time',
+              startDate: subscription.currentPeriodStart
+                ? new Date(subscription.currentPeriodStart).toLocaleDateString()
+                : '-',
+              nextBillingDate: subscription.currentPeriodEnd
+                ? new Date(subscription.currentPeriodEnd).toLocaleDateString()
+                : '-',
+              status: subscription.status || 'inactive',
+              features: [
+                subscription.product.description || 'Standard features',
+                'Customer support',
+                'Access to platform features',
+              ],
+            }
+          : {
+              name: 'Free Plan',
+              price: '$0',
+              billingCycle: 'month',
+              startDate: '-',
+              nextBillingDate: '-',
+              status: 'active',
+              features: [
+                'Basic features',
+                'Limited usage',
+                'Community support',
+              ],
+            };
+
+        const billingHistory = subscriptionHistory.map((sub, index) => ({
+          id: sub.id ?? `SUB-${sub.product_id?.slice(-6) || index}`,
+          created_at: sub.created_at,
+          product_id: sub.product_id,
+          status: sub.status ?? 'unknown',
+          cancel_at_period_end: sub.cancel_at_period_end,
+          product: sub.workspace_subscription_products
+            ? {
+                name:
+                  sub.workspace_subscription_products.name || 'Unknown Plan',
+                description: sub.workspace_subscription_products.description,
+                price: sub.workspace_subscription_products.price || 0,
+                recurring_interval:
+                  sub.workspace_subscription_products.recurring_interval ||
+                  'month',
+              }
+            : null,
+        }));
+
+        return (
+          <div className="container mx-auto max-w-6xl px-4 py-8">
+            <BillingClient
+              currentPlan={currentPlan}
+              isAdmin={isTuturuuuAdmin}
+              products={products}
+              product_id={subscription?.product.id || ''}
+              wsId={wsId}
+              activeSubscriptionId={subscription?.polar_subscription_id || ''}
+              isCreator={isCreator}
+            />
+
+            <BillingHistory billingHistory={billingHistory} />
+          </div>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }

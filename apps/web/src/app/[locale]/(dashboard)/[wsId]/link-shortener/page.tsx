@@ -1,4 +1,5 @@
 import { CustomDataTable } from '@/components/custom-data-table';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
   BarChart3,
   Clock,
@@ -64,226 +65,233 @@ export default async function LinkShortenerPage({
   params,
   searchParams,
 }: Props) {
-  const { wsId } = await params;
-  const t = await getTranslations();
-
-  const [{ data: rawData, count }, analytics] = await Promise.all([
-    getData(wsId, await searchParams),
-    getAnalyticsData(wsId),
-  ]);
-
-  // Fetch analytics data separately
-  const sbAdmin = await createAdminClient();
-  const { data: analyticsData } = await sbAdmin
-    .from('link_analytics_summary')
-    .select('link_id, total_clicks')
-    .in(
-      'link_id',
-      rawData.map((d) => d.id)
-    );
-
-  const analyticsMap = new Map(
-    analyticsData?.map((a) => [a.link_id || '', a.total_clicks || 0]) || []
-  );
-
-  const data = rawData.map((d) => ({
-    ...d,
-    href: `/${wsId}/link-shortener/${d.id}`,
-    click_count: analyticsMap.get(d.id) || 0,
-  }));
-
-  const linksThisMonth = data.filter((d) => {
-    const createdDate = new Date(d.created_at);
-    const now = new Date();
-    return (
-      createdDate.getMonth() === now.getMonth() &&
-      createdDate.getFullYear() === now.getFullYear()
-    );
-  }).length;
-
-  const uniqueCreators = new Set(data.map((d) => d.creator?.id).filter(Boolean))
-    .size;
-
   return (
-    <div className="min-h-screen">
-      <div className="container mx-auto space-y-8 px-4 py-8">
-        {/* Header Section */}
-        <div className="space-y-6 text-center">
-          <div className="flex items-center justify-center space-x-4">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-dynamic-blue/20 blur-lg" />
-              <div className="relative rounded-full border border-dynamic-blue/20 bg-linear-to-br from-dynamic-blue/10 to-dynamic-blue/5 p-4">
-                <LinkIcon className="h-10 w-10 text-dynamic-blue" />
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+        const t = await getTranslations();
+
+        const [{ data: rawData, count }, analytics] = await Promise.all([
+          getData(wsId, await searchParams),
+          getAnalyticsData(wsId),
+        ]);
+
+        // Fetch analytics data separately
+        const sbAdmin = await createAdminClient();
+        const { data: analyticsData } = await sbAdmin
+          .from('link_analytics_summary')
+          .select('link_id, total_clicks')
+          .in(
+            'link_id',
+            rawData.map((d) => d.id)
+          );
+
+        const analyticsMap = new Map(
+          analyticsData?.map((a) => [a.link_id || '', a.total_clicks || 0]) ||
+            []
+        );
+
+        const data = rawData.map((d) => ({
+          ...d,
+          href: `/${wsId}/link-shortener/${d.id}`,
+          click_count: analyticsMap.get(d.id) || 0,
+        }));
+
+        const linksThisMonth = data.filter((d) => {
+          const createdDate = new Date(d.created_at);
+          const now = new Date();
+          return (
+            createdDate.getMonth() === now.getMonth() &&
+            createdDate.getFullYear() === now.getFullYear()
+          );
+        }).length;
+
+        const uniqueCreators = new Set(
+          data.map((d) => d.creator?.id).filter(Boolean)
+        ).size;
+
+        return (
+          <div className="min-h-screen">
+            <div className="container mx-auto space-y-8 px-4 py-8">
+              {/* Header Section */}
+              <div className="space-y-6 text-center">
+                <div className="flex items-center justify-center space-x-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-full bg-dynamic-blue/20 blur-lg" />
+                    <div className="relative rounded-full border border-dynamic-blue/20 bg-linear-to-br from-dynamic-blue/10 to-dynamic-blue/5 p-4">
+                      <LinkIcon className="h-10 w-10 text-dynamic-blue" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <h1 className="bg-linear-to-r from-foreground via-foreground to-foreground/60 bg-clip-text font-bold text-5xl tracking-tight">
+                      {t('link-shortener.plural')}
+                    </h1>
+                    <p className="max-w-2xl text-muted-foreground text-xl">
+                      {t('link-shortener.description')}
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="space-y-2">
-              <h1 className="bg-linear-to-r from-foreground via-foreground to-foreground/60 bg-clip-text font-bold text-5xl tracking-tight">
-                {t('link-shortener.plural')}
-              </h1>
-              <p className="max-w-2xl text-muted-foreground text-xl">
-                {t('link-shortener.description')}
-              </p>
+
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-5">
+                <Card className="group relative overflow-hidden border-0 bg-linear-to-br from-dynamic-blue/5 via-dynamic-blue/10 to-dynamic-blue/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                  <div className="absolute inset-0 bg-linear-to-br from-dynamic-blue/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <CardHeader className="relative pb-3">
+                    <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                      <div className="rounded-md bg-dynamic-blue/10 p-1.5 transition-colors group-hover:bg-dynamic-blue/20">
+                        <LinkIcon className="h-4 w-4 text-dynamic-blue" />
+                      </div>
+                      {t('link-shortener.total_links')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="relative">
+                    <div className="mb-1 font-bold text-3xl text-dynamic-blue">
+                      {count?.toLocaleString()}
+                    </div>
+                    <p className="text-muted-foreground text-xs">
+                      {t('link-shortener.all_time')}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="group relative overflow-hidden border-0 bg-linear-to-br from-dynamic-green/5 via-dynamic-green/10 to-dynamic-green/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                  <div className="absolute inset-0 bg-linear-to-br from-dynamic-green/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <CardHeader className="relative pb-3">
+                    <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                      <div className="rounded-md bg-dynamic-green/10 p-1.5 transition-colors group-hover:bg-dynamic-green/20">
+                        <Clock className="h-4 w-4 text-dynamic-green" />
+                      </div>
+                      {t('link-shortener.this_month')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="relative">
+                    <div className="mb-1 font-bold text-3xl text-dynamic-green">
+                      {linksThisMonth.toLocaleString()}
+                    </div>
+                    <p className="text-muted-foreground text-xs">
+                      {t('link-shortener.new_links')}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="group relative overflow-hidden border-0 bg-linear-to-br from-dynamic-orange/5 via-dynamic-orange/10 to-dynamic-orange/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                  <div className="absolute inset-0 bg-linear-to-br from-dynamic-orange/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <CardHeader className="relative pb-3">
+                    <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                      <div className="rounded-md bg-dynamic-orange/10 p-1.5 transition-colors group-hover:bg-dynamic-orange/20">
+                        <Users className="h-4 w-4 text-dynamic-orange" />
+                      </div>
+                      {t('link-shortener.active_creators')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="relative">
+                    <div className="mb-1 font-bold text-3xl text-dynamic-orange">
+                      {uniqueCreators.toLocaleString()}
+                    </div>
+                    <p className="text-muted-foreground text-xs">
+                      {t('link-shortener.unique_users')}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="group relative overflow-hidden border-0 bg-linear-to-br from-dynamic-purple/5 via-dynamic-purple/10 to-dynamic-purple/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                  <div className="absolute inset-0 bg-linear-to-br from-dynamic-purple/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <CardHeader className="relative pb-3">
+                    <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                      <div className="rounded-md bg-dynamic-purple/10 p-1.5 transition-colors group-hover:bg-dynamic-purple/20">
+                        <MousePointerClick className="h-4 w-4 text-dynamic-purple" />
+                      </div>
+                      {t('link-shortener.analytics.total_clicks')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="relative">
+                    <div className="mb-1 font-bold text-3xl text-dynamic-purple">
+                      {analytics.totalClicks.toLocaleString()}
+                    </div>
+                    <p className="text-muted-foreground text-xs">
+                      {t('link-shortener.analytics.all_links_combined')}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="group relative overflow-hidden border-0 bg-linear-to-br from-dynamic-pink/5 via-dynamic-pink/10 to-dynamic-pink/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                  <div className="absolute inset-0 bg-linear-to-br from-dynamic-pink/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <CardHeader className="relative pb-3">
+                    <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                      <div className="rounded-md bg-dynamic-pink/10 p-1.5 transition-colors group-hover:bg-dynamic-pink/20">
+                        <BarChart3 className="h-4 w-4 text-dynamic-pink" />
+                      </div>
+                      {t('link-shortener.analytics.unique_visitors')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="relative">
+                    <div className="mb-1 font-bold text-3xl text-dynamic-pink">
+                      {analytics.uniqueVisitors.toLocaleString()}
+                    </div>
+                    <p className="text-muted-foreground text-xs">
+                      {t('link-shortener.analytics.unique_ip_addresses')}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Create Link Section */}
+              <Card className="relative overflow-hidden border-0 bg-linear-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
+                <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent" />
+                <CardContent className="relative p-0">
+                  <InlineLinkShortenerForm wsId={wsId} />
+                </CardContent>
+              </Card>
+
+              {/* Links Table Section */}
+              <Card className="relative overflow-hidden border-0 bg-linear-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
+                <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent opacity-50" />
+                <CardHeader className="relative">
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-lg bg-dynamic-blue/10 p-2">
+                        <TrendingUp className="h-5 w-5 text-dynamic-blue" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">
+                          {t('link-shortener.recent_links')}
+                        </h3>
+                        <p className="text-muted-foreground text-sm">
+                          {count}{' '}
+                          {count === 1
+                            ? t('link-shortener.singular')
+                            : t('link-shortener.plural')}
+                        </p>
+                      </div>
+                    </div>
+                  </CardTitle>
+                  <CardDescription className="text-base">
+                    {t('link-shortener.manage_description')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="relative">
+                  <CustomDataTable
+                    data={data}
+                    columnGenerator={linkShortenerColumns}
+                    namespace="link-shortener-data-table"
+                    count={count}
+                    filters={<LinkShortenerFilters wsId={wsId} />}
+                    defaultVisibility={{
+                      id: false,
+                      creator: false,
+                      creator_id: false,
+                      created_at: false,
+                      click_count: true,
+                      href: true,
+                    }}
+                  />
+                </CardContent>
+              </Card>
             </div>
           </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-5">
-          <Card className="group relative overflow-hidden border-0 bg-linear-to-br from-dynamic-blue/5 via-dynamic-blue/10 to-dynamic-blue/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-            <div className="absolute inset-0 bg-linear-to-br from-dynamic-blue/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <CardHeader className="relative pb-3">
-              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                <div className="rounded-md bg-dynamic-blue/10 p-1.5 transition-colors group-hover:bg-dynamic-blue/20">
-                  <LinkIcon className="h-4 w-4 text-dynamic-blue" />
-                </div>
-                {t('link-shortener.total_links')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <div className="mb-1 font-bold text-3xl text-dynamic-blue">
-                {count?.toLocaleString()}
-              </div>
-              <p className="text-muted-foreground text-xs">
-                {t('link-shortener.all_time')}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="group relative overflow-hidden border-0 bg-linear-to-br from-dynamic-green/5 via-dynamic-green/10 to-dynamic-green/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-            <div className="absolute inset-0 bg-linear-to-br from-dynamic-green/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <CardHeader className="relative pb-3">
-              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                <div className="rounded-md bg-dynamic-green/10 p-1.5 transition-colors group-hover:bg-dynamic-green/20">
-                  <Clock className="h-4 w-4 text-dynamic-green" />
-                </div>
-                {t('link-shortener.this_month')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <div className="mb-1 font-bold text-3xl text-dynamic-green">
-                {linksThisMonth.toLocaleString()}
-              </div>
-              <p className="text-muted-foreground text-xs">
-                {t('link-shortener.new_links')}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="group relative overflow-hidden border-0 bg-linear-to-br from-dynamic-orange/5 via-dynamic-orange/10 to-dynamic-orange/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-            <div className="absolute inset-0 bg-linear-to-br from-dynamic-orange/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <CardHeader className="relative pb-3">
-              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                <div className="rounded-md bg-dynamic-orange/10 p-1.5 transition-colors group-hover:bg-dynamic-orange/20">
-                  <Users className="h-4 w-4 text-dynamic-orange" />
-                </div>
-                {t('link-shortener.active_creators')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <div className="mb-1 font-bold text-3xl text-dynamic-orange">
-                {uniqueCreators.toLocaleString()}
-              </div>
-              <p className="text-muted-foreground text-xs">
-                {t('link-shortener.unique_users')}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="group relative overflow-hidden border-0 bg-linear-to-br from-dynamic-purple/5 via-dynamic-purple/10 to-dynamic-purple/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-            <div className="absolute inset-0 bg-linear-to-br from-dynamic-purple/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <CardHeader className="relative pb-3">
-              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                <div className="rounded-md bg-dynamic-purple/10 p-1.5 transition-colors group-hover:bg-dynamic-purple/20">
-                  <MousePointerClick className="h-4 w-4 text-dynamic-purple" />
-                </div>
-                {t('link-shortener.analytics.total_clicks')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <div className="mb-1 font-bold text-3xl text-dynamic-purple">
-                {analytics.totalClicks.toLocaleString()}
-              </div>
-              <p className="text-muted-foreground text-xs">
-                {t('link-shortener.analytics.all_links_combined')}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="group relative overflow-hidden border-0 bg-linear-to-br from-dynamic-pink/5 via-dynamic-pink/10 to-dynamic-pink/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-            <div className="absolute inset-0 bg-linear-to-br from-dynamic-pink/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <CardHeader className="relative pb-3">
-              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                <div className="rounded-md bg-dynamic-pink/10 p-1.5 transition-colors group-hover:bg-dynamic-pink/20">
-                  <BarChart3 className="h-4 w-4 text-dynamic-pink" />
-                </div>
-                {t('link-shortener.analytics.unique_visitors')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <div className="mb-1 font-bold text-3xl text-dynamic-pink">
-                {analytics.uniqueVisitors.toLocaleString()}
-              </div>
-              <p className="text-muted-foreground text-xs">
-                {t('link-shortener.analytics.unique_ip_addresses')}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Create Link Section */}
-        <Card className="relative overflow-hidden border-0 bg-linear-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
-          <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent" />
-          <CardContent className="relative p-0">
-            <InlineLinkShortenerForm wsId={wsId} />
-          </CardContent>
-        </Card>
-
-        {/* Links Table Section */}
-        <Card className="relative overflow-hidden border-0 bg-linear-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
-          <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent opacity-50" />
-          <CardHeader className="relative">
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-dynamic-blue/10 p-2">
-                  <TrendingUp className="h-5 w-5 text-dynamic-blue" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">
-                    {t('link-shortener.recent_links')}
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    {count}{' '}
-                    {count === 1
-                      ? t('link-shortener.singular')
-                      : t('link-shortener.plural')}
-                  </p>
-                </div>
-              </div>
-            </CardTitle>
-            <CardDescription className="text-base">
-              {t('link-shortener.manage_description')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="relative">
-            <CustomDataTable
-              data={data}
-              columnGenerator={linkShortenerColumns}
-              namespace="link-shortener-data-table"
-              count={count}
-              filters={<LinkShortenerFilters wsId={wsId} />}
-              defaultVisibility={{
-                id: false,
-                creator: false,
-                creator_id: false,
-                created_at: false,
-                click_count: true,
-                href: true,
-              }}
-            />
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
 
