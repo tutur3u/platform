@@ -40,7 +40,6 @@ import { useBoardConfig } from '@tuturuuu/utils/task-helper';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -81,8 +80,7 @@ export default function MyTasksContent({
   const t = useTranslations();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { createTask, onUpdate, openTaskById } = useTaskDialog();
-  const [activeMode, setActiveMode] = useState<CommandMode>('task');
+  const { onUpdate, openTaskById } = useTaskDialog();
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>(wsId);
   const [selectedBoardId, setSelectedBoardId] = useState<string>('');
@@ -546,6 +544,7 @@ export default function MyTasksContent({
           <div className="flex flex-col">
             <span>Task created successfully!</span>
             <button
+              type='button'
               onClick={() => openTaskById(newTask.id)}
               className="mt-1 text-left font-bold text-dynamic-blue text-sm hover:underline"
             >
@@ -778,10 +777,10 @@ export default function MyTasksContent({
           workspaceEstimationConfig={
             boardConfig
               ? {
-                  estimation_type: boardConfig.estimation_type,
-                  extended_estimation: boardConfig.extended_estimation,
-                  allow_zero_estimates: boardConfig.allow_zero_estimates,
-                }
+                estimation_type: boardConfig.estimation_type,
+                extended_estimation: boardConfig.extended_estimation,
+                allow_zero_estimates: boardConfig.allow_zero_estimates,
+              }
               : null
           }
           wsId={wsId}

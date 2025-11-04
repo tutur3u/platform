@@ -340,10 +340,10 @@ function TaskEditDialogComponent({
     id: task?.id || '',
     user: user
       ? {
-          id: user.id || '',
-          name: user.display_name || '',
-          color: userColor || '',
-        }
+        id: user.id || '',
+        name: user.display_name || '',
+        color: userColor || '',
+      }
       : null,
     enabled: isOpen && !isCreateMode && collaborationMode && !!task?.id,
   });
@@ -716,9 +716,9 @@ function TaskEditDialogComponent({
   const estimationIndices: number[] = useMemo(() => {
     return boardConfig?.estimation_type
       ? buildEstimationIndices({
-          extended: boardConfig?.extended_estimation,
-          allowZero: boardConfig?.allow_zero_estimates,
-        })
+        extended: boardConfig?.extended_estimation,
+        allowZero: boardConfig?.allow_zero_estimates,
+      })
       : [];
   }, [
     boardConfig?.estimation_type,
@@ -1124,7 +1124,6 @@ function TaskEditDialogComponent({
   const previousSlashHighlightRef = useRef(0);
   const previousSlashQueryRef = useRef('');
   const previousMentionQueryRef = useRef('');
-  const originalUrlRef = useRef<string | null>(null);
 
   const suggestionMenuWidth = 360;
 
@@ -1208,11 +1207,11 @@ function TaskEditDialogComponent({
   // ============================================================================
   // HANDLER REFS - Stable refs for callbacks used in effects
   // ============================================================================
-  const handleSaveRef = useRef<() => void>(() => {});
-  const handleCloseRef = useRef<() => void>(() => {});
+  const handleSaveRef = useRef<() => void>(() => { });
+  const handleCloseRef = useRef<() => void>(() => { });
   const hasUnsavedChangesRef = useRef<boolean>(false);
-  const quickDueRef = useRef<(days: number | null) => void>(() => {});
-  const updateEstimationRef = useRef<(points: number | null) => void>(() => {});
+  const quickDueRef = useRef<(days: number | null) => void>(() => { });
+  const updateEstimationRef = useRef<(points: number | null) => void>(() => { });
   const handleConvertToTaskRef = useRef<(() => Promise<void>) | null>(null);
   const flushNameUpdateRef = useRef<(() => Promise<void>) | null>(null);
 
@@ -2109,7 +2108,7 @@ function TaskEditDialogComponent({
       if (typeof window !== 'undefined')
         localStorage.removeItem(draftStorageKey);
       setHasDraft(false);
-    } catch {}
+    } catch { }
 
     let descriptionString: string | null = null;
     if (currentDescription) {
@@ -2319,7 +2318,7 @@ function TaskEditDialogComponent({
       if (!isCreateMode && typeof window !== 'undefined') {
         localStorage.removeItem(draftStorageKey);
       }
-    } catch {}
+    } catch { }
     onClose();
   }, [
     isLoading,
@@ -2360,7 +2359,7 @@ function TaskEditDialogComponent({
       if (!isCreateMode && typeof window !== 'undefined') {
         localStorage.removeItem(draftStorageKey);
       }
-    } catch {}
+    } catch { }
     onClose();
   }, [
     isCreateMode,
@@ -2421,7 +2420,7 @@ function TaskEditDialogComponent({
           if (!isCreateMode && typeof window !== 'undefined') {
             localStorage.removeItem(draftStorageKey);
           }
-        } catch {}
+        } catch { }
         onClose();
       }, 500);
 
@@ -3151,7 +3150,7 @@ function TaskEditDialogComponent({
           setSelectedLabels(draft.selectedLabels);
         setHasDraft(true);
       }
-    } catch {}
+    } catch { }
   }, [isOpen, isCreateMode, draftStorageKey]);
 
   // Ensure origin list from entry point is respected in create mode
@@ -3168,7 +3167,7 @@ function TaskEditDialogComponent({
         if (typeof window !== 'undefined') {
           localStorage.removeItem(draftStorageKey);
         }
-      } catch {}
+      } catch { }
     }
   }, [isOpen, isCreateMode, draftStorageKey]);
 
@@ -3187,7 +3186,7 @@ function TaskEditDialogComponent({
       try {
         if (typeof window !== 'undefined')
           localStorage.removeItem(draftStorageKey);
-      } catch {}
+      } catch { }
       setHasDraft(false);
       return;
     }
@@ -3207,7 +3206,7 @@ function TaskEditDialogComponent({
         if (typeof window !== 'undefined')
           localStorage.setItem(draftStorageKey, JSON.stringify(toSave));
         setHasDraft(true);
-      } catch {}
+      } catch { }
     }, 300);
     return () => {
       if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
@@ -3773,7 +3772,7 @@ function TaskEditDialogComponent({
                       try {
                         if (typeof window !== 'undefined')
                           localStorage.removeItem(draftStorageKey);
-                      } catch {}
+                      } catch { }
                       setHasDraft(false);
                       // Also clear current local state to an empty fresh draft
                       setName('');
@@ -4122,12 +4121,12 @@ function TaskEditDialogComponent({
                               <span>
                                 {endDate
                                   ? new Date(endDate).toLocaleDateString(
-                                      'en-US',
-                                      {
-                                        month: 'short',
-                                        day: 'numeric',
-                                      }
-                                    )
+                                    'en-US',
+                                    {
+                                      month: 'short',
+                                      day: 'numeric',
+                                    }
+                                  )
                                   : 'Due date'}
                               </span>
                             </button>
@@ -4170,9 +4169,9 @@ function TaskEditDialogComponent({
                                 <span>
                                   {estimationPoints != null
                                     ? mapEstimationPoints(
-                                        estimationPoints,
-                                        boardConfig.estimation_type
-                                      )
+                                      estimationPoints,
+                                      boardConfig.estimation_type
+                                    )
                                     : 'Estimate'}
                                 </span>
                               </button>
@@ -4264,10 +4263,10 @@ function TaskEditDialogComponent({
                                         style={
                                           styles
                                             ? {
-                                                backgroundColor: styles.bg,
-                                                borderColor: styles.border,
-                                                color: styles.text,
-                                              }
+                                              backgroundColor: styles.bg,
+                                              borderColor: styles.border,
+                                              color: styles.text,
+                                            }
                                             : undefined
                                         }
                                         onClick={() => toggleLabel(label)}
@@ -4418,7 +4417,7 @@ function TaskEditDialogComponent({
                                   ? 'Assignees'
                                   : selectedAssignees.length === 1
                                     ? selectedAssignees[0]?.display_name ||
-                                      'Unknown'
+                                    'Unknown'
                                     : `${selectedAssignees.length} assignees`}
                               </span>
                             </button>
@@ -4659,7 +4658,7 @@ function TaskEditDialogComponent({
                             className={cn(
                               'cursor-pointer transition-colors',
                               selectedListId === list.id &&
-                                'bg-dynamic-orange/10 font-medium text-dynamic-orange'
+                              'bg-dynamic-orange/10 font-medium text-dynamic-orange'
                             )}
                           >
                             <Check
@@ -4695,7 +4694,7 @@ function TaskEditDialogComponent({
                           className={cn(
                             'h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm',
                             priority === 'critical' &&
-                              'border-dynamic-red bg-dynamic-red/10 font-semibold text-dynamic-red hover:bg-dynamic-red/20'
+                            'border-dynamic-red bg-dynamic-red/10 font-semibold text-dynamic-red hover:bg-dynamic-red/20'
                           )}
                           title="Priority — Alt+1 Urgent, Alt+2 High, Alt+3 Medium, Alt+4 Low, Alt+0 Clear"
                         >
@@ -4750,8 +4749,8 @@ function TaskEditDialogComponent({
                               'cursor-pointer',
                               opt.className,
                               priority === opt.value &&
-                                opt.value === 'critical' &&
-                                'bg-dynamic-red/10'
+                              opt.value === 'critical' &&
+                              'bg-dynamic-red/10'
                             )}
                           >
                             <span
@@ -4801,9 +4800,9 @@ function TaskEditDialogComponent({
                             <span className="truncate">
                               {typeof estimationPoints === 'number'
                                 ? mapEstimationPoints(
-                                    estimationPoints,
-                                    boardConfig.estimation_type
-                                  )
+                                  estimationPoints,
+                                  boardConfig.estimation_type
+                                )
                                 : 'Set estimation'}
                             </span>
                             <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -5049,16 +5048,16 @@ function TaskEditDialogComponent({
                                 className={cn(
                                   'h-7 border px-3 text-xs transition-all',
                                   !active &&
-                                    'bg-background hover:border-dynamic-orange/50',
+                                  'bg-background hover:border-dynamic-orange/50',
                                   active && 'shadow-sm'
                                 )}
                                 style={
                                   active && styles
                                     ? {
-                                        backgroundColor: styles.bg,
-                                        borderColor: styles.border,
-                                        color: styles.text,
-                                      }
+                                      backgroundColor: styles.bg,
+                                      borderColor: styles.border,
+                                      color: styles.text,
+                                    }
                                     : undefined
                                 }
                               >
