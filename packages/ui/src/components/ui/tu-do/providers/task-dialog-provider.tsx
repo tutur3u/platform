@@ -128,12 +128,7 @@ export function TaskDialogProvider({
   const closeCallbackRef = useRef<(() => void) | null>(null);
 
   const openTask = useCallback(
-    (
-      task: Task,
-      boardId: string,
-      availableLists?: TaskList[],
-      options?: { preserveUrl?: boolean }
-    ) => {
+    (task: Task, boardId: string, availableLists?: TaskList[]) => {
       setState({
         isOpen: true,
         task,
@@ -141,7 +136,6 @@ export function TaskDialogProvider({
         mode: 'edit',
         availableLists,
         collaborationMode: !isPersonalWorkspace,
-        preserveUrl: options?.preserveUrl,
       });
     },
     [isPersonalWorkspace]
