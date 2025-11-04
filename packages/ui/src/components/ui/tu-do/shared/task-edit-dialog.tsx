@@ -110,7 +110,6 @@ interface TaskEditDialogProps {
   availableLists?: TaskList[];
   onOpenTask?: (taskId: string) => void;
   filters?: TaskFilters;
-  preserveUrl?: boolean;
 }
 
 // Helper types
@@ -223,7 +222,6 @@ function TaskEditDialogComponent({
   mode = 'edit',
   collaborationMode = false,
   filters,
-  preserveUrl,
 }: TaskEditDialogProps & {
   mode?: 'edit' | 'create';
   collaborationMode?: boolean;
@@ -2556,46 +2554,7 @@ function TaskEditDialogComponent({
     doc,
   ]);
 
-  // Sync URL with task dialog state (edit mode only)
-  useEffect(() => {
-    if (
-      preserveUrl ||
-      !isOpen ||
-      isCreateMode ||
-      !task?.id ||
-      !workspaceId ||
-      !pathname
-    )
-      return;
 
-    if (!originalUrlRef.current && !pathname.match(/\/tasks\/[^/]+$/)) {
-      originalUrlRef.current = pathname;
-    }
-
-    const newUrl = `/${workspaceId}/tasks/${task.id}`;
-    window.history.replaceState(null, '', newUrl);
-
-    return () => {
-      if (originalUrlRef.current) {
-        window.history.replaceState(null, '', originalUrlRef.current);
-        originalUrlRef.current = null;
-      } else if (boardId) {
-        window.history.replaceState(
-          null,
-          '',
-          `/${workspaceId}/tasks/boards/${boardId}`
-        );
-      }
-    };
-  }, [
-    isOpen,
-    task?.id,
-    pathname,
-    boardId,
-    isCreateMode,
-    workspaceId,
-    preserveUrl,
-  ]);
 
   // Reset state when dialog closes or opens
   const isMountedRef = useRef(true);

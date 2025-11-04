@@ -53,7 +53,7 @@ interface TaskDialogState {
   collaborationMode?: boolean;
   originalPathname?: string;
   filters?: TaskFilters;
-  preserveUrl?: boolean;
+  previousUrl?: string;
 }
 
 interface TaskDialogContextValue {

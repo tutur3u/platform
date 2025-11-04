@@ -240,7 +240,7 @@ export default function MyTasksContent({
   const t = useTranslations();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { createTask, onUpdate } = useTaskDialog();
+  const { createTask, onUpdate, openTaskById } = useTaskDialog();
   const [activeMode, setActiveMode] = useState<CommandMode>('task');
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>(wsId);
@@ -779,12 +779,12 @@ export default function MyTasksContent({
         toast.success(
           <div className="flex flex-col">
             <span>Task created successfully!</span>
-            <Link
-              href={`/${wsId}/tasks/${newTask.id}`}
-              className="mt-1 font-bold text-dynamic-blue text-sm hover:underline"
+            <button
+              onClick={() => openTaskById(newTask.id)}
+              className="mt-1 text-left font-bold text-dynamic-blue text-sm hover:underline"
             >
               Go to task
-            </Link>
+            </button>
           </div>
         );
         setPendingTaskTitle('');

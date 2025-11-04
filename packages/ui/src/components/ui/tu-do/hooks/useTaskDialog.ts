@@ -31,9 +31,9 @@ export function useTaskDialog(): {
   openTask: (
     task: Task,
     boardId: string,
-    availableLists?: TaskList[],
-    options?: { preserveUrl?: boolean }
+    availableLists?: TaskList[]
   ) => void;
+  openTaskById: (taskId: string) => Promise<void>;
   createTask: (
     boardId: string,
     listId: string,
@@ -44,11 +44,12 @@ export function useTaskDialog(): {
   onUpdate: (callback: () => void) => void;
   onClose: (callback: () => void) => void;
 } {
-  const { openTask, createTask, closeDialog, onUpdate, onClose } =
+  const { openTask, openTaskById, createTask, closeDialog, onUpdate, onClose } =
     useTaskDialogContext();
 
   return {
     openTask,
+    openTaskById,
     createTask,
     closeDialog,
     onUpdate,

@@ -352,7 +352,7 @@ function TaskCardInner({
         !dialogState.newProjectDialogOpen
       ) {
         // Only open edit dialog if not in multi-select mode, not dragging, and no other dialogs are open
-        openTask(task, boardId, availableLists, { preserveUrl: true });
+        openTask(task, boardId, availableLists);
       }
     },
     [
