@@ -4,15 +4,15 @@
 
 use axum::{
     extract::{
-        ws::{Message, WebSocket, WebSocketUpgrade},
         Path, State,
+        ws::{Message, WebSocket, WebSocketUpgrade},
     },
     response::Response,
 };
 use futures::{sink::SinkExt, stream::StreamExt};
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::{broadcast, RwLock};
+use tokio::sync::{RwLock, broadcast};
 use uuid::Uuid;
 
 // ============================================================================
@@ -193,7 +193,8 @@ async fn handle_socket_broadcast(socket: WebSocket, state: WebSocketState) {
     state.connections.write().await.remove(&conn_id);
 
     // Notify others that user disconnected
-    let disconnect_msg = format!("{} disconnected. {} connections remaining.",
+    let disconnect_msg = format!(
+        "{} disconnected. {} connections remaining.",
         conn_id,
         state.connection_count().await
     );
@@ -268,7 +269,11 @@ async fn handle_socket_room(socket: WebSocket, state: WebSocketState, room: Stri
             // Only forward messages for this room
             if msg.starts_with(&format!("room:{}:", room_clone)) {
                 if let Some(content) = msg.strip_prefix(&format!("room:{}:", room_clone)) {
-                    if sender.send(Message::Text(content.to_string().into())).await.is_err() {
+                    if sender
+                        .send(Message::Text(content.to_string().into()))
+                        .await
+                        .is_err()
+                    {
                         break;
                     }
                 }

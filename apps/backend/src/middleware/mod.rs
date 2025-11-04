@@ -7,4 +7,3 @@ pub mod error;
 
 // Re-export commonly used middleware
 pub use auth::*;
-pub use error::*;

@@ -6,12 +6,14 @@ use crate::models::{Post, PostStatus};
 use sqlx::PgPool;
 use uuid::Uuid;
 
+#[allow(dead_code)]
 /// Post repository for database operations
 #[derive(Clone)]
 pub struct PostRepository {
     pool: PgPool,
 }
 
+#[allow(dead_code)]
 impl PostRepository {
     /// Create a new post repository
     pub fn new(pool: PgPool) -> Self {

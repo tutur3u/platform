@@ -56,6 +56,7 @@ pub async fn auth_middleware(mut request: Request, next: Next) -> Result<Respons
 }
 
 /// Optional authentication - doesn't fail if no token provided
+#[allow(dead_code)]
 pub async fn optional_auth_middleware(mut request: Request, next: Next) -> Response {
     // Try to extract and validate token, but don't fail if missing
     if let Some(auth_header) = request

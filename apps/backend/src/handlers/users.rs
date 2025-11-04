@@ -146,17 +146,17 @@ pub async fn update_user(
 
     // Only admins can change role or active status
     if matches!(user_role, UserRole::Admin) {
-        if let Some(role) = &update_data.role {
+        if update_data.role.is_some() {
             updates.push(format!("role = ${}", param_count));
             param_count += 1;
         }
 
-        if let Some(is_active) = update_data.is_active {
+        if update_data.is_active.is_some() {
             updates.push(format!("is_active = ${}", param_count));
             param_count += 1;
         }
 
-        if let Some(email_verified) = update_data.email_verified {
+        if update_data.email_verified.is_some() {
             updates.push(format!("email_verified = ${}", param_count));
             param_count += 1;
         }

@@ -11,7 +11,6 @@ pub mod user;
 
 // Re-export commonly used types
 pub use dto::*;
-pub use file_metadata::*;
 pub use post::*;
 pub use session::*;
 pub use user::*;

@@ -8,6 +8,7 @@ use sqlx::FromRow;
 use uuid::Uuid;
 
 /// File metadata model
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct FileMetadata {
     /// Unique file identifier
@@ -54,6 +55,7 @@ pub struct FileMetadata {
     pub expires_at: Option<DateTime<Utc>>,
 }
 
+#[allow(dead_code)]
 impl FileMetadata {
     /// Create new file metadata
     pub fn new(
@@ -155,6 +157,7 @@ impl FileMetadata {
 }
 
 /// File upload response
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileUploadResponse {
     pub id: Uuid,
@@ -179,6 +182,7 @@ impl From<FileMetadata> for FileUploadResponse {
 }
 
 /// File summary for lists
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileSummary {
     pub id: Uuid,
@@ -208,6 +212,7 @@ impl From<FileMetadata> for FileSummary {
 }
 
 /// Signed upload URL request
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SignedUploadRequest {
     pub filename: String,
@@ -216,6 +221,7 @@ pub struct SignedUploadRequest {
 }
 
 /// Signed upload URL response
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SignedUploadResponse {
     pub upload_url: String,
