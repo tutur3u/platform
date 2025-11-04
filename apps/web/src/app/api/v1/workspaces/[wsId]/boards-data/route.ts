@@ -15,7 +15,7 @@ const searchParamsSchema = z.object({
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ wsId: string}> }
+  context: { params: Promise<{ wsId: string }> }
 ) {
   try {
     const resolvedParams = await context.params;
@@ -25,7 +25,9 @@ export async function GET(
     );
 
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -62,7 +64,7 @@ export async function GET(
     queryBuilder.range(start, end).limit(parsedSize);
 
     const { data: boards, error: boardsError, count } = await queryBuilder;
-    
+
     if (boardsError) {
       throw boardsError;
     }

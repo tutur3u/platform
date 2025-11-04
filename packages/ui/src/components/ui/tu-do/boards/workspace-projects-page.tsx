@@ -1,4 +1,8 @@
-import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';
+import {
+  QueryClient,
+  HydrationBoundary,
+  dehydrate,
+} from '@tanstack/react-query';
 import { Plus } from '@tuturuuu/icons';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';

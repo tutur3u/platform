@@ -10,16 +10,28 @@ const paramsSchema = z.object({
 async function authorize(wsId: string) {
   console.log('Authorizing request for workspace:', wsId);
   const supabase = await createClient();
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
   if (userError) {
     console.error('Error getting user:', userError);
-    return { user: null, error: NextResponse.json({ error: 'Internal server error' }, { status: 500 }) };
+    return {
+      user: null,
+      error: NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      ),
+    };
   }
 
   if (!user) {
     console.log('No user found, returning unauthorized');
-    return { user: null, error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
+    return {
+      user: null,
+      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
   }
 
   console.log('User found:', user.id);
@@ -33,12 +45,24 @@ async function authorize(wsId: string) {
 
   if (memberError) {
     console.error('Error checking workspace membership:', memberError);
-    return { user: null, error: NextResponse.json({ error: 'Internal server error' }, { status: 500 }) };
+    return {
+      user: null,
+      error: NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      ),
+    };
   }
 
   if (!memberCheck) {
     console.log('User is not a member of the workspace, returning forbidden');
-    return { user: null, error: NextResponse.json({ error: "You don't have access to this workspace" }, { status: 403 }) };
+    return {
+      user: null,
+      error: NextResponse.json(
+        { error: "You don't have access to this workspace" },
+        { status: 403 }
+      ),
+    };
   }
 
   console.log('User is a member of the workspace');
@@ -135,7 +159,10 @@ export async function PATCH(
     }
 
     if (!board.deleted_at) {
-      return NextResponse.json({ error: 'Board is not in trash' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Board is not in trash' },
+        { status: 400 }
+      );
     }
 
     const { error: restoreError } = await supabase
@@ -145,8 +172,11 @@ export async function PATCH(
 
     if (restoreError) {
       console.error('Error restoring board:', restoreError);
-      return NextResponse.json({ error: 'Failed to restore board' }, { status: 500 });
-    };
+      return NextResponse.json(
+        { error: 'Failed to restore board' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -183,7 +213,10 @@ export async function PUT(
     }
 
     if (board.deleted_at) {
-      return NextResponse.json({ error: 'Board is already in trash' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Board is already in trash' },
+        { status: 400 }
+      );
     }
 
     const { error: softDeleteError } = await supabase
