@@ -996,6 +996,8 @@ export type Database = {
         };
         Returns: {
           address: string;
+          archived: boolean;
+          archived_until: string;
           avatar_url: string;
           balance: number;
           birthday: string;
@@ -1053,6 +1055,14 @@ export type Database = {
         Args: {
           _user_id: string;
           _ws_id: string;
+        };
+        Returns: boolean;
+      };
+      has_workspace_permission: {
+        Args: {
+          p_permission: string;
+          p_user_id: string;
+          p_ws_id: string;
         };
         Returns: boolean;
       };
@@ -1173,13 +1183,19 @@ export type Database = {
           query_text: string;
         };
         Returns: {
+          board_id: string;
+          board_name: string;
           closed_at: string;
           completed_at: string;
+          created_at: string;
           description: string;
           end_date: string;
           id: string;
           list_id: string;
+          list_name: string;
+          list_status: Database['public']['Enums']['task_board_status'];
           name: string;
+          priority: Database['public']['Enums']['task_priority'];
           similarity: number;
           start_date: string;
         }[];
@@ -4813,6 +4829,7 @@ export type Database = {
           creator_id?: string;
           deleted?: boolean | null;
           id?: string;
+          title?: null | string;
           updated_at?: null | string;
           ws_id: string;
         };
@@ -4867,6 +4884,7 @@ export type Database = {
           creator_id: string;
           deleted: boolean | null;
           id: string;
+          title: null | string;
           updated_at: null | string;
           ws_id: string;
         };
@@ -4877,6 +4895,7 @@ export type Database = {
           creator_id?: string;
           deleted?: boolean | null;
           id?: string;
+          title?: null | string;
           updated_at?: null | string;
           ws_id?: string;
         };

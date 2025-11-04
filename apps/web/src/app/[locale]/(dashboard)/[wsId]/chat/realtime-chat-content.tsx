@@ -742,7 +742,7 @@ export default function RealtimeChatContent({
                           }`}
                         >
                           {/* Avatar */}
-                          <div className="flex-shrink-0">
+                          <div className="shrink-0">
                             {showAvatar ? (
                               <Avatar className="h-7 w-7 border border-dynamic-border/50">
                                 {user?.avatar_url ? (
@@ -900,7 +900,7 @@ export default function RealtimeChatContent({
                   {/* Typing Indicator */}
                   {typingUsers.size > 0 && (
                     <div className="flex gap-2 px-2 py-1">
-                      <div className="flex-shrink-0">
+                      <div className="shrink-0">
                         <div className="h-7 w-7" />
                       </div>
                       <div className="flex min-w-0 flex-col items-start">

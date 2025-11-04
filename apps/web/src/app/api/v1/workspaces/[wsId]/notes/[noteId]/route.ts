@@ -15,10 +15,13 @@ const jsonContentSchema: z.ZodType<any> = z.lazy(() =>
 );
 
 const updateNoteSchema = z.object({
-  content: jsonContentSchema.refine(
-    (val) => val.type === 'doc',
-    'Content must be a valid TipTap document'
-  ),
+  title: z.string().nullable().optional(),
+  content: jsonContentSchema
+    .refine(
+      (val) => val.type === 'doc',
+      'Content must be a valid TipTap document'
+    )
+    .optional(),
 });
 
 export async function PUT(
@@ -52,12 +55,12 @@ export async function PUT(
 
     // Parse and validate request body
     const body = await request.json();
-    const { content } = updateNoteSchema.parse(body);
+    const { title, content } = updateNoteSchema.parse(body);
 
     // Update note
     const { data: updatedNote, error: updateError } = await supabase
       .from('notes')
-      .update({ content })
+      .update({ title, content })
       .eq('id', noteId)
       .eq('ws_id', wsId)
       .eq('creator_id', user.id)
@@ -78,13 +81,13 @@ export async function PUT(
 
     return NextResponse.json(updatedNote);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
     console.error(
       'Error in PUT /api/v1/workspaces/[wsId]/notes/[noteId]:',
       error
     );
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

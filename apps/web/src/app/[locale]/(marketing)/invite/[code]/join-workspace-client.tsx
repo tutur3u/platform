@@ -149,7 +149,7 @@ export default function JoinWorkspaceClient({
 
             {/* Go to Workspace Button */}
             <Button
-              className="group/btn relative w-full overflow-hidden bg-gradient-to-r from-dynamic-blue to-dynamic-purple shadow-lg transition-all duration-300 hover:shadow-dynamic-blue/20 hover:shadow-xl"
+              className="group/btn relative w-full overflow-hidden bg-linear-to-r from-dynamic-blue to-dynamic-purple shadow-lg transition-all duration-300 hover:shadow-dynamic-blue/20 hover:shadow-xl"
               size="lg"
               onClick={handleGoToWorkspace}
             >
@@ -157,7 +157,7 @@ export default function JoinWorkspaceClient({
                 {t('go-to-workspace')}
                 <ArrowRight className="h-5 w-5 transition-transform group-hover/btn:translate-x-1" />
               </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-dynamic-purple to-dynamic-pink opacity-0 transition-opacity group-hover/btn:opacity-100" />
+              <div className="absolute inset-0 bg-linear-to-r from-dynamic-purple to-dynamic-pink opacity-0 transition-opacity group-hover/btn:opacity-100" />
             </Button>
           </div>
 
@@ -265,7 +265,7 @@ export default function JoinWorkspaceClient({
             className={`group/btn relative w-full overflow-hidden shadow-lg transition-all duration-300 ${
               joined
                 ? 'bg-dynamic-green hover:bg-dynamic-green'
-                : 'bg-gradient-to-r from-dynamic-blue to-dynamic-purple hover:shadow-dynamic-blue/20 hover:shadow-xl'
+                : 'bg-linear-to-r from-dynamic-blue to-dynamic-purple hover:shadow-dynamic-blue/20 hover:shadow-xl'
             }`}
             size="lg"
             onClick={handleJoin}
@@ -293,7 +293,7 @@ export default function JoinWorkspaceClient({
               )}
             </span>
             {!joined && !joining && (
-              <div className="absolute inset-0 bg-gradient-to-r from-dynamic-purple to-dynamic-pink opacity-0 transition-opacity group-hover/btn:opacity-100" />
+              <div className="absolute inset-0 bg-linear-to-r from-dynamic-purple to-dynamic-pink opacity-0 transition-opacity group-hover/btn:opacity-100" />
             )}
           </Button>
 

@@ -5,16 +5,13 @@ import {
   Box,
   Calendar,
   Check,
-  ChevronDown,
   ChevronRight,
   Flag,
-  ListTodo,
   MapPin,
   Plus,
   Search,
   Settings,
   Sparkles,
-  StickyNote,
   Tag,
   Timer,
   UserMinus,
@@ -24,13 +21,6 @@ import {
 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
@@ -39,6 +29,12 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@tuturuuu/ui/tooltip';
+import {
   buildEstimationIndices,
   type EstimationType,
   mapEstimationPoints,
@@ -46,8 +42,6 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import type { KeyboardEvent } from 'react';
 import { useMemo, useState } from 'react';
-
-export type CommandMode = 'note' | 'task';
 
 export interface TaskOptions {
   priority?: 'critical' | 'high' | 'normal' | 'low' | null;
@@ -83,10 +77,9 @@ interface WorkspaceEstimationConfig {
 }
 
 interface CommandBarProps {
-  onCreateNote: (content: string) => Promise<void>;
-  onCreateTask: (title: string, options?: TaskOptions) => void;
+  onCreateTask: (title: string, options?: TaskOptions) => Promise<boolean>;
   onGenerateAI: (entry: string) => void;
-  onOpenBoardSelector: () => void;
+  onOpenBoardSelector: (title?: string, isAi?: boolean) => void;
   selectedDestination: {
     boardName?: string;
     listName?: string;
@@ -99,8 +92,6 @@ interface CommandBarProps {
   onAiGenerateDescriptionsChange?: (value: boolean) => void;
   onAiGeneratePriorityChange?: (value: boolean) => void;
   onAiGenerateLabelsChange?: (value: boolean) => void;
-  mode?: CommandMode;
-  onModeChange?: (mode: CommandMode) => void;
   workspaceLabels?: WorkspaceLabel[];
   workspaceProjects?: WorkspaceProject[];
   workspaceMembers?: WorkspaceMember[];
@@ -108,10 +99,11 @@ interface CommandBarProps {
   wsId?: string;
   onCreateNewLabel?: () => void;
   onCreateNewProject?: () => void;
+  value: string;
+  onValueChange: (value: string) => void;
 }
 
 export function CommandBar({
-  onCreateNote,
   onCreateTask,
   onGenerateAI,
   onOpenBoardSelector,
@@ -124,17 +116,15 @@ export function CommandBar({
   onAiGenerateDescriptionsChange,
   onAiGeneratePriorityChange,
   onAiGenerateLabelsChange,
-  mode: controlledMode,
-  onModeChange,
   workspaceLabels = [],
   workspaceProjects = [],
   workspaceMembers = [],
   workspaceEstimationConfig = null,
   onCreateNewLabel,
   onCreateNewProject,
+  value,
+  onValueChange,
 }: CommandBarProps) {
-  const [internalMode, setInternalMode] = useState<CommandMode>('task');
-  const [inputText, setInputText] = useState('');
   const [aiEnabled, setAiEnabled] = useState(false);
 
   // Optional task fields
@@ -160,13 +150,6 @@ export function CommandBar({
   >('main');
   const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
 
-  // Use controlled mode if provided, otherwise use internal state
-  const mode = controlledMode ?? internalMode;
-  const setMode = (newMode: CommandMode) => {
-    setInternalMode(newMode);
-    onModeChange?.(newMode);
-  };
-
   // Calculate available estimation indices based on board config
   const availableEstimationIndices = useMemo(() => {
     return buildEstimationIndices({
@@ -190,68 +173,47 @@ export function CommandBar({
     return itemCount > 0 ? `${itemCount * ITEM_HEIGHT}px` : 'auto';
   }, [workspaceLabels.length]);
 
-  const modeConfig = useMemo(
-    () => ({
-      note: {
-        label: 'Note',
-        description: 'Quick capture for thoughts and ideas',
-        placeholder: 'Jot down a quick note...',
-      },
-      task: {
-        label: 'Task',
-        description: 'Create actionable tasks with details',
-        placeholder: "What's on your mind?",
-      },
-    }),
-    []
-  );
-
-  const currentConfig = modeConfig[mode];
   const hasDestination = Boolean(
     selectedDestination?.boardName && selectedDestination?.listName
   );
-  const canExecute = Boolean(inputText.trim());
+  const canExecute = Boolean(value.trim());
 
   const handleAction = async () => {
-    if (!inputText.trim()) return;
+    if (!value.trim()) return;
 
     try {
-      if (mode === 'note') {
-        await onCreateNote(inputText.trim());
-        setInputText('');
-      } else if (mode === 'task') {
-        if (!hasDestination) {
-          onOpenBoardSelector();
-          return;
-        }
-
-        // If AI is enabled, use AI generation
-        if (aiEnabled) {
-          onGenerateAI(inputText.trim());
-        } else {
-          // Pass optional task fields
-          const options: TaskOptions = {
-            priority,
-            dueDate,
-            estimationPoints,
-            labelIds:
-              selectedLabelIds.length > 0 ? selectedLabelIds : undefined,
-            projectIds:
-              selectedProjectIds.length > 0 ? selectedProjectIds : undefined,
-            assigneeIds:
-              selectedAssigneeIds.length > 0 ? selectedAssigneeIds : undefined,
-          };
-          onCreateTask(inputText.trim(), options);
-        }
-        setInputText('');
-        // Reset optional fields
-        setPriority(null);
-        setDueDate(null);
-        setEstimationPoints(null);
-        setSelectedLabelIds([]);
-        setSelectedProjectIds([]);
-        setSelectedAssigneeIds([]);
+      if (!hasDestination) {
+        onOpenBoardSelector(value.trim(), aiEnabled);
+        return;
       }
+      // If AI is enabled, use AI generation
+      if (aiEnabled) {
+        onGenerateAI(value.trim());
+        onValueChange('');
+      } else {
+        // Pass optional task fields
+        const options: TaskOptions = {
+          priority,
+          dueDate,
+          estimationPoints,
+          labelIds: selectedLabelIds.length > 0 ? selectedLabelIds : undefined,
+          projectIds:
+            selectedProjectIds.length > 0 ? selectedProjectIds : undefined,
+          assigneeIds:
+            selectedAssigneeIds.length > 0 ? selectedAssigneeIds : undefined,
+        };
+        const success = await onCreateTask(value.trim(), options);
+        if (success) {
+          onValueChange('');
+        }
+      }
+      // Reset optional fields
+      setPriority(null);
+      setDueDate(null);
+      setEstimationPoints(null);
+      setSelectedLabelIds([]);
+      setSelectedProjectIds([]);
+      setSelectedAssigneeIds([]);
     } catch (error) {
       console.error('Command bar action error:', error);
     }
@@ -280,11 +242,11 @@ export function CommandBar({
       <div className="group relative">
         <Textarea
           id="my-tasks-command-bar-textarea"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
+          value={value}
+          onChange={(e) => onValueChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={currentConfig.placeholder}
-          className="max-h-[280px] min-h-[150px] resize-none rounded-2xl border border-border/0 bg-linear-to-br from-background to-primary/15 px-4 pt-4 pb-14 text-base leading-relaxed transition-all duration-300 placeholder:text-muted-foreground/40 hover:shadow-xl focus-visible:border-white/10 focus-visible:shadow-[0_20px_50px_-15px_rgba(var(--primary)_/_0.15)] focus-visible:ring-0 sm:px-6 md:min-h-[200px] md:rounded-3xl md:px-8 md:pt-6 md:pb-16 md:text-lg lg:text-xl"
+          placeholder="What's on your mind?"
+          className="max-h-[280px] min-h-[150px] resize-none rounded-2xl border border-border/0 bg-linear-to-br from-background to-primary/15 px-4 pt-4 pb-14 text-base leading-relaxed transition-all duration-300 placeholder:text-muted-foreground/40 hover:shadow-xl focus-visible:border-white/10 focus-visible:shadow-[0_20px_50px_-15px_rgba(var(--primary)/0.15)] focus-visible:ring-0 sm:px-6 md:min-h-[200px] md:rounded-3xl md:px-8 md:pt-6 md:pb-16 md:text-lg lg:text-xl"
           disabled={isLoading}
         />
 
@@ -293,41 +255,52 @@ export function CommandBar({
           {/* Left Side: Location + Settings + AI + Destination Display */}
           <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Location Button - Only for Tasks */}
-            {mode === 'task' && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onOpenBoardSelector}
-                disabled={isLoading}
-                className={cn(
-                  'h-8 w-8 rounded-lg border p-0 transition-all md:h-9 md:w-9',
-                  hasDestination
-                    ? 'border-dynamic-blue/20 bg-dynamic-blue/5 text-dynamic-blue shadow-lg hover:bg-dynamic-blue/10 hover:shadow-xl md:border-border md:bg-transparent md:text-foreground md:shadow-none md:hover:bg-muted md:hover:shadow-none'
-                    : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
-                )}
-                title="Select destination"
-              >
-                <MapPin className="h-3.5 w-3.5 md:h-4 md:w-4" />
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onOpenBoardSelector()}
+              disabled={isLoading}
+              className={cn(
+                'h-8 w-8 rounded-lg border p-0 transition-all md:h-9 md:w-9',
+                hasDestination
+                  ? 'border-dynamic-blue/20 bg-dynamic-blue/5 text-dynamic-blue shadow-lg hover:bg-dynamic-blue/10 hover:shadow-xl md:border-border md:bg-transparent md:text-foreground md:shadow-none md:hover:bg-muted md:hover:shadow-none'
+                  : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
+              )}
+              title="Select destination"
+            >
+              <MapPin className="h-3.5 w-3.5 md:h-4 md:w-4" />
+            </Button>
 
             {/* Settings Button - AI settings when AI on, Task options when AI off */}
-            {mode === 'task' && hasDestination && (
-              <Popover
-                open={settingsOpen}
-                onOpenChange={handleSettingsOpenChange}
-              >
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={isLoading}
-                    className="h-8 w-8 rounded-lg border border-border p-0 transition-colors hover:bg-muted md:h-9 md:w-9"
-                    title={aiEnabled ? 'AI Settings' : 'Task Options'}
-                  >
-                    <Settings className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                  </Button>
-                </PopoverTrigger>
+            <Popover
+              open={settingsOpen}
+              onOpenChange={handleSettingsOpenChange}
+            >
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={isLoading}
+                        className={cn(
+                          'h-8 w-8 rounded-lg border border-border p-0 transition-colors hover:bg-muted md:h-9 md:w-9',
+                          !hasDestination && 'cursor-not-allowed opacity-50'
+                        )}
+                      >
+                        <Settings className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                  </TooltipTrigger>
+                  {!hasDestination && (
+                    <TooltipContent>
+                      <p>Select board/list for more configuration</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
+              {hasDestination && (
                 <PopoverContent
                   align="start"
                   side="bottom"
@@ -415,6 +388,7 @@ export function CommandBar({
                         <div className="py-1">
                           <div className="space-y-0.5 p-2">
                             <button
+                              type="button"
                               onClick={() => setActiveSettingsView('priority')}
                               className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                             >
@@ -445,6 +419,7 @@ export function CommandBar({
                             </button>
 
                             <button
+                              type="button"
                               onClick={() => setActiveSettingsView('dueDate')}
                               className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                             >
@@ -468,6 +443,7 @@ export function CommandBar({
                             {workspaceEstimationConfig?.estimation_type &&
                               availableEstimationIndices.length > 0 && (
                                 <button
+                                  type="button"
                                   onClick={() =>
                                     setActiveSettingsView('estimation')
                                   }
@@ -493,6 +469,7 @@ export function CommandBar({
 
                             {workspaceProjects.length > 0 && (
                               <button
+                                type="button"
                                 onClick={() =>
                                   setActiveSettingsView('projects')
                                 }
@@ -515,6 +492,7 @@ export function CommandBar({
 
                             {workspaceLabels.length > 0 && (
                               <button
+                                type="button"
                                 onClick={() => setActiveSettingsView('labels')}
                                 className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                               >
@@ -535,6 +513,7 @@ export function CommandBar({
 
                             {workspaceMembers.length > 0 && (
                               <button
+                                type="button"
                                 onClick={() =>
                                   setActiveSettingsView('assignees')
                                 }
@@ -561,6 +540,7 @@ export function CommandBar({
                         <div>
                           <div className="space-y-0.5 p-2">
                             <button
+                              type="button"
                               onClick={() => setActiveSettingsView('main')}
                               className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                             >
@@ -570,6 +550,7 @@ export function CommandBar({
                               </span>
                             </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 setPriority('critical');
                                 setActiveSettingsView('main');
@@ -587,6 +568,7 @@ export function CommandBar({
                               )}
                             </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 setPriority('high');
                                 setActiveSettingsView('main');
@@ -604,6 +586,7 @@ export function CommandBar({
                               )}
                             </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 setPriority('normal');
                                 setActiveSettingsView('main');
@@ -621,6 +604,7 @@ export function CommandBar({
                               )}
                             </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 setPriority('low');
                                 setActiveSettingsView('main');
@@ -639,6 +623,7 @@ export function CommandBar({
                             </button>
                             {priority && (
                               <button
+                                type="button"
                                 onClick={() => {
                                   setPriority(null);
                                   setActiveSettingsView('main');
@@ -656,6 +641,7 @@ export function CommandBar({
                         <div>
                           <div className="space-y-0.5 p-2">
                             <button
+                              type="button"
                               onClick={() => setActiveSettingsView('main')}
                               className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                             >
@@ -665,6 +651,7 @@ export function CommandBar({
                               </span>
                             </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 setDueDate(new Date());
                                 setActiveSettingsView('main');
@@ -681,6 +668,7 @@ export function CommandBar({
                               )}
                             </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 const tomorrow = new Date();
                                 tomorrow.setDate(tomorrow.getDate() + 1);
@@ -705,6 +693,7 @@ export function CommandBar({
                               })()}
                             </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 const nextWeek = new Date();
                                 nextWeek.setDate(nextWeek.getDate() + 7);
@@ -730,6 +719,7 @@ export function CommandBar({
                             </button>
                             {dueDate && (
                               <button
+                                type="button"
                                 onClick={() => {
                                   setDueDate(null);
                                   setActiveSettingsView('main');
@@ -747,6 +737,7 @@ export function CommandBar({
                         <div>
                           <div className="space-y-0.5 p-2">
                             <button
+                              type="button"
                               onClick={() => setActiveSettingsView('main')}
                               className="flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors hover:bg-muted"
                             >
@@ -764,6 +755,7 @@ export function CommandBar({
                               return (
                                 <button
                                   key={index}
+                                  type="button"
                                   onClick={() => {
                                     if (!isDisabled) {
                                       setEstimationPoints(index);
@@ -795,6 +787,7 @@ export function CommandBar({
                             })}
                             {estimationPoints !== null && (
                               <button
+                                type="button"
                                 onClick={() => {
                                   setEstimationPoints(null);
                                   setActiveSettingsView('main');
@@ -811,6 +804,7 @@ export function CommandBar({
                         // Projects selection view
                         <div className="space-y-0.5 p-2">
                           <button
+                            type="button"
                             onClick={() => setActiveSettingsView('main')}
                             className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                           >
@@ -861,6 +855,7 @@ export function CommandBar({
                           </ScrollArea>
                           <div className="border-t pt-2">
                             <button
+                              type="button"
                               onClick={() => {
                                 onCreateNewProject?.();
                                 setSettingsOpen(false);
@@ -876,6 +871,7 @@ export function CommandBar({
                         // Labels selection view
                         <div className="space-y-0.5 p-2">
                           <button
+                            type="button"
                             onClick={() => setActiveSettingsView('main')}
                             className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                           >
@@ -911,7 +907,9 @@ export function CommandBar({
                                     <div className="flex items-center gap-2">
                                       <span
                                         className="h-3 w-3 rounded-full"
-                                        style={{ backgroundColor: label.color }}
+                                        style={{
+                                          backgroundColor: label.color,
+                                        }}
                                       />
                                       <span
                                         className="line-clamp-1"
@@ -933,6 +931,7 @@ export function CommandBar({
                           </ScrollArea>
                           <div className="border-t pt-2">
                             <button
+                              type="button"
                               onClick={() => {
                                 onCreateNewLabel?.();
                                 setSettingsOpen(false);
@@ -948,6 +947,7 @@ export function CommandBar({
                         // Assignees selection view - matching kanban.tsx implementation
                         <div className="p-3">
                           <button
+                            type="button"
                             onClick={() => {
                               setActiveSettingsView('main');
                               setAssigneeSearchQuery('');
@@ -1132,8 +1132,8 @@ export function CommandBar({
                     </div>
                   )}
                 </PopoverContent>
-              </Popover>
-            )}
+              )}
+            </Popover>
 
             {/* AI Toggle Button (like Claude's extended thinking) */}
             <Button
@@ -1158,7 +1158,7 @@ export function CommandBar({
             </Button>
 
             {/* Destination Display - Shows selected board/list */}
-            {mode === 'task' && hasDestination && selectedDestination && (
+            {hasDestination && selectedDestination && (
               <div className="group/destination relative hidden items-center rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 transition-all hover:bg-dynamic-blue/10 md:inline-flex">
                 <span className="px-2.5 py-1.5 text-dynamic-blue text-xs md:px-3 md:py-2 md:text-sm">
                   {selectedDestination.boardName} /{' '}
@@ -1176,57 +1176,14 @@ export function CommandBar({
             )}
           </div>
 
-          {/* Right Side: Mode Selector + Create Button */}
+          {/* Right Side: Create Button */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Mode Selector Dropdown (like Claude's model selector) */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={isLoading}
-                  className="h-8 gap-1 rounded-lg px-2 transition-colors hover:bg-muted sm:gap-1.5 sm:px-2.5 md:h-9 md:px-3"
-                >
-                  {mode === 'task' ? (
-                    <ListTodo className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                  ) : (
-                    <StickyNote className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                  )}
-                  <span className="text-xs capitalize md:text-sm">{mode}</span>
-                  <ChevronDown className="h-3 w-3 opacity-50 md:h-3.5 md:w-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuItem
-                  onClick={() => setMode('task')}
-                  className="flex items-center justify-between gap-2"
-                >
-                  <div className="flex items-center gap-2">
-                    <ListTodo className="h-4 w-4" />
-                    <span>Task</span>
-                  </div>
-                  {mode === 'task' && <Check className="h-4 w-4" />}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setMode('note')}
-                  className="flex items-center justify-between gap-2"
-                >
-                  <div className="flex items-center gap-2">
-                    <StickyNote className="h-4 w-4" />
-                    <span>Note</span>
-                  </div>
-                  {mode === 'note' && <Check className="h-4 w-4" />}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
             {/* Create/Generate Button */}
             <Button
               onClick={handleAction}
               disabled={!canExecute || isLoading}
               size="sm"
-              className="h-8 shrink-0 gap-1.5 rounded-lg bg-gradient-to-r from-primary to-primary/90 px-3 font-semibold text-xs shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] disabled:opacity-50 sm:gap-2 sm:px-4 md:h-9 md:text-sm"
+              className="h-8 shrink-0 gap-1.5 rounded-lg bg-linear-to-r from-primary to-primary/90 px-3 font-semibold text-xs shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] disabled:opacity-50 sm:gap-2 sm:px-4 md:h-9 md:text-sm"
             >
               {isLoading ? (
                 <>

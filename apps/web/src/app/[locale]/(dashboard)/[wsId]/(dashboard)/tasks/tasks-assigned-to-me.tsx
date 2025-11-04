@@ -148,7 +148,7 @@ export default async function TasksAssignedToMe({
 
   return (
     <Card className="group overflow-hidden border-dynamic-orange/20 transition-all duration-300 hover:border-dynamic-orange/30 hover:shadow-lg">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-orange/20 border-b bg-gradient-to-r from-dynamic-orange/5 via-dynamic-orange/3 to-dynamic-red/5 p-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-orange/20 border-b bg-linear-to-r from-dynamic-orange/5 via-dynamic-orange/3 to-dynamic-red/5 p-4">
         <CardTitle className="flex items-center gap-3 font-semibold text-base">
           <div className="rounded-xl bg-linear-to-br from-dynamic-orange/20 to-dynamic-orange/10 p-2 text-dynamic-orange shadow-sm ring-1 ring-dynamic-orange/20">
             <UserStar className="h-4 w-4" />
@@ -191,7 +191,7 @@ export default async function TasksAssignedToMe({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-dynamic-orange/30 bg-gradient-to-r from-dynamic-orange/5 to-dynamic-orange/10 text-dynamic-orange transition-all duration-200 hover:scale-105 hover:border-dynamic-orange/40 hover:bg-dynamic-orange/20 hover:shadow-md"
+                  className="border-dynamic-orange/30 bg-linear-to-r from-dynamic-orange/5 to-dynamic-orange/10 text-dynamic-orange transition-all duration-200 hover:scale-105 hover:border-dynamic-orange/40 hover:bg-dynamic-orange/20 hover:shadow-md"
                 >
                   <User className="mr-2 h-4 w-4" />
                   {t('view_tasks')}

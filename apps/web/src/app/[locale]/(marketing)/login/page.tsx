@@ -194,7 +194,7 @@ export default function Login({ searchParams }: LoginProps) {
                   transition={{ duration: 0.5, delay: 0.4 }}
                   className="space-y-2"
                 >
-                  <h1 className="bg-gradient-to-r from-foreground via-foreground to-foreground/60 bg-clip-text font-bold text-3xl text-transparent">
+                  <h1 className="bg-linear-to-r from-foreground via-foreground to-foreground/60 bg-clip-text font-bold text-3xl text-transparent">
                     {multiAccount
                       ? t('account_switcher.add_account')
                       : t('login.welcome')}

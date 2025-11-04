@@ -38,11 +38,11 @@ const getCategoryColor = (taskId: string) => {
   }, 0);
 
   const colors = [
-    'bg-gradient-to-r from-blue-500/10 to-blue-600/10 text-blue-700 border-blue-200 dark:border-blue-800',
-    'bg-gradient-to-r from-green-500/10 to-emerald-600/10 text-green-700 border-green-200 dark:border-green-800',
-    'bg-gradient-to-r from-orange-500/10 to-amber-600/10 text-orange-700 border-orange-200 dark:border-orange-800',
-    'bg-gradient-to-r from-purple-500/10 to-pink-600/10 text-purple-700 border-purple-200 dark:border-purple-800',
-    'bg-gradient-to-r from-red-500/10 to-rose-600/10 text-red-700 border-red-200 dark:border-red-800',
+    'bg-linear-to-r from-blue-500/10 to-blue-600/10 text-blue-700 border-blue-200 dark:border-blue-800',
+    'bg-linear-to-r from-green-500/10 to-emerald-600/10 text-green-700 border-green-200 dark:border-green-800',
+    'bg-linear-to-r from-orange-500/10 to-amber-600/10 text-orange-700 border-orange-200 dark:border-orange-800',
+    'bg-linear-to-r from-purple-500/10 to-pink-600/10 text-purple-700 border-purple-200 dark:border-purple-800',
+    'bg-linear-to-r from-red-500/10 to-rose-600/10 text-red-700 border-red-200 dark:border-red-800',
   ];
 
   return colors[Math.abs(hash) % colors.length];
@@ -51,15 +51,15 @@ const getCategoryColor = (taskId: string) => {
 const getPriorityColor = (priority: TaskPriority) => {
   switch (priority) {
     case 'critical':
-      return 'bg-gradient-to-r from-red-500/10 to-rose-600/10 text-red-700 border-red-200 dark:border-red-800';
+      return 'bg-linear-to-r from-red-500/10 to-rose-600/10 text-red-700 border-red-200 dark:border-red-800';
     case 'high':
-      return 'bg-gradient-to-r from-orange-500/10 to-amber-600/10 text-orange-700 border-orange-200 dark:border-orange-800';
+      return 'bg-linear-to-r from-orange-500/10 to-amber-600/10 text-orange-700 border-orange-200 dark:border-orange-800';
     case 'normal':
-      return 'bg-gradient-to-r from-blue-500/10 to-blue-600/10 text-blue-700 border-blue-200 dark:border-blue-800';
+      return 'bg-linear-to-r from-blue-500/10 to-blue-600/10 text-blue-700 border-blue-200 dark:border-blue-800';
     case 'low':
-      return 'bg-gradient-to-r from-gray-500/10 to-gray-600/10 text-gray-700 border-gray-200 dark:border-gray-800';
+      return 'bg-linear-to-r from-gray-500/10 to-gray-600/10 text-gray-700 border-gray-200 dark:border-gray-800';
     default:
-      return 'bg-gradient-to-r from-gray-500/10 to-gray-600/10 text-gray-700 border-gray-200 dark:border-gray-800';
+      return 'bg-linear-to-r from-gray-500/10 to-gray-600/10 text-gray-700 border-gray-200 dark:border-gray-800';
   }
 };
 
@@ -209,7 +209,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
         <CardContent>
           <div className="grid grid-cols-2 gap-6 md:grid-cols-8">
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-linear-to-r from-blue-600 to-blue-700 bg-clip-text font-bold text-3xl text-transparent">
                 {events.length}
               </div>
               <div className="font-medium text-muted-foreground text-sm">
@@ -217,7 +217,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-linear-to-r from-green-600 to-emerald-700 bg-clip-text font-bold text-3xl text-transparent">
                 {scheduleStats.uniqueTasks}
               </div>
               <div className="font-medium text-muted-foreground text-sm">
@@ -225,7 +225,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-orange-600 to-amber-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-linear-to-r from-orange-600 to-amber-700 bg-clip-text font-bold text-3xl text-transparent">
                 {scheduleStats.totalDuration.toFixed(1)}h
               </div>
               <div className="font-medium text-muted-foreground text-sm">
@@ -233,7 +233,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-purple-600 to-pink-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-linear-to-r from-purple-600 to-pink-700 bg-clip-text font-bold text-3xl text-transparent">
                 {scheduleStats.splitTasks}
               </div>
               <div className="font-medium text-muted-foreground text-sm">
@@ -241,7 +241,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-red-600 to-rose-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-linear-to-r from-red-600 to-rose-700 bg-clip-text font-bold text-3xl text-transparent">
                 {scheduleStats.priorityStats.critical || 0}
               </div>
               <div className="font-medium text-muted-foreground text-sm">
@@ -249,7 +249,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-orange-600 to-amber-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-linear-to-r from-orange-600 to-amber-700 bg-clip-text font-bold text-3xl text-transparent">
                 {scheduleStats.priorityStats.high || 0}
               </div>
               <div className="font-medium text-muted-foreground text-sm">
@@ -257,7 +257,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-indigo-600 to-blue-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-linear-to-r from-indigo-600 to-blue-700 bg-clip-text font-bold text-3xl text-transparent">
                 {scheduleStats.lockedEvents}
               </div>
               <div className="font-medium text-muted-foreground text-sm">
@@ -265,7 +265,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-rose-600 to-pink-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-linear-to-r from-rose-600 to-pink-700 bg-clip-text font-bold text-3xl text-transparent">
                 {scheduleStats.daysSpanned}
               </div>
               <div className="font-medium text-muted-foreground text-sm">
@@ -378,10 +378,10 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
                               key={event.id}
                               className={`group relative rounded-lg border-2 p-4 transition-all duration-200 hover:shadow-lg ${
                                 event.locked
-                                  ? 'border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50 dark:border-purple-800 dark:from-purple-950/20 dark:to-pink-950/20'
+                                  ? 'border-purple-200 bg-linear-to-r from-purple-50 to-pink-50 dark:border-purple-800 dark:from-purple-950/20 dark:to-pink-950/20'
                                   : isPastDeadline(event)
-                                    ? 'border-red-200 bg-gradient-to-r from-red-50 to-rose-50 dark:border-red-800 dark:from-red-950/20 dark:to-rose-950/20'
-                                    : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-blue-700 dark:hover:from-blue-950/20 dark:hover:to-purple-950/20'
+                                    ? 'border-red-200 bg-linear-to-r from-red-50 to-rose-50 dark:border-red-800 dark:from-red-950/20 dark:to-rose-950/20'
+                                    : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-linear-to-r hover:from-blue-50/50 hover:to-purple-50/50 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-blue-700 dark:hover:from-blue-950/20 dark:hover:to-purple-950/20'
                               }`}
                             >
                               <div className="flex items-start justify-between gap-4">

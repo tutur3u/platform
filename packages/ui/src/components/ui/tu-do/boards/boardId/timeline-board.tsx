@@ -707,7 +707,7 @@ export function TimelineBoard({
                             </div>
                             {/* Resize handles */}
                             <div
-                              className="absolute inset-y-0 left-0 w-3 cursor-col-resize rounded-l-md bg-gradient-to-r from-background/60 to-transparent opacity-0 transition-all hover:w-4 hover:from-background/80 group-hover:opacity-100"
+                              className="absolute inset-y-0 left-0 w-3 cursor-col-resize rounded-l-md bg-linear-to-r from-background/60 to-transparent opacity-0 transition-all hover:w-4 hover:from-background/80 group-hover:opacity-100"
                               aria-hidden="true"
                               onPointerDown={(e) => {
                                 e.preventDefault();
@@ -722,7 +722,7 @@ export function TimelineBoard({
                               }}
                             />
                             <div
-                              className="absolute inset-y-0 right-0 w-3 cursor-col-resize rounded-r-md bg-gradient-to-l from-background/60 to-transparent opacity-0 transition-all hover:w-4 hover:from-background/80 group-hover:opacity-100"
+                              className="absolute inset-y-0 right-0 w-3 cursor-col-resize rounded-r-md bg-linear-to-l from-background/60 to-transparent opacity-0 transition-all hover:w-4 hover:from-background/80 group-hover:opacity-100"
                               aria-hidden="true"
                               onPointerDown={(e) => {
                                 e.preventDefault();

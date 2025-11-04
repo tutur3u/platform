@@ -1,11 +1,11 @@
-import {
-  AccountSwitcherProvider,
-  useAccountSwitcher,
-} from '@/context/account-switcher-context';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { SupabaseSession } from '@tuturuuu/supabase/next/user';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  AccountSwitcherProvider,
+  useAccountSwitcher,
+} from '@/context/account-switcher-context';
 
 // Mock functions - Use vi.hoisted() to ensure they're available in vi.mock factories
 const { mockGetSession, mockSetSession, mockSignOut, mockSwitchClientSession } =

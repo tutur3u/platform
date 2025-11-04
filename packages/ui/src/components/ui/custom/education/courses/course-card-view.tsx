@@ -128,7 +128,7 @@ export function CourseCardView({ courses }: CourseCardViewProps) {
             <Card className="flex h-full flex-col overflow-hidden bg-white shadow-md transition-transform hover:scale-105 dark:bg-foreground/5">
               {/* Top colored section with icon */}
               <div
-                className={`${style?.bgColor} flex flex-shrink-0 items-center justify-center px-8 py-8`}
+                className={`${style?.bgColor} flex shrink-0 items-center justify-center px-8 py-8`}
               >
                 <div className={`${style?.iconBg} rounded-2xl p-4`}>
                   <IconComponent className={`h-12 w-12 ${style?.iconColor}`} />
@@ -141,7 +141,7 @@ export function CourseCardView({ courses }: CourseCardViewProps) {
                   <h3 className="line-clamp-2 flex-grow pr-2 font-semibold text-gray-900 text-lg leading-tight dark:text-gray-100">
                     {course.name}
                   </h3>
-                  <div className="flex flex-shrink-0 items-center">
+                  <div className="flex shrink-0 items-center">
                     <Star className="mr-1 h-4 w-4 fill-yellow-400 text-yellow-400" />
                     <span className="mr-1 font-medium text-sm">4.5</span>
                     {/* TODO: Add rating if the schema supports later on*/}

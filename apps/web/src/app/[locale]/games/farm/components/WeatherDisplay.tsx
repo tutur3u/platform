@@ -40,7 +40,7 @@ export function WeatherDisplay({ weather }: WeatherDisplayProps) {
       <div className="mb-2">
         <div className="h-2 overflow-hidden rounded-full bg-dynamic-gray/20">
           <div
-            className="h-full bg-gradient-to-r from-dynamic-blue to-dynamic-purple transition-all duration-1000"
+            className="h-full bg-linear-to-r from-dynamic-blue to-dynamic-purple transition-all duration-1000"
             style={{ width: `${progress * 100}%` }}
           />
         </div>

@@ -73,7 +73,7 @@ export function PromptInput({
   return (
     <div className="flex h-full flex-col">
       {!isSubmitting && (
-        <div className="mb-6 rounded-xl border-2 border-foreground/10 bg-gradient-to-r from-background/60 via-background/80 to-background/60 p-5 shadow-sm backdrop-blur-sm transition-all duration-300 hover:border-foreground/20">
+        <div className="mb-6 rounded-xl border-2 border-foreground/10 bg-linear-to-r from-background/60 via-background/80 to-background/60 p-5 shadow-sm backdrop-blur-sm transition-all duration-300 hover:border-foreground/20">
           <div className="flex items-center justify-between text-foreground/70 text-sm">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
@@ -105,15 +105,15 @@ export function PromptInput({
                     className={cn(
                       'relative h-full overflow-hidden transition-all duration-500 ease-out',
                       isAtLimit
-                        ? 'bg-gradient-to-r from-dynamic-red to-dynamic-rose'
+                        ? 'bg-linear-to-r from-dynamic-red to-dynamic-rose'
                         : isNearLimit
-                          ? 'bg-gradient-to-r from-dynamic-amber to-dynamic-orange'
-                          : 'bg-gradient-to-r from-dynamic-blue to-dynamic-purple'
+                          ? 'bg-linear-to-r from-dynamic-amber to-dynamic-orange'
+                          : 'bg-linear-to-r from-dynamic-blue to-dynamic-purple'
                     )}
                     style={{ width: `${Math.min(characterPercentage, 100)}%` }}
                   >
                     {!isAtLimit && (
-                      <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                      <div className="absolute inset-0 animate-pulse bg-linear-to-r from-transparent via-white/30 to-transparent" />
                     )}
                   </div>
                 </div>
@@ -180,7 +180,7 @@ export function PromptInput({
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <h3 className="bg-gradient-to-r from-dynamic-blue via-dynamic-purple to-dynamic-indigo bg-clip-text font-bold text-2xl text-transparent">
+                  <h3 className="bg-linear-to-r from-dynamic-blue via-dynamic-purple to-dynamic-indigo bg-clip-text font-bold text-2xl text-transparent">
                     {currentProgress.step &&
                     typeof currentProgress.step === 'string'
                       ? currentProgress.step
@@ -209,12 +209,12 @@ export function PromptInput({
                 <div className="mx-auto w-full max-w-xs">
                   <div className="h-2 overflow-hidden rounded-full bg-dynamic-blue/20 shadow-inner">
                     <div
-                      className="relative h-full overflow-hidden bg-gradient-to-r from-dynamic-blue via-dynamic-purple to-dynamic-indigo transition-all duration-1000 ease-out"
+                      className="relative h-full overflow-hidden bg-linear-to-r from-dynamic-blue via-dynamic-purple to-dynamic-indigo transition-all duration-1000 ease-out"
                       style={{
                         width: `${Math.round(currentProgress.progress || 0)}%`,
                       }}
                     >
-                      <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+                      <div className="absolute inset-0 animate-pulse bg-linear-to-r from-transparent via-white/40 to-transparent" />
                     </div>
                   </div>
                 </div>
@@ -276,7 +276,7 @@ export function PromptInput({
                 disabled={!prompt.trim() || isDisabled}
                 className={cn(
                   'gap-3 border-0 px-8 py-3 font-semibold text-white shadow-lg transition-all duration-300',
-                  'bg-gradient-to-r from-dynamic-blue to-dynamic-purple',
+                  'bg-linear-to-r from-dynamic-blue to-dynamic-purple',
                   'hover:scale-[1.02] hover:from-dynamic-blue/90 hover:to-dynamic-purple/90 hover:shadow-dynamic-blue/25',
                   'active:scale-[0.98]',
                   'disabled:scale-100 disabled:bg-foreground/20 disabled:text-foreground/40 disabled:shadow-none',
@@ -301,7 +301,7 @@ export function PromptInput({
 
         {error && (
           <div className="mt-3 flex items-start gap-3 rounded-lg border border-dynamic-red/20 bg-dynamic-red/10 p-4 shadow-sm">
-            <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-dynamic-red" />
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-red" />
             <div>
               <p className="font-medium text-dynamic-red text-sm">Error</p>
               <p className="mt-1 text-dynamic-red/80 text-sm">{error}</p>

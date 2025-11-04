@@ -109,7 +109,7 @@ export function StatsOverview({
         >
           <CardContent className="p-3 sm:p-6">
             <div className="flex items-start gap-2 sm:gap-4">
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <div
                   className={cn(
                     'rounded-full bg-white p-2 shadow-sm transition-transform sm:p-3 dark:bg-gray-800'

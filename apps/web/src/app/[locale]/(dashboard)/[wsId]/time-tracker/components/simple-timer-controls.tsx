@@ -16,6 +16,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import { useCallback, useEffect, useState } from 'react';
 import type { ExtendedWorkspaceTask, SessionWithRelations } from '../types';
 
@@ -356,8 +357,8 @@ export function SimpleTimerControls({
             <div className="text-left">
               <h3 className="font-medium text-lg">{currentSession.title}</h3>
               {currentSession.description && (
-                <p className="mt-1 text-muted-foreground text-sm">
-                  {currentSession.description}
+                <p className="mt-1 whitespace-pre-wrap text-muted-foreground text-sm">
+                  {getDescriptionText(currentSession.description)}
                 </p>
               )}
               {currentSession.category && (
@@ -409,8 +410,8 @@ export function SimpleTimerControls({
             <div className="text-left">
               <h3 className="font-medium text-lg">{pausedSession.title}</h3>
               {pausedSession.description && (
-                <p className="mt-1 text-muted-foreground text-sm">
-                  {pausedSession.description}
+                <p className="mt-1 whitespace-pre-wrap text-muted-foreground text-sm">
+                  {getDescriptionText(pausedSession.description)}
                 </p>
               )}
             </div>

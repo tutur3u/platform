@@ -38,18 +38,15 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
-import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import debounce from 'lodash/debounce';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
-
-interface NotesListProps {
-  wsId: string;
-  enabled?: boolean;
-}
+import { useCallback, useMemo, useState } from 'react';
+import { NoteEditDialog } from './note-edit-dialog';
 
 interface Note {
   id: string;
+  title: string | null;
   content: JSONContent;
   created_at: string;
   updated_at: string;
@@ -97,13 +94,14 @@ const extractTextFromContent = (content: JSONContent): string => {
   return '';
 };
 
-function NotesListContent({ wsId }: { wsId: string }) {
+export default function NoteList({ wsId }: { wsId: string }) {
   const t = useTranslations('dashboard.bucket_dump');
 
   const [isConversionDialogOpen, setIsConversionDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState<JSONContent | null>(null);
   const [conversionType, setConversionType] = useState<'task' | 'project'>(
     'task'
@@ -209,10 +207,12 @@ function NotesListContent({ wsId }: { wsId: string }) {
   const updateNoteMutation = useMutation({
     mutationFn: async ({
       noteId,
+      title,
       content,
     }: {
       noteId: string;
-      content: JSONContent;
+      title?: string;
+      content?: JSONContent;
     }) => {
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/notes/${noteId}`,
@@ -221,7 +221,7 @@ function NotesListContent({ wsId }: { wsId: string }) {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ content }),
+          body: JSON.stringify({ title, content }),
         }
       );
 
@@ -230,13 +230,6 @@ function NotesListContent({ wsId }: { wsId: string }) {
       }
 
       return response.json();
-    },
-    onSuccess: () => {
-      toast.success(t('success.note_updated'));
-      setIsEditDialogOpen(false);
-      setEditingNote(null);
-      setEditContent(null);
-      refetchNotes();
     },
     onError: (error: Error) => {
       toast.error(error.message || t('errors.update_note'));
@@ -323,6 +316,7 @@ function NotesListContent({ wsId }: { wsId: string }) {
 
   const handleEditNote = (note: Note) => {
     setEditingNote(note);
+    setEditTitle(note.title || '');
     // Parse content if it's a string (safeguard for JSONB serialization issues)
     const parsedContent =
       typeof note.content === 'string'
@@ -332,17 +326,45 @@ function NotesListContent({ wsId }: { wsId: string }) {
     setIsEditDialogOpen(true);
   };
 
-  const handleUpdateNote = () => {
-    if (!editingNote || !editContent) {
-      toast.error(t('errors.empty_note'));
-      return;
-    }
+  const debouncedTitleSave = useMemo(
+    () =>
+      debounce((noteId: string, title: string) => {
+        updateNoteMutation.mutate({
+          noteId,
+          title,
+        });
+      }, 1000),
+    [updateNoteMutation]
+  );
 
-    updateNoteMutation.mutate({
-      noteId: editingNote.id,
-      content: editContent,
-    });
-  };
+  const handleAutoSaveTitle = useCallback(
+    (title: string) => {
+      if (!editingNote) return;
+      debouncedTitleSave(editingNote.id, title);
+    },
+    [editingNote, debouncedTitleSave]
+  );
+
+  // Debounced auto-save handler - triggered 1 second after last change
+  const debouncedAutoSave = useMemo(
+    () =>
+      debounce((noteId: string, content: JSONContent) => {
+        updateNoteMutation.mutate({
+          noteId,
+          content,
+        });
+      }, 1000),
+    [updateNoteMutation]
+  );
+
+  // Auto-save handler - debounced save triggered by changes
+  const handleAutoSaveNote = useCallback(
+    (content: JSONContent | null) => {
+      if (!editingNote || !content) return;
+      debouncedAutoSave(editingNote.id, content);
+    },
+    [editingNote, debouncedAutoSave]
+  );
 
   const handleConvertNote = (note: Note) => {
     const plainText = extractTextFromContent(note.content);
@@ -429,15 +451,13 @@ function NotesListContent({ wsId }: { wsId: string }) {
             <Badge variant="outline" className="text-xs">
               {displayedNotes.length}
             </Badge>
-            {notes.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowArchived(!showArchived)}
-              >
-                {showArchived ? t('show_active') : t('show_archived')}
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowArchived(!showArchived)}
+            >
+              {showArchived ? t('show_active') : t('show_archived')}
+            </Button>
           </div>
         </div>
 
@@ -475,13 +495,14 @@ function NotesListContent({ wsId }: { wsId: string }) {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 space-y-2">
                       <p
-                        className={`text-sm leading-relaxed ${
+                        className={`text-sm leading-relaxed hover:underline cursor-pointer ${
                           note.archived
                             ? 'text-muted-foreground line-through'
                             : 'text-foreground'
                         }`}
+                        onClick={() => handleEditNote(note)}
                       >
-                        {extractTextFromContent(note.content)}
+                        {note.title || 'Untitled Note'}
                       </p>
                       <div className="flex items-center gap-2">
                         <p className="text-muted-foreground text-xs">
@@ -558,59 +579,33 @@ function NotesListContent({ wsId }: { wsId: string }) {
       </div>
 
       {/* Edit Note Dialog */}
-      <Dialog
-        open={isEditDialogOpen}
+      <NoteEditDialog
+        isOpen={isEditDialogOpen}
         onOpenChange={(open) => {
           if (!open) {
             setIsEditDialogOpen(false);
             setEditingNote(null);
+            setEditTitle('');
             setEditContent(null);
+            refetchNotes();
           }
         }}
-      >
-        <DialogContent className="max-h-[80vh] max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>{t('edit_dialog.title')}</DialogTitle>
-            <DialogDescription>
-              {t('edit_dialog.description')}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 overflow-y-auto">
-            <RichTextEditor
-              content={editContent}
-              onChange={setEditContent}
-              writePlaceholder={t('edit_dialog.content_placeholder')}
-              titlePlaceholder=""
-              className="min-h-[400px]"
-              readOnly={isUpdating}
-            />
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => setIsEditDialogOpen(false)}
-              disabled={isUpdating}
-            >
-              {t('edit_dialog.cancel')}
-            </Button>
-            <Button
-              onClick={handleUpdateNote}
-              disabled={isUpdating || !editContent}
-            >
-              {isUpdating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t('edit_dialog.updating')}
-                </>
-              ) : (
-                t('edit_dialog.save')
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        title={editTitle}
+        onTitleChange={(newTitle) => {
+          setEditTitle(newTitle);
+          if (newTitle) {
+            handleAutoSaveTitle(newTitle);
+          }
+        }}
+        content={editContent}
+        onContentChange={(newContent) => {
+          setEditContent(newContent);
+          // Trigger auto-save when content changes
+          if (newContent) {
+            handleAutoSaveNote(newContent);
+          }
+        }}
+      />
 
       {/* Conversion Dialog */}
       <Dialog
@@ -770,9 +765,4 @@ function NotesListContent({ wsId }: { wsId: string }) {
       </Dialog>
     </>
   );
-}
-
-export default function NotesList({ wsId, enabled = true }: NotesListProps) {
-  if (!enabled) return null;
-  return <NotesListContent wsId={wsId} />;
 }
