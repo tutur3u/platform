@@ -38,10 +38,9 @@ pub struct Session {
     pub is_active: bool,
 }
 
+#[allow(dead_code)]
 impl Session {
     /// Create a new session
-    ///
-    /// # Arguments
     ///
     /// * `user_id` - The user this session belongs to
     /// * `refresh_token` - JWT refresh token
@@ -128,6 +127,7 @@ pub enum TokenType {
     Refresh,
 }
 
+#[allow(dead_code)]
 impl Claims {
     /// Create new access token claims
     pub fn new_access_token(
@@ -230,13 +230,15 @@ pub struct RegisterRequest {
 }
 
 /// Refresh token request
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct RefreshTokenRequest {
     pub refresh_token: String,
 }
 
 /// Change password request
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct ChangePasswordRequest {
     pub current_password: String,
     pub new_password: String,

@@ -148,7 +148,7 @@ pub fn higher_order_functions() {
     println!("\n=== Higher-Order Functions ===");
 
     // map: Transform each element
-    let numbers = vec![1, 2, 3, 4, 5];
+    let numbers = [1, 2, 3, 4, 5];
     let squared: Vec<i32> = numbers.iter().map(|x| x * x).collect();
     println!("Squared: {:?}", squared);
 
@@ -178,7 +178,7 @@ pub fn higher_order_functions() {
 pub fn iterator_basics() {
     println!("\n=== Iterator Basics ===");
 
-    let v = vec![1, 2, 3, 4, 5];
+    let v = [1, 2, 3, 4, 5];
 
     // Iterators are lazy - nothing happens until consumed
     let mut iter = v.iter();
@@ -234,7 +234,7 @@ pub fn iterator_adaptors() {
     }
 
     // zip to combine two iterators
-    let letters = vec!['a', 'b', 'c'];
+    let letters = ['a', 'b', 'c'];
     let zipped: Vec<(i32, char)> = numbers
         .iter()
         .copied()
@@ -249,7 +249,7 @@ pub fn iterator_adaptors() {
 pub fn iterator_consumers() {
     println!("\n=== Iterator Consumers ===");
 
-    let numbers = vec![1, 2, 3, 4, 5];
+    let numbers = [1, 2, 3, 4, 5];
 
     // sum: Add all elements
     let sum: i32 = numbers.iter().sum();
@@ -264,7 +264,7 @@ pub fn iterator_consumers() {
     println!("Doubled: {:?}", doubled);
 
     // fold: General-purpose accumulator (like reduce in other languages)
-    let factorial = (1..=5).fold(1, |acc, x| acc * x);
+    let factorial = (1..=5).product::<i32>();
     println!("5! = {}", factorial);
 
     // reduce: Similar to fold but uses first element as initial value
@@ -333,27 +333,27 @@ pub fn advanced_patterns() {
     println!("\n=== Advanced Patterns ===");
 
     // Flatten nested iterators
-    let nested = vec![vec![1, 2], vec![3, 4], vec![5, 6]];
+    let nested = [vec![1, 2], vec![3, 4], vec![5, 6]];
     let flat: Vec<i32> = nested.iter().flatten().copied().collect();
     println!("Flattened: {:?}", flat);
 
     // Partition: Split into two collections
-    let numbers = vec![1, 2, 3, 4, 5, 6];
+    let numbers = [1, 2, 3, 4, 5, 6];
     let (evens, odds): (Vec<i32>, Vec<i32>) = numbers.iter().copied().partition(|&x| x % 2 == 0);
     println!("Evens: {:?}, Odds: {:?}", evens, odds);
 
     // Cycle: Repeat iterator infinitely (use with take!)
-    let repeated: Vec<i32> = vec![1, 2, 3].iter().copied().cycle().take(10).collect();
+    let repeated: Vec<i32> = [1, 2, 3].iter().copied().cycle().take(10).collect();
     println!("Repeated: {:?}", repeated);
 
     // Chain: Combine iterators
-    let v1 = vec![1, 2, 3];
-    let v2 = vec![4, 5, 6];
+    let v1 = [1, 2, 3];
+    let v2 = [4, 5, 6];
     let chained: Vec<i32> = v1.iter().chain(v2.iter()).copied().collect();
     println!("Chained: {:?}", chained);
 
     // Scan: Stateful map
-    let cumulative: Vec<i32> = vec![1, 2, 3, 4, 5]
+    let cumulative: Vec<i32> = [1, 2, 3, 4, 5]
         .iter()
         .scan(0, |acc, &x| {
             *acc += x;
@@ -388,7 +388,6 @@ pub fn performance_comparison() {
 /// # Practical Examples
 ///
 /// Real-world use cases for closures and iterators.
-
 /// Count word frequencies in text
 pub fn word_frequency(text: &str) -> std::collections::HashMap<String, usize> {
     text.split_whitespace()

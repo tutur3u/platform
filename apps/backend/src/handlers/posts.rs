@@ -172,7 +172,7 @@ pub async fn create_post(
     .bind(&post_data.content)
     .bind(&post_data.excerpt)
     .bind(status)
-    .bind(&post_data.tags.unwrap_or_default())
+    .bind(post_data.tags.unwrap_or_default())
     .bind(&post_data.featured_image_url)
     .bind(published_at)
     .bind(now)

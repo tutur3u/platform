@@ -76,17 +76,12 @@ impl<T> PaginatedResponse<T> {
 
 /// Sort order
 #[allow(dead_code)]
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum SortOrder {
     Asc,
+    #[default]
     Desc,
-}
-
-impl Default for SortOrder {
-    fn default() -> Self {
-        SortOrder::Desc
-    }
 }
 
 /// Generic API response wrapper
