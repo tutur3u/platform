@@ -30,7 +30,6 @@ export async function GET() {
         date: new Date(item.date).toISOString().split('T')[0],
       })),
     });
-    // eslint-disable-next-line no-unused-vars
   } catch (error) {
     return NextResponse.json(
       { message: 'Error fetching forecast data' },

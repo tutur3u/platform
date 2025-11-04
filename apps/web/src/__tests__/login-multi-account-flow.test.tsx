@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach, beforeAll } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 let mockLocationHref = '';
 const mockLocationHrefSetter = vi.fn((value: string) => {
@@ -179,7 +179,7 @@ describe('Login Multi-Account Flow', () => {
       try {
         // Simulate navigation error
         throw new Error('Invalid URL format');
-      } catch (navError) {
+      } catch (_navError) {
         // Fallback logic
         if (multiAccount === 'true') {
           mockLocationHrefSetter(

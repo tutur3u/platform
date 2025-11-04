@@ -40,7 +40,7 @@ export function timetzToTime(timetz: string) {
 export function timetzToHour(timetz?: string) {
   if (!timetz) return undefined;
   const [hourStr] = timetzToTime(timetz).split(':');
-  return parseInt(hourStr ?? '0');
+  return parseInt(hourStr ?? '0', 10);
 }
 
 export function compareTimetz(timetz1: string, timetz2: string) {
@@ -90,7 +90,7 @@ export function parseTimezoneOffset(timeString: string): string {
   const offset = parseFloat(offsetPart);
 
   // Handle NaN case
-  if (isNaN(offset)) {
+  if (Number.isNaN(offset)) {
     return '';
   }
 

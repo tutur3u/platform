@@ -34,12 +34,12 @@ export function joinPath(...paths: string[]) {
 
   // Add leading slash for absolute paths
   if (!shouldBeRelative && shouldStartWithSlash) {
-    result = '/' + result.replace(/^\//, '');
+    result = `/${result.replace(/^\//, '')}`;
   }
 
   // Add leading './' if the first path started with './'
   if (shouldBeRelative && firstPath?.startsWith('./')) {
-    result = './' + result;
+    result = `./${result}`;
   }
 
   // Add trailing slash if original had one
@@ -80,12 +80,12 @@ export function popPath(path: string) {
   // Handle relative paths
   if (isRelative) {
     if (!result.startsWith('./') && !result.startsWith('../')) {
-      result = './' + result.replace(/^\/+/, '');
+      result = `./${result.replace(/^\/+/, '')}`;
     }
   } else {
     // Ensure leading slash for absolute paths and paths without protocol
     if (!result.includes('://') && !result.startsWith('/')) {
-      result = '/' + result;
+      result = `/${result}`;
     }
   }
 

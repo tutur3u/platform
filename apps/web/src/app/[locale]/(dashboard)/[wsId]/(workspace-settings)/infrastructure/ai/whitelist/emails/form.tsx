@@ -15,7 +15,7 @@ import * as z from 'zod';
 
 interface Props {
   wsId: string;
-  // eslint-disable-next-line no-unused-vars
+
   onSubmit: (values: z.infer<typeof FormSchema>) => void;
 }
 

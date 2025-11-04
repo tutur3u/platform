@@ -44,8 +44,8 @@ export default async function WorkspaceCoursesPage({
 
   const { data, count } = await getData(wsId, searchParamsResolved);
   const currentView = searchParamsResolved.view || 'card';
-  const currentPage = parseInt(page);
-  const currentPageSize = parseInt(pageSize);
+  const currentPage = parseInt(page, 10);
+  const currentPageSize = parseInt(pageSize, 10);
   const totalPages = Math.ceil(count / currentPageSize);
 
   const courses = data.map((c) => ({
@@ -55,49 +55,47 @@ export default async function WorkspaceCoursesPage({
   }));
 
   return (
-    <>
-      <div className="p-4">
-        <FeatureSummary
-          pluralTitle={t('ws-courses.plural')}
-          singularTitle={t('ws-courses.singular')}
-          description={t('ws-courses.description')}
-          createTitle={t('ws-courses.create')}
-          createDescription={t('ws-courses.create_description')}
-          form={<CourseForm wsId={wsId} />}
-        />
-        <Separator className="my-4" />
+    <div className="p-4">
+      <FeatureSummary
+        pluralTitle={t('ws-courses.plural')}
+        singularTitle={t('ws-courses.singular')}
+        description={t('ws-courses.description')}
+        createTitle={t('ws-courses.create')}
+        createDescription={t('ws-courses.create_description')}
+        form={<CourseForm wsId={wsId} />}
+      />
+      <Separator className="my-4" />
 
-        <div className="mb-4 flex justify-end">
-          <ViewToggle currentView={currentView} />
-        </div>
-
-        {currentView === 'card' ? (
-          <>
-            <CourseCardView courses={courses} />
-            <div className="mt-8">
-              <CoursePagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalCount={count}
-                pageSize={currentPageSize}
-                wsId={wsId}
-              />
-            </div>
-          </>
-        ) : (
-          <CustomDataTable
-            data={courses}
-            columnGenerator={getWorkspaceCourseColumns}
-            namespace="course-data-table"
-            count={count}
-            defaultVisibility={{
-              id: false,
-              created_at: false,
-            }}
-          />
-        )}
+      <div className="mb-4 flex justify-end">
+        <ViewToggle currentView={currentView} />
       </div>
-    </>
+
+      {currentView === 'card' ? (
+        <>
+          <CourseCardView courses={courses} />
+          <div className="mt-8">
+            <CoursePagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalCount={count}
+              pageSize={currentPageSize}
+              wsId={wsId}
+            />
+          </div>
+        </>
+      ) : (
+        <CustomDataTable
+          data={courses}
+          columnGenerator={getWorkspaceCourseColumns}
+          namespace="course-data-table"
+          count={count}
+          defaultVisibility={{
+            id: false,
+            created_at: false,
+          }}
+        />
+      )}
+    </div>
   );
 }
 
@@ -143,8 +141,8 @@ async function getData(
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
   if (page && pageSize) {
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
+    const parsedPage = parseInt(page, 10);
+    const parsedSize = parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize;
     queryBuilder.range(start, end).limit(parsedSize);

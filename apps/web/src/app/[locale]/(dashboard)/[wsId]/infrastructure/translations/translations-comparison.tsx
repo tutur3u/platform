@@ -1553,7 +1553,7 @@ export default function TranslationsComparison({
                   Raw AI Output ({streamingContent.length} chars)
                 </summary>
                 <div className="max-h-[200px] overflow-y-auto border-t p-3">
-                  <pre className="whitespace-pre-wrap break-words font-mono text-xs">
+                  <pre className="wrap-break-word whitespace-pre-wrap font-mono text-xs">
                     {streamingContent}
                   </pre>
                 </div>
@@ -1661,7 +1661,7 @@ export default function TranslationsComparison({
                 </div>
                 <div className="max-h-[300px] min-h-[120px] overflow-y-auto rounded-lg border bg-muted/30 p-4">
                   {selectedTranslation?.enValue ? (
-                    <p className="whitespace-pre-wrap break-words">
+                    <p className="wrap-break-word whitespace-pre-wrap">
                       {selectedTranslation.enValue}
                     </p>
                   ) : (
@@ -1705,7 +1705,7 @@ export default function TranslationsComparison({
                 </div>
                 <div className="max-h-[300px] min-h-[120px] overflow-y-auto rounded-lg border bg-muted/30 p-4">
                   {selectedTranslation?.viValue ? (
-                    <p className="whitespace-pre-wrap break-words">
+                    <p className="wrap-break-word whitespace-pre-wrap">
                       {selectedTranslation.viValue}
                     </p>
                   ) : (

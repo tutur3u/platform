@@ -39,7 +39,7 @@ export function AccountItem({ account, isActive, onClick }: AccountItemProps) {
 
       <div className="flex flex-1 flex-col items-start text-left">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{displayName}</span>
+          <span className="font-medium text-sm">{displayName}</span>
           {isActive && (
             <Badge variant="secondary" className="text-xs">
               {t('account_switcher.active')}
@@ -47,7 +47,7 @@ export function AccountItem({ account, isActive, onClick }: AccountItemProps) {
           )}
         </div>
         {account.email && (
-          <span className="text-xs text-foreground/60">{account.email}</span>
+          <span className="text-foreground/60 text-xs">{account.email}</span>
         )}
       </div>
 

@@ -286,7 +286,7 @@ const TimeBlockingProvider = ({
 
   useEffect(() => {
     setIsDirty(false);
-  }, [plan.dates, plan.start_time, plan.end_time]);
+  }, []);
 
   // Initialize initial timeblocks for comparison
   useEffect(() => {

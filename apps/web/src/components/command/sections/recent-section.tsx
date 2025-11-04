@@ -76,7 +76,7 @@ export function RecentSection({
                 variant="ghost"
                 size="sm"
                 onClick={handleClearRecent}
-                className="h-5 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                className="h-5 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
               >
                 <Trash2 className="h-3 w-3" />
                 Clear

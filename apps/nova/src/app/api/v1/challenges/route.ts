@@ -76,12 +76,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  let body;
+  let body: unknown;
 
   try {
     body = await request.json();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
   }
 

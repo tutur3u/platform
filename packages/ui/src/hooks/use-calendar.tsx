@@ -704,7 +704,7 @@ export const CalendarProvider = ({
                     // Redirect to Google Calendar auth page or open auth modal
                     // This could be enhanced to open a specific auth flow
                     window.open(
-                      '/api/v1/calendar/auth?wsId=' + ws?.id,
+                      `/api/v1/calendar/auth?wsId=${ws?.id}`,
                       '_blank'
                     );
                   },
@@ -1068,7 +1068,7 @@ export const CalendarProvider = ({
         queryClient.invalidateQueries(['calendarEvents', ws?.id]);
       }
     },
-    [googleEvents, events, ws?.id, queryClient]
+    [googleEvents, events, ws?.id, queryClient, experimentalGoogleToken]
   );
 
   // Modal management

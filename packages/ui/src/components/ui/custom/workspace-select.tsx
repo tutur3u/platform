@@ -559,7 +559,7 @@ async function fetchWorkspaces() {
   const { data: workspaces, error } = await supabase
     .from('workspaces')
     .select(
-      'id, name, personal, avatar_url, logo_url, created_at, creator_id, workspace_members!inner(role)'
+      'id, name, personal, avatar_url, logo_url, created_at, creator_id, workspace_members!inner(user_id)'
     )
     .eq('workspace_members.user_id', user.id);
 

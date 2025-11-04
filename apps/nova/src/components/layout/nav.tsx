@@ -50,7 +50,7 @@ export function Nav({
         )
         .map((item) => (
           <div key={item.href}>
-            {item.subItems && item.subItems.length ? (
+            {item.subItems?.length ? (
               <Collapsible>
                 <CollapsibleTrigger asChild>
                   {isCollapsed ? (

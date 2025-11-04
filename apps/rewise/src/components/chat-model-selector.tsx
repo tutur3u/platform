@@ -24,9 +24,9 @@ export function ChatModelSelector({
   open: boolean;
   model?: Model;
   className?: string;
-  // eslint-disable-next-line no-unused-vars
+
   setOpen: (open: boolean) => void;
-  // eslint-disable-next-line no-unused-vars
+
   onChange: (value: Model) => void;
 }) {
   const [previewModel, setPreviewModel] = useState<Model | undefined>(model);
@@ -123,7 +123,7 @@ export function ChatModelSelector({
           <Separator className="my-2" />
           <div className="p-2 pt-0">
             <div className="text-sm">{previewModel?.description}</div>
-            {previewModel?.context != undefined && (
+            {previewModel?.context !== undefined && (
               <>
                 <Separator className="my-2" />
                 <div className="rounded bg-foreground px-2 py-0.5 text-center font-semibold text-background text-sm">

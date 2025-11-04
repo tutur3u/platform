@@ -122,7 +122,6 @@ const MermaidRenderer = ({ content }: { content: string }) => {
     <div
       ref={elementRef}
       className="overflow-x-auto"
-      // biome-ignore lint/security/noDangerouslySetInnerHtml: <safely set svg content>
       dangerouslySetInnerHTML={{ __html: svgContent }}
     />
   );
@@ -340,7 +339,7 @@ export interface ChatMessageProps {
   embeddedUrl?: string;
   locale?: string;
   anonymize?: boolean;
-  // eslint-disable-next-line no-unused-vars
+
   setInput?: (input: string) => void;
 }
 
@@ -544,7 +543,7 @@ export function ChatMessage({
           </blockquote>
         );
       },
-      // eslint-disable-next-line no-unused-vars
+
       code({
         node,
         className,
@@ -696,13 +695,12 @@ export function ChatMessage({
       <div
         className={cn(
           'flex-1 space-y-2',
-          'prose dark:prose-invert w-[calc(100vw-8rem)] min-w-full break-words prose-td:border prose-th:border prose-th:border-foreground/20 prose-tr:border-border prose-th:border-b-4 prose-pre:p-2 prose-td:p-2 prose-th:p-2 prose-th:text-center prose-th:text-lg text-foreground text-md prose-p:leading-relaxed prose-li:marker:text-foreground/80 prose-code:before:hidden prose-p:before:hidden prose-code:after:hidden prose-p:after:hidden md:w-152 lg:w-full'
+          'prose dark:prose-invert wrap-break-word w-[calc(100vw-8rem)] min-w-full prose-td:border prose-th:border prose-th:border-foreground/20 prose-tr:border-border prose-th:border-b-4 prose-pre:p-2 prose-td:p-2 prose-th:p-2 prose-th:text-center prose-th:text-lg text-foreground text-md prose-p:leading-relaxed prose-li:marker:text-foreground/80 prose-code:before:hidden prose-p:before:hidden prose-code:after:hidden prose-p:after:hidden md:w-152 lg:w-full'
         )}
       >
         <MemoizedReactMarkdown
           remarkPlugins={[remarkGfm, remarkMath]}
           rehypePlugins={[rehypeKatex]}
-          // biome-ignore lint/suspicious/noExplicitAny: <custom components>
           components={markdownComponents as any}
         >
           {message.parts

@@ -29,7 +29,7 @@ const FormSchema = z.object({
 interface ProfileCompletionScreenProps {
   user: WorkspaceUser;
   onBack: () => void;
-  // eslint-disable-next-line no-unused-vars
+
   onContinue: (data: {
     displayName: string;
     bio?: string;

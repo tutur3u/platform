@@ -2,11 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type {
-  PermissionId,
-  Workspace,
-  WorkspaceUserRole,
-} from '@tuturuuu/types';
+import type { PermissionId, Workspace } from '@tuturuuu/types';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { notFound, redirect } from 'next/navigation';
 import { ROOT_WORKSPACE_ID, resolveWorkspaceId } from './constants';
@@ -26,15 +22,15 @@ export async function checkTuturuuuAdmin() {
 
   if (!user) redirect('/login');
 
-  const { data, error } = await supabase
+  // Check if user is a member of root workspace
+  const { error } = await supabase
     .from('workspace_members')
-    .select('role')
+    .select('user_id')
     .eq('ws_id', ROOT_WORKSPACE_ID)
     .eq('user_id', user.id)
-    .in('role', ['OWNER', 'ADMIN'])
     .single();
 
-  if (error || !data) {
+  if (error) {
     console.error('Error checking Tuturuuu admin status:', error);
     throw error;
   }
@@ -79,7 +75,7 @@ export async function getWorkspace(
   const queryBuilder = supabase
     .from('workspaces')
     .select(
-      'id, name, avatar_url, logo_url, personal, created_at, workspace_members(role)'
+      'id, name, avatar_url, logo_url, personal, created_at, workspace_members(user_id)'
     );
 
   const resolvedWorkspaceId = resolveWorkspaceId(id);
@@ -105,17 +101,15 @@ export async function getWorkspace(
     notFound();
   }
 
-  const workspaceJoined = !!data?.workspace_members[0]?.role;
-  const { workspace_members, ...rest } = data;
+  const workspaceJoined = !!data?.workspace_members[0]?.user_id;
+  const { workspace_members: _, ...rest } = data;
 
   const ws = {
     ...rest,
-    role: workspace_members[0]?.role,
     joined: workspaceJoined,
   };
 
   return ws as Workspace & {
-    role: WorkspaceUserRole;
     joined: boolean;
   };
 }
@@ -132,7 +126,7 @@ export async function getWorkspaces() {
   const { data, error } = await supabase
     .from('workspaces')
     .select(
-      'id, name, avatar_url, logo_url, personal, created_at, workspace_members!inner(role)'
+      'id, name, avatar_url, logo_url, personal, created_at, workspace_members!inner(user_id)'
     )
     .eq('workspace_members.user_id', user.id);
 
@@ -245,12 +239,12 @@ export async function enforceRootWorkspaceAdmin(
 
   if (!user) redirect('/login');
 
+  // Check if user is a member of root workspace (membership implies admin)
   const { error } = await supabase
     .from('workspace_members')
-    .select('role')
+    .select('user_id')
     .eq('ws_id', ROOT_WORKSPACE_ID)
     .eq('user_id', user.id)
-    .in('role', ['OWNER', 'ADMIN'])
     .single();
 
   if (error) {

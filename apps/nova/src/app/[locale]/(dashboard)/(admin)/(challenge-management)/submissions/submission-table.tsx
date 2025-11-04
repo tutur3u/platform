@@ -38,6 +38,7 @@ import {
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 
 type SubmissionWithDetails = NovaSubmission & {
@@ -379,10 +380,12 @@ export function SubmissionTable({
                     >
                       <div className="flex items-center gap-2">
                         {submission.user?.avatar_url ? (
-                          <img
+                          <Image
                             src={submission.user.avatar_url}
                             alt={submission.user.display_name || 'User'}
                             className="h-8 w-8 rounded-full"
+                            width={32}
+                            height={32}
                           />
                         ) : (
                           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">

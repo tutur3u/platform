@@ -90,7 +90,7 @@ export function MailList({
                 </span>
               </div>
 
-              <div className="line-clamp-2 break-words font-medium text-foreground/80 text-sm leading-relaxed transition-colors group-hover:text-foreground/95">
+              <div className="wrap-break-word line-clamp-2 font-medium text-foreground/80 text-sm leading-relaxed transition-colors group-hover:text-foreground/95">
                 {confidentialMode ? t('confidential_subject') : item.subject}
               </div>
             </div>

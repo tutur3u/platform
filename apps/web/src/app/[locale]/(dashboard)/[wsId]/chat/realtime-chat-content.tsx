@@ -792,7 +792,7 @@ export default function RealtimeChatContent({
                                   : 'border border-dynamic-border/50 bg-background text-dynamic-foreground'
                               } ${isOptimistic ? 'opacity-50' : 'opacity-100'}`}
                             >
-                              <p className="break-words text-sm leading-relaxed">
+                              <p className="wrap-break-word text-sm leading-relaxed">
                                 {message.content}
                               </p>
                               {isOwn && (

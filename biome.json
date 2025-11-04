@@ -74,6 +74,9 @@
     "globals": ["React", "JSX"]
   },
   "html": {
+    "parser": {
+      "interpolation": true
+    },
     "formatter": {
       "selfCloseVoidElements": "always"
     }

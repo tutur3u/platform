@@ -1,7 +1,6 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { LogoutDropdownItem } from '@/app/[locale]/(dashboard)/_components/logout-dropdown-item';
 import LogoutButton from '@/components/LogoutButton';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the account switcher context
 const mockLogout = vi.fn();
@@ -94,12 +93,6 @@ describe('Logout Functionality', () => {
 
   describe('Logout Behavior', () => {
     it('should handle logout with multiple accounts', async () => {
-      // Simulate logout being called with multiple accounts
-      const accounts = [
-        { id: 'user-1', metadata: { email: 'user1@test.com' } },
-        { id: 'user-2', metadata: { email: 'user2@test.com' } },
-      ];
-
       mockLogout.mockImplementation(() => {
         // Simulates removing current account and switching to another
         return Promise.resolve();

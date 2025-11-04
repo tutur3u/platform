@@ -1,4 +1,3 @@
-import { DEV_MODE } from '@/constants/common';
 import { useQuery } from '@tanstack/react-query';
 import { ActivitySquare, Database } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -7,8 +6,9 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@tuturuuu/ui/dropdown-menu';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { DEV_MODE } from '@/constants/common';
 
 export default function DashboardMenuItem() {
   const t = useTranslations('common');
@@ -66,7 +66,7 @@ async function fetchDefaultWorkspace() {
     // Validate the default workspace exists and user has access
     const { data: workspace, error } = await supabase
       .from('workspaces')
-      .select('id, name, workspace_members!inner(role)')
+      .select('id, name, workspace_members!inner(user_id)')
       .eq('id', userData.default_workspace_id)
       .eq('workspace_members.user_id', user.id)
       .single();
@@ -79,7 +79,7 @@ async function fetchDefaultWorkspace() {
   // If no default workspace or invalid, get the first available workspace
   const { data: workspaces, error } = await supabase
     .from('workspaces')
-    .select('id, name, workspace_members!inner(role)')
+    .select('id, name, workspace_members!inner(user_id)')
     .eq('workspace_members.user_id', user.id)
     .limit(1)
     .maybeSingle();

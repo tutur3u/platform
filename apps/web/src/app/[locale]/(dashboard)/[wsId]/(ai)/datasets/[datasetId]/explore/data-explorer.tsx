@@ -87,7 +87,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
 
   const headers = columnsQuery.data?.map((col: any) => col.name) || [];
   const { data, totalRows = 0 } = rowsQuery.data || {};
-  const totalPages = Math.ceil(totalRows / parseInt(pageSize));
+  const totalPages = Math.ceil(totalRows / parseInt(pageSize, 10));
 
   const handlePageSizeChange = (value: string) => {
     setPageSize(value);
@@ -253,7 +253,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
             <tbody>
               {rowsQuery.isPlaceholderData && data.length > 0
                 ? // Show skeleton rows while loading with existing data
-                  Array.from({ length: parseInt(pageSize) }).map(
+                  Array.from({ length: parseInt(pageSize, 10) }).map(
                     (_, rowIndex) => (
                       <tr key={`skeleton-${rowIndex}`} className="border-b">
                         {headers.map((_: any, colIndex: number) => (
@@ -415,8 +415,8 @@ export function DataExplorer({ wsId, dataset }: Props) {
           ) : (
             <>
               <div className="text-muted-foreground text-sm">
-                Showing {(currentPage - 1) * parseInt(pageSize) + 1} to{' '}
-                {Math.min(currentPage * parseInt(pageSize), totalRows)} of{' '}
+                Showing {(currentPage - 1) * parseInt(pageSize, 10) + 1} to{' '}
+                {Math.min(currentPage * parseInt(pageSize, 10), totalRows)} of{' '}
                 {totalRows} rows
               </div>
 

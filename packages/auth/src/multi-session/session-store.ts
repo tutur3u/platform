@@ -1,4 +1,4 @@
-import type { Session } from '@supabase/supabase-js';
+import type { SupabaseSession } from '@tuturuuu/supabase/next/user';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import {
@@ -287,7 +287,7 @@ export class SessionStore {
       const decrypted = (await decryptSession(
         account.encryptedSession,
         this.encryptionKey
-      )) as Session;
+      )) as SupabaseSession;
 
       return {
         session: decrypted,
@@ -308,7 +308,7 @@ export class SessionStore {
    * Add a new account
    */
   async addAccount(
-    session: Session,
+    session: SupabaseSession,
     options: AddAccountOptions = {}
   ): Promise<AccountOperationResult> {
     if (!this.encryptionKey) {
@@ -496,7 +496,7 @@ export class SessionStore {
    */
   async updateAccountSession(
     accountId: string,
-    session: Session
+    session: SupabaseSession
   ): Promise<AccountOperationResult> {
     if (!this.encryptionKey) {
       throw new Error('Store not initialized');
