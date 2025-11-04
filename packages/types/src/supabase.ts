@@ -8910,18 +8910,6 @@ export type Database = {
           },
         ];
       };
-      workspace_default_roles: {
-        Row: {
-          id: string;
-        };
-        Insert: {
-          id: string;
-        };
-        Update: {
-          id?: string;
-        };
-        Relationships: [];
-      };
       workspace_documents: {
         Row: {
           content: Json | null;
@@ -9136,24 +9124,18 @@ export type Database = {
           created_at: string;
           email: string;
           invited_by: string | null;
-          role: string;
-          role_title: string;
           ws_id: string;
         };
         Insert: {
           created_at?: string;
           email: string;
           invited_by?: string | null;
-          role?: string;
-          role_title?: string;
           ws_id: string;
         };
         Update: {
           created_at?: string;
           email?: string;
           invited_by?: string | null;
-          role?: string;
-          role_title?: string;
           ws_id?: string;
         };
         Relationships: [
@@ -9183,13 +9165,6 @@ export type Database = {
             columns: ['invited_by'];
             isOneToOne: false;
             referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_email_invites_role_fkey';
-            columns: ['role'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_default_roles';
             referencedColumns: ['id'];
           },
           {
@@ -9336,8 +9311,6 @@ export type Database = {
           expires_at: string | null;
           id: string;
           max_uses: number | null;
-          role: string;
-          role_title: string;
           updated_at: string;
           ws_id: string;
         };
@@ -9348,8 +9321,6 @@ export type Database = {
           expires_at?: string | null;
           id?: string;
           max_uses?: number | null;
-          role?: string;
-          role_title?: string;
           updated_at?: string;
           ws_id: string;
         };
@@ -9360,8 +9331,6 @@ export type Database = {
           expires_at?: string | null;
           id?: string;
           max_uses?: number | null;
-          role?: string;
-          role_title?: string;
           updated_at?: string;
           ws_id?: string;
         };
@@ -9395,13 +9364,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'workspace_invite_links_role_fkey';
-            columns: ['role'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_default_roles';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'workspace_invite_links_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
@@ -9420,33 +9382,20 @@ export type Database = {
       workspace_invites: {
         Row: {
           created_at: string | null;
-          role: string;
-          role_title: string | null;
           user_id: string;
           ws_id: string;
         };
         Insert: {
           created_at?: string | null;
-          role?: string;
-          role_title?: string | null;
           user_id: string;
           ws_id: string;
         };
         Update: {
           created_at?: string | null;
-          role?: string;
-          role_title?: string | null;
           user_id?: string;
           ws_id?: string;
         };
         Relationships: [
-          {
-            foreignKeyName: 'workspace_invites_role_fkey';
-            columns: ['role'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_default_roles';
-            referencedColumns: ['id'];
-          },
           {
             foreignKeyName: 'workspace_invites_user_id_fkey';
             columns: ['user_id'];
@@ -9564,7 +9513,6 @@ export type Database = {
       workspace_members: {
         Row: {
           created_at: string | null;
-          role: string;
           role_title: string;
           sort_key: number | null;
           user_id: string;
@@ -9572,7 +9520,6 @@ export type Database = {
         };
         Insert: {
           created_at?: string | null;
-          role?: string;
           role_title?: string;
           sort_key?: number | null;
           user_id?: string;
@@ -9580,20 +9527,12 @@ export type Database = {
         };
         Update: {
           created_at?: string | null;
-          role?: string;
           role_title?: string;
           sort_key?: number | null;
           user_id?: string;
           ws_id?: string;
         };
         Relationships: [
-          {
-            foreignKeyName: 'workspace_members_role_fkey';
-            columns: ['role'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_default_roles';
-            referencedColumns: ['id'];
-          },
           {
             foreignKeyName: 'workspace_members_user_id_fkey';
             columns: ['user_id'];
@@ -12150,8 +12089,6 @@ export type Database = {
           is_expired: boolean | null;
           is_full: boolean | null;
           max_uses: number | null;
-          role: string | null;
-          role_title: string | null;
           updated_at: string | null;
           ws_id: string | null;
         };
@@ -12185,13 +12122,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'workspace_invite_links_role_fkey';
-            columns: ['role'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_default_roles';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'workspace_invite_links_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
@@ -12213,21 +12143,6 @@ export type Database = {
           link_count: number | null;
           logo_url: string | null;
           name: string | null;
-        };
-        Relationships: [];
-      };
-      workspace_members_and_invites: {
-        Row: {
-          avatar_url: string | null;
-          created_at: string | null;
-          display_name: string | null;
-          email: string | null;
-          handle: string | null;
-          id: string | null;
-          pending: boolean | null;
-          role: string | null;
-          role_title: string | null;
-          ws_id: string | null;
         };
         Relationships: [];
       };
@@ -12523,6 +12438,15 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: Json;
+      };
+      create_missing_personal_workspaces: {
+        Args: never;
+        Returns: {
+          error_message: string;
+          success: boolean;
+          user_id: string;
+          workspace_id: string;
+        }[];
       };
       extract_domain: { Args: { url: string }; Returns: string };
       extract_referrer_domain: { Args: { url: string }; Returns: string };
@@ -12918,6 +12842,10 @@ export type Database = {
           unique_users_count: number;
         }[];
       };
+      get_time_tracking_daily_activity: {
+        Args: { p_days_back?: number; p_user_id?: string; p_ws_id: string };
+        Returns: Json;
+      };
       get_time_tracking_sessions_paginated: {
         Args: {
           p_limit?: number;
@@ -13014,10 +12942,6 @@ export type Database = {
           task_start_date: string;
           task_total_duration: number;
         }[];
-      };
-      get_user_role: {
-        Args: { user_id: string; ws_id: string };
-        Returns: string;
       };
       get_user_session_stats: {
         Args: { user_id: string };
@@ -13148,12 +13072,12 @@ export type Database = {
         Returns: number;
       };
       hard_delete_soft_deleted_items: { Args: never; Returns: undefined };
-      has_other_owner: {
-        Args: { _user_id: string; _ws_id: string };
-        Returns: boolean;
-      };
       has_workspace_permission: {
         Args: { p_permission: string; p_user_id: string; p_ws_id: string };
+        Returns: boolean;
+      };
+      has_workspace_secret: {
+        Args: { secret_name: string; ws_id: string };
         Returns: boolean;
       };
       insert_ai_chat_message: {
