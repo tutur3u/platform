@@ -41,7 +41,9 @@ chrono = { version = "0.4.42", features = ["serde"] }
 
 # SQLx: Async SQL toolkit for Rust with compile-time checked queries
 # Features: PostgreSQL driver, runtime tokio, TLS via rustls, migrations
-# Note: default-features = false to exclude MySQL and avoid vulnerable rsa dependency
+# Note: default-features = false to exclude MySQL driver and avoid RUSTSEC-2023-0071
+#       (rsa 0.9.8 vulnerability in sqlx-mysql). We only use PostgreSQL, so MySQL is not needed.
+#       The "any" feature in default features pulls in all database drivers including MySQL.
 sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "migrate", "macros", "json"] }
 
 # JWT: JSON Web Token implementation for authentication
@@ -76,3 +78,6 @@ thiserror = "2.0.17"
 # Dependencies used only for testing
 # HTTPs testing client for integration tests
 reqwest = { version = "0.12.24", features = ["json"] }
+
+# Serial test: Run tests serially to avoid environment variable conflicts
+serial_test = "3.2.0"
