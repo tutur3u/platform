@@ -40,7 +40,6 @@ import { useBoardConfig } from '@tuturuuu/utils/task-helper';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -81,7 +80,7 @@ export default function MyTasksContent({
   const t = useTranslations();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { onUpdate } = useTaskDialog();
+  const { onUpdate, openTaskById } = useTaskDialog();
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>(wsId);
   const [selectedBoardId, setSelectedBoardId] = useState<string>('');
@@ -544,12 +543,13 @@ export default function MyTasksContent({
         toast.success(
           <div className="flex flex-col">
             <span>Task created successfully!</span>
-            <Link
-              href={`/${wsId}/tasks/${newTask.id}`}
-              className="mt-1 font-bold text-dynamic-blue text-sm hover:underline"
+            <button
+              type="button"
+              onClick={() => openTaskById(newTask.id)}
+              className="mt-1 text-left font-bold text-dynamic-blue text-sm hover:underline"
             >
               Go to task
-            </Link>
+            </button>
           </div>
         );
         setPendingTaskTitle('');
