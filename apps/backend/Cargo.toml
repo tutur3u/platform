@@ -41,7 +41,8 @@ chrono = { version = "0.4.42", features = ["serde"] }
 
 # SQLx: Async SQL toolkit for Rust with compile-time checked queries
 # Features: PostgreSQL driver, runtime tokio, TLS via rustls, migrations
-sqlx = { version = "0.8.6", features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "migrate"] }
+# Note: default-features = false to exclude MySQL and avoid vulnerable rsa dependency
+sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "migrate", "macros", "json"] }
 
 # JWT: JSON Web Token implementation for authentication
 # Note: Using 9.3.0 as 10.x has compilation issues in some environments
