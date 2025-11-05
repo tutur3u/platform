@@ -482,12 +482,12 @@ export default function NoteList({ wsId }: { wsId: string }) {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {displayedNotes.map((note) => (
               <Card
                 key={note.id}
                 onClick={() => handleEditNote(note)}
-                className={`group max-h-[500px] cursor-pointer transition ${
+                className={`group max-h-[512px] cursor-pointer transition ${
                   note.archived
                     ? 'border-dynamic-green/30 bg-dynamic-green/5'
                     : 'hover:border-dynamic-purple/30 hover:shadow-md'
@@ -495,7 +495,7 @@ export default function NoteList({ wsId }: { wsId: string }) {
               >
                 <CardContent className="flex h-full flex-col p-4">
                   {/* Header with title and actions */}
-                  <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="mb-1 flex items-start justify-between gap-3">
                     <h3
                       className={`flex-1 font-bold text-base leading-tight ${
                         note.archived
@@ -571,21 +571,7 @@ export default function NoteList({ wsId }: { wsId: string }) {
                     </div>
                   </div>
 
-                  {/* Read-only TipTap editor with limited height */}
-                  <div className="relative mb-3 flex-1 overflow-y-hidden">
-                    <div className="pointer-events-none h-full overflow-y-hidden">
-                      <RichTextEditor
-                        content={note.content}
-                        readOnly={true}
-                        className="border-0 p-0! text-sm"
-                      />
-                    </div>
-                    {/* Fade gradient at bottom */}
-                    <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-12 bg-linear-to-t from-background to-transparent" />
-                  </div>
-
-                  {/* Footer with date and archived badge */}
-                  <div className="flex items-center gap-2 border-t pt-3">
+                  <div className="mb-3 flex items-center gap-2">
                     <p className="text-muted-foreground text-xs">
                       {new Date(note.created_at).toLocaleDateString('en-US', {
                         year: 'numeric',
@@ -601,6 +587,19 @@ export default function NoteList({ wsId }: { wsId: string }) {
                         {t('actions.archived')}
                       </Badge>
                     )}
+                  </div>
+
+                  {/* Read-only TipTap editor with limited height */}
+                  <div className="relative flex-1 overflow-y-hidden">
+                    <div className="pointer-events-none h-full overflow-y-hidden">
+                      <RichTextEditor
+                        content={note.content}
+                        readOnly={true}
+                        className="border-0 p-0! text-sm"
+                      />
+                    </div>
+                    {/* Fade gradient at bottom */}
+                    <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-12 bg-linear-to-t from-background to-transparent" />
                   </div>
                 </CardContent>
               </Card>
