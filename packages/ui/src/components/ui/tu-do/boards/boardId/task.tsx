@@ -10,14 +10,11 @@ import {
   CircleSlash,
   Clock,
   FileText,
-  Flag,
   Image as ImageIcon,
   Link2,
   ListTodo,
   MoreHorizontal,
-  Move,
   Play,
-  Timer,
   Trash2,
   UserMinus,
   UserStar,
@@ -27,7 +24,6 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -49,12 +45,9 @@ import {
   useBoardConfig,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
-import {
-  getDescriptionMetadata,
-  getDescriptionText,
-} from '@tuturuuu/utils/text-helper';
+import { getDescriptionMetadata } from '@tuturuuu/utils/text-helper';
 import { format, formatDistanceToNow } from 'date-fns';
-import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { useTaskDialogState } from '../../hooks/useTaskDialogState';
 import { useTaskLabelManagement } from '../../hooks/useTaskLabelManagement';
@@ -65,7 +58,6 @@ import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
 import { TaskViewerAvatarsComponent } from '../../shared/user-presence-avatars';
 import {
-  getAssigneeInitials,
   getCardColorClasses as getCardColorClassesUtil,
   getListColorClasses,
 } from '../../utils/taskColorUtils';
@@ -1124,159 +1116,3 @@ export function MeasuredTaskCard({
     </div>
   );
 }
-
-interface LightweightTaskCardProps {
-  task: Task;
-  destination?: Pick<TaskList, 'id' | 'name' | 'status' | 'color'> | null;
-}
-
-const destinationTone: Record<SupportedColor, string> = {
-  GRAY: 'bg-dynamic-gray/15 text-foreground/80 ring-dynamic-gray/30',
-  RED: 'bg-dynamic-red/15 text-dynamic-red ring-dynamic-red/30',
-  BLUE: 'bg-dynamic-blue/15 text-dynamic-blue ring-dynamic-blue/30',
-  GREEN: 'bg-dynamic-green/15 text-dynamic-green ring-dynamic-green/30',
-  YELLOW: 'bg-dynamic-yellow/15 text-dynamic-yellow ring-dynamic-yellow/30',
-  ORANGE: 'bg-dynamic-orange/15 text-dynamic-orange ring-dynamic-orange/30',
-  PURPLE: 'bg-dynamic-purple/15 text-dynamic-purple ring-dynamic-purple/30',
-  PINK: 'bg-dynamic-pink/15 text-dynamic-pink ring-dynamic-pink/30',
-  INDIGO: 'bg-dynamic-indigo/15 text-dynamic-indigo ring-dynamic-indigo/30',
-  CYAN: 'bg-dynamic-cyan/15 text-dynamic-cyan ring-dynamic-cyan/30',
-};
-
-const priorityLabels: Record<NonNullable<Task['priority']>, string> = {
-  critical: 'Urgent',
-  high: 'High',
-  normal: 'Medium',
-  low: 'Low',
-};
-
-function LightweightTaskCardInner({
-  task,
-  destination,
-}: LightweightTaskCardProps) {
-  const descriptionText = getDescriptionText(task.description);
-  const sortedLabels = task.labels
-    ? [...task.labels].sort((a, b) =>
-        a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-      )
-    : [];
-  const dueDate = task.end_date ? new Date(task.end_date) : null;
-  const now = Date.now();
-  const dueDisplay = dueDate
-    ? formatDistanceToNow(dueDate, { addSuffix: true })
-    : null;
-  const isOverdue = Boolean(dueDate && dueDate.getTime() < now);
-  const assignees = task.assignees ? [...task.assignees] : [];
-  const visibleAssignees = assignees.slice(0, 3);
-  const extraAssignees = Math.max(
-    0,
-    assignees.length - visibleAssignees.length
-  );
-  const destinationColorClass = destination
-    ? destinationTone[(destination.color as SupportedColor) || 'GRAY'] ||
-      destinationTone.GRAY
-    : null;
-
-  return (
-    <Card className="pointer-events-none w-full max-w-[340px] select-none overflow-hidden border-2 border-primary/40 bg-background/95 shadow-2xl ring-2 ring-primary/30 backdrop-blur-md">
-      <div className="flex flex-col gap-3 p-4">
-        {destination && (
-          <div className="slide-in-from-top-2 flex animate-in items-center justify-between gap-2 rounded-lg bg-linear-to-r from-primary/10 via-primary/5 to-transparent p-2 text-[11px] duration-300">
-            <span
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-semibold shadow-sm ring-1 ring-inset',
-                destinationColorClass
-              )}
-            >
-              <Move className="h-3.5 w-3.5 animate-pulse" />
-              <span className="text-xs">{destination.name}</span>
-            </span>
-            {destination.status && (
-              <span className="rounded-full bg-background/80 px-2 py-1 font-medium text-[10px] text-muted-foreground uppercase tracking-wider shadow-sm">
-                {destination.status.replace(/_/g, ' ')}
-              </span>
-            )}
-          </div>
-        )}
-        <div className="space-y-1.5">
-          <div className="truncate font-bold text-base text-foreground leading-snug">
-            {task.name}
-          </div>
-          {descriptionText && (
-            <div className="line-clamp-2 whitespace-pre-line text-muted-foreground text-xs leading-relaxed">
-              {descriptionText.replace(/\n/g, ' • ')}
-            </div>
-          )}
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-          {dueDisplay && (
-            <span
-              className={cn(
-                'inline-flex items-center gap-1 rounded-md bg-dynamic-surface/70 px-2 py-1 font-medium',
-                isOverdue ? 'text-dynamic-red' : 'text-dynamic-green'
-              )}
-            >
-              <Calendar className="h-3 w-3" />
-              {dueDisplay}
-            </span>
-          )}
-          {task.priority && (
-            <span
-              className={cn(
-                'inline-flex items-center gap-1 rounded-md px-2 py-1 font-medium',
-                task.priority === 'critical'
-                  ? 'bg-dynamic-red text-white shadow-dynamic-red/50 shadow-sm'
-                  : 'bg-dynamic-surface/70 text-foreground/80'
-              )}
-            >
-              <Flag
-                className={cn(
-                  'h-3 w-3',
-                  task.priority === 'critical' ? 'h-3.5 w-3.5' : ''
-                )}
-              />
-              {priorityLabels[task.priority]}
-            </span>
-          )}
-          {typeof task.estimation_points === 'number' && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-dynamic-surface/70 px-2 py-1 font-medium text-foreground/80">
-              <Timer className="h-3 w-3" />
-              {task.estimation_points}
-            </span>
-          )}
-        </div>
-        {sortedLabels.length > 0 && (
-          <TaskLabelsDisplay labels={sortedLabels} size="sm" />
-        )}
-        {visibleAssignees.length > 0 && (
-          <div className="flex items-center gap-1.5">
-            {visibleAssignees.map((assignee) => (
-              <Avatar
-                key={assignee.id}
-                className="h-6 w-6 border border-background/60 bg-dynamic-surface"
-              >
-                {assignee.avatar_url ? (
-                  <AvatarImage
-                    src={assignee.avatar_url}
-                    alt={assignee.display_name || assignee.email || 'Assignee'}
-                  />
-                ) : null}
-                <AvatarFallback>
-                  {getAssigneeInitials(assignee.display_name, assignee.email)}
-                </AvatarFallback>
-              </Avatar>
-            ))}
-            {extraAssignees > 0 && (
-              <span className="rounded-full bg-dynamic-surface/70 px-2 py-0.5 text-[11px] text-muted-foreground">
-                +{extraAssignees}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-    </Card>
-  );
-}
-
-export const LightweightTaskCard = memo(LightweightTaskCardInner);
-LightweightTaskCard.displayName = 'LightweightTaskCard';
