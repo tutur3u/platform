@@ -194,6 +194,8 @@ export const Video = (options: VideoOptions = {}) =>
           props: {
             handleDOMEvents: {
               drop(view, event) {
+                if (!onVideoUpload) return false;
+
                 const { schema } = view.state;
                 const hasFiles = event.dataTransfer?.files?.length;
 
