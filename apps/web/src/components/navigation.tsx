@@ -1,12 +1,12 @@
 'use client';
 
+import { DEV_MODE, PROD_MODE } from '@/constants/common';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
-import { DEV_MODE, PROD_MODE } from '@/constants/common';
 
 export interface NavLink {
   title: string;
@@ -20,7 +20,6 @@ export interface NavLink {
   external?: boolean;
   disabled?: boolean;
   tempDisabled?: boolean;
-  disabledRoles?: string[];
   isBack?: boolean;
   onClick?: () => void;
   children?: (NavLink | null)[];
@@ -28,23 +27,16 @@ export interface NavLink {
   requireRootMember?: boolean;
   requireRootWorkspace?: boolean;
   disableOnProduction?: boolean;
-  allowedRoles?: string[];
   experimental?: 'alpha' | 'beta' | 'new';
 }
 
 interface Props {
   currentWsId?: string;
-  currentRole?: string;
   currentUser?: WorkspaceUser | null;
   navLinks: NavLink[];
 }
 
-export function Navigation({
-  currentWsId,
-  currentRole,
-  currentUser,
-  navLinks,
-}: Props) {
+export function Navigation({ currentWsId, currentUser, navLinks }: Props) {
   const pathname = usePathname();
   const isRootWorkspace = currentWsId === ROOT_WORKSPACE_ID;
 
@@ -97,16 +89,6 @@ export function Navigation({
         // If the link requires the root workspace, check if the current workspace is the root workspace
         if (link?.requireRootWorkspace && !isRootWorkspace) return null;
 
-        // If the link is only allowed for certain roles, check if the current role is allowed
-        if (
-          currentRole &&
-          link?.allowedRoles &&
-          link.allowedRoles.length > 0 &&
-          (link?.allowedRoles?.includes(currentRole) === false ||
-            link?.disabledRoles?.includes(currentRole) === true)
-        )
-          return null;
-
         const links = [...(link.aliases || []), link.href];
         const matchExact = link.matchExact ?? false;
 
@@ -146,7 +128,7 @@ export function Navigation({
               link.tempDisabled
                 ? 'cursor-not-allowed opacity-50'
                 : isActive
-                  ? 'border-border bg-foreground/[0.025] text-foreground dark:bg-foreground/5'
+                  ? 'border-border bg-foreground/2.5 text-foreground dark:bg-foreground/5'
                   : urlToLoad === link.href
                     ? 'animate-pulse bg-foreground/5 text-foreground/70 dark:text-foreground/40'
                     : 'border-transparent text-foreground/70 md:hover:bg-foreground/5 md:hover:text-foreground dark:text-foreground/40'

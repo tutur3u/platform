@@ -647,7 +647,7 @@ export const CalendarSyncProvider = ({
   // Effect to reset the processed flag when dates change
   useEffect(() => {
     hasProcessedInitialData.current = false;
-  }, [dates]);
+  }, []);
 
   const syncToGoogle = async () => {};
 

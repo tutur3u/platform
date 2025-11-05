@@ -1,8 +1,8 @@
 'use client';
 
 import { Box } from '@tuturuuu/icons';
-import { Badge } from '@tuturuuu/ui/badge';
 import type { TaskProject } from '@tuturuuu/types';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 
@@ -15,7 +15,6 @@ interface TaskProjectsDisplayProps {
 
 export function TaskProjectsDisplay({
   projects,
-  className,
   size = 'sm',
   showIcon = true,
 }: TaskProjectsDisplayProps) {
@@ -42,7 +41,7 @@ export function TaskProjectsDisplay({
       <Badge
         variant="outline"
         className={cn(
-          'inline-flex items-center gap-1 truncate border font-medium ring-0 bg-dynamic-blue/10 text-dynamic-blue ring-dynamic-blue/20 border-dynamic-blue/30',
+          'inline-flex items-center gap-1 truncate border border-dynamic-blue/30 bg-dynamic-blue/10 font-medium text-dynamic-blue ring-0 ring-dynamic-blue/20',
           sizeClasses[size]
         )}
       >
@@ -59,7 +58,7 @@ export function TaskProjectsDisplay({
         <Badge
           variant="outline"
           className={cn(
-            'inline-flex items-center gap-1 border font-medium ring-0 cursor-help bg-dynamic-blue/10 text-dynamic-blue ring-dynamic-blue/20 border-dynamic-blue/30',
+            'inline-flex cursor-help items-center gap-1 border border-dynamic-blue/30 bg-dynamic-blue/10 font-medium text-dynamic-blue ring-0 ring-dynamic-blue/20',
             sizeClasses[size]
           )}
         >
@@ -67,7 +66,7 @@ export function TaskProjectsDisplay({
           <span>{projects.length} projects</span>
         </Badge>
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="max-w-xs max-h-60 overflow-auto">
+      <TooltipContent side="bottom" className="max-h-60 max-w-xs overflow-auto">
         <div className="space-y-1">
           {projects.map((project) => (
             <div key={project.id} className="text-xs">

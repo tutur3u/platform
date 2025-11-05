@@ -1,14 +1,14 @@
+import { CustomDataTable } from '@/components/custom-data-table';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { ProductSupplier } from '@tuturuuu/types/primitives/ProductSupplier';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { productSupplierColumns } from './columns';
 import { ProductSupplierForm } from './form';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'Suppliers',
@@ -44,7 +44,7 @@ export default async function WorkspaceSuppliersPage({
           return (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
-                <h2 className="text-lg font-semibold">
+                <h2 className="font-semibold text-lg">
                   {t('ws-roles.inventory_access_denied')}
                 </h2>
                 <p className="text-muted-foreground">
@@ -121,8 +121,8 @@ async function getData(
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
   if (page && pageSize) {
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
+    const parsedPage = parseInt(page, 10);
+    const parsedSize = parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize;
     queryBuilder.range(start, end).limit(parsedSize);

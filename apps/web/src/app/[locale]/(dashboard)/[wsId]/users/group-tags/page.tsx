@@ -1,10 +1,10 @@
+import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { groupTagColumns } from './columns';
 import GroupTagForm from './form';
 
@@ -85,8 +85,8 @@ async function getGroupTags(
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
   if (page && pageSize) {
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
+    const parsedPage = parseInt(page, 10);
+    const parsedSize = parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize;
     queryBuilder.range(start, end).limit(parsedSize);

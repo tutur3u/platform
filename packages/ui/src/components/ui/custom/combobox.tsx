@@ -32,9 +32,9 @@ interface ComboboxProps {
   label?: string;
   disabled?: boolean;
   useFirstValueAsDefault?: boolean;
-  // eslint-disable-next-line no-unused-vars
+
   onChange?: (event: string | string[]) => void; // Updated to handle multiple selections
-  // eslint-disable-next-line no-unused-vars
+
   onCreate?: (value: string) => void;
 }
 

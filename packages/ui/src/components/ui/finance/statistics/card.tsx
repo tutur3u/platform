@@ -163,7 +163,7 @@ const StatisticCard = ({
                     <TooltipTrigger asChild>
                       <p
                         className={cn(
-                          'min-w-0 cursor-help break-words font-bold text-foreground tracking-tight',
+                          'wrap-break-word min-w-0 cursor-help font-bold text-foreground tracking-tight',
                           getFontSizeClass(displayValue)
                         )}
                       >
@@ -178,7 +178,7 @@ const StatisticCard = ({
               ) : (
                 <p
                   className={cn(
-                    'min-w-0 break-words font-bold text-foreground tracking-tight',
+                    'wrap-break-word min-w-0 font-bold text-foreground tracking-tight',
                     getFontSizeClass(displayValue)
                   )}
                 >

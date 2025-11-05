@@ -13,8 +13,8 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import * as z from 'zod';
 
 interface Props {
@@ -22,7 +22,7 @@ interface Props {
   moduleId: string;
   link?: string;
   links?: string[];
-  // eslint-disable-next-line no-unused-vars
+
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 

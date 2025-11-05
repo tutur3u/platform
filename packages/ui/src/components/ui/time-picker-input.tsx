@@ -14,7 +14,7 @@ export interface TimePickerInputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {
   picker: TimePickerType;
   date: Date | undefined;
-  // eslint-disable-next-line no-unused-vars
+
   setDate: (date: Date | undefined) => void;
   onRightFocus?: () => void;
   onLeftFocus?: () => void;

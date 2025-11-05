@@ -70,13 +70,11 @@ export const getDescriptionText = (description?: string | Json): string => {
             ?.map((child) => extractText(child, depth + 1))
             .join('') || '';
         // Indent quoted text with > symbol
-        return (
-          text
-            .split('\n')
-            .filter((line) => line.trim())
-            .map((line) => `> ${line}`)
-            .join('\n') + '\n'
-        );
+        return `${text
+          .split('\n')
+          .filter((line) => line.trim())
+          .map((line) => `> ${line}`)
+          .join('\n')}\n`;
       }
 
       // Code blocks - preserve formatting
@@ -93,7 +91,7 @@ export const getDescriptionText = (description?: string | Json): string => {
         const items =
           node.content?.map((child) => extractText(child, depth)).join('') ||
           '';
-        return items + '\n';
+        return `${items}\n`;
       }
 
       if (node.type === 'orderedList') {
@@ -106,7 +104,7 @@ export const getDescriptionText = (description?: string | Json): string => {
               return text;
             })
             .join('') || '';
-        return items + '\n';
+        return `${items}\n`;
       }
 
       if (node.type === 'listItem') {
@@ -127,7 +125,7 @@ export const getDescriptionText = (description?: string | Json): string => {
         const items =
           node.content?.map((child) => extractText(child, depth)).join('') ||
           '';
-        return items + '\n';
+        return `${items}\n`;
       }
 
       if (node.type === 'taskItem') {

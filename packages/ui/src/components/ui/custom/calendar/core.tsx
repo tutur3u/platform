@@ -9,9 +9,9 @@ interface CalendarProps {
   locale: string;
   initialDate?: Date;
   attendanceData?: WorkspaceUserAttendance[];
-  // eslint-disable-next-line no-unused-vars
+
   onDateClick?: (date: Date) => void;
-  // eslint-disable-next-line no-unused-vars
+
   onDayHeaderClick?: (dayIndex: number, monthDate: Date) => void;
   hideControls?: boolean;
   hideYear?: boolean;

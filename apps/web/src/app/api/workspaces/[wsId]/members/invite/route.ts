@@ -11,7 +11,7 @@ export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId } = await params;
 
-  const { email, role, accessLevel } = await req.json();
+  const { email } = await req.json();
 
   if (!email) {
     return NextResponse.json(
@@ -27,8 +27,6 @@ export async function POST(req: Request, { params }: Params) {
   const { error } = await supabase.from('workspace_email_invites').insert({
     ws_id: wsId,
     email: email.toLowerCase(),
-    role_title: role,
-    role: accessLevel,
     invited_by: user?.id,
   });
 

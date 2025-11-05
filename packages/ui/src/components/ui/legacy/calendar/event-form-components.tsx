@@ -253,7 +253,7 @@ export const EventDescriptionInput = ({
           onChange={(e) => onChange(e.target.value)}
           placeholder="Add event details..."
           className={cn(
-            'overflow-wrap-anywhere resize-none whitespace-pre-wrap break-words transition-all duration-200',
+            'overflow-wrap-anywhere wrap-break-word resize-none whitespace-pre-wrap transition-all duration-200',
             isExpanded ? 'h-auto' : 'overflow-y-auto',
             'scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent'
           )}

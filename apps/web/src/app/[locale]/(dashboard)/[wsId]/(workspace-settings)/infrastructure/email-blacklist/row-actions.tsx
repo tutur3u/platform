@@ -75,7 +75,7 @@ export function EmailBlacklistRowActions({
           description: data.message || t('email-blacklist.delete-error'),
         });
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error(t('email-blacklist.delete-failed'), {
         description: t('email-blacklist.network-error'),
       });
@@ -116,7 +116,7 @@ export function EmailBlacklistRowActions({
             <span className="sr-only">{t('common.actions')}</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[160px]">
+        <DropdownMenuContent align="end" className="w-40">
           <DropdownMenuItem onClick={() => setOpen(true)}>
             {t('common.edit')}
           </DropdownMenuItem>

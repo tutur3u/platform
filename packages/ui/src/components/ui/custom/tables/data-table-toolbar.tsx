@@ -25,7 +25,7 @@ interface DataTableToolbarProps<TData> {
   importContent?: ReactNode;
   exportContent?: ReactNode;
   onRefresh: () => void;
-  // eslint-disable-next-line no-unused-vars
+
   onSearch: (query: string) => void;
   resetParams: () => void;
 }

@@ -34,6 +34,7 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
 import { useLocale, useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 type SessionWithDetails = {
@@ -384,10 +385,12 @@ export function SessionTable({
                     >
                       <div className="flex items-center gap-2">
                         {session.user?.avatar_url ? (
-                          <img
+                          <Image
                             src={session.user.avatar_url}
                             alt={session.user.display_name || 'User'}
                             className="h-8 w-8 rounded-full"
+                            width={32}
+                            height={32}
                           />
                         ) : (
                           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">

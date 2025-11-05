@@ -36,6 +36,7 @@ export async function UserNav({
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <button
+          type="button"
           className={cn(
             'flex w-full gap-2 rounded border p-2 text-start transition',
             hideMetadata

@@ -22,7 +22,7 @@ interface Props {
   wsId: string;
   courseId: string;
   data?: Partial<WorkspaceCourseModule>;
-  // eslint-disable-next-line no-unused-vars
+
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 

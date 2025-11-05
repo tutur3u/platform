@@ -80,7 +80,7 @@ export const getEmailBlacklistColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="max-w-md wrap-break-word font-mono text-sm">
+      <div className="wrap-break-word max-w-md font-mono text-sm">
         {row.getValue('value')}
       </div>
     ),
@@ -97,7 +97,7 @@ export const getEmailBlacklistColumns = (
     cell: ({ row }) => {
       const reason = row.getValue<string | null>('reason');
       return (
-        <div className="line-clamp-2 max-w-md wrap-break-word text-sm">
+        <div className="wrap-break-word line-clamp-2 max-w-md text-sm">
           {reason || '-'}
         </div>
       );
@@ -113,7 +113,7 @@ export const getEmailBlacklistColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-2 max-w-32 wrap-break-word text-sm">
+      <div className="wrap-break-word line-clamp-2 max-w-32 text-sm">
         {row.getValue('created_at')
           ? moment(row.getValue('created_at')).format('DD/MM/YYYY, HH:mm:ss')
           : '-'}
@@ -130,7 +130,7 @@ export const getEmailBlacklistColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-2 max-w-32 wrap-break-word text-sm">
+      <div className="wrap-break-word line-clamp-2 max-w-32 text-sm">
         {row.getValue('updated_at')
           ? moment(row.getValue('updated_at')).format('DD/MM/YYYY, HH:mm:ss')
           : '-'}

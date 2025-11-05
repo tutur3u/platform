@@ -26,7 +26,7 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import CrawlButton from './[crawlerId]/crawl-button';
 
@@ -83,7 +83,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
     );
   }, 300);
 
-  const groupUrlsByOrigin = (urls: UncrawledUrl[]) => {
+  const groupUrlsByOrigin = useCallback((urls: UncrawledUrl[]) => {
     return urls.reduce(
       (acc, url) => {
         const key = url.origin_url || 'unknown';
@@ -93,7 +93,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
       },
       {} as Record<string, UncrawledUrl[]>
     );
-  };
+  }, []);
 
   useEffect(() => {
     const fetchUncrawledUrls = async () => {
@@ -123,7 +123,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
     };
 
     fetchUncrawledUrls();
-  }, [wsId, searchParams]);
+  }, [wsId, searchParams, groupUrlsByOrigin]);
 
   const createQueryString = (params: Record<string, string | null>) => {
     const newSearchParams = new URLSearchParams(searchParams);

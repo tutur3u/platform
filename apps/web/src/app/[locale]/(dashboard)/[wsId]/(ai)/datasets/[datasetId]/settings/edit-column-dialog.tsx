@@ -13,10 +13,10 @@ import { useEffect, useState } from 'react';
 
 interface Props {
   open: boolean;
-  // eslint-disable-next-line no-unused-vars
+
   onOpenChange: (open: boolean) => void;
   column: { id: string; name: string };
-  // eslint-disable-next-line no-unused-vars
+
   onSave: (columnId: string, name: string) => Promise<void>;
 }
 

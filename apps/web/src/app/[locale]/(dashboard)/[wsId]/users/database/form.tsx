@@ -17,9 +17,9 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/sonner';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { getInitials } from '@tuturuuu/utils/name-helper';
@@ -27,18 +27,17 @@ import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import * as z from 'zod';
-import React from 'react';
 
 interface Props {
   wsId: string;
   data?: WorkspaceUser;
-  // eslint-disable-next-line no-unused-vars
+
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
-  // eslint-disable-next-line no-unused-vars
+
   onSuccess?: () => void;
-  // eslint-disable-next-line no-unused-vars
+
   onError?: (error: string) => void;
   showUserID?: boolean;
   canCreateUsers?: boolean;

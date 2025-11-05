@@ -1,8 +1,8 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { getLocale } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 import UserProfileClient, { type ProfileData } from './client';
 
 // Dynamic metadata for profile pages
@@ -196,7 +196,7 @@ export default async function UserProfilePage({
       : [];
 
     problemScores.forEach((problem) => {
-      if (problem && problem.id && typeof problem.score === 'number') {
+      if (problem?.id && typeof problem.score === 'number') {
         bestProblemScores.set(problem.id, {
           score: problem.score,
           challengeId,

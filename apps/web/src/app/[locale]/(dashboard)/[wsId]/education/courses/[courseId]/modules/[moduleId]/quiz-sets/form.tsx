@@ -22,7 +22,7 @@ interface Props {
   wsId: string;
   moduleId: string;
   data?: WorkspaceQuizSet;
-  // eslint-disable-next-line no-unused-vars
+
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 

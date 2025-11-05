@@ -990,7 +990,7 @@ function TaskEditDialogComponent({
 
       const { data, error } = await supabase
         .from('workspaces')
-        .select('id, name, handle, personal, workspace_members!inner(role)')
+        .select('id, name, handle, personal, workspace_members!inner(user_id)')
         .eq('workspace_members.user_id', user.id);
 
       if (error) throw error;
@@ -4357,7 +4357,7 @@ function TaskEditDialogComponent({
                                       className="item-center h-auto cursor-pointer gap-1 whitespace-normal border-dynamic-sky/30 bg-dynamic-sky/10 px-2 text-dynamic-sky text-xs transition-opacity hover:opacity-80"
                                       onClick={() => toggleProject(project)}
                                     >
-                                      <span className="break-words">
+                                      <span className="wrap-break-word">
                                         {project.name}
                                       </span>
                                       <X className="h-2.5 w-2.5 shrink-0" />
@@ -4384,7 +4384,7 @@ function TaskEditDialogComponent({
                                         onClick={() => toggleProject(project)}
                                         className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
                                       >
-                                        <span className="flex-1 whitespace-normal break-words">
+                                        <span className="wrap-break-word flex-1 whitespace-normal">
                                           {project.name}
                                         </span>
                                         <Plus className="ml-auto h-4 w-4 shrink-0" />
@@ -5144,7 +5144,7 @@ function TaskEditDialogComponent({
                                     onClick={() => toggleProject(project)}
                                     className="h-auto items-center gap-1.5 whitespace-normal rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
                                   >
-                                    <span className="break-words">
+                                    <span className="wrap-break-word">
                                       {project.name}
                                     </span>
                                     <X className="h-3 w-3 shrink-0 opacity-70" />
@@ -5207,7 +5207,7 @@ function TaskEditDialogComponent({
                                           <ListTodo className="h-4 w-4 text-dynamic-orange" />
                                         </div>
                                         <div className="flex-1">
-                                          <span className="block whitespace-normal break-words text-sm">
+                                          <span className="wrap-break-word block whitespace-normal text-sm">
                                             {project.name}
                                           </span>
                                           {project.status && (

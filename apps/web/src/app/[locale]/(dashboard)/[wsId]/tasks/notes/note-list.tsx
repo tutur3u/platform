@@ -495,7 +495,7 @@ export default function NoteList({ wsId }: { wsId: string }) {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 space-y-2">
                       <p
-                        className={`text-sm leading-relaxed hover:underline cursor-pointer ${
+                        className={`cursor-pointer text-sm leading-relaxed hover:underline ${
                           note.archived
                             ? 'text-muted-foreground line-through'
                             : 'text-foreground'

@@ -65,28 +65,15 @@ export default function TeamClient({
 }) {
   const locale = useLocale();
   const t = useTranslations('nova.profile-team-page');
-  console.log('team', teamData);
-  if (!teamData) {
-    return (
-      <div className="container max-w-6xl py-16 text-center">
-        <h2 className="font-semibold text-2xl">{t('not-found')}</h2>
-        <p className="mt-2 text-muted-foreground">
-          {t('not-found-description')}
-        </p>
-        <Button className="mt-4" asChild>
-          <Link href="/teams">{t('view-all-teams')}</Link>
-        </Button>
-      </div>
-    );
-  }
+
   const teamInfo = {
     ...teamData,
-    name: teamData.name,
+    name: teamData?.name,
   };
 
   const nova_infor = {
-    description: teamData.description,
-    goals: teamData.goals,
+    description: teamData?.description,
+    goals: teamData?.goals,
   };
 
   const [copied, setCopied] = useState(false);
@@ -103,7 +90,7 @@ export default function TeamClient({
   });
 
   // Use either stats.active_since or the root active_since property
-  const activeSinceDate = teamData.stats?.active_since || '';
+  const activeSinceDate = teamData?.stats?.active_since || '';
 
   const formattedActiveDate = activeSinceDate
     ? (() => {
@@ -111,7 +98,7 @@ export default function TeamClient({
           const date = new Date(activeSinceDate);
 
           // Check if date is valid before formatting
-          if (isNaN(date.getTime())) {
+          if (Number.isNaN(date.getTime())) {
             return 'Unknown';
           }
 
@@ -128,7 +115,7 @@ export default function TeamClient({
     : 'Unknown';
 
   const isTeamMember =
-    user?.id && teamData.members.some((member) => member.user_id === user?.id);
+    user?.id && teamData?.members.some((member) => member.user_id === user?.id);
   const openDialog = (type: 'goals' | 'reports' | 'des') => {
     setDialogState({ isOpen: true, type, isEditing: false });
   };
@@ -165,8 +152,22 @@ export default function TeamClient({
 
   // Team stats
   const teamStats = {
-    totalMembers: teamData.members.length,
+    totalMembers: teamData?.members.length,
   };
+
+  if (!teamData) {
+    return (
+      <div className="container max-w-6xl py-16 text-center">
+        <h2 className="font-semibold text-2xl">{t('not-found')}</h2>
+        <p className="mt-2 text-muted-foreground">
+          {t('not-found-description')}
+        </p>
+        <Button className="mt-4" asChild>
+          <Link href="/teams">{t('view-all-teams')}</Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="container max-w-6xl pt-8 pb-16">

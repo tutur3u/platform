@@ -11,7 +11,6 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/sonner';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import {
@@ -22,9 +21,10 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { z } from 'zod';
 
@@ -74,7 +74,7 @@ export function PromotionForm({
       name: data?.name,
       description: data?.description,
       code: data?.code,
-      value: data?.value ? parseInt(data?.value.toString()) : undefined,
+      value: data?.value ? parseInt(data?.value.toString(), 10) : undefined,
       unit: data?.use_ratio ? 'percentage' : 'currency',
     },
   });

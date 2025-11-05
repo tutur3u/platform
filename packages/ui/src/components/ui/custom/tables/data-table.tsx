@@ -55,12 +55,12 @@ export interface DataTableProps<TData, TValue> {
   className?: string;
   preserveParams?: string[];
   onRefresh?: () => void;
-  // eslint-disable-next-line no-unused-vars
+
   onSearch?: (query: string) => void;
-  // eslint-disable-next-line no-unused-vars
+
   onRowClick?: (row: TData) => void;
   onRowDoubleClick?: (row: TData) => void;
-  // eslint-disable-next-line no-unused-vars
+
   setParams?: (params: {
     page?: number;
     pageSize?: string;

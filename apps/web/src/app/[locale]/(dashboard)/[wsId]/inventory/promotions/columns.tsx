@@ -9,7 +9,7 @@ import { PromotionRowActions } from './row-actions';
 export const getPromotionColumns = (
   t: any,
   namespace: string | undefined,
-  extraColumns?: any[],
+  _?: any[],
   extraData?: {
     canDeleteInventory?: boolean;
     canUpdateInventory?: boolean;

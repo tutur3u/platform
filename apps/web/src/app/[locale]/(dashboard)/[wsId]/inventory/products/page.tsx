@@ -1,18 +1,18 @@
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { Plus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Product } from '@tuturuuu/types/primitives/Product';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
 import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
 import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { ProductsPageClient } from './products-page-client';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'Products',
@@ -50,7 +50,7 @@ export default async function WorkspaceProductsPage({
           return (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
-                <h2 className="text-lg font-semibold">
+                <h2 className="font-semibold text-lg">
                   {t('ws-roles.inventory_access_denied')}
                 </h2>
                 <p className="text-muted-foreground">
@@ -139,8 +139,8 @@ async function getData(
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
   if (page && pageSize) {
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
+    const parsedPage = parseInt(page, 10);
+    const parsedSize = parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize;
     queryBuilder.range(start, end).limit(parsedSize);

@@ -43,7 +43,7 @@ export default async function MyPage({
 'use client';
 
 interface MyComponentProps {
-  workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
+  workspace: Workspace & { joined: boolean };
   wsId: string;
 }
 
@@ -124,7 +124,7 @@ interface PageProps {
 }
 
 interface WorkspaceData {
-  workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
+  workspace: Workspace & { joined: boolean };
   wsId: string;
 }
 

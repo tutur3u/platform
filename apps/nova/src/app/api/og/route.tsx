@@ -124,7 +124,9 @@ export async function GET() {
                 left: '50%',
               }}
             />
+            {/** biome-ignore lint/performance/noImgElement: <cannot use Next.js Image on server> */}
             <img
+              alt="Tuturuuu Logo"
               width="320"
               height="320"
               src="https://tuturuuu.com/media/logos/light.png"

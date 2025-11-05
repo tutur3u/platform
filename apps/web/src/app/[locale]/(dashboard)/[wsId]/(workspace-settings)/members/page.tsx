@@ -60,7 +60,7 @@ export default async function WorkspaceMembersPage({
         return (
           <div className="space-y-8">
             {/* Header Section with gradient background */}
-            <div className="relative overflow-hidden rounded-xl border border-border bg-linear-to-br from-background via-background to-foreground/[0.02] p-6 shadow-sm">
+            <div className="relative overflow-hidden rounded-xl border border-border bg-linear-to-br from-background via-background to-foreground/2 p-6 shadow-sm">
               {/* Decorative elements */}
               <div className="-right-4 -top-4 pointer-events-none absolute h-32 w-32 rounded-full bg-dynamic-blue/5 blur-2xl" />
               <div className="-bottom-4 -left-4 pointer-events-none absolute h-32 w-32 rounded-full bg-dynamic-purple/5 blur-2xl" />
@@ -136,10 +136,7 @@ export default async function WorkspaceMembersPage({
   );
 }
 
-const getMembers = async (
-  wsId: string,
-  { status, roles }: { status: string; roles: string }
-) => {
+const getMembers = async (wsId: string, { status }: { status: string }) => {
   const supabase = await createClient();
   const sbAdmin = await createAdminClient();
 
@@ -155,7 +152,7 @@ const getMembers = async (
   const queryBuilder = supabase
     .from('workspace_members_and_invites')
     .select(
-      'id, handle, email, display_name, avatar_url, pending, role, role_title, created_at',
+      'id, handle, email, display_name, avatar_url, pending, created_at',
       {
         count: 'exact',
       }
@@ -167,8 +164,6 @@ const getMembers = async (
 
   if (status && status !== 'all')
     queryBuilder.eq('pending', status === 'invited');
-
-  if (roles) queryBuilder.in('role', roles.split(','));
 
   const { data, error } = await queryBuilder;
   if (error) throw error;
