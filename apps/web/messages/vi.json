@@ -1317,6 +1317,124 @@
     "email_blacklist": "Danh sách đen email",
     "translations": "Bản dịch"
   },
+  "infrastructure-analytics": {
+    "page-description": "Giám sát và quản lý cơ sở hạ tầng, người dùng và tài nguyên nền tảng với phân tích toàn diện.",
+    "metrics": {
+      "total-users": "Tổng Người Dùng",
+      "active-sessions": "Phiên Hoạt Động",
+      "workspaces": "Không Gian Làm Việc",
+      "dau": "Người Dùng Hoạt Động Hàng Ngày",
+      "vs-last-week": "so với tuần trước"
+    },
+    "tabs": {
+      "overview": "Tổng Quan",
+      "users": "Người Dùng",
+      "authentication": "Xác Thực",
+      "workspaces": "Không Gian Làm Việc",
+      "activity": "Hoạt Động"
+    },
+    "engagement": {
+      "title": "Chỉ Số Tương Tác Người Dùng",
+      "description": "Xu hướng người dùng hoạt động theo ngày, tuần và tháng theo thời gian",
+      "dau": "Người Dùng Hoạt Động Hàng Ngày",
+      "wau": "Người Dùng Hoạt Động Hàng Tuần",
+      "mau": "Người Dùng Hoạt Động Hàng Tháng",
+      "no-data": "Không có dữ liệu tương tác",
+      "heatmap-title": "Bản Đồ Nhiệt Hoạt Động",
+      "heatmap-description": "Mẫu hoạt động người dùng theo ngày trong tuần và giờ",
+      "less": "Ít",
+      "more": "Nhiều",
+      "days": {
+        "sunday": "CN",
+        "monday": "T2",
+        "tuesday": "T3",
+        "wednesday": "T4",
+        "thursday": "T5",
+        "friday": "T6",
+        "saturday": "T7"
+      }
+    },
+    "auth": {
+      "provider-distribution": "Phân Phối Nhà Cung Cấp Xác Thực",
+      "provider-distribution-description": "Phân bố người dùng theo nhà cung cấp xác thực",
+      "provider-details": "Chi Tiết Nhà Cung Cấp",
+      "provider-details-description": "Thống kê chi tiết theo nhà cung cấp xác thực",
+      "provider": "Nhà Cung Cấp",
+      "users": "Người Dùng",
+      "percentage": "Phần Trăm",
+      "sign-in-trends": "Xu Hướng Đăng Nhập",
+      "sign-in-trends-description": "Hoạt động đăng nhập theo nhà cung cấp theo thời gian",
+      "no-data": "Không có dữ liệu xác thực"
+    },
+    "sessions": {
+      "total": "Tổng Phiên",
+      "active": "Phiên Hoạt Động",
+      "avg-duration": "Thời Lượng Trung Bình",
+      "median-duration": "Thời Lượng Trung Vị",
+      "today": "Hôm Nay",
+      "this-week": "Tuần Này",
+      "this-month": "Tháng Này",
+      "device-distribution": "Phân Phối Thiết Bị",
+      "device-distribution-description": "Phiên theo loại thiết bị",
+      "device-breakdown": "Phân Tích Thiết Bị",
+      "device-breakdown-description": "Thống kê chi tiết loại thiết bị",
+      "sessions": "phiên"
+    },
+    "workspaces": {
+      "total": "Tổng Không Gian",
+      "active": "Không Gian Hoạt Động",
+      "avg-members": "Trung Bình Thành Viên",
+      "median-members": "Trung Vị Thành Viên",
+      "empty-workspaces": "Không Gian Trống",
+      "created-today": "Tạo Hôm Nay",
+      "created-this-week": "Tạo Tuần Này",
+      "created-this-month": "Tạo Tháng Này",
+      "member-distribution": "Phân Phối Thành Viên",
+      "member-distribution-description": "Không gian làm việc được nhóm theo số lượng thành viên",
+      "count": "Số Lượng Không Gian",
+      "workspaces": "không gian làm việc"
+    },
+    "users": {
+      "power-users-title": "Người Dùng Tích Cực",
+      "power-users-description": "Top 5 người dùng hoạt động tích cực nhất trong 30 ngày qua",
+      "actions": "{count, plural, one {# hành động} other {# hành động}}",
+      "last-seen": "Lần cuối hoạt động"
+    },
+    "features": {
+      "adoption-title": "Mức Độ Sử Dụng Tính Năng",
+      "adoption-description": "Tỷ lệ sử dụng các tính năng chính trên tất cả người dùng",
+      "adoption-percentage": "% Sử Dụng"
+    },
+    "cohorts": {
+      "user-lifecycle": "Phân Đoạn Vòng Đời Người Dùng",
+      "user-lifecycle-description": "Phân bố người dùng theo mức độ hoạt động",
+      "users": "người dùng",
+      "of-total": "tổng số",
+      "retention-analysis": "Phân Tích Giữ Chân",
+      "retention-analysis-description": "Tỷ lệ giữ chân người dùng theo giai đoạn nhóm",
+      "period": "Giai Đoạn",
+      "cohort-size": "Kích Thước Nhóm",
+      "retained-users": "Người Dùng Được Giữ Chân",
+      "retention-rate": "Tỷ Lệ Giữ Chân"
+    },
+    "audit": {
+      "top-actions": "Hành Động Hàng Đầu Trên Nền Tảng",
+      "top-actions-description": "Các hành động thường xuyên nhất trong 30 ngày qua",
+      "times": "lần",
+      "users": "người dùng",
+      "activity-by-hour": "Hoạt Động Theo Giờ",
+      "activity-by-hour-description": "Tần suất hành động trong suốt cả ngày",
+      "recent-activity": "Hoạt Động Gần Đây",
+      "recent-activity-description": "Các hành động gần đây nhất trên nền tảng từ nhật ký kiểm toán",
+      "action": "Hành Động",
+      "user": "Người Dùng",
+      "type": "Loại",
+      "ip-address": "Địa Chỉ IP",
+      "time": "Thời Gian",
+      "unknown": "Không xác định",
+      "actions": "Hành Động"
+    }
+  },
   "basic-data-table": {
     "id": "Mã số",
     "name": "Tên",

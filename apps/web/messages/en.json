@@ -1225,6 +1225,124 @@
     "translations": "Translations",
     "email_blacklist": "Email Blacklist"
   },
+  "infrastructure-analytics": {
+    "page-description": "Monitor and manage your platform infrastructure, users, and resources with comprehensive analytics.",
+    "metrics": {
+      "total-users": "Total Users",
+      "active-sessions": "Active Sessions",
+      "workspaces": "Workspaces",
+      "dau": "DAU",
+      "vs-last-week": "vs last week"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "users": "Users",
+      "authentication": "Authentication",
+      "workspaces": "Workspaces",
+      "activity": "Activity"
+    },
+    "engagement": {
+      "title": "User Engagement Metrics",
+      "description": "Daily, weekly, and monthly active user trends over time",
+      "dau": "Daily Active Users",
+      "wau": "Weekly Active Users",
+      "mau": "Monthly Active Users",
+      "no-data": "No engagement data available",
+      "heatmap-title": "Activity Heatmap",
+      "heatmap-description": "User activity patterns by day of week and hour",
+      "less": "Less",
+      "more": "More",
+      "days": {
+        "sunday": "Sun",
+        "monday": "Mon",
+        "tuesday": "Tue",
+        "wednesday": "Wed",
+        "thursday": "Thu",
+        "friday": "Fri",
+        "saturday": "Sat"
+      }
+    },
+    "auth": {
+      "provider-distribution": "Authentication Provider Distribution",
+      "provider-distribution-description": "User distribution across authentication providers",
+      "provider-details": "Provider Details",
+      "provider-details-description": "Detailed statistics by authentication provider",
+      "provider": "Provider",
+      "users": "Users",
+      "percentage": "Percentage",
+      "sign-in-trends": "Sign-in Trends",
+      "sign-in-trends-description": "Sign-in activity by provider over time",
+      "no-data": "No authentication data available"
+    },
+    "sessions": {
+      "total": "Total Sessions",
+      "active": "Active Sessions",
+      "avg-duration": "Avg Duration",
+      "median-duration": "Median Duration",
+      "today": "Today",
+      "this-week": "This Week",
+      "this-month": "This Month",
+      "device-distribution": "Device Distribution",
+      "device-distribution-description": "Sessions by device type",
+      "device-breakdown": "Device Breakdown",
+      "device-breakdown-description": "Detailed device type statistics",
+      "sessions": "sessions"
+    },
+    "workspaces": {
+      "total": "Total Workspaces",
+      "active": "Active Workspaces",
+      "avg-members": "Avg Members",
+      "median-members": "Median Members",
+      "empty-workspaces": "Empty Workspaces",
+      "created-today": "Created Today",
+      "created-this-week": "Created This Week",
+      "created-this-month": "Created This Month",
+      "member-distribution": "Member Distribution",
+      "member-distribution-description": "Workspaces grouped by number of members",
+      "count": "Workspace Count",
+      "workspaces": "workspaces"
+    },
+    "users": {
+      "power-users-title": "Power Users",
+      "power-users-description": "Top 5 most active users in the last 30 days",
+      "actions": "{count, plural, one {# action} other {# actions}}",
+      "last-seen": "Last seen"
+    },
+    "features": {
+      "adoption-title": "Feature Adoption",
+      "adoption-description": "Adoption rate of key features across all users",
+      "adoption-percentage": "Adoption %"
+    },
+    "cohorts": {
+      "user-lifecycle": "User Lifecycle Segments",
+      "user-lifecycle-description": "User distribution by activity level",
+      "users": "users",
+      "of-total": "of total",
+      "retention-analysis": "Retention Analysis",
+      "retention-analysis-description": "User retention rates by cohort period",
+      "period": "Period",
+      "cohort-size": "Cohort Size",
+      "retained-users": "Retained Users",
+      "retention-rate": "Retention Rate"
+    },
+    "audit": {
+      "top-actions": "Top Platform Actions",
+      "top-actions-description": "Most frequent actions in the last 30 days",
+      "times": "times",
+      "users": "users",
+      "activity-by-hour": "Activity by Hour",
+      "activity-by-hour-description": "Action frequency throughout the day",
+      "recent-activity": "Recent Activity",
+      "recent-activity-description": "Latest platform actions from audit logs",
+      "action": "Action",
+      "user": "User",
+      "type": "Type",
+      "ip-address": "IP Address",
+      "time": "Time",
+      "unknown": "Unknown",
+      "actions": "Actions"
+    }
+  },
   "basic-data-table": {
     "id": "ID",
     "name": "Name",
