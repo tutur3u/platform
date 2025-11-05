@@ -1,8 +1,7 @@
 import {
-  type SupabaseClient,
+  type TypedSupabaseClient,
   createClient,
 } from '@ncthub/supabase/next/client';
-import { Database } from '@ncthub/types/supabase';
 import { APP_DOMAIN_MAP } from '@ncthub/utils/internal-domains';
 
 export * from './navigation';
@@ -16,7 +15,7 @@ export * from './navigation';
  * @returns The generated token or null if generation failed
  */
 export async function generateCrossAppToken(
-  supabase: SupabaseClient<Database, 'public', Database['public']>,
+  supabase: TypedSupabaseClient,
   targetApp: string,
   originApp: string,
   expirySeconds: number = 300
@@ -83,7 +82,7 @@ export async function generateCrossAppToken(
  * @returns An object with userId and sessionData if valid, null otherwise
  */
 export async function validateCrossAppTokenWithSession(
-  supabase: SupabaseClient<Database>,
+  supabase: TypedSupabaseClient,
   token: string,
   targetApp: string
 ): Promise<{
@@ -145,7 +144,7 @@ export async function validateCrossAppTokenWithSession(
  * @returns True if successful, false otherwise
  */
 export async function revokeAllCrossAppTokens(
-  supabase: SupabaseClient<Database>
+  supabase: TypedSupabaseClient
 ): Promise<boolean> {
   try {
     // Get the current user

@@ -2,9 +2,9 @@
   "name": "@ncthub/docs",
   "private": true,
   "scripts": {
-    "dev": "mintlify dev"
+    "dev": "mint dev"
   },
   "devDependencies": {
-    "mintlify": "^3.0.98"
+    "mintlify": "^4.2.186"
   }
 }
