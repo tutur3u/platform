@@ -26,7 +26,7 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { XLSX } from '@tuturuuu/ui/xlsx';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { z } from 'zod';
 import { CsvCrawler } from './crawlers/csv-crawler';
 import { ExcelCrawler } from './crawlers/excel-crawler';
@@ -104,14 +104,6 @@ export function DatasetCrawler({
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (isOpen && dataset.url) {
-      // Prefetch from URL if available
-      form.setValue('url', dataset.url);
-      loadExcelFile();
-    }
-  }, [isOpen, dataset.url]);
-
   const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -121,114 +113,215 @@ export function DatasetCrawler({
     },
   });
 
-  const loadExcelFile = async (
-    e?:
-      | React.ChangeEvent<HTMLInputElement>
-      | React.MouseEvent<HTMLButtonElement>
-  ) => {
-    let file: File | undefined;
-
-    if (e?.target instanceof HTMLInputElement) {
-      file = e?.target?.files?.[0];
-      e.preventDefault();
-    }
-
-    if (!file) return;
-
-    // Validate file type
-    const validTypes = [
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-excel',
-      'text/csv',
-    ];
-    if (!validTypes.includes(file.type)) {
-      setExcelError('Invalid file type. Please upload a CSV or Excel file.');
-      return;
-    }
-
-    setLocalFile(file);
-    setExcelError(null);
-
-    try {
-      setLoading(true);
-      setSyncStatus('Reading file...');
-
-      const arrayBuffer = await file.arrayBuffer();
-      let data: any[][] | XLSX.WorkBook;
-
-      if (file.name.toLowerCase().endsWith('.csv')) {
-        const csvCrawler = new CsvCrawler({ useProductionProxy: false });
-        const result = await csvCrawler.crawl({
-          url: '', // Not used for local files
-          headerRow: 1,
-          dataStartRow: 2,
-          onProgress: (progress, status) => {
-            setSyncProgress(progress);
-            setSyncStatus(status);
-          },
-        });
-        data = result.data;
-        setAvailableSheets(['CSV Data']);
-        setSelectedSheet('CSV Data');
-      } else {
-        data = XLSX.read(arrayBuffer);
+  const updatePreview = useCallback(
+    (
+      data: any[][] | XLSX.WorkBook,
+      sheetName: string,
+      headerRow: number,
+      dataRow: number
+    ) => {
+      let preview: { headers: string[]; preview: any[][]; error?: string } = {
+        headers: [],
+        preview: [],
+      };
+      try {
         if (
-          typeof data === 'object' &&
-          'SheetNames' in data &&
-          Array.isArray(data.SheetNames)
+          dataset.url?.toLowerCase().endsWith('.csv') ||
+          localFile?.name.toLowerCase().endsWith('.csv')
         ) {
-          const sheets = data.SheetNames;
-          if (sheets.length > 0) {
-            const defaultSheet = sheets[0] || 'Sheet1';
-            setAvailableSheets(sheets);
-            setSelectedSheet(defaultSheet);
+          const csvCrawler = new CsvCrawler();
+          preview = csvCrawler.getPreviewFromData(
+            data as any[][],
+            headerRow,
+            dataRow
+          );
+        } else {
+          const excelCrawler = new ExcelCrawler();
+          preview = excelCrawler.getPreviewFromWorkbook(
+            data,
+            sheetName,
+            headerRow,
+            dataRow
+          );
+        }
+
+        if (preview.error) {
+          setExcelError(preview.error);
+          return;
+        }
+
+        setExcelError(null);
+
+        // Update sheet info with actual data
+        if ('SheetNames' in data) {
+          const worksheet = data.Sheets[sheetName];
+          if (worksheet?.['!ref']) {
+            const range = XLSX.utils.decode_range(worksheet['!ref']);
+            setSheetInfo((prev) => ({
+              ...prev,
+              name: sheetName,
+              rows: range.e.r + 1,
+              columns: range.e.c + 1,
+            }));
+          }
+        }
+
+        // Ensure we have valid preview data
+        if (!preview.headers || !preview.preview) {
+          setExcelError('No valid data found with current settings');
+          setProcessedData([preview.headers]); // Show headers even if no data
+          return;
+        }
+
+        // Ensure preview data matches header length
+        const headerLength = preview.headers.length;
+        const validPreview = preview.preview
+          .filter((row) => row && row.length === headerLength)
+          .map((row) =>
+            row.map((cell) =>
+              cell === null || cell === undefined ? '' : String(cell).trim()
+            )
+          );
+
+        if (validPreview.length === 0) {
+          setExcelError('No valid data rows found with current settings');
+          setProcessedData([preview.headers]); // Show headers even if no data
+          return;
+        }
+
+        setProcessedData([preview.headers, ...validPreview]);
+      } catch (error) {
+        console.error('Error updating preview:', error);
+        setExcelError(
+          error instanceof Error
+            ? error.message
+            : 'Failed to update preview with current settings'
+        );
+        setProcessedData([]);
+      }
+    },
+    [dataset.url, localFile]
+  );
+
+  const loadExcelFile = useCallback(
+    async (
+      e?:
+        | React.ChangeEvent<HTMLInputElement>
+        | React.MouseEvent<HTMLButtonElement>
+    ) => {
+      let file: File | undefined;
+
+      if (e?.target instanceof HTMLInputElement) {
+        file = e?.target?.files?.[0];
+        e.preventDefault();
+      }
+
+      if (!file) return;
+
+      // Validate file type
+      const validTypes = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel',
+        'text/csv',
+      ];
+      if (!validTypes.includes(file.type)) {
+        setExcelError('Invalid file type. Please upload a CSV or Excel file.');
+        return;
+      }
+
+      setLocalFile(file);
+      setExcelError(null);
+
+      try {
+        setLoading(true);
+        setSyncStatus('Reading file...');
+
+        const arrayBuffer = await file.arrayBuffer();
+        let data: any[][] | XLSX.WorkBook;
+
+        if (file.name.toLowerCase().endsWith('.csv')) {
+          const csvCrawler = new CsvCrawler({ useProductionProxy: false });
+          const result = await csvCrawler.crawl({
+            url: '', // Not used for local files
+            headerRow: 1,
+            dataStartRow: 2,
+            onProgress: (progress, status) => {
+              setSyncProgress(progress);
+              setSyncStatus(status);
+            },
+          });
+          data = result.data;
+          setAvailableSheets(['CSV Data']);
+          setSelectedSheet('CSV Data');
+        } else {
+          data = XLSX.read(arrayBuffer);
+          if (
+            typeof data === 'object' &&
+            'SheetNames' in data &&
+            Array.isArray(data.SheetNames)
+          ) {
+            const sheets = data.SheetNames;
+            if (sheets.length > 0) {
+              const defaultSheet = sheets[0] || 'Sheet1';
+              setAvailableSheets(sheets);
+              setSelectedSheet(defaultSheet);
+            } else {
+              setAvailableSheets(['Sheet1']);
+              setSelectedSheet('Sheet1');
+            }
           } else {
             setAvailableSheets(['Sheet1']);
             setSelectedSheet('Sheet1');
           }
-        } else {
-          setAvailableSheets(['Sheet1']);
-          setSelectedSheet('Sheet1');
         }
+
+        const defaultSheetName = 'Sheet1';
+        let sheetName = defaultSheetName;
+
+        if (file.name.toLowerCase().endsWith('.csv')) {
+          sheetName = 'CSV Data';
+        } else if (
+          typeof data === 'object' &&
+          'SheetNames' in data &&
+          Array.isArray(data.SheetNames) &&
+          data.SheetNames.length > 0
+        ) {
+          const firstSheet = data.SheetNames[0];
+          sheetName = firstSheet || defaultSheetName;
+        }
+
+        setWorkbook(data);
+        setSheetInfo({
+          ...sheetInfo,
+          name: sheetName,
+        });
+
+        setIsFileLoaded(true);
+        setSyncStatus('File loaded. Configure import settings below.');
+
+        // Set default values for form
+        form.setValue('headerRow', '1');
+        form.setValue('dataRow', '2');
+        updatePreview(data, sheetName, 1, 2);
+      } catch (error) {
+        setExcelError(
+          error instanceof Error ? error.message : 'Failed to load file'
+        );
+        setSyncStatus('Failed to load file');
+      } finally {
+        setLoading(false);
       }
+    },
+    [sheetInfo, form, updatePreview]
+  );
 
-      const defaultSheetName = 'Sheet1';
-      let sheetName = defaultSheetName;
-
-      if (file.name.toLowerCase().endsWith('.csv')) {
-        sheetName = 'CSV Data';
-      } else if (
-        typeof data === 'object' &&
-        'SheetNames' in data &&
-        Array.isArray(data.SheetNames) &&
-        data.SheetNames.length > 0
-      ) {
-        const firstSheet = data.SheetNames[0];
-        sheetName = firstSheet || defaultSheetName;
-      }
-
-      setWorkbook(data);
-      setSheetInfo({
-        ...sheetInfo,
-        name: sheetName,
-      });
-
-      setIsFileLoaded(true);
-      setSyncStatus('File loaded. Configure import settings below.');
-
-      // Set default values for form
-      form.setValue('headerRow', '1');
-      form.setValue('dataRow', '2');
-      updatePreview(data, sheetName, 1, 2);
-    } catch (error) {
-      setExcelError(
-        error instanceof Error ? error.message : 'Failed to load file'
-      );
-      setSyncStatus('Failed to load file');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (isOpen && dataset.url) {
+      // Prefetch from URL if available
+      form.setValue('url', dataset.url);
+      loadExcelFile();
     }
-  };
+  }, [isOpen, dataset.url, form.setValue, loadExcelFile]);
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
@@ -241,101 +334,17 @@ export function DatasetCrawler({
 
     setSelectedSheet(sheetName);
     if (workbook) {
-      const headerRow = parseInt(form.getValues('headerRow') || '1');
-      const dataRow = parseInt(form.getValues('dataRow') || '2');
+      const headerRow = parseInt(form.getValues('headerRow') || '1', 10);
+      const dataRow = parseInt(form.getValues('dataRow') || '2', 10);
       updatePreview(workbook, sheetName, headerRow, dataRow);
-    }
-  };
-
-  const updatePreview = (
-    data: any[][] | XLSX.WorkBook,
-    sheetName: string,
-    headerRow: number,
-    dataRow: number
-  ) => {
-    let preview;
-    try {
-      if (
-        dataset.url?.toLowerCase().endsWith('.csv') ||
-        localFile?.name.toLowerCase().endsWith('.csv')
-      ) {
-        const csvCrawler = new CsvCrawler();
-        preview = csvCrawler.getPreviewFromData(
-          data as any[][],
-          headerRow,
-          dataRow
-        );
-      } else {
-        const excelCrawler = new ExcelCrawler();
-        preview = excelCrawler.getPreviewFromWorkbook(
-          data,
-          sheetName,
-          headerRow,
-          dataRow
-        );
-      }
-
-      if (preview.error) {
-        setExcelError(preview.error);
-        return;
-      }
-
-      setExcelError(null);
-
-      // Update sheet info with actual data
-      if ('SheetNames' in data) {
-        const worksheet = data.Sheets[sheetName];
-        if (worksheet && worksheet['!ref']) {
-          const range = XLSX.utils.decode_range(worksheet['!ref']);
-          setSheetInfo((prev) => ({
-            ...prev,
-            name: sheetName,
-            rows: range.e.r + 1,
-            columns: range.e.c + 1,
-          }));
-        }
-      }
-
-      // Ensure we have valid preview data
-      if (!preview.headers || !preview.preview) {
-        setExcelError('No valid data found with current settings');
-        setProcessedData([preview.headers]); // Show headers even if no data
-        return;
-      }
-
-      // Ensure preview data matches header length
-      const headerLength = preview.headers.length;
-      const validPreview = preview.preview
-        .filter((row) => row && row.length === headerLength)
-        .map((row) =>
-          row.map((cell) =>
-            cell === null || cell === undefined ? '' : String(cell).trim()
-          )
-        );
-
-      if (validPreview.length === 0) {
-        setExcelError('No valid data rows found with current settings');
-        setProcessedData([preview.headers]); // Show headers even if no data
-        return;
-      }
-
-      setProcessedData([preview.headers, ...validPreview]);
-    } catch (error) {
-      console.error('Error updating preview:', error);
-      setExcelError(
-        error instanceof Error
-          ? error.message
-          : 'Failed to update preview with current settings'
-      );
-      setProcessedData([]);
     }
   };
 
   const handleConfigChange = () => {
     if (!workbook || !selectedSheet) return;
 
-    const headerRow = parseInt(form.getValues('headerRow') || '1');
-    const dataRow = parseInt(form.getValues('dataRow') || '2');
+    const headerRow = parseInt(form.getValues('headerRow') || '1', 10);
+    const dataRow = parseInt(form.getValues('dataRow') || '2', 10);
 
     // Validate row numbers
     if (headerRow < 1) {
@@ -365,8 +374,8 @@ export function DatasetCrawler({
       setSyncStatus('Fetching and parsing file...');
       const { headers, data, sheetInfo } = await crawler.crawl({
         url: dataset.url || '',
-        headerRow: parseInt(form.getValues('headerRow') || '1'),
-        dataStartRow: parseInt(form.getValues('dataRow') || '2'),
+        headerRow: parseInt(form.getValues('headerRow') || '1', 10),
+        dataStartRow: parseInt(form.getValues('dataRow') || '2', 10),
         onProgress: (progress, status) => {
           setSyncProgress(progress);
           setSyncStatus(status);

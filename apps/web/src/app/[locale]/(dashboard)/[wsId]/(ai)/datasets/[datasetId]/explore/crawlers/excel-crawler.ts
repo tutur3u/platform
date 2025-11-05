@@ -5,7 +5,7 @@ interface ExcelCrawlerProps {
   url: string;
   headerRow?: number;
   dataStartRow: number;
-  // eslint-disable-next-line no-unused-vars
+
   onProgress: (progress: number, status: string) => void;
 }
 
@@ -97,8 +97,7 @@ export class ExcelCrawler extends BaseCrawler {
     let workbook: XLSX.WorkBook;
     try {
       workbook = XLSX.read(arrayBuffer);
-      // eslint-disable-next-line no-unused-vars
-    } catch (error) {
+    } catch (_error) {
       throw new Error('Unsupported Excel file');
     }
     const sheetName = this.findRelevantSheet(workbook);
@@ -237,8 +236,7 @@ export class ExcelCrawler extends BaseCrawler {
       let workbook: XLSX.WorkBook;
       try {
         workbook = XLSX.read(arrayBuffer);
-        // eslint-disable-next-line no-unused-vars
-      } catch (error) {
+      } catch (_error) {
         throw new Error('Unsupported Excel file');
       }
       const sheetName = this.findRelevantSheet(workbook);

@@ -24,21 +24,18 @@ export async function GET(_: Request, { params }: Params) {
 
   const { data, error } = await supabase
     .from('workspaces')
-    .select('id, name, created_at, workspace_members!inner(role)')
+    .select('id, name, created_at, workspace_members!inner(user_id)')
     .eq('id', id)
     .eq('workspace_members.user_id', user.id)
     .single();
 
-  if (error || !data?.workspace_members[0]?.role)
+  if (error || !data?.workspace_members[0]?.user_id)
     return NextResponse.json(
       { message: 'Error fetching workspaces' },
       { status: 500 }
     );
 
-  return NextResponse.json({
-    ...data,
-    role: data.workspace_members[0].role,
-  });
+  return NextResponse.json(data);
 }
 
 export async function PUT(req: Request, { params }: Params) {

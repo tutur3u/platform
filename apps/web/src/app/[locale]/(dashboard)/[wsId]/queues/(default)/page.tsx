@@ -1,3 +1,4 @@
+import { CustomDataTable } from '@/components/custom-data-table';
 import {
   createAdminClient,
   createClient,
@@ -6,7 +7,6 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { getColumns } from '../columns';
 import ModelForm from '../form';
 
@@ -36,7 +36,7 @@ export default async function CrawledUrlsPage({ params, searchParams }: Props) {
   const { locale, wsId } = await params;
   const { data, count } = await getData(wsId, await searchParams);
 
-  const pageSize = parseInt((await searchParams)?.pageSize || '50') || 50;
+  const pageSize = parseInt((await searchParams)?.pageSize || '50', 10) || 50;
 
   return (
     <>
@@ -94,8 +94,8 @@ async function getData(
       .order('created_at');
 
     if (page && pageSize) {
-      const parsedPage = parseInt(page);
-      const parsedSize = parseInt(pageSize);
+      const parsedPage = parseInt(page, 10);
+      const parsedSize = parseInt(pageSize, 10);
       const start = (parsedPage - 1) * parsedSize;
       const end = parsedPage * parsedSize;
       queryBuilder.range(start, end).limit(parsedSize);

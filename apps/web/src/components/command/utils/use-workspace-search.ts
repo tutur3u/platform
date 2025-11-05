@@ -6,7 +6,6 @@ export interface WorkspaceSearchResult {
   id: string;
   name: string;
   personal: boolean;
-  role: string;
 }
 
 /**

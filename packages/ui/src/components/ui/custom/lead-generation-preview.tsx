@@ -144,7 +144,7 @@ export default function LeadGenerationPreview({
           <p className="mb-2 text-sm">
             The following workspace configuration variables are required:
           </p>
-          <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+          <ul className="list-inside list-disc space-y-1 text-muted-foreground text-sm">
             {missingConfigs.map((config) => (
               <li key={config}>
                 <code className="rounded bg-muted px-1 py-0.5">{config}</code>
@@ -158,7 +158,7 @@ export default function LeadGenerationPreview({
 
   const previewContent = (
     <div
-      className={`h-full rounded-lg border p-4 ${theme === 'dark' ? 'text-foreground' : 'text-black'} md:p-12 print:border-0 print:rounded-none print:h-auto print:p-8 print:text-black print:bg-white`}
+      className={`h-full rounded-lg border p-4 ${theme === 'dark' ? 'text-foreground' : 'text-black'} md:p-12 print:h-auto print:rounded-none print:border-0 print:bg-white print:p-8 print:text-black`}
     >
       {/* Header with Logo and Brand Info */}
       <div className="flex items-center justify-between gap-8">
@@ -176,7 +176,7 @@ export default function LeadGenerationPreview({
           )}
 
           {brandLocation && (
-            <div className="text-center font-semibold text-wrap whitespace-pre-wrap text-sm">
+            <div className="whitespace-pre-wrap text-wrap text-center font-semibold text-sm">
               {brandLocation}
             </div>
           )}
@@ -196,7 +196,7 @@ export default function LeadGenerationPreview({
       <div className="p-3">
         {/* Title */}
         {emailTitle && (
-          <div className="text-center font-bold uppercase tracking-wide text-2xl text-blue-700">
+          <div className="text-center font-bold text-2xl text-blue-700 uppercase tracking-wide">
             {emailTitle}
           </div>
         )}
@@ -286,7 +286,7 @@ export default function LeadGenerationPreview({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="border rounded-lg overflow-hidden">
+          <div className="overflow-hidden rounded-lg border">
             {previewContent}
           </div>
         </CardContent>
@@ -298,7 +298,7 @@ export default function LeadGenerationPreview({
     <div className="overflow-x-auto xl:flex-none">
       <div
         id="printable-area"
-        className={`h-[297mm] w-[210mm] max-w-full flex-none rounded-xl ${theme === 'dark' ? 'bg-foreground/10' : 'bg-white'} print:h-auto print:w-auto print:max-w-none print:rounded-none print:shadow-none print:border-0 print:m-0 print:p-4 mx-auto`}
+        className={`h-[297mm] w-[210mm] max-w-full flex-none rounded-xl ${theme === 'dark' ? 'bg-foreground/10' : 'bg-white'} mx-auto print:m-0 print:h-auto print:w-auto print:max-w-none print:rounded-none print:border-0 print:p-4 print:shadow-none`}
       >
         {previewContent}
       </div>

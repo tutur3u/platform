@@ -143,7 +143,6 @@ export default function ClientQuizzes({
                   <Button
                     variant="outline"
                     onClick={
-                      // biome-ignore lint/style/noNonNullAssertion: <quiz id is defined>
                       quiz?.id ? () => setEditingQuizId(quiz.id!) : undefined
                     }
                   >
@@ -172,7 +171,6 @@ export default function ClientQuizzes({
                         </AlertDialogCancel>
                         <AlertDialogAction
                           onClick={
-                            // biome-ignore lint/style/noNonNullAssertion: <quiz id is defined>
                             quiz?.id ? () => onDelete(quiz.id!) : undefined
                           }
                         >

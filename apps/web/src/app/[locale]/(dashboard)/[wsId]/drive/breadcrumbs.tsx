@@ -90,7 +90,7 @@ export default function DriveBreadcrumbs({ wsId, path }: Props) {
 
   return (
     <Breadcrumb>
-      <BreadcrumbList className="flex items-center gap-1 mb-4 overflow-x-auto whitespace-nowrap rounded-lg border border-dynamic-border bg-muted/40 px-1 py-2">
+      <BreadcrumbList className="mb-4 flex items-center gap-1 overflow-x-auto whitespace-nowrap rounded-lg border border-dynamic-border bg-muted/40 px-1 py-2">
         {visibleItems.map((item, index) => (
           <div key={item.href} className="flex items-center">
             <BreadcrumbItem>

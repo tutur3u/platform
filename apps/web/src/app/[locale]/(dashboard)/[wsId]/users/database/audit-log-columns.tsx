@@ -23,7 +23,7 @@ export const getAuditLogColumns = (
     accessorKey: 'id',
     header: t(`${namespace}.id`),
     cell: ({ row }) => (
-      <div className="text-sm text-muted-foreground">{row.getValue('id')}</div>
+      <div className="text-muted-foreground text-sm">{row.getValue('id')}</div>
     ),
   },
   {
@@ -64,7 +64,7 @@ export const getAuditLogColumns = (
       const date = row.getValue('archived_until') as string | null;
       if (!date)
         return (
-          <div className="text-sm text-muted-foreground">
+          <div className="text-muted-foreground text-sm">
             {t(`${namespace}.dash`)}
           </div>
         );
@@ -72,7 +72,7 @@ export const getAuditLogColumns = (
         return <div className="text-sm">{format(new Date(date), 'PPP p')}</div>;
       } catch {
         return (
-          <div className="text-sm text-muted-foreground">
+          <div className="text-muted-foreground text-sm">
             {t(`${namespace}.invalid_date`)}
           </div>
         );
@@ -95,13 +95,13 @@ export const getAuditLogColumns = (
       const date = row.getValue('created_at') as string;
       try {
         return (
-          <div className="text-sm text-muted-foreground">
+          <div className="text-muted-foreground text-sm">
             {format(new Date(date), 'PPP p')}
           </div>
         );
       } catch {
         return (
-          <div className="text-sm text-muted-foreground">
+          <div className="text-muted-foreground text-sm">
             {t(`${namespace}.invalid_date`)}
           </div>
         );

@@ -27,7 +27,7 @@ interface DataTablePaginationProps<TData> {
   pageSize?: number;
   additionalSizes?: number[];
   t?: any;
-  // eslint-disable-next-line no-unused-vars
+
   setParams?: (params: { page?: number; pageSize?: string }) => void;
 }
 

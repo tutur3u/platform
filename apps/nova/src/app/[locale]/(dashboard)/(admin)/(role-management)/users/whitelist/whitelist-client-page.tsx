@@ -1,8 +1,8 @@
 'use client';
 
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { addWhitelistEmail } from './actions';
 import WhitelistEmailForm from './form';
 
@@ -26,8 +26,7 @@ export default function WhitelistEmailClient({ wsId, onFinish }: Props) {
       });
       onFinish?.();
       router.refresh();
-      // eslint-disable-next-line no-unused-vars
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: t('common.error'),
         description: t('common.error_adding_email'),

@@ -14,7 +14,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -24,7 +23,6 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { Separator } from '@tuturuuu/ui/separator';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import * as z from 'zod';
@@ -40,10 +38,7 @@ interface Props {
 
 const FormSchema = z.object({
   wsId: z.string().uuid(),
-  email: z.string().email(),
-  role: z.string(),
-  accessLevel: z.string(),
-  // accessLevel: z.enum(['MEMBER', 'ADMIN', 'OWNER']),
+  email: z.email(),
 });
 
 export default function InviteMemberButton({
@@ -63,8 +58,6 @@ export default function InviteMemberButton({
     values: {
       wsId,
       email: '',
-      role: '',
-      accessLevel: 'MEMBER',
     },
   });
 
@@ -114,98 +107,30 @@ export default function InviteMemberButton({
         </DialogHeader>
 
         {canManageMembers ? (
-          <>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(inviteMember)}
-                className="space-y-3"
-              >
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="username@example.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(inviteMember)}
+              className="space-y-3"
+            >
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="username@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <Separator />
-
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Workspace Role</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Graphic Designer, Marketing Manager, etc."
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                      <FormDescription>
-                        The role of the member in the workspace is only for
-                        display purposes and does not affect workspace
-                        permissions.
-                      </FormDescription>
-                    </FormItem>
-                  )}
-                />
-
-                {/* <Separator />
-
-                <FormField
-                  control={form.control}
-                  name="accessLevel"
-                  render={({ field }) => (
-                    <FormItem className="w-full">
-                      <FormLabel>Access Level</FormLabel>
-                      <FormControl>
-                        <SelectField
-                          id="access-level"
-                          placeholder="Select an access level"
-                          defaultValue={field.value}
-                          onValueChange={field.onChange}
-                          options={
-                            currentUser?.role === 'OWNER'
-                              ? [
-                                  { value: 'MEMBER', label: 'Member' },
-                                  { value: 'ADMIN', label: 'Admin' },
-                                  {
-                                    value: 'OWNER',
-                                    label: 'Owner',
-                                  },
-                                ]
-                              : [
-                                  { value: 'MEMBER', label: 'Member' },
-                                  { value: 'ADMIN', label: 'Admin' },
-                                ]
-                          }
-                          classNames={{ root: 'w-full' }}
-                          disabled={currentUser?.role === 'MEMBER'}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                      <FormDescription>
-                        This will affect the member&apos;s permissions in the
-                        workspace.
-                      </FormDescription>
-                    </FormItem>
-                  )}
-                /> */}
-
-                <Button type="submit" className="w-full">
-                  Invite Member
-                </Button>
-              </form>
-            </Form>
-          </>
+              <Button type="submit" className="w-full">
+                Invite Member
+              </Button>
+            </form>
+          </Form>
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8">
             <p className="text-center text-muted-foreground">

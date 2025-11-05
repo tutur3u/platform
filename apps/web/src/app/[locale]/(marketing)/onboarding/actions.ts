@@ -193,7 +193,6 @@ export async function createWorkspaceFromOnboarding(
       .insert({
         ws_id: workspace.id,
         user_id: userId,
-        role: 'ADMIN',
       });
 
     if (memberError) {

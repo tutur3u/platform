@@ -1,4 +1,3 @@
-import { CustomDataTable } from '@/components/custom-data-table';
 import {
   Building,
   Crown,
@@ -14,8 +13,10 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { getLocale, getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
+import { getLocale, getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getPlatformRoleColumns } from './columns';
 
 export const metadata: Metadata = {
@@ -74,177 +75,186 @@ export default async function PlatformRolesPage({
   params,
   searchParams,
 }: Props) {
-  const locale = await getLocale();
-  const t = await getTranslations();
-  const { wsId } = await params;
-
-  // Only allow root workspace members to access this page
-  if (wsId !== ROOT_WORKSPACE_ID) {
-    redirect(`/${wsId}/settings`);
-  }
-
-  const { withoutPermission } = await getPermissions({
-    wsId,
-  });
-
-  if (withoutPermission('manage_workspace_roles'))
-    redirect(`/${wsId}/settings`);
-
-  const { q, page, pageSize, role, enabled } = await searchParams;
-
-  // Fetch platform user data
-  const { userData, userCount } = await getPlatformUserData({
-    q,
-    page: page || '1',
-    pageSize: pageSize || '10',
-    role,
-    enabled,
-  });
-
-  // Calculate role statistics
-  const roleStats = userData.reduce(
-    (stats, user) => {
-      if (!user.enabled) {
-        stats.inactive += 1;
-        return stats;
-      }
-
-      stats.active += 1;
-
-      if (user.allow_role_management) stats.admins += 1;
-      if (user.allow_manage_all_challenges) stats.globalManagers += 1;
-      if (user.allow_challenge_management) stats.challengeManagers += 1;
-      if (user.allow_workspace_creation) stats.workspaceCreators += 1;
-
-      // Count users with only basic member permissions
-      if (
-        !user.allow_role_management &&
-        !user.allow_manage_all_challenges &&
-        !user.allow_challenge_management &&
-        !user.allow_workspace_creation
-      ) {
-        stats.members += 1;
-      }
-
-      return stats;
-    },
-    {
-      active: 0,
-      inactive: 0,
-      admins: 0,
-      globalManagers: 0,
-      challengeManagers: 0,
-      workspaceCreators: 0,
-      members: 0,
-    }
-  );
-
   return (
-    <>
-      <FeatureSummary
-        pluralTitle={t('platform-roles.plural')}
-        description={t('platform-roles.description')}
-      />
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+        const locale = await getLocale();
+        const t = await getTranslations();
 
-      {/* Role Statistics */}
-      <div className="my-6 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7">
-        <div className="rounded-lg border bg-card p-3 shadow-sm">
-          <div className="flex items-center gap-2">
-            <UserCheck className="h-4 w-4 text-dynamic-green" />
-            <div className="font-bold text-2xl text-dynamic-green">
-              {roleStats.active}
+        // Only allow root workspace members to access this page
+        if (wsId !== ROOT_WORKSPACE_ID) {
+          redirect(`/${wsId}/settings`);
+        }
+
+        const { withoutPermission } = await getPermissions({
+          wsId,
+        });
+
+        if (withoutPermission('manage_workspace_roles'))
+          redirect(`/${wsId}/settings`);
+
+        const { q, page, pageSize, role, enabled } = await searchParams;
+
+        // Fetch platform user data
+        const { userData, userCount } = await getPlatformUserData({
+          q,
+          page: page || '1',
+          pageSize: pageSize || '10',
+          role,
+          enabled,
+        });
+
+        // Calculate role statistics
+        const roleStats = userData.reduce(
+          (stats, user) => {
+            if (!user.enabled) {
+              stats.inactive += 1;
+              return stats;
+            }
+
+            stats.active += 1;
+
+            if (user.allow_role_management) stats.admins += 1;
+            if (user.allow_manage_all_challenges) stats.globalManagers += 1;
+            if (user.allow_challenge_management) stats.challengeManagers += 1;
+            if (user.allow_workspace_creation) stats.workspaceCreators += 1;
+
+            // Count users with only basic member permissions
+            if (
+              !user.allow_role_management &&
+              !user.allow_manage_all_challenges &&
+              !user.allow_challenge_management &&
+              !user.allow_workspace_creation
+            ) {
+              stats.members += 1;
+            }
+
+            return stats;
+          },
+          {
+            active: 0,
+            inactive: 0,
+            admins: 0,
+            globalManagers: 0,
+            challengeManagers: 0,
+            workspaceCreators: 0,
+            members: 0,
+          }
+        );
+
+        return (
+          <>
+            <FeatureSummary
+              pluralTitle={t('platform-roles.plural')}
+              description={t('platform-roles.description')}
+            />
+
+            {/* Role Statistics */}
+            <div className="my-6 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7">
+              <div className="rounded-lg border bg-card p-3 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <UserCheck className="h-4 w-4 text-dynamic-green" />
+                  <div className="font-bold text-2xl text-dynamic-green">
+                    {roleStats.active}
+                  </div>
+                </div>
+                <p className="text-dynamic-muted-foreground text-xs">
+                  Active Users
+                </p>
+              </div>
+
+              <div className="rounded-lg border bg-card p-3 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <Crown className="h-4 w-4 text-dynamic-red" />
+                  <div className="font-bold text-2xl text-dynamic-red">
+                    {roleStats.admins}
+                  </div>
+                </div>
+                <p className="text-dynamic-muted-foreground text-xs">Admins</p>
+              </div>
+
+              <div className="rounded-lg border bg-card p-3 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-dynamic-blue" />
+                  <div className="font-bold text-2xl text-dynamic-blue">
+                    {roleStats.globalManagers}
+                  </div>
+                </div>
+                <p className="text-dynamic-muted-foreground text-xs">
+                  Global Managers
+                </p>
+              </div>
+
+              <div className="rounded-lg border bg-card p-3 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-dynamic-purple" />
+                  <div className="font-bold text-2xl text-dynamic-purple">
+                    {roleStats.challengeManagers}
+                  </div>
+                </div>
+                <p className="text-dynamic-muted-foreground text-xs">
+                  Challenge Managers
+                </p>
+              </div>
+
+              <div className="rounded-lg border bg-card p-3 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <Building className="h-4 w-4 text-dynamic-green" />
+                  <div className="font-bold text-2xl text-dynamic-green">
+                    {roleStats.workspaceCreators}
+                  </div>
+                </div>
+                <p className="text-dynamic-muted-foreground text-xs">
+                  Workspace Creators
+                </p>
+              </div>
+
+              <div className="rounded-lg border bg-card p-3 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-dynamic-muted-foreground" />
+                  <div className="font-bold text-2xl">{roleStats.members}</div>
+                </div>
+                <p className="text-dynamic-muted-foreground text-xs">Members</p>
+              </div>
+
+              <div className="rounded-lg border bg-card p-3 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 rounded-full bg-dynamic-muted" />
+                  <div className="font-bold text-2xl text-dynamic-muted-foreground">
+                    {roleStats.inactive}
+                  </div>
+                </div>
+                <p className="text-dynamic-muted-foreground text-xs">
+                  Inactive
+                </p>
+              </div>
             </div>
-          </div>
-          <p className="text-dynamic-muted-foreground text-xs">Active Users</p>
-        </div>
 
-        <div className="rounded-lg border bg-card p-3 shadow-sm">
-          <div className="flex items-center gap-2">
-            <Crown className="h-4 w-4 text-dynamic-red" />
-            <div className="font-bold text-2xl text-dynamic-red">
-              {roleStats.admins}
-            </div>
-          </div>
-          <p className="text-dynamic-muted-foreground text-xs">Admins</p>
-        </div>
-
-        <div className="rounded-lg border bg-card p-3 shadow-sm">
-          <div className="flex items-center gap-2">
-            <Globe className="h-4 w-4 text-dynamic-blue" />
-            <div className="font-bold text-2xl text-dynamic-blue">
-              {roleStats.globalManagers}
-            </div>
-          </div>
-          <p className="text-dynamic-muted-foreground text-xs">
-            Global Managers
-          </p>
-        </div>
-
-        <div className="rounded-lg border bg-card p-3 shadow-sm">
-          <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-dynamic-purple" />
-            <div className="font-bold text-2xl text-dynamic-purple">
-              {roleStats.challengeManagers}
-            </div>
-          </div>
-          <p className="text-dynamic-muted-foreground text-xs">
-            Challenge Managers
-          </p>
-        </div>
-
-        <div className="rounded-lg border bg-card p-3 shadow-sm">
-          <div className="flex items-center gap-2">
-            <Building className="h-4 w-4 text-dynamic-green" />
-            <div className="font-bold text-2xl text-dynamic-green">
-              {roleStats.workspaceCreators}
-            </div>
-          </div>
-          <p className="text-dynamic-muted-foreground text-xs">
-            Workspace Creators
-          </p>
-        </div>
-
-        <div className="rounded-lg border bg-card p-3 shadow-sm">
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-dynamic-muted-foreground" />
-            <div className="font-bold text-2xl">{roleStats.members}</div>
-          </div>
-          <p className="text-dynamic-muted-foreground text-xs">Members</p>
-        </div>
-
-        <div className="rounded-lg border bg-card p-3 shadow-sm">
-          <div className="flex items-center gap-2">
-            <div className="h-4 w-4 rounded-full bg-dynamic-muted" />
-            <div className="font-bold text-2xl text-dynamic-muted-foreground">
-              {roleStats.inactive}
-            </div>
-          </div>
-          <p className="text-dynamic-muted-foreground text-xs">Inactive</p>
-        </div>
-      </div>
-
-      <Separator className="my-4" />
-      <CustomDataTable
-        data={userData}
-        columnGenerator={getPlatformRoleColumns}
-        count={userCount}
-        extraData={{ locale }}
-        namespace="platform-role-data-table"
-        defaultVisibility={{
-          id: false,
-          created_at: false,
-          // Show permissions overview by default, hide individual toggles initially
-          platform_role: true,
-          enabled: true,
-          display_name: true,
-          // Hide individual permission columns by default to prevent overwhelming UI
-          allow_role_management: false,
-          allow_manage_all_challenges: false,
-          allow_challenge_management: false,
-          allow_workspace_creation: false,
-        }}
-      />
-    </>
+            <Separator className="my-4" />
+            <CustomDataTable
+              data={userData}
+              columnGenerator={getPlatformRoleColumns}
+              count={userCount}
+              extraData={{ locale }}
+              namespace="platform-role-data-table"
+              defaultVisibility={{
+                id: false,
+                created_at: false,
+                // Show permissions overview by default, hide individual toggles initially
+                platform_role: true,
+                enabled: true,
+                display_name: true,
+                // Hide individual permission columns by default to prevent overwhelming UI
+                allow_role_management: false,
+                allow_manage_all_challenges: false,
+                allow_challenge_management: false,
+                allow_workspace_creation: false,
+              }}
+            />
+          </>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
 
@@ -272,8 +282,8 @@ async function getPlatformUserData({
     if (q) {
       const { data, error } = await sbAdmin.rpc('search_users', {
         search_query: q,
-        page_number: parseInt(page),
-        page_size: parseInt(pageSize),
+        page_number: parseInt(page, 10),
+        page_size: parseInt(pageSize, 10),
         role_filter: role && role !== 'all' ? role : undefined,
         enabled_filter: enabled ? enabled === 'true' : undefined,
       });
@@ -355,8 +365,8 @@ async function getPlatformUserData({
     }
 
     // Handle pagination
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
+    const parsedPage = parseInt(page, 10);
+    const parsedSize = parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize - 1;
     queryBuilder.range(start, end);

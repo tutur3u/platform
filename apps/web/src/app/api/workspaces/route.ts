@@ -6,7 +6,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('workspace_members')
-    .select('id:ws_id, role, workspaces(name)')
+    .select('id:ws_id, workspaces(name)')
     .order('sort_key')
     .order('created_at', { ascending: false });
 
@@ -17,9 +17,8 @@ export async function GET() {
     );
 
   return NextResponse.json(
-    data.map(({ id, role, workspaces }) => ({
+    data.map(({ id, workspaces }) => ({
       id,
-      role,
       ...workspaces,
       color: 'bg-blue-500', // Add a default color since the workspaces table doesn't have a color field
     }))

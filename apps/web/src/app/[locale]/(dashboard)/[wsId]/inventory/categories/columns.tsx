@@ -9,7 +9,7 @@ import { ProductCategoryRowActions } from './row-actions';
 export const productCategoryColumns = (
   t: any,
   namespace: string | undefined,
-  extraColumns?: any[],
+  _?: any[],
   extraData?: {
     canUpdateInventory?: boolean;
     canDeleteInventory?: boolean;

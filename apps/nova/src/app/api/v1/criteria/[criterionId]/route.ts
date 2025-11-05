@@ -80,7 +80,7 @@ export async function PUT(request: Request, { params }: Params) {
         { status: 400 }
       );
     }
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
   }
 

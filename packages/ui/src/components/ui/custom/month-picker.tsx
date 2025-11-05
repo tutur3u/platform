@@ -19,12 +19,11 @@ interface MonthPickerProps {
   className?: string;
   defaultMonth?: string;
   onUpdate?: (
-    // eslint-disable-next-line no-unused-vars
     args: {
       month: string;
       page?: string;
     },
-    // eslint-disable-next-line no-unused-vars
+
     refresh: boolean
   ) => void;
 }

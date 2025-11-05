@@ -203,7 +203,6 @@ export default function StorageObjectsTable({
       {viewMode === 'list' ? (
         <CustomDataTable
           data={!path || path === '/' ? data : [{ name: '...' }, ...data]}
-          // biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
           columnGenerator={(t: any, namespace: string | undefined) =>
             storageObjectsColumns(
               t,
@@ -248,7 +247,6 @@ export default function StorageObjectsTable({
                     );
                   }}
                 >
-                  {/* biome-ignore lint/suspicious/noExplicitAny: <there can be any children> */}
                   {(row.props as any)?.children}
                 </tr>
               );
@@ -278,7 +276,6 @@ export default function StorageObjectsTable({
                         );
                       }}
                     >
-                      {/* biome-ignore lint/suspicious/noExplicitAny: <there can be any children> */}
                       {(row.props as any)?.children}
                     </tr>
                   </ContextMenuTrigger>

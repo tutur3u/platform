@@ -82,8 +82,6 @@ export async function GET(request: NextRequest) {
       .from('workspace_members')
       .select(`
         user_id,
-        role,
-        role_title,
         created_at,
         users:user_id (
           id,

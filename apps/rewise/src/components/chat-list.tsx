@@ -40,7 +40,7 @@ export interface ChatListProps {
   summarizing?: boolean;
   presenceState?: RealtimePresenceState<PresenceState>;
   currentUserId?: string;
-  // eslint-disable-next-line no-unused-vars
+
   setInput: (input: string) => void;
 }
 
@@ -136,7 +136,7 @@ export function ChatList({
                 {!chatSummary && summarizing ? (
                   <div className="h-32 w-full animate-pulse rounded border bg-foreground/5" />
                 ) : (
-                  <div className="w-full whitespace-pre-wrap break-words rounded border bg-foreground/5 p-2 text-start font-normal text-lg">
+                  <div className="wrap-break-word w-full whitespace-pre-wrap rounded border bg-foreground/5 p-2 text-start font-normal text-lg">
                     {chatSummary?.trim()}
                   </div>
                 )}

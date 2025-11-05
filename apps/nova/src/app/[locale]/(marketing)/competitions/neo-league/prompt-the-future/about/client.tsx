@@ -219,7 +219,6 @@ export function AboutUsClient() {
     );
   }, []);
 
-  // biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
   const getOrganizerInfo = (t: any, tKey: string, type = 'organizers') => ({
     name: t(`${type}.members.${tKey}.name`),
     role: t(`${type}.members.${tKey}.role`),

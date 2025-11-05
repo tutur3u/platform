@@ -53,7 +53,7 @@ export default async function DatasetDetailsPage({ params }: Props) {
     .in(
       'url',
       relatedUrls?.map((r) =>
-        r.url.trim().endsWith('/') ? r.url.trim() : r.url.trim() + '/'
+        r.url.trim().endsWith('/') ? r.url.trim() : `${r.url.trim()}/`
       ) || []
     );
 
@@ -69,11 +69,11 @@ export default async function DatasetDetailsPage({ params }: Props) {
         crawledUrl={crawledUrl}
         relatedUrls={(relatedUrls || []).map((r) => ({
           ...r,
-          url: r.url.trim().endsWith('/') ? r.url.trim() : r.url.trim() + '/',
+          url: r.url.trim().endsWith('/') ? r.url.trim() : `${r.url.trim()}/`,
         }))}
         crawledRelatedUrls={(crawledRelatedUrls || []).map((r) => ({
           ...r,
-          url: r.url.trim().endsWith('/') ? r.url.trim() : r.url.trim() + '/',
+          url: r.url.trim().endsWith('/') ? r.url.trim() : `${r.url.trim()}/`,
         }))}
         wsId={wsId}
         url={crawledUrl?.url || ''}

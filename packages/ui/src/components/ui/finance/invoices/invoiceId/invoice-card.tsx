@@ -345,7 +345,7 @@ export default function InvoiceCard({
               {t('invoices.content')}:
             </h3>
             <p
-              className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'} text-wrap break-words`}
+              className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'} wrap-break-word text-wrap`}
             >
               {invoice.notice}
             </p>

@@ -15,7 +15,7 @@ export const DayCell: React.FC<{
   currentDate: Date;
   today: Date;
   attendanceData?: WorkspaceUserAttendance[];
-  // eslint-disable-next-line no-unused-vars
+
   onDateClick?: (date: Date) => void;
   /** When true, hides days from previous and next months to reduce visual clutter */
   hideOutsideMonthDays?: boolean;

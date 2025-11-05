@@ -1,10 +1,5 @@
 'use client';
 
-import { ActiveTimerIndicator } from '@/components/active-timer-indicator';
-import type { NavLink } from '@/components/navigation';
-import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
-import { useSidebar } from '@/context/sidebar-context';
-import { useActiveTimerSession } from '@/hooks/use-active-timer-session';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from '@tuturuuu/icons';
 import type { Workspace } from '@tuturuuu/types';
@@ -16,10 +11,10 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   type ReactNode,
   Suspense,
@@ -27,6 +22,11 @@ import {
   useEffect,
   useState,
 } from 'react';
+import { ActiveTimerIndicator } from '@/components/active-timer-indicator';
+import type { NavLink } from '@/components/navigation';
+import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import { useSidebar } from '@/context/sidebar-context';
+import { useActiveTimerSession } from '@/hooks/use-active-timer-session';
 import { Nav } from './nav';
 
 interface MailProps {
@@ -314,10 +314,45 @@ export function Structure({
 
   const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
 
+  /**
+   * Remove consecutive nulls to avoid repeated separators in navigation.
+   * Also removes leading and trailing nulls.
+   */
+  const removeConsecutiveNulls = (
+    arr: (NavLink | null)[]
+  ): (NavLink | null)[] => {
+    const withoutConsecutive = arr.reduce<(NavLink | null)[]>(
+      (acc, item, index) => {
+        // Skip null if previous item was also null
+        if (item === null && index > 0 && arr[index - 1] === null) {
+          return acc;
+        }
+        acc.push(item);
+        return acc;
+      },
+      []
+    );
+
+    // Remove leading nulls
+    while (withoutConsecutive.length > 0 && withoutConsecutive[0] === null) {
+      withoutConsecutive.shift();
+    }
+
+    // Remove trailing nulls
+    while (
+      withoutConsecutive.length > 0 &&
+      withoutConsecutive[withoutConsecutive.length - 1] === null
+    ) {
+      withoutConsecutive.pop();
+    }
+
+    return withoutConsecutive;
+  };
+
   const getFilteredLinks = (
     linksToFilter: (NavLink | null)[] | undefined
-  ): (NavLink | null)[] =>
-    (linksToFilter || []).flatMap((link) => {
+  ): (NavLink | null)[] => {
+    const filtered = (linksToFilter || []).flatMap((link) => {
       // Preserve null separators
       if (!link) return [null];
 
@@ -327,7 +362,6 @@ export function Structure({
         return [];
 
       if (link.requireRootWorkspace && !isRootWorkspace) return [];
-      // Do not filter by allowedRoles here; this is handled in `Navigation` where role context exists
 
       if (link.children && link.children.length > 1) {
         const filteredChildren = getFilteredLinks(link.children);
@@ -348,6 +382,10 @@ export function Structure({
 
       return [link];
     });
+
+    // Clean up consecutive nulls after filtering
+    return removeConsecutiveNulls(filtered);
+  };
 
   const backButton: NavLink = {
     title: t('common.back'),

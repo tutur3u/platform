@@ -119,7 +119,7 @@ const CommodityComparison = ({
     };
 
     loadData();
-  }, [toast]);
+  }, [toast, initialData.statistical_forecast.map, locale]);
 
   // Calculate insights
   const getModelInsights = (modelData: any[], model: string) => {

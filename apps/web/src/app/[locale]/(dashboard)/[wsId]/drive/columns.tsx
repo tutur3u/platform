@@ -13,10 +13,9 @@ import { Fragment } from 'react';
 import { StorageObjectRowActions } from './row-actions';
 
 export const storageObjectsColumns = (
-  // biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
   t: any,
   namespace: string | undefined,
-  // eslint-disable-next-line no-unused-vars
+
   setStorageObject: (value: StorageObject | undefined) => void,
   wsId: string,
   path?: string,

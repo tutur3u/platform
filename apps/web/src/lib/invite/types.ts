@@ -7,8 +7,6 @@ export interface Workspace {
 
 export interface WorkspaceInfo {
   workspace: Workspace;
-  role: string;
-  roleTitle: string;
   memberCount: number;
 }
 

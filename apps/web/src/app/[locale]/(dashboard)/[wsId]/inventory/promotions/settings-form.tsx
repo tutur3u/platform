@@ -48,7 +48,6 @@ export default function WorkspaceSettingsForm({
   wsId,
   data,
   regularPromotions,
-  onFinish,
 }: Props) {
   const t = useTranslations();
   const [loading, setLoading] = useState(false);

@@ -19,7 +19,7 @@ import { DateInput } from './date-input';
 
 interface ComparedDateRangePickerProps {
   /** Click handler for applying the updates from DateRangePicker. */
-  // eslint-disable-next-line no-unused-vars
+
   onUpdate?: (values: { range: DateRange; rangeCompare?: DateRange }) => void;
   /** Initial value for start date */
   initialDateFrom?: Date | string;

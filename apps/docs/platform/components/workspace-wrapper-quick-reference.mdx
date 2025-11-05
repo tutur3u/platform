@@ -58,7 +58,7 @@ return withWorkspace(
 
 ```tsx
 {({ workspace, wsId, isPersonal, isRoot }) => {
-  // workspace: Workspace & { role: WorkspaceUserRole; joined: boolean }
+  // workspace: Workspace & { joined: boolean }
   // wsId: string (validated UUID)
   // isPersonal: boolean
   // isRoot: boolean
@@ -141,7 +141,7 @@ export function WorkspaceSettings({
   isRoot,
   theme
 }: {
-  workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
+  workspace: Workspace & { joined: boolean };
   wsId: string;
   isPersonal: boolean;
   isRoot: boolean;

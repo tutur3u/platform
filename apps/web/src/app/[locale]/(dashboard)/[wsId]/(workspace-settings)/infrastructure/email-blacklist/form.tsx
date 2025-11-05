@@ -19,8 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -147,7 +147,7 @@ export default function EmailBlacklistForm({
         });
         onError?.(errorMessage);
       }
-    } catch (error) {
+    } catch (_error) {
       const errorMessage = t('email-blacklist.network-error');
       toast.error(t('email-blacklist.error'), {
         description: errorMessage,
