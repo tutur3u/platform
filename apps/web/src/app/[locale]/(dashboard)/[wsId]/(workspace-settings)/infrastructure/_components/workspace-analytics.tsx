@@ -1,5 +1,6 @@
 'use client';
 
+import { Building2, TrendingUp, Users } from '@tuturuuu/icons';
 import type {
   WorkspaceMemberDistribution,
   WorkspaceStatistics,
@@ -9,7 +10,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@tuturuuu/ui/chart';
-import { Building2, TrendingUp, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from 'recharts';

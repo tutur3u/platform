@@ -1,5 +1,6 @@
 'use client';
 
+import { Activity, Clock, Monitor, Smartphone, Tablet } from '@tuturuuu/icons';
 import type { SessionByDevice, SessionStatistics } from '@tuturuuu/types';
 import {
   ChartContainer,
@@ -8,7 +9,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@tuturuuu/ui/chart';
-import { Activity, Clock, Monitor, Smartphone, Tablet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { Cell, Pie, PieChart } from 'recharts';

@@ -1,7 +1,7 @@
+import { Activity, Building2, Lock, TrendingUp, Users } from '@tuturuuu/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';
-import { Activity, Building2, Lock, TrendingUp, Users } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';

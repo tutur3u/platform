@@ -4,7 +4,7 @@ import {
   TrendingDown,
   TrendingUp,
   Users,
-} from 'lucide-react';
+} from '@tuturuuu/icons';
 
 interface MetricCardData {
   title: string;

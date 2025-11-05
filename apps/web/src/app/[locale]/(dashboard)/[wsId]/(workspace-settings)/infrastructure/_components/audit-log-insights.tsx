@@ -1,5 +1,6 @@
 'use client';
 
+import { Activity, Clock, Users } from '@tuturuuu/icons';
 import type {
   ActionFrequencyByHour,
   AuditLogActionSummary,
@@ -10,7 +11,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@tuturuuu/ui/chart';
-import { Activity, Clock, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
