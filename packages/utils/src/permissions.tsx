@@ -55,6 +55,7 @@ export type RolePermissionGroup = {
   id: string;
   icon?: ReactNode;
   title: string;
+  description?: string;
   permissions: RolePermission[];
 };
 
@@ -75,6 +76,7 @@ export const permissionGroups = ({
               id: 'infrastructure',
               icon: <CircuitBoard />,
               title: t('ws-roles.infrastructure'),
+              description: t('ws-roles.infrastructure_description'),
               permissions: [
                 {
                   id: 'view_infrastructure',
@@ -112,6 +114,7 @@ export const permissionGroups = ({
         id: 'workspace',
         icon: <House />,
         title: t('ws-roles.workspace'),
+        description: t('ws-roles.workspace_description'),
         permissions: [
           ...(wsId === ROOT_WORKSPACE_ID ||
           user?.email?.endsWith('@tuturuuu.com')
@@ -181,6 +184,7 @@ export const permissionGroups = ({
         id: 'ai',
         icon: <Sparkles />,
         title: t('ws-roles.ai'),
+        description: t('ws-roles.ai_description'),
         permissions: [
           {
             id: 'ai_chat',

@@ -1,15 +1,19 @@
-import { ShieldCheck } from '@tuturuuu/icons';
+import { CheckCircle, Info, Shield, ShieldCheck } from '@tuturuuu/icons';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
 import { FormField, FormItem } from '@tuturuuu/ui/form';
+import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
+import { cn } from '@tuturuuu/utils/format';
 import { permissionGroups } from '@tuturuuu/utils/permissions';
 import { useTranslations } from 'next-intl';
-import { Fragment } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import type { SectionProps } from './index';
 import RolePermission from './role-permission';
 
@@ -26,98 +30,258 @@ export default function RoleFormPermissionsSection({
     user,
   });
 
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const allPermissionsEnabled = groups.every((group) =>
+    group.permissions.every(
+      (permission) => form.watch(`permissions.${permission.id}`) === true
+    )
+  );
+
+  const totalPermissions = groups.reduce(
+    (acc, group) => acc + group.permissions.length,
+    0
+  );
+
+  const totalEnabledPermissions = enabledPermissionsCount.reduce(
+    (acc, group) => acc + group.count,
+    0
+  );
+
+  // Filter groups based on search query
+  const filteredGroups = useMemo(() => {
+    if (!searchQuery) return groups;
+
+    const query = searchQuery.toLowerCase().trim();
+    return groups
+      .map((group) => ({
+        ...group,
+        permissions: group.permissions.filter(
+          (permission) =>
+            permission.title.toLowerCase().includes(query) ||
+            permission.description.toLowerCase().includes(query) ||
+            group.title.toLowerCase().includes(query)
+        ),
+      }))
+      .filter((group) => group.permissions.length > 0);
+  }, [groups, searchQuery]);
+
+  const handleToggleAll = (value: boolean) => {
+    groups.forEach((group) => {
+      group.permissions.forEach((permission) => {
+        form.setValue(`permissions.${permission.id}`, value, {
+          shouldDirty: true,
+        });
+      });
+    });
+    form.trigger('permissions');
+  };
+
   return (
-    <>
-      <div className="mb-2 rounded-md border border-dynamic-blue/20 bg-dynamic-blue/10 p-2 text-center font-bold text-dynamic-blue">
-        {form.watch('name') || '-'}
+    <div className="space-y-6">
+      {/* Permissions Header */}
+      <div className="space-y-4 rounded-lg border bg-linear-to-br from-background via-background to-foreground/2 p-6 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-dynamic-purple to-dynamic-blue shadow-lg">
+              <Shield className="h-7 w-7 text-background" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Label className="font-semibold text-base">
+                  {form.watch('name') || t('ws-roles.unnamed_role')}
+                </Label>
+                <Badge variant="secondary" className="font-semibold">
+                  {totalEnabledPermissions}/{totalPermissions}
+                </Badge>
+              </div>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                {t('ws-roles.permissions_description')}
+              </p>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant={allPermissionsEnabled ? 'outline' : 'default'}
+            size="sm"
+            onClick={() => handleToggleAll(!allPermissionsEnabled)}
+            className="shrink-0"
+          >
+            <CheckCircle className="mr-2 h-4 w-4" />
+            {allPermissionsEnabled
+              ? t('ws-roles.deselect_all')
+              : t('ws-roles.select_all')}
+          </Button>
+        </div>
+
+        {/* Info Banner */}
+        <div className="flex gap-3 rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/5 p-4">
+          <Info className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-purple" />
+          <div className="text-sm">
+            <p className="font-medium text-dynamic-purple">
+              {t('ws-roles.permissions_info_title')}
+            </p>
+            <p className="text-muted-foreground leading-relaxed">
+              {t('ws-roles.permissions_info_description')}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="rounded border p-4">
-        <RolePermission
-          icon={<ShieldCheck />}
-          title={t('ws-roles.admin')}
-          description={t('ws-roles.admin_description')}
-          value={groups.every((group) =>
-            group.permissions.every(
-              (permission) =>
-                form.watch(`permissions.${permission.id}`) === true
-            )
+      <Separator />
+
+      {/* Admin Toggle */}
+      <div className="space-y-3">
+        <Label className="flex items-center gap-2 font-semibold text-base">
+          <ShieldCheck className="h-4 w-4" />
+          {t('ws-roles.quick_actions')}
+        </Label>
+
+        <div
+          className={cn(
+            'rounded-lg border p-4 transition-colors',
+            allPermissionsEnabled
+              ? 'border-dynamic-green/20 bg-dynamic-green/5'
+              : 'bg-background'
           )}
-          onChange={(value) => {
-            groups.forEach((group) => {
-              group.permissions.forEach((permission) => {
-                form.setValue(`permissions.${permission.id}`, value, {
-                  shouldDirty: true,
-                });
-              });
-            });
-            form.trigger('permissions');
-          }}
-        />
+        >
+          <RolePermission
+            icon={<ShieldCheck className="h-5 w-5" />}
+            title={t('ws-roles.admin')}
+            description={t('ws-roles.admin_description')}
+            value={allPermissionsEnabled}
+            onChange={handleToggleAll}
+          />
+        </div>
       </div>
 
-      <Separator className="my-4" />
+      <Separator />
 
-      <Accordion
-        type="multiple"
-        // defaultValue={groups.map((group) => `group-${group.id}`)}
-      >
-        {groups.map((group, idx) => (
-          <Fragment key={`group-${group.id}`}>
-            <AccordionItem value={`group-${group.id}`}>
-              <AccordionTrigger>
-                <div className="flex items-start justify-start gap-2">
-                  {group.icon}
-                  <div className="flex flex-wrap items-center gap-2">
-                    {group.title}
-                    <span className="flex items-center gap-1 rounded border px-1 font-bold text-sm">
-                      <span className="text-dynamic-orange">
-                        {enabledPermissionsCount.find((x) => x.id === group.id)
-                          ?.count || 0}
-                      </span>
-                      <span className="opacity-50">/</span>
-                      <span className="text-dynamic-blue">
-                        {group.permissions.length}
-                      </span>
-                    </span>
-                  </div>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                {group.permissions.map((permission, idx) => (
-                  <Fragment
-                    key={`group-${group.id}-permission-${permission.id}`}
-                  >
-                    <FormField
-                      control={form.control}
-                      name={`permissions.${permission.id}`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <RolePermission
-                            icon={permission.icon}
-                            title={permission.title}
-                            description={permission.description}
-                            value={field.value}
-                            onChange={(value) => {
-                              field.onChange(value);
-                              form.trigger('permissions');
-                            }}
-                            disabled={permission?.disabled}
-                          />
-                        </FormItem>
-                      )}
-                    />
-                    {idx !== group.permissions.length - 1 && (
-                      <Separator className="my-4" />
-                    )}
-                  </Fragment>
-                ))}
-              </AccordionContent>
-            </AccordionItem>
-            {idx !== groups.length - 1 && <div className="mb-2" />}
-          </Fragment>
-        ))}
-      </Accordion>
-    </>
+      {/* Search Permissions */}
+      <div className="space-y-3">
+        <Label className="flex items-center gap-2 font-semibold text-base">
+          <Shield className="h-4 w-4" />
+          {t('ws-roles.permission_groups')}
+        </Label>
+
+        <div className="relative">
+          <input
+            type="text"
+            placeholder={t('ws-roles.search_permissions_placeholder')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          />
+        </div>
+      </div>
+
+      {/* Permission Groups */}
+      {filteredGroups.length > 0 ? (
+        <Accordion
+          type="multiple"
+          defaultValue={filteredGroups.map((group) => `group-${group.id}`)}
+        >
+          {filteredGroups.map((group, idx) => {
+            const groupEnabledCount =
+              enabledPermissionsCount.find((x) => x.id === group.id)?.count ||
+              0;
+            const allGroupEnabled =
+              groupEnabledCount === group.permissions.length;
+
+            return (
+              <Fragment key={`group-${group.id}`}>
+                <AccordionItem
+                  value={`group-${group.id}`}
+                  className="rounded-lg border bg-background px-4"
+                >
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center justify-between gap-3 pr-2 text-left">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={cn(
+                            'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
+                            allGroupEnabled
+                              ? 'bg-dynamic-green/20 text-dynamic-green'
+                              : 'bg-muted text-muted-foreground'
+                          )}
+                        >
+                          {group.icon}
+                        </div>
+                        <div className="space-y-0.5">
+                          <div className="font-semibold">{group.title}</div>
+                          <div className="text-muted-foreground text-xs">
+                            {group.description}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            'font-semibold',
+                            allGroupEnabled &&
+                              'bg-dynamic-green/20 text-dynamic-green'
+                          )}
+                        >
+                          {groupEnabledCount}/{group.permissions.length}
+                        </Badge>
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 pt-2 pb-4">
+                    {group.permissions.map((permission) => (
+                      <Fragment
+                        key={`group-${group.id}-permission-${permission.id}`}
+                      >
+                        <FormField
+                          control={form.control}
+                          name={`permissions.${permission.id}`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <div
+                                className={cn(
+                                  'rounded-lg border p-4 transition-colors',
+                                  field.value
+                                    ? 'border-dynamic-green/20 bg-dynamic-green/5'
+                                    : 'bg-muted/30'
+                                )}
+                              >
+                                <RolePermission
+                                  icon={permission.icon}
+                                  title={permission.title}
+                                  description={permission.description}
+                                  value={field.value}
+                                  onChange={(value) => {
+                                    field.onChange(value);
+                                    form.trigger('permissions');
+                                  }}
+                                  disabled={permission?.disabled}
+                                />
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+                      </Fragment>
+                    ))}
+                  </AccordionContent>
+                </AccordionItem>
+                {idx !== filteredGroups.length - 1 && <div className="my-3" />}
+              </Fragment>
+            );
+          })}
+        </Accordion>
+      ) : (
+        <div className="rounded-lg border border-dashed bg-muted/30 p-8 text-center">
+          <Shield className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
+          <p className="mb-2 font-semibold">
+            {t('ws-roles.no_permissions_found')}
+          </p>
+          <p className="text-muted-foreground text-sm">
+            {t('ws-roles.try_different_search')}
+          </p>
+        </div>
+      )}
+    </div>
   );
 }
