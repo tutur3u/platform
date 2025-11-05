@@ -132,6 +132,11 @@ export function KanbanBoard({
   const selectedColumnId = useRef<string | null>(null);
   const firstSelectedTaskId = useRef<string | null>(null);
 
+  // Auto-scroll refs
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const autoScrollRafRef = useRef<number | null>(null);
+  const isDraggingRef = useRef(false);
+
   const queryClient = useQueryClient();
   const supabase = createClient();
   const moveTaskToBoardMutation = useMoveTaskToBoard(boardId ?? '');
@@ -485,6 +490,11 @@ export function KanbanBoard({
       setDragPreviewPosition(null);
       pickedUpTaskColumn.current = null;
       (processDragOver as any).lastTargetListId = null;
+      isDraggingRef.current = false;
+      if (autoScrollRafRef.current) {
+        cancelAnimationFrame(autoScrollRafRef.current);
+        autoScrollRafRef.current = null;
+      }
     }
     window.addEventListener('mouseup', handleGlobalPointerUp);
     window.addEventListener('touchend', handleGlobalPointerUp);
@@ -493,6 +503,81 @@ export function KanbanBoard({
       window.removeEventListener('touchend', handleGlobalPointerUp);
     };
   }, [processDragOver]);
+
+  // Auto-scroll functionality when dragging near edges
+  useEffect(() => {
+    const EDGE_THRESHOLD = 100; // Distance from edge to trigger scroll (px)
+    const SCROLL_SPEED = 10; // Base scroll speed (px per frame)
+    const MAX_SCROLL_SPEED = 30; // Maximum scroll speed (px per frame)
+
+    let currentPointerX = 0;
+
+    function handlePointerMove(event: PointerEvent) {
+      currentPointerX = event.clientX;
+    }
+
+    function autoScroll() {
+      if (!isDraggingRef.current || !scrollContainerRef.current) {
+        autoScrollRafRef.current = null;
+        return;
+      }
+
+      const container = scrollContainerRef.current;
+      const rect = container.getBoundingClientRect();
+
+      // Calculate distance from edges
+      const distanceFromLeft = currentPointerX - rect.left;
+      const distanceFromRight = rect.right - currentPointerX;
+
+      let scrollAmount = 0;
+
+      // Scroll left when near left edge
+      if (distanceFromLeft < EDGE_THRESHOLD && distanceFromLeft > 0) {
+        const intensity = 1 - distanceFromLeft / EDGE_THRESHOLD;
+        scrollAmount = -Math.min(
+          SCROLL_SPEED + intensity * (MAX_SCROLL_SPEED - SCROLL_SPEED),
+          MAX_SCROLL_SPEED
+        );
+      }
+      // Scroll right when near right edge
+      else if (distanceFromRight < EDGE_THRESHOLD && distanceFromRight > 0) {
+        const intensity = 1 - distanceFromRight / EDGE_THRESHOLD;
+        scrollAmount = Math.min(
+          SCROLL_SPEED + intensity * (MAX_SCROLL_SPEED - SCROLL_SPEED),
+          MAX_SCROLL_SPEED
+        );
+      }
+
+      // Apply scroll if needed
+      if (scrollAmount !== 0) {
+        container.scrollLeft += scrollAmount;
+      }
+
+      // Continue the animation loop
+      autoScrollRafRef.current = requestAnimationFrame(autoScroll);
+    }
+
+    // Start auto-scroll loop when dragging starts (triggered by isDraggingRef)
+    window.addEventListener('pointermove', handlePointerMove);
+
+    // Watch for drag start to initialize auto-scroll loop
+    const startAutoScrollLoop = () => {
+      if (isDraggingRef.current && !autoScrollRafRef.current) {
+        autoScrollRafRef.current = requestAnimationFrame(autoScroll);
+      }
+    };
+
+    // Poll for drag start (alternative: trigger from onDragStart)
+    const pollInterval = setInterval(startAutoScrollLoop, 100);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      clearInterval(pollInterval);
+      if (autoScrollRafRef.current) {
+        cancelAnimationFrame(autoScrollRafRef.current);
+      }
+    };
+  }, []);
 
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
   const estimationOptions = useMemo(() => {
@@ -621,6 +706,9 @@ export function KanbanBoard({
     if (!hasDraggableData(event.active)) return;
     const { active } = event;
     if (!active.data?.current) return;
+
+    // Enable auto-scroll (will be picked up by the effect's polling)
+    isDraggingRef.current = true;
 
     const { type } = active.data.current;
     if (type === 'Column') {
@@ -1989,7 +2077,10 @@ export function KanbanBoard({
             }}
             autoScroll={false}
           >
-            <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent relative flex h-full w-full gap-4 overflow-x-auto">
+            <div
+              ref={scrollContainerRef}
+              className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent relative flex h-full w-full gap-4 overflow-x-auto"
+            >
               <SortableContext
                 items={columnsId}
                 strategy={horizontalListSortingStrategy}
