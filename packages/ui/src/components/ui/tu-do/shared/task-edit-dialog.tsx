@@ -3674,66 +3674,63 @@ function TaskEditDialogComponent({
                     Create multiple
                   </label>
                 )}
-                {!isCreateMode && (
-                  task?.id && (
-                    <DropdownMenu
-                      open={isMoreMenuOpen}
-                      onOpenChange={setIsMoreMenuOpen}
-                    >
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                          title="More options"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => {
-                            navigator.clipboard.writeText(task.id);
-                            toast({
-                              title: 'Task ID copied',
-                              description:
-                                'Task ID has been copied to clipboard',
-                            });
-                            setIsMoreMenuOpen(false);
-                          }}
-                        >
-                          <Copy className="mr-2 h-4 w-4" />
-                          Copy ID
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            const url = `${window.location.origin}${pathname?.split('/tasks/')[0]}/tasks/${task.id}`;
-                            navigator.clipboard.writeText(url);
-                            toast({
-                              title: 'Link copied',
-                              description:
-                                'Task link has been copied to clipboard',
-                            });
-                            setIsMoreMenuOpen(false);
-                          }}
-                        >
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          Copy Link
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setShowDeleteConfirm(true);
-                            setIsMoreMenuOpen(false);
-                          }}
-                          className="text-dynamic-red focus:text-dynamic-red"
-                        >
-                          <Trash className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )
+                {!isCreateMode && task?.id && (
+                  <DropdownMenu
+                    open={isMoreMenuOpen}
+                    onOpenChange={setIsMoreMenuOpen}
+                  >
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                        title="More options"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          navigator.clipboard.writeText(task.id);
+                          toast({
+                            title: 'Task ID copied',
+                            description: 'Task ID has been copied to clipboard',
+                          });
+                          setIsMoreMenuOpen(false);
+                        }}
+                      >
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copy ID
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          const url = `${window.location.origin}${pathname?.split('/tasks/')[0]}/tasks/${task.id}`;
+                          navigator.clipboard.writeText(url);
+                          toast({
+                            title: 'Link copied',
+                            description:
+                              'Task link has been copied to clipboard',
+                          });
+                          setIsMoreMenuOpen(false);
+                        }}
+                      >
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        Copy Link
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setShowDeleteConfirm(true);
+                          setIsMoreMenuOpen(false);
+                        }}
+                        className="text-dynamic-red focus:text-dynamic-red"
+                      >
+                        <Trash className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
                 <Button
                   variant="ghost"
