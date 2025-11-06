@@ -433,8 +433,11 @@ export async function getPermissions({
     ? rolePermissions({ wsId: resolvedWorkspaceId, user }).map(({ id }) => id)
     : [
         // permissions from role memberships
-        ...permissionsData.flatMap((m) =>
-          m.workspace_roles?.workspace_role_permissions?.map((p) => p.permission) || []
+        ...permissionsData.flatMap(
+          (m) =>
+            m.workspace_roles?.workspace_role_permissions?.map(
+              (p) => p.permission
+            ) || []
         ),
         // default workspace permissions
         ...defaultData.map((d) => d.permission),
