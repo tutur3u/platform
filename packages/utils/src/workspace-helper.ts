@@ -431,9 +431,14 @@ export async function getPermissions({
 
   const permissions = isCreator
     ? rolePermissions({ wsId: resolvedWorkspaceId, user }).map(({ id }) => id)
-    : [...permissionsData, ...defaultData]
-        .map(({ permission }) => permission)
-        .filter((value, index, self) => self.indexOf(value) === index);
+    : [
+        // permissions from role memberships
+        ...permissionsData.flatMap((m) =>
+          m.workspace_roles?.workspace_role_permissions?.map((p) => p.permission) || []
+        ),
+        // default workspace permissions
+        ...defaultData.map((d) => d.permission),
+      ].filter((value, index, self) => self.indexOf(value) === index);
 
   const containsPermission = (permission: PermissionId) =>
     permissions.includes(permission);
