@@ -487,7 +487,7 @@ export default function NoteList({ wsId }: { wsId: string }) {
               <Card
                 key={note.id}
                 onClick={() => handleEditNote(note)}
-                className={`group max-h-[512px] cursor-pointer transition ${
+                className={`group cursor-pointer transition ${
                   note.archived
                     ? 'border-dynamic-green/30 bg-dynamic-green/5'
                     : 'hover:border-dynamic-purple/30 hover:shadow-md'
@@ -590,8 +590,8 @@ export default function NoteList({ wsId }: { wsId: string }) {
                   </div>
 
                   {/* Read-only TipTap editor with limited height */}
-                  <div className="relative flex-1 overflow-y-hidden">
-                    <div className="pointer-events-none h-full overflow-y-hidden">
+                  <div className="relative flex-1">
+                    <div className="pointer-events-none h-full max-h-[512px] overflow-hidden">
                       <RichTextEditor
                         content={note.content}
                         readOnly={true}
