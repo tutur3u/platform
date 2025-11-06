@@ -49,6 +49,8 @@ export function LiveScoresDisplay({
   }, [
     evaluationPreview.testCaseScores?.percentage,
     evaluationPreview.criteriaScores?.percentage,
+    evaluationPreview.criteriaScores,
+    evaluationPreview.testCaseScores,
   ]);
 
   // Don't show anything if there's no meaningful data yet
@@ -91,6 +93,10 @@ export function LiveScoresDisplay({
                     className="-rotate-90 h-20 w-20 transform"
                     viewBox="0 0 100 100"
                   >
+                    <title>
+                      Criteria Score:{' '}
+                      {evaluationPreview.criteriaScores.percentage}%
+                    </title>
                     <circle
                       cx="50"
                       cy="50"

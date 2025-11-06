@@ -21,7 +21,7 @@ interface MenuProps {
   t?: (key: string) => string;
 }
 
-const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
+const MobileMenu: React.FC<MenuProps> = ({ sbUser, user }) => {
   const [isOpened, setIsOpened] = useState(false);
   const closeMenu = () => setIsOpened(false);
 

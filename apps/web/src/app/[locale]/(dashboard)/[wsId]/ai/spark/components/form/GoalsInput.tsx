@@ -36,7 +36,6 @@ import type { PlanRequest, SkillLevel, TimeOfDay } from '../../types';
 type AdvancedSettings = Omit<PlanRequest, 'wsId' | 'goals'>;
 
 interface GoalsInputProps {
-  // eslint-disable-next-line no-unused-vars
   onSubmit: (goals: string[], settings: AdvancedSettings) => void;
   isLoading: boolean;
   error?: Error | null;
@@ -335,7 +334,7 @@ export function GoalsInput({
                       onValueChange={(value) =>
                         setAdvancedSettings({
                           ...advancedSettings,
-                          availability: parseInt(value),
+                          availability: parseInt(value, 10),
                         })
                       }
                     >

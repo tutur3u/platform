@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '13.0.5';
-  };
   public: {
     Tables: {
       ai_chat_members: {
@@ -8910,18 +8905,6 @@ export type Database = {
           },
         ];
       };
-      workspace_default_roles: {
-        Row: {
-          id: string;
-        };
-        Insert: {
-          id: string;
-        };
-        Update: {
-          id?: string;
-        };
-        Relationships: [];
-      };
       workspace_documents: {
         Row: {
           content: Json | null;
@@ -9136,24 +9119,18 @@ export type Database = {
           created_at: string;
           email: string;
           invited_by: string | null;
-          role: string;
-          role_title: string;
           ws_id: string;
         };
         Insert: {
           created_at?: string;
           email: string;
           invited_by?: string | null;
-          role?: string;
-          role_title?: string;
           ws_id: string;
         };
         Update: {
           created_at?: string;
           email?: string;
           invited_by?: string | null;
-          role?: string;
-          role_title?: string;
           ws_id?: string;
         };
         Relationships: [
@@ -9183,13 +9160,6 @@ export type Database = {
             columns: ['invited_by'];
             isOneToOne: false;
             referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_email_invites_role_fkey';
-            columns: ['role'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_default_roles';
             referencedColumns: ['id'];
           },
           {
@@ -9336,8 +9306,6 @@ export type Database = {
           expires_at: string | null;
           id: string;
           max_uses: number | null;
-          role: string;
-          role_title: string;
           updated_at: string;
           ws_id: string;
         };
@@ -9348,8 +9316,6 @@ export type Database = {
           expires_at?: string | null;
           id?: string;
           max_uses?: number | null;
-          role?: string;
-          role_title?: string;
           updated_at?: string;
           ws_id: string;
         };
@@ -9360,8 +9326,6 @@ export type Database = {
           expires_at?: string | null;
           id?: string;
           max_uses?: number | null;
-          role?: string;
-          role_title?: string;
           updated_at?: string;
           ws_id?: string;
         };
@@ -9395,13 +9359,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'workspace_invite_links_role_fkey';
-            columns: ['role'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_default_roles';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'workspace_invite_links_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
@@ -9420,33 +9377,20 @@ export type Database = {
       workspace_invites: {
         Row: {
           created_at: string | null;
-          role: string;
-          role_title: string | null;
           user_id: string;
           ws_id: string;
         };
         Insert: {
           created_at?: string | null;
-          role?: string;
-          role_title?: string | null;
           user_id: string;
           ws_id: string;
         };
         Update: {
           created_at?: string | null;
-          role?: string;
-          role_title?: string | null;
           user_id?: string;
           ws_id?: string;
         };
         Relationships: [
-          {
-            foreignKeyName: 'workspace_invites_role_fkey';
-            columns: ['role'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_default_roles';
-            referencedColumns: ['id'];
-          },
           {
             foreignKeyName: 'workspace_invites_user_id_fkey';
             columns: ['user_id'];
@@ -9564,36 +9508,23 @@ export type Database = {
       workspace_members: {
         Row: {
           created_at: string | null;
-          role: string;
-          role_title: string;
           sort_key: number | null;
           user_id: string;
           ws_id: string;
         };
         Insert: {
           created_at?: string | null;
-          role?: string;
-          role_title?: string;
           sort_key?: number | null;
           user_id?: string;
           ws_id: string;
         };
         Update: {
           created_at?: string | null;
-          role?: string;
-          role_title?: string;
           sort_key?: number | null;
           user_id?: string;
           ws_id?: string;
         };
         Relationships: [
-          {
-            foreignKeyName: 'workspace_members_role_fkey';
-            columns: ['role'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_default_roles';
-            referencedColumns: ['id'];
-          },
           {
             foreignKeyName: 'workspace_members_user_id_fkey';
             columns: ['user_id'];
@@ -11459,7 +11390,36 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       calendar_event_participants: {
         Row: {
@@ -12150,8 +12110,6 @@ export type Database = {
           is_expired: boolean | null;
           is_full: boolean | null;
           max_uses: number | null;
-          role: string | null;
-          role_title: string | null;
           updated_at: string | null;
           ws_id: string | null;
         };
@@ -12182,13 +12140,6 @@ export type Database = {
             columns: ['creator_id'];
             isOneToOne: false;
             referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_invite_links_role_fkey';
-            columns: ['role'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_default_roles';
             referencedColumns: ['id'];
           },
           {
@@ -12225,8 +12176,6 @@ export type Database = {
           handle: string | null;
           id: string | null;
           pending: boolean | null;
-          role: string | null;
-          role_title: string | null;
           ws_id: string | null;
         };
         Relationships: [];
@@ -12524,6 +12473,15 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_missing_personal_workspaces: {
+        Args: never;
+        Returns: {
+          error_message: string;
+          success: boolean;
+          user_id: string;
+          workspace_id: string;
+        }[];
+      };
       extract_domain: { Args: { url: string }; Returns: string };
       extract_referrer_domain: { Args: { url: string }; Returns: string };
       generate_cross_app_token:
@@ -12546,6 +12504,22 @@ export type Database = {
             };
             Returns: string;
           };
+      get_action_frequency_by_hour: {
+        Args: never;
+        Returns: {
+          action_count: number;
+          hour_of_day: number;
+        }[];
+      };
+      get_active_sessions_count: { Args: never; Returns: number };
+      get_activity_heatmap: {
+        Args: never;
+        Returns: {
+          activity_count: number;
+          day_of_week: number;
+          hour_of_day: number;
+        }[];
+      };
       get_ai_execution_daily_stats_v2: {
         Args: {
           p_end_date?: string;
@@ -12613,6 +12587,27 @@ export type Database = {
           total_output_tokens: number;
           total_reasoning_tokens: number;
           total_tokens: number;
+        }[];
+      };
+      get_auth_provider_stats: {
+        Args: never;
+        Returns: {
+          last_sign_in_avg: unknown;
+          percentage: number;
+          provider: string;
+          user_count: number;
+        }[];
+      };
+      get_auth_session_statistics: {
+        Args: never;
+        Returns: {
+          active_sessions: number;
+          avg_session_duration_hours: number;
+          median_session_duration_minutes: number;
+          sessions_this_month: number;
+          sessions_this_week: number;
+          sessions_today: number;
+          total_sessions: number;
         }[];
       };
       get_available_referral_users: {
@@ -12698,6 +12693,7 @@ export type Database = {
           total_prompt_tokens: number;
         }[];
       };
+      get_dau_count: { Args: never; Returns: number };
       get_default_ai_pricing: { Args: never; Returns: Json };
       get_device_types: {
         Args: { p_limit?: number; p_link_id: string };
@@ -12715,6 +12711,23 @@ export type Database = {
           isOneToOne: false;
           isSetofReturn: true;
         };
+      };
+      get_engagement_metrics_over_time: {
+        Args: { days?: number };
+        Returns: {
+          date: string;
+          dau: number;
+          mau: number;
+          wau: number;
+        }[];
+      };
+      get_feature_adoption: {
+        Args: { feature_action_prefix: string };
+        Returns: {
+          adoption_count: number;
+          adoption_percentage: number;
+          feature_name: string;
+        }[];
       };
       get_finance_invoices_count: { Args: { ws_id: string }; Returns: number };
       get_guest_user_leads: {
@@ -12802,6 +12815,7 @@ export type Database = {
         Args: { user_id: string };
         Returns: number;
       };
+      get_mau_count: { Args: never; Returns: number };
       get_monthly_income_expense: {
         Args: { _ws_id: string; past_months?: number };
         Returns: {
@@ -12880,6 +12894,45 @@ export type Database = {
           ws_id: string;
         }[];
       };
+      get_power_users: {
+        Args: { limit_count?: number };
+        Returns: {
+          action_count: number;
+          last_seen: string;
+          user_id: string;
+          username: string;
+        }[];
+      };
+      get_recent_actions_summary: {
+        Args: { limit_count?: number };
+        Returns: {
+          action: string;
+          action_count: number;
+          last_occurrence: string;
+          unique_users: number;
+        }[];
+      };
+      get_recent_audit_logs: {
+        Args: { limit_count?: number };
+        Returns: {
+          action: string;
+          actor_id: string;
+          actor_username: string;
+          created_at: string;
+          id: string;
+          ip_address: string;
+          log_type: string;
+        }[];
+      };
+      get_retention_rate: {
+        Args: { period?: string };
+        Returns: {
+          cohort_period: string;
+          cohort_size: number;
+          retained_users: number;
+          retention_rate: number;
+        }[];
+      };
       get_session_statistics: {
         Args: never;
         Returns: {
@@ -12910,6 +12963,22 @@ export type Database = {
           usage_count: number;
         }[];
       };
+      get_sessions_by_device: {
+        Args: never;
+        Returns: {
+          device_type: string;
+          percentage: number;
+          session_count: number;
+        }[];
+      };
+      get_sign_ins_by_provider: {
+        Args: { days?: number };
+        Returns: {
+          date: string;
+          provider: string;
+          sign_in_count: number;
+        }[];
+      };
       get_submission_statistics: {
         Args: never;
         Returns: {
@@ -12917,6 +12986,10 @@ export type Database = {
           total_count: number;
           unique_users_count: number;
         }[];
+      };
+      get_time_tracking_daily_activity: {
+        Args: { p_days_back?: number; p_user_id?: string; p_ws_id: string };
+        Returns: Json;
       };
       get_time_tracking_sessions_paginated: {
         Args: {
@@ -13015,9 +13088,32 @@ export type Database = {
           task_total_duration: number;
         }[];
       };
-      get_user_role: {
-        Args: { user_id: string; ws_id: string };
-        Returns: string;
+      get_user_activity_cohorts: {
+        Args: never;
+        Returns: {
+          cohort_name: string;
+          percentage: number;
+          user_count: number;
+        }[];
+      };
+      get_user_growth_comparison: {
+        Args: never;
+        Returns: {
+          growth_rate_monthly: number;
+          growth_rate_weekly: number;
+          total_users: number;
+          users_this_month: number;
+          users_this_week: number;
+          users_today: number;
+        }[];
+      };
+      get_user_growth_stats: {
+        Args: { time_period?: string };
+        Returns: {
+          cumulative_users: number;
+          new_users: number;
+          period: string;
+        }[];
       };
       get_user_session_stats: {
         Args: { user_id: string };
@@ -13062,14 +13158,36 @@ export type Database = {
           is_whitelisted: boolean;
         }[];
       };
+      get_wau_count: { Args: never; Returns: number };
       get_workspace_drive_size: { Args: { ws_id: string }; Returns: number };
       get_workspace_member_count: {
         Args: { p_ws_id: string };
         Returns: number;
       };
+      get_workspace_member_distribution: {
+        Args: never;
+        Returns: {
+          member_range: string;
+          percentage: number;
+          workspace_count: number;
+        }[];
+      };
       get_workspace_products_count: {
         Args: { ws_id: string };
         Returns: number;
+      };
+      get_workspace_statistics: {
+        Args: never;
+        Returns: {
+          active_workspaces: number;
+          avg_members_per_workspace: number;
+          empty_workspace_count: number;
+          median_members_per_workspace: number;
+          total_workspaces: number;
+          workspaces_created_this_month: number;
+          workspaces_created_this_week: number;
+          workspaces_created_today: number;
+        }[];
       };
       get_workspace_storage_limit: { Args: { ws_id: string }; Returns: number };
       get_workspace_transaction_categories_count: {
@@ -13148,12 +13266,12 @@ export type Database = {
         Returns: number;
       };
       hard_delete_soft_deleted_items: { Args: never; Returns: undefined };
-      has_other_owner: {
-        Args: { _user_id: string; _ws_id: string };
-        Returns: boolean;
-      };
       has_workspace_permission: {
         Args: { p_permission: string; p_user_id: string; p_ws_id: string };
+        Returns: boolean;
+      };
+      has_workspace_secret: {
+        Args: { secret_name: string; ws_id: string };
         Returns: boolean;
       };
       insert_ai_chat_message: {

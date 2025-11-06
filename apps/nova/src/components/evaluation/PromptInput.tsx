@@ -45,7 +45,7 @@ export function PromptInput({
     setCharacterAnimation(true);
     const timer = setTimeout(() => setCharacterAnimation(false), 300);
     return () => clearTimeout(timer);
-  }, [Math.floor(prompt.length / 100)]);
+  }, []);
 
   // Trigger submit button pulse on completion
   useEffect(() => {
@@ -54,7 +54,7 @@ export function PromptInput({
       const timer = setTimeout(() => setSubmitPulse(false), 1000);
       return () => clearTimeout(timer);
     }
-  }, [prompt.trim().length > 0, isSubmitting]);
+  }, [isSubmitting, prompt.trim]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {

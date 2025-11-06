@@ -60,7 +60,7 @@ interface Props {
   user: SupabaseUser | null;
   data?: WorkspaceRole;
   forceDefault?: boolean;
-  // eslint-disable-next-line no-unused-vars
+
   onFinish?: (data: FormType) => void;
 }
 

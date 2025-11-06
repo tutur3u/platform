@@ -140,32 +140,137 @@ export const CustomImage = (options: ImageOptions = {}) => {
             return modified ? tr : null;
           },
         }),
+        // Image paste plugin with upload
+        new Plugin({
+          key: new PluginKey('imagePastePlugin'),
+
+          props: {
+            handleDOMEvents: {
+              paste: (view: EditorView, event: ClipboardEvent) => {
+                if (!onImageUpload) return false;
+
+                const items = event.clipboardData?.items;
+                if (!items) return false;
+
+                // Filter and collect image files
+                const images = Array.from(items)
+                  .map((item) =>
+                    item.type.startsWith('image/') ? item.getAsFile() : null
+                  )
+                  .filter((file): file is File => file !== null);
+
+                if (images.length === 0) return false;
+
+                event.preventDefault();
+
+                const { state } = view;
+                const { from, to } = state.selection;
+
+                // Get container width for default size (60%)
+                const editorElement = view.dom as HTMLElement;
+                const containerWidth =
+                  editorElement.querySelector('.ProseMirror')?.clientWidth ||
+                  editorElement.clientWidth ||
+                  800;
+                const defaultWidth =
+                  (SIZE_PERCENTAGES.md / 100) * containerWidth; // md = 60%
+
+                // Process images asynchronously
+                (async () => {
+                  // Delete selected content if there's a selection (replace it)
+                  let currentPos = from;
+                  if (from !== to) {
+                    const deleteTr = view.state.tr.delete(from, to);
+                    view.dispatch(deleteTr);
+                    currentPos = from;
+                  }
+
+                  // Process all images sequentially
+                  for (const image of images) {
+                    try {
+                      console.log('Processing pasted image:', {
+                        name: image.name,
+                        type: image.type,
+                        size: image.size,
+                      });
+
+                      // Validate file size (max 5MB for images)
+                      const maxSize = 5 * 1024 * 1024;
+                      if (image.size > maxSize) {
+                        console.error(
+                          'Image size must be less than 5MB:',
+                          image.name
+                        );
+                        continue;
+                      }
+
+                      // Upload the image
+                      const url = await onImageUpload(image);
+
+                      // Get fresh state after upload
+                      const currentState = view.state;
+                      const imageNode = currentState.schema.nodes.imageResize;
+
+                      if (!imageNode) {
+                        console.error(
+                          'Image node not found. Available nodes:',
+                          Object.keys(currentState.schema.nodes)
+                        );
+                        continue;
+                      }
+
+                      // Create and insert the image node
+                      const node = imageNode.create({
+                        src: url,
+                        width: defaultWidth,
+                      });
+
+                      const tr = view.state.tr.insert(currentPos, node);
+                      view.dispatch(tr);
+
+                      // Update position for next insertion, mapping through the transaction
+                      currentPos = tr.mapping.map(currentPos) + node.nodeSize;
+                    } catch (error) {
+                      console.error(
+                        'Failed to upload pasted image:',
+                        image.name,
+                        error
+                      );
+                    }
+                  }
+                })();
+
+                return true;
+              },
+            },
+          },
+        }),
+
         // Image drop plugin with upload
         new Plugin({
           key: new PluginKey('imageDropPlugin'),
 
           props: {
             handleDOMEvents: {
-              drop: (view: EditorView, event: Event) => {
-                const dragEvent = event as DragEvent;
+              drop: (view: EditorView, event: DragEvent) => {
                 if (!onImageUpload) return false;
 
                 const { schema } = view.state;
-                const hasFiles = dragEvent.dataTransfer?.files?.length;
+                const hasFiles = event.dataTransfer?.files?.length;
 
                 if (!hasFiles) return false;
 
                 const images = Array.from(
-                  dragEvent.dataTransfer?.files || []
+                  event.dataTransfer?.files || []
                 ).filter((file) => /image/i.test(file.type));
 
                 if (images.length === 0) return false;
 
-                dragEvent.preventDefault();
+                event.preventDefault();
 
                 const coordinates = view.posAtCoords({
-                  left: dragEvent.clientX,
-                  top: dragEvent.clientY,
+                  left: event.clientX,
+                  top: event.clientY,
                 });
 
                 if (!coordinates || typeof coordinates.pos !== 'number') {

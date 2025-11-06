@@ -12,7 +12,6 @@ export type InvoiceProduct = Tables<'finance_invoice_products'>;
 export type InvoicePromotion = Tables<'finance_invoice_promotions'>;
 export type Workspace = Tables<'workspaces'>;
 export type WorkspaceUser = Tables<'workspace_users'>;
-export type WorkspaceUserRole = 'MEMBER' | 'ADMIN' | 'OWNER';
 export type WorkspaceFlashcard = Tables<'workspace_flashcards'>;
 export type WorkspaceQuiz = Tables<'workspace_quizzes'>;
 export type WorkspaceTaskBoard = Tables<'workspace_boards'> & {

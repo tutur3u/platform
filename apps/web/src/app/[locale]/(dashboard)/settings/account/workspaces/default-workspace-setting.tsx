@@ -13,14 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 interface Workspace {
   id: string;
   name: string;
-  role: string;
   personal?: boolean;
 }
 
@@ -51,7 +50,9 @@ export default function DefaultWorkspaceSetting({
 
       const { data: workspaces, error } = await supabase
         .from('workspaces')
-        .select('id, name, personal, creator_id, workspace_members!inner(role)')
+        .select(
+          'id, name, personal, creator_id, workspace_members!inner(user_id)'
+        )
         .eq('workspace_members.user_id', user.id);
 
       if (error) throw error;
@@ -93,7 +94,6 @@ export default function DefaultWorkspaceSetting({
           ws.personal === true
             ? displayLabel || ws.name || 'Personal'
             : ws.name || 'Untitled Workspace',
-        role: ws.workspace_members[0]?.role,
         personal: ws.personal === true,
       })) as Workspace[];
     },
@@ -199,9 +199,6 @@ export default function DefaultWorkspaceSetting({
                 <div className="flex items-center">
                   <Crown className="mr-2 h-3.5 w-3.5 opacity-70" />
                   <span>{workspace.name}</span>
-                  <span className="ml-2 text-muted-foreground text-xs">
-                    ({workspace.role})
-                  </span>
                 </div>
               </SelectItem>
             ))}
@@ -215,12 +212,7 @@ export default function DefaultWorkspaceSetting({
             .filter((w) => !w.personal)
             .map((workspace) => (
               <SelectItem key={workspace.id} value={workspace.id}>
-                <div className="flex items-center">
-                  <span>{workspace.name}</span>
-                  <span className="ml-2 text-muted-foreground text-xs">
-                    ({workspace.role})
-                  </span>
-                </div>
+                <span>{workspace.name}</span>
               </SelectItem>
             ))}
         </SelectContent>

@@ -104,6 +104,11 @@ export async function WorkspaceNavigationLinks({
 }) {
   const t = await getTranslations();
   const resolvedWorkspaceId = resolveWorkspaceId(wsId);
+
+  const { withoutPermission: withoutRootPermission } = await getPermissions({
+    wsId: ROOT_WORKSPACE_ID,
+  });
+
   const { withoutPermission } = await getPermissions({
     wsId: resolvedWorkspaceId,
   });
@@ -420,7 +425,7 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/users/attendance`,
           icon: <UserCheck className="h-5 w-5" />,
           disabled:
-            withoutPermission('manage_users') ||
+            withoutPermission('manage_users') &&
             withoutPermission('check_user_attendance'),
         },
         {
@@ -428,16 +433,16 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/users/database`,
           icon: <BookUser className="h-5 w-5" />,
           disabled:
-            withoutPermission('manage_users') ||
-            (withoutPermission('view_users_private_info') &&
-              withoutPermission('view_users_public_info')),
+            withoutPermission('manage_users') &&
+            withoutPermission('view_users_private_info') &&
+            withoutPermission('view_users_public_info'),
         },
         {
           title: t('workspace-users-tabs.groups'),
           href: `/${personalOrWsId}/users/groups`,
           icon: <Users className="h-5 w-5" />,
           disabled:
-            withoutPermission('manage_users') ||
+            withoutPermission('manage_users') &&
             withoutPermission('view_user_groups'),
         },
         {
@@ -445,7 +450,7 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/users/group-tags`,
           icon: <Tags className="h-5 w-5" />,
           disabled:
-            withoutPermission('manage_users') ||
+            withoutPermission('manage_users') &&
             withoutPermission('view_user_groups'),
         },
         {
@@ -1010,7 +1015,7 @@ export async function WorkspaceNavigationLinks({
           title: t('workspace-settings-layout.secrets'),
           href: `/${personalOrWsId}/secrets`,
           icon: <BookKey className="h-5 w-5" />,
-          disabled: withoutPermission('manage_workspace_secrets'),
+          disabled: withoutRootPermission('manage_workspace_secrets'),
           requireRootMember: true,
         },
         {
@@ -1092,6 +1097,43 @@ export async function WorkspaceNavigationLinks({
     },
   ];
 
+  /**
+   * Remove consecutive nulls to avoid repeated separators in navigation.
+   * Also removes leading and trailing nulls.
+   * @param arr - Array of NavLinks and nulls (where null represents a separator)
+   * @returns Cleaned array with no consecutive nulls and no leading/trailing nulls
+   */
+  const removeConsecutiveNulls = (
+    arr: (NavLink | null)[]
+  ): (NavLink | null)[] => {
+    const withoutConsecutive = arr.reduce<(NavLink | null)[]>(
+      (acc, item, index) => {
+        // Skip null if previous item was also null
+        if (item === null && index > 0 && arr[index - 1] === null) {
+          return acc;
+        }
+        acc.push(item);
+        return acc;
+      },
+      []
+    );
+
+    // Remove leading nulls
+    while (withoutConsecutive.length > 0 && withoutConsecutive[0] === null) {
+      withoutConsecutive.shift();
+    }
+
+    // Remove trailing nulls
+    while (
+      withoutConsecutive.length > 0 &&
+      withoutConsecutive[withoutConsecutive.length - 1] === null
+    ) {
+      withoutConsecutive.pop();
+    }
+
+    return withoutConsecutive;
+  };
+
   // Preserve null entries as separators; rendering components handle them
-  return navLinks satisfies (NavLink | null)[];
+  return removeConsecutiveNulls(navLinks) satisfies (NavLink | null)[];
 }

@@ -11,7 +11,7 @@ import { useState } from 'react';
 
 interface MonthPickerProps {
   value: Date;
-  // eslint-disable-next-line no-unused-vars
+
   onChange: (date: Date) => void;
   minDate?: Date;
   maxDate?: Date;
@@ -78,7 +78,7 @@ export function MonthPicker({
         </Button>
         <Select
           value={year.toString()}
-          onValueChange={(value) => setYear(parseInt(value))}
+          onValueChange={(value) => setYear(parseInt(value, 10))}
         >
           <SelectTrigger className="w-[120px]">
             <SelectValue placeholder="Select year" />

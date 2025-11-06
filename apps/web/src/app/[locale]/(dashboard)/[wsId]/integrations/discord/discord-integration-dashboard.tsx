@@ -51,8 +51,6 @@ type DiscordGuildMember =
 
 interface WorkspaceMember {
   user_id: string;
-  role: string;
-  role_title: string;
   created_at: string;
   users: {
     id: string;

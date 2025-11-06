@@ -9,11 +9,8 @@ import PostsRowActions from './row-actions';
 import type { PostEmail } from './types';
 
 export const getPostEmailColumns = (
-  // biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: any,
   namespace: string | undefined,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _: any,
   extraData: { locale?: string; onEmailSent: () => void }
 ): ColumnDef<PostEmail>[] => [

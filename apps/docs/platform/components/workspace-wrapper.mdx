@@ -152,7 +152,7 @@ export default async function MyPage({
 'use client';
 
 interface MyClientComponentProps {
-  workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
+  workspace: Workspace & { joined: boolean };
   wsId: string; // Validated UUID
   isPersonal: boolean;
   isRoot: boolean;
@@ -173,7 +173,6 @@ export function MyClientComponent({
     <div>
       <h1>{workspace.name}</h1>
       <p>Workspace ID: {wsId}</p>
-      <p>User Role: {workspace.role}</p>
       <p>Personal: {isPersonal ? 'Yes' : 'No'}</p>
       <p>Root: {isRoot ? 'Yes' : 'No'}</p>
     </div>
@@ -206,7 +205,7 @@ export function MyClientComponent({
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `workspace` | `Workspace & { role: WorkspaceUserRole; joined: boolean }` | Full workspace object with user role and joined status |
+| `workspace` | `Workspace & { joined: boolean }` | Full workspace object with joined status |
 | `wsId` | `string` | Validated UUID from `workspace.id` |
 | `isPersonal` | `boolean` | Whether the workspace is a personal workspace |
 | `isRoot` | `boolean` | Whether the workspace is the root/internal workspace |

@@ -32,7 +32,7 @@ export function QuickActions({ wsId }: QuickActionsProps) {
         <DropdownMenuTrigger asChild>
           <Button
             size="lg"
-            className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full p-0 shadow-lg"
+            className="fixed right-6 bottom-6 z-50 h-14 w-14 rounded-full p-0 shadow-lg"
           >
             <Plus className="h-6 w-6" />
             <span className="sr-only">Quick Actions</span>

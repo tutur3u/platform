@@ -388,7 +388,7 @@ export default function UserFeedbackDialog({
                         {/* Feedback content */}
                         <div className="flex-1 space-y-2">
                           <div className="max-h-40 overflow-y-auto rounded-lg border bg-card p-4">
-                            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                            <p className="wrap-break-word whitespace-pre-wrap text-sm leading-relaxed">
                               {feedback.content}
                             </p>
                           </div>

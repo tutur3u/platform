@@ -10,10 +10,6 @@ import {
 } from '@tuturuuu/ui/form';
 import type { UseFormReturn } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
-import { Separator } from '@tuturuuu/ui/separator';
-import type * as z from 'zod';
-import type { UserReportFormSchema } from './editable-report-preview';
-import { useTranslations } from 'next-intl';
 import {
   Select,
   SelectContent,
@@ -21,6 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { Separator } from '@tuturuuu/ui/separator';
+import { useTranslations } from 'next-intl';
+import type * as z from 'zod';
+import type { UserReportFormSchema } from './editable-report-preview';
 
 export default function UserReportForm({
   isNew,
@@ -37,7 +37,7 @@ export default function UserReportForm({
   isNew: boolean;
   form: UseFormReturn<z.infer<typeof UserReportFormSchema>>;
   submitLabel: string;
-  // eslint-disable-next-line no-unused-vars
+
   onSubmit?: (formData: z.infer<typeof UserReportFormSchema>) => void;
   onDelete?: () => void;
   managerOptions?: Array<{ value: string; label: string }>;

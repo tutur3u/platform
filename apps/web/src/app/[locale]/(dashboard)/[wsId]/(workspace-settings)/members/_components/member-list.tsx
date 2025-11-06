@@ -1,8 +1,7 @@
 import { User as UserIcon } from '@tuturuuu/icons';
-import type { Workspace, WorkspaceUserRole } from '@tuturuuu/types';
+import type { Workspace } from '@tuturuuu/types';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import moment from 'moment';
@@ -11,7 +10,7 @@ import InviteMemberButton from './invite-member-button';
 import { MemberSettingsButton } from './member-settings-button';
 
 interface Props {
-  workspace?: (Workspace & { role: WorkspaceUserRole }) | null;
+  workspace?: Workspace | null;
   members: User[];
   invited?: boolean;
   loading?: boolean;
@@ -76,10 +75,7 @@ export default async function MemberList({
               member.display_name
             ) : (
               <span className="opacity-50">Unknown</span>
-            )}{' '}
-            {member?.role_title ? (
-              <span className="text-dynamic-orange">({member.role_title})</span>
-            ) : null}
+            )}
           </p>
           <p
             className={`font-semibold text-sm ${
@@ -134,24 +130,6 @@ export default async function MemberList({
               {t('you')}
             </div>
           )}
-
-          <div
-            className={cn(
-              `flex-initial rounded border px-2 py-0.5 text-center font-semibold ${
-                member?.pending ? 'border-dashed opacity-60' : ''
-              }`,
-              loading
-                ? 'text-transparent'
-                : 'border-border bg-foreground/5 text-foreground'
-            )}
-          >
-            {t(
-              (member?.role?.toLocaleLowerCase() || 'unknown') as
-                | 'member'
-                | 'admin'
-                | 'owner'
-            )}
-          </div>
         </div>
       </div>
     </div>

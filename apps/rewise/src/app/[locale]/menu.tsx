@@ -32,7 +32,6 @@ interface NavItem {
   external?: boolean;
 }
 
-// eslint-disable-next-line no-unused-vars
 const navItems = (_: any) => {
   return [
     // { href: '/', label: t('common.home') },

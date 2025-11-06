@@ -52,7 +52,6 @@ export async function GET(request: Request) {
           { status: 400, headers: corsHeaders }
         );
       }
-      // eslint-disable-next-line no-unused-vars
     } catch (e) {
       return NextResponse.json(
         {

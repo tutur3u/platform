@@ -28,7 +28,7 @@ interface ChatPermissionsProps {
   isPublic: boolean;
   creatorId: string;
   currentUserId?: string;
-  // eslint-disable-next-line no-unused-vars
+
   onUpdateVisibility: (isPublic: boolean) => void;
 }
 

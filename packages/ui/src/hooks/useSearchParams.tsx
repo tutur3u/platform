@@ -49,7 +49,9 @@ const useSearchParams = () => {
           params.delete(key);
           value
             .filter((v) => v !== undefined && v !== null)
-            .forEach((item) => params.append(key, item));
+            .forEach((item) => {
+              params.append(key, item);
+            });
         } else {
           params.set(key, value.toString());
         }
@@ -65,7 +67,9 @@ const useSearchParams = () => {
     (key: string, value: string | string[], refresh = true) => {
       const params = new URLSearchParams(searchParams);
       if (Array.isArray(value)) {
-        value.forEach((item) => params.append(key, item));
+        value.forEach((item) => {
+          params.append(key, item);
+        });
       } else {
         params.append(key, value);
       }

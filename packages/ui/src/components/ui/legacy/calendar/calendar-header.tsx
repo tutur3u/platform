@@ -28,7 +28,7 @@ export function CalendarHeader({
   view: 'day' | '4-days' | 'week' | 'month';
   offset: number;
   availableViews: { value: string; label: string; disabled?: boolean }[];
-  // eslint-disable-next-line no-unused-vars
+
   onViewChange: (view: 'day' | '4-days' | 'week' | 'month') => void;
   extras?: React.ReactNode;
 }) {

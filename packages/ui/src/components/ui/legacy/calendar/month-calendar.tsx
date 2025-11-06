@@ -559,7 +559,7 @@ export const MonthCalendar = ({
                               className="w-80"
                             >
                               <div className="space-y-2">
-                                <h4 className="line-clamp-2 break-words font-medium">
+                                <h4 className="wrap-break-word line-clamp-2 font-medium">
                                   {event.title || 'Untitled event'}
                                 </h4>
                                 {event.description && (
@@ -780,7 +780,7 @@ export const MonthCalendar = ({
               </HoverCardTrigger>
               <HoverCardContent side="right" align="start" className="w-80">
                 <div className="space-y-2">
-                  <h4 className="line-clamp-2 break-words font-medium">
+                  <h4 className="wrap-break-word line-clamp-2 font-medium">
                     {event.title || 'Untitled event'}
                   </h4>
                   {event.description && (

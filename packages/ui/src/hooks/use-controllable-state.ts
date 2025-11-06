@@ -8,11 +8,10 @@ import { useCallbackRef } from './use-callback-ref';
 type UseControllableStateParams<T> = {
   prop?: T | undefined;
   defaultProp?: T | undefined;
-  // eslint-disable-next-line no-unused-vars
+
   onChange?: (state: T) => void;
 };
 
-// eslint-disable-next-line no-unused-vars
 type SetStateFn<T> = (prevState?: T) => T;
 
 function useControllableState<T>({
@@ -60,7 +59,7 @@ function useUncontrolledState<T>({
       handleChange(value as T);
       prevValueRef.current = value;
     }
-  }, [value, prevValueRef, handleChange]);
+  }, [value, handleChange]);
 
   return uncontrolledState;
 }

@@ -40,7 +40,7 @@ export default async function WorkspaceProductsPage({ params }: Props) {
           return (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
-                <h2 className="text-lg font-semibold">
+                <h2 className="font-semibold text-lg">
                   {t('ws-roles.inventory_access_denied')}
                 </h2>
                 <p className="text-muted-foreground">

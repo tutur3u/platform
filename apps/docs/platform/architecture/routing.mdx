@@ -198,7 +198,7 @@ export default async function MyPage({ params }: { params: Promise<{ wsId: strin
 interface WorkspaceWrapperProps<TParams extends BaseParams = BaseParams> {
   params: Promise<TParams>;
   children: (props: {
-    workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
+    workspace: Workspace & { joined: boolean };
     wsId: string; // The validated UUID from workspace.id
     isPersonal: boolean;
     isRoot: boolean;
