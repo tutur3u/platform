@@ -17,7 +17,7 @@ export async function MyTasksDataLoader({
     'get_user_accessible_tasks',
     {
       p_user_id: userId,
-      p_ws_id: wsId,
+      p_ws_id: isPersonal ? undefined : wsId,
       p_include_deleted: false,
       p_list_statuses: ['not_started', 'active', 'done'],
     }
@@ -54,9 +54,10 @@ export async function MyTasksDataLoader({
 
   let assigneesData: any[] | null = [];
   let labelsData: any[] | null = [];
+  let projectsData: any[] | null = [];
 
   if (taskIds.length > 0) {
-    const [assigneesResult, labelsResult] = await Promise.all([
+    const [assigneesResult, labelsResult, projectsResult] = await Promise.all([
       supabase
         .from('task_assignees')
         .select(
@@ -84,9 +85,23 @@ export async function MyTasksDataLoader({
         `
         )
         .in('task_id', taskIds),
+      supabase
+        .from('task_project_tasks')
+        .select(
+          `
+          task_id,
+          project:task_projects(
+            id,
+            name,
+            ws_id
+          )
+        `
+        )
+        .in('task_id', taskIds),
     ]);
     assigneesData = assigneesResult.data;
     labelsData = labelsResult.data;
+    projectsData = projectsResult.data;
   }
 
   const assigneesByTaskId = new Map<string, any[]>();
@@ -106,6 +121,16 @@ export async function MyTasksDataLoader({
         labelsByTaskId.set(label.task_id, []);
       }
       labelsByTaskId.get(label.task_id)!.push({ label: label.label });
+    }
+  }
+
+  const projectsByTaskId = new Map<string, any[]>();
+  if (projectsData) {
+    for (const project of projectsData) {
+      if (!projectsByTaskId.has(project.task_id)) {
+        projectsByTaskId.set(project.task_id, []);
+      }
+      projectsByTaskId.get(project.task_id)!.push({ project: project.project });
     }
   }
 
@@ -137,6 +162,7 @@ export async function MyTasksDataLoader({
     list: listsData?.find((l) => l.id === task.list_id) || null,
     assignees: assigneesByTaskId.get(task.id) || [],
     labels: labelsByTaskId.get(task.id) || [],
+    projects: projectsByTaskId.get(task.id) || [],
   }));
 
   // Filter tasks by categories
