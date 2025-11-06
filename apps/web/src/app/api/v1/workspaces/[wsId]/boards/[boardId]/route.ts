@@ -61,9 +61,9 @@ async function authorize(wsId: string) {
 }
 
 // DELETE handler for permanent deletion
-export async function DELETE(
-  context: { params: Promise<{ wsId: string; boardId: string }> }
-) {
+export async function DELETE(context: {
+  params: Promise<{ wsId: string; boardId: string }>;
+}) {
   try {
     const resolvedParams = await context.params;
     const { wsId, boardId } = paramsSchema.parse(resolvedParams);
