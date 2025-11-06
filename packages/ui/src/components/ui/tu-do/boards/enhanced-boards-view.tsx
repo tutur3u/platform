@@ -804,7 +804,7 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
                     </h3>
                     <p className="text-muted-foreground text-sm">
                       {analyticsFilters.selectedBoard
-                        ? `Metrics for ${safeData.find((b) => b.id === analyticsFilters.selectedBoard)?.name || 'Selected Board'}`
+                        ? `Metrics for ${safeData.find((b: WorkspaceTaskBoard) => b.id === analyticsFilters.selectedBoard)?.name || 'Selected Board'}`
                         : 'Aggregate metrics across all boards'}
                     </p>
                   </div>
@@ -868,7 +868,7 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Boards</SelectItem>
-                        {safeData.map((board) => (
+                        {safeData.map((board: WorkspaceTaskBoard) => (
                           <SelectItem key={board.id} value={board.id}>
                             {board.name}
                           </SelectItem>
