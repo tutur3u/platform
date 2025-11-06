@@ -1,4 +1,5 @@
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
+import { DEV_MODE } from './constants/common';
 import { Locale, defaultLocale, supportedLocales } from './i18n/routing';
 import { match } from '@formatjs/intl-localematcher';
 import { updateSession } from '@ncthub/supabase/next/proxy';
@@ -26,8 +27,8 @@ const apiRateLimit = new Ratelimit({
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   const pathname = req.nextUrl.pathname;
 
-  // 1. Apply the correct rate limiter based on the path
-  if (pathname.startsWith('/api/')) {
+  // Apply the correct rate limiter based on the path
+  if (!DEV_MODE && pathname.startsWith('/api/')) {
     const ip = ipAddress(req) || '127.0.0.1';
     let rateResult;
     if (pathname.startsWith('/api/auth/otp/send')) {
