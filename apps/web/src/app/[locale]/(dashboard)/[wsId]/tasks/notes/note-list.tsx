@@ -591,7 +591,7 @@ export default function NoteList({ wsId }: { wsId: string }) {
 
                   {/* Read-only TipTap editor with limited height */}
                   <div className="relative flex-1">
-                    <div className="pointer-events-none h-full max-h-[512px] overflow-hidden">
+                    <div className="pointer-events-none h-[256px] overflow-hidden">
                       <RichTextEditor
                         content={note.content}
                         readOnly={true}
