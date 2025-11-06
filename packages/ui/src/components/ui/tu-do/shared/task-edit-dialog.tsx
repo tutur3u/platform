@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
@@ -3674,17 +3674,7 @@ function TaskEditDialogComponent({
                     Create multiple
                   </label>
                 )}
-                {isCreateMode ? (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                    onClick={() => setShowOptionsSidebar((open) => !open)}
-                    title="Toggle options"
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                ) : (
+                {!isCreateMode && (
                   task?.id && (
                     <DropdownMenu
                       open={isMoreMenuOpen}
@@ -3731,15 +3721,6 @@ function TaskEditDialogComponent({
                           Copy Link
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setShowOptionsSidebar((open) => !open);
-                            setIsMoreMenuOpen(false);
-                          }}
-                        >
-                          <Settings className="mr-2 h-4 w-4" />
-                          Options
-                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => {
                             setShowDeleteConfirm(true);
