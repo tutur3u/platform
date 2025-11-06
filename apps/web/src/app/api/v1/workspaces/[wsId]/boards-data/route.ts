@@ -60,7 +60,7 @@ export async function GET(
     const parsedPage = parseInt(page, 10);
     const parsedSize = parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
+    const end = start + parsedSize - 1;
     queryBuilder.range(start, end).limit(parsedSize);
 
     const { data: boards, error: boardsError, count } = await queryBuilder;

@@ -8,7 +8,6 @@ const paramsSchema = z.object({
 });
 
 async function authorize(wsId: string) {
-  console.log('Authorizing request for workspace:', wsId);
   const supabase = await createClient();
   const {
     data: { user },
@@ -16,7 +15,6 @@ async function authorize(wsId: string) {
   } = await supabase.auth.getUser();
 
   if (userError) {
-    console.error('Error getting user:', userError);
     return {
       user: null,
       error: NextResponse.json(
@@ -27,14 +25,11 @@ async function authorize(wsId: string) {
   }
 
   if (!user) {
-    console.log('No user found, returning unauthorized');
     return {
       user: null,
       error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
     };
   }
-
-  console.log('User found:', user.id);
 
   const { data: memberCheck, error: memberError } = await supabase
     .from('workspace_members')
@@ -44,7 +39,6 @@ async function authorize(wsId: string) {
     .single();
 
   if (memberError) {
-    console.error('Error checking workspace membership:', memberError);
     return {
       user: null,
       error: NextResponse.json(
@@ -55,7 +49,6 @@ async function authorize(wsId: string) {
   }
 
   if (!memberCheck) {
-    console.log('User is not a member of the workspace, returning forbidden');
     return {
       user: null,
       error: NextResponse.json(

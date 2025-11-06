@@ -32,7 +32,6 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { useBoardActions } from '@tuturuuu/ui/hooks/use-board-actions';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { CopyBoardDialog } from './copy-board-dialog';
@@ -44,7 +43,6 @@ interface ProjectRowActionsProps {
 
 export function ProjectRowActions({ row }: ProjectRowActionsProps) {
   const t = useTranslations();
-  const router = useRouter();
   const data = row.original;
   const {
     softDeleteBoard,

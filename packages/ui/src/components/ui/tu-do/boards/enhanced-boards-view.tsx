@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 import { BOARD_RETENTION_DAYS } from '../../../../constants/boards';
 import { projectColumns } from './columns';
@@ -79,7 +79,6 @@ async function getBoardsData(
 }
 
 export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
 
@@ -213,10 +212,6 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
 
     return Math.max(0, daysRemaining);
   }, []);
-
-  // Remove the onSuccess callback that uses router.refresh
-  // The mutations in useBoardActions already handle invalidation
-  // No need for an additional callback here
 
   const { filteredData, hasActiveFilters } = useMemo(() => {
     const hasFilters =
@@ -689,7 +684,7 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
                                   className="h-8 w-8 p-0"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    restoreBoard(board.id, { onSuccess });
+                                    restoreBoard(board.id);
                                   }}
                                   title="Restore board"
                                 >
@@ -701,9 +696,7 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
                                   className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    permanentDeleteBoard(board.id, {
-                                      onSuccess,
-                                    });
+                                    permanentDeleteBoard(board.id);
                                   }}
                                   title="Delete permanently"
                                 >
@@ -717,7 +710,7 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
                                 className="h-8 w-8 p-0"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  unarchiveBoard(board.id, { onSuccess });
+                                  unarchiveBoard(board.id);
                                 }}
                                 title="Unarchive board"
                               >
@@ -731,7 +724,7 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
                                   className="h-8 w-8 p-0"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    archiveBoard(board.id, { onSuccess });
+                                    archiveBoard(board.id);
                                   }}
                                   title="Archive board"
                                 >
@@ -743,7 +736,7 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
                                   className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    softDeleteBoard(board.id, { onSuccess });
+                                    softDeleteBoard(board.id);
                                   }}
                                   title="Delete board"
                                 >
