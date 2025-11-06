@@ -1,3 +1,4 @@
+import { authorize } from '@/lib/api-auth';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -6,61 +7,6 @@ const paramsSchema = z.object({
   wsId: z.string().uuid(),
   boardId: z.string().uuid(),
 });
-
-async function authorize(wsId: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError) {
-    return {
-      user: null,
-      error: NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
-      ),
-    };
-  }
-
-  if (!user) {
-    return {
-      user: null,
-      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
-  }
-
-  const { data: memberCheck, error: memberError } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .single();
-
-  if (memberError) {
-    return {
-      user: null,
-      error: NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
-      ),
-    };
-  }
-
-  if (!memberCheck) {
-    return {
-      user: null,
-      error: NextResponse.json(
-        { error: "You don't have access to this workspace" },
-        { status: 403 }
-      ),
-    };
-  }
-
-  console.log('User is a member of the workspace');
-  return { user, error: null };
-}
 
 // POST handler for archiving
 export async function POST(

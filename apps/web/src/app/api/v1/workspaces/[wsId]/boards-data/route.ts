@@ -1,3 +1,4 @@
+import { authorize } from '@/lib/api-auth';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -24,28 +25,12 @@ export async function GET(
       Object.fromEntries(req.nextUrl.searchParams)
     );
 
+    const { error: authError } = await authorize(wsId);
+    if (authError) {
+      return authError;
+    }
+
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (!memberCheck) {
-      return NextResponse.json(
-        { error: "You don't have access to this workspace" },
-        { status: 403 }
-      );
-    }
 
     // Build the main query for boards
     const queryBuilder = supabase
