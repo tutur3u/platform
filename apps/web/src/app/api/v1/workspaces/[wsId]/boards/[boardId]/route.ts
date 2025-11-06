@@ -12,8 +12,9 @@ const paramsSchema = z.object({
 export async function DELETE(
   _: NextRequest,
   context: {
-  params: Promise<{ wsId: string; boardId: string }>;
-}) {
+    params: Promise<{ wsId: string; boardId: string }>;
+  }
+) {
   try {
     const resolvedParams = await context.params;
     const { wsId, boardId } = paramsSchema.parse(resolvedParams);
