@@ -5,8 +5,6 @@ import {
 } from '@tanstack/react-query';
 import { Plus } from '@tuturuuu/icons';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
-import type { Task } from '@tuturuuu/types/primitives/Task';
-import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
