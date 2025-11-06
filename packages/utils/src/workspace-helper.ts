@@ -9,7 +9,7 @@ import { ROOT_WORKSPACE_ID, resolveWorkspaceId } from './constants';
 import { isValidTuturuuuEmail } from './email/client';
 import { permissions as rolePermissions } from './permissions';
 
-// import { DEV_MODE } from '@tuturuuu/utils/constants';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 
 export { toWorkspaceSlug } from './constants';
 
@@ -370,11 +370,13 @@ export async function getPermissions({
 
   const resolvedWorkspaceId = resolveWorkspaceId(wsId);
 
+  // FIX: Query user's role memberships and join with permissions
   const permissionsQuery = supabase
-    .from('workspace_role_permissions')
-    .select('permission, role_id')
-    .eq('ws_id', resolvedWorkspaceId)
-    .eq('enabled', true);
+    .from('workspace_role_members')
+    .select('workspace_roles!inner(workspace_role_permissions(permission))')
+    .eq('user_id', user.id)
+    .eq('workspace_roles.ws_id', resolvedWorkspaceId)
+    .eq('workspace_roles.workspace_role_permissions.enabled', true);
 
   const workspaceQuery = supabase
     .from('workspaces')
@@ -406,14 +408,14 @@ export async function getPermissions({
   const hasPermissions = permissionsData.length > 0 || defaultData.length > 0;
   const isCreator = workspaceData.creator_id === user.id;
 
-  // if (DEV_MODE) {
-  //   console.log('--------------------');
-  //   console.log('Is creator', isCreator);
-  //   console.log('Workspace permissions', permissionsData);
-  //   console.log('Default permissions', defaultData);
-  //   console.log('Has permissions', hasPermissions);
-  //   console.log('--------------------');
-  // }
+  if (DEV_MODE) {
+    console.log('--------------------');
+    console.log('Is creator', isCreator);
+    // console.log('Workspace permissions', permissionsData);
+    console.log('Default permissions', defaultData);
+    console.log('Has permissions', hasPermissions);
+    console.log('--------------------');
+  }
 
   if (!isCreator && !hasPermissions) {
     if (redirectTo) {
@@ -429,9 +431,17 @@ export async function getPermissions({
 
   const permissions = isCreator
     ? rolePermissions({ wsId: resolvedWorkspaceId, user }).map(({ id }) => id)
-    : [...permissionsData, ...defaultData]
-        .map(({ permission }) => permission)
-        .filter((value, index, self) => self.indexOf(value) === index);
+    : [
+        // permissions from role memberships
+        ...permissionsData.flatMap(
+          (m) =>
+            m.workspace_roles?.workspace_role_permissions?.map(
+              (p) => p.permission
+            ) || []
+        ),
+        // default workspace permissions
+        ...defaultData.map((d) => d.permission),
+      ].filter((value, index, self) => self.indexOf(value) === index);
 
   const containsPermission = (permission: PermissionId) =>
     permissions.includes(permission);
