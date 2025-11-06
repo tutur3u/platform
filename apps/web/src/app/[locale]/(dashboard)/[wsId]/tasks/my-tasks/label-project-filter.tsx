@@ -135,9 +135,7 @@ export function LabelProjectFilter({
                       onClick={() => handleLabelSelect(label.id)}
                       className="flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-muted"
                     >
-                      <Checkbox
-                        checked={selectedLabelIds.includes(label.id)}
-                      />
+                      <Checkbox checked={selectedLabelIds.includes(label.id)} />
                       <span style={{ color: label.color }}>{label.name}</span>
                     </div>
                   ))
