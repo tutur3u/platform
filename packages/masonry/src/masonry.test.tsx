@@ -137,7 +137,7 @@ describe('Masonry', () => {
 
     const mainContainer = container.firstChild as HTMLElement;
     const column = mainContainer.children[0] as HTMLElement;
-    
+
     // Check that transition style is applied
     expect(column.style.transition).toBeTruthy();
   });
@@ -181,7 +181,7 @@ describe('Masonry', () => {
 
     const mainContainer = container.firstChild as HTMLElement;
     const columns = mainContainer.children;
-    
+
     // With 9 items and 3 columns, should have 3 items per column
     for (const column of columns) {
       expect(column.children.length).toBe(3);
@@ -207,12 +207,16 @@ describe('Masonry', () => {
   });
 
   it('handles zero items gracefully', () => {
-    const { container } = render(<Masonry columns={3} gap={16}>{[]}</Masonry>);
+    const { container } = render(
+      <Masonry columns={3} gap={16}>
+        {[]}
+      </Masonry>
+    );
 
     const mainContainer = container.firstChild as HTMLElement;
     const columns = mainContainer.children;
     expect(columns.length).toBe(3);
-    
+
     // All columns should be empty
     for (const column of columns) {
       expect(column.children.length).toBe(0);
