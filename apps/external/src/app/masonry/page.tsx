@@ -6,21 +6,16 @@ import { useState } from 'react';
 // Generate 100 items with random heights for better testing
 const generateItems = (count: number) => {
   const colors = [
-    'from-blue-400 to-blue-600',
-    'from-cyan-400 to-cyan-600',
-    'from-green-400 to-green-600',
-    'from-yellow-400 to-yellow-600',
-    'from-purple-400 to-purple-600',
-    'from-indigo-400 to-indigo-600',
-    'from-orange-400 to-orange-600',
-    'from-slate-400 to-slate-600',
-    'from-emerald-400 to-emerald-600',
-    'from-violet-400 to-violet-600',
-    'from-red-400 to-red-600',
-    'from-gray-400 to-gray-600',
-    'from-pink-400 to-pink-600',
-    'from-teal-400 to-teal-600',
-    'from-lime-400 to-lime-600',
+    'from-dynamic-blue to-dynamic-blue/80',
+    'from-dynamic-cyan to-dynamic-cyan/80',
+    'from-dynamic-green to-dynamic-green/80',
+    'from-dynamic-yellow to-dynamic-yellow/80',
+    'from-dynamic-purple to-dynamic-purple/80',
+    'from-dynamic-indigo to-dynamic-indigo/80',
+    'from-dynamic-orange to-dynamic-orange/80',
+    'from-dynamic-gray to-dynamic-gray/80',
+    'from-dynamic-red to-dynamic-red/80',
+    'from-dynamic-pink to-dynamic-pink/80',
   ];
 
   return Array.from({ length: count }, (_, i) => ({
@@ -146,13 +141,14 @@ export default function MasonryDemo() {
               {strategy === 'count' ? (
                 <>
                   <strong>Count Strategy:</strong> Fast distribution by item
-                  count. No layout shift, but columns may have uneven heights.
+                  count. Instant rendering with zero layout shift. Best for
+                  uniform content.
                 </>
               ) : (
                 <>
-                  <strong>Balanced Strategy:</strong> Measures actual heights
-                  for better visual balance. May cause brief layout shift on
-                  load.
+                  <strong>Balanced Strategy:</strong> Progressive loading -
+                  items appear immediately, then redistribute as content loads
+                  for optimal height balance. Perfect for image galleries.
                 </>
               )}
             </p>
@@ -238,8 +234,15 @@ export default function MasonryDemo() {
             <li className="flex items-start gap-2">
               <span className="mt-1 text-dynamic-green">✓</span>
               <span>
-                <strong>Flexible:</strong> Choose between fast count-based or
-                height-balanced distribution
+                <strong>Progressive Loading:</strong> Balanced strategy shows
+                content immediately, then optimizes layout as images load
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-1 text-dynamic-green">✓</span>
+              <span>
+                <strong>Zero Layout Shift:</strong> No hidden measurement phase
+                - content visible from first render
               </span>
             </li>
           </ul>

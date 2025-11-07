@@ -54,7 +54,7 @@ export function Masonry({
   const [currentColumns, setCurrentColumns] = useState(columns);
   const itemHeightsRef = useRef<Map<number, number>>(new Map());
   const [isInitialized, setIsInitialized] = useState(strategy !== 'balanced');
-  const [redistributionKey, setRedistributionKey] = useState(0);
+  const [, forceUpdate] = useState(0);
   const imagesLoadingRef = useRef<{
     total: number;
     loaded: number;
@@ -97,9 +97,16 @@ export function Masonry({
   }, [columns, breakpoints, currentColumns, strategy]);
 
   // Measure individual item heights and setup periodic redistribution
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally re-run when children count changes
   useEffect(() => {
     if (strategy !== 'balanced') return;
     if (isInitialized) return; // Already set up
+
+    // Cleanup any existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
 
     const measureHeights = () => {
       const items = containerRef.current?.querySelectorAll(
@@ -118,9 +125,13 @@ export function Masonry({
       });
 
       // Measure initial heights (even if images not loaded yet)
-      items.forEach((item, index) => {
+      items.forEach((item) => {
         if (item instanceof HTMLElement) {
-          itemHeightsRef.current.set(index, item.offsetHeight);
+          const itemIndex = Number.parseInt(
+            item.getAttribute('data-item-index') ?? '0',
+            10
+          );
+          itemHeightsRef.current.set(itemIndex, item.offsetHeight);
         }
       });
 
@@ -135,14 +146,18 @@ export function Masonry({
       // Set up periodic redistribution while images are loading
       intervalRef.current = setInterval(() => {
         // Measure all items with current heights
-        items.forEach((item, index) => {
+        items.forEach((item) => {
           if (item instanceof HTMLElement) {
-            itemHeightsRef.current.set(index, item.offsetHeight);
+            const itemIndex = Number.parseInt(
+              item.getAttribute('data-item-index') ?? '0',
+              10
+            );
+            itemHeightsRef.current.set(itemIndex, item.offsetHeight);
           }
         });
 
         // Trigger redistribution
-        setRedistributionKey((k) => k + 1);
+        forceUpdate((n) => n + 1);
 
         // Stop interval once all images are loaded
         if (imagesLoadingRef.current.loaded >= imagesLoadingRef.current.total) {
@@ -154,7 +169,7 @@ export function Masonry({
       }, 100); // Recalculate every 100ms
 
       // Setup image load handlers
-      items.forEach((item, index) => {
+      items.forEach((item) => {
         const images = item.querySelectorAll('img');
 
         images.forEach((img) => {
@@ -163,7 +178,11 @@ export function Masonry({
 
             // Measure this item immediately when its image loads
             if (item instanceof HTMLElement) {
-              itemHeightsRef.current.set(index, item.offsetHeight);
+              const itemIndex = Number.parseInt(
+                item.getAttribute('data-item-index') ?? '0',
+                10
+              );
+              itemHeightsRef.current.set(itemIndex, item.offsetHeight);
             }
           };
 
@@ -189,7 +208,16 @@ export function Masonry({
         intervalRef.current = null;
       }
     };
-  }, [strategy, isInitialized]);
+  }, [strategy, isInitialized, children.length]);
+
+  // Reset initialization when children or columns change significantly
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally reset on structural changes
+  useEffect(() => {
+    if (strategy === 'balanced') {
+      setIsInitialized(false);
+      itemHeightsRef.current.clear();
+    }
+  }, [children.length, currentColumns, strategy]);
 
   // Distribute items across columns
   const distributeItems = () => {
@@ -275,16 +303,11 @@ export function Masonry({
   };
 
   return (
-    <div
-      ref={containerRef}
-      style={containerStyle}
-      className={className}
-      key={`masonry-${redistributionKey}`}
-    >
+    <div ref={containerRef} style={containerStyle} className={className}>
       {strategy === 'balanced' && !isInitialized ? (
         <div style={columnStyle}>
           {children.map((child, index) => (
-            <div key={index} data-masonry-item>
+            <div key={index} data-masonry-item data-item-index={index}>
               {child}
             </div>
           ))}
@@ -299,7 +322,15 @@ export function Masonry({
                   .slice(0, columnIndex)
                   .reduce((acc, col) => acc + col.length, 0) + itemIndex;
 
-              return <div key={globalIndex}>{child}</div>;
+              return (
+                <div
+                  key={globalIndex}
+                  data-masonry-item
+                  data-item-index={globalIndex}
+                >
+                  {child}
+                </div>
+              );
             })}
           </div>
         ))

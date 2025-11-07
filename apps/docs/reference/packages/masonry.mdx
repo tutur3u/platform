@@ -1,12 +1,12 @@
 ---
 title: '@tuturuuu/masonry'
 description: 'A lightweight, responsive masonry grid component for React applications'
-updatedAt: '2025-06-09'
+updatedAt: '2025-11-07'
 ---
 
 ## Overview
 
-The `@tuturuuu/masonry` package provides a Pinterest-style masonry grid layout component for React. It offers two distribution strategies: a fast count-based approach for uniform content, and an intelligent height-based balancing algorithm that progressively optimizes layout as images load.
+The `@tuturuuu/masonry` package provides a Pinterest-style masonry grid component for React. It offers two distribution strategies: a fast count-based approach for uniform content, and an intelligent height-based balancing algorithm that progressively optimizes layout as content loads - with zero hidden measurement phase.
 
 ## Installation
 
@@ -419,8 +419,18 @@ The package supports all modern browsers that support:
     - Renders items immediately using count-based distribution
     - Progressively rebalances every 100ms as images load
     - Achieves final optimal balance once all images complete
+    - Automatically stops updating once all images are loaded
     
     If instant rendering is more important than perfect balance, use `strategy="count"` (default).
+  </Accordion>
+
+  <Accordion title="Component keeps re-rendering">
+    This should not happen in v0.1.5+. If you're experiencing infinite rendering:
+    - Ensure you're using the latest version (`bun add @tuturuuu/masonry@latest`)
+    - Check that children array is stable (use proper keys and avoid recreating on each render)
+    - Verify images have proper `src` attributes
+    
+    The component automatically stops measuring and redistributing once all images are loaded.
   </Accordion>
 </AccordionGroup>
 
@@ -438,7 +448,19 @@ The package is open source and available on GitHub:
 
 ## Changelog
 
-### 0.1.3 (Current)
+### 0.1.5 (Current)
+- **Fixed infinite rendering issue**: Proper cleanup of measurement intervals
+- Removed problematic component remounting from key prop changes
+- Improved lifecycle management with better effect dependencies
+- Stable rendering once all images are loaded
+
+### 0.1.4
+- **Visible-first rendering**: Removed hidden measurement phase
+- Items now appear immediately - no more delayed visibility
+- Background measurement and progressive optimization
+- Zero layout shift with count strategy, smooth progressive improvement with balanced
+
+### 0.1.3
 - **Optimized progressive loading**: Periodic redistribution every 100ms while images load
 - Smooth, continuous layout improvements as images become available
 - Final perfect distribution after all images are fully loaded

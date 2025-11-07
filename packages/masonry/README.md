@@ -1,8 +1,8 @@
 # @tuturuuu/masonry
 
-A lightweight, responsive masonry grid component for React with intelligent distribution strategies.
+A lightweight, responsive masonry grid component for React with intelligent distribution strategies and progressive loading.
 
-**Version**: 0.1.3 (Stable)
+**Version**: 0.1.5 (Stable)
 
 ## Features
 
@@ -12,6 +12,8 @@ A lightweight, responsive masonry grid component for React with intelligent dist
 - 🎯 TypeScript support
 - 🔧 Flexible configuration
 - 🎭 Two distribution strategies: fast count-based or height-balanced
+- 🖼️ Progressive loading with zero hidden measurement phase
+- 🚀 Immediate visibility - content appears instantly
 - 📊 Tested with 100+ items of varying sizes
 
 ## Installation
@@ -117,6 +119,7 @@ export function Gallery() {
 ### Count Strategy (Default)
 
 The `count` strategy distributes items based on item count, placing each item in the column with the fewest items. This is:
+
 - ⚡ **Fast**: No measurement overhead
 - 🎯 **Stable**: No layout shift after initial render
 - ✅ **Best for**: Uniform content, cards, tiles
@@ -130,11 +133,13 @@ The `count` strategy distributes items based on item count, placing each item in
 ### Balanced Strategy
 
 The `balanced` strategy measures actual item heights and distributes items to the shortest column. This provides:
+
 - 🎨 **Better visual balance**: Columns have similar total heights
 - 📏 **Accurate**: Uses actual measured heights (tracks image loading)
-- 🔄 **Smooth progressive loading**: Recalculates every 100ms as images load
-- 🖼️ **Image-aware**: Continuously optimizes layout as images become available
-- ✨ **No jarring shifts**: Gradual improvements instead of sudden redistribution
+- 🔄 **Progressive loading**: Items visible immediately, redistributes as images load
+- 🖼️ **Image-aware**: Continuously optimizes layout every 100ms during loading
+- ✨ **No hidden phase**: Content visible from first render
+- 🚫 **Auto-stops**: Measurements cease once all images are loaded
 - ✅ **Best for**: Image galleries, content with varying heights
 
 ```tsx
@@ -145,7 +150,9 @@ The `balanced` strategy measures actual item heights and distributes items to th
 </Masonry>
 ```
 
-**How it works**: The balanced strategy continuously measures and redistributes items every 100ms while images are loading. This creates a smooth, progressive optimization experience where the layout gradually improves as more images load, culminating in a perfectly balanced final distribution once all content is ready.
+**How it works**: The balanced strategy shows items immediately using count-based distribution, then continuously measures and redistributes items every 100ms while images are loading. This creates a smooth, progressive optimization experience where the layout gradually improves as more images load. Once all images are fully loaded, the interval automatically stops and you have a perfectly balanced final distribution.
+
+**Performance**: No blocking measurements or hidden rendering phases. Content is always visible, with background optimization happening via periodic updates that automatically clean up.
 
 ## How It Works
 
@@ -158,13 +165,30 @@ The `balanced` strategy measures actual item heights and distributes items to th
 
 ### Balanced Strategy Algorithm
 
-1. **Measurement Phase**: Renders all items in a hidden single column to measure their heights
-2. **Continuous Optimization**: Recalculates distribution every 100ms while images are loading
-3. **Progressive Improvement**: Layout continuously improves as more images load
-4. **Final Distribution**: Once all images are loaded, the interval stops and the perfect balanced layout is shown
-5. **Result**: Columns have similar total heights with smooth loading experience
+1. **Immediate Render**: Items appear instantly using count-based distribution
+2. **Background Measurement**: Heights measured without hiding content
+3. **Progressive Optimization**: Redistributes every 100ms while images load
+4. **Image Load Tracking**: Monitors image loading progress
+5. **Auto-Cleanup**: Stops measuring once all images complete
+6. **Final Balance**: Achieves optimal height distribution
 
 The component automatically adjusts the number of columns based on viewport width and configured breakpoints.
+
+## Recent Updates
+
+### v0.1.5
+
+- ✅ Fixed infinite rendering issue
+- ✅ Proper interval cleanup
+- ✅ Stable rendering after image load completion
+
+### v0.1.4
+
+- ✅ Removed hidden measurement phase
+- ✅ Immediate visibility for all content
+- ✅ Zero layout shift
+
+See [full changelog](https://github.com/tutur3u/platform/blob/main/packages/masonry/README.md#changelog) for more details.
 
 ## Stability
 
