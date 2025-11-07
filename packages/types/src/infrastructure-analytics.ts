@@ -179,5 +179,3 @@ export interface UserRegistrationData {
   count: number;
   created_at: string;
 }
-
-
