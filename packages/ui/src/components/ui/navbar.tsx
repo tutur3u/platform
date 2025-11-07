@@ -40,6 +40,11 @@ export interface NavbarProps {
   homeUrl?: string;
 
   /**
+   * Custom logo link component (overrides homeUrl and default link behavior)
+   */
+  customLogoLink?: ReactNode;
+
+  /**
    * Whether to hide the navbar on desktop screens
    */
   onlyOnMobile?: boolean;
@@ -68,6 +73,7 @@ export function Navbar({
   actions,
   separator,
   homeUrl = '/',
+  customLogoLink,
   onlyOnMobile = false,
   className,
   contentClassName,
@@ -91,26 +97,28 @@ export function Navbar({
       >
         <div className="relative flex items-center justify-between gap-2 md:gap-4">
           <div className="flex w-full items-center gap-2 md:gap-4">
-            <Link
-              href={homeUrl}
-              className={cn(
-                'flex flex-none items-center gap-2 transition-opacity hover:opacity-80',
-                logoClassName
-              )}
-            >
-              {typeof logo === 'string' ? (
-                <Image
-                  src={logo}
-                  className="h-8 w-8 transition-transform hover:scale-105"
-                  width={32}
-                  height={32}
-                  alt="logo"
-                />
-              ) : (
-                logo
-              )}
-              {title}
-            </Link>
+            {customLogoLink || (
+              <Link
+                href={homeUrl}
+                className={cn(
+                  'flex flex-none items-center gap-2 transition-opacity hover:opacity-80',
+                  logoClassName
+                )}
+              >
+                {typeof logo === 'string' ? (
+                  <Image
+                    src={logo}
+                    className="h-8 w-8 transition-transform hover:scale-105"
+                    width={32}
+                    height={32}
+                    alt="logo"
+                  />
+                ) : (
+                  logo
+                )}
+                {title}
+              </Link>
+            )}
 
             {afterTitle && (
               <Suspense
