@@ -25,7 +25,7 @@
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.6.2",
     "@hookform/resolvers": "^5.2.2",
-    "@tanstack/react-query": "^5.90.6",
+    "@tanstack/react-query": "^5.90.7",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/apis": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
@@ -48,7 +48,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.16",
+    "@tailwindcss/postcss": "^4.1.17",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.10.0",
     "@types/react": "^19.2.2",

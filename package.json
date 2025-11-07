@@ -73,12 +73,12 @@
     "update-all": "bun ./scripts/package-update.js"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.3",
+    "@biomejs/biome": "^2.3.4",
     "@tuturuuu/typescript-config": "workspace:*",
     "@vitest/coverage-v8": "^4.0.7",
     "turbo": "^2.6.0",
     "typescript": "^5.9.3",
-    "vite": "^7.1.12",
+    "vite": "^7.2.1",
     "vitest": "^4.0.7"
   },
   "engines": {
