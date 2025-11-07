@@ -56,6 +56,7 @@ export function Masonry({
   const [measurementPhase, setMeasurementPhase] = useState(
     strategy === 'balanced'
   );
+  const [, forceUpdate] = useState(0);
 
   useEffect(() => {
     const handleResize = () => {
@@ -96,43 +97,64 @@ export function Masonry({
   useEffect(() => {
     if (!measurementPhase || strategy !== 'balanced') return;
 
-    const measureHeights = async () => {
-      itemHeightsRef.current.clear();
-
+    const measureHeights = () => {
       const items = containerRef.current?.querySelectorAll(
         '[data-masonry-item]'
       );
 
       if (!items) return;
 
-      // Wait for all images to load
-      const imagePromises: Promise<void>[] = [];
-      items.forEach((item) => {
+      let imagesLoaded = 0;
+      let totalImages = 0;
+
+      // Setup image load handlers
+      items.forEach((item, index) => {
         const images = item.querySelectorAll('img');
+        totalImages += images.length;
+
         images.forEach((img) => {
-          if (!img.complete) {
-            imagePromises.push(
-              new Promise((resolve) => {
-                img.onload = () => resolve();
-                img.onerror = () => resolve(); // Resolve even on error to not block
-              })
-            );
+          const measureAndUpdate = () => {
+            // Measure this specific item's height
+            if (item instanceof HTMLElement) {
+              itemHeightsRef.current.set(index, item.offsetHeight);
+            }
+
+            imagesLoaded++;
+
+            // If all images are loaded, end measurement phase
+            if (imagesLoaded === totalImages) {
+              setMeasurementPhase(false);
+            } else {
+              // Force re-render with updated heights
+              forceUpdate((n) => n + 1);
+            }
+          };
+
+          if (img.complete) {
+            // Image already loaded
+            measureAndUpdate();
+          } else {
+            // Wait for image to load
+            img.onload = measureAndUpdate;
+            img.onerror = measureAndUpdate; // Handle errors too
           }
         });
-      });
 
-      // Wait for all images to load
-      await Promise.all(imagePromises);
-
-      // Now measure heights
-      items.forEach((item, index) => {
-        if (item instanceof HTMLElement) {
+        // If no images in this item, measure immediately
+        if (images.length === 0 && item instanceof HTMLElement) {
           itemHeightsRef.current.set(index, item.offsetHeight);
         }
       });
 
-      // End measurement phase
-      setMeasurementPhase(false);
+      // If no images at all, end measurement phase immediately
+      if (totalImages === 0) {
+        items.forEach((item, index) => {
+          if (item instanceof HTMLElement) {
+            itemHeightsRef.current.set(index, item.offsetHeight);
+          }
+        });
+        setMeasurementPhase(false);
+      }
     };
 
     // Wait for next frame to ensure DOM is ready, then measure

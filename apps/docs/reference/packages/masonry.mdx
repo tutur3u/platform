@@ -408,7 +408,13 @@ The package is open source and available on GitHub:
 
 ## Changelog
 
-### 0.1.1 (Current)
+### 0.1.2 (Current)
+- **Progressive image loading**: Distribution now recalculates as each image loads instead of waiting for all
+- Smoother user experience with incremental layout improvements
+- Better handling of mixed content (images and non-image items)
+- Eliminates long wait times for image-heavy galleries
+
+### 0.1.1
 - **Fixed image support in balanced strategy**: Now waits for all images to load before measuring heights
 - Handles both loaded and unloaded images gracefully
 - Prevents measurement of images before they have dimensions
