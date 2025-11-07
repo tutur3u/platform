@@ -6,7 +6,7 @@ updatedAt: '2025-11-07'
 
 ## Overview
 
-The `@tuturuuu/masonry` package provides a Pinterest-style masonry grid component for React with modern ResizeObserver-based measurement. Version 0.3.0 brings major performance improvements (50-70% CPU reduction), fixes the columns prop bug, and adds advanced configuration options. It offers two distribution strategies: a fast count-based approach for uniform content, and an intelligent height-based balancing algorithm with event-driven measurement and memoized calculations.
+The `@tuturuuu/masonry` package provides a Pinterest-style masonry grid component for React with modern ResizeObserver-based measurement. Version 0.3.1 brings smooth UX improvements with debounced updates. Version 0.3.0 brought major performance improvements (50-70% CPU reduction), fixed the columns prop bug, and added advanced configuration options. It offers two distribution strategies: a fast count-based approach for uniform content, and an intelligent height-based balancing algorithm with event-driven measurement and memoized calculations.
 
 ## Installation
 
@@ -64,6 +64,8 @@ export function Gallery() {
 
 <Note>
 **v0.3.0+ Change**: The `columns` prop now works as expected without requiring breakpoints. Previously, default breakpoints would override the columns setting based on screen width.
+
+**v0.3.1 Improvement**: Debounced updates (200ms) prevent excessive redistributions and jerky movement for smoother UX.
 </Note>
 
 ## API Reference
@@ -356,7 +358,7 @@ The masonry component uses an **optimized shortest-column algorithm** to distrib
 4. Uses strict comparison for deterministic distribution
 5. **Memoized** - only recalculates when children or columns change
 
-### Balanced Strategy Algorithm (v0.3.0)
+### Balanced Strategy Algorithm (v0.3.0+)
 1. **Immediate Multi-Column Render**: Items appear instantly in their target columns
 2. **ResizeObserver Setup**: Observes all masonry items for size changes
 3. **Event-Driven Measurement**: Captures height changes as they happen (images loading, etc.)
@@ -365,9 +367,10 @@ The masonry component uses an **optimized shortest-column algorithm** to distrib
    - Uses threshold-based greedy algorithm
    - Considers balance threshold for tie-breaking
    - Tracks coefficient of variation for quality
-5. **Smart Redistribution**:
-   - Debounced via `requestAnimationFrame`
-   - Only triggers when heights change >1px
+5. **Smart Redistribution** (v0.3.1 improved):
+   - Debounced 200ms after last change to avoid excessive updates
+   - Only triggers when heights change >3px (ignores minor fluctuations)
+   - Uses `requestAnimationFrame` for smooth visual updates
    - Memoized to prevent unnecessary calculations
 6. **Automatic Cleanup**: Observer disconnects on unmount or strategy change
 
@@ -391,7 +394,7 @@ The height-based strategy provides better visual balance for items with varying 
 ### Strategy Performance
 
 - **Count Strategy (Default)**: Fastest option. No height measurements, no layout shift, zero overhead. Ideal for most use cases and 100+ items.
-- **Balanced Strategy (v0.3.0)**: Modern ResizeObserver API with memoization. Event-driven updates, no polling overhead. 50-70% faster than v0.2.x interval-based measurement.
+- **Balanced Strategy (v0.3.0)**: Modern ResizeObserver API with memoization and debouncing. Event-driven updates with 200ms debounce to prevent excessive redistributions. 50-70% faster than v0.2.x interval-based measurement.
 
 ### Memoization Benefits
 
@@ -466,7 +469,7 @@ The component uses inline styles for core layout functionality and accepts a `cl
   </Accordion>
 </AccordionGroup>
 
-## How Balanced Strategy Works (v0.3.0)
+## How Balanced Strategy Works (v0.3.0+)
 
 The `strategy="balanced"` mode uses modern ResizeObserver API for event-driven measurement:
 
@@ -475,13 +478,13 @@ The `strategy="balanced"` mode uses modern ResizeObserver API for event-driven m
 3. **Event-Driven Measurement**: Captures height changes automatically when they occur (images loading, dynamic content)
 4. **Accurate Measurement**: Uses `entry.contentRect.height` from ResizeObserver for precision
 5. **Validation & Fallbacks**: Validates measurements; uses running average for missing/invalid values
-6. **Smart Change Detection**: Only redistributes when heights change by >1px (avoids float precision issues)
+6. **Smart Change Detection**: Only redistributes when heights change by >3px (avoids minor fluctuations from font rendering, subpixel changes)
 7. **Intelligent Distribution**: Threshold-based greedy algorithm with coefficient of variation tracking
-8. **Debounced Updates**: Uses `requestAnimationFrame` to batch multiple changes
+8. **Debounced Updates** (v0.3.1): 200ms debounce after last change + `requestAnimationFrame` prevents excessive redistribution
 9. **Memoized Calculations**: Distribution only recalculates when dependencies actually change
 10. **Auto-Cleanup**: Observer automatically disconnects on unmount or strategy change
 
-This v0.3.0 approach provides:
+This v0.3.0+ approach provides:
 - ✅ **50-70% faster** - event-driven vs polling (100ms intervals in v0.2.x)
 - ✅ **Instant response** - no 100ms delay for updates
 - ✅ **Better battery life** - no continuous polling
@@ -490,6 +493,8 @@ This v0.3.0 approach provides:
 - ✅ **Smooth 60fps** - even with 100+ items
 - ✅ **Robust validation** - handles edge cases gracefully
 - ✅ **No layout shift** - multi-column from first render
+- ✅ **Debounced updates** (v0.3.1) - 200ms wait prevents jerky movement
+- ✅ **Smart thresholds** (v0.3.1) - 3px minimum change avoids micro-adjustments
 
 ### Browser Support for ResizeObserver
 - **Supported**: All modern browsers (Chrome 64+, Firefox 69+, Safari 13.1+)
@@ -502,7 +507,8 @@ This v0.3.0 approach provides:
 - Count strategy: No DOM measurements, instant rendering, zero overhead
 - Balanced strategy (v0.3.0):
   - Event-driven measurement (no polling)
-  - Change detection (>1px) prevents unnecessary redistributions
+  - Change detection (>3px) ignores minor fluctuations
+  - 200ms debounce prevents excessive redistributions
   - Memoized distribution prevents recalculation unless dependencies change
   - Proper ResizeObserver cleanup on unmount
 - Minimal re-renders when breakpoints change
@@ -671,7 +677,18 @@ The package is open source and available on GitHub:
 
 ## Changelog
 
-### 0.3.0 (Current - Major Performance & Bug Fix Release)
+### 0.3.1 (Current - UX Polish Release)
+
+**UX Improvements:**
+- 🎭 **Debounced updates**: 200ms debounce prevents jerky movement and excessive redistributions
+- 📏 **Smart thresholds**: Increased change threshold from 1px to 3px to ignore minor font rendering differences
+- ✨ **Smoother experience**: Items settle into place smoothly instead of constantly shifting
+
+**Bug Fixes:**
+- ✅ **Excessive redistributions**: Fixed items moving around too frequently even after all images loaded
+- ✅ **Stable layout**: Layout now settles properly once images finish loading
+
+### 0.3.0 (Major Performance & Bug Fix Release)
 
 **Breaking Changes:**
 - 🔧 **Breakpoints now optional**: Default changed from object to `undefined`. Columns prop now works without breakpoints!

@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.1] - 2025-11-07
+
+### Fixed
+- **Excessive redistributions**: Fixed items moving around too frequently even after all images loaded
+- **Stable layout**: Layout now settles properly once images finish loading
+
+### Improved
+- **Debounced updates**: Added 200ms debounce after last change to prevent jerky movement
+- **Smart thresholds**: Increased change threshold from 1px to 3px to ignore minor font rendering differences and subpixel changes
+- **Better UX**: Items now settle into place smoothly instead of constantly shifting
+
 ## [0.3.0] - 2025-11-07
 
 ### Breaking Changes

@@ -2,7 +2,7 @@
 
 A lightweight, high-performance masonry grid component for React with intelligent distribution strategies and modern ResizeObserver-based measurement.
 
-**Version**: 0.3.0 (Stable)
+**Version**: 0.3.1 (Stable)
 
 ## Features
 
@@ -202,8 +202,10 @@ The `balanced` strategy measures actual item heights and distributes items to th
 - Coefficient of variation tracking for distribution quality
 - Memoized calculations to prevent unnecessary work
 - Configurable balance threshold
+- **Debounced updates** (200ms) to prevent excessive redistribution
+- **3px threshold** to ignore minor fluctuations from font rendering or subpixel changes
 
-**Performance**: ResizeObserver is event-driven (no polling), highly optimized by the browser, and only fires when elements actually resize. Memoization prevents recalculating distribution unless dependencies change. Content is always visible from the first render.
+**Performance**: ResizeObserver is event-driven (no polling), highly optimized by the browser, and only fires when elements actually resize. Debouncing ensures redistributions only happen after changes settle, preventing jerky movement. Memoization prevents recalculating distribution unless dependencies change. Content is always visible from the first render.
 
 ## How It Works
 
@@ -226,8 +228,9 @@ The `balanced` strategy measures actual item heights and distributes items to th
    - Considers balance threshold for tie-breaking
    - Tracks coefficient of variation for quality
 5. **Smart Redistribution**: 
-   - Debounced via `requestAnimationFrame`
-   - Only triggers when heights change >1px
+   - Debounced 200ms after last change to avoid excessive updates
+   - Only triggers when heights change >3px (ignores minor fluctuations)
+   - Uses `requestAnimationFrame` for smooth visual updates
    - Memoized to prevent unnecessary calculations
 6. **Automatic Cleanup**: Observer disconnects on unmount or strategy change
 
@@ -360,7 +363,18 @@ Fine-tune column counts per viewport:
 
 ## Recent Updates
 
-### v0.3.0 (Current - Major Performance & Bug Fix Release)
+### v0.3.1 (Current - UX Polish Release)
+
+**UX Improvements:**
+- 🎭 **Debounced updates**: 200ms debounce prevents jerky movement and excessive redistributions
+- 📏 **Smart thresholds**: Increased change threshold from 1px to 3px to ignore minor font rendering differences
+- ✨ **Smoother experience**: Items settle into place smoothly instead of constantly shifting
+
+**Bug Fixes:**
+- ✅ **Excessive redistributions**: Fixed items moving around too frequently even after all images loaded
+- ✅ **Stable layout**: Layout now settles properly once images finish loading
+
+### v0.3.0 (Major Performance & Bug Fix Release)
 
 **Breaking Changes:**
 - 🔧 **Breakpoints now optional**: Default changed from object to `undefined`. Columns prop now works without breakpoints!

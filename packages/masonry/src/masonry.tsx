@@ -119,22 +119,43 @@ export function Masonry({
       resizeObserverRef.current.disconnect();
     }
 
-    // Track if redistribution is needed
+    // Track redistribution state
     let redistributionScheduled = false;
+    let redistributionTimeout: ReturnType<typeof setTimeout> | null = null;
+    let pendingChanges = false;
 
     const scheduleRedistribution = () => {
-      if (redistributionScheduled) return;
-      redistributionScheduled = true;
+      if (redistributionScheduled) {
+        pendingChanges = true;
+        return;
+      }
 
-      requestAnimationFrame(() => {
-        redistributionScheduled = false;
-        setRedistributionKey((prev) => prev + 1);
-      });
+      redistributionScheduled = true;
+      pendingChanges = false;
+
+      // Clear any existing timeout
+      if (redistributionTimeout) {
+        clearTimeout(redistributionTimeout);
+      }
+
+      // Debounce redistributions to avoid excessive updates
+      // Wait 200ms after last change before redistributing
+      redistributionTimeout = setTimeout(() => {
+        requestAnimationFrame(() => {
+          redistributionScheduled = false;
+          setRedistributionKey((prev) => prev + 1);
+
+          // If more changes came in during debounce, schedule again
+          if (pendingChanges) {
+            scheduleRedistribution();
+          }
+        });
+      }, 200);
     };
 
     // Create new ResizeObserver
     const resizeObserver = new ResizeObserver((entries) => {
-      let hasChanges = false;
+      let hasSignificantChanges = false;
 
       for (const entry of entries) {
         const element = entry.target;
@@ -149,15 +170,16 @@ export function Masonry({
         const height = entry.contentRect.height || element.offsetHeight;
         const previousHeight = itemHeightsRef.current.get(itemIndex) || 0;
 
-        // Only update if height changed significantly (> 1px to avoid float precision issues)
-        if (height > 0 && Math.abs(height - previousHeight) > 1) {
+        // Only update if height changed significantly (> 3px to avoid minor fluctuations)
+        // This prevents redistribution on tiny font rendering differences, subpixel changes, etc.
+        if (height > 0 && Math.abs(height - previousHeight) > 3) {
           itemHeightsRef.current.set(itemIndex, height);
-          hasChanges = true;
+          hasSignificantChanges = true;
         }
       }
 
-      // Schedule redistribution if changes detected
-      if (hasChanges) {
+      // Schedule redistribution if significant changes detected
+      if (hasSignificantChanges) {
         scheduleRedistribution();
       }
     });
@@ -179,6 +201,9 @@ export function Masonry({
     resizeObserverRef.current = resizeObserver;
 
     return () => {
+      if (redistributionTimeout) {
+        clearTimeout(redistributionTimeout);
+      }
       resizeObserver.disconnect();
       resizeObserverRef.current = null;
     };
