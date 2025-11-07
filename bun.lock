@@ -64,6 +64,7 @@
       "dependencies": {
         "@tanstack/react-query": "^5.90.7",
         "@tuturuuu/ai": "workspace:*",
+        "@tuturuuu/masonry": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
@@ -643,6 +644,26 @@
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
+      },
+    },
+    "packages/masonry": {
+      "name": "@tuturuuu/masonry",
+      "version": "0.0.1",
+      "dependencies": {
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0",
+      },
+      "devDependencies": {
+        "@testing-library/jest-dom": "^6.9.1",
+        "@testing-library/react": "^16.3.0",
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^24.10.0",
+        "@types/react": "^19.2.2",
+        "@types/react-dom": "^19.2.2",
+        "@vitejs/plugin-react": "^5.1.0",
+        "jsdom": "^27.1.0",
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.7",
       },
     },
     "packages/payment": {
@@ -2067,6 +2088,8 @@
     "@tuturuuu/google": ["@tuturuuu/google@workspace:packages/google"],
 
     "@tuturuuu/icons": ["@tuturuuu/icons@workspace:packages/icons"],
+
+    "@tuturuuu/masonry": ["@tuturuuu/masonry@workspace:packages/masonry"],
 
     "@tuturuuu/nova": ["@tuturuuu/nova@workspace:apps/nova"],
 
