@@ -1,6 +1,8 @@
 'use client';
 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  Archive,
   ArrowRight,
   BarChart3,
   Calendar,
@@ -18,6 +20,7 @@ import {
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
+import { useBoardActions } from '@tuturuuu/ui/hooks/use-board-actions';
 import {
   Select,
   SelectContent,
@@ -25,9 +28,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 import { BOARD_RETENTION_DAYS } from '../../../../constants/boards';
 import { projectColumns } from './columns';
@@ -48,8 +50,7 @@ const CARD_LAYOUT_OPTIONS = [
 type CardLayout = (typeof CARD_LAYOUT_OPTIONS)[number]['value'];
 
 interface EnhancedBoardsViewProps {
-  data: WorkspaceTaskBoard[];
-  count: number;
+  wsId: string;
 }
 
 // Define types for better type safety
@@ -61,12 +62,50 @@ interface TaskModalState {
   selectedBoard: string | null; // null means all boards
 }
 
-export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
-  const router = useRouter();
-  // Ensure data is always an array to prevent hook order issues
-  const safeData = useMemo(() => data || [], [data]);
+async function getBoardsData(
+  wsId: string,
+  q: string,
+  page: string,
+  pageSize: string
+) {
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/boards-data?q=${q}&page=${page}&pageSize=${pageSize}`,
+    { cache: 'no-store' }
+  );
+  if (!response.ok) {
+    throw new Error('Failed to fetch boards data');
+  }
+  return response.json();
+}
 
-  // Removed unused activeTab state - tabs are controlled by Tabs component
+export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
+  const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
+
+  const q = searchParams.get('q') || '';
+  const page = searchParams.get('page') || '1';
+  const pageSize = searchParams.get('pageSize') || '10';
+
+  // Use React Query to consume the hydrated cache
+  const { data: queryData } = useQuery({
+    queryKey: ['boards', wsId, q, page, pageSize],
+    queryFn: () => getBoardsData(wsId, q, page, pageSize),
+    // Remove staleTime: 0 to use default behavior
+    // This allows React Query to handle staleness based on invalidation
+  });
+
+  const data = queryData?.data || [];
+  const count = queryData?.count || 0;
+
+  const safeData = useMemo(() => data || [], [data]);
+  const {
+    softDeleteBoard,
+    permanentDeleteBoard,
+    restoreBoard,
+    archiveBoard,
+    unarchiveBoard,
+  } = useBoardActions(wsId);
+
   const [cardLayout, setCardLayout] = useState<CardLayout>('grid-cols-3');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('name');
@@ -76,7 +115,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     'all' | 'active' | 'archived' | 'recently_deleted'
   >('active');
 
-  // Column visibility state
   const [columnVisibility, setColumnVisibility] = useState({
     boardName: true,
     totalTasks: true,
@@ -89,7 +127,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     priorityDistribution: true,
   });
 
-  // Reset column visibility to default
   const resetColumnVisibility = useCallback(() => {
     setColumnVisibility({
       boardName: true,
@@ -110,7 +147,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     selectedBoard: null,
   });
 
-  // Copy board dialog state
   const [copyBoardModal, setCopyBoardModal] = useState<{
     isOpen: boolean;
     board: WorkspaceTaskBoard | null;
@@ -145,54 +181,25 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
   }, []);
 
   const refreshTasks = useCallback(() => {
-    // TODO: Implement proper data refresh
-    // Should invalidate and refetch task data instead of page reload
-    // For now, use page reload as fallback
-    window.location.reload();
-
-    // TODO: Replace with proper data refresh:
-    // - Invalidate React Query cache
-    // - Refetch task data
-    // - Update local state
-  }, []);
+    // Invalidate the boards query to trigger a refetch
+    queryClient.invalidateQueries({
+      queryKey: ['boards', wsId],
+      refetchType: 'active',
+    });
+  }, [queryClient, wsId]);
 
   const handleTableFilter = useCallback(() => {
-    // TODO: Implement table filter toggle
-    // Should toggle advanced filter panel or filter dropdown
-    // For now, just log the action
     console.log('Table filter triggered');
-
-    // TODO: Add filter logic here:
-    // - Toggle filter panel visibility
-    // - Show/hide advanced filter options
-    // - Apply current filter state
   }, []);
 
   const handleTableSort = useCallback(() => {
-    // TODO: Implement table sort toggle
-    // Should cycle through sort options or toggle sort direction
-    // For now, just log the action
     console.log('Table sort triggered');
-
-    // TODO: Add sort logic here:
-    // - Cycle through available sort fields
-    // - Toggle sort direction (asc/desc)
-    // - Update sort state
   }, []);
 
   const handleTableSettings = useCallback(() => {
-    // TODO: Implement table settings toggle
-    // Should toggle column visibility settings panel
-    // For now, just log the action
     console.log('Table settings triggered');
-
-    // TODO: Add settings logic here:
-    // - Toggle column visibility panel
-    // - Show/hide table customization options
-    // - Save/restore user preferences
   }, []);
 
-  // Calculate days remaining for soft-deleted boards
   const calculateDaysRemaining = useCallback((deletedAt: string | null) => {
     if (!deletedAt) return null;
 
@@ -206,38 +213,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     return Math.max(0, daysRemaining);
   }, []);
 
-  // Soft delete a board
-  const handleSoftDeleteBoard = useCallback(
-    async (boardId: string, wsId: string) => {
-      try {
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/boards/${boardId}/trash`,
-          {
-            method: 'POST',
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to delete board');
-        }
-
-        toast.success('Board moved to trash successfully');
-        // Refresh the page to show updated data
-        router.refresh();
-      } catch (error) {
-        console.error('Error deleting board:', error);
-        toast.error('Failed to delete board', {
-          description:
-            error instanceof Error
-              ? error.message
-              : 'An unexpected error occurred',
-        });
-      }
-    },
-    [router]
-  );
-
-  // Apply filters to data and check if filters are active
   const { filteredData, hasActiveFilters } = useMemo(() => {
     const hasFilters =
       searchQuery.trim() !== '' ||
@@ -245,7 +220,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
       boardStatusFilter !== 'all';
     let filtered = [...safeData];
 
-    // Board status filter
     if (boardStatusFilter !== 'all') {
       filtered = filtered.filter((board) => {
         switch (boardStatusFilter) {
@@ -260,23 +234,13 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
         }
       });
     }
-    // When 'all' is selected, show all boards (no filtering by status)
 
-    // Search filter
     if (searchQuery.trim()) {
       filtered = filtered.filter((board) =>
         board.name?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
-    // Status filter - fix FilterType comparison
-    if (taskModal.filterType !== 'all') {
-      // For now, we don't filter boards based on FilterType since FilterType
-      // is meant for tasks ('completed' | 'overdue' | 'urgent'), not board status
-      // This logic can be enhanced when board-level filtering is needed
-    }
-
-    // Sort
     filtered.sort((a, b) => {
       let aValue: string | number, bValue: string | number;
 
@@ -306,13 +270,10 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
 
   return (
     <>
-      {/* Main Content with Tabs */}
       <div className="space-y-6">
         <Tabs defaultValue="table" className="w-full">
-          {/* Unified Toolbar */}
           <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-1">
             <div className="flex items-center gap-1">
-              {/* View Switcher */}
               <TabsList className="grid grid-cols-3 bg-background shadow-sm">
                 <TabsTrigger
                   value="table"
@@ -338,9 +299,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               </TabsList>
             </div>
 
-            {/* Contextual Actions */}
             <div className="flex items-center gap-1">
-              {/* Table View Actions */}
               <TabsContent
                 value="table"
                 className="m-0 data-[state=inactive]:hidden"
@@ -376,7 +335,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 </div>
               </TabsContent>
 
-              {/* Cards View Actions */}
               <TabsContent
                 value="cards"
                 className="m-0 data-[state=inactive]:hidden"
@@ -412,7 +370,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 </div>
               </TabsContent>
 
-              {/* Analytics View Actions */}
               <TabsContent
                 value="analytics"
                 className="m-0 data-[state=inactive]:hidden"
@@ -424,7 +381,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 </div>
               </TabsContent>
 
-              {/* Global Actions */}
               <div className="mx-1 h-4 w-px bg-border" />
               <Button
                 variant="ghost"
@@ -437,7 +393,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
             </div>
           </div>
 
-          {/* Filter Panel */}
           <div className="mt-4 rounded-lg border bg-muted/30 p-4">
             <div className="flex items-center gap-4">
               <div className="flex-1">
@@ -503,7 +458,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
             </div>
           </div>
 
-          {/* Column Settings Panel */}
           {showColumnSettings && (
             <div className="mt-4 rounded-lg border bg-muted/30 p-4">
               <div className="mb-4 flex items-center justify-between">
@@ -665,9 +619,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
             </div>
           )}
 
-          {/* Tab Content */}
           <div className="mt-6">
-            {/* Table View */}
             <TabsContent value="table" className="mt-0 space-y-4">
               <CustomDataTable
                 columnGenerator={projectColumns}
@@ -682,7 +634,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               />
             </TabsContent>
 
-            {/* Enhanced Cards View */}
             <TabsContent value="cards" className="mt-0 space-y-4">
               <div
                 className={`grid grid-cols-1 gap-6 sm:${cardLayout} lg:${cardLayout}`}
@@ -692,7 +643,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     key={board.id}
                     className="group hover:-translate-y-1 relative w-full cursor-pointer rounded-xl border bg-card p-6 text-left shadow-sm transition-all duration-200 hover:border-primary/20 hover:shadow-lg"
                   >
-                    {/* Board Header */}
                     <div className="mb-4">
                       <div className="mb-3 flex items-start justify-between gap-2">
                         <div className="flex-1">
@@ -726,19 +676,73 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                             >
                               <Copy className="h-4 w-4" />
                             </Button>
-                            {!board.deleted_at && (
+                            {board.deleted_at ? (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    restoreBoard(board.id);
+                                  }}
+                                  title="Restore board"
+                                >
+                                  <RefreshCw className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    permanentDeleteBoard(board.id);
+                                  }}
+                                  title="Delete permanently"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            ) : board.archived_at ? (
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                className="h-8 w-8 p-0"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleSoftDeleteBoard(board.id, board.ws_id);
+                                  unarchiveBoard(board.id);
                                 }}
-                                title="Delete board"
+                                title="Unarchive board"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <RefreshCw className="h-4 w-4" />
                               </Button>
+                            ) : (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    archiveBoard(board.id);
+                                  }}
+                                  title="Archive board"
+                                >
+                                  <Archive className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    softDeleteBoard(board.id);
+                                  }}
+                                  title="Delete board"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
                             )}
                             <Button
                               variant="ghost"
@@ -758,7 +762,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       </div>
                     </div>
 
-                    {/* Footer */}
                     <div className="flex items-center justify-between border-t pt-3 text-muted-foreground text-xs">
                       {board.created_at && (
                         <div className="flex items-center gap-1">
@@ -779,7 +782,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 ))}
               </div>
 
-              {/* Empty State */}
               {safeData.length === 0 && (
                 <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-12 text-center">
                   <LayoutGrid className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
@@ -793,10 +795,8 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               )}
             </TabsContent>
 
-            {/* Analytics View - Gantt Chart Heatmap */}
             <TabsContent value="analytics" className="mt-0 space-y-4">
               <div className="space-y-6 pb-8">
-                {/* Analytics Header */}
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-semibold text-lg">
@@ -804,7 +804,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     </h3>
                     <p className="text-muted-foreground text-sm">
                       {analyticsFilters.selectedBoard
-                        ? `Metrics for ${safeData.find((b) => b.id === analyticsFilters.selectedBoard)?.name || 'Selected Board'}`
+                        ? `Metrics for ${safeData.find((b: WorkspaceTaskBoard) => b.id === analyticsFilters.selectedBoard)?.name || 'Selected Board'}`
                         : 'Aggregate metrics across all boards'}
                     </p>
                   </div>
@@ -868,7 +868,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Boards</SelectItem>
-                        {safeData.map((board) => (
+                        {safeData.map((board: WorkspaceTaskBoard) => (
                           <SelectItem key={board.id} value={board.id}>
                             {board.name}
                           </SelectItem>
@@ -883,7 +883,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
         </Tabs>
       </div>
 
-      {/* Copy Board Dialog */}
       {copyBoardModal.board && (
         <CopyBoardDialog
           board={copyBoardModal.board}
