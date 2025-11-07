@@ -25,6 +25,7 @@
   "dependencies": {
     "@tanstack/react-query": "^5.90.7",
     "@tuturuuu/ai": "workspace:*",
+    "@tuturuuu/masonry": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",

@@ -568,10 +568,10 @@ const CountdownJT26 = () => {
 
 const Countdown = () => {
   return (
-    <>
+    <div className="grid gap-4 md:grid-cols-2">
       <CountdownDD />
       <CountdownJT26 />
-    </>
+    </div>
   );
 };
 
