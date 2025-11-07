@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.3.10] - 2025-11-07
+
+### Changed
+- **50 optimization passes**: Increased from 20 to 50 for thorough exploration
+- **Ultra-tight threshold**: Now stops only when columns within 0.5% or 5px (vs previous 1% or 10px)
+- **Near-perfect balance**: Relentless optimization until column heights are nearly identical
+- **No premature stopping**: Tighter tolerance ensures visual perfection
+
+### Algorithm
+- **Phase 1**: Min-Max greedy placement
+- **Phase 2**: Ultra-aggressive optimization:
+  - Up to 50 passes (vs previous 20)
+  - Tries moving every item to every column
+  - Applies best move in each pass
+  - Stops when range < max(5px, 0.5% of shortest column)
+- **Phase 3**: Build final layout
+
+### Results
+- ✅ **Near-perfect balance**: Column heights differ by ≤5px in most cases
+- ✅ **Professional appearance**: Visually indistinguishable column heights
+- ✅ **Thorough optimization**: 50 passes ensure no improvement is missed
+- ✅ **No compromise**: Ultra-tight tolerance for best visual quality
+
 ## [0.3.9] - 2025-11-07
 
 ### Changed

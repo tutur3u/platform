@@ -374,7 +374,7 @@ export function Masonry({
     // Phase 2: Global optimization - try moving ANY item to ANY column
     let improved = true;
     let passCount = 0;
-    const maxPasses = 20; // More passes for exhaustive search
+    const maxPasses = 50; // Many passes for thorough exploration
 
     while (improved && passCount < maxPasses) {
       improved = false;
@@ -382,9 +382,9 @@ export function Masonry({
 
       const currentRange = getHeightRange(columnHeights);
 
-      // Stop if already well balanced (tighter threshold: 1% or 10px)
+      // Stop if already near-perfectly balanced (very tight threshold: 0.5% or 5px)
       const minHeight = Math.min(...columnHeights);
-      if (currentRange < Math.max(10, minHeight * 0.01)) {
+      if (currentRange < Math.max(5, minHeight * 0.005)) {
         break;
       }
 
