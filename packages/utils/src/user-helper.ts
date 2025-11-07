@@ -71,7 +71,11 @@ export async function getCurrentUser(noRedirect?: boolean) {
     .eq('id', user.id)
     .single();
 
-  if (error) notFound();
+  if (error) {
+    console.error('Error getting user:', error);
+    notFound();
+  }
+
   const { user_private_details, ...rest } = data;
   return { ...rest, ...user_private_details } as
     | (User & UserPrivateDetails)

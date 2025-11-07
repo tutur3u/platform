@@ -49,6 +49,7 @@ export default async function WorkspaceWrapper<
   const workspace = await getWorkspace(wsId);
 
   if (!workspace) {
+    console.error('Workspace not found:', wsId);
     notFound();
   }
 
@@ -92,6 +93,7 @@ export async function withWorkspace<T extends Record<string, any>>(
   const workspace = await getWorkspace(wsId);
 
   if (!workspace) {
+    console.error('Workspace not found:', wsId);
     notFound();
   }
 

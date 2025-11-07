@@ -1,5 +1,3 @@
-import type { NavLink } from '@/components/navigation';
-import { DEV_MODE } from '@/constants/common';
 import {
   Activity,
   Archive,
@@ -84,12 +82,17 @@ import {
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
-  resolveWorkspaceId,
   ROOT_WORKSPACE_ID,
+  resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getPermissions, verifySecret } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  getSecret,
+  getSecrets,
+} from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
+import type { NavLink } from '@/components/navigation';
+import { DEV_MODE } from '@/constants/common';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -102,39 +105,58 @@ export async function WorkspaceNavigationLinks({
   isPersonal: boolean;
   isTuturuuuUser: boolean;
 }) {
-  const t = await getTranslations();
   const resolvedWorkspaceId = resolveWorkspaceId(wsId);
-
-  const { withoutPermission: withoutRootPermission } = await getPermissions({
-    wsId: ROOT_WORKSPACE_ID,
-  });
-
-  const { withoutPermission } = await getPermissions({
-    wsId: resolvedWorkspaceId,
-  });
-
-  const ENABLE_AI_ONLY = await verifySecret({
-    forceAdmin: true,
-    wsId: resolvedWorkspaceId,
-    name: 'ENABLE_AI_ONLY',
-    value: 'true',
-  });
-
-  // Check if user has Discord integration permission
-  const user = await getCurrentUser();
   const supabase = await createClient();
-  let allowDiscordIntegrations = false;
 
-  if (user) {
-    const { data: platformUserRole } = await supabase
-      .from('platform_user_roles')
-      .select('allow_discord_integrations')
-      .eq('user_id', user.id)
-      .single();
+  // Parallelize all independent initial queries
+  const [
+    t,
+    {
+      data: { user },
+    },
+    secrets,
+  ] = await Promise.all([
+    getTranslations(),
+    supabase.auth.getUser(),
+    getSecrets({ wsId: resolvedWorkspaceId, forceAdmin: true }),
+  ]);
 
-    allowDiscordIntegrations =
-      platformUserRole?.allow_discord_integrations ?? false;
-  }
+  // Helper to check secrets from cached list
+  const hasSecret = (name: string, value: string) =>
+    getSecret(name, secrets)?.value === value;
+
+  const ENABLE_AI_ONLY = hasSecret('ENABLE_AI_ONLY', 'true');
+
+  // Parallelize user-dependent queries
+  const [rootMemberData, workspacePermissions, platformUserRole] =
+    await Promise.all([
+      user
+        ? supabase
+            .from('workspace_members')
+            .select('user_id')
+            .eq('ws_id', ROOT_WORKSPACE_ID)
+            .eq('user_id', user.id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      getPermissions({ wsId: resolvedWorkspaceId }),
+      user
+        ? supabase
+            .from('platform_user_roles')
+            .select('allow_discord_integrations')
+            .eq('user_id', user.id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+
+  const { withoutPermission } = workspacePermissions;
+
+  // Get root permissions only if user is a root member
+  const withoutRootPermission = rootMemberData.data
+    ? (await getPermissions({ wsId: ROOT_WORKSPACE_ID })).withoutPermission
+    : () => true;
+
+  const allowDiscordIntegrations =
+    platformUserRole.data?.allow_discord_integrations ?? false;
 
   const navLinks: (NavLink | null)[] = [
     {
@@ -243,12 +265,7 @@ export async function WorkspaceNavigationLinks({
       icon: <FileText className="h-5 w-5" />,
       disabled:
         ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId: resolvedWorkspaceId,
-          name: 'ENABLE_DOCS',
-          value: 'true',
-        })) ||
+        !hasSecret('ENABLE_DOCS', 'true') ||
         withoutPermission('manage_documents'),
       experimental: 'beta',
     },
@@ -475,23 +492,13 @@ export async function WorkspaceNavigationLinks({
           disabled:
             !DEV_MODE ||
             ENABLE_AI_ONLY ||
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId: resolvedWorkspaceId,
-              name: 'ENABLE_USERS',
-              value: 'true',
-            })) ||
+            !hasSecret('ENABLE_USERS', 'true') ||
             withoutPermission('manage_users'),
         },
       ],
       disabled:
         ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId: resolvedWorkspaceId,
-          name: 'ENABLE_USERS',
-          value: 'true',
-        })) ||
+        !hasSecret('ENABLE_USERS', 'true') ||
         withoutPermission('manage_users'),
     },
     {
@@ -550,12 +557,7 @@ export async function WorkspaceNavigationLinks({
       ],
       disabled:
         ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId: resolvedWorkspaceId,
-          name: 'ENABLE_INVENTORY',
-          value: 'true',
-        })) ||
+        !hasSecret('ENABLE_INVENTORY', 'true') ||
         withoutPermission('view_inventory'),
     },
     null,
@@ -573,12 +575,7 @@ export async function WorkspaceNavigationLinks({
               icon: <Sparkles className="h-5 w-5" />,
               disabled:
                 ENABLE_AI_ONLY ||
-                !(await verifySecret({
-                  forceAdmin: true,
-                  wsId: resolvedWorkspaceId,
-                  name: 'ENABLE_TASKS',
-                  value: 'true',
-                })) ||
+                !hasSecret('ENABLE_TASKS', 'true') ||
                 withoutPermission('manage_projects'),
               experimental: 'alpha',
             },
@@ -588,12 +585,7 @@ export async function WorkspaceNavigationLinks({
               icon: <MessageCircleIcon className="h-5 w-5" />,
               disabled:
                 ENABLE_AI_ONLY ||
-                !(await verifySecret({
-                  forceAdmin: true,
-                  wsId: resolvedWorkspaceId,
-                  name: 'ENABLE_CHAT',
-                  value: 'true',
-                })) ||
+                !hasSecret('ENABLE_CHAT', 'true') ||
                 withoutPermission('ai_chat'),
               experimental: 'beta',
             },
@@ -610,12 +602,7 @@ export async function WorkspaceNavigationLinks({
               href: `/${personalOrWsId}/models`,
               icon: <Box className="h-5 w-5" />,
               disabled:
-                !(await verifySecret({
-                  forceAdmin: true,
-                  wsId: resolvedWorkspaceId,
-                  name: 'ENABLE_AI',
-                  value: 'true',
-                })) || withoutPermission('ai_lab'),
+                !hasSecret('ENABLE_AI', 'true') || withoutPermission('ai_lab'),
               experimental: 'alpha',
             },
             {
@@ -623,12 +610,7 @@ export async function WorkspaceNavigationLinks({
               href: `/${personalOrWsId}/datasets`,
               icon: <Database className="h-5 w-5" />,
               disabled:
-                !(await verifySecret({
-                  forceAdmin: true,
-                  wsId: resolvedWorkspaceId,
-                  name: 'ENABLE_AI',
-                  value: 'true',
-                })) || withoutPermission('ai_lab'),
+                !hasSecret('ENABLE_AI', 'true') || withoutPermission('ai_lab'),
               experimental: 'beta',
             },
             {
@@ -636,12 +618,7 @@ export async function WorkspaceNavigationLinks({
               href: `/${personalOrWsId}/pipelines`,
               icon: <Play className="h-5 w-5" />,
               disabled:
-                !(await verifySecret({
-                  forceAdmin: true,
-                  wsId: resolvedWorkspaceId,
-                  name: 'ENABLE_AI',
-                  value: 'true',
-                })) || withoutPermission('ai_lab'),
+                !hasSecret('ENABLE_AI', 'true') || withoutPermission('ai_lab'),
               experimental: 'alpha',
             },
             {
@@ -649,12 +626,7 @@ export async function WorkspaceNavigationLinks({
               href: `/${personalOrWsId}/crawlers`,
               icon: <ScanSearch className="h-5 w-5" />,
               disabled:
-                !(await verifySecret({
-                  forceAdmin: true,
-                  wsId: resolvedWorkspaceId,
-                  name: 'ENABLE_AI',
-                  value: 'true',
-                })) || withoutPermission('ai_lab'),
+                !hasSecret('ENABLE_AI', 'true') || withoutPermission('ai_lab'),
               experimental: 'alpha',
             },
             {
@@ -662,12 +634,7 @@ export async function WorkspaceNavigationLinks({
               href: `/${personalOrWsId}/cron`,
               icon: <Clock className="h-5 w-5" />,
               disabled:
-                !(await verifySecret({
-                  forceAdmin: true,
-                  wsId: resolvedWorkspaceId,
-                  name: 'ENABLE_AI',
-                  value: 'true',
-                })) || withoutPermission('ai_lab'),
+                !hasSecret('ENABLE_AI', 'true') || withoutPermission('ai_lab'),
               experimental: 'alpha',
             },
             {
@@ -675,12 +642,7 @@ export async function WorkspaceNavigationLinks({
               href: `/${personalOrWsId}/queues`,
               icon: <Logs className="h-5 w-5" />,
               disabled:
-                !(await verifySecret({
-                  forceAdmin: true,
-                  wsId: resolvedWorkspaceId,
-                  name: 'ENABLE_AI',
-                  value: 'true',
-                })) || withoutPermission('ai_lab'),
+                !hasSecret('ENABLE_AI', 'true') || withoutPermission('ai_lab'),
               experimental: 'alpha',
             },
           ],
@@ -820,12 +782,7 @@ export async function WorkspaceNavigationLinks({
               href: `/${personalOrWsId}/posts`,
               icon: <GalleryVerticalEnd className="h-5 w-5" />,
               disabled:
-                !(await verifySecret({
-                  forceAdmin: true,
-                  wsId: resolvedWorkspaceId,
-                  name: 'ENABLE_EMAIL_SENDING',
-                  value: 'true',
-                })) ||
+                !hasSecret('ENABLE_EMAIL_SENDING', 'true') ||
                 (!DEV_MODE &&
                   (ENABLE_AI_ONLY ||
                     withoutPermission('send_user_group_post_emails'))),
@@ -870,12 +827,7 @@ export async function WorkspaceNavigationLinks({
               ],
               disabled:
                 ENABLE_AI_ONLY ||
-                !(await verifySecret({
-                  forceAdmin: true,
-                  wsId: resolvedWorkspaceId,
-                  name: 'ENABLE_EDUCATION',
-                  value: 'true',
-                })) ||
+                !hasSecret('ENABLE_EDUCATION', 'true') ||
                 withoutPermission('ai_lab'),
               experimental: 'beta',
             },
@@ -885,12 +837,7 @@ export async function WorkspaceNavigationLinks({
               icon: <PencilLine className="h-5 w-5" />,
               disabled:
                 ENABLE_AI_ONLY ||
-                !(await verifySecret({
-                  forceAdmin: true,
-                  wsId: resolvedWorkspaceId,
-                  name: 'ENABLE_WHITEBOARDS',
-                  value: 'true',
-                })) ||
+                !hasSecret('ENABLE_WHITEBOARDS', 'true') ||
                 withoutPermission('manage_projects'),
               experimental: 'alpha',
             },
@@ -905,12 +852,7 @@ export async function WorkspaceNavigationLinks({
               icon: <Link className="h-5 w-5" />,
               disabled:
                 resolvedWorkspaceId !== ROOT_WORKSPACE_ID &&
-                !(await verifySecret({
-                  forceAdmin: true,
-                  wsId: resolvedWorkspaceId,
-                  name: 'ENABLE_LINK_SHORTENER',
-                  value: 'true',
-                })),
+                !hasSecret('ENABLE_LINK_SHORTENER', 'true'),
             },
           ],
         },
@@ -1002,12 +944,7 @@ export async function WorkspaceNavigationLinks({
           icon: <KeyRound className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY ||
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId: resolvedWorkspaceId,
-              name: 'ENABLE_API_KEYS',
-              value: 'true',
-            })) ||
+            !hasSecret('ENABLE_API_KEYS', 'true') ||
             withoutPermission('manage_api_keys'),
           requireRootMember: true,
         },
