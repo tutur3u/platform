@@ -1,1 +1,1 @@
-export { Masonry } from './masonry';
+export { Masonry } from './masonry.js';
