@@ -53,14 +53,13 @@ export function Masonry({
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentColumns, setCurrentColumns] = useState(columns);
   const itemHeightsRef = useRef<Map<number, number>>(new Map());
-  const [measurementPhase, setMeasurementPhase] = useState(
-    strategy === 'balanced'
-  );
+  const [isInitialized, setIsInitialized] = useState(strategy !== 'balanced');
   const [redistributionKey, setRedistributionKey] = useState(0);
   const imagesLoadingRef = useRef<{
     total: number;
     loaded: number;
   }>({ total: 0, loaded: 0 });
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -81,9 +80,9 @@ export function Masonry({
 
       setCurrentColumns(cols);
 
-      // Reset measurement phase on column change
+      // Reset initialization on column change
       if (strategy === 'balanced' && cols !== currentColumns) {
-        setMeasurementPhase(true);
+        setIsInitialized(false);
       }
     };
 
@@ -97,9 +96,10 @@ export function Masonry({
     }
   }, [columns, breakpoints, currentColumns, strategy]);
 
-  // Measure individual item heights in the measurement phase
+  // Measure individual item heights and setup periodic redistribution
   useEffect(() => {
-    if (!measurementPhase || strategy !== 'balanced') return;
+    if (strategy !== 'balanced') return;
+    if (isInitialized) return; // Already set up
 
     const measureHeights = () => {
       const items = containerRef.current?.querySelectorAll(
@@ -117,19 +117,23 @@ export function Masonry({
         imagesLoadingRef.current.total += images.length;
       });
 
-      // If no images, measure immediately and end
+      // Measure initial heights (even if images not loaded yet)
+      items.forEach((item, index) => {
+        if (item instanceof HTMLElement) {
+          itemHeightsRef.current.set(index, item.offsetHeight);
+        }
+      });
+
+      // Show immediately
+      setIsInitialized(true);
+
+      // If no images, we're done
       if (imagesLoadingRef.current.total === 0) {
-        items.forEach((item, index) => {
-          if (item instanceof HTMLElement) {
-            itemHeightsRef.current.set(index, item.offsetHeight);
-          }
-        });
-        setMeasurementPhase(false);
         return;
       }
 
       // Set up periodic redistribution while images are loading
-      const redistributionInterval = setInterval(() => {
+      intervalRef.current = setInterval(() => {
         // Measure all items with current heights
         items.forEach((item, index) => {
           if (item instanceof HTMLElement) {
@@ -142,8 +146,10 @@ export function Masonry({
 
         // Stop interval once all images are loaded
         if (imagesLoadingRef.current.loaded >= imagesLoadingRef.current.total) {
-          clearInterval(redistributionInterval);
-          setMeasurementPhase(false);
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
         }
       }, 100); // Recalculate every 100ms
 
@@ -151,48 +157,39 @@ export function Masonry({
       items.forEach((item, index) => {
         const images = item.querySelectorAll('img');
 
-        if (images.length === 0) {
-          // No images in this item, measure immediately
-          if (item instanceof HTMLElement) {
-            itemHeightsRef.current.set(index, item.offsetHeight);
-          }
-        } else {
-          // Track image loading
-          images.forEach((img) => {
-            const handleImageLoad = () => {
-              imagesLoadingRef.current.loaded++;
+        images.forEach((img) => {
+          const handleImageLoad = () => {
+            imagesLoadingRef.current.loaded++;
 
-              // Measure this item immediately when its image loads
-              if (item instanceof HTMLElement) {
-                itemHeightsRef.current.set(index, item.offsetHeight);
-              }
-            };
-
-            if (img.complete) {
-              handleImageLoad();
-            } else {
-              img.onload = handleImageLoad;
-              img.onerror = handleImageLoad;
+            // Measure this item immediately when its image loads
+            if (item instanceof HTMLElement) {
+              itemHeightsRef.current.set(index, item.offsetHeight);
             }
-          });
-        }
-      });
+          };
 
-      // Cleanup interval on unmount
-      return () => clearInterval(redistributionInterval);
+          if (img.complete) {
+            handleImageLoad();
+          } else {
+            img.onload = handleImageLoad;
+            img.onerror = handleImageLoad;
+          }
+        });
+      });
     };
 
     // Wait for next frame to ensure DOM is ready
-    const cleanup = requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
       measureHeights();
     });
 
+    // Cleanup
     return () => {
-      if (typeof cleanup === 'number') {
-        cancelAnimationFrame(cleanup);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
-  }, [measurementPhase, strategy]);
+  }, [strategy, isInitialized]);
 
   // Distribute items across columns
   const distributeItems = () => {
@@ -203,7 +200,7 @@ export function Masonry({
 
     if (
       strategy === 'balanced' &&
-      !measurementPhase &&
+      isInitialized &&
       itemHeightsRef.current.size > 0
     ) {
       // Use measured heights for distribution
@@ -277,26 +274,6 @@ export function Masonry({
     flex: 1,
   };
 
-  // In measurement phase, render items in a single column to measure heights
-  if (measurementPhase && strategy === 'balanced') {
-    return (
-      <div
-        ref={containerRef}
-        style={{ ...containerStyle, opacity: 0, pointerEvents: 'none' }}
-        className={className}
-        key={`measurement-${redistributionKey}`}
-      >
-        <div style={columnStyle}>
-          {children.map((child, index) => (
-            <div key={index} data-masonry-item>
-              {child}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div
       ref={containerRef}
@@ -304,19 +281,29 @@ export function Masonry({
       className={className}
       key={`masonry-${redistributionKey}`}
     >
-      {columnWrappers.map((column, columnIndex) => (
-        <div key={columnIndex} style={columnStyle}>
-          {column.map((child, itemIndex) => {
-            // Calculate global index for consistent keys
-            const globalIndex =
-              columnWrappers
-                .slice(0, columnIndex)
-                .reduce((acc, col) => acc + col.length, 0) + itemIndex;
-
-            return <div key={globalIndex}>{child}</div>;
-          })}
+      {strategy === 'balanced' && !isInitialized ? (
+        <div style={columnStyle}>
+          {children.map((child, index) => (
+            <div key={index} data-masonry-item>
+              {child}
+            </div>
+          ))}
         </div>
-      ))}
+      ) : (
+        columnWrappers.map((column, columnIndex) => (
+          <div key={columnIndex} style={columnStyle}>
+            {column.map((child, itemIndex) => {
+              // Calculate global index for consistent keys
+              const globalIndex =
+                columnWrappers
+                  .slice(0, columnIndex)
+                  .reduce((acc, col) => acc + col.length, 0) + itemIndex;
+
+              return <div key={globalIndex}>{child}</div>;
+            })}
+          </div>
+        ))
+      )}
     </div>
   );
 }

@@ -1,11 +1,12 @@
 ---
 title: '@tuturuuu/masonry'
 description: 'A lightweight, responsive masonry grid component for React applications'
+updatedAt: '2025-06-09'
 ---
 
 ## Overview
 
-The `@tuturuuu/masonry` package provides a Pinterest-style masonry grid layout component for React. It uses a "shortest column" algorithm to ensure balanced distribution of items across columns, resulting in a visually appealing layout regardless of item heights.
+The `@tuturuuu/masonry` package provides a Pinterest-style masonry grid layout component for React. It offers two distribution strategies: a fast count-based approach for uniform content, and an intelligent height-based balancing algorithm that progressively optimizes layout as images load.
 
 ## Installation
 
@@ -33,10 +34,12 @@ bun add @tuturuuu/masonry
 
 - 🎨 **Pinterest-style Layout**: Creates beautiful masonry grids with balanced columns
 - 📱 **Responsive Design**: Automatically adjusts columns based on viewport width
-- ⚖️ **Smart Distribution**: Uses "shortest column" algorithm for optimal balance
+- ⚖️ **Smart Distribution**: Two strategies - fast count-based or height-balanced
+- 🖼️ **Progressive Image Loading**: Visible-first rendering with background optimization for image galleries
 - 🎯 **TypeScript Support**: Fully typed with TypeScript
 - ⚡ **Lightweight**: Zero external dependencies besides React
 - 🔧 **Customizable**: Flexible column, gap, and breakpoint configuration
+- ⚡ **Zero Layout Shift**: Items render immediately, no hidden measurement phase
 
 ## Basic Usage
 
@@ -314,20 +317,42 @@ The component uses inline styles for core layout functionality and accepts a `cl
   </Accordion>
 
   <Accordion title="Choose the right distribution strategy">
-    - Use `strategy="count"` (default) for best performance and no layout shift. Ideal for uniform content or when loading indicators are present.
-    - Use `strategy="balanced"` when items have significantly varying heights and visual balance is critical (e.g., image galleries with mixed aspect ratios).
+    - Use `strategy="count"` (default) for best performance with uniform or near-uniform content. Zero layout shift, instant rendering.
+    - Use `strategy="balanced"` for image galleries or content with varying heights. Renders immediately with count-based distribution, then progressively optimizes to height-balanced layout as images load. No hidden measurement phase - content is visible from first render.
   </Accordion>
 
-  <Accordion title="Optimize images">
-    For image galleries, use appropriately sized images and consider lazy loading for better performance.
+  <Accordion title="Optimize images for progressive loading">
+    When using `strategy="balanced"` with images:
+    - Items render immediately using count-based distribution
+    - As images load, the layout progressively rebalances every 100ms
+    - Final balanced distribution achieved once all images complete loading
+    - No flash or hidden content - smooth progressive enhancement
   </Accordion>
 </AccordionGroup>
+
+## How Balanced Strategy Works
+
+The `strategy="balanced"` mode uses a sophisticated progressive loading approach optimized for image galleries:
+
+1. **Immediate Render**: Items appear instantly using fast count-based distribution
+2. **Background Measurement**: Heights are measured without hiding content  
+3. **Progressive Optimization**: Every 100ms, layout redistributes based on current measurements
+4. **Image Load Tracking**: Monitors image loading progress and updates heights dynamically
+5. **Final Balance**: Once all images load, achieves optimal height-balanced distribution
+
+This approach provides:
+- ✅ Fast initial render - no waiting for measurements
+- ✅ Smooth progressive improvement - no layout jumps
+- ✅ Optimal final balance - equal column heights
+- ✅ No hidden content phase - everything visible immediately
 
 ## Performance Considerations
 
 - The component uses React state and effects efficiently
-- Resize events are properly debounced through React's rendering cycle
-- No DOM measurements are performed during rendering
+- Resize events are properly debounced through React's rendering cycle  
+- Count strategy: No DOM measurements, instant rendering
+- Balanced strategy: Minimal background measurements (100ms intervals), no render blocking
+- Progressive redistribution only runs while images are loading
 - Minimal re-renders when breakpoints change
 
 ## TypeScript
@@ -372,7 +397,7 @@ The package supports all modern browsers that support:
   <Accordion title="Columns are uneven in height">
     With the default `strategy="count"`, this is expected behavior. The algorithm balances by item count, not pixel height. 
     
-    For better visual balance with varying item heights, use `strategy="balanced"` which measures actual heights and distributes items to the shortest column.
+    For better visual balance with varying item heights, use `strategy="balanced"` which measures actual heights and distributes items to achieve equal column heights.
   </Accordion>
 
   <Accordion title="Breakpoints not working">
@@ -389,8 +414,13 @@ The package supports all modern browsers that support:
     - Passed an empty `breakpoints={{}}` object to disable responsive behavior
   </Accordion>
 
-  <Accordion title="Layout shift with balanced strategy">
-    The `strategy="balanced"` option measures item heights after mount, which can cause a brief layout shift. This is expected behavior for achieving better visual balance. If layout stability is more important, use `strategy="count"` (default).
+  <Accordion title="Images taking time to balance">
+    This is expected with `strategy="balanced"`. The component:
+    - Renders items immediately using count-based distribution
+    - Progressively rebalances every 100ms as images load
+    - Achieves final optimal balance once all images complete
+    
+    If instant rendering is more important than perfect balance, use `strategy="count"` (default).
   </Accordion>
 </AccordionGroup>
 
