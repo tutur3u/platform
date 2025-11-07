@@ -48,6 +48,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import type { ComponentProps, ElementType } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
@@ -274,6 +275,7 @@ export function TimerControls({
   currentUserId,
 }: TimerControlsProps) {
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [newSessionTitle, setNewSessionTitle] = useState('');
   const [newSessionDescription, setNewSessionDescription] = useState('');
@@ -682,6 +684,26 @@ export function TimerControls({
     loadTimerModeSessionsFromStorage,
     formatDuration,
   ]);
+
+  // Handle taskSelect URL parameter
+  useEffect(() => {
+    const taskSelectId = searchParams.get('taskSelect');
+    if (taskSelectId && tasks.length > 0) {
+      const selectedTask = tasks.find((t) => t.id === taskSelectId);
+      if (selectedTask) {
+        // Set the task as selected in the dropdown
+        setSelectedTaskId(taskSelectId);
+        setSessionMode('task');
+
+        // Show notification about pre-selected task
+        toast.info(`Task selected: ${selectedTask.name}`, {
+          description:
+            'This task has been selected for tracking. Click Start to begin.',
+          duration: 5000,
+        });
+      }
+    }
+  }, [searchParams, tasks]);
 
   // Update session protection when timer state changes
   useEffect(() => {

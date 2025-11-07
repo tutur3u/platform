@@ -926,9 +926,9 @@ export default function TimeTrackerContent({
                       <div className="/40 max-h-[400px] overflow-y-auto rounded-lg border bg-gray-50/30 p-4 dark:border-gray-700/40 dark:bg-gray-800/20">
                         <div className="space-y-4">
                           {filteredSidebarTasks.map((task) => (
-                            // biome-ignore lint/a11y/noStaticElementInteractions: <>
                             <div
                               key={task.id}
+                              id={`task-${task.id}`}
                               className={cn(
                                 'group cursor-grab rounded-lg border p-4 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow-md active:cursor-grabbing',
                                 // Enhanced styling for assigned tasks
