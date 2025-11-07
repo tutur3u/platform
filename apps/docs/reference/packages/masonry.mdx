@@ -85,6 +85,15 @@ export function Gallery() {
   Additional CSS classes to apply to the masonry container element.
 </ResponseField>
 
+<ResponseField name="strategy" type="'balanced' | 'count'" default="count">
+  Strategy for distributing items across columns:
+  
+  - `'count'` (default): Distributes items based on item count. Faster with no layout shift, but may result in uneven column heights when items have varying heights.
+  - `'balanced'`: Distributes items based on actual measured heights for better visual balance. May cause a brief initial layout shift as heights are measured, but results in more evenly balanced column heights.
+  
+  Use `'balanced'` when visual balance is critical (e.g., image galleries with varying aspect ratios). Use `'count'` for better performance and no layout shift.
+</ResponseField>
+
 ## Examples
 
 ### Image Gallery
@@ -205,20 +214,64 @@ export function FixedColumnGrid() {
 }
 ```
 
+### Balanced vs Count Strategy
+
+Choose between fast count-based distribution or height-based balancing:
+
+```tsx
+import { Masonry } from '@tuturuuu/masonry';
+
+// Count-based (default) - Fast, no layout shift
+export function CountBasedGallery() {
+  return (
+    <Masonry columns={3} gap={16} strategy="count">
+      {items.map((item) => (
+        <div key={item.id} style={{ height: item.height }}>
+          {item.content}
+        </div>
+      ))}
+    </Masonry>
+  );
+}
+
+// Height-based - Better visual balance for varying heights
+export function BalancedGallery() {
+  return (
+    <Masonry columns={3} gap={16} strategy="balanced">
+      {items.map((item) => (
+        <div key={item.id} style={{ height: item.height }}>
+          {item.content}
+        </div>
+      ))}
+    </Masonry>
+  );
+}
+```
+
+The `balanced` strategy is particularly useful for image galleries where images have varying aspect ratios, while `count` works well for uniform content like cards or tiles.
+
 ## How It Works
 
-The masonry component uses a **"shortest column" algorithm** to distribute items:
+The masonry component uses a **shortest-column algorithm** to distribute items:
 
-1. Creates the specified number of columns
-2. Iterates through all items sequentially
-3. Places each item in the column that currently has the fewest items
-4. Results in balanced column heights throughout the grid
+1. **Responsive Breakpoints**: Determines the number of columns based on container width
+2. **Distribution Strategy**:
+   - **Count-based** (default): Places each item in the column with the fewest items, rotating through equal columns
+   - **Height-based** (`strategy="balanced"`): Measures actual item heights using ResizeObserver and places each item in the shortest column
+3. **CSS Grid Layout**: Uses native CSS Grid with auto-flow dense for optimal rendering
+4. **Even Distribution**: Ensures items are distributed evenly across columns with no stacking bias
 
-This approach ensures that columns remain balanced even when items have varying heights, preventing the situation where some columns become much taller than others.
+The height-based strategy provides better visual balance for items with varying heights, while the count-based strategy is faster and avoids layout shift.
 
-### Why Not Round-Robin?
+## Performance Considerations
 
-A simple round-robin distribution (item 1 → column 1, item 2 → column 2, etc.) can lead to unbalanced layouts when items have different heights. The shortest-column algorithm dynamically adjusts placement to maintain visual balance.
+- **Count Strategy (Default)**: Lightweight and fast. No height measurements, no layout shift. Ideal for most use cases.
+- **Balanced Strategy**: Uses ResizeObserver to measure heights. Slightly more overhead and may cause initial layout shift, but provides better visual balance for varying item sizes.
+- **Responsive**: Automatically adjusts columns based on container width
+- **CSS Grid**: Leverages native browser optimizations
+- **No JavaScript Layout**: Distribution logic runs once, then pure CSS handles rendering
+
+For best performance with many items or frequent updates, use the default `strategy="count"`. Use `strategy="balanced"` when visual balance is more important than avoiding layout shift.
 
 ## Styling
 
@@ -260,6 +313,11 @@ The component uses inline styles for core layout functionality and accepts a `cl
     Always provide unique `key` props to direct children of Masonry to ensure proper React reconciliation.
   </Accordion>
 
+  <Accordion title="Choose the right distribution strategy">
+    - Use `strategy="count"` (default) for best performance and no layout shift. Ideal for uniform content or when loading indicators are present.
+    - Use `strategy="balanced"` when items have significantly varying heights and visual balance is critical (e.g., image galleries with mixed aspect ratios).
+  </Accordion>
+
   <Accordion title="Optimize images">
     For image galleries, use appropriately sized images and consider lazy loading for better performance.
   </Accordion>
@@ -288,6 +346,7 @@ interface MasonryProps {
     [key: number]: number;
   };
   className?: string;
+  strategy?: 'balanced' | 'count';
 }
 ```
 
@@ -311,7 +370,9 @@ The package supports all modern browsers that support:
 
 <AccordionGroup>
   <Accordion title="Columns are uneven in height">
-    This is expected behavior with varying item heights. The shortest-column algorithm balances by item count, not actual pixel height. For exact height matching, consider using CSS Grid instead.
+    With the default `strategy="count"`, this is expected behavior. The algorithm balances by item count, not pixel height. 
+    
+    For better visual balance with varying item heights, use `strategy="balanced"` which measures actual heights and distributes items to the shortest column.
   </Accordion>
 
   <Accordion title="Breakpoints not working">
@@ -326,6 +387,10 @@ The package supports all modern browsers that support:
     If you see 3 columns when expecting a different number, check that you've either:
     - Passed a custom `columns` prop, or
     - Passed an empty `breakpoints={{}}` object to disable responsive behavior
+  </Accordion>
+
+  <Accordion title="Layout shift with balanced strategy">
+    The `strategy="balanced"` option measures item heights after mount, which can cause a brief layout shift. This is expected behavior for achieving better visual balance. If layout stability is more important, use `strategy="count"` (default).
   </Accordion>
 </AccordionGroup>
 
@@ -343,7 +408,12 @@ The package is open source and available on GitHub:
 
 ## Changelog
 
-### 0.0.3 (Current)
+### 0.0.4 (Current)
+- Added `strategy` prop with `'count'` and `'balanced'` modes
+- `'balanced'` mode uses ResizeObserver to measure heights for better visual balance
+- `'count'` mode (default) provides best performance with no layout shift
+
+### 0.0.3
 - Fixed unbalanced column distribution using shortest-column algorithm
 - Improved visual balance across all column heights
 

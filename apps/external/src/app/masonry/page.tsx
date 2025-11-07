@@ -83,6 +83,7 @@ export default function MasonryDemo() {
   const [columns, setColumns] = useState(3);
   const [gap, setGap] = useState(16);
   const [itemCount, setItemCount] = useState(12);
+  const [strategy, setStrategy] = useState<'count' | 'balanced'>('count');
 
   const displayItems = sampleItems.slice(0, itemCount);
 
@@ -104,7 +105,7 @@ export default function MasonryDemo() {
           <h2 className="mb-4 font-semibold text-dynamic-foreground text-xl">
             Controls
           </h2>
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-4">
             {/* Columns Control */}
             <div>
               <label className="mb-2 block font-medium text-dynamic-foreground text-sm">
@@ -150,6 +151,52 @@ export default function MasonryDemo() {
                 className="w-full"
               />
             </div>
+
+            {/* Strategy Control */}
+            <div>
+              <label className="mb-2 block font-medium text-dynamic-foreground text-sm">
+                Strategy
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setStrategy('count')}
+                  className={`flex-1 rounded-md px-3 py-2 text-sm transition-colors ${
+                    strategy === 'count'
+                      ? 'bg-dynamic-blue text-white'
+                      : 'bg-dynamic-muted text-dynamic-foreground hover:bg-dynamic-muted/80'
+                  }`}
+                >
+                  Count
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStrategy('balanced')}
+                  className={`flex-1 rounded-md px-3 py-2 text-sm transition-colors ${
+                    strategy === 'balanced'
+                      ? 'bg-dynamic-blue text-white'
+                      : 'bg-dynamic-muted text-dynamic-foreground hover:bg-dynamic-muted/80'
+                  }`}
+                >
+                  Balanced
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          {/* Strategy Info */}
+          <div className="mt-4 rounded-md bg-dynamic-muted p-4">
+            <p className="text-dynamic-muted-foreground text-sm">
+              {strategy === 'count' ? (
+                <>
+                  <strong>Count Strategy:</strong> Fast distribution by item count. No layout shift, but columns may have uneven heights.
+                </>
+              ) : (
+                <>
+                  <strong>Balanced Strategy:</strong> Measures actual heights for better visual balance. May cause brief layout shift on load.
+                </>
+              )}
+            </p>
           </div>
         </div>
 
@@ -157,6 +204,7 @@ export default function MasonryDemo() {
         <Masonry
           columns={columns}
           gap={gap}
+          strategy={strategy}
           breakpoints={{
             640: 1,
             768: 2,
@@ -228,6 +276,12 @@ export default function MasonryDemo() {
                 algorithm
               </span>
             </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-1 text-dynamic-green">✓</span>
+              <span>
+                <strong>Flexible:</strong> Choose between fast count-based or height-balanced distribution
+              </span>
+            </li>
           </ul>
         </div>
 
@@ -244,6 +298,7 @@ export function Gallery() {
     <Masonry
       columns={${columns}}
       gap={${gap}}
+      strategy="${strategy}"
       breakpoints={{
         640: 1,
         768: 2,
