@@ -11,7 +11,6 @@ import WorkspaceWrapper from '@/components/workspace-wrapper';
 import UpcomingCalendarEvents from './calendar/upcoming-events';
 import Countdown from './countdown';
 import DashboardCardSkeleton from './dashboard-card-skeleton';
-import NewlyCreatedTasks from './tasks/newly-created-tasks';
 import TasksAssignedToMe from './tasks/tasks-assigned-to-me';
 import TimeTrackingMetrics from './time-tracker/time-tracking-metrics';
 import RecentTumeetPlans from './tumeet/recent-plans';
@@ -32,7 +31,7 @@ interface Props {
 export default async function WorkspaceHomePage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params} fallback={<LoadingStatisticCard />}>
-      {async ({ workspace, wsId, isPersonal }) => {
+      {async ({ workspace, wsId }) => {
         // At this point, wsId is guaranteed to be a validated UUID
         // and workspace contains the full workspace object with role and joined status
 
@@ -61,12 +60,6 @@ export default async function WorkspaceHomePage({ params }: Props) {
                   <UserGroupQuickActions wsId={wsId} />
                 </Suspense>
                 <div className="grid gap-4 pb-4 md:grid-cols-2">
-                  {!isPersonal && (
-                    <Suspense fallback={<DashboardCardSkeleton />}>
-                      <NewlyCreatedTasks wsId={wsId} />
-                    </Suspense>
-                  )}
-
                   <Suspense fallback={<DashboardCardSkeleton />}>
                     <TasksAssignedToMe
                       wsId={wsId}
@@ -91,13 +84,7 @@ export default async function WorkspaceHomePage({ params }: Props) {
                   </Suspense>
 
                   <Suspense fallback={<DashboardCardSkeleton />}>
-                    <RecentTumeetPlans
-                      className={
-                        disableCalendar || isPersonal
-                          ? 'col-span-1'
-                          : 'col-span-full'
-                      }
-                    />
+                    <RecentTumeetPlans />
                   </Suspense>
                 </div>
               </>
