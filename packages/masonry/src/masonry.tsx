@@ -311,25 +311,17 @@ export function Masonry({
     );
   }, [redistributionKey]);
 
-  // Helper: Calculate variance of column heights
-  const calculateVariance = (heights: number[]): number => {
-    const mean = heights.reduce((sum, h) => sum + h, 0) / heights.length;
-    const variance =
-      heights.reduce((sum, h) => sum + (h - mean) ** 2, 0) / heights.length;
-    return Math.sqrt(variance) / mean; // Coefficient of variation
-  };
-
-  // Helper: Distribute items with multi-pass optimization
+  // Helper: Distribute items with Largest First Decreasing (LFD) algorithm
   const distributeItems = (items: ReactNode[]): ReactNode[][] => {
     const wrappers: ReactNode[][] = Array.from(
       { length: currentColumns },
       () => []
     );
 
-    // Build initial distribution with item metadata
+    // Build item metadata with heights
     interface ItemMetadata {
       child: ReactNode;
-      index: number;
+      originalIndex: number;
       height: number;
     }
 
@@ -338,80 +330,37 @@ export function Masonry({
       if (effectiveHeight === undefined || effectiveHeight <= 0) {
         effectiveHeight = getAverageHeight;
       }
-      return { child, index, height: effectiveHeight };
+      return { child, originalIndex: index, height: effectiveHeight };
     });
 
-    // Phase 1: Initial greedy placement
-    const columnAssignments: number[] = Array(items.length).fill(0);
+    // Sort items by height in descending order (Largest First)
+    // This is proven to produce better bin-packing results
+    const sortedItems = [...itemsWithHeights].sort((a, b) => b.height - a.height);
+
+    // Track column heights for greedy placement
     const columnHeights = Array(currentColumns).fill(0);
 
-    itemsWithHeights.forEach((item, index) => {
-      // Find shortest column
+    // Greedy placement: place each item in the shortest column
+    sortedItems.forEach((item) => {
+      // Find the shortest column
       let shortestColumnIndex = 0;
       let minHeight = columnHeights[0] ?? 0;
 
       for (let i = 1; i < currentColumns; i++) {
         const height = columnHeights[i] ?? 0;
-        if (height < minHeight) {
+        // Use threshold to prefer earlier columns when heights are close
+        const threshold = minHeight * balanceThreshold;
+        if (height < minHeight - threshold) {
           minHeight = height;
           shortestColumnIndex = i;
         }
       }
 
-      columnAssignments[index] = shortestColumnIndex;
-      columnHeights[shortestColumnIndex] += item.height + gap;
-    });
-
-    // Phase 2: Optimization passes - swap items to reduce variance
-    let improved = true;
-    let passCount = 0;
-    const maxPasses = 3; // Limit optimization passes
-
-    while (improved && passCount < maxPasses) {
-      improved = false;
-      passCount++;
-
-      // Try swapping items between columns
-      for (let i = 0; i < itemsWithHeights.length - 1; i++) {
-        for (let j = i + 1; j < itemsWithHeights.length; j++) {
-          const item1 = itemsWithHeights[i];
-          const item2 = itemsWithHeights[j];
-          if (!item1 || !item2) continue;
-
-          const col1 = columnAssignments[i] ?? 0;
-          const col2 = columnAssignments[j] ?? 0;
-
-          // Skip if same column
-          if (col1 === col2) continue;
-
-          // Calculate current variance
-          const currentVariance = calculateVariance(columnHeights);
-
-          // Try swapping
-          const newHeights = [...columnHeights];
-          newHeights[col1] = newHeights[col1] - item1.height + item2.height;
-          newHeights[col2] = newHeights[col2] - item2.height + item1.height;
-
-          const newVariance = calculateVariance(newHeights);
-
-          // If swap improves balance significantly, apply it
-          if (newVariance < currentVariance * 0.95) {
-            columnHeights[col1] = newHeights[col1];
-            columnHeights[col2] = newHeights[col2];
-            columnAssignments[i] = col2;
-            columnAssignments[j] = col1;
-            improved = true;
-          }
-        }
-      }
-    }
-
-    // Phase 3: Build final wrappers from assignments
-    itemsWithHeights.forEach((item, index) => {
-      const columnIndex = columnAssignments[index] ?? 0;
-      const column = wrappers[columnIndex];
+      // Add item to shortest column
+      const column = wrappers[shortestColumnIndex];
       if (column) {
         column.push(item.child);
+        columnHeights[shortestColumnIndex] += item.height + gap;
       }
     });
 

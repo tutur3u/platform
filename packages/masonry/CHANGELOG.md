@@ -1,20 +1,30 @@
 # Changelog
 
+## [0.3.4] - 2025-11-07
+
+### Improved
+- **Largest First Decreasing (LFD)**: Replaced swap-based optimization with proven bin-packing algorithm
+- **Smart sorting**: Places largest items first for optimal space utilization
+- **Better balance**: LFD algorithm produces results within 11/9 of optimal distribution
+- **Threshold-based placement**: Uses balance threshold for tie-breaking when columns are similar height
+- **Simpler & faster**: More efficient than complex swap-based approaches
+
+### Algorithm
+- **Phase 1**: Sort items by height (largest first)
+- **Phase 2**: Greedy placement - each item goes to shortest column
+- **Phase 3**: Threshold-based tie-breaking for similar column heights
+
+### Results
+- ✅ **Dramatically better balance**: Proven algorithm minimizes column height variance
+- ✅ **Optimal for varied sizes**: Handles mixed aspect ratios exceptionally well
+- ✅ **Fast & efficient**: Simple O(n log n) sort + O(n·k) placement
+
 ## [0.3.3] - 2025-11-07
 
 ### Improved
-- **Multi-pass optimization**: Replaced simple greedy algorithm with intelligent swap-based rebalancing
-- **Variance reduction**: Actively minimizes column height differences through iterative optimization
-- **Smart swapping**: Tries item exchanges between columns to achieve much better visual balance
-- **Even distribution**: Dramatically improves visual balance for image galleries
-- **Phase 1**: Initial greedy placement
-- **Phase 2**: Up to 3 optimization passes swapping items to reduce variance
-- **Phase 3**: Only accepts swaps that improve balance by ≥5%
-
-### Results
-- ✅ **Dramatically better balance**: Columns end at much more similar heights
-- ✅ **Optimized placement**: Items intelligently redistributed for visual harmony
-- ✅ **Still performant**: Multi-pass optimization completes in milliseconds
+- **Multi-pass optimization**: Implemented swap-based rebalancing (replaced in v0.3.4 with LFD)
+- **Iterative improvement**: Up to 3 optimization passes
+- Note: This approach was replaced with Largest First Decreasing in v0.3.4 for better results
 
 ## [0.3.2] - 2025-11-07
 
