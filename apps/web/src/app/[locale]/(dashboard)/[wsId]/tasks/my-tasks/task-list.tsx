@@ -15,7 +15,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import TaskListWithCompletion from '../../(dashboard)/tasks/task-list-with-completion';
+import TaskListWithCompletion from './task-list-with-completion';
 
 interface TaskListProps {
   isPersonal: boolean;

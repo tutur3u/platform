@@ -118,6 +118,8 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.17",
     "@tailwindcss/typography": "^0.5.19",
+    "@tanstack/react-query": "^5.90.6",
+    "@tanstack/react-table": "^8.21.3",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@tuturuuu/types": "workspace:*",
@@ -137,9 +139,14 @@
     "typescript": "^5.9.3",
     "vitest": "^4.0.7"
   },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.90.6",
+    "@tanstack/react-table": "^8.21.3"
+  },
   "exports": {
     "./globals.css": "./src/globals.css",
     "./postcss.config": "./postcss.config.mjs",
+    "./hooks/use-board-actions": "./src/hooks/use-board-actions.ts",
     "./hooks/*": "./src/hooks/*.ts",
     "./hooks/time-blocking-provider": "./src/hooks/time-blocking-provider.tsx",
     "./hooks/use-at-bottom": "./src/hooks/use-at-bottom.tsx",
