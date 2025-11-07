@@ -6,7 +6,7 @@ updatedAt: '2025-11-07'
 
 ## Overview
 
-The `@tuturuuu/masonry` package provides a Pinterest-style masonry grid component for React with modern ResizeObserver-based measurement. Version 0.3.7 introduces best-first optimization for excellent visual balance. Version 0.3.2 brought rock-solid stability with aggressive debouncing and auto-stop mechanisms. Version 0.3.0 brought major performance improvements (50-70% CPU reduction), fixed the columns prop bug, and added advanced configuration options. It offers two distribution strategies: a fast count-based approach for uniform content, and an intelligent height-based balancing algorithm with event-driven measurement, best-first optimization, and memoized calculations.
+The `@tuturuuu/masonry` package provides a Pinterest-style masonry grid component for React with modern ResizeObserver-based measurement. Version 0.3.8 introduces direct item migration for excellent visual balance. Version 0.3.2 brought rock-solid stability with aggressive debouncing and auto-stop mechanisms. Version 0.3.0 brought major performance improvements (50-70% CPU reduction), fixed the columns prop bug, and added advanced configuration options. It offers two distribution strategies: a fast count-based approach for uniform content, and an intelligent height-based balancing algorithm with event-driven measurement, iterative item migration, and memoized calculations.
 
 ## Installation
 
@@ -65,7 +65,7 @@ export function Gallery() {
 <Note>
 **v0.3.0+ Change**: The `columns` prop now works as expected without requiring breakpoints. Previously, default breakpoints would override the columns setting based on screen width.
 
-**v0.3.7 Improvement**: Best-first optimization - each pass finds and applies the BEST swap among all possibilities. Up to 5 passes with 0.5px threshold ensures excellent balance by systematically converging to local optimum.
+**v0.3.8 Improvement**: Direct item migration - iteratively moves items from tallest to shortest column. Up to 10 passes with smart stopping (within 5% or 20px) ensures excellent balance through direct balancing.
 
 **v0.3.2 Improvement**: Aggressive stability controls (500ms debounce, 10px threshold, max 10 redistributions, auto-stop after images load) ensure rock-solid layouts that settle and stay settled.
 </Note>
@@ -369,12 +369,12 @@ The masonry component uses an **optimized shortest-column algorithm** to distrib
    - Uses threshold-based greedy algorithm
    - Considers balance threshold for tie-breaking
    - Tracks coefficient of variation for quality
-5. **Best-First Optimization** (v0.3.7 enhanced):
+5. **Item Migration** (v0.3.8 new):
    - Phase 1: Min-Max placement (evaluates all placements)
-   - Phase 2: Best-first refinement (finds BEST swap in each of 5 passes)
+   - Phase 2: Iterative balancing (moves items from tallest to shortest)
    - Phase 3: Build layout from optimized assignments
-   - Accepts improvements >0.5px for fine-grained optimization
-   - Systematically converges to excellent balance
+   - Stops when columns within 5% or 20px of each other
+   - Direct approach for better convergence
 6. **Smart Redistribution** (v0.3.2 enhanced):
    - Debounced 500ms after last change for maximum stability
    - Only triggers when heights change >10px (ignores all minor fluctuations)
@@ -405,7 +405,7 @@ The height-based strategy provides better visual balance for items with varying 
 ### Strategy Performance
 
 - **Count Strategy (Default)**: Fastest option. No height measurements, no layout shift, zero overhead. Ideal for most use cases and 100+ items.
-- **Balanced Strategy (v0.3.7)**: Modern ResizeObserver API with best-first optimization and aggressive stability controls. Event-driven with systematic best-first search (finds BEST swap in each of 5 passes) for excellent visual balance, 500ms debounce, 10px threshold, max 10 redistributions, and auto-stop after images load. Rock-solid layouts that settle and stay settled with excellent column balance.
+- **Balanced Strategy (v0.3.8)**: Modern ResizeObserver API with iterative item migration and aggressive stability controls. Event-driven with direct balancing (moves items from tallest to shortest in up to 10 passes) for excellent visual balance, 500ms debounce, 10px threshold, max 10 redistributions, and auto-stop after images load. Rock-solid layouts that settle and stay settled with excellent column balance.
 
 ### Memoization Benefits
 
@@ -490,12 +490,12 @@ The `strategy="balanced"` mode uses modern ResizeObserver API for event-driven m
 4. **Accurate Measurement**: Uses `entry.contentRect.height` from ResizeObserver for precision
 5. **Validation & Fallbacks**: Validates measurements; uses running average for missing/invalid values
 6. **Smart Change Detection** (v0.3.2): Only redistributes when heights change by >10px (completely ignores minor fluctuations)
-7. **Best-First Optimization** (v0.3.7 enhanced):
+7. **Item Migration** (v0.3.8 new):
    - Phase 1: Min-Max placement minimizes height range
-   - Phase 2: Up to 5 best-first optimization passes
-   - Each pass finds BEST swap among all pairs
-   - Accepts any improvement >0.5px
-   - Systematically achieves excellent column equality
+   - Phase 2: Up to 10 iterative balancing passes
+   - Each pass moves best item from tallest to shortest column
+   - Stops when range < max(20px, 5% of shortest)
+   - Direct migration achieves excellent column equality
 8. **Aggressive Debouncing** (v0.3.2): 500ms debounce + `requestAnimationFrame` ensures maximum stability
 9. **Redistribution Limits** (v0.3.2): Maximum 10 redistributions prevents endless movement
 10. **Image Load Tracking** (v0.3.2): Automatically stops observing once all images finish loading
@@ -512,8 +512,8 @@ This v0.3.0+ approach provides:
 - ✅ **Smooth 60fps** - even with 100+ items
 - ✅ **Robust validation** - handles edge cases gracefully
 - ✅ **No layout shift** - multi-column from first render
-- ✅ **Best-First Optimization** (v0.3.7) - Finds BEST swap in each pass, not just first improvement
-- ✅ **Exhaustive search** (v0.3.7) - 5 passes evaluating ALL swaps ensures excellent balance
+- ✅ **Item Migration** (v0.3.8) - Direct balancing moves items from tall to short columns
+- ✅ **Iterative optimization** (v0.3.8) - Up to 10 passes with smart stopping for excellent balance
 - ✅ **Aggressive debouncing** (v0.3.2) - 500ms wait ensures rock-solid stability
 - ✅ **High thresholds** (v0.3.2) - 10px minimum change completely ignores minor adjustments
 - ✅ **Auto-stop** (v0.3.2) - Stops observing after images load or 2s of stability
@@ -526,7 +526,7 @@ This v0.3.0+ approach provides:
 ## Additional Performance Notes
 
 - The component uses React state and effects efficiently
-- Resize events are properly debounced through React's rendering cycle
+- Resize events are properly debounced through React's rendering cycle  
 - Count strategy: No DOM measurements, instant rendering, zero overhead
 - Balanced strategy (v0.3.3):
   - Event-driven measurement (no polling)
@@ -703,7 +703,33 @@ The package is open source and available on GitHub:
 
 ## Changelog
 
-### 0.3.7 (Current - Perfect Balance Release)
+### 0.3.8 (Current - Perfect Balance Release)
+
+**Direct Balancing with Item Migration:**
+- 🎯 **Item migration**: Moves items from tallest to shortest column (not just swapping)
+- 📊 **Iterative optimization**: Up to 10 passes moving best item each time
+- ⚖️ **Excellent balance**: Directly reduces height differences
+- 🎨 **Smart stopping**: Stops when columns within 5% or 20px of each other
+- ⚡ **More effective**: Migration is simpler and more direct than pair swaps
+
+**Algorithm Details:**
+- **Phase 1**: Min-Max greedy (initial placement)
+- **Phase 2**: Iterative balancing (move items from tallest to shortest)
+- **Phase 3**: Early stop when well-balanced
+- **Phase 4**: Build final layout
+
+**Why Migration Works Better:**
+- Directly addresses the problem (move from tall to short)
+- Doesn't require finding matching pairs to swap
+- Can move any item that improves balance
+- Converges faster to good solution
+
+**Results:**
+- ✅ **Better balance**: More direct approach reduces extremes
+- ✅ **Simpler logic**: Migration is conceptually clearer than swapping
+- ✅ **Faster convergence**: Gets to good solution in fewer iterations
+
+### 0.3.7 (Perfect Balance Release)
 
 **Best-First Optimization Enhancement:**
 - 🎯 **Best-first search**: Each pass finds and applies the BEST swap, not just first improvement

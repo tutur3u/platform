@@ -329,7 +329,9 @@ export function Masonry({
     });
 
     // Sort items by height in descending order (Largest First)
-    const sortedItems = [...itemsWithHeights].sort((a, b) => b.height - a.height);
+    const sortedItems = [...itemsWithHeights].sort(
+      (a, b) => b.height - a.height
+    );
 
     // Track which column each item is assigned to
     const columnAssignments: number[] = [];
@@ -351,9 +353,9 @@ export function Masonry({
       for (let i = 0; i < currentColumns; i++) {
         const testHeights = [...columnHeights];
         testHeights[i] += item.height + gap;
-        
+
         const range = getHeightRange(testHeights);
-        
+
         if (range < bestRange - 1) {
           bestRange = range;
           bestColumnIndex = i;
@@ -369,70 +371,61 @@ export function Masonry({
       columnHeights[bestColumnIndex] += item.height + gap;
     });
 
-    // Phase 2: Aggressive post-optimization - exhaustive swap search
+    // Phase 2: Direct balancing - iteratively move items from tallest to shortest columns
     let improved = true;
     let passCount = 0;
-    const maxPasses = 5; // More passes for better balance
+    const maxPasses = 10; // More passes for thorough optimization
 
     while (improved && passCount < maxPasses) {
       improved = false;
       passCount++;
 
-      let bestSwapImprovement = 0;
-      let bestSwapI = -1;
-      let bestSwapJ = -1;
-      let bestSwapNewHeights: number[] = [];
+      // Find tallest and shortest columns
+      const maxHeight = Math.max(...columnHeights);
+      const minHeight = Math.min(...columnHeights);
+      const range = maxHeight - minHeight;
 
-      // Find the best swap in this pass
+      // Stop if columns are already well balanced (within 5% or 20px)
+      if (range < Math.max(20, minHeight * 0.05)) {
+        break;
+      }
+
+      const tallestCol = columnHeights.indexOf(maxHeight);
+      const shortestCol = columnHeights.indexOf(minHeight);
+
+      let bestMoveImprovement = 0;
+      let bestMoveItemIndex = -1;
+      let bestMoveNewHeights: number[] = [];
+
+      // Try moving items from tallest column to shortest column
       for (let i = 0; i < sortedItems.length; i++) {
-        for (let j = i + 1; j < sortedItems.length; j++) {
-          const item1 = sortedItems[i];
-          const item2 = sortedItems[j];
-          if (!item1 || !item2) continue;
+        const item = sortedItems[i];
+        if (!item) continue;
 
-          const col1 = columnAssignments[i];
-          const col2 = columnAssignments[j];
-          if (col1 === undefined || col2 === undefined) continue;
+        const currentCol = columnAssignments[i];
+        if (currentCol !== tallestCol) continue;
 
-          // Skip if same column
-          if (col1 === col2) continue;
+        // Calculate what would happen if we moved this item
+        const newHeights = [...columnHeights];
+        newHeights[tallestCol] -= item.height + gap;
+        newHeights[shortestCol] += item.height + gap;
 
-          // Calculate current range
-          const currentRange = getHeightRange(columnHeights);
+        const newRange = getHeightRange(newHeights);
+        const improvement = range - newRange;
 
-          // Simulate swap
-          const newHeights = [...columnHeights];
-          newHeights[col1] = newHeights[col1] - item1.height + item2.height;
-          newHeights[col2] = newHeights[col2] - item2.height + item1.height;
-
-          const newRange = getHeightRange(newHeights);
-          const improvement = currentRange - newRange;
-
-          // Track the best swap found so far (any improvement counts)
-          if (improvement > bestSwapImprovement) {
-            bestSwapImprovement = improvement;
-            bestSwapI = i;
-            bestSwapJ = j;
-            bestSwapNewHeights = newHeights;
-          }
+        // Track best move
+        if (improvement > bestMoveImprovement) {
+          bestMoveImprovement = improvement;
+          bestMoveItemIndex = i;
+          bestMoveNewHeights = newHeights;
         }
       }
 
-      // Apply the best swap if it improves balance at all
-      if (bestSwapImprovement > 0.5 && bestSwapI >= 0 && bestSwapJ >= 0) {
-        const item1 = sortedItems[bestSwapI];
-        const item2 = sortedItems[bestSwapJ];
-        if (item1 && item2) {
-          const col1 = columnAssignments[bestSwapI];
-          const col2 = columnAssignments[bestSwapJ];
-          if (col1 !== undefined && col2 !== undefined) {
-            // Apply the best swap
-            columnHeights.splice(0, columnHeights.length, ...bestSwapNewHeights);
-            columnAssignments[bestSwapI] = col2;
-            columnAssignments[bestSwapJ] = col1;
-            improved = true;
-          }
-        }
+      // Apply the best move if it improves balance
+      if (bestMoveImprovement > 0 && bestMoveItemIndex >= 0) {
+        columnHeights.splice(0, columnHeights.length, ...bestMoveNewHeights);
+        columnAssignments[bestMoveItemIndex] = shortestCol;
+        improved = true;
       }
     }
 

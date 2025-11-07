@@ -2,7 +2,7 @@
 
 A lightweight, high-performance masonry grid component for React with intelligent distribution strategies and modern ResizeObserver-based measurement.
 
-**Version**: 0.3.7 (Stable)
+**Version**: 0.3.8 (Stable)
 
 ## Features
 
@@ -195,7 +195,7 @@ The `balanced` strategy measures actual item heights and distributes items to th
 </Masonry>
 ```
 
-**How it works (v0.3.7)**: The balanced strategy uses modern `ResizeObserver` API to monitor item height changes. When an item resizes (e.g., image loads), the observer triggers redistribution via `requestAnimationFrame` for smooth updates. It uses a hybrid algorithm combining Min-Max placement with aggressive best-first optimization:
+**How it works (v0.3.8)**: The balanced strategy uses modern `ResizeObserver` API to monitor item height changes. When an item resizes (e.g., image loads), the observer triggers redistribution via `requestAnimationFrame` for smooth updates. It uses a hybrid algorithm combining Min-Max placement with iterative item migration:
 
 - Threshold-based tie-breaking for better balance
 - Running average height for unmeasured items
@@ -220,21 +220,22 @@ The `balanced` strategy measures actual item heights and distributes items to th
 4. Uses strict comparison for deterministic distribution
 5. **Memoized** - only recalculates when children or columns change
 
-### Balanced Strategy Algorithm (v0.3.7)
+### Balanced Strategy Algorithm (v0.3.8)
 
 1. **Immediate Multi-Column Render**: Items appear instantly in their target columns
 2. **ResizeObserver Setup**: Observes all masonry items for size changes
 3. **Event-Driven Measurement**: Captures height changes as they happen (images loading, etc.)
-4. **Hybrid Optimization** (v0.3.7 enhanced): 
+4. **Iterative Balancing** (v0.3.8 new): 
    - **Phase 1 - Min-Max Placement**: 
      - Sorts items by height (largest first)
      - For each item, evaluates all possible column placements
      - Chooses column that minimizes height range
-   - **Phase 2 - Best-First Optimization**: 
-     - Up to 5 refinement passes
-     - Each pass evaluates ALL possible item swaps
-     - Picks and applies the BEST swap (biggest improvement)
-     - Continues until no improvements >0.5px remain
+   - **Phase 2 - Item Migration**: 
+     - Up to 10 optimization passes
+     - Each pass finds tallest and shortest columns
+     - Tries moving each item from tallest to shortest
+     - Applies the move that improves balance most
+     - Stops when columns within 5% or 20px of each other
    - **Phase 3 - Build Layout**: 
      - Constructs final wrappers from optimized assignments
 5. **Smart Redistribution** (v0.3.2 enhanced): 
@@ -376,7 +377,33 @@ Fine-tune column counts per viewport:
 
 ## Recent Updates
 
-### v0.3.7 (Current - Perfect Balance Release)
+### v0.3.8 (Current - Perfect Balance Release)
+
+**Direct Balancing with Item Migration:**
+- 🎯 **Item migration**: Moves items from tallest to shortest column (not just swapping)
+- 📊 **Iterative optimization**: Up to 10 passes moving best item each time
+- ⚖️ **Excellent balance**: Directly reduces height differences
+- 🎨 **Smart stopping**: Stops when columns within 5% or 20px of each other
+- ⚡ **More effective**: Migration is simpler and more direct than pair swaps
+
+**Algorithm Details:**
+- **Phase 1**: Min-Max greedy (initial placement)
+- **Phase 2**: Iterative balancing (move items from tallest to shortest)
+- **Phase 3**: Early stop when well-balanced
+- **Phase 4**: Build final layout
+
+**Why Migration Works Better:**
+- Directly addresses the problem (move from tall to short)
+- Doesn't require finding matching pairs to swap
+- Can move any item that improves balance
+- Converges faster to good solution
+
+**Results:**
+- ✅ **Better balance**: More direct approach reduces extremes
+- ✅ **Simpler logic**: Migration is conceptually clearer than swapping
+- ✅ **Faster convergence**: Gets to good solution in fewer iterations
+
+### v0.3.7 (Perfect Balance Release)
 
 **Hybrid Algorithm with Aggressive Best-First Optimization:**
 - 🎯 **Best-first search**: Each pass finds and applies the BEST swap, not just first improvement

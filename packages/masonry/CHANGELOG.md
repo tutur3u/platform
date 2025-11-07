@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.3.8] - 2025-11-07
+
+### Changed
+- **Direct balancing**: Replaced swap-based optimization with item migration
+- **Iterative redistribution**: Moves items from tallest to shortest column repeatedly
+- **Better convergence**: Up to 10 passes with early stopping when balanced
+- **Smart threshold**: Stops when columns within 5% or 20px of each other
+- **More effective**: Migration is simpler and more direct than swapping pairs
+
+### Algorithm
+- **Phase 1**: Min-Max greedy placement
+- **Phase 2**: Iterative balancing - repeatedly move best item from tallest to shortest column
+- **Phase 3**: Early stop when range < max(20px, 5% of shortest column)
+- **Phase 4**: Build final layout
+
+### Results
+- ✅ **Direct approach**: Migration is more effective than pair swapping
+- ✅ **Better balance**: Systematically reduces height differences
+- ✅ **Faster convergence**: Direct moves get to good solution quicker
+
 ## [0.3.7] - 2025-11-07
 
 ### Improved
