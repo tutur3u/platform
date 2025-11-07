@@ -437,6 +437,14 @@ The package supports all modern browsers that support:
     If instant rendering is more important than perfect balance, use `strategy="count"` (default).
   </Accordion>
 
+  <Accordion title="Component stuck in single column with balanced strategy">
+    This was fixed in v0.2.1. If you're still experiencing this:
+    - Update to the latest version (`bun add @tuturuuu/masonry@latest`)
+    - The component now requires only 50% of items to have valid measurements before switching to multi-column
+    - Check that items have measurable height (not `display: none` or `height: 0`)
+    - Ensure images have proper `src` attributes
+  </Accordion>
+
   <Accordion title="Component keeps re-rendering">
     This should not happen in v0.1.5+. If you're experiencing infinite rendering:
     - Ensure you're using the latest version (`bun add @tuturuuu/masonry@latest`)
@@ -461,7 +469,16 @@ The package is open source and available on GitHub:
 
 ## Changelog
 
-### 0.2.0 (Current)
+### 0.2.1 (Current)
+
+Critical bug fix for initialization:
+
+- **Fixed single column stuck issue**: Component now properly initializes multi-column layout
+- **More lenient initialization**: Requires only 50% valid measurements instead of 100%
+- **Faster initial render**: Switches to multi-column as soon as minimum threshold is met
+- **Better edge case handling**: Won't get stuck if some items have zero height initially
+
+### 0.2.0
 
 Major improvements to measurement and distribution system:
 

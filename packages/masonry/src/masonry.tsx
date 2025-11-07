@@ -131,7 +131,7 @@ export function Masonry({
       });
 
       // Measure all items and validate measurements
-      let allMeasurementsValid = true;
+      let validMeasurements = 0;
       const newHeights: number[] = [];
 
       items.forEach((item) => {
@@ -145,12 +145,11 @@ export function Masonry({
           const rect = item.getBoundingClientRect();
           const height = rect.height || item.offsetHeight;
 
-          // Validate height measurement
-          if (height <= 0) {
-            allMeasurementsValid = false;
-          } else {
+          // Store height if valid
+          if (height > 0) {
             itemHeightsRef.current.set(itemIndex, height);
             newHeights.push(height);
+            validMeasurements++;
           }
         }
       });
@@ -159,17 +158,14 @@ export function Masonry({
       const measurementHash = newHeights.join(',');
       lastMeasurementRef.current = measurementHash;
 
-      // Show immediately after first valid measurement
-      if (
-        !isInitialized &&
-        allMeasurementsValid &&
-        itemHeightsRef.current.size > 0
-      ) {
+      // Show immediately after we have some valid measurements (at least 50% or 1 item)
+      const minValidMeasurements = Math.max(1, Math.floor(items.length * 0.5));
+      if (!isInitialized && validMeasurements >= minValidMeasurements) {
         setIsInitialized(true);
       }
 
       // If no images, we're done after first valid measurement
-      if (imagesLoadingRef.current.total === 0 && allMeasurementsValid) {
+      if (imagesLoadingRef.current.total === 0 && validMeasurements > 0) {
         return true; // All done
       }
 

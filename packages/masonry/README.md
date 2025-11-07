@@ -2,7 +2,7 @@
 
 A lightweight, responsive masonry grid component for React with intelligent distribution strategies and robust progressive loading.
 
-**Version**: 0.2.0 (Stable)
+**Version**: 0.2.1 (Stable)
 
 ## Features
 
@@ -187,7 +187,16 @@ The component automatically adjusts the number of columns based on viewport widt
 
 ## Recent Updates
 
-### v0.2.0 (Current)
+### v0.2.1 (Current)
+
+Critical bug fix for initialization:
+
+- ✅ **Fixed single column stuck issue**: Component now properly initializes multi-column layout
+- ✅ **More lenient initialization**: Requires only 50% valid measurements instead of 100%
+- ✅ **Faster initial render**: Switches to multi-column as soon as minimum threshold is met
+- ✅ **Better edge case handling**: Won't get stuck if some items have zero height initially
+
+### v0.2.0
 
 Major improvements to measurement and distribution:
 
