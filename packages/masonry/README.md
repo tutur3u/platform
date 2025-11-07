@@ -2,7 +2,7 @@
 
 A lightweight, responsive masonry grid component for React with intelligent distribution strategies.
 
-**Version**: 0.1.0 (Stable)
+**Version**: 0.1.1 (Stable)
 
 ## Features
 
@@ -131,8 +131,9 @@ The `count` strategy distributes items based on item count, placing each item in
 
 The `balanced` strategy measures actual item heights and distributes items to the shortest column. This provides:
 - 🎨 **Better visual balance**: Columns have similar total heights
-- 📏 **Accurate**: Uses actual measured heights
+- 📏 **Accurate**: Uses actual measured heights (waits for images to load)
 - 🔄 **Brief layout shift**: Items measured first, then redistributed
+- 🖼️ **Image-aware**: Waits for all images to load before measuring
 - ✅ **Best for**: Image galleries, content with varying heights
 
 ```tsx
@@ -143,7 +144,7 @@ The `balanced` strategy measures actual item heights and distributes items to th
 </Masonry>
 ```
 
-**Trade-offs**: The balanced strategy has a brief measurement phase (invisible to users) where items are measured before final distribution. This ensures optimal visual balance but may cause a single layout shift on initial load.
+**Trade-offs**: The balanced strategy has a brief measurement phase (invisible to users) where items are measured before final distribution. For image content, it waits for all images to load to ensure accurate height measurements. This ensures optimal visual balance but may cause a single layout shift on initial load.
 
 ## How It Works
 
@@ -157,8 +158,9 @@ The `balanced` strategy measures actual item heights and distributes items to th
 ### Balanced Strategy Algorithm
 
 1. **Measurement Phase**: Renders all items in a hidden single column to measure their heights
-2. **Distribution Phase**: Distributes items to columns based on actual heights, always choosing the shortest column
-3. **Result**: Columns have similar total heights for better visual balance
+2. **Image Loading**: Waits for all `<img>` elements to fully load before measuring
+3. **Distribution Phase**: Distributes items to columns based on actual heights, always choosing the shortest column
+4. **Result**: Columns have similar total heights for better visual balance
 
 The component automatically adjusts the number of columns based on viewport width and configured breakpoints.
 

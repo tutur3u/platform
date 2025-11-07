@@ -96,14 +96,36 @@ export function Masonry({
   useEffect(() => {
     if (!measurementPhase || strategy !== 'balanced') return;
 
-    // Wait for next frame to ensure DOM is ready
-    requestAnimationFrame(() => {
+    const measureHeights = async () => {
       itemHeightsRef.current.clear();
 
       const items = containerRef.current?.querySelectorAll(
         '[data-masonry-item]'
       );
-      items?.forEach((item, index) => {
+
+      if (!items) return;
+
+      // Wait for all images to load
+      const imagePromises: Promise<void>[] = [];
+      items.forEach((item) => {
+        const images = item.querySelectorAll('img');
+        images.forEach((img) => {
+          if (!img.complete) {
+            imagePromises.push(
+              new Promise((resolve) => {
+                img.onload = () => resolve();
+                img.onerror = () => resolve(); // Resolve even on error to not block
+              })
+            );
+          }
+        });
+      });
+
+      // Wait for all images to load
+      await Promise.all(imagePromises);
+
+      // Now measure heights
+      items.forEach((item, index) => {
         if (item instanceof HTMLElement) {
           itemHeightsRef.current.set(index, item.offsetHeight);
         }
@@ -111,8 +133,13 @@ export function Masonry({
 
       // End measurement phase
       setMeasurementPhase(false);
+    };
+
+    // Wait for next frame to ensure DOM is ready, then measure
+    requestAnimationFrame(() => {
+      measureHeights();
     });
-  }, [measurementPhase, strategy, children.length]);
+  }, [measurementPhase, strategy]);
 
   // Distribute items across columns
   const distributeItems = () => {
