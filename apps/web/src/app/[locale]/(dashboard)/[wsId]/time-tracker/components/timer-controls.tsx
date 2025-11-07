@@ -3707,7 +3707,7 @@ export function TimerControls({
                                   openDropdown();
                                 }}
                                 className={cn(
-                                  'h-auto min-h-[2.5rem] pr-10 transition-all duration-200',
+                                  'h-auto min-h-10 pr-10 transition-all duration-200',
                                   isDragOver
                                     ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20'
                                     : isDraggingTask
