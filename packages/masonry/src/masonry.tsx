@@ -311,7 +311,7 @@ export function Masonry({
     );
   }, [redistributionKey]);
 
-  // Helper: Distribute items with Largest First Decreasing (LFD) algorithm
+  // Helper: Distribute items with improved balanced greedy algorithm
   const distributeItems = (items: ReactNode[]): ReactNode[][] => {
     const wrappers: ReactNode[][] = Array.from(
       { length: currentColumns },
@@ -334,33 +334,49 @@ export function Masonry({
     });
 
     // Sort items by height in descending order (Largest First)
-    // This is proven to produce better bin-packing results
     const sortedItems = [...itemsWithHeights].sort((a, b) => b.height - a.height);
 
-    // Track column heights for greedy placement
+    // Track column heights for placement
     const columnHeights = Array(currentColumns).fill(0);
 
-    // Greedy placement: place each item in the shortest column
-    sortedItems.forEach((item) => {
-      // Find the shortest column
-      let shortestColumnIndex = 0;
-      let minHeight = columnHeights[0] ?? 0;
+    // Helper: Calculate the range (max - min) of column heights
+    const getHeightRange = (heights: number[]): number => {
+      const max = Math.max(...heights);
+      const min = Math.min(...heights);
+      return max - min;
+    };
 
-      for (let i = 1; i < currentColumns; i++) {
-        const height = columnHeights[i] ?? 0;
-        // Use threshold to prefer earlier columns when heights are close
-        const threshold = minHeight * balanceThreshold;
-        if (height < minHeight - threshold) {
-          minHeight = height;
-          shortestColumnIndex = i;
+    // Improved greedy placement: minimize the maximum column height
+    sortedItems.forEach((item) => {
+      let bestColumnIndex = 0;
+      let bestRange = Number.POSITIVE_INFINITY;
+
+      // Try placing item in each column and pick the one that minimizes height range
+      for (let i = 0; i < currentColumns; i++) {
+        const testHeights = [...columnHeights];
+        testHeights[i] += item.height + gap;
+        
+        // Calculate what the height range would be after this placement
+        const range = getHeightRange(testHeights);
+        
+        // Pick the column that results in the smallest range (most balanced)
+        // If ranges are equal within threshold, prefer the column with lower absolute height
+        if (range < bestRange - 1) { // 1px tolerance for floating point
+          bestRange = range;
+          bestColumnIndex = i;
+        } else if (Math.abs(range - bestRange) <= 1) {
+          // Tie-breaker: prefer shorter column when ranges are similar
+          if (columnHeights[i] < columnHeights[bestColumnIndex]) {
+            bestColumnIndex = i;
+          }
         }
       }
 
-      // Add item to shortest column
-      const column = wrappers[shortestColumnIndex];
+      // Add item to best column
+      const column = wrappers[bestColumnIndex];
       if (column) {
         column.push(item.child);
-        columnHeights[shortestColumnIndex] += item.height + gap;
+        columnHeights[bestColumnIndex] += item.height + gap;
       }
     });
 
