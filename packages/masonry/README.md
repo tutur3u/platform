@@ -93,7 +93,13 @@ export function Gallery() {
 
 ## How It Works
 
-The masonry component distributes items across columns in a round-robin fashion, ensuring balanced column heights. It automatically adjusts the number of columns based on the viewport width and configured breakpoints.
+The masonry component uses a "shortest column" algorithm to distribute items across columns. Instead of a simple round-robin approach (which can lead to unbalanced columns), each item is placed in the column that currently has the fewest items, resulting in a more balanced layout.
+
+The component:
+1. Creates the specified number of columns
+2. Iterates through all items
+3. Places each item in the column with the fewest items
+4. Automatically adjusts the number of columns based on viewport width and configured breakpoints
 
 ## Stability
 

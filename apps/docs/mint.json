@@ -152,6 +152,7 @@
           "group": "Packages",
           "pages": [
             "reference/packages/sdk",
+            "reference/packages/masonry",
             "reference/packages/supabase",
             "reference/packages/trigger"
           ]

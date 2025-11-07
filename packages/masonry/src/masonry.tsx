@@ -20,6 +20,7 @@ interface MasonryProps {
 
 /**
  * Masonry component for creating a Pinterest-style grid layout
+ * Uses a "shortest column" algorithm to distribute items evenly
  *
  * @example
  * ```tsx
@@ -75,17 +76,31 @@ export function Masonry({
     }
   }, [columns, breakpoints]);
 
-  // Distribute items across columns
+  // Distribute items across columns using shortest column algorithm
   const columnWrappers: ReactNode[][] = Array.from(
     { length: currentColumns },
     () => []
   );
 
-  children.forEach((child, index) => {
-    const columnIndex = index % currentColumns;
-    const column = columnWrappers[columnIndex];
+  // Track how many items each column has (as a proxy for height)
+  const columnItemCounts = Array(currentColumns).fill(0);
+
+  children.forEach((child) => {
+    // Find the column with the fewest items
+    let shortestColumnIndex = 0;
+    let minCount = columnItemCounts[0];
+
+    for (let i = 1; i < currentColumns; i++) {
+      if (columnItemCounts[i] < minCount) {
+        minCount = columnItemCounts[i];
+        shortestColumnIndex = i;
+      }
+    }
+
+    const column = columnWrappers[shortestColumnIndex];
     if (column) {
       column.push(child);
+      columnItemCounts[shortestColumnIndex]++;
     }
   });
 
