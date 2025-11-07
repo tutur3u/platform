@@ -79,6 +79,7 @@ export function TaskDialogManager() {
 
   return (
     <TaskEditDialog
+      wsId={wsId}
       task={state.task}
       boardId={state.boardId || ''}
       isOpen={state.isOpen}

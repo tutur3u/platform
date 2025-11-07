@@ -15,6 +15,7 @@ import {
   ListTodo,
   MoreHorizontal,
   Play,
+  Timer,
   Trash2,
   UserMinus,
   UserStar,
@@ -47,6 +48,8 @@ import {
 } from '@tuturuuu/utils/task-helper';
 import { getDescriptionMetadata } from '@tuturuuu/utils/text-helper';
 import { format, formatDistanceToNow } from 'date-fns';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { useTaskDialogState } from '../../hooks/useTaskDialogState';
@@ -109,6 +112,8 @@ function TaskCardInner({
   optimisticUpdateInProgress,
   selectedTasks,
 }: TaskCardProps) {
+  const { wsId } = useParams();
+
   const [isLoading, setIsLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuGuardUntil, setMenuGuardUntil] = useState(0);
@@ -476,6 +481,20 @@ function TaskCardInner({
                     e.stopPropagation(); // Prevent triggering task card click
                   }}
                 >
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    disabled={isLoading}
+                  >
+                    <Link
+                      href={`/${wsId}/time-tracker/timer?taskSelect=${task?.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2"
+                    >
+                      <Timer className="h-4 w-4 text-dynamic-blue" />
+                      Start tracking time
+                    </Link>
+                  </DropdownMenuItem>
                   {/* Quick Completion Action */}
                   {canMoveToCompletion && (
                     <DropdownMenuItem
