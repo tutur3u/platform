@@ -24,7 +24,11 @@ export default function TimeTrackerWrapper({
 
   // Check URL parameter or localStorage for mode preference
   const [isAdvancedMode, setIsAdvancedMode] = useState(() => {
-    // First check URL parameter
+    // First check if taskSelect parameter is present - auto-switch to advanced mode
+    const taskSelect = searchParams.get('taskSelect');
+    if (taskSelect) return true;
+
+    // Check URL parameter
     const urlMode = searchParams.get('mode');
     if (urlMode === 'advanced') return true;
     if (urlMode === 'simple') return false;

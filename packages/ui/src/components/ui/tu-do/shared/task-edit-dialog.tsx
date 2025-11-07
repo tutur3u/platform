@@ -64,6 +64,7 @@ import {
 import { convertJsonContentToYjsState } from '@tuturuuu/utils/yjs-helper';
 import dayjs from 'dayjs';
 import debounce from 'lodash/debounce';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import React, {
   useCallback,
@@ -102,6 +103,7 @@ import { UserPresenceAvatarsComponent } from './user-presence-avatars';
 const supabase = createClient();
 
 interface TaskEditDialogProps {
+  wsId: string;
   task?: Task;
   boardId: string;
   isOpen: boolean;
@@ -212,6 +214,7 @@ async function saveYjsDescriptionToDatabase({
 }
 
 function TaskEditDialogComponent({
+  wsId,
   task,
   boardId,
   isOpen,
@@ -4622,6 +4625,30 @@ function TaskEditDialogComponent({
               <div className="scrollbar-thin flex-1 overflow-y-auto">
                 <div className="space-y-4 p-4 md:space-y-5 md:p-6">
                   {/* Essential Options - Always Visible */}
+
+                  {/* Start time tracker */}
+                  <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
+                    <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                      <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                        <Timer className="h-3.5 w-3.5 text-dynamic-orange" />
+                      </div>
+                      Time Tracker
+                    </Label>
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="h-8 w-full justify-center text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm"
+                    >
+                      <Link
+                        href={`/${wsId}/time-tracker/timer?taskSelect=${task?.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Start tracking time
+                      </Link>
+                    </Button>
+                  </div>
+
                   {/* List Selection */}
                   <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
                     <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
