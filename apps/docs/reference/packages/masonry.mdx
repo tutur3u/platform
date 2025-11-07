@@ -6,7 +6,7 @@ updatedAt: '2025-11-07'
 
 ## Overview
 
-The `@tuturuuu/masonry` package provides a Pinterest-style masonry grid component for React with modern ResizeObserver-based measurement. Version 0.3.2 brings rock-solid stability with aggressive debouncing and auto-stop mechanisms. Version 0.3.0 brought major performance improvements (50-70% CPU reduction), fixed the columns prop bug, and added advanced configuration options. It offers two distribution strategies: a fast count-based approach for uniform content, and an intelligent height-based balancing algorithm with event-driven measurement and memoized calculations.
+The `@tuturuuu/masonry` package provides a Pinterest-style masonry grid component for React with modern ResizeObserver-based measurement. Version 0.3.3 introduces multi-pass optimization for dramatically better visual balance. Version 0.3.2 brought rock-solid stability with aggressive debouncing and auto-stop mechanisms. Version 0.3.0 brought major performance improvements (50-70% CPU reduction), fixed the columns prop bug, and added advanced configuration options. It offers two distribution strategies: a fast count-based approach for uniform content, and an intelligent height-based balancing algorithm with event-driven measurement, multi-pass optimization, and memoized calculations.
 
 ## Installation
 
@@ -64,6 +64,8 @@ export function Gallery() {
 
 <Note>
 **v0.3.0+ Change**: The `columns` prop now works as expected without requiring breakpoints. Previously, default breakpoints would override the columns setting based on screen width.
+
+**v0.3.3 Improvement**: Multi-pass optimization with swap-based rebalancing dramatically improves visual balance. Columns end at similar heights for professional gallery appearance.
 
 **v0.3.2 Improvement**: Aggressive stability controls (500ms debounce, 10px threshold, max 10 redistributions, auto-stop after images load) ensure rock-solid layouts that settle and stay settled.
 </Note>
@@ -367,7 +369,13 @@ The masonry component uses an **optimized shortest-column algorithm** to distrib
    - Uses threshold-based greedy algorithm
    - Considers balance threshold for tie-breaking
    - Tracks coefficient of variation for quality
-5. **Smart Redistribution** (v0.3.2 enhanced):
+5. **Multi-Pass Optimization** (v0.3.3 new):
+   - Phase 1: Initial greedy placement
+   - Phase 2: Up to 3 optimization passes
+   - Tries swapping items between columns
+   - Only accepts swaps improving balance by ≥5%
+   - Dramatically reduces column height variance
+6. **Smart Redistribution** (v0.3.2 enhanced):
    - Debounced 500ms after last change for maximum stability
    - Only triggers when heights change >10px (ignores all minor fluctuations)
    - Maximum 10 redistributions to prevent endless movement
@@ -397,7 +405,7 @@ The height-based strategy provides better visual balance for items with varying 
 ### Strategy Performance
 
 - **Count Strategy (Default)**: Fastest option. No height measurements, no layout shift, zero overhead. Ideal for most use cases and 100+ items.
-- **Balanced Strategy (v0.3.2)**: Modern ResizeObserver API with aggressive stability controls. Event-driven with 500ms debounce, 10px threshold, max 10 redistributions, and auto-stop after images load. Rock-solid layouts that settle and stay settled.
+- **Balanced Strategy (v0.3.3)**: Modern ResizeObserver API with multi-pass optimization and aggressive stability controls. Event-driven with swap-based rebalancing for optimal visual balance, 500ms debounce, 10px threshold, max 10 redistributions, and auto-stop after images load. Rock-solid layouts that settle and stay settled with dramatically better column balance.
 
 ### Memoization Benefits
 
@@ -482,7 +490,12 @@ The `strategy="balanced"` mode uses modern ResizeObserver API for event-driven m
 4. **Accurate Measurement**: Uses `entry.contentRect.height` from ResizeObserver for precision
 5. **Validation & Fallbacks**: Validates measurements; uses running average for missing/invalid values
 6. **Smart Change Detection** (v0.3.2): Only redistributes when heights change by >10px (completely ignores minor fluctuations)
-7. **Intelligent Distribution**: Threshold-based greedy algorithm with coefficient of variation tracking
+7. **Multi-Pass Optimization** (v0.3.3 new):
+   - Phase 1: Initial greedy placement (shortest column first)
+   - Phase 2: Up to 3 optimization passes trying item swaps
+   - Calculates variance before/after each swap
+   - Only accepts swaps that improve balance by ≥5%
+   - Iterates until no more improvements found
 8. **Aggressive Debouncing** (v0.3.2): 500ms debounce + `requestAnimationFrame` ensures maximum stability
 9. **Redistribution Limits** (v0.3.2): Maximum 10 redistributions prevents endless movement
 10. **Image Load Tracking** (v0.3.2): Automatically stops observing once all images finish loading
@@ -499,6 +512,8 @@ This v0.3.0+ approach provides:
 - ✅ **Smooth 60fps** - even with 100+ items
 - ✅ **Robust validation** - handles edge cases gracefully
 - ✅ **No layout shift** - multi-column from first render
+- ✅ **Multi-pass optimization** (v0.3.3) - Swap-based rebalancing for dramatically better visual balance
+- ✅ **Variance reduction** (v0.3.3) - Columns end at similar heights for professional appearance
 - ✅ **Aggressive debouncing** (v0.3.2) - 500ms wait ensures rock-solid stability
 - ✅ **High thresholds** (v0.3.2) - 10px minimum change completely ignores minor adjustments
 - ✅ **Auto-stop** (v0.3.2) - Stops observing after images load or 2s of stability
@@ -513,7 +528,7 @@ This v0.3.0+ approach provides:
 - The component uses React state and effects efficiently
 - Resize events are properly debounced through React's rendering cycle
 - Count strategy: No DOM measurements, instant rendering, zero overhead
-- Balanced strategy (v0.3.2):
+- Balanced strategy (v0.3.3):
   - Event-driven measurement (no polling)
   - Change detection (>10px) completely ignores minor fluctuations
   - 500ms debounce ensures maximum stability
@@ -688,7 +703,26 @@ The package is open source and available on GitHub:
 
 ## Changelog
 
-### 0.3.2 (Current - Rock-Solid Stability Release)
+### 0.3.3 (Current - Optimal Distribution Release)
+
+**Major Algorithm Improvements:**
+- 🎯 **Multi-pass optimization**: Implements intelligent swap-based rebalancing after initial placement
+- 📊 **Variance reduction**: Actively minimizes column height differences through iterative optimization
+- 🔄 **Smart swapping**: Tries item exchanges between columns to achieve better visual balance
+- ⚖️ **Even distribution**: Dramatically improves visual balance compared to simple greedy algorithm
+- 🎨 **Better aesthetics**: Columns end at similar heights for cleaner gallery appearance
+
+**Algorithm Details:**
+- **Phase 1**: Initial greedy placement (shortest column first)
+- **Phase 2**: Up to 3 optimization passes swapping items to reduce variance
+- **Phase 3**: Only accepts swaps that improve balance by ≥5%
+
+**Results:**
+- ✅ **Dramatically better balance**: Columns end at much more similar heights
+- ✅ **Optimized placement**: Items are intelligently redistributed for visual harmony
+- ✅ **Still performant**: Multi-pass optimization completes in milliseconds
+
+### 0.3.2 (Rock-Solid Stability Release)
 
 **Critical UX Fixes:**
 - 🎭 **Aggressive debouncing**: 500ms debounce ensures layout stability (up from 200ms in v0.3.1)

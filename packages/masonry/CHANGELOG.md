@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.3] - 2025-11-07
+
+### Improved
+- **Multi-pass optimization**: Replaced simple greedy algorithm with intelligent swap-based rebalancing
+- **Variance reduction**: Actively minimizes column height differences through iterative optimization
+- **Smart swapping**: Tries item exchanges between columns to achieve much better visual balance
+- **Even distribution**: Dramatically improves visual balance for image galleries
+- **Phase 1**: Initial greedy placement
+- **Phase 2**: Up to 3 optimization passes swapping items to reduce variance
+- **Phase 3**: Only accepts swaps that improve balance by ≥5%
+
+### Results
+- ✅ **Dramatically better balance**: Columns end at much more similar heights
+- ✅ **Optimized placement**: Items intelligently redistributed for visual harmony
+- ✅ **Still performant**: Multi-pass optimization completes in milliseconds
+
 ## [0.3.2] - 2025-11-07
 
 ### Fixed

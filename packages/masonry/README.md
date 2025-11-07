@@ -2,7 +2,7 @@
 
 A lightweight, high-performance masonry grid component for React with intelligent distribution strategies and modern ResizeObserver-based measurement.
 
-**Version**: 0.3.2 (Stable)
+**Version**: 0.3.3 (Stable)
 
 ## Features
 
@@ -195,7 +195,7 @@ The `balanced` strategy measures actual item heights and distributes items to th
 </Masonry>
 ```
 
-**How it works (v0.3.2)**: The balanced strategy uses modern `ResizeObserver` API to monitor item height changes. When an item resizes (e.g., image loads), the observer triggers redistribution via `requestAnimationFrame` for smooth updates. It uses an improved greedy algorithm with:
+**How it works (v0.3.3)**: The balanced strategy uses modern `ResizeObserver` API to monitor item height changes. When an item resizes (e.g., image loads), the observer triggers redistribution via `requestAnimationFrame` for smooth updates. It uses a multi-pass optimization algorithm with:
 
 - Threshold-based tie-breaking for better balance
 - Running average height for unmeasured items
@@ -220,16 +220,17 @@ The `balanced` strategy measures actual item heights and distributes items to th
 4. Uses strict comparison for deterministic distribution
 5. **Memoized** - only recalculates when children or columns change
 
-### Balanced Strategy Algorithm (v0.3.0)
+### Balanced Strategy Algorithm (v0.3.3)
 
 1. **Immediate Multi-Column Render**: Items appear instantly in their target columns
 2. **ResizeObserver Setup**: Observes all masonry items for size changes
 3. **Event-Driven Measurement**: Captures height changes as they happen (images loading, etc.)
-4. **Intelligent Distribution**: 
-   - Calculates running average for unmeasured items
-   - Uses threshold-based greedy algorithm
-   - Considers balance threshold for tie-breaking
-   - Tracks coefficient of variation for quality
+4. **Multi-Pass Optimization** (v0.3.3 new): 
+   - Phase 1: Initial greedy placement (shortest column first)
+   - Phase 2: Up to 3 optimization passes
+   - Tries swapping items between columns
+   - Only accepts swaps improving balance by ≥5%
+   - Dramatically reduces column height variance
 5. **Smart Redistribution** (v0.3.2 enhanced): 
    - Debounced 500ms after last change for maximum stability
    - Only triggers when heights change >10px (ignores all minor fluctuations)
@@ -369,7 +370,26 @@ Fine-tune column counts per viewport:
 
 ## Recent Updates
 
-### v0.3.2 (Current - Rock-Solid Stability Release)
+### v0.3.3 (Current - Optimal Distribution Release)
+
+**Major Algorithm Improvements:**
+- 🎯 **Multi-pass optimization**: Implements intelligent swap-based rebalancing after initial placement
+- 📊 **Variance reduction**: Actively minimizes column height differences through iterative optimization
+- 🔄 **Smart swapping**: Tries item exchanges between columns to achieve better visual balance
+- ⚖️ **Even distribution**: Dramatically improves visual balance compared to simple greedy algorithm
+- 🎨 **Better aesthetics**: Columns end at similar heights for cleaner gallery appearance
+
+**Algorithm Details:**
+- **Phase 1**: Initial greedy placement (shortest column first)
+- **Phase 2**: Up to 3 optimization passes swapping items to reduce variance
+- **Phase 3**: Only accepts swaps that improve balance by ≥5%
+
+**Results:**
+- ✅ **Dramatically better balance**: Columns end at much more similar heights
+- ✅ **Optimized placement**: Items are intelligently redistributed for visual harmony
+- ✅ **Still performant**: Multi-pass optimization completes in milliseconds
+
+### v0.3.2 (Rock-Solid Stability Release)
 
 **Critical UX Fixes:**
 - 🎭 **Aggressive debouncing**: 500ms debounce ensures layout stability (up from 200ms in v0.3.1)

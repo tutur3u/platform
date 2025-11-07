@@ -319,80 +319,141 @@ export function Masonry({
     return Math.sqrt(variance) / mean; // Coefficient of variation
   };
 
-  // Memoized distribution calculation with improved algorithm
-  // biome-ignore lint/correctness/useExhaustiveDependencies: redistributionKey triggers recalculation, calculateVariance is stable
-  const columnWrappers = useMemo(() => {
+  // Helper: Distribute items with multi-pass optimization
+  const distributeItems = (items: ReactNode[]): ReactNode[][] => {
     const wrappers: ReactNode[][] = Array.from(
       { length: currentColumns },
       () => []
     );
 
-    if (strategy === 'balanced' && itemHeightsRef.current.size > 0) {
-      // Use measured heights for distribution with improved greedy algorithm
-      const columnHeights = Array(currentColumns).fill(0);
-
-      children.forEach((child, index) => {
-        // Get item height with fallback to running average
-        let effectiveHeight = itemHeightsRef.current.get(index);
-        if (effectiveHeight === undefined || effectiveHeight <= 0) {
-          effectiveHeight = getAverageHeight;
-        }
-
-        // Find the shortest column with improved tie-breaking
-        let shortestColumnIndex = 0;
-        let minHeight = columnHeights[0] ?? 0;
-
-        for (let i = 1; i < currentColumns; i++) {
-          const height = columnHeights[i] ?? 0;
-          // Use threshold-based comparison for better balance
-          // Prefer earlier columns when heights are very close (within threshold)
-          if (height < minHeight - minHeight * balanceThreshold) {
-            minHeight = height;
-            shortestColumnIndex = i;
-          }
-        }
-
-        // Add item to shortest column
-        const column = wrappers[shortestColumnIndex];
-        if (column) {
-          column.push(child);
-          // Update column height including gap
-          columnHeights[shortestColumnIndex] += effectiveHeight + gap;
-        }
-      });
-
-      // Check if redistribution achieved good balance
-      const variance = calculateVariance(columnHeights);
-      if (variance > 0.1) {
-        // Variance too high, but we've done our best with greedy
-        // Could log for debugging: console.debug('Column variance:', variance)
-      }
-    } else {
-      // Use item count for distribution (default or during initial measurement)
-      const columnItemCounts = Array(currentColumns).fill(0);
-
-      children.forEach((child) => {
-        // Find the column with the fewest items
-        let shortestColumnIndex = 0;
-        let minCount = columnItemCounts[0] ?? 0;
-
-        for (let i = 1; i < currentColumns; i++) {
-          const count = columnItemCounts[i] ?? 0;
-          // Strict < ensures deterministic distribution
-          if (count < minCount) {
-            minCount = count;
-            shortestColumnIndex = i;
-          }
-        }
-
-        // Add item to column
-        const column = wrappers[shortestColumnIndex];
-        if (column) {
-          column.push(child);
-          columnItemCounts[shortestColumnIndex]++;
-        }
-      });
+    // Build initial distribution with item metadata
+    interface ItemMetadata {
+      child: ReactNode;
+      index: number;
+      height: number;
     }
+
+    const itemsWithHeights: ItemMetadata[] = items.map((child, index) => {
+      let effectiveHeight = itemHeightsRef.current.get(index);
+      if (effectiveHeight === undefined || effectiveHeight <= 0) {
+        effectiveHeight = getAverageHeight;
+      }
+      return { child, index, height: effectiveHeight };
+    });
+
+    // Phase 1: Initial greedy placement
+    const columnAssignments: number[] = Array(items.length).fill(0);
+    const columnHeights = Array(currentColumns).fill(0);
+
+    itemsWithHeights.forEach((item, index) => {
+      // Find shortest column
+      let shortestColumnIndex = 0;
+      let minHeight = columnHeights[0] ?? 0;
+
+      for (let i = 1; i < currentColumns; i++) {
+        const height = columnHeights[i] ?? 0;
+        if (height < minHeight) {
+          minHeight = height;
+          shortestColumnIndex = i;
+        }
+      }
+
+      columnAssignments[index] = shortestColumnIndex;
+      columnHeights[shortestColumnIndex] += item.height + gap;
+    });
+
+    // Phase 2: Optimization passes - swap items to reduce variance
+    let improved = true;
+    let passCount = 0;
+    const maxPasses = 3; // Limit optimization passes
+
+    while (improved && passCount < maxPasses) {
+      improved = false;
+      passCount++;
+
+      // Try swapping items between columns
+      for (let i = 0; i < itemsWithHeights.length - 1; i++) {
+        for (let j = i + 1; j < itemsWithHeights.length; j++) {
+          const item1 = itemsWithHeights[i];
+          const item2 = itemsWithHeights[j];
+          if (!item1 || !item2) continue;
+
+          const col1 = columnAssignments[i] ?? 0;
+          const col2 = columnAssignments[j] ?? 0;
+
+          // Skip if same column
+          if (col1 === col2) continue;
+
+          // Calculate current variance
+          const currentVariance = calculateVariance(columnHeights);
+
+          // Try swapping
+          const newHeights = [...columnHeights];
+          newHeights[col1] = newHeights[col1] - item1.height + item2.height;
+          newHeights[col2] = newHeights[col2] - item2.height + item1.height;
+
+          const newVariance = calculateVariance(newHeights);
+
+          // If swap improves balance significantly, apply it
+          if (newVariance < currentVariance * 0.95) {
+            columnHeights[col1] = newHeights[col1];
+            columnHeights[col2] = newHeights[col2];
+            columnAssignments[i] = col2;
+            columnAssignments[j] = col1;
+            improved = true;
+          }
+        }
+      }
+    }
+
+    // Phase 3: Build final wrappers from assignments
+    itemsWithHeights.forEach((item, index) => {
+      const columnIndex = columnAssignments[index] ?? 0;
+      const column = wrappers[columnIndex];
+      if (column) {
+        column.push(item.child);
+      }
+    });
+
+    return wrappers;
+  };
+
+  // Memoized distribution calculation with multi-pass optimization
+  // biome-ignore lint/correctness/useExhaustiveDependencies: redistributionKey triggers recalculation, calculateVariance is stable
+  const columnWrappers = useMemo(() => {
+    if (strategy === 'balanced' && itemHeightsRef.current.size > 0) {
+      // Use measured heights with optimization
+      return distributeItems(children);
+    }
+
+    // Use item count for distribution (default or during initial measurement)
+    const wrappers: ReactNode[][] = Array.from(
+      { length: currentColumns },
+      () => []
+    );
+    const columnItemCounts = Array(currentColumns).fill(0);
+
+    children.forEach((child) => {
+      // Find the column with the fewest items
+      let shortestColumnIndex = 0;
+      let minCount = columnItemCounts[0] ?? 0;
+
+      for (let i = 1; i < currentColumns; i++) {
+        const count = columnItemCounts[i] ?? 0;
+        // Strict < ensures deterministic distribution
+        if (count < minCount) {
+          minCount = count;
+          shortestColumnIndex = i;
+        }
+      }
+
+      // Add item to column
+      const column = wrappers[shortestColumnIndex];
+      if (column) {
+        column.push(child);
+        columnItemCounts[shortestColumnIndex]++;
+      }
+    });
 
     return wrappers;
   }, [
