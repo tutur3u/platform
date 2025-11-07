@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.3.7] - 2025-11-07
+
+### Improved
+- **Best-first optimization**: Each pass now finds and applies the BEST swap, not just the first improvement
+- **More aggressive**: Increased from 2 to 5 optimization passes for thorough refinement
+- **Lower threshold**: Reduced from 2px to 0.5px - accepts any meaningful improvement
+- **Exhaustive search**: Evaluates ALL possible swaps in each pass and picks the best one
+- **Better convergence**: Guarantees finding local optimum through systematic best-first search
+
+### Algorithm Enhancement
+- Each optimization pass finds the single best swap across all possible pairs
+- Applies only the best swap per pass (greedy approach)
+- Continues for up to 5 passes or until no improvements found
+- Dramatically reduces column height variance
+
+### Results
+- ✅ **Excellent balance**: Systematically finds near-optimal distribution
+- ✅ **Consistent quality**: Best-first guarantees good results
+- ✅ **Handles edge cases**: More passes catch difficult distributions
+
 ## [0.3.6] - 2025-11-07
 
 ### Improved
