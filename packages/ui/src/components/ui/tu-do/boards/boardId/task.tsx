@@ -39,6 +39,11 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useTaskActions } from '@tuturuuu/ui/hooks/use-task-actions';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@tuturuuu/ui/hover-card';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
 import {
@@ -47,7 +52,13 @@ import {
 } from '@tuturuuu/utils/task-helper';
 import { getDescriptionMetadata } from '@tuturuuu/utils/text-helper';
 import { format, formatDistanceToNow } from 'date-fns';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { useTaskDialogState } from '../../hooks/useTaskDialogState';
 import { useTaskLabelManagement } from '../../hooks/useTaskLabelManagement';
@@ -359,6 +370,109 @@ function TaskCardInner({
       openTask,
     ]
   );
+
+  const taskBadges = useMemo(() => {
+    // Collect all badges into an array for overflow handling
+    const badges: { id: string; element: React.ReactNode }[] = [];
+
+    // Priority badge
+    if (task.priority) {
+      badges.push({
+        id: 'priority',
+        element: (
+          <div key="priority" className="flex-none overflow-hidden">
+            {getPriorityIndicator(task.priority)}
+          </div>
+        ),
+      });
+    }
+
+    // Sub-tasks counter badge
+    if (descriptionMeta.totalCheckboxes > 0) {
+      badges.push({
+        id: 'subtasks',
+        element: (
+          <Badge
+            key="subtasks"
+            variant="secondary"
+            className={cn(
+              'border font-medium text-[10px]',
+              descriptionMeta.checkedCheckboxes ===
+                descriptionMeta.totalCheckboxes
+                ? 'border-dynamic-green/30 bg-dynamic-green/15 text-dynamic-green'
+                : 'border-dynamic-gray/30 bg-dynamic-gray/10 text-dynamic-gray'
+            )}
+            title={`${descriptionMeta.checkedCheckboxes} of ${descriptionMeta.totalCheckboxes} sub-tasks completed`}
+          >
+            <ListTodo className="h-3 w-3" />
+            {descriptionMeta.checkedCheckboxes}/
+            {descriptionMeta.totalCheckboxes}
+          </Badge>
+        ),
+      });
+    }
+
+    // Project indicator badge
+    if (task.projects && task.projects.length > 0) {
+      badges.push({
+        id: 'projects',
+        element: (
+          <div key="projects" className="min-w-0 shrink-0">
+            <Badge
+              variant="secondary"
+              className={cn(
+                'h-5 border px-2 text-[10px]',
+                'border-dynamic-sky/30 bg-dynamic-sky/10 text-dynamic-sky'
+              )}
+            >
+              <Box className="h-2.5 w-2.5" />
+              {task.projects.length === 1
+                ? task.projects[0]?.name
+                : `${task.projects.length} projects`}
+            </Badge>
+          </div>
+        ),
+      });
+    }
+
+    // Estimation Points badge
+    if (task.estimation_points != null) {
+      badges.push({
+        id: 'estimation',
+        element: (
+          <div key="estimation" className="min-w-0 shrink-0">
+            <TaskEstimationDisplay
+              points={task.estimation_points}
+              size="sm"
+              estimationType={boardConfig?.estimation_type}
+              showIcon
+            />
+          </div>
+        ),
+      });
+    }
+
+    // Labels badge
+    if (task.labels && task.labels.length > 0) {
+      badges.push({
+        id: 'labels',
+        element: (
+          <div key="labels" className="flex min-w-0 shrink-0 flex-wrap gap-1">
+            <TaskLabelsDisplay
+              labels={[...task.labels].sort((a, b) =>
+                a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+              )}
+              size="sm"
+            />
+          </div>
+        ),
+      });
+    }
+    return badges;
+  }, [task, boardConfig, descriptionMeta]);
+
+  const visibleBadges = taskBadges.slice(0, 2);
+  const hiddenBadges = taskBadges.slice(2);
 
   return (
     <Card
@@ -724,9 +838,11 @@ function TaskCardInner({
               )}
             </div>
           )}
-        {/* Completion and Closed Dates Section */}
-        {/* Show completed_at when in done list, closed_at when in closed list */}
-        {(taskList?.status === 'done' || taskList?.status === 'closed') && (
+        {taskList?.status === 'done' || taskList?.status === 'closed' ? (
+          /*
+            Completion and Closed Dates Section
+            Show completed_at when in done list, closed_at when in closed list
+          */
           <div className="mb-1 space-y-0.5 text-[10px] leading-snug">
             {taskList?.status === 'done' && task.completed_at && (
               <div className="flex items-center gap-1 text-dynamic-green">
@@ -757,132 +873,94 @@ function TaskCardInner({
               </div>
             )}
           </div>
-        )}
-        {/* Bottom Row: Three-column layout for assignee, priority, and checkbox, with only one tag visible and +N tooltip for extras */}
-        {/* Hide bottom row entirely when in done/closed list */}
-        {taskList?.status !== 'done' && taskList?.status !== 'closed' && (
+        ) : (
+          /*
+            Bottom Row: Three-column layout for assignee, priority, and checkbox, with only one tag visible and +N tooltip for extras.
+            Hide bottom row entirely when in done/closed list
+          */
           <div className="flex items-center gap-2">
             <div className="scrollbar-hide flex w-full min-w-0 items-center gap-1 overflow-auto whitespace-nowrap rounded-lg">
-              {/* Priority */}
-              {!task.closed_at && task.priority && (
-                <div className="flex-none overflow-hidden">
-                  {getPriorityIndicator(task.priority)}
-                </div>
-              )}
-              {/* Sub-tasks counter - prominent placement */}
-              {!task.closed_at && descriptionMeta.totalCheckboxes > 0 && (
-                <Badge
-                  variant="secondary"
-                  className={cn(
-                    'border font-medium text-[10px]',
-                    descriptionMeta.checkedCheckboxes ===
-                      descriptionMeta.totalCheckboxes
-                      ? 'border-dynamic-green/30 bg-dynamic-green/15 text-dynamic-green'
-                      : 'border-dynamic-gray/30 bg-dynamic-gray/10 text-dynamic-gray'
-                  )}
-                  title={`${descriptionMeta.checkedCheckboxes} of ${descriptionMeta.totalCheckboxes} sub-tasks completed`}
-                >
-                  <ListTodo className="h-3 w-3" />
-                  {descriptionMeta.checkedCheckboxes}/
-                  {descriptionMeta.totalCheckboxes}
-                </Badge>
-              )}
-              {/* Project indicator */}
-              {!task.closed_at && task.projects && task.projects.length > 0 && (
-                <div className="min-w-0 shrink-0">
-                  <Badge
-                    variant="secondary"
-                    className={cn(
-                      'h-5 border px-2 text-[10px]',
-                      'border-dynamic-sky/30 bg-dynamic-sky/10 text-dynamic-sky'
-                    )}
+              {visibleBadges.map((badge) => badge.element)}
+              {hiddenBadges.length > 0 && (
+                <HoverCard openDelay={200}>
+                  <HoverCardTrigger asChild>
+                    <Badge
+                      variant="secondary"
+                      className="cursor-pointer border border-border bg-muted/50 font-medium text-[10px] text-muted-foreground hover:bg-muted"
+                    >
+                      +{hiddenBadges.length}
+                    </Badge>
+                  </HoverCardTrigger>
+                  <HoverCardContent
+                    side="top"
+                    align="start"
+                    className="flex w-auto max-w-xs flex-col gap-2 p-2"
                   >
-                    <Box className="h-2.5 w-2.5" />
-                    {task.projects.length === 1
-                      ? task.projects[0]?.name
-                      : `${task.projects.length} projects`}
-                  </Badge>
-                </div>
-              )}
-              {/* Estimation Points */}
-              {!task.closed_at && task.estimation_points != null && (
-                <div className="min-w-0 shrink-0">
-                  <TaskEstimationDisplay
-                    points={task.estimation_points}
-                    size="sm"
-                    estimationType={boardConfig?.estimation_type}
-                    showIcon
-                  />
-                </div>
-              )}
-              {/* Labels */}
-              {!task.closed_at && task.labels && task.labels.length > 0 && (
-                <div className="flex min-w-0 shrink-0 flex-wrap gap-1">
-                  {/* Sort labels for deterministic display order */}
-                  <TaskLabelsDisplay
-                    labels={[...task.labels].sort((a, b) =>
-                      a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-                    )}
-                    size="sm"
-                  />
-                </div>
+                    <div className="text-center font-semibold text-sm">
+                      Other properties
+                    </div>
+                    <div className="border" />
+                    <div className="flex flex-col gap-2">
+                      {hiddenBadges.map((badge) => badge.element)}
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
               )}
               {/* Description indicators */}
-              {!task.closed_at &&
-                (descriptionMeta.hasText ||
-                  descriptionMeta.hasImages ||
-                  descriptionMeta.hasVideos ||
-                  descriptionMeta.hasLinks) && (
-                  <div className="flex min-w-0 shrink-0 items-center gap-0.5">
-                    {descriptionMeta.hasText && (
-                      <div
-                        className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
-                        title="Has description"
-                      >
-                        <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-                      </div>
-                    )}
-                    {descriptionMeta.hasImages && (
-                      <div
-                        className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
-                        title={`${descriptionMeta.imageCount} image${descriptionMeta.imageCount > 1 ? 's' : ''}`}
-                      >
-                        <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                        {descriptionMeta.imageCount > 1 && (
-                          <span className="text-[9px] text-muted-foreground">
-                            {descriptionMeta.imageCount}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {descriptionMeta.hasVideos && (
-                      <div
-                        className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
-                        title={`${descriptionMeta.videoCount} video${descriptionMeta.videoCount > 1 ? 's' : ''}`}
-                      >
-                        <Play className="h-3.5 w-3.5 text-muted-foreground" />
-                        {descriptionMeta.videoCount > 1 && (
-                          <span className="text-[9px] text-muted-foreground">
-                            {descriptionMeta.videoCount}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {descriptionMeta.hasLinks && (
-                      <div
-                        className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 px-1 py-0.5"
-                        title={`${descriptionMeta.linkCount} link${descriptionMeta.linkCount > 1 ? 's' : ''}`}
-                      >
-                        <Link2 className="h-2.5 w-2.5 text-muted-foreground" />
-                        {descriptionMeta.linkCount > 1 && (
-                          <span className="text-[9px] text-muted-foreground">
-                            {descriptionMeta.linkCount}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+              {(descriptionMeta.hasText ||
+                descriptionMeta.hasImages ||
+                descriptionMeta.hasVideos ||
+                descriptionMeta.hasLinks) && (
+                <div className="flex min-w-0 shrink-0 items-center gap-0.5">
+                  {descriptionMeta.hasText && (
+                    <div
+                      className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
+                      title="Has description"
+                    >
+                      <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                    </div>
+                  )}
+                  {descriptionMeta.hasImages && (
+                    <div
+                      className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
+                      title={`${descriptionMeta.imageCount} image${descriptionMeta.imageCount > 1 ? 's' : ''}`}
+                    >
+                      <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                      {descriptionMeta.imageCount > 1 && (
+                        <span className="text-[9px] text-muted-foreground">
+                          {descriptionMeta.imageCount}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {descriptionMeta.hasVideos && (
+                    <div
+                      className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
+                      title={`${descriptionMeta.videoCount} video${descriptionMeta.videoCount > 1 ? 's' : ''}`}
+                    >
+                      <Play className="h-3.5 w-3.5 text-muted-foreground" />
+                      {descriptionMeta.videoCount > 1 && (
+                        <span className="text-[9px] text-muted-foreground">
+                          {descriptionMeta.videoCount}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {descriptionMeta.hasLinks && (
+                    <div
+                      className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 px-1 py-0.5"
+                      title={`${descriptionMeta.linkCount} link${descriptionMeta.linkCount > 1 ? 's' : ''}`}
+                    >
+                      <Link2 className="h-2.5 w-2.5 text-muted-foreground" />
+                      {descriptionMeta.linkCount > 1 && (
+                        <span className="text-[9px] text-muted-foreground">
+                          {descriptionMeta.linkCount}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2">
               {!isPersonalWorkspace && (
