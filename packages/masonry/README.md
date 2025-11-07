@@ -2,7 +2,7 @@
 
 A lightweight, responsive masonry grid component for React with intelligent distribution strategies.
 
-**Version**: 0.1.2 (Stable)
+**Version**: 0.1.3 (Stable)
 
 ## Features
 
@@ -131,9 +131,10 @@ The `count` strategy distributes items based on item count, placing each item in
 
 The `balanced` strategy measures actual item heights and distributes items to the shortest column. This provides:
 - 🎨 **Better visual balance**: Columns have similar total heights
-- 📏 **Accurate**: Uses actual measured heights (waits for images to load)
-- 🔄 **Progressive loading**: Recalculates distribution as each image loads
-- 🖼️ **Image-aware**: Handles image loading gracefully with incremental improvements
+- 📏 **Accurate**: Uses actual measured heights (tracks image loading)
+- 🔄 **Smooth progressive loading**: Recalculates every 100ms as images load
+- 🖼️ **Image-aware**: Continuously optimizes layout as images become available
+- ✨ **No jarring shifts**: Gradual improvements instead of sudden redistribution
 - ✅ **Best for**: Image galleries, content with varying heights
 
 ```tsx
@@ -144,7 +145,7 @@ The `balanced` strategy measures actual item heights and distributes items to th
 </Masonry>
 ```
 
-**How it works**: The balanced strategy progressively measures items as images load. Each time an image finishes loading, the distribution is recalculated, providing a smooth, incremental improvement to the layout. No long waits - the layout optimizes as content becomes available.
+**How it works**: The balanced strategy continuously measures and redistributes items every 100ms while images are loading. This creates a smooth, progressive optimization experience where the layout gradually improves as more images load, culminating in a perfectly balanced final distribution once all content is ready.
 
 ## How It Works
 
@@ -158,9 +159,10 @@ The `balanced` strategy measures actual item heights and distributes items to th
 ### Balanced Strategy Algorithm
 
 1. **Measurement Phase**: Renders all items in a hidden single column to measure their heights
-2. **Progressive Image Loading**: As each image loads, item heights are measured and distribution is recalculated
-3. **Incremental Distribution**: Layout improves progressively as more images load (no waiting for all)
-4. **Result**: Columns have similar total heights for better visual balance
+2. **Continuous Optimization**: Recalculates distribution every 100ms while images are loading
+3. **Progressive Improvement**: Layout continuously improves as more images load
+4. **Final Distribution**: Once all images are loaded, the interval stops and the perfect balanced layout is shown
+5. **Result**: Columns have similar total heights with smooth loading experience
 
 The component automatically adjusts the number of columns based on viewport width and configured breakpoints.
 

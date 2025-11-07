@@ -56,7 +56,11 @@ export function Masonry({
   const [measurementPhase, setMeasurementPhase] = useState(
     strategy === 'balanced'
   );
-  const [, forceUpdate] = useState(0);
+  const [redistributionKey, setRedistributionKey] = useState(0);
+  const imagesLoadingRef = useRef<{
+    total: number;
+    loaded: number;
+  }>({ total: 0, loaded: 0 });
 
   useEffect(() => {
     const handleResize = () => {
@@ -104,63 +108,90 @@ export function Masonry({
 
       if (!items) return;
 
-      let imagesLoaded = 0;
-      let totalImages = 0;
+      // Initialize tracking
+      imagesLoadingRef.current = { total: 0, loaded: 0 };
 
-      // Setup image load handlers
-      items.forEach((item, index) => {
+      // Count total images
+      items.forEach((item) => {
         const images = item.querySelectorAll('img');
-        totalImages += images.length;
-
-        images.forEach((img) => {
-          const measureAndUpdate = () => {
-            // Measure this specific item's height
-            if (item instanceof HTMLElement) {
-              itemHeightsRef.current.set(index, item.offsetHeight);
-            }
-
-            imagesLoaded++;
-
-            // If all images are loaded, end measurement phase
-            if (imagesLoaded === totalImages) {
-              setMeasurementPhase(false);
-            } else {
-              // Force re-render with updated heights
-              forceUpdate((n) => n + 1);
-            }
-          };
-
-          if (img.complete) {
-            // Image already loaded
-            measureAndUpdate();
-          } else {
-            // Wait for image to load
-            img.onload = measureAndUpdate;
-            img.onerror = measureAndUpdate; // Handle errors too
-          }
-        });
-
-        // If no images in this item, measure immediately
-        if (images.length === 0 && item instanceof HTMLElement) {
-          itemHeightsRef.current.set(index, item.offsetHeight);
-        }
+        imagesLoadingRef.current.total += images.length;
       });
 
-      // If no images at all, end measurement phase immediately
-      if (totalImages === 0) {
+      // If no images, measure immediately and end
+      if (imagesLoadingRef.current.total === 0) {
         items.forEach((item, index) => {
           if (item instanceof HTMLElement) {
             itemHeightsRef.current.set(index, item.offsetHeight);
           }
         });
         setMeasurementPhase(false);
+        return;
       }
+
+      // Set up periodic redistribution while images are loading
+      const redistributionInterval = setInterval(() => {
+        // Measure all items with current heights
+        items.forEach((item, index) => {
+          if (item instanceof HTMLElement) {
+            itemHeightsRef.current.set(index, item.offsetHeight);
+          }
+        });
+
+        // Trigger redistribution
+        setRedistributionKey((k) => k + 1);
+
+        // Stop interval once all images are loaded
+        if (imagesLoadingRef.current.loaded >= imagesLoadingRef.current.total) {
+          clearInterval(redistributionInterval);
+          setMeasurementPhase(false);
+        }
+      }, 100); // Recalculate every 100ms
+
+      // Setup image load handlers
+      items.forEach((item, index) => {
+        const images = item.querySelectorAll('img');
+
+        if (images.length === 0) {
+          // No images in this item, measure immediately
+          if (item instanceof HTMLElement) {
+            itemHeightsRef.current.set(index, item.offsetHeight);
+          }
+        } else {
+          // Track image loading
+          images.forEach((img) => {
+            const handleImageLoad = () => {
+              imagesLoadingRef.current.loaded++;
+
+              // Measure this item immediately when its image loads
+              if (item instanceof HTMLElement) {
+                itemHeightsRef.current.set(index, item.offsetHeight);
+              }
+            };
+
+            if (img.complete) {
+              handleImageLoad();
+            } else {
+              img.onload = handleImageLoad;
+              img.onerror = handleImageLoad;
+            }
+          });
+        }
+      });
+
+      // Cleanup interval on unmount
+      return () => clearInterval(redistributionInterval);
     };
 
-    // Wait for next frame to ensure DOM is ready, then measure
-    requestAnimationFrame(() => {
+    // Wait for next frame to ensure DOM is ready
+    const cleanup = requestAnimationFrame(() => {
       measureHeights();
     });
+
+    return () => {
+      if (typeof cleanup === 'number') {
+        cancelAnimationFrame(cleanup);
+      }
+    };
   }, [measurementPhase, strategy]);
 
   // Distribute items across columns
@@ -253,6 +284,7 @@ export function Masonry({
         ref={containerRef}
         style={{ ...containerStyle, opacity: 0, pointerEvents: 'none' }}
         className={className}
+        key={`measurement-${redistributionKey}`}
       >
         <div style={columnStyle}>
           {children.map((child, index) => (
@@ -266,7 +298,12 @@ export function Masonry({
   }
 
   return (
-    <div ref={containerRef} style={containerStyle} className={className}>
+    <div
+      ref={containerRef}
+      style={containerStyle}
+      className={className}
+      key={`masonry-${redistributionKey}`}
+    >
       {columnWrappers.map((column, columnIndex) => (
         <div key={columnIndex} style={columnStyle}>
           {column.map((child, itemIndex) => {
