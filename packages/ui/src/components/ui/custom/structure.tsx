@@ -70,7 +70,7 @@ export function Structure({
               'group fixed z-50 flex h-full flex-col overflow-hidden border-r backdrop-blur-lg transition-all duration-300 ease-in-out md:z-20',
               isCollapsed
                 ? 'w-16 bg-background/50 max-md:w-0'
-                : 'w-64 bg-background',
+                : 'w-64 bg-background max-sm:w-full',
               'max-md:absolute',
               isCollapsed && 'max-md:-translate-x-full'
             )}
