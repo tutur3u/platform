@@ -371,60 +371,66 @@ export function Masonry({
       columnHeights[bestColumnIndex] += item.height + gap;
     });
 
-    // Phase 2: Direct balancing - iteratively move items from tallest to shortest columns
+    // Phase 2: Global optimization - try moving ANY item to ANY column
     let improved = true;
     let passCount = 0;
-    const maxPasses = 10; // More passes for thorough optimization
+    const maxPasses = 20; // More passes for exhaustive search
 
     while (improved && passCount < maxPasses) {
       improved = false;
       passCount++;
 
-      // Find tallest and shortest columns
-      const maxHeight = Math.max(...columnHeights);
-      const minHeight = Math.min(...columnHeights);
-      const range = maxHeight - minHeight;
+      const currentRange = getHeightRange(columnHeights);
 
-      // Stop if columns are already well balanced (within 5% or 20px)
-      if (range < Math.max(20, minHeight * 0.05)) {
+      // Stop if already well balanced (tighter threshold: 1% or 10px)
+      const minHeight = Math.min(...columnHeights);
+      if (currentRange < Math.max(10, minHeight * 0.01)) {
         break;
       }
 
-      const tallestCol = columnHeights.indexOf(maxHeight);
-      const shortestCol = columnHeights.indexOf(minHeight);
-
       let bestMoveImprovement = 0;
       let bestMoveItemIndex = -1;
+      let bestMoveTargetCol = -1;
       let bestMoveNewHeights: number[] = [];
 
-      // Try moving items from tallest column to shortest column
+      // Try moving EVERY item to EVERY other column (exhaustive search)
       for (let i = 0; i < sortedItems.length; i++) {
         const item = sortedItems[i];
         if (!item) continue;
 
         const currentCol = columnAssignments[i];
-        if (currentCol !== tallestCol) continue;
+        if (currentCol === undefined) continue;
 
-        // Calculate what would happen if we moved this item
-        const newHeights = [...columnHeights];
-        newHeights[tallestCol] -= item.height + gap;
-        newHeights[shortestCol] += item.height + gap;
+        // Try moving this item to every other column
+        for (let targetCol = 0; targetCol < currentColumns; targetCol++) {
+          if (targetCol === currentCol) continue;
 
-        const newRange = getHeightRange(newHeights);
-        const improvement = range - newRange;
+          // Calculate what would happen if we moved this item
+          const newHeights = [...columnHeights];
+          newHeights[currentCol] -= item.height + gap;
+          newHeights[targetCol] += item.height + gap;
 
-        // Track best move
-        if (improvement > bestMoveImprovement) {
-          bestMoveImprovement = improvement;
-          bestMoveItemIndex = i;
-          bestMoveNewHeights = newHeights;
+          const newRange = getHeightRange(newHeights);
+          const improvement = currentRange - newRange;
+
+          // Track best move (accept any positive improvement)
+          if (improvement > bestMoveImprovement) {
+            bestMoveImprovement = improvement;
+            bestMoveItemIndex = i;
+            bestMoveTargetCol = targetCol;
+            bestMoveNewHeights = newHeights;
+          }
         }
       }
 
       // Apply the best move if it improves balance
-      if (bestMoveImprovement > 0 && bestMoveItemIndex >= 0) {
+      if (
+        bestMoveImprovement > 0 &&
+        bestMoveItemIndex >= 0 &&
+        bestMoveTargetCol >= 0
+      ) {
         columnHeights.splice(0, columnHeights.length, ...bestMoveNewHeights);
-        columnAssignments[bestMoveItemIndex] = shortestCol;
+        columnAssignments[bestMoveItemIndex] = bestMoveTargetCol;
         improved = true;
       }
     }

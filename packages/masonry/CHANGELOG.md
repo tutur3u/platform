@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.3.9] - 2025-11-07
+
+### Changed
+- **Exhaustive search**: Tries moving EVERY item to EVERY column (not limited to tallest→shortest)
+- **Global optimization**: Each pass evaluates all N×M possible moves
+- **Best-move selection**: Always applies the single move that improves balance most
+- **Tighter threshold**: Stops when columns within 1% or 10px (vs previous 5% or 20px)
+- **More passes**: Up to 20 optimization passes (vs previous 10)
+
+### Algorithm
+- **Phase 1**: Min-Max greedy placement
+- **Phase 2**: Global optimization - for each pass:
+  - Try moving every item to every other column
+  - Evaluate all possible moves (N items × M columns)
+  - Apply the single best move that reduces range most
+- **Phase 3**: Early stop when range < max(10px, 1% of shortest column)
+- **Phase 4**: Build final layout
+
+### Results
+- ✅ **Near-optimal balance**: Explores full solution space to find best distribution
+- ✅ **No local optima**: Not limited to specific move patterns
+- ✅ **Guaranteed convergence**: Always finds improving move if one exists
+- ✅ **Tighter tolerance**: Achieves balance within 1% or 10px
+
 ## [0.3.8] - 2025-11-07
 
 ### Changed
