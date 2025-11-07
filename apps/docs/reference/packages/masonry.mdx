@@ -6,7 +6,7 @@ updatedAt: '2025-11-07'
 
 ## Overview
 
-The `@tuturuuu/masonry` package provides a Pinterest-style masonry grid component for React. It offers two distribution strategies: a fast count-based approach for uniform content, and an intelligent height-based balancing algorithm that progressively optimizes layout as content loads - with zero hidden measurement phase.
+The `@tuturuuu/masonry` package provides a Pinterest-style masonry grid component for React. It offers two distribution strategies: a fast count-based approach for uniform content, and an intelligent height-based balancing algorithm with robust measurement validation and progressive optimization as content loads.
 
 ## Installation
 
@@ -35,11 +35,13 @@ bun add @tuturuuu/masonry
 - 🎨 **Pinterest-style Layout**: Creates beautiful masonry grids with balanced columns
 - 📱 **Responsive Design**: Automatically adjusts columns based on viewport width
 - ⚖️ **Smart Distribution**: Two strategies - fast count-based or height-balanced
-- 🖼️ **Progressive Image Loading**: Visible-first rendering with background optimization for image galleries
+- 🖼️ **Progressive Image Loading**: Visible-first rendering with intelligent measurement
+- 🛡️ **Robust Validation**: Validates measurements with intelligent fallbacks
 - 🎯 **TypeScript Support**: Fully typed with TypeScript
 - ⚡ **Lightweight**: Zero external dependencies besides React
 - 🔧 **Customizable**: Flexible column, gap, and breakpoint configuration
-- ⚡ **Zero Layout Shift**: Items render immediately, no hidden measurement phase
+- ⚡ **Performance Optimized**: Change detection prevents unnecessary updates
+- 🔄 **Auto-cleanup**: Smart stopping conditions for measurement intervals
 
 ## Basic Usage
 
@@ -335,24 +337,35 @@ The component uses inline styles for core layout functionality and accepts a `cl
 The `strategy="balanced"` mode uses a sophisticated progressive loading approach optimized for image galleries:
 
 1. **Immediate Render**: Items appear instantly using fast count-based distribution
-2. **Background Measurement**: Heights are measured without hiding content  
-3. **Progressive Optimization**: Every 100ms, layout redistributes based on current measurements
-4. **Image Load Tracking**: Monitors image loading progress and updates heights dynamically
-5. **Final Balance**: Once all images load, achieves optimal height-balanced distribution
+2. **Accurate Measurement**: Dual measurement system (`getBoundingClientRect()` + `offsetHeight`)
+3. **Validation & Fallbacks**: Validates all measurements; uses average for missing/invalid values
+4. **Smart Change Detection**: Only redistributes when heights change by >1px (avoids float precision)
+5. **Progressive Optimization**: Every 100ms, layout redistributes based on current measurements
+6. **Image Load Tracking**: Monitors image loading with proper event listeners and `naturalHeight` validation
+7. **Immediate Updates**: Triggers redistribution as soon as each image loads
+8. **Auto-Cleanup**: Stops measuring when stable or after 50 cycles (5 second safety limit)
+9. **Final Balance**: Achieves optimal height-balanced distribution using greedy algorithm
 
 This approach provides:
 - ✅ Fast initial render - no waiting for measurements
-- ✅ Smooth progressive improvement - no layout jumps
+- ✅ Robust validation - handles edge cases gracefully
+- ✅ Smart updates - only when necessary
+- ✅ Smooth progressive improvement - no jarring layout jumps
 - ✅ Optimal final balance - equal column heights
 - ✅ No hidden content phase - everything visible immediately
+- ✅ Performance limits - prevents runaway measurements
 
 ## Performance Considerations
 
 - The component uses React state and effects efficiently
 - Resize events are properly debounced through React's rendering cycle  
 - Count strategy: No DOM measurements, instant rendering
-- Balanced strategy: Minimal background measurements (100ms intervals), no render blocking
-- Progressive redistribution only runs while images are loading
+- Balanced strategy: 
+  - Dual measurement approach for accuracy
+  - Change detection (>1px) prevents unnecessary redistributions
+  - Only measures during image loading phase
+  - Safety limit prevents infinite loops (max 50 cycles / 5 seconds)
+  - Proper event cleanup on unmount
 - Minimal re-renders when breakpoints change
 
 ## TypeScript
@@ -448,13 +461,37 @@ The package is open source and available on GitHub:
 
 ## Changelog
 
-### 0.1.5 (Current)
+### 0.2.0 (Current)
+
+Major improvements to measurement and distribution system:
+
+- **Robust measurement validation**: Dual measurement approach with validation
+- **Smart change detection**: Only updates when heights change by >1px
+- **Intelligent fallbacks**: Uses average height for unmeasured items
+- **Performance safety limits**: Maximum 50 measurement cycles (5 seconds)
+- **Better image handling**: Proper event listeners with `naturalHeight` validation
+- **Improved greedy algorithm**: Better column distribution
+- **Immediate image updates**: Redistributes as each image loads
+
+### 0.1.7
+
+- **Fixed distribution algorithm**: Proper strict `<` comparison for better balance
+- Prevents items from piling up in later columns
+
+### 0.1.6
+
+- **Fixed measurement tracking**: Added `data-item-index` for accurate height mapping
+- Measurements now correctly correlate after redistribution
+
+### 0.1.5
+
 - **Fixed infinite rendering issue**: Proper cleanup of measurement intervals
 - Removed problematic component remounting from key prop changes
 - Improved lifecycle management with better effect dependencies
 - Stable rendering once all images are loaded
 
 ### 0.1.4
+
 - **Visible-first rendering**: Removed hidden measurement phase
 - Items now appear immediately - no more delayed visibility
 - Background measurement and progressive optimization

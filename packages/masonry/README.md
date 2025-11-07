@@ -1,8 +1,8 @@
 # @tuturuuu/masonry
 
-A lightweight, responsive masonry grid component for React with intelligent distribution strategies and progressive loading.
+A lightweight, responsive masonry grid component for React with intelligent distribution strategies and robust progressive loading.
 
-**Version**: 0.1.5 (Stable)
+**Version**: 0.2.0 (Stable)
 
 ## Features
 
@@ -12,8 +12,10 @@ A lightweight, responsive masonry grid component for React with intelligent dist
 - 🎯 TypeScript support
 - 🔧 Flexible configuration
 - 🎭 Two distribution strategies: fast count-based or height-balanced
-- 🖼️ Progressive loading with zero hidden measurement phase
+- 🖼️ Progressive loading with intelligent measurement
 - 🚀 Immediate visibility - content appears instantly
+- 🛡️ Robust error handling and validation
+- 🔄 Smart redistribution - only updates when heights change
 - 📊 Tested with 100+ items of varying sizes
 
 ## Installation
@@ -135,11 +137,13 @@ The `count` strategy distributes items based on item count, placing each item in
 The `balanced` strategy measures actual item heights and distributes items to the shortest column. This provides:
 
 - 🎨 **Better visual balance**: Columns have similar total heights
-- 📏 **Accurate**: Uses actual measured heights (tracks image loading)
+- 📏 **Accurate measurement**: Uses `getBoundingClientRect()` for precision
 - 🔄 **Progressive loading**: Items visible immediately, redistributes as images load
 - 🖼️ **Image-aware**: Continuously optimizes layout every 100ms during loading
-- ✨ **No hidden phase**: Content visible from first render
+- ✨ **Smart updates**: Only redistributes when heights actually change
+- 🛡️ **Robust validation**: Validates measurements with intelligent fallbacks
 - 🚫 **Auto-stops**: Measurements cease once all images are loaded
+- ⚡ **Performance limit**: Maximum 50 measurement cycles (5 seconds) for safety
 - ✅ **Best for**: Image galleries, content with varying heights
 
 ```tsx
@@ -150,9 +154,14 @@ The `balanced` strategy measures actual item heights and distributes items to th
 </Masonry>
 ```
 
-**How it works**: The balanced strategy shows items immediately using count-based distribution, then continuously measures and redistributes items every 100ms while images are loading. This creates a smooth, progressive optimization experience where the layout gradually improves as more images load. Once all images are fully loaded, the interval automatically stops and you have a perfectly balanced final distribution.
+**How it works**: The balanced strategy shows items immediately using count-based distribution, then continuously measures and redistributes items every 100ms while images are loading. It uses a sophisticated greedy algorithm that:
 
-**Performance**: No blocking measurements or hidden rendering phases. Content is always visible, with background optimization happening via periodic updates that automatically clean up.
+- Validates all height measurements
+- Uses average height for unmeasured items
+- Only triggers updates when heights change by >1px
+- Automatically stops when stable or after safety limit
+
+**Performance**: Dual measurement approach (`getBoundingClientRect()` + `offsetHeight`) ensures accuracy. Change detection prevents unnecessary redistributions. Content is always visible, with background optimization happening via periodic updates that automatically clean up.
 
 ## How It Works
 
@@ -166,27 +175,41 @@ The `balanced` strategy measures actual item heights and distributes items to th
 ### Balanced Strategy Algorithm
 
 1. **Immediate Render**: Items appear instantly using count-based distribution
-2. **Background Measurement**: Heights measured without hiding content
-3. **Progressive Optimization**: Redistributes every 100ms while images load
-4. **Image Load Tracking**: Monitors image loading progress
-5. **Auto-Cleanup**: Stops measuring once all images complete
-6. **Final Balance**: Achieves optimal height distribution
+2. **Accurate Measurement**: Uses `getBoundingClientRect()` + `offsetHeight` for precision
+3. **Validation**: Validates all measurements; uses average for missing/invalid values
+4. **Smart Updates**: Only redistributes when heights change by >1px
+5. **Progressive Optimization**: Redistributes every 100ms while images load
+6. **Image Load Tracking**: Monitors image loading with proper event listeners
+7. **Auto-Cleanup**: Stops measuring once all images complete or after 50 attempts (5s)
+8. **Final Balance**: Achieves optimal height distribution with greedy algorithm
 
 The component automatically adjusts the number of columns based on viewport width and configured breakpoints.
 
 ## Recent Updates
 
-### v0.1.5
+### v0.2.0 (Current)
 
-- ✅ Fixed infinite rendering issue
-- ✅ Proper interval cleanup
-- ✅ Stable rendering after image load completion
+Major improvements to measurement and distribution:
 
-### v0.1.4
+- ✅ **Dual measurement system**: `getBoundingClientRect()` + `offsetHeight` for accuracy
+- ✅ **Measurement validation**: Validates heights before use; intelligent fallbacks
+- ✅ **Change detection**: Only updates when heights change >1px (avoids float precision issues)
+- ✅ **Smart fallbacks**: Uses average of measured items for missing heights
+- ✅ **Performance limits**: Max 50 measurement cycles (5 seconds) safety limit
+- ✅ **Proper event listeners**: `addEventListener` with `{ once: true }` for images
+- ✅ **Natural height validation**: Checks `img.naturalHeight > 0` for true load confirmation
+- ✅ **Immediate updates on image load**: Triggers redistribution as each image completes
+- ✅ **Greedy algorithm**: Improved distribution for better visual balance
 
-- ✅ Removed hidden measurement phase
-- ✅ Immediate visibility for all content
-- ✅ Zero layout shift
+### v0.1.7
+
+- ✅ Fixed distribution algorithm to use strict `<` comparison
+- ✅ Prevents items from piling up in later columns
+
+### v0.1.6
+
+- ✅ Added `data-item-index` tracking for accurate measurement mapping
+- ✅ Fixed measurement correlation after redistribution
 
 See [full changelog](https://github.com/tutur3u/platform/blob/main/packages/masonry/README.md#changelog) for more details.
 

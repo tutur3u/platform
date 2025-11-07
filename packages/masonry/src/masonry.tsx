@@ -60,6 +60,8 @@ export function Masonry({
     loaded: number;
   }>({ total: 0, loaded: 0 });
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const measurementAttemptsRef = useRef(0);
+  const lastMeasurementRef = useRef<string>(''); // Track measurement hash to detect changes
 
   useEffect(() => {
     const handleResize = () => {
@@ -108,67 +110,145 @@ export function Masonry({
       intervalRef.current = null;
     }
 
+    // Reset measurement tracking
+    measurementAttemptsRef.current = 0;
+    lastMeasurementRef.current = '';
+
     const measureHeights = () => {
       const items = containerRef.current?.querySelectorAll(
         '[data-masonry-item]'
       );
 
-      if (!items) return;
+      if (!items || items.length === 0) return false;
 
       // Initialize tracking
       imagesLoadingRef.current = { total: 0, loaded: 0 };
 
-      // Count total images
+      // Count total images and preload check
       items.forEach((item) => {
         const images = item.querySelectorAll('img');
         imagesLoadingRef.current.total += images.length;
       });
 
-      // Measure initial heights (even if images not loaded yet)
+      // Measure all items and validate measurements
+      let allMeasurementsValid = true;
+      const newHeights: number[] = [];
+
       items.forEach((item) => {
         if (item instanceof HTMLElement) {
           const itemIndex = Number.parseInt(
             item.getAttribute('data-item-index') ?? '0',
             10
           );
-          itemHeightsRef.current.set(itemIndex, item.offsetHeight);
+
+          // Get bounding rect for more accurate measurement
+          const rect = item.getBoundingClientRect();
+          const height = rect.height || item.offsetHeight;
+
+          // Validate height measurement
+          if (height <= 0) {
+            allMeasurementsValid = false;
+          } else {
+            itemHeightsRef.current.set(itemIndex, height);
+            newHeights.push(height);
+          }
         }
       });
 
-      // Show immediately
-      setIsInitialized(true);
+      // Create measurement hash to detect actual changes
+      const measurementHash = newHeights.join(',');
+      lastMeasurementRef.current = measurementHash;
 
-      // If no images, we're done
-      if (imagesLoadingRef.current.total === 0) {
+      // Show immediately after first valid measurement
+      if (
+        !isInitialized &&
+        allMeasurementsValid &&
+        itemHeightsRef.current.size > 0
+      ) {
+        setIsInitialized(true);
+      }
+
+      // If no images, we're done after first valid measurement
+      if (imagesLoadingRef.current.total === 0 && allMeasurementsValid) {
+        return true; // All done
+      }
+
+      return false; // Continue measuring
+    };
+
+    // Perform initial measurement
+    const initialComplete = measureHeights();
+
+    if (initialComplete) {
+      return; // No need for interval
+    }
+
+    // Set up periodic redistribution while images are loading
+    intervalRef.current = setInterval(() => {
+      measurementAttemptsRef.current++;
+
+      // Measure all items with current heights
+      const items = containerRef.current?.querySelectorAll(
+        '[data-masonry-item]'
+      );
+
+      if (!items) {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
         return;
       }
 
-      // Set up periodic redistribution while images are loading
-      intervalRef.current = setInterval(() => {
-        // Measure all items with current heights
-        items.forEach((item) => {
-          if (item instanceof HTMLElement) {
-            const itemIndex = Number.parseInt(
-              item.getAttribute('data-item-index') ?? '0',
-              10
-            );
-            itemHeightsRef.current.set(itemIndex, item.offsetHeight);
-          }
-        });
+      let hasChanges = false;
+      const newHeights: number[] = [];
 
-        // Trigger redistribution
-        forceUpdate((n) => n + 1);
+      items.forEach((item) => {
+        if (item instanceof HTMLElement) {
+          const itemIndex = Number.parseInt(
+            item.getAttribute('data-item-index') ?? '0',
+            10
+          );
 
-        // Stop interval once all images are loaded
-        if (imagesLoadingRef.current.loaded >= imagesLoadingRef.current.total) {
-          if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
+          const rect = item.getBoundingClientRect();
+          const height = rect.height || item.offsetHeight;
+          const previousHeight = itemHeightsRef.current.get(itemIndex) || 0;
+
+          // Only update if height has changed significantly (more than 1px to avoid float precision issues)
+          if (height > 0 && Math.abs(height - previousHeight) > 1) {
+            itemHeightsRef.current.set(itemIndex, height);
+            hasChanges = true;
           }
+
+          newHeights.push(height);
         }
-      }, 100); // Recalculate every 100ms
+      });
 
-      // Setup image load handlers
+      // Only trigger redistribution if heights actually changed
+      if (hasChanges) {
+        forceUpdate((n) => n + 1);
+      }
+
+      // Stop conditions
+      const allImagesLoaded =
+        imagesLoadingRef.current.loaded >= imagesLoadingRef.current.total;
+      const maxAttemptsReached = measurementAttemptsRef.current > 50; // Safety limit: 5 seconds
+
+      if ((allImagesLoaded && !hasChanges) || maxAttemptsReached) {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      }
+    }, 100); // Recalculate every 100ms
+
+    // Setup image load handlers
+    requestAnimationFrame(() => {
+      const items = containerRef.current?.querySelectorAll(
+        '[data-masonry-item]'
+      );
+      if (!items) return;
+
       items.forEach((item) => {
         const images = item.querySelectorAll('img');
 
@@ -182,23 +262,25 @@ export function Masonry({
                 item.getAttribute('data-item-index') ?? '0',
                 10
               );
-              itemHeightsRef.current.set(itemIndex, item.offsetHeight);
+              const rect = item.getBoundingClientRect();
+              const height = rect.height || item.offsetHeight;
+
+              if (height > 0) {
+                itemHeightsRef.current.set(itemIndex, height);
+                // Trigger immediate redistribution on image load
+                forceUpdate((n) => n + 1);
+              }
             }
           };
 
-          if (img.complete) {
+          if (img.complete && img.naturalHeight > 0) {
             handleImageLoad();
           } else {
-            img.onload = handleImageLoad;
-            img.onerror = handleImageLoad;
+            img.addEventListener('load', handleImageLoad, { once: true });
+            img.addEventListener('error', handleImageLoad, { once: true });
           }
         });
       });
-    };
-
-    // Wait for next frame to ensure DOM is ready
-    requestAnimationFrame(() => {
-      measureHeights();
     });
 
     // Cleanup
@@ -231,32 +313,46 @@ export function Masonry({
       isInitialized &&
       itemHeightsRef.current.size > 0
     ) {
-      // Use measured heights for distribution
+      // Use measured heights for distribution with greedy algorithm
       const columnHeights = Array(currentColumns).fill(0);
 
       children.forEach((child, index) => {
-        // Find the shortest column - properly handle equal heights by choosing later columns
+        // Get item height with fallback to average if missing
+        const itemHeight = itemHeightsRef.current.get(index);
+
+        // If height not measured yet, use average of measured items or default
+        let effectiveHeight = itemHeight;
+        if (effectiveHeight === undefined || effectiveHeight <= 0) {
+          const measuredHeights = Array.from(
+            itemHeightsRef.current.values()
+          ).filter((h) => h > 0);
+          effectiveHeight =
+            measuredHeights.length > 0
+              ? measuredHeights.reduce((sum, h) => sum + h, 0) /
+                measuredHeights.length
+              : 200; // Reasonable default fallback
+        }
+
+        // Find the shortest column using greedy algorithm
         let shortestColumnIndex = 0;
         let minHeight = columnHeights[0] ?? 0;
 
         for (let i = 1; i < currentColumns; i++) {
           const height = columnHeights[i] ?? 0;
-          // Use <= to rotate through columns when heights are equal
-          if (height <= minHeight) {
+          // Use strict < to always pick the truly shortest column
+          // This ensures deterministic behavior and better balance
+          if (height < minHeight) {
             minHeight = height;
             shortestColumnIndex = i;
           }
         }
 
+        // Add item to shortest column
         const column = columnWrappers[shortestColumnIndex];
         if (column) {
           column.push(child);
-          const itemHeight = itemHeightsRef.current.get(index) ?? 0;
-          const currentHeight = columnHeights[shortestColumnIndex];
-          if (currentHeight !== undefined) {
-            columnHeights[shortestColumnIndex] =
-              currentHeight + itemHeight + gap;
-          }
+          // Update column height including gap
+          columnHeights[shortestColumnIndex] += effectiveHeight + gap;
         }
       });
     } else {
@@ -264,18 +360,20 @@ export function Masonry({
       const columnItemCounts = Array(currentColumns).fill(0);
 
       children.forEach((child) => {
-        // Find the column with the fewest items
+        // Find the column with the fewest items using round-robin for ties
         let shortestColumnIndex = 0;
         let minCount = columnItemCounts[0] ?? 0;
 
         for (let i = 1; i < currentColumns; i++) {
           const count = columnItemCounts[i] ?? 0;
-          if (count <= minCount) {
+          // Use strict < to pick first column with fewer items
+          if (count < minCount) {
             minCount = count;
             shortestColumnIndex = i;
           }
         }
 
+        // Add item to column
         const column = columnWrappers[shortestColumnIndex];
         if (column) {
           column.push(child);

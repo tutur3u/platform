@@ -146,9 +146,11 @@ export default function MasonryDemo() {
                 </>
               ) : (
                 <>
-                  <strong>Balanced Strategy:</strong> Progressive loading -
-                  items appear immediately, then redistribute as content loads
-                  for optimal height balance. Perfect for image galleries.
+                  <strong>Balanced Strategy:</strong> Progressive loading with
+                  robust measurement validation. Items appear immediately, then
+                  redistribute every 100ms as content loads. Uses dual
+                  measurement system with intelligent fallbacks for optimal
+                  height balance. Perfect for image galleries.
                 </>
               )}
             </p>
@@ -234,15 +236,23 @@ export default function MasonryDemo() {
             <li className="flex items-start gap-2">
               <span className="mt-1 text-dynamic-green">✓</span>
               <span>
-                <strong>Progressive Loading:</strong> Balanced strategy shows
-                content immediately, then optimizes layout as images load
+                <strong>Robust Validation:</strong> Validates all measurements
+                with intelligent fallbacks for missing or invalid heights
               </span>
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-1 text-dynamic-green">✓</span>
               <span>
-                <strong>Zero Layout Shift:</strong> No hidden measurement phase
-                - content visible from first render
+                <strong>Progressive Loading:</strong> Balanced strategy shows
+                content immediately, then optimizes layout with smart change
+                detection
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-1 text-dynamic-green">✓</span>
+              <span>
+                <strong>Performance Limits:</strong> Safety limits prevent
+                runaway measurements (max 50 cycles / 5 seconds)
               </span>
             </li>
           </ul>
