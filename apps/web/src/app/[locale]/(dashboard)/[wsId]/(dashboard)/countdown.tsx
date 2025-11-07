@@ -129,9 +129,9 @@ const CountdownDD = () => {
             </div>
           </div>
 
-          <div className="space-y-3 rounded-lg bg-linear-to-r from-dynamic-cyan/5 to-dynamic-blue/5 p-4 border-dynamic-cyan/10 border">
+          <div className="space-y-3 rounded-lg border border-dynamic-cyan/10 bg-linear-to-r from-dynamic-cyan/5 to-dynamic-blue/5 p-4">
             <h3 className="font-bold text-dynamic-cyan text-sm uppercase tracking-wide">
-              � SPARK Hub Demo Day - December 4, 2025
+              📢 SPARK Hub Demo Day - December 4, 2025
             </h3>
             <div className="space-y-2 text-sm">
               <p className="text-dynamic-gray/80">
@@ -320,7 +320,7 @@ const CountdownJT26 = () => {
             </div>
           </div>
 
-          <div className="space-y-3 rounded-lg bg-linear-to-r from-dynamic-pink/5 to-dynamic-rose/5 p-4 border-dynamic-pink/10 border">
+          <div className="space-y-3 rounded-lg border border-dynamic-pink/10 bg-linear-to-r from-dynamic-pink/5 to-dynamic-rose/5 p-4">
             <h3 className="font-bold text-dynamic-pink text-sm uppercase tracking-wide">
               🎌 日本への旅 - Journey to Japan
             </h3>
