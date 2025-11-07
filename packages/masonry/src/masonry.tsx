@@ -311,13 +311,8 @@ export function Masonry({
     );
   }, [redistributionKey]);
 
-  // Helper: Distribute items with improved balanced greedy algorithm
+  // Helper: Distribute items with hybrid algorithm (Min-Max + Post-Optimization)
   const distributeItems = (items: ReactNode[]): ReactNode[][] => {
-    const wrappers: ReactNode[][] = Array.from(
-      { length: currentColumns },
-      () => []
-    );
-
     // Build item metadata with heights
     interface ItemMetadata {
       child: ReactNode;
@@ -336,7 +331,8 @@ export function Masonry({
     // Sort items by height in descending order (Largest First)
     const sortedItems = [...itemsWithHeights].sort((a, b) => b.height - a.height);
 
-    // Track column heights for placement
+    // Track which column each item is assigned to
+    const columnAssignments: number[] = [];
     const columnHeights = Array(currentColumns).fill(0);
 
     // Helper: Calculate the range (max - min) of column heights
@@ -346,8 +342,8 @@ export function Masonry({
       return max - min;
     };
 
-    // Improved greedy placement: minimize the maximum column height
-    sortedItems.forEach((item) => {
+    // Phase 1: Initial Min-Max greedy placement
+    sortedItems.forEach((item, itemIndex) => {
       let bestColumnIndex = 0;
       let bestRange = Number.POSITIVE_INFINITY;
 
@@ -356,27 +352,81 @@ export function Masonry({
         const testHeights = [...columnHeights];
         testHeights[i] += item.height + gap;
         
-        // Calculate what the height range would be after this placement
         const range = getHeightRange(testHeights);
         
-        // Pick the column that results in the smallest range (most balanced)
-        // If ranges are equal within threshold, prefer the column with lower absolute height
-        if (range < bestRange - 1) { // 1px tolerance for floating point
+        if (range < bestRange - 1) {
           bestRange = range;
           bestColumnIndex = i;
         } else if (Math.abs(range - bestRange) <= 1) {
-          // Tie-breaker: prefer shorter column when ranges are similar
           if (columnHeights[i] < columnHeights[bestColumnIndex]) {
             bestColumnIndex = i;
           }
         }
       }
 
-      // Add item to best column
-      const column = wrappers[bestColumnIndex];
-      if (column) {
-        column.push(item.child);
-        columnHeights[bestColumnIndex] += item.height + gap;
+      // Assign item to best column
+      columnAssignments[itemIndex] = bestColumnIndex;
+      columnHeights[bestColumnIndex] += item.height + gap;
+    });
+
+    // Phase 2: Post-optimization - try swapping items to further reduce variance
+    let improved = true;
+    let passCount = 0;
+    const maxPasses = 2; // Limited passes for performance
+
+    while (improved && passCount < maxPasses) {
+      improved = false;
+      passCount++;
+
+      // Try swapping items between columns
+      for (let i = 0; i < sortedItems.length - 1; i++) {
+        for (let j = i + 1; j < sortedItems.length; j++) {
+          const item1 = sortedItems[i];
+          const item2 = sortedItems[j];
+          if (!item1 || !item2) continue;
+
+          const col1 = columnAssignments[i];
+          const col2 = columnAssignments[j];
+          if (col1 === undefined || col2 === undefined) continue;
+
+          // Skip if same column
+          if (col1 === col2) continue;
+
+          // Calculate current range
+          const currentRange = getHeightRange(columnHeights);
+
+          // Simulate swap
+          const newHeights = [...columnHeights];
+          newHeights[col1] = newHeights[col1] - item1.height + item2.height;
+          newHeights[col2] = newHeights[col2] - item2.height + item1.height;
+
+          const newRange = getHeightRange(newHeights);
+
+          // If swap improves balance by at least 2px, apply it
+          if (newRange < currentRange - 2) {
+            columnHeights[col1] = newHeights[col1];
+            columnHeights[col2] = newHeights[col2];
+            columnAssignments[i] = col2;
+            columnAssignments[j] = col1;
+            improved = true;
+          }
+        }
+      }
+    }
+
+    // Phase 3: Build final wrappers from optimized assignments
+    const wrappers: ReactNode[][] = Array.from(
+      { length: currentColumns },
+      () => []
+    );
+
+    sortedItems.forEach((item, index) => {
+      const columnIndex = columnAssignments[index];
+      if (columnIndex !== undefined) {
+        const column = wrappers[columnIndex];
+        if (column) {
+          column.push(item.child);
+        }
       }
     });
 

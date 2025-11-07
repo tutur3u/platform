@@ -2,7 +2,7 @@
 
 A lightweight, high-performance masonry grid component for React with intelligent distribution strategies and modern ResizeObserver-based measurement.
 
-**Version**: 0.3.5 (Stable)
+**Version**: 0.3.6 (Stable)
 
 ## Features
 
@@ -195,7 +195,7 @@ The `balanced` strategy measures actual item heights and distributes items to th
 </Masonry>
 ```
 
-**How it works (v0.3.5)**: The balanced strategy uses modern `ResizeObserver` API to monitor item height changes. When an item resizes (e.g., image loads), the observer triggers redistribution via `requestAnimationFrame` for smooth updates. It uses a Min-Max Balanced Greedy algorithm with:
+**How it works (v0.3.6)**: The balanced strategy uses modern `ResizeObserver` API to monitor item height changes. When an item resizes (e.g., image loads), the observer triggers redistribution via `requestAnimationFrame` for smooth updates. It uses a hybrid algorithm combining Min-Max placement with post-optimization:
 
 - Threshold-based tie-breaking for better balance
 - Running average height for unmeasured items
@@ -220,18 +220,22 @@ The `balanced` strategy measures actual item heights and distributes items to th
 4. Uses strict comparison for deterministic distribution
 5. **Memoized** - only recalculates when children or columns change
 
-### Balanced Strategy Algorithm (v0.3.5)
+### Balanced Strategy Algorithm (v0.3.6)
 
 1. **Immediate Multi-Column Render**: Items appear instantly in their target columns
 2. **ResizeObserver Setup**: Observes all masonry items for size changes
 3. **Event-Driven Measurement**: Captures height changes as they happen (images loading, etc.)
-4. **Min-Max Balanced Greedy** (v0.3.5 new): 
-   - Sorts items by height (largest first)
-   - For each item, evaluates all possible column placements
-   - Calculates height range (max - min) for each option
-   - Chooses column that minimizes the range
-   - Tie-breaks by preferring shorter columns
-   - O(n log n) sorting + O(n·k²) placement
+4. **Hybrid Optimization** (v0.3.6 new): 
+   - **Phase 1 - Min-Max Placement**: 
+     - Sorts items by height (largest first)
+     - For each item, evaluates all possible column placements
+     - Chooses column that minimizes height range
+   - **Phase 2 - Post-Optimization**: 
+     - Up to 2 refinement passes
+     - Tries swapping items between columns
+     - Only applies swaps that improve balance ≥2px
+   - **Phase 3 - Build Layout**: 
+     - Constructs final wrappers from optimized assignments
 5. **Smart Redistribution** (v0.3.2 enhanced): 
    - Debounced 500ms after last change for maximum stability
    - Only triggers when heights change >10px (ignores all minor fluctuations)
@@ -371,7 +375,26 @@ Fine-tune column counts per viewport:
 
 ## Recent Updates
 
-### v0.3.5 (Current - Perfect Balance Release)
+### v0.3.6 (Current - Perfect Balance Release)
+
+**Hybrid Algorithm with Post-Optimization:**
+- 🎯 **Two-phase approach**: Min-Max placement + swap-based refinement
+- 📊 **Post-optimization**: Up to 2 passes swapping items to reduce variance further
+- ⚖️ **Near-perfect equality**: Achieves virtually identical column heights
+- 🎨 **Best of both worlds**: Global Min-Max + local swap optimization
+- ⚡ **Still efficient**: Limited refinement passes maintain performance
+
+**Algorithm Details:**
+- **Phase 1**: Min-Max greedy (evaluates all placements, minimizes height range)
+- **Phase 2**: Post-optimization (swaps items between columns if it improves balance ≥2px)
+- **Phase 3**: Build final layout from optimized assignments
+
+**Results:**
+- ✅ **Virtually perfect balance**: Columns end at nearly identical heights
+- ✅ **Hybrid superiority**: Outperforms pure Min-Max with refinement pass
+- ✅ **Minimal overhead**: Only 2 optimization passes
+
+### v0.3.5 (Perfect Balance Release)
 
 **Major Algorithm Improvements:**
 - 🎯 **Min-Max Balanced Greedy**: Advanced algorithm that minimizes height range across all columns

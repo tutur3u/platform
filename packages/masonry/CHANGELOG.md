@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.3.6] - 2025-11-07
+
+### Improved
+- **Hybrid Algorithm**: Added post-optimization refinement pass after Min-Max placement
+- **Swap-based refinement**: Up to 2 optimization passes that swap items to further reduce variance
+- **Better final balance**: Achieves near-perfect column height equality
+- **Smart threshold**: Only applies swaps that improve balance by ≥2px
+- **Best of both worlds**: Combines global Min-Max with local swap optimization
+
+### Algorithm
+- **Phase 1**: Min-Max greedy placement (minimizes height range)
+- **Phase 2**: Post-optimization with item swaps (up to 2 passes)
+- **Phase 3**: Build final layout from optimized assignments
+
+### Results
+- ✅ **Near-perfect equality**: Columns end at virtually identical heights
+- ✅ **Hybrid approach**: Combines strengths of Min-Max and local optimization
+- ✅ **Minimal overhead**: Only 2 refinement passes keeps it fast
+
 ## [0.3.5] - 2025-11-07
 
 ### Improved

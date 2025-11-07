@@ -6,7 +6,7 @@ updatedAt: '2025-11-07'
 
 ## Overview
 
-The `@tuturuuu/masonry` package provides a Pinterest-style masonry grid component for React with modern ResizeObserver-based measurement. Version 0.3.5 introduces Min-Max Balanced Greedy algorithm for near-perfect visual balance. Version 0.3.2 brought rock-solid stability with aggressive debouncing and auto-stop mechanisms. Version 0.3.0 brought major performance improvements (50-70% CPU reduction), fixed the columns prop bug, and added advanced configuration options. It offers two distribution strategies: a fast count-based approach for uniform content, and an intelligent height-based balancing algorithm with event-driven measurement, advanced min-max optimization, and memoized calculations.
+The `@tuturuuu/masonry` package provides a Pinterest-style masonry grid component for React with modern ResizeObserver-based measurement. Version 0.3.6 introduces hybrid algorithm (Min-Max + post-optimization) for virtually perfect visual balance. Version 0.3.2 brought rock-solid stability with aggressive debouncing and auto-stop mechanisms. Version 0.3.0 brought major performance improvements (50-70% CPU reduction), fixed the columns prop bug, and added advanced configuration options. It offers two distribution strategies: a fast count-based approach for uniform content, and an intelligent height-based balancing algorithm with event-driven measurement, hybrid optimization, and memoized calculations.
 
 ## Installation
 
@@ -65,7 +65,7 @@ export function Gallery() {
 <Note>
 **v0.3.0+ Change**: The `columns` prop now works as expected without requiring breakpoints. Previously, default breakpoints would override the columns setting based on screen width.
 
-**v0.3.5 Improvement**: Min-Max Balanced Greedy algorithm - evaluates all possible placements and chooses the one that minimizes height range across columns. Produces near-perfect balance by considering global distribution, not just local shortest column.
+**v0.3.6 Improvement**: Hybrid algorithm combining Min-Max placement with post-optimization refinement. Achieves virtually perfect balance through two-phase approach: global Min-Max followed by local swap optimization.
 
 **v0.3.2 Improvement**: Aggressive stability controls (500ms debounce, 10px threshold, max 10 redistributions, auto-stop after images load) ensure rock-solid layouts that settle and stay settled.
 </Note>
@@ -369,12 +369,12 @@ The masonry component uses an **optimized shortest-column algorithm** to distrib
    - Uses threshold-based greedy algorithm
    - Considers balance threshold for tie-breaking
    - Tracks coefficient of variation for quality
-5. **Min-Max Balanced Greedy** (v0.3.5 new):
-   - Sorts items by height in descending order
-   - Evaluates all possible column placements
-   - Minimizes height range (max - min)
-   - Considers global balance, not just local shortest
-   - Superior balance to simple greedy algorithms
+5. **Hybrid Optimization** (v0.3.6 new):
+   - Phase 1: Min-Max placement (evaluates all placements)
+   - Phase 2: Post-optimization (swap-based refinement)
+   - Phase 3: Build layout from optimized assignments
+   - Achieves virtually perfect balance
+   - Best of both global and local optimization
 6. **Smart Redistribution** (v0.3.2 enhanced):
    - Debounced 500ms after last change for maximum stability
    - Only triggers when heights change >10px (ignores all minor fluctuations)
@@ -405,7 +405,7 @@ The height-based strategy provides better visual balance for items with varying 
 ### Strategy Performance
 
 - **Count Strategy (Default)**: Fastest option. No height measurements, no layout shift, zero overhead. Ideal for most use cases and 100+ items.
-- **Balanced Strategy (v0.3.5)**: Modern ResizeObserver API with Min-Max Balanced Greedy algorithm and aggressive stability controls. Event-driven with advanced look-ahead optimization for near-perfect visual balance, 500ms debounce, 10px threshold, max 10 redistributions, and auto-stop after images load. Rock-solid layouts that settle and stay settled with columns ending at nearly identical heights.
+- **Balanced Strategy (v0.3.6)**: Modern ResizeObserver API with hybrid algorithm (Min-Max + post-optimization) and aggressive stability controls. Event-driven with two-phase optimization for virtually perfect visual balance, 500ms debounce, 10px threshold, max 10 redistributions, and auto-stop after images load. Rock-solid layouts that settle and stay settled with columns ending at virtually identical heights.
 
 ### Memoization Benefits
 
@@ -490,12 +490,12 @@ The `strategy="balanced"` mode uses modern ResizeObserver API for event-driven m
 4. **Accurate Measurement**: Uses `entry.contentRect.height` from ResizeObserver for precision
 5. **Validation & Fallbacks**: Validates measurements; uses running average for missing/invalid values
 6. **Smart Change Detection** (v0.3.2): Only redistributes when heights change by >10px (completely ignores minor fluctuations)
-7. **Min-Max Balanced Greedy** (v0.3.5 new):
-   - Sorts items by height (largest first)
-   - For each item, evaluates all k possible placements
-   - Calculates height range for each option
-   - Chooses placement that minimizes range
-   - Produces near-perfect balance across columns
+7. **Hybrid Optimization** (v0.3.6 new):
+   - Phase 1: Min-Max placement minimizes height range
+   - Phase 2: Up to 2 swap optimization passes
+   - Only applies swaps improving balance ≥2px
+   - Combines global and local optimization
+   - Achieves virtually perfect column equality
 8. **Aggressive Debouncing** (v0.3.2): 500ms debounce + `requestAnimationFrame` ensures maximum stability
 9. **Redistribution Limits** (v0.3.2): Maximum 10 redistributions prevents endless movement
 10. **Image Load Tracking** (v0.3.2): Automatically stops observing once all images finish loading
@@ -512,8 +512,8 @@ This v0.3.0+ approach provides:
 - ✅ **Smooth 60fps** - even with 100+ items
 - ✅ **Robust validation** - handles edge cases gracefully
 - ✅ **No layout shift** - multi-column from first render
-- ✅ **Min-Max Balanced Greedy** (v0.3.5) - Advanced algorithm that minimizes column height differences
-- ✅ **Look-ahead optimization** (v0.3.5) - Evaluates all placements to choose most balanced
+- ✅ **Hybrid Algorithm** (v0.3.6) - Two-phase approach: Min-Max + swap refinement
+- ✅ **Post-optimization** (v0.3.6) - Refines placement after initial Min-Max distribution
 - ✅ **Aggressive debouncing** (v0.3.2) - 500ms wait ensures rock-solid stability
 - ✅ **High thresholds** (v0.3.2) - 10px minimum change completely ignores minor adjustments
 - ✅ **Auto-stop** (v0.3.2) - Stops observing after images load or 2s of stability
@@ -703,7 +703,26 @@ The package is open source and available on GitHub:
 
 ## Changelog
 
-### 0.3.5 (Current - Perfect Balance Release)
+### 0.3.6 (Current - Perfect Balance Release)
+
+**Hybrid Algorithm with Post-Optimization:**
+- 🎯 **Two-phase approach**: Min-Max placement + swap-based refinement
+- 📊 **Post-optimization**: Up to 2 passes swapping items to reduce variance further
+- ⚖️ **Near-perfect equality**: Achieves virtually identical column heights
+- 🎨 **Best of both worlds**: Global Min-Max + local swap optimization
+- ⚡ **Still efficient**: Limited refinement passes maintain performance
+
+**Algorithm Details:**
+- **Phase 1**: Min-Max greedy (evaluates all placements, minimizes height range)
+- **Phase 2**: Post-optimization (swaps items between columns if it improves balance ≥2px)
+- **Phase 3**: Build final layout from optimized assignments
+
+**Results:**
+- ✅ **Virtually perfect balance**: Columns end at nearly identical heights
+- ✅ **Hybrid superiority**: Outperforms pure Min-Max with refinement pass
+- ✅ **Minimal overhead**: Only 2 optimization passes
+
+### 0.3.5 (Perfect Balance Release)
 
 **Major Algorithm Improvements:**
 - 🎯 **Min-Max Balanced Greedy**: Advanced algorithm that minimizes height range across all columns
