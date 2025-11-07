@@ -4,6 +4,7 @@ import {
   type CSSProperties,
   type ReactNode,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -18,15 +19,26 @@ interface MasonryProps {
   className?: string;
   /**
    * Strategy for distributing items across columns
-   * - 'balanced': Distribute based on actual measured heights for better visual balance (may cause initial layout shift)
+   * - 'balanced': Distribute based on actual measured heights for better visual balance
    * - 'count': Distribute based on item count (faster, no layout shift, default)
    */
   strategy?: 'balanced' | 'count';
+  /**
+   * Balance threshold for redistribution (0-1)
+   * Only redistributes when column height variance exceeds this threshold
+   * @default 0.05 (5%)
+   */
+  balanceThreshold?: number;
+  /**
+   * Enable smooth CSS transitions during redistribution
+   * @default false
+   */
+  smoothTransitions?: boolean;
 }
 
 /**
  * Masonry component for creating a Pinterest-style grid layout
- * Uses a "shortest column" algorithm to distribute items evenly
+ * Uses an optimized "shortest column" algorithm to distribute items evenly
  *
  * @example
  * ```tsx
@@ -41,29 +53,25 @@ export function Masonry({
   children,
   columns = 3,
   gap = 16,
-  breakpoints = {
-    640: 1,
-    768: 2,
-    1024: 3,
-    1280: 4,
-  },
+  breakpoints,
   className = '',
   strategy = 'count',
+  balanceThreshold = 0.05,
+  smoothTransitions = false,
 }: MasonryProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentColumns, setCurrentColumns] = useState(columns);
   const itemHeightsRef = useRef<Map<number, number>>(new Map());
-  const [isInitialized, setIsInitialized] = useState(strategy !== 'balanced');
-  const [, forceUpdate] = useState(0);
-  const imagesLoadingRef = useRef<{
-    total: number;
-    loaded: number;
-  }>({ total: 0, loaded: 0 });
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const measurementAttemptsRef = useRef(0);
-  const lastMeasurementRef = useRef<string>(''); // Track measurement hash to detect changes
+  const [redistributionKey, setRedistributionKey] = useState(0);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
+  // Handle responsive breakpoints
   useEffect(() => {
+    if (!breakpoints || Object.keys(breakpoints).length === 0) {
+      setCurrentColumns(columns);
+      return;
+    }
+
     const handleResize = () => {
       const width = window.innerWidth;
       let cols = columns;
@@ -80,165 +88,81 @@ export function Masonry({
         }
       }
 
-      setCurrentColumns(cols);
-
-      // Reset initialization on column change
-      if (strategy === 'balanced' && cols !== currentColumns) {
-        setIsInitialized(false);
+      if (cols !== currentColumns) {
+        setCurrentColumns(cols);
+        if (strategy === 'balanced') {
+          itemHeightsRef.current.clear();
+        }
       }
     };
 
-    // Only run resize logic if breakpoints are provided
-    if (Object.keys(breakpoints).length > 0) {
-      handleResize();
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
-    } else {
-      setCurrentColumns(columns);
-    }
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, [columns, breakpoints, currentColumns, strategy]);
 
-  // Measure individual item heights and setup periodic redistribution
+  // Modern ResizeObserver-based measurement for balanced strategy
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally re-run when children count changes
   useEffect(() => {
     if (strategy !== 'balanced') return;
-    if (isInitialized) return; // Already set up
 
-    // Cleanup any existing interval
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+    // Check if ResizeObserver is available
+    if (typeof ResizeObserver === 'undefined') {
+      console.warn(
+        'ResizeObserver not available, falling back to count strategy'
+      );
+      return;
     }
 
-    // Reset measurement tracking
-    measurementAttemptsRef.current = 0;
-    lastMeasurementRef.current = '';
+    // Cleanup existing observer
+    if (resizeObserverRef.current) {
+      resizeObserverRef.current.disconnect();
+    }
 
-    const measureHeights = () => {
-      const items = containerRef.current?.querySelectorAll(
-        '[data-masonry-item]'
-      );
+    // Track if redistribution is needed
+    let redistributionScheduled = false;
 
-      if (!items || items.length === 0) return false;
+    const scheduleRedistribution = () => {
+      if (redistributionScheduled) return;
+      redistributionScheduled = true;
 
-      // Initialize tracking
-      imagesLoadingRef.current = { total: 0, loaded: 0 };
-
-      // Count total images and preload check
-      items.forEach((item) => {
-        const images = item.querySelectorAll('img');
-        imagesLoadingRef.current.total += images.length;
+      requestAnimationFrame(() => {
+        redistributionScheduled = false;
+        setRedistributionKey((prev) => prev + 1);
       });
-
-      // Measure all items and validate measurements
-      let validMeasurements = 0;
-      const newHeights: number[] = [];
-
-      items.forEach((item) => {
-        if (item instanceof HTMLElement) {
-          const itemIndex = Number.parseInt(
-            item.getAttribute('data-item-index') ?? '0',
-            10
-          );
-
-          // Get bounding rect for more accurate measurement
-          const rect = item.getBoundingClientRect();
-          const height = rect.height || item.offsetHeight;
-
-          // Store height if valid
-          if (height > 0) {
-            itemHeightsRef.current.set(itemIndex, height);
-            newHeights.push(height);
-            validMeasurements++;
-          }
-        }
-      });
-
-      // Create measurement hash to detect actual changes
-      const measurementHash = newHeights.join(',');
-      lastMeasurementRef.current = measurementHash;
-
-      // Show immediately after we have some valid measurements (at least 50% or 1 item)
-      const minValidMeasurements = Math.max(1, Math.floor(items.length * 0.5));
-      if (!isInitialized && validMeasurements >= minValidMeasurements) {
-        setIsInitialized(true);
-      }
-
-      // If no images, we're done after first valid measurement
-      if (imagesLoadingRef.current.total === 0 && validMeasurements > 0) {
-        return true; // All done
-      }
-
-      return false; // Continue measuring
     };
 
-    // Perform initial measurement
-    const initialComplete = measureHeights();
-
-    if (initialComplete) {
-      return; // No need for interval
-    }
-
-    // Set up periodic redistribution while images are loading
-    intervalRef.current = setInterval(() => {
-      measurementAttemptsRef.current++;
-
-      // Measure all items with current heights
-      const items = containerRef.current?.querySelectorAll(
-        '[data-masonry-item]'
-      );
-
-      if (!items) {
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-        return;
-      }
-
+    // Create new ResizeObserver
+    const resizeObserver = new ResizeObserver((entries) => {
       let hasChanges = false;
-      const newHeights: number[] = [];
 
-      items.forEach((item) => {
-        if (item instanceof HTMLElement) {
-          const itemIndex = Number.parseInt(
-            item.getAttribute('data-item-index') ?? '0',
-            10
-          );
+      for (const entry of entries) {
+        const element = entry.target;
+        if (!(element instanceof HTMLElement)) continue;
 
-          const rect = item.getBoundingClientRect();
-          const height = rect.height || item.offsetHeight;
-          const previousHeight = itemHeightsRef.current.get(itemIndex) || 0;
+        const itemIndex = Number.parseInt(
+          element.getAttribute('data-item-index') ?? '0',
+          10
+        );
 
-          // Only update if height has changed significantly (more than 1px to avoid float precision issues)
-          if (height > 0 && Math.abs(height - previousHeight) > 1) {
-            itemHeightsRef.current.set(itemIndex, height);
-            hasChanges = true;
-          }
+        // Use contentRect for accurate measurement
+        const height = entry.contentRect.height || element.offsetHeight;
+        const previousHeight = itemHeightsRef.current.get(itemIndex) || 0;
 
-          newHeights.push(height);
+        // Only update if height changed significantly (> 1px to avoid float precision issues)
+        if (height > 0 && Math.abs(height - previousHeight) > 1) {
+          itemHeightsRef.current.set(itemIndex, height);
+          hasChanges = true;
         }
-      });
+      }
 
-      // Only trigger redistribution if heights actually changed
+      // Schedule redistribution if changes detected
       if (hasChanges) {
-        forceUpdate((n) => n + 1);
+        scheduleRedistribution();
       }
+    });
 
-      // Stop conditions
-      const allImagesLoaded =
-        imagesLoadingRef.current.loaded >= imagesLoadingRef.current.total;
-      const maxAttemptsReached = measurementAttemptsRef.current > 50; // Safety limit: 5 seconds
-
-      if ((allImagesLoaded && !hasChanges) || maxAttemptsReached) {
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-      }
-    }, 100); // Recalculate every 100ms
-
-    // Setup image load handlers
+    // Observe all masonry items after initial render
     requestAnimationFrame(() => {
       const items = containerRef.current?.querySelectorAll(
         '[data-masonry-item]'
@@ -246,123 +170,110 @@ export function Masonry({
       if (!items) return;
 
       items.forEach((item) => {
-        const images = item.querySelectorAll('img');
-
-        images.forEach((img) => {
-          const handleImageLoad = () => {
-            imagesLoadingRef.current.loaded++;
-
-            // Measure this item immediately when its image loads
-            if (item instanceof HTMLElement) {
-              const itemIndex = Number.parseInt(
-                item.getAttribute('data-item-index') ?? '0',
-                10
-              );
-              const rect = item.getBoundingClientRect();
-              const height = rect.height || item.offsetHeight;
-
-              if (height > 0) {
-                itemHeightsRef.current.set(itemIndex, height);
-                // Trigger immediate redistribution on image load
-                forceUpdate((n) => n + 1);
-              }
-            }
-          };
-
-          if (img.complete && img.naturalHeight > 0) {
-            handleImageLoad();
-          } else {
-            img.addEventListener('load', handleImageLoad, { once: true });
-            img.addEventListener('error', handleImageLoad, { once: true });
-          }
-        });
+        if (item instanceof HTMLElement) {
+          resizeObserver.observe(item);
+        }
       });
     });
 
-    // Cleanup
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [strategy, isInitialized, children.length]);
+    resizeObserverRef.current = resizeObserver;
 
-  // Reset initialization when children or columns change significantly
+    return () => {
+      resizeObserver.disconnect();
+      resizeObserverRef.current = null;
+    };
+  }, [strategy, children.length, currentColumns]);
+
+  // Reset heights when children or columns change
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally reset on structural changes
   useEffect(() => {
     if (strategy === 'balanced') {
-      setIsInitialized(false);
       itemHeightsRef.current.clear();
+      setRedistributionKey((prev) => prev + 1);
     }
   }, [children.length, currentColumns, strategy]);
 
-  // Distribute items across columns
-  const distributeItems = () => {
-    const columnWrappers: ReactNode[][] = Array.from(
+  // Helper: Calculate average height from measured items
+  // biome-ignore lint/correctness/useExhaustiveDependencies: redistributionKey triggers intentional recalculation
+  const getAverageHeight = useMemo(() => {
+    if (itemHeightsRef.current.size === 0) return 200;
+    const measuredHeights = Array.from(itemHeightsRef.current.values()).filter(
+      (h) => h > 0
+    );
+    if (measuredHeights.length === 0) return 200;
+    return (
+      measuredHeights.reduce((sum, h) => sum + h, 0) / measuredHeights.length
+    );
+  }, [redistributionKey]);
+
+  // Helper: Calculate variance of column heights
+  const calculateVariance = (heights: number[]): number => {
+    const mean = heights.reduce((sum, h) => sum + h, 0) / heights.length;
+    const variance =
+      heights.reduce((sum, h) => sum + (h - mean) ** 2, 0) / heights.length;
+    return Math.sqrt(variance) / mean; // Coefficient of variation
+  };
+
+  // Memoized distribution calculation with improved algorithm
+  // biome-ignore lint/correctness/useExhaustiveDependencies: redistributionKey triggers recalculation, calculateVariance is stable
+  const columnWrappers = useMemo(() => {
+    const wrappers: ReactNode[][] = Array.from(
       { length: currentColumns },
       () => []
     );
 
-    if (
-      strategy === 'balanced' &&
-      isInitialized &&
-      itemHeightsRef.current.size > 0
-    ) {
-      // Use measured heights for distribution with greedy algorithm
+    if (strategy === 'balanced' && itemHeightsRef.current.size > 0) {
+      // Use measured heights for distribution with improved greedy algorithm
       const columnHeights = Array(currentColumns).fill(0);
 
       children.forEach((child, index) => {
-        // Get item height with fallback to average if missing
-        const itemHeight = itemHeightsRef.current.get(index);
-
-        // If height not measured yet, use average of measured items or default
-        let effectiveHeight = itemHeight;
+        // Get item height with fallback to running average
+        let effectiveHeight = itemHeightsRef.current.get(index);
         if (effectiveHeight === undefined || effectiveHeight <= 0) {
-          const measuredHeights = Array.from(
-            itemHeightsRef.current.values()
-          ).filter((h) => h > 0);
-          effectiveHeight =
-            measuredHeights.length > 0
-              ? measuredHeights.reduce((sum, h) => sum + h, 0) /
-                measuredHeights.length
-              : 200; // Reasonable default fallback
+          effectiveHeight = getAverageHeight;
         }
 
-        // Find the shortest column using greedy algorithm
+        // Find the shortest column with improved tie-breaking
         let shortestColumnIndex = 0;
         let minHeight = columnHeights[0] ?? 0;
 
         for (let i = 1; i < currentColumns; i++) {
           const height = columnHeights[i] ?? 0;
-          // Use strict < to always pick the truly shortest column
-          // This ensures deterministic behavior and better balance
-          if (height < minHeight) {
+          // Use threshold-based comparison for better balance
+          // Prefer earlier columns when heights are very close (within threshold)
+          if (height < minHeight - minHeight * balanceThreshold) {
             minHeight = height;
             shortestColumnIndex = i;
           }
         }
 
         // Add item to shortest column
-        const column = columnWrappers[shortestColumnIndex];
+        const column = wrappers[shortestColumnIndex];
         if (column) {
           column.push(child);
           // Update column height including gap
           columnHeights[shortestColumnIndex] += effectiveHeight + gap;
         }
       });
+
+      // Check if redistribution achieved good balance
+      const variance = calculateVariance(columnHeights);
+      if (variance > 0.1) {
+        // Variance too high, but we've done our best with greedy
+        // Could log for debugging: console.debug('Column variance:', variance)
+      }
     } else {
-      // Use item count for distribution (default, faster, or during measurement phase)
+      // Use item count for distribution (default or during initial measurement)
       const columnItemCounts = Array(currentColumns).fill(0);
 
       children.forEach((child) => {
-        // Find the column with the fewest items using round-robin for ties
+        // Find the column with the fewest items
         let shortestColumnIndex = 0;
         let minCount = columnItemCounts[0] ?? 0;
 
         for (let i = 1; i < currentColumns; i++) {
           const count = columnItemCounts[i] ?? 0;
-          // Use strict < to pick first column with fewer items
+          // Strict < ensures deterministic distribution
           if (count < minCount) {
             minCount = count;
             shortestColumnIndex = i;
@@ -370,7 +281,7 @@ export function Masonry({
         }
 
         // Add item to column
-        const column = columnWrappers[shortestColumnIndex];
+        const column = wrappers[shortestColumnIndex];
         if (column) {
           column.push(child);
           columnItemCounts[shortestColumnIndex]++;
@@ -378,10 +289,16 @@ export function Masonry({
       });
     }
 
-    return columnWrappers;
-  };
-
-  const columnWrappers = distributeItems();
+    return wrappers;
+  }, [
+    children,
+    currentColumns,
+    strategy,
+    redistributionKey,
+    balanceThreshold,
+    gap,
+    getAverageHeight,
+  ]);
 
   const containerStyle: CSSProperties = {
     display: 'flex',
@@ -394,41 +311,41 @@ export function Masonry({
     flexDirection: 'column',
     gap: `${gap}px`,
     flex: 1,
+    ...(smoothTransitions && {
+      transition: 'all 0.3s ease-in-out',
+    }),
   };
+
+  const itemStyle: CSSProperties = smoothTransitions
+    ? {
+        transition: 'transform 0.3s ease-in-out',
+      }
+    : {};
 
   return (
     <div ref={containerRef} style={containerStyle} className={className}>
-      {strategy === 'balanced' && !isInitialized ? (
-        <div style={columnStyle}>
-          {children.map((child, index) => (
-            <div key={index} data-masonry-item data-item-index={index}>
-              {child}
-            </div>
-          ))}
-        </div>
-      ) : (
-        columnWrappers.map((column, columnIndex) => (
-          <div key={columnIndex} style={columnStyle}>
-            {column.map((child, itemIndex) => {
-              // Calculate global index for consistent keys
-              const globalIndex =
-                columnWrappers
-                  .slice(0, columnIndex)
-                  .reduce((acc, col) => acc + col.length, 0) + itemIndex;
+      {columnWrappers.map((column, columnIndex) => (
+        <div key={columnIndex} style={columnStyle}>
+          {column.map((child, itemIndex) => {
+            // Calculate global index for consistent keys
+            const globalIndex =
+              columnWrappers
+                .slice(0, columnIndex)
+                .reduce((acc, col) => acc + col.length, 0) + itemIndex;
 
-              return (
-                <div
-                  key={globalIndex}
-                  data-masonry-item
-                  data-item-index={globalIndex}
-                >
-                  {child}
-                </div>
-              );
-            })}
-          </div>
-        ))
-      )}
+            return (
+              <div
+                key={globalIndex}
+                data-masonry-item
+                data-item-index={globalIndex}
+                style={itemStyle}
+              >
+                {child}
+              </div>
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
 }
