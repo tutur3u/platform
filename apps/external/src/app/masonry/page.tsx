@@ -3,89 +3,44 @@
 import { Masonry } from '@tuturuuu/masonry';
 import { useState } from 'react';
 
-// Sample data with varying heights to demonstrate masonry layout
-const sampleItems = [
-  {
-    id: 1,
-    title: 'Mountain Vista',
-    height: 300,
-    color: 'from-blue-400 to-blue-600',
-  },
-  {
-    id: 2,
-    title: 'Ocean Waves',
-    height: 200,
-    color: 'from-cyan-400 to-cyan-600',
-  },
-  {
-    id: 3,
-    title: 'Forest Path',
-    height: 400,
-    color: 'from-green-400 to-green-600',
-  },
-  {
-    id: 4,
-    title: 'Desert Dunes',
-    height: 250,
-    color: 'from-yellow-400 to-yellow-600',
-  },
-  {
-    id: 5,
-    title: 'City Lights',
-    height: 350,
-    color: 'from-purple-400 to-purple-600',
-  },
-  {
-    id: 6,
-    title: 'Northern Lights',
-    height: 280,
-    color: 'from-indigo-400 to-indigo-600',
-  },
-  {
-    id: 7,
-    title: 'Sunset Beach',
-    height: 320,
-    color: 'from-orange-400 to-orange-600',
-  },
-  {
-    id: 8,
-    title: 'Snowy Peaks',
-    height: 220,
-    color: 'from-slate-400 to-slate-600',
-  },
-  {
-    id: 9,
-    title: 'Tropical Paradise',
-    height: 380,
-    color: 'from-emerald-400 to-emerald-600',
-  },
-  {
-    id: 10,
-    title: 'Starry Night',
-    height: 260,
-    color: 'from-violet-400 to-violet-600',
-  },
-  {
-    id: 11,
-    title: 'Canyon Views',
-    height: 340,
-    color: 'from-red-400 to-red-600',
-  },
-  {
-    id: 12,
-    title: 'Misty Morning',
-    height: 290,
-    color: 'from-gray-400 to-gray-600',
-  },
-];
+// Generate 100 items with random heights for better testing
+const generateItems = (count: number) => {
+  const colors = [
+    'from-blue-400 to-blue-600',
+    'from-cyan-400 to-cyan-600',
+    'from-green-400 to-green-600',
+    'from-yellow-400 to-yellow-600',
+    'from-purple-400 to-purple-600',
+    'from-indigo-400 to-indigo-600',
+    'from-orange-400 to-orange-600',
+    'from-slate-400 to-slate-600',
+    'from-emerald-400 to-emerald-600',
+    'from-violet-400 to-violet-600',
+    'from-red-400 to-red-600',
+    'from-gray-400 to-gray-600',
+    'from-pink-400 to-pink-600',
+    'from-teal-400 to-teal-600',
+    'from-lime-400 to-lime-600',
+  ];
+
+  return Array.from({ length: count }, (_, i) => ({
+    id: i + 1,
+    title: `Item ${i + 1}`,
+    // Vary heights significantly: 150-450px range
+    height: Math.floor(Math.random() * 300) + 150,
+    color: colors[i % colors.length],
+  }));
+};
+
+const allItems = generateItems(100);
 
 export default function MasonryDemo() {
   const [columns, setColumns] = useState(3);
   const [gap, setGap] = useState(16);
-  const [itemCount, setItemCount] = useState(12);
+  const [itemCount, setItemCount] = useState(100);
   const [strategy, setStrategy] = useState<'count' | 'balanced'>('count');
 
-  const displayItems = sampleItems.slice(0, itemCount);
+  const displayItems = allItems.slice(0, itemCount);
 
   return (
     <div className="min-h-screen bg-linear-to-br from-dynamic-surface to-dynamic-muted p-8">
@@ -144,8 +99,9 @@ export default function MasonryDemo() {
               </label>
               <input
                 type="range"
-                min="3"
-                max="12"
+                min="10"
+                max="100"
+                step="10"
                 value={itemCount}
                 onChange={(e) => setItemCount(Number(e.target.value))}
                 className="w-full"
@@ -183,17 +139,20 @@ export default function MasonryDemo() {
               </div>
             </div>
           </div>
-          
+
           {/* Strategy Info */}
           <div className="mt-4 rounded-md bg-dynamic-muted p-4">
             <p className="text-dynamic-muted-foreground text-sm">
               {strategy === 'count' ? (
                 <>
-                  <strong>Count Strategy:</strong> Fast distribution by item count. No layout shift, but columns may have uneven heights.
+                  <strong>Count Strategy:</strong> Fast distribution by item
+                  count. No layout shift, but columns may have uneven heights.
                 </>
               ) : (
                 <>
-                  <strong>Balanced Strategy:</strong> Measures actual heights for better visual balance. May cause brief layout shift on load.
+                  <strong>Balanced Strategy:</strong> Measures actual heights
+                  for better visual balance. May cause brief layout shift on
+                  load.
                 </>
               )}
             </p>
@@ -279,7 +238,8 @@ export default function MasonryDemo() {
             <li className="flex items-start gap-2">
               <span className="mt-1 text-dynamic-green">✓</span>
               <span>
-                <strong>Flexible:</strong> Choose between fast count-based or height-balanced distribution
+                <strong>Flexible:</strong> Choose between fast count-based or
+                height-balanced distribution
               </span>
             </li>
           </ul>

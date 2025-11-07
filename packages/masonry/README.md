@@ -1,6 +1,8 @@
 # @tuturuuu/masonry
 
-A lightweight, responsive masonry grid component for React.
+A lightweight, responsive masonry grid component for React with intelligent distribution strategies.
+
+**Version**: 0.1.0 (Stable)
 
 ## Features
 
@@ -9,6 +11,8 @@ A lightweight, responsive masonry grid component for React.
 - ⚡ Lightweight with zero external dependencies
 - 🎯 TypeScript support
 - 🔧 Flexible configuration
+- 🎭 Two distribution strategies: fast count-based or height-balanced
+- 📊 Tested with 100+ items of varying sizes
 
 ## Installation
 
@@ -70,6 +74,22 @@ export function Gallery() {
 </Masonry>
 ```
 
+### With Balanced Strategy (for varying heights)
+
+```tsx
+<Masonry
+  columns={3}
+  gap={16}
+  strategy="balanced"
+>
+  {items.map((item) => (
+    <div key={item.id} style={{ height: item.height }}>
+      {item.content}
+    </div>
+  ))}
+</Masonry>
+```
+
 ## Props
 
 | Prop | Type | Default | Description |
@@ -79,6 +99,7 @@ export function Gallery() {
 | `gap` | `number` | `16` | Gap between items in pixels |
 | `breakpoints` | `{ [key: number]: number }` | See below | Responsive breakpoint configuration |
 | `className` | `string` | `''` | Additional CSS classes for the container |
+| `strategy` | `'count' \| 'balanced'` | `'count'` | Distribution strategy (see below) |
 
 ### Default Breakpoints
 
@@ -91,15 +112,55 @@ export function Gallery() {
 }
 ```
 
+## Distribution Strategies
+
+### Count Strategy (Default)
+
+The `count` strategy distributes items based on item count, placing each item in the column with the fewest items. This is:
+- ⚡ **Fast**: No measurement overhead
+- 🎯 **Stable**: No layout shift after initial render
+- ✅ **Best for**: Uniform content, cards, tiles
+
+```tsx
+<Masonry strategy="count" columns={3} gap={16}>
+  {items.map(item => <Card key={item.id} {...item} />)}
+</Masonry>
+```
+
+### Balanced Strategy
+
+The `balanced` strategy measures actual item heights and distributes items to the shortest column. This provides:
+- 🎨 **Better visual balance**: Columns have similar total heights
+- 📏 **Accurate**: Uses actual measured heights
+- 🔄 **Brief layout shift**: Items measured first, then redistributed
+- ✅ **Best for**: Image galleries, content with varying heights
+
+```tsx
+<Masonry strategy="balanced" columns={3} gap={16}>
+  {images.map(image => (
+    <img key={image.id} src={image.url} alt={image.title} />
+  ))}
+</Masonry>
+```
+
+**Trade-offs**: The balanced strategy has a brief measurement phase (invisible to users) where items are measured before final distribution. This ensures optimal visual balance but may cause a single layout shift on initial load.
+
 ## How It Works
 
-The masonry component uses a "shortest column" algorithm to distribute items across columns. Instead of a simple round-robin approach (which can lead to unbalanced columns), each item is placed in the column that currently has the fewest items, resulting in a more balanced layout.
+### Count Strategy Algorithm
 
-The component:
 1. Creates the specified number of columns
 2. Iterates through all items
 3. Places each item in the column with the fewest items
-4. Automatically adjusts the number of columns based on viewport width and configured breakpoints
+4. When columns have equal counts, rotates through them for even distribution
+
+### Balanced Strategy Algorithm
+
+1. **Measurement Phase**: Renders all items in a hidden single column to measure their heights
+2. **Distribution Phase**: Distributes items to columns based on actual heights, always choosing the shortest column
+3. **Result**: Columns have similar total heights for better visual balance
+
+The component automatically adjusts the number of columns based on viewport width and configured breakpoints.
 
 ## Stability
 

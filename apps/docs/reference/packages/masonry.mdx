@@ -408,7 +408,16 @@ The package is open source and available on GitHub:
 
 ## Changelog
 
-### 0.0.4 (Current)
+### 0.1.0 (Current)
+- **STABLE RELEASE**: Production-ready masonry grid component
+- Fixed infinite rendering loop in balanced strategy
+- Implemented proper two-phase measurement approach for balanced distribution
+- Fixed column distribution to properly rotate through equal-height columns
+- Improved visual balance with varying item heights (100+ items tested)
+- Balanced strategy now uses hidden measurement phase for accurate height calculations
+- Performance optimizations: measurement happens once, distribution is stable
+
+### 0.0.4
 - Added `strategy` prop with `'count'` and `'balanced'` modes
 - `'balanced'` mode uses ResizeObserver to measure heights for better visual balance
 - `'count'` mode (default) provides best performance with no layout shift

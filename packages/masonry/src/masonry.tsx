@@ -52,8 +52,10 @@ export function Masonry({
 }: MasonryProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentColumns, setCurrentColumns] = useState(columns);
-  const [columnHeights, setColumnHeights] = useState<number[]>([]);
-  const itemRefs = useRef<Map<number, HTMLElement>>(new Map());
+  const itemHeightsRef = useRef<Map<number, number>>(new Map());
+  const [measurementPhase, setMeasurementPhase] = useState(
+    strategy === 'balanced'
+  );
 
   useEffect(() => {
     const handleResize = () => {
@@ -73,6 +75,11 @@ export function Masonry({
       }
 
       setCurrentColumns(cols);
+
+      // Reset measurement phase on column change
+      if (strategy === 'balanced' && cols !== currentColumns) {
+        setMeasurementPhase(true);
+      }
     };
 
     // Only run resize logic if breakpoints are provided
@@ -83,41 +90,29 @@ export function Masonry({
     } else {
       setCurrentColumns(columns);
     }
-  }, [columns, breakpoints]);
+  }, [columns, breakpoints, currentColumns, strategy]);
 
-  // Measure column heights when using balanced strategy
+  // Measure individual item heights in the measurement phase
   useEffect(() => {
-    if (strategy !== 'balanced' || !containerRef.current) return;
+    if (!measurementPhase || strategy !== 'balanced') return;
 
-    const measureHeights = () => {
-      const heights: number[] = Array(currentColumns).fill(0);
-      const columnElements = containerRef.current?.children;
+    // Wait for next frame to ensure DOM is ready
+    requestAnimationFrame(() => {
+      itemHeightsRef.current.clear();
 
-      if (columnElements) {
-        for (let i = 0; i < Math.min(currentColumns, columnElements.length); i++) {
-          const column = columnElements[i];
-          if (column instanceof HTMLElement) {
-            heights[i] = column.scrollHeight;
-          }
+      const items = containerRef.current?.querySelectorAll(
+        '[data-masonry-item]'
+      );
+      items?.forEach((item, index) => {
+        if (item instanceof HTMLElement) {
+          itemHeightsRef.current.set(index, item.offsetHeight);
         }
-      }
+      });
 
-      setColumnHeights(heights);
-    };
-
-    // Initial measurement
-    measureHeights();
-
-    // Remeasure on resize
-    const resizeObserver = new ResizeObserver(measureHeights);
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
-    }
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [strategy, currentColumns]);
+      // End measurement phase
+      setMeasurementPhase(false);
+    });
+  }, [measurementPhase, strategy, children.length]);
 
   // Distribute items across columns
   const distributeItems = () => {
@@ -126,17 +121,22 @@ export function Masonry({
       () => []
     );
 
-    if (strategy === 'balanced' && columnHeights.length === currentColumns) {
-      // Use actual measured heights for distribution
-      const tempHeights = [...columnHeights];
+    if (
+      strategy === 'balanced' &&
+      !measurementPhase &&
+      itemHeightsRef.current.size > 0
+    ) {
+      // Use measured heights for distribution
+      const columnHeights = Array(currentColumns).fill(0);
 
       children.forEach((child, index) => {
-        // Find the shortest column by actual height
+        // Find the shortest column - properly handle equal heights by choosing later columns
         let shortestColumnIndex = 0;
-        let minHeight = tempHeights[0] ?? 0;
+        let minHeight = columnHeights[0] ?? 0;
 
         for (let i = 1; i < currentColumns; i++) {
-          const height = tempHeights[i] ?? 0;
+          const height = columnHeights[i] ?? 0;
+          // Use <= to rotate through columns when heights are equal
           if (height <= minHeight) {
             minHeight = height;
             shortestColumnIndex = i;
@@ -146,17 +146,16 @@ export function Masonry({
         const column = columnWrappers[shortestColumnIndex];
         if (column) {
           column.push(child);
-          // Estimate added height (we'll measure actual later)
-          const ref = itemRefs.current.get(index);
-          const itemHeight = ref ? ref.offsetHeight : 100;
-          const currentHeight = tempHeights[shortestColumnIndex];
+          const itemHeight = itemHeightsRef.current.get(index) ?? 0;
+          const currentHeight = columnHeights[shortestColumnIndex];
           if (currentHeight !== undefined) {
-            tempHeights[shortestColumnIndex] = currentHeight + itemHeight + gap;
+            columnHeights[shortestColumnIndex] =
+              currentHeight + itemHeight + gap;
           }
         }
       });
     } else {
-      // Use item count for distribution (default, faster)
+      // Use item count for distribution (default, faster, or during measurement phase)
       const columnItemCounts = Array(currentColumns).fill(0);
 
       children.forEach((child) => {
@@ -198,32 +197,35 @@ export function Masonry({
     flex: 1,
   };
 
+  // In measurement phase, render items in a single column to measure heights
+  if (measurementPhase && strategy === 'balanced') {
+    return (
+      <div
+        ref={containerRef}
+        style={{ ...containerStyle, opacity: 0, pointerEvents: 'none' }}
+        className={className}
+      >
+        <div style={columnStyle}>
+          {children.map((child, index) => (
+            <div key={index} data-masonry-item>
+              {child}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div ref={containerRef} style={containerStyle} className={className}>
       {columnWrappers.map((column, columnIndex) => (
         <div key={columnIndex} style={columnStyle}>
           {column.map((child, itemIndex) => {
-            // Calculate global index for ref tracking
-            const globalIndex = columnWrappers
-              .slice(0, columnIndex)
-              .reduce((acc, col) => acc + col.length, 0) + itemIndex;
-
-            if (strategy === 'balanced') {
-              return (
-                <div
-                  key={globalIndex}
-                  ref={(el) => {
-                    if (el) {
-                      itemRefs.current.set(globalIndex, el);
-                    } else {
-                      itemRefs.current.delete(globalIndex);
-                    }
-                  }}
-                >
-                  {child}
-                </div>
-              );
-            }
+            // Calculate global index for consistent keys
+            const globalIndex =
+              columnWrappers
+                .slice(0, columnIndex)
+                .reduce((acc, col) => acc + col.length, 0) + itemIndex;
 
             return <div key={globalIndex}>{child}</div>;
           })}
