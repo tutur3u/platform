@@ -2,7 +2,7 @@
 
 A lightweight, high-performance masonry grid component for React with intelligent distribution strategies and modern ResizeObserver-based measurement.
 
-**Version**: 0.3.1 (Stable)
+**Version**: 0.3.2 (Stable)
 
 ## Features
 
@@ -195,17 +195,20 @@ The `balanced` strategy measures actual item heights and distributes items to th
 </Masonry>
 ```
 
-**How it works (v0.3.0)**: The balanced strategy uses modern `ResizeObserver` API to monitor item height changes. When an item resizes (e.g., image loads), the observer triggers redistribution via `requestAnimationFrame` for smooth updates. It uses an improved greedy algorithm with:
+**How it works (v0.3.2)**: The balanced strategy uses modern `ResizeObserver` API to monitor item height changes. When an item resizes (e.g., image loads), the observer triggers redistribution via `requestAnimationFrame` for smooth updates. It uses an improved greedy algorithm with:
 
 - Threshold-based tie-breaking for better balance
 - Running average height for unmeasured items
 - Coefficient of variation tracking for distribution quality
 - Memoized calculations to prevent unnecessary work
 - Configurable balance threshold
-- **Debounced updates** (200ms) to prevent excessive redistribution
-- **3px threshold** to ignore minor fluctuations from font rendering or subpixel changes
+- **Aggressive debouncing** (500ms) to ensure smooth, stable layout
+- **10px threshold** to ignore minor fluctuations completely
+- **Maximum 10 redistributions** to prevent endless movement
+- **Image load tracking** - automatically stops observing after all images load
+- **Stability detection** - stops observing after 2 seconds of no changes
 
-**Performance**: ResizeObserver is event-driven (no polling), highly optimized by the browser, and only fires when elements actually resize. Debouncing ensures redistributions only happen after changes settle, preventing jerky movement. Memoization prevents recalculating distribution unless dependencies change. Content is always visible from the first render.
+**Performance**: ResizeObserver is event-driven (no polling), highly optimized by the browser, and only fires when elements actually resize. Aggressive debouncing and automatic observer shutdown ensure layouts settle quickly and stay stable. Memoization prevents recalculating distribution unless dependencies change. Content is always visible from the first render.
 
 ## How It Works
 
@@ -227,9 +230,12 @@ The `balanced` strategy measures actual item heights and distributes items to th
    - Uses threshold-based greedy algorithm
    - Considers balance threshold for tie-breaking
    - Tracks coefficient of variation for quality
-5. **Smart Redistribution**: 
-   - Debounced 200ms after last change to avoid excessive updates
-   - Only triggers when heights change >3px (ignores minor fluctuations)
+5. **Smart Redistribution** (v0.3.2 enhanced): 
+   - Debounced 500ms after last change for maximum stability
+   - Only triggers when heights change >10px (ignores all minor fluctuations)
+   - Maximum 10 redistributions to prevent endless movement
+   - Stops observing after all images load
+   - Stops observing after 2 seconds of stability
    - Uses `requestAnimationFrame` for smooth visual updates
    - Memoized to prevent unnecessary calculations
 6. **Automatic Cleanup**: Observer disconnects on unmount or strategy change
@@ -363,16 +369,31 @@ Fine-tune column counts per viewport:
 
 ## Recent Updates
 
-### v0.3.1 (Current - UX Polish Release)
+### v0.3.2 (Current - Rock-Solid Stability Release)
 
-**UX Improvements:**
-- 🎭 **Debounced updates**: 200ms debounce prevents jerky movement and excessive redistributions
-- 📏 **Smart thresholds**: Increased change threshold from 1px to 3px to ignore minor font rendering differences
-- ✨ **Smoother experience**: Items settle into place smoothly instead of constantly shifting
+**Critical UX Fixes:**
+- 🎭 **Aggressive debouncing**: 500ms debounce ensures layout stability (up from 200ms in v0.3.1)
+- 📏 **High threshold**: 10px change threshold completely ignores minor fluctuations (up from 3px in v0.3.1)
+- 🛑 **Maximum redistributions**: Hard limit of 10 redistributions prevents endless movement
+- 🖼️ **Image load tracking**: Automatically stops observing once all images finish loading
+- ⏱️ **Stability detection**: Stops observing after 2 seconds of no changes
+- ✨ **Rock-solid experience**: Layout settles quickly and stays settled permanently
 
 **Bug Fixes:**
-- ✅ **Excessive redistributions**: Fixed items moving around too frequently even after all images loaded
-- ✅ **Stable layout**: Layout now settles properly once images finish loading
+- ✅ **Non-stop repositioning**: Fixed items constantly moving around even after images loaded
+- ✅ **Stable layout**: Layout now properly stabilizes and never changes again
+- ✅ **Performance**: Stops wasting resources after layout is stable
+
+### v0.3.1 (UX Polish Release)
+
+**Initial UX Improvements:**
+- 🎭 **Debounced updates**: 200ms debounce prevents jerky movement
+- 📏 **Smart thresholds**: 3px change threshold ignores minor font rendering differences
+- ✨ **Smoother experience**: Items settle into place smoothly
+
+**Bug Fixes:**
+- ✅ **Excessive redistributions**: Fixed items moving around too frequently
+- ✅ **Stable layout**: Layout settles properly once images finish loading
 
 ### v0.3.0 (Major Performance & Bug Fix Release)
 

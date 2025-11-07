@@ -64,6 +64,8 @@ export function Masonry({
   const itemHeightsRef = useRef<Map<number, number>>(new Map());
   const [redistributionKey, setRedistributionKey] = useState(0);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const redistributionCountRef = useRef(0);
+  const imagesLoadedRef = useRef(false);
 
   // Handle responsive breakpoints
   useEffect(() => {
@@ -119,12 +121,23 @@ export function Masonry({
       resizeObserverRef.current.disconnect();
     }
 
+    // Reset tracking on remount
+    redistributionCountRef.current = 0;
+    imagesLoadedRef.current = false;
+
     // Track redistribution state
     let redistributionScheduled = false;
     let redistributionTimeout: ReturnType<typeof setTimeout> | null = null;
+    let stableCheckTimeout: ReturnType<typeof setTimeout> | null = null;
     let pendingChanges = false;
+    let lastChangeTimestamp = Date.now();
 
     const scheduleRedistribution = () => {
+      // Stop redistributing after a reasonable number of attempts or if images are loaded
+      if (redistributionCountRef.current >= 10 || imagesLoadedRef.current) {
+        return;
+      }
+
       if (redistributionScheduled) {
         pendingChanges = true;
         return;
@@ -132,29 +145,54 @@ export function Masonry({
 
       redistributionScheduled = true;
       pendingChanges = false;
+      lastChangeTimestamp = Date.now();
 
       // Clear any existing timeout
       if (redistributionTimeout) {
         clearTimeout(redistributionTimeout);
       }
 
-      // Debounce redistributions to avoid excessive updates
-      // Wait 200ms after last change before redistributing
+      // Longer debounce to ensure stability - wait 500ms after last change
       redistributionTimeout = setTimeout(() => {
         requestAnimationFrame(() => {
           redistributionScheduled = false;
+          redistributionCountRef.current++;
           setRedistributionKey((prev) => prev + 1);
 
-          // If more changes came in during debounce, schedule again
-          if (pendingChanges) {
+          // If more changes came in during debounce and we haven't hit the limit, schedule again
+          if (pendingChanges && redistributionCountRef.current < 10) {
             scheduleRedistribution();
           }
         });
-      }, 200);
+      }, 500);
+    };
+
+    // Check if layout is stable and stop observing
+    const checkStability = () => {
+      if (stableCheckTimeout) {
+        clearTimeout(stableCheckTimeout);
+      }
+
+      stableCheckTimeout = setTimeout(() => {
+        const timeSinceLastChange = Date.now() - lastChangeTimestamp;
+        // If no changes for 2 seconds, consider layout stable and stop observing
+        if (timeSinceLastChange >= 2000) {
+          imagesLoadedRef.current = true;
+          if (resizeObserverRef.current) {
+            resizeObserverRef.current.disconnect();
+            resizeObserverRef.current = null;
+          }
+        }
+      }, 2000);
     };
 
     // Create new ResizeObserver
     const resizeObserver = new ResizeObserver((entries) => {
+      // Don't process if we've hit limits
+      if (redistributionCountRef.current >= 10 || imagesLoadedRef.current) {
+        return;
+      }
+
       let hasSignificantChanges = false;
 
       for (const entry of entries) {
@@ -170,9 +208,9 @@ export function Masonry({
         const height = entry.contentRect.height || element.offsetHeight;
         const previousHeight = itemHeightsRef.current.get(itemIndex) || 0;
 
-        // Only update if height changed significantly (> 3px to avoid minor fluctuations)
-        // This prevents redistribution on tiny font rendering differences, subpixel changes, etc.
-        if (height > 0 && Math.abs(height - previousHeight) > 3) {
+        // Much higher threshold - only update if height changed by more than 10px
+        // This prevents redistribution from minor changes
+        if (height > 0 && Math.abs(height - previousHeight) > 10) {
           itemHeightsRef.current.set(itemIndex, height);
           hasSignificantChanges = true;
         }
@@ -181,21 +219,58 @@ export function Masonry({
       // Schedule redistribution if significant changes detected
       if (hasSignificantChanges) {
         scheduleRedistribution();
+        checkStability();
       }
     });
 
-    // Observe all masonry items after initial render
+    // Observe all masonry items and track image loading
     requestAnimationFrame(() => {
       const items = containerRef.current?.querySelectorAll(
         '[data-masonry-item]'
       );
       if (!items) return;
 
+      let totalImages = 0;
+      let loadedImages = 0;
+
       items.forEach((item) => {
         if (item instanceof HTMLElement) {
           resizeObserver.observe(item);
+
+          // Track image loading
+          const images = item.querySelectorAll('img');
+          totalImages += images.length;
+
+          images.forEach((img) => {
+            if (img.complete && img.naturalHeight > 0) {
+              loadedImages++;
+            } else {
+              const handleLoad = () => {
+                loadedImages++;
+                if (loadedImages >= totalImages) {
+                  // All images loaded - wait a bit then stop observing
+                  setTimeout(() => {
+                    imagesLoadedRef.current = true;
+                    if (resizeObserverRef.current) {
+                      resizeObserverRef.current.disconnect();
+                      resizeObserverRef.current = null;
+                    }
+                  }, 1000);
+                }
+              };
+              img.addEventListener('load', handleLoad, { once: true });
+              img.addEventListener('error', handleLoad, { once: true });
+            }
+          });
         }
       });
+
+      // If all images already loaded, mark as complete
+      if (totalImages > 0 && loadedImages >= totalImages) {
+        setTimeout(() => {
+          imagesLoadedRef.current = true;
+        }, 1000);
+      }
     });
 
     resizeObserverRef.current = resizeObserver;
@@ -203,6 +278,9 @@ export function Masonry({
     return () => {
       if (redistributionTimeout) {
         clearTimeout(redistributionTimeout);
+      }
+      if (stableCheckTimeout) {
+        clearTimeout(stableCheckTimeout);
       }
       resizeObserver.disconnect();
       resizeObserverRef.current = null;
@@ -214,6 +292,8 @@ export function Masonry({
   useEffect(() => {
     if (strategy === 'balanced') {
       itemHeightsRef.current.clear();
+      redistributionCountRef.current = 0;
+      imagesLoadedRef.current = false;
       setRedistributionKey((prev) => prev + 1);
     }
   }, [children.length, currentColumns, strategy]);

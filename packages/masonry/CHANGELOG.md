@@ -1,9 +1,24 @@
 # Changelog
 
+## [0.3.2] - 2025-11-07
+
+### Fixed
+- **Non-stop repositioning**: Fixed items constantly moving around even after images loaded (critical UX issue)
+- **Stable layout**: Layout now properly stabilizes and never changes again
+- **Performance waste**: Stops observing after layout is stable
+
+### Improved
+- **Aggressive debouncing**: Increased from 200ms (v0.3.1) to 500ms for maximum stability
+- **High threshold**: Increased change threshold from 3px (v0.3.1) to 10px to completely ignore minor fluctuations
+- **Maximum redistributions**: Added hard limit of 10 redistributions to prevent endless movement
+- **Image load tracking**: Automatically stops observing once all images finish loading
+- **Stability detection**: Automatically stops observing after 2 seconds of no changes
+- **Rock-solid UX**: Layout settles quickly and stays settled permanently
+
 ## [0.3.1] - 2025-11-07
 
 ### Fixed
-- **Excessive redistributions**: Fixed items moving around too frequently even after all images loaded
+- **Excessive redistributions**: Fixed items moving around too frequently even after images loaded
 - **Stable layout**: Layout now settles properly once images finish loading
 
 ### Improved
