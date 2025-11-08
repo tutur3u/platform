@@ -415,6 +415,7 @@
         "@tuturuuu/auth": "workspace:*",
         "@tuturuuu/google": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
+        "@tuturuuu/masonry": "workspace:*",
         "@tuturuuu/payment": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/transactional": "workspace:*",

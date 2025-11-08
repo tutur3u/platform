@@ -63,6 +63,7 @@
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/payment": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
+    "@tuturuuu/masonry": "workspace:*",
     "@tuturuuu/transactional": "workspace:*",
     "@tuturuuu/trigger": "workspace:*",
     "@tuturuuu/types": "workspace:*",

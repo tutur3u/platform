@@ -5,6 +5,7 @@ import { UserCircle } from '@tuturuuu/icons';
 import type { WorkspaceRole } from '@tuturuuu/types';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
+import { ExpandableRoleRow } from './_components/expandable-role-row';
 import { RoleRowActions } from './row-actions';
 
 export const roleColumns = (
@@ -12,28 +13,22 @@ export const roleColumns = (
   namespace: string | undefined,
   _?: any[],
   extraData?: any
-): ColumnDef<WorkspaceRole>[] => [
-  // {
-  //   id: 'select',
-  //   header: ({ table }) => (
-  //     <Checkbox
-  //       checked={table.getIsAllPageRowsSelected()}
-  //       onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-  //       aria-label="Select all"
-  //       className="translate-y-[2px]"
-  //     />
-  //   ),
-  //   cell: ({ row }) => (
-  //     <Checkbox
-  //       checked={row.getIsSelected()}
-  //       onCheckedChange={(value) => row.toggleSelected(!!value)}
-  //       aria-label="Select row"
-  //       className="translate-y-[2px]"
-  //     />
-  //   ),
-  //   enableSorting: false,
-  //   enableHiding: false,
-  // },
+): ColumnDef<WorkspaceRole & { ws_id?: string }>[] => [
+  {
+    id: 'expand',
+    header: () => <div className="w-6" />,
+    cell: ({ row }) => {
+      const role = row.original;
+      return (
+        <ExpandableRoleRow
+          role={{ ...role, ws_id: role.ws_id || '' }}
+          permissionsCount={extraData || 0}
+        />
+      );
+    },
+    enableSorting: false,
+    enableHiding: false,
+  },
   {
     accessorKey: 'id',
     header: ({ column }) => (
