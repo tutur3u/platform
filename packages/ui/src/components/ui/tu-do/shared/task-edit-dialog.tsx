@@ -4105,7 +4105,7 @@ function TaskEditDialogComponent({
                           </PopoverContent>
                         </Popover>
 
-                        {/* Due Date Badge */}
+                        {/* Dates Badge - Combined Start Date and Due Date */}
                         <Popover
                           open={isDueDatePopoverOpen}
                           onOpenChange={setIsDueDatePopoverOpen}
@@ -4115,39 +4115,124 @@ function TaskEditDialogComponent({
                               type="button"
                               className={cn(
                                 'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
-                                endDate
-                                  ? 'border-dynamic-green/30 bg-dynamic-green/15 text-dynamic-green hover:bg-dynamic-green/25'
+                                startDate || endDate
+                                  ? 'border-dynamic-orange/30 bg-dynamic-orange/15 text-dynamic-orange hover:bg-dynamic-orange/25'
                                   : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
                               )}
                             >
                               <Calendar className="h-3 w-3" />
                               <span>
-                                {endDate
-                                  ? new Date(endDate).toLocaleDateString(
-                                      'en-US',
-                                      {
-                                        month: 'short',
-                                        day: 'numeric',
-                                      }
-                                    )
-                                  : 'Due date'}
+                                {startDate || endDate
+                                  ? `${startDate ? new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No start'} → ${endDate ? new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No due'}`
+                                  : 'Dates'}
                               </span>
                             </button>
                           </PopoverTrigger>
-                          <PopoverContent align="start" className="w-auto p-3">
-                            <div className="space-y-2">
-                              <Label className="text-xs">Due Date</Label>
-                              <DateTimePicker
-                                date={endDate}
-                                setDate={(date) => {
-                                  handleEndDateChange(date);
-                                  if (!date) setIsDueDatePopoverOpen(false);
-                                }}
-                                showTimeSelect={true}
-                                allowClear={true}
-                                showFooterControls={true}
-                                minDate={startDate}
-                              />
+                          <PopoverContent align="start" className="w-80 p-0">
+                            <div className="rounded-lg p-3.5">
+                              <div className="space-y-3">
+                                {/* Start Date */}
+                                <div className="space-y-1.5">
+                                  <Label className="font-normal text-muted-foreground text-xs">
+                                    Start Date
+                                  </Label>
+                                  <DateTimePicker
+                                    date={startDate}
+                                    setDate={updateStartDate}
+                                    showTimeSelect={true}
+                                    allowClear={true}
+                                    showFooterControls={true}
+                                    maxDate={endDate}
+                                  />
+                                </div>
+
+                                {/* Due Date */}
+                                <div className="space-y-1.5">
+                                  <Label className="font-normal text-muted-foreground text-xs">
+                                    Due Date
+                                  </Label>
+
+                                  <DateTimePicker
+                                    date={endDate}
+                                    setDate={handleEndDateChange}
+                                    showTimeSelect={true}
+                                    allowClear={true}
+                                    showFooterControls={true}
+                                    minDate={startDate}
+                                  />
+
+                                  {/* Date Range Warning */}
+                                  {startDate &&
+                                    endDate &&
+                                    startDate > endDate && (
+                                      <div className="flex items-center gap-2 rounded-md border border-dynamic-orange/30 bg-dynamic-orange/10 px-3 py-2 text-xs">
+                                        <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-dynamic-orange" />
+                                        <span className="text-dynamic-orange">
+                                          Start date is after due date
+                                        </span>
+                                      </div>
+                                    )}
+
+                                  {/* Quick Due Date Actions */}
+                                  <div className="space-y-1.5 pt-2">
+                                    <Label className="font-normal text-muted-foreground text-xs">
+                                      Quick Actions
+                                    </Label>
+                                    <div className="grid grid-cols-2 gap-1.5 md:gap-2">
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="xs"
+                                        onClick={() => handleQuickDueDate(0)}
+                                        disabled={isLoading}
+                                        className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
+                                        title="Today – Alt+T"
+                                      >
+                                        Today
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="xs"
+                                        onClick={() => handleQuickDueDate(1)}
+                                        disabled={isLoading}
+                                        className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
+                                        title="Tomorrow – Alt+M"
+                                      >
+                                        Tomorrow
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="xs"
+                                        onClick={() => {
+                                          const daysUntilEndOfWeek =
+                                            6 - dayjs().day();
+                                          handleQuickDueDate(
+                                            daysUntilEndOfWeek
+                                          );
+                                        }}
+                                        disabled={isLoading}
+                                        className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
+                                        title="End of this week (Saturday)"
+                                      >
+                                        This week
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="xs"
+                                        onClick={() => handleQuickDueDate(7)}
+                                        disabled={isLoading}
+                                        className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
+                                        title="Next week – Alt+W"
+                                      >
+                                        Next week
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </PopoverContent>
                         </Popover>
