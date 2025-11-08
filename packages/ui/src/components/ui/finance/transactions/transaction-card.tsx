@@ -5,13 +5,16 @@ import {
   ArrowUpCircle,
   Calendar,
   FileText,
+  Lock,
+  Minus,
 } from '@tuturuuu/icons';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
+import { ConfidentialAmount } from '@tuturuuu/ui/finance/transactions/confidential-field';
 import moment from 'moment';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 interface TransactionCardProps {
   transaction: Transaction & {
@@ -26,19 +29,32 @@ interface TransactionCardProps {
 
 export function TransactionCard({ transaction }: TransactionCardProps) {
   const locale = useLocale();
+  const t = useTranslations('workspace-finance-transactions');
   const isExpense = (transaction.amount || 0) < 0;
+
+  // Check if transaction is confidential
+  const isConfidential =
+    (transaction as any).is_amount_confidential ||
+    (transaction as any).is_description_confidential ||
+    (transaction as any).is_category_confidential;
 
   return (
     <Card className="group cursor-pointer border-dynamic-gray/20 bg-dynamic-gray/10 transition-all hover:border-primary/50 hover:shadow-md">
       <div className="flex items-center gap-4 p-4">
-        {/* Icon and amount */}
+        {/* Icon and amount - Neutral for confidential */}
         <div className="flex flex-col items-center gap-1">
           <div
             className={`flex h-12 w-12 items-center justify-center rounded-full ${
-              isExpense ? 'bg-dynamic-red/10' : 'bg-dynamic-green/10'
+              isConfidential
+                ? 'bg-dynamic-orange/10'
+                : isExpense
+                  ? 'bg-dynamic-red/10'
+                  : 'bg-dynamic-green/10'
             }`}
           >
-            {isExpense ? (
+            {isConfidential ? (
+              <Lock className="h-6 w-6 text-dynamic-orange" />
+            ) : isExpense ? (
               <ArrowDownCircle className="h-6 w-6 text-dynamic-red" />
             ) : (
               <ArrowUpCircle className="h-6 w-6 text-dynamic-green" />
@@ -50,11 +66,22 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
         <div className="flex-1 space-y-1">
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-col items-start justify-start gap-2">
-              {transaction.category && (
-                <Badge variant="outline" className="font-medium text-xs">
-                  {transaction.category}
-                </Badge>
-              )}
+              <div className="flex items-center gap-2 flex-wrap">
+                {transaction.category && (
+                  <Badge variant="outline" className="font-medium text-xs">
+                    {transaction.category}
+                  </Badge>
+                )}
+                {isConfidential && (
+                  <Badge
+                    variant="outline"
+                    className="flex items-center gap-1 border-dynamic-orange/40 bg-dynamic-orange/10 text-dynamic-orange text-xs"
+                  >
+                    <Lock className="h-2.5 w-2.5" />
+                    {t('confidential')}
+                  </Badge>
+                )}
+              </div>
               {transaction.description && (
                 <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
                   <FileText className="h-3.5 w-3.5" />
@@ -63,19 +90,17 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
               )}
             </div>
 
-            <div
+            <ConfidentialAmount
+              amount={transaction.amount}
+              isConfidential={(transaction as any).is_amount_confidential}
               className={`font-bold text-lg tabular-nums ${
-                isExpense ? 'text-dynamic-red' : 'text-dynamic-green'
+                isConfidential
+                  ? 'text-dynamic-orange'
+                  : isExpense
+                    ? 'text-dynamic-red'
+                    : 'text-dynamic-green'
               }`}
-            >
-              {Intl.NumberFormat(locale, {
-                style: 'currency',
-                currency: 'VND',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-                signDisplay: 'always',
-              }).format(transaction.amount || 0)}
-            </div>
+            />
           </div>
 
           <div className="flex items-center gap-4 text-muted-foreground text-xs">

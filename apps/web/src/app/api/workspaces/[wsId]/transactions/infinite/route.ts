@@ -21,82 +21,49 @@ export async function GET(req: Request, { params }: Params) {
     const walletIds = searchParams.getAll('walletIds');
     const walletId = searchParams.get('walletId'); // For single wallet view
 
-    let queryBuilder = supabase
-      .from('wallet_transactions')
-      .select(
-        `
-        *,
-        workspace_wallets!inner(name, ws_id),
-        transaction_categories(name),
-        workspace_users!wallet_transactions_creator_id_fkey(
-          id,
-          full_name,
-          avatar_url,
-          email
-        )
-      `
-      )
-      .eq('workspace_wallets.ws_id', wsId)
-      .order('taken_at', { ascending: false })
-      .order('created_at', { ascending: false })
-      .limit(limit + 1); // Fetch one extra to check if there's more
-
-    // Apply cursor-based pagination
+    // Parse cursor for cursor-based pagination
+    let cursorTakenAt = null;
+    let cursorCreatedAt = null;
     if (cursor) {
       const [taken_at, created_at] = cursor.split('_');
-      queryBuilder = queryBuilder.or(
-        `taken_at.lt.${taken_at},and(taken_at.eq.${taken_at},created_at.lt.${created_at})`
-      );
+      cursorTakenAt = taken_at;
+      cursorCreatedAt = created_at;
     }
 
-    // Apply filters
-    if (q) {
-      queryBuilder.ilike('description', `%${q}%`);
-    }
+    // Combine wallet filters
+    const finalWalletIds =
+      walletIds.length > 0 ? walletIds : walletId ? [walletId] : null;
 
-    if (userIds.length > 0) {
-      queryBuilder.in('creator_id', userIds);
-    }
-
-    if (categoryIds.length > 0) {
-      queryBuilder.in('category_id', categoryIds);
-    }
-
-    if (walletIds.length > 0) {
-      queryBuilder.in('wallet_id', walletIds);
-    } else if (walletId) {
-      queryBuilder.eq('wallet_id', walletId);
-    }
-
-    const { data: rawData, error } = await queryBuilder;
+    // Use optimized RPC function with all filters at database level
+    const { data, error } = await supabase.rpc(
+      'get_wallet_transactions_with_permissions',
+      {
+        p_ws_id: wsId,
+        p_wallet_ids: finalWalletIds,
+        p_category_ids: categoryIds.length > 0 ? categoryIds : null,
+        p_creator_ids: userIds.length > 0 ? userIds : null,
+        p_search_query: q || null,
+        p_order_by: 'taken_at',
+        p_order_direction: 'DESC',
+        p_limit: limit + 1, // Fetch one extra to check for more
+        p_cursor_taken_at: cursorTakenAt,
+        p_cursor_created_at: cursorCreatedAt,
+        p_include_count: false, // Don't need total count for infinite scroll
+      }
+    );
 
     if (error) throw error;
 
-    // Check if there are more items
-    const hasMore = rawData.length > limit;
-    const data = hasMore ? rawData.slice(0, limit) : rawData;
+    // Check if there are more results
+    const hasMore = (data || []).length > limit;
+    const transactions = hasMore ? data.slice(0, limit) : data || [];
 
     // Generate next cursor
     let nextCursor = null;
-    if (hasMore && data.length > 0) {
-      const lastItem = data[data.length - 1];
+    if (hasMore && transactions.length > 0) {
+      const lastItem = transactions[transactions.length - 1];
       nextCursor = `${lastItem?.taken_at}_${lastItem?.created_at}`;
     }
-
-    // Transform data
-    const transactions = data.map(
-      ({
-        workspace_wallets,
-        transaction_categories,
-        workspace_users,
-        ...rest
-      }) => ({
-        ...rest,
-        wallet: workspace_wallets?.name,
-        category: transaction_categories?.name,
-        creator: workspace_users,
-      })
-    );
 
     return NextResponse.json({
       data: transactions,

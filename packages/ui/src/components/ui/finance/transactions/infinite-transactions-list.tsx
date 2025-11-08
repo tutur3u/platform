@@ -19,6 +19,11 @@ interface InfiniteTransactionsListProps {
   initialData?: Transaction[];
   canUpdateTransactions?: boolean;
   canDeleteTransactions?: boolean;
+  canUpdateConfidentialTransactions?: boolean;
+  canDeleteConfidentialTransactions?: boolean;
+  canViewConfidentialAmount?: boolean;
+  canViewConfidentialDescription?: boolean;
+  canViewConfidentialCategory?: boolean;
 }
 
 interface TransactionResponse {
@@ -39,6 +44,11 @@ export function InfiniteTransactionsList({
   // initialData = [],
   canUpdateTransactions,
   canDeleteTransactions,
+  canUpdateConfidentialTransactions,
+  canDeleteConfidentialTransactions,
+  canViewConfidentialAmount,
+  canViewConfidentialDescription,
+  canViewConfidentialCategory,
 }: InfiniteTransactionsListProps) {
   const t = useTranslations();
   const locale = useLocale();
@@ -216,12 +226,28 @@ export function InfiniteTransactionsList({
   return (
     <div className="space-y-8">
       {groupedTransactions.map((group) => {
-        // Calculate daily total
-        const dailyTotal = group.transactions.reduce(
-          (sum, transaction) => sum + (transaction.amount || 0),
-          0
-        );
+        // Calculate daily total (only from non-redacted amounts)
+        const dailyTotal = group.transactions.reduce((sum, transaction) => {
+          // Skip confidential amounts that are redacted (null)
+          if (
+            transaction.amount === null &&
+            (transaction as any).is_amount_confidential
+          ) {
+            return sum;
+          }
+          return sum + (transaction.amount || 0);
+        }, 0);
         const isPositive = dailyTotal >= 0;
+
+        // Check if any amounts are redacted (null amount + confidential flag)
+        const hasRedactedAmounts = group.transactions.some(
+          (t: any) => t.amount === null && t.is_amount_confidential
+        );
+
+        // Check if ALL amounts are redacted
+        const allAmountsRedacted = group.transactions.every(
+          (t: any) => t.amount === null && t.is_amount_confidential
+        );
 
         return (
           <div
@@ -253,27 +279,36 @@ export function InfiniteTransactionsList({
                   </div>
                 </div>
 
-                {/* Daily total */}
-                <div className="flex items-center gap-2">
-                  {isPositive ? (
-                    <TrendingUp className="h-4 w-4 text-dynamic-green" />
-                  ) : (
-                    <TrendingDown className="h-4 w-4 text-dynamic-red" />
-                  )}
-                  <div
-                    className={`font-bold text-base tabular-nums ${
-                      isPositive ? 'text-dynamic-green' : 'text-dynamic-red'
-                    }`}
-                  >
-                    {Intl.NumberFormat(locale, {
-                      style: 'currency',
-                      currency: 'VND',
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                      signDisplay: 'always',
-                    }).format(dailyTotal)}
+                {/* Daily total - hide if all amounts are redacted */}
+                {!allAmountsRedacted ? (
+                  <div className="flex items-center gap-2">
+                    {isPositive ? (
+                      <TrendingUp className="h-4 w-4 text-dynamic-green" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4 text-dynamic-red" />
+                    )}
+                    <div
+                      className={`font-bold text-base tabular-nums ${
+                        isPositive ? 'text-dynamic-green' : 'text-dynamic-red'
+                      }`}
+                    >
+                      {hasRedactedAmounts && '≈ '}
+                      {Intl.NumberFormat(locale, {
+                        style: 'currency',
+                        currency: 'VND',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                        signDisplay: 'always',
+                      }).format(dailyTotal)}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <span className="font-medium text-sm italic">
+                      {t('workspace-finance-transactions.amount-redacted')}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -331,6 +366,11 @@ export function InfiniteTransactionsList({
           onUpdate={handleTransactionUpdate}
           canUpdateTransactions={canUpdateTransactions}
           canDeleteTransactions={canDeleteTransactions}
+          canUpdateConfidentialTransactions={canUpdateConfidentialTransactions}
+          canDeleteConfidentialTransactions={canDeleteConfidentialTransactions}
+          canViewConfidentialAmount={canViewConfidentialAmount}
+          canViewConfidentialDescription={canViewConfidentialDescription}
+          canViewConfidentialCategory={canViewConfidentialCategory}
         />
       )}
     </div>

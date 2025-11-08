@@ -4,10 +4,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Calendar,
   Check,
+  Coins,
   DollarSign,
   FileText,
   FolderOpen,
   Loader2,
+  Lock,
   Tag,
   Trash,
   TrendingDown,
@@ -40,6 +42,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
@@ -48,6 +51,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import { ConfidentialToggle } from './confidential-field';
 
 interface TransactionEditDialogProps {
   transaction: Transaction & {
@@ -63,6 +67,11 @@ interface TransactionEditDialogProps {
   onUpdate?: () => void;
   canUpdateTransactions?: boolean;
   canDeleteTransactions?: boolean;
+  canUpdateConfidentialTransactions?: boolean;
+  canDeleteConfidentialTransactions?: boolean;
+  canViewConfidentialAmount?: boolean;
+  canViewConfidentialDescription?: boolean;
+  canViewConfidentialCategory?: boolean;
 }
 
 export function TransactionEditDialog({
@@ -73,11 +82,45 @@ export function TransactionEditDialog({
   onUpdate,
   canUpdateTransactions,
   canDeleteTransactions,
+  canUpdateConfidentialTransactions,
+  canDeleteConfidentialTransactions,
+  canViewConfidentialAmount,
+  canViewConfidentialDescription,
+  canViewConfidentialCategory,
 }: TransactionEditDialogProps) {
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  // Check if transaction has confidential fields that user cannot view
+  const hasConfidentialAmount =
+    (transaction as any)?.is_amount_confidential && !canViewConfidentialAmount;
+  const hasConfidentialDescription =
+    (transaction as any)?.is_description_confidential &&
+    !canViewConfidentialDescription;
+  const hasConfidentialCategory =
+    (transaction as any)?.is_category_confidential &&
+    !canViewConfidentialCategory;
+  const hasAnyConfidentialField =
+    hasConfidentialAmount ||
+    hasConfidentialDescription ||
+    hasConfidentialCategory;
+
+  // Check if transaction has any confidential flags set (regardless of user permissions)
+  const isConfidentialTransaction =
+    (transaction as any)?.is_amount_confidential ||
+    (transaction as any)?.is_description_confidential ||
+    (transaction as any)?.is_category_confidential;
+
+  // Disable all fields if user lacks permission to view/update confidential transaction
+  const isDisabled =
+    hasAnyConfidentialField && !canUpdateConfidentialTransactions;
+
+  // Check if user can delete this specific transaction
+  const canDeleteThisTransaction =
+    canDeleteTransactions &&
+    (!isConfidentialTransaction || canDeleteConfidentialTransactions);
 
   // Form state
   const initialAmount = transaction?.amount
@@ -104,6 +147,15 @@ export function TransactionEditDialog({
     transaction?.report_opt_in ?? true
   );
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [isAmountConfidential, setIsAmountConfidential] = useState(
+    (transaction as any)?.is_amount_confidential ?? false
+  );
+  const [isDescriptionConfidential, setIsDescriptionConfidential] = useState(
+    (transaction as any)?.is_description_confidential ?? false
+  );
+  const [isCategoryConfidential, setIsCategoryConfidential] = useState(
+    (transaction as any)?.is_category_confidential ?? false
+  );
 
   const [isLoading, setIsLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -179,6 +231,15 @@ export function TransactionEditDialog({
         transaction.taken_at ? new Date(transaction.taken_at) : new Date()
       );
       setReportOptIn(transaction.report_opt_in ?? true);
+      setIsAmountConfidential(
+        (transaction as any)?.is_amount_confidential ?? false
+      );
+      setIsDescriptionConfidential(
+        (transaction as any)?.is_description_confidential ?? false
+      );
+      setIsCategoryConfidential(
+        (transaction as any)?.is_category_confidential ?? false
+      );
     } else if (isOpen && !transaction) {
       // Reset for new transaction
       setDescription('');
@@ -188,6 +249,9 @@ export function TransactionEditDialog({
       setCategoryId('');
       setTakenAt(new Date());
       setReportOptIn(true);
+      setIsAmountConfidential(false);
+      setIsDescriptionConfidential(false);
+      setIsCategoryConfidential(false);
     }
   }, [isOpen, transaction, formatAmountForDisplay]);
 
@@ -254,6 +318,9 @@ export function TransactionEditDialog({
             taken_at: takenAt?.toISOString(),
             report_opt_in: reportOptIn,
             tag_ids: selectedTagIds,
+            is_amount_confidential: isAmountConfidential,
+            is_description_confidential: isDescriptionConfidential,
+            is_category_confidential: isCategoryConfidential,
           }),
         }
       );
@@ -296,6 +363,7 @@ export function TransactionEditDialog({
     }
   }, [
     canSave,
+    canUpdateTransactions,
     isExpense,
     numericAmount,
     transaction,
@@ -306,6 +374,9 @@ export function TransactionEditDialog({
     takenAt,
     reportOptIn,
     selectedTagIds,
+    isAmountConfidential,
+    isDescriptionConfidential,
+    isCategoryConfidential,
     toast,
     t,
     queryClient,
@@ -318,7 +389,7 @@ export function TransactionEditDialog({
     if (!transaction.id) return;
 
     // Check permissions before making API call
-    if (!canDeleteTransactions) {
+    if (!canDeleteThisTransaction) {
       toast.error(t('common.insufficient_permissions'));
       setShowDeleteConfirm(false);
       return;
@@ -426,14 +497,25 @@ export function TransactionEditDialog({
                     <TrendingUp className="h-4 w-4 text-dynamic-green" />
                   )}
                 </div>
-                <div className="flex min-w-0 flex-col gap-0.5">
-                  <DialogTitle className="truncate font-semibold text-base text-foreground md:text-lg">
-                    {canUpdateTransactions
-                      ? transaction?.id
-                        ? t('ws-transactions.edit')
-                        : t('ws-transactions.create')
-                      : t('ws-transactions.view')}
-                  </DialogTitle>
+                <div className="flex min-w-0 flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <DialogTitle className="truncate font-semibold text-base text-foreground md:text-lg">
+                      {canUpdateTransactions
+                        ? transaction?.id
+                          ? t('ws-transactions.edit')
+                          : t('ws-transactions.create')
+                        : t('ws-transactions.view')}
+                    </DialogTitle>
+                    {isConfidentialTransaction && (
+                      <Badge
+                        variant="outline"
+                        className="flex items-center gap-1 border-dynamic-orange/40 bg-dynamic-orange/10 text-dynamic-orange text-xs"
+                      >
+                        <Lock className="h-3 w-3" />
+                        {t('workspace-finance-transactions.confidential')}
+                      </Badge>
+                    )}
+                  </div>
                   <DialogDescription className="text-xs">
                     {canUpdateTransactions
                       ? transaction?.id
@@ -441,11 +523,43 @@ export function TransactionEditDialog({
                         : t('ws-transactions.create_description')
                       : t('ws-transactions.view_description')}
                   </DialogDescription>
+                  {/* Confidential indicators */}
+                  {isConfidentialTransaction && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {isAmountConfidential && (
+                        <Badge
+                          variant="secondary"
+                          className="flex items-center gap-1 bg-dynamic-orange/5 text-dynamic-orange text-[10px]"
+                        >
+                          <Coins className="h-2.5 w-2.5" />
+                          {t('workspace-finance-transactions.amount')}
+                        </Badge>
+                      )}
+                      {isDescriptionConfidential && (
+                        <Badge
+                          variant="secondary"
+                          className="flex items-center gap-1 bg-dynamic-orange/5 text-dynamic-orange text-[10px]"
+                        >
+                          <FileText className="h-2.5 w-2.5" />
+                          {t('workspace-finance-transactions.description')}
+                        </Badge>
+                      )}
+                      {isCategoryConfidential && (
+                        <Badge
+                          variant="secondary"
+                          className="flex items-center gap-1 bg-dynamic-orange/5 text-dynamic-orange text-[10px]"
+                        >
+                          <FolderOpen className="h-2.5 w-2.5" />
+                          {t('workspace-finance-transactions.category')}
+                        </Badge>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className="flex items-center gap-1 md:gap-2">
-                {transaction?.id && canDeleteTransactions && (
+                {transaction?.id && canDeleteThisTransaction && (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -493,59 +607,62 @@ export function TransactionEditDialog({
 
             {/* Main editing area */}
             <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-4 md:p-8">
-              {/* Amount Section - Most prominent */}
-              <div className="space-y-3 rounded-lg border-2 border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-4 shadow-sm">
-                <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                  <div
-                    className={cn(
-                      'flex h-5 w-5 items-center justify-center rounded-md',
-                      isExpense ? 'bg-dynamic-red/15' : 'bg-dynamic-green/15'
-                    )}
-                  >
-                    <DollarSign
+              {/* Amount Section - Hidden if confidential and user lacks permission */}
+              {!hasConfidentialAmount && (
+                <div className="space-y-3 rounded-lg border-2 border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-4 shadow-sm">
+                  <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                    <div
                       className={cn(
-                        'h-3.5 w-3.5',
-                        isExpense ? 'text-dynamic-red' : 'text-dynamic-green'
+                        'flex h-5 w-5 items-center justify-center rounded-md',
+                        isExpense ? 'bg-dynamic-red/15' : 'bg-dynamic-green/15'
+                      )}
+                    >
+                      <DollarSign
+                        className={cn(
+                          'h-3.5 w-3.5',
+                          isExpense ? 'text-dynamic-red' : 'text-dynamic-green'
+                        )}
+                      />
+                    </div>
+                    {t('transaction-data-table.amount')}
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      value={displayAmount}
+                      onChange={(e) => handleAmountChange(e.target.value)}
+                      placeholder="0"
+                      disabled={isDisabled || !canUpdateTransactions}
+                      className={cn(
+                        'pr-16 font-bold text-2xl tabular-nums',
+                        isExpense ? 'text-dynamic-red' : 'text-dynamic-green',
+                        (isDisabled || !canUpdateTransactions) &&
+                          'cursor-not-allowed opacity-60'
                       )}
                     />
+                    <div className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-3 flex items-center gap-1.5 text-muted-foreground text-sm">
+                      <span className="font-medium">VND</span>
+                    </div>
                   </div>
-                  {t('transaction-data-table.amount')}
-                </Label>
-                <div className="relative">
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    value={displayAmount}
-                    onChange={(e) => handleAmountChange(e.target.value)}
-                    placeholder="0"
-                    disabled={!canUpdateTransactions}
-                    className={cn(
-                      'pr-16 font-bold text-2xl tabular-nums',
-                      isExpense ? 'text-dynamic-red' : 'text-dynamic-green',
-                      !canUpdateTransactions && 'cursor-not-allowed opacity-60'
-                    )}
-                  />
-                  <div className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-3 flex items-center gap-1.5 text-muted-foreground text-sm">
-                    <span className="font-medium">VND</span>
+                  <div className="flex items-center justify-between text-muted-foreground text-xs">
+                    <span>
+                      {isExpense
+                        ? t('transaction-data-table.expense')
+                        : t('transaction-data-table.income')}
+                    </span>
+                    <span className="font-medium">
+                      {Intl.NumberFormat(locale, {
+                        style: 'currency',
+                        currency: 'VND',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                        signDisplay: 'always',
+                      }).format(isExpense ? -numericAmount : numericAmount)}
+                    </span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between text-muted-foreground text-xs">
-                  <span>
-                    {isExpense
-                      ? t('transaction-data-table.expense')
-                      : t('transaction-data-table.income')}
-                  </span>
-                  <span className="font-medium">
-                    {Intl.NumberFormat(locale, {
-                      style: 'currency',
-                      currency: 'VND',
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                      signDisplay: 'always',
-                    }).format(isExpense ? -numericAmount : numericAmount)}
-                  </span>
-                </div>
-              </div>
+              )}
 
               {/* Description */}
               <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
@@ -559,10 +676,11 @@ export function TransactionEditDialog({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Add details about this transaction..."
-                  disabled={!canUpdateTransactions}
+                  disabled={isDisabled || !canUpdateTransactions}
                   className={cn(
                     'min-h-[80px] resize-none',
-                    !canUpdateTransactions && 'cursor-not-allowed opacity-60'
+                    (isDisabled || !canUpdateTransactions) &&
+                      'cursor-not-allowed opacity-60'
                   )}
                 />
               </div>
@@ -586,7 +704,7 @@ export function TransactionEditDialog({
                       label: w.name!,
                     }))}
                   placeholder={t('transaction-data-table.select_wallet')}
-                  disabled={!canUpdateTransactions}
+                  disabled={isDisabled || !canUpdateTransactions}
                 />
               </div>
 
@@ -609,7 +727,7 @@ export function TransactionEditDialog({
                       label: c.name!,
                     }))}
                   placeholder={t('transaction-data-table.select_category')}
-                  disabled={!canUpdateTransactions}
+                  disabled={isDisabled || !canUpdateTransactions}
                 />
               </div>
 
@@ -627,7 +745,7 @@ export function TransactionEditDialog({
                   showTimeSelect={true}
                   allowClear={false}
                   showFooterControls={true}
-                  disabled={!canUpdateTransactions}
+                  disabled={isDisabled || !canUpdateTransactions}
                 />
               </div>
 
@@ -643,6 +761,8 @@ export function TransactionEditDialog({
                   <div className="flex flex-wrap gap-2">
                     {tags.map((tag) => {
                       const isSelected = selectedTagIds.includes(tag.id);
+                      const isInteractive =
+                        !isDisabled && canUpdateTransactions;
                       return (
                         <Badge
                           key={tag.id}
@@ -650,9 +770,8 @@ export function TransactionEditDialog({
                           className={cn(
                             'transition-all',
                             isSelected && 'ring-2',
-                            canUpdateTransactions && 'cursor-pointer',
-                            !canUpdateTransactions &&
-                              'cursor-not-allowed opacity-60'
+                            isInteractive && 'cursor-pointer',
+                            !isInteractive && 'cursor-not-allowed opacity-60'
                           )}
                           style={{
                             borderColor: tag.color,
@@ -666,9 +785,7 @@ export function TransactionEditDialog({
                               } as React.CSSProperties)),
                           }}
                           onClick={
-                            canUpdateTransactions
-                              ? () => toggleTag(tag.id)
-                              : undefined
+                            isInteractive ? () => toggleTag(tag.id) : undefined
                           }
                         >
                           {tag.name}
@@ -696,13 +813,78 @@ export function TransactionEditDialog({
                   <Switch
                     checked={reportOptIn}
                     onCheckedChange={setReportOptIn}
-                    disabled={!canUpdateTransactions}
+                    disabled={isDisabled || !canUpdateTransactions}
                   />
                 </div>
               </div>
 
+              {/* Confidential Settings */}
+              {(canUpdateConfidentialTransactions ||
+                isConfidentialTransaction) && (
+                <div className="space-y-4 rounded-lg border-2 border-dynamic-orange/20 bg-dynamic-orange/5 p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="flex items-center gap-2 font-semibold text-base">
+                        <Lock className="h-4 w-4 text-dynamic-orange" />
+                        {t(
+                          'workspace-finance-transactions.confidential-settings'
+                        )}
+                      </h3>
+                      <p className="text-dynamic-foreground/60 text-sm">
+                        {t(
+                          'workspace-finance-transactions.confidential-settings-description'
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  <Separator className="bg-dynamic-orange/20" />
+
+                  <div className="space-y-3">
+                    <ConfidentialToggle
+                      label={t(
+                        'workspace-finance-transactions.confidential-amount'
+                      )}
+                      description={t(
+                        'workspace-finance-transactions.confidential-amount-description'
+                      )}
+                      checked={isAmountConfidential}
+                      onCheckedChange={setIsAmountConfidential}
+                      disabled={!canUpdateConfidentialTransactions}
+                      icon={Coins}
+                    />
+
+                    <ConfidentialToggle
+                      label={t(
+                        'workspace-finance-transactions.confidential-description'
+                      )}
+                      description={t(
+                        'workspace-finance-transactions.confidential-description-description'
+                      )}
+                      checked={isDescriptionConfidential}
+                      onCheckedChange={setIsDescriptionConfidential}
+                      disabled={!canUpdateConfidentialTransactions}
+                      icon={FileText}
+                    />
+
+                    <ConfidentialToggle
+                      label={t(
+                        'workspace-finance-transactions.confidential-category'
+                      )}
+                      description={t(
+                        'workspace-finance-transactions.confidential-category-description'
+                      )}
+                      checked={isCategoryConfidential}
+                      onCheckedChange={setIsCategoryConfidential}
+                      disabled={!canUpdateConfidentialTransactions}
+                      icon={FolderOpen}
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Mobile Save Button */}
-              {canUpdateTransactions && (
+              {canUpdateTransactions && !isDisabled && (
                 <div className="md:hidden">
                   <Button
                     onClick={handleSave}

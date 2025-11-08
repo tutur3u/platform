@@ -10,13 +10,16 @@ const enabled = true;
 
 export default async function ExpenseStatistics({
   wsId,
-  searchParams: { view, startDate, endDate } = {},
+  searchParams: { view, startDate, endDate, includeConfidential } = {},
 }: {
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;
 }) {
   const supabase = await createClient();
   const t = await getTranslations();
+
+  // Parse includeConfidential from URL param (defaults to true if not set)
+  const includeConfidentialBool = includeConfidential !== 'false';
 
   const { data: expense } = enabled
     ? await supabase.rpc('get_workspace_wallets_expense', {
@@ -33,6 +36,7 @@ export default async function ExpenseStatistics({
                 .endOf(view as OpUnitType)
                 .toISOString()
             : undefined,
+        include_confidential: includeConfidentialBool,
       })
     : { data: 0 };
 

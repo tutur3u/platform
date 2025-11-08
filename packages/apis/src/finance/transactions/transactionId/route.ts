@@ -40,6 +40,9 @@ const TransactionUpdateSchema = z.object({
   taken_at: z.string().or(z.date()).optional(),
   report_opt_in: z.boolean().optional(),
   tag_ids: z.array(z.uuid()).optional(),
+  is_amount_confidential: z.boolean().optional(),
+  is_description_confidential: z.boolean().optional(),
+  is_category_confidential: z.boolean().optional(),
 });
 
 export async function GET(_: Request, { params }: Params) {
@@ -75,14 +78,26 @@ export async function GET(_: Request, { params }: Params) {
     );
   }
 
-  // Fetch complete transaction data
-  const { data, error } = await supabase
-    .from('wallet_transactions')
-    .select('*')
-    .eq('id', transactionId)
-    .single();
+  // Get authenticated user for permission checks
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (error || !data) {
+  if (!user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Use redaction function to get transaction with permission-based field redaction
+  const { data, error } = await supabase.rpc(
+    'get_wallet_transactions_with_permissions',
+    {
+      p_ws_id: wsId,
+      p_user_id: user.id,
+      p_transaction_ids: [transactionId],
+    }
+  );
+
+  if (error || !data || data.length === 0) {
     console.error('Error fetching transaction:', {
       transactionId,
       error: error?.message,
@@ -93,7 +108,7 @@ export async function GET(_: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json(data[0]);
 }
 
 export async function PUT(req: Request, { params }: Params) {
@@ -150,6 +165,52 @@ export async function PUT(req: Request, { params }: Params) {
   const tagIds = newData.tag_ids;
   delete newData.tag_ids;
 
+  // Check if confidential fields are being modified
+  const isModifyingConfidential =
+    newData.is_amount_confidential !== undefined ||
+    newData.is_description_confidential !== undefined ||
+    newData.is_category_confidential !== undefined;
+
+  // If updating confidential fields, check permission
+  if (
+    isModifyingConfidential &&
+    withoutPermission('update_confidential_transactions')
+  ) {
+    return NextResponse.json(
+      {
+        message: 'Insufficient permissions to update confidential transactions',
+      },
+      { status: 403 }
+    );
+  }
+
+  // Fetch existing transaction to check if it's already confidential
+  const { data: existingTx } = await supabase
+    .from('wallet_transactions')
+    .select(
+      'is_amount_confidential, is_description_confidential, is_category_confidential'
+    )
+    .eq('id', transactionId)
+    .single();
+
+  const isAlreadyConfidential =
+    existingTx?.is_amount_confidential ||
+    existingTx?.is_description_confidential ||
+    existingTx?.is_category_confidential;
+
+  // If transaction is already confidential, require permission to update
+  if (
+    isAlreadyConfidential &&
+    withoutPermission('update_confidential_transactions')
+  ) {
+    return NextResponse.json(
+      {
+        message: 'Insufficient permissions to update confidential transactions',
+      },
+      { status: 403 }
+    );
+  }
+
   // Verify new wallet belongs to workspace if being changed
   if (newData.wallet_id) {
     const { data: walletCheck } = await supabase
@@ -189,6 +250,16 @@ export async function PUT(req: Request, { params }: Params) {
   }
   if (newData.report_opt_in !== undefined) {
     updatePayload.report_opt_in = newData.report_opt_in;
+  }
+  if (newData.is_amount_confidential !== undefined) {
+    updatePayload.is_amount_confidential = newData.is_amount_confidential;
+  }
+  if (newData.is_description_confidential !== undefined) {
+    updatePayload.is_description_confidential =
+      newData.is_description_confidential;
+  }
+  if (newData.is_category_confidential !== undefined) {
+    updatePayload.is_category_confidential = newData.is_category_confidential;
   }
 
   const { error } = await supabase
@@ -267,6 +338,30 @@ export async function DELETE(_: Request, { params }: Params) {
     return NextResponse.json(
       { message: 'Transaction not found' },
       { status: 404 }
+    );
+  }
+
+  // Check if transaction is confidential
+  const { data: txData } = await supabase
+    .from('wallet_transactions')
+    .select(
+      'is_amount_confidential, is_description_confidential, is_category_confidential'
+    )
+    .eq('id', transactionId)
+    .single();
+
+  const isConfidential =
+    txData?.is_amount_confidential ||
+    txData?.is_description_confidential ||
+    txData?.is_category_confidential;
+
+  // If transaction is confidential, require permission to delete
+  if (isConfidential && withoutPermission('delete_confidential_transactions')) {
+    return NextResponse.json(
+      {
+        message: 'Insufficient permissions to delete confidential transactions',
+      },
+      { status: 403 }
     );
   }
 

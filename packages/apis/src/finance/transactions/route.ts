@@ -17,6 +17,9 @@ const TransactionSchema = z.object({
   taken_at: z.union([z.string(), z.date()]),
   report_opt_in: z.boolean().optional(),
   tag_ids: z.array(z.string().uuid()).optional(),
+  is_amount_confidential: z.boolean().optional(),
+  is_description_confidential: z.boolean().optional(),
+  is_category_confidential: z.boolean().optional(),
 });
 export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
@@ -41,25 +44,46 @@ export async function GET(req: Request, { params }: Params) {
 
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from('wallet_transactions')
-    .select('*, workspace_wallets!inner(ws_id)')
-    .eq('workspace_wallets.ws_id', wsId)
-    .range(
-      (Number(activePage) - 1) * Number(itemsPerPage),
-      Number(activePage) * Number(itemsPerPage) - 1
-    )
-    .order('taken_at', { ascending: false });
+  // Get authenticated user for permission checks
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Use the redaction function to get transactions with permission-based field redaction
+  const { data, error } = await supabase.rpc(
+    'get_wallet_transactions_with_permissions',
+    {
+      p_ws_id: wsId,
+      p_user_id: user.id,
+      p_transaction_ids: null,
+    }
+  );
 
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error fetching transaction' },
+      { message: 'Error fetching transactions' },
       { status: 500 }
     );
   }
 
-  return NextResponse.json(data);
+  // Apply pagination in memory (TODO: add pagination support to the RPC function)
+  const paginatedData = data
+    ?.slice(
+      (Number(activePage) - 1) * Number(itemsPerPage),
+      Number(activePage) * Number(itemsPerPage)
+    )
+    .sort((a, b) => {
+      const dateA = new Date(a.taken_at).getTime();
+      const dateB = new Date(b.taken_at).getTime();
+      return dateB - dateA;
+    });
+
+  return NextResponse.json(paginatedData || []);
 }
 
 export async function POST(req: Request, { params }: Params) {
@@ -114,6 +138,25 @@ export async function POST(req: Request, { params }: Params) {
   const tagIds = data.tag_ids;
   delete data.tag_ids;
 
+  // Check if any confidential flags are being set
+  const hasConfidentialFields =
+    data.is_amount_confidential ||
+    data.is_description_confidential ||
+    data.is_category_confidential;
+
+  // If creating confidential transaction, check permission
+  if (
+    hasConfidentialFields &&
+    withoutPermission('create_confidential_transactions')
+  ) {
+    return NextResponse.json(
+      {
+        message: 'Insufficient permissions to create confidential transactions',
+      },
+      { status: 403 }
+    );
+  }
+
   // Ensure wallet is in this workspace
   const { data: walletCheck, error: walletErr } = await supabase
     .from('workspace_wallets')
@@ -139,6 +182,9 @@ export async function POST(req: Request, { params }: Params) {
           : data.taken_at.toISOString(),
       report_opt_in: data.report_opt_in || false,
       creator_id: wsUser.virtual_user_id,
+      is_amount_confidential: data.is_amount_confidential || false,
+      is_description_confidential: data.is_description_confidential || false,
+      is_category_confidential: data.is_category_confidential || false,
     })
     .select('id')
     .single();
