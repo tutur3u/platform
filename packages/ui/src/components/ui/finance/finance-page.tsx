@@ -171,18 +171,13 @@ async function getRecentTransactions(
       p_order_by: 'taken_at',
       p_order_direction: 'DESC',
       p_limit: 10,
+      p_include_confidential: includeConfidential,
     }
   );
 
   if (error) throw error;
 
-  // Filter confidential transactions if needed
-  let filteredTransactions = transactions || [];
-  if (!includeConfidential) {
-    filteredTransactions = filteredTransactions.filter(
-      (t: any) => !t.is_amount_confidential
-    );
-  }
+  const filteredTransactions = transactions || [];
 
   if (filteredTransactions.length === 0) {
     return { data: [] };
