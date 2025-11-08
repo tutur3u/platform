@@ -13,1487 +13,13 @@ export type Database = {
     PostgrestVersion: '13.0.5';
   };
   public: {
-    CompositeTypes: {
-      [_ in never]: never;
-    };
-    Enums: {
-      ai_message_type:
-        | 'file'
-        | 'flashcards'
-        | 'message'
-        | 'multi_choice_quiz'
-        | 'notes'
-        | 'paragraph_quiz'
-        | 'summary';
-      calendar_hour_type: 'MEETING' | 'PERSONAL' | 'WORK';
-      calendar_hours: 'meeting_hours' | 'personal_hours' | 'work_hours';
-      certificate_templates: 'elegant' | 'modern' | 'original';
-      chat_role: 'ASSISTANT' | 'FUNCTION' | 'SYSTEM' | 'USER';
-      dataset_type: 'csv' | 'excel' | 'html';
-      estimation_type: 'exponential' | 'fibonacci' | 'linear' | 't-shirt';
-      feature_flag:
-        | 'ENABLE_AI'
-        | 'ENABLE_CHALLENGES'
-        | 'ENABLE_EDUCATION'
-        | 'ENABLE_QUIZZES';
-      notification_priority: 'high' | 'low' | 'medium' | 'urgent';
-      notification_scope: 'system' | 'user' | 'workspace';
-      platform_service: 'NOVA' | 'REWISE' | 'TUTURUUU' | 'UPSKII';
-      product:
-        | 'calendar'
-        | 'drive'
-        | 'finance'
-        | 'mail'
-        | 'nova'
-        | 'other'
-        | 'qr'
-        | 'rewise'
-        | 'shortener'
-        | 'tudo'
-        | 'tumeet'
-        | 'web';
-      promotion_type: 'REFERRAL' | 'REGULAR';
-      recording_status:
-        | 'completed'
-        | 'failed'
-        | 'interrupted'
-        | 'pending_transcription'
-        | 'recording'
-        | 'transcribing';
-      recurring_frequency: 'daily' | 'monthly' | 'weekly' | 'yearly';
-      subscription_status: 'active' | 'canceled' | 'past_due' | 'trialing';
-      support_type: 'bug' | 'feature-request' | 'job-application' | 'support';
-      task_board_status: 'active' | 'closed' | 'done' | 'not_started';
-      task_priority: 'critical' | 'high' | 'low' | 'normal';
-      workspace_api_key_scope:
-        | 'gemini-2.0-flash-lite'
-        | 'gemini-2.0-flash'
-        | 'gemini-2.0-pro'
-        | 'gemini-2.5-flash-lite'
-        | 'gemini-2.5-flash'
-        | 'gemini-2.5-pro';
-      workspace_role_permission:
-        | 'ai_chat'
-        | 'ai_lab'
-        | 'check_user_attendance'
-        | 'create_inventory'
-        | 'create_invoices'
-        | 'create_lead_generations'
-        | 'create_transactions'
-        | 'create_user_groups_posts'
-        | 'create_user_groups_scores'
-        | 'create_user_groups'
-        | 'create_users'
-        | 'delete_inventory'
-        | 'delete_invoices'
-        | 'delete_transactions'
-        | 'delete_user_groups_posts'
-        | 'delete_user_groups_scores'
-        | 'delete_user_groups'
-        | 'delete_users'
-        | 'export_finance_data'
-        | 'export_users_data'
-        | 'manage_api_keys'
-        | 'manage_calendar'
-        | 'manage_documents'
-        | 'manage_drive'
-        | 'manage_external_migrations'
-        | 'manage_finance'
-        | 'manage_inventory'
-        | 'manage_projects'
-        | 'manage_user_report_templates'
-        | 'manage_users'
-        | 'manage_workspace_audit_logs'
-        | 'manage_workspace_billing'
-        | 'manage_workspace_integrations'
-        | 'manage_workspace_members'
-        | 'manage_workspace_roles'
-        | 'manage_workspace_secrets'
-        | 'manage_workspace_security'
-        | 'manage_workspace_settings'
-        | 'send_user_group_post_emails'
-        | 'update_inventory'
-        | 'update_invoices'
-        | 'update_transactions'
-        | 'update_user_groups_posts'
-        | 'update_user_groups_scores'
-        | 'update_user_groups'
-        | 'update_users'
-        | 'view_finance_stats'
-        | 'view_infrastructure'
-        | 'view_inventory'
-        | 'view_invoices'
-        | 'view_transactions'
-        | 'view_user_groups_posts'
-        | 'view_user_groups_scores'
-        | 'view_user_groups'
-        | 'view_users_private_info'
-        | 'view_users_public_info';
-    };
-    Functions: {
-      archive_old_notifications: {
-        Args: {
-          p_days_threshold?: number;
-        };
-        Returns: number;
-      };
-      atomic_sync_token_operation: {
-        Args: {
-          p_calendar_id?: string;
-          p_operation?: string;
-          p_sync_token?: string;
-          p_ws_id: string;
-        };
-        Returns: {
-          last_synced_at: string;
-          message: string;
-          success: boolean;
-          sync_token: string;
-        }[];
-      };
-      calculate_next_occurrence: {
-        Args: {
-          frequency: Database['public']['Enums']['recurring_frequency'];
-          from_date: string;
-        };
-        Returns: string;
-      };
-      calculate_productivity_score: {
-        Args: {
-          category_color: string;
-          duration_seconds: number;
-        };
-        Returns: number;
-      };
-      can_create_workspace: {
-        Args: {
-          p_user_id: string;
-        };
-        Returns: boolean;
-      };
-      can_manage_indicator: {
-        Args: {
-          p_indicator_id: string;
-        };
-        Returns: boolean;
-      };
-      check_guest_group: {
-        Args: {
-          group_id: string;
-        };
-        Returns: boolean;
-      };
-      check_guest_lead_eligibility: {
-        Args: {
-          p_user_id: string;
-          p_ws_id: string;
-        };
-        Returns: Json;
-      };
-      check_ws_creator: {
-        Args: {
-          ws_id: string;
-        };
-        Returns: boolean;
-      };
-      cleanup_expired_cross_app_tokens: {
-        Args: never;
-        Returns: undefined;
-      };
-      cleanup_expired_notifications: {
-        Args: never;
-        Returns: number;
-      };
-      cleanup_old_api_key_usage_logs: {
-        Args: never;
-        Returns: undefined;
-      };
-      cleanup_old_typing_indicators: {
-        Args: never;
-        Returns: undefined;
-      };
-      cleanup_role_inconsistencies: {
-        Args: never;
-        Returns: undefined;
-      };
-      compute_ai_cost_usd: {
-        Args: {
-          p_input_tokens: number;
-          p_model_id: string;
-          p_output_tokens: number;
-          p_pricing: Json;
-          p_reasoning_tokens: number;
-        };
-        Returns: number;
-      };
-      count_search_users: {
-        Args: {
-          enabled_filter?: boolean;
-          role_filter?: string;
-          search_query: string;
-        };
-        Returns: number;
-      };
-      count_user_workspaces: {
-        Args: {
-          user_id: string;
-        };
-        Returns: number;
-      };
-      create_ai_chat: {
-        Args: {
-          message: string;
-          model: string;
-          title: string;
-        };
-        Returns: string;
-      };
-      create_guest_lead_email: {
-        Args: {
-          p_content: string;
-          p_email: string;
-          p_post_id?: string;
-          p_receiver_id: string;
-          p_sender_id: string;
-          p_source_email: string;
-          p_source_name: string;
-          p_subject: string;
-          p_ws_id: string;
-        };
-        Returns: Json;
-      };
-      create_notification: {
-        Args: {
-          p_code?: string;
-          p_created_by?: string;
-          p_data?: Json;
-          p_description?: string;
-          p_email?: string;
-          p_entity_id?: string;
-          p_entity_type?: string;
-          p_priority?: Database['public']['Enums']['notification_priority'];
-          p_scope?: Database['public']['Enums']['notification_scope'];
-          p_title?: string;
-          p_type?: string;
-          p_user_id?: string;
-          p_ws_id?: string;
-        };
-        Returns: string;
-      };
-      create_system_announcement: {
-        Args: {
-          p_action_url?: string;
-          p_data?: Json;
-          p_description: string;
-          p_expires_at?: string;
-          p_priority?: Database['public']['Enums']['notification_priority'];
-          p_title: string;
-        };
-        Returns: string;
-      };
-      create_user_notification: {
-        Args: {
-          p_action_url?: string;
-          p_data?: Json;
-          p_description?: string;
-          p_priority?: Database['public']['Enums']['notification_priority'];
-          p_title: string;
-          p_type: string;
-          p_user_id: string;
-        };
-        Returns: string;
-      };
-      extract_domain: {
-        Args: {
-          url: string;
-        };
-        Returns: string;
-      };
-      extract_referrer_domain: {
-        Args: {
-          url: string;
-        };
-        Returns: string;
-      };
-      generate_cross_app_token:
-        | {
-            Args: {
-              p_expiry_seconds?: number;
-              p_origin_app: string;
-              p_session_data?: Json;
-              p_target_app: string;
-              p_user_id: string;
-            };
-            Returns: string;
-          }
-        | {
-            Args: {
-              p_expiry_seconds?: number;
-              p_origin_app: string;
-              p_target_app: string;
-              p_user_id: string;
-            };
-            Returns: string;
-          };
-      get_ai_execution_daily_stats_v2: {
-        Args: {
-          p_end_date?: string;
-          p_pricing?: Json;
-          p_start_date?: string;
-          p_ws_id: string;
-        };
-        Returns: {
-          date: string;
-          executions: number;
-          input_tokens: number;
-          output_tokens: number;
-          reasoning_tokens: number;
-          total_cost_usd: number;
-          total_tokens: number;
-        }[];
-      };
-      get_ai_execution_model_stats_v2: {
-        Args: {
-          p_end_date?: string;
-          p_pricing?: Json;
-          p_start_date?: string;
-          p_ws_id: string;
-        };
-        Returns: {
-          avg_cost_per_execution: number;
-          avg_tokens_per_execution: number;
-          executions: number;
-          model_id: string;
-          percentage_of_total: number;
-          total_cost_usd: number;
-          total_tokens: number;
-        }[];
-      };
-      get_ai_execution_monthly_cost_v2: {
-        Args: {
-          p_exchange_rate?: number;
-          p_month?: number;
-          p_pricing?: Json;
-          p_ws_id: string;
-          p_year?: number;
-        };
-        Returns: {
-          avg_daily_cost: number;
-          executions: number;
-          total_cost_usd: number;
-          total_cost_vnd: number;
-        }[];
-      };
-      get_ai_execution_summary_v2: {
-        Args: {
-          p_end_date?: string;
-          p_exchange_rate?: number;
-          p_pricing?: Json;
-          p_start_date?: string;
-          p_ws_id: string;
-        };
-        Returns: {
-          avg_cost_per_execution: number;
-          avg_tokens_per_execution: number;
-          total_cost_usd: number;
-          total_cost_vnd: number;
-          total_executions: number;
-          total_input_tokens: number;
-          total_output_tokens: number;
-          total_reasoning_tokens: number;
-          total_tokens: number;
-        }[];
-      };
-      get_available_referral_users: {
-        Args: {
-          p_user_id: string;
-          p_ws_id: string;
-        };
-        Returns: {
-          display_name: string;
-          email: string;
-          full_name: string;
-          id: string;
-          phone: string;
-        }[];
-      };
-      get_browsers: {
-        Args: {
-          p_limit?: number;
-          p_link_id: string;
-        };
-        Returns: {
-          browser: string;
-          count: number;
-        }[];
-      };
-      get_budget_status: {
-        Args: {
-          _ws_id: string;
-        };
-        Returns: {
-          amount: number;
-          budget_id: string;
-          budget_name: string;
-          is_near_threshold: boolean;
-          is_over_budget: boolean;
-          percentage_used: number;
-          remaining: number;
-          spent: number;
-        }[];
-      };
-      get_challenge_stats: {
-        Args: {
-          challenge_id_param: string;
-          user_id_param: string;
-        };
-        Returns: {
-          problems_attempted: number;
-          total_score: number;
-        }[];
-      };
-      get_clicks_by_day: {
-        Args: {
-          p_days?: number;
-          p_link_id: string;
-        };
-        Returns: {
-          click_date: string;
-          clicks: number;
-        }[];
-      };
-      get_clicks_by_day_of_week: {
-        Args: {
-          p_link_id: string;
-        };
-        Returns: {
-          clicks: number;
-          day_name: string;
-          day_of_week: number;
-        }[];
-      };
-      get_clicks_by_hour: {
-        Args: {
-          p_link_id: string;
-        };
-        Returns: {
-          clicks: number;
-          hour: number;
-        }[];
-      };
-      get_created_workspace_count: {
-        Args: {
-          user_id: string;
-        };
-        Returns: number;
-      };
-      get_daily_activity_heatmap: {
-        Args: {
-          p_days_back?: number;
-          p_user_id?: string;
-          p_ws_id: string;
-        };
-        Returns: Json;
-      };
-      get_daily_income_expense: {
-        Args: {
-          _ws_id: string;
-          past_days?: number;
-        };
-        Returns: {
-          day: string;
-          total_expense: number;
-          total_income: number;
-        }[];
-      };
-      get_daily_prompt_completion_tokens: {
-        Args: {
-          past_days?: number;
-        };
-        Returns: {
-          day: string;
-          total_completion_tokens: number;
-          total_prompt_tokens: number;
-        }[];
-      };
-      get_default_ai_pricing: {
-        Args: never;
-        Returns: Json;
-      };
-      get_device_types: {
-        Args: {
-          p_limit?: number;
-          p_link_id: string;
-        };
-        Returns: {
-          count: number;
-          device_type: string;
-        }[];
-      };
-      get_finance_invoices_count: {
-        Args: {
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      get_guest_user_leads: {
-        Args: {
-          p_page?: number;
-          p_page_size?: number;
-          p_search?: string;
-          p_threshold?: number;
-          p_ws_id: string;
-        };
-        Returns: {
-          attendance_count: number;
-          created_at: string;
-          email: string;
-          full_name: string;
-          gender: string;
-          group_id: string;
-          group_name: string;
-          has_lead_generation: boolean;
-          id: string;
-          phone: string;
-          total_count: number;
-        }[];
-      };
-      get_healthcare_checkups_count: {
-        Args: {
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      get_healthcare_diagnoses_count: {
-        Args: {
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      get_healthcare_vital_groups_count: {
-        Args: {
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      get_healthcare_vitals_count: {
-        Args: {
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      get_hourly_prompt_completion_tokens: {
-        Args: {
-          past_hours?: number;
-        };
-        Returns: {
-          hour: string;
-          total_completion_tokens: number;
-          total_prompt_tokens: number;
-        }[];
-      };
-      get_inventory_batches_count: {
-        Args: {
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      get_inventory_product_categories_count: {
-        Args: {
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      get_inventory_products: {
-        Args: {
-          _category_ids?: string[];
-          _has_unit?: boolean;
-          _warehouse_ids?: string[];
-          _ws_id?: string;
-        };
-        Returns: {
-          amount: number;
-          category: string;
-          created_at: string;
-          id: string;
-          manufacturer: string;
-          name: string;
-          price: number;
-          unit: string;
-          unit_id: string;
-          ws_id: string;
-        }[];
-      };
-      get_inventory_products_count: {
-        Args: {
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      get_inventory_suppliers_count: {
-        Args: {
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      get_inventory_units_count: {
-        Args: {
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      get_inventory_warehouses_count: {
-        Args: {
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      get_joined_workspace_count: {
-        Args: {
-          user_id: string;
-        };
-        Returns: number;
-      };
-      get_monthly_income_expense: {
-        Args: {
-          _ws_id: string;
-          past_months?: number;
-        };
-        Returns: {
-          month: string;
-          total_expense: number;
-          total_income: number;
-        }[];
-      };
-      get_monthly_prompt_completion_tokens: {
-        Args: {
-          past_months?: number;
-        };
-        Returns: {
-          month: string;
-          total_completion_tokens: number;
-          total_prompt_tokens: number;
-        }[];
-      };
-      get_operating_systems: {
-        Args: {
-          p_limit?: number;
-          p_link_id: string;
-        };
-        Returns: {
-          count: number;
-          os: string;
-        }[];
-      };
-      get_or_create_notification_batch:
-        | {
-            Args: {
-              p_channel: string;
-              p_email?: string;
-              p_user_id: string;
-              p_window_minutes?: number;
-              p_ws_id: string;
-            };
-            Returns: string;
-          }
-        | {
-            Args: {
-              p_channel: string;
-              p_user_id: string;
-              p_window_minutes?: number;
-              p_ws_id: string;
-            };
-            Returns: string;
-          };
-      get_pending_event_participants: {
-        Args: {
-          _event_id: string;
-        };
-        Returns: number;
-      };
-      get_pending_invoices: {
-        Args: {
-          p_limit?: number;
-          p_offset?: number;
-          p_ws_id: string;
-        };
-        Returns: {
-          attendance_days: number;
-          group_id: string;
-          group_name: string;
-          months_owed: string;
-          potential_total: number;
-          total_sessions: number;
-          user_id: string;
-          user_name: string;
-        }[];
-      };
-      get_pending_invoices_base: {
-        Args: {
-          p_ws_id: string;
-        };
-        Returns: {
-          attendance_days: number;
-          group_id: string;
-          group_name: string;
-          month: string;
-          sessions: string[];
-          user_id: string;
-          user_name: string;
-        }[];
-      };
-      get_pending_invoices_count: {
-        Args: {
-          p_ws_id: string;
-        };
-        Returns: number;
-      };
-      get_period_summary_stats: {
-        Args: {
-          p_period?: string;
-          p_ws_id: string;
-        };
-        Returns: Json;
-      };
-      get_possible_excluded_groups: {
-        Args: {
-          _ws_id: string;
-          included_groups: string[];
-        };
-        Returns: {
-          amount: number;
-          id: string;
-          name: string;
-          ws_id: string;
-        }[];
-      };
-      get_possible_excluded_tags: {
-        Args: {
-          _ws_id: string;
-          included_tags: string[];
-        };
-        Returns: {
-          amount: number;
-          id: string;
-          name: string;
-          ws_id: string;
-        }[];
-      };
-      get_session_statistics: {
-        Args: never;
-        Returns: {
-          active_count: number;
-          completed_count: number;
-          latest_session_date: string;
-          total_count: number;
-          unique_users_count: number;
-        }[];
-      };
-      get_session_templates: {
-        Args: {
-          limit_count?: number;
-          user_id_param: string;
-          workspace_id: string;
-        };
-        Returns: {
-          avg_duration: number;
-          category_color: string;
-          category_id: string;
-          category_name: string;
-          description: string;
-          last_used: string;
-          tags: string[];
-          task_id: string;
-          task_name: string;
-          title: string;
-          usage_count: number;
-        }[];
-      };
-      get_submission_statistics: {
-        Args: never;
-        Returns: {
-          latest_submission_date: string;
-          total_count: number;
-          unique_users_count: number;
-        }[];
-      };
-      get_task_details: {
-        Args: {
-          p_task_id: string;
-        };
-        Returns: {
-          board_id: string;
-          board_name: string;
-          creator_id: string;
-          list_id: string;
-          list_name: string;
-          task_id: string;
-          task_name: string;
-          ws_id: string;
-        }[];
-      };
-      get_task_workspace_id: {
-        Args: {
-          p_task_id: string;
-        };
-        Returns: string;
-      };
-      get_time_tracking_sessions_paginated: {
-        Args: {
-          p_limit?: number;
-          p_page?: number;
-          p_period?: string;
-          p_search?: string;
-          p_ws_id: string;
-        };
-        Returns: Json;
-      };
-      get_time_tracking_stats: {
-        Args: {
-          p_user_id?: string;
-          p_ws_id: string;
-        };
-        Returns: Json;
-      };
-      get_top_cities: {
-        Args: {
-          p_limit?: number;
-          p_link_id: string;
-        };
-        Returns: {
-          city: string;
-          count: number;
-          country: string;
-        }[];
-      };
-      get_top_countries: {
-        Args: {
-          p_limit?: number;
-          p_link_id: string;
-        };
-        Returns: {
-          count: number;
-          country: string;
-        }[];
-      };
-      get_top_referrers: {
-        Args: {
-          p_limit?: number;
-          p_link_id: string;
-        };
-        Returns: {
-          count: number;
-          domain: string;
-        }[];
-      };
-      get_transaction_categories_with_amount_by_workspace: {
-        Args: {
-          p_ws_id: string;
-        };
-        Returns: {
-          amount: number;
-          created_at: string;
-          id: string;
-          is_expense: boolean;
-          name: string;
-          transaction_count: number;
-          ws_id: string;
-        }[];
-      };
-      get_transaction_count_by_tag: {
-        Args: {
-          _ws_id: string;
-        };
-        Returns: {
-          tag_color: string;
-          tag_id: string;
-          tag_name: string;
-          transaction_count: number;
-        }[];
-      };
-      get_upcoming_recurring_transactions: {
-        Args: {
-          _ws_id: string;
-          days_ahead?: number;
-        };
-        Returns: {
-          amount: number;
-          category_name: string;
-          frequency: Database['public']['Enums']['recurring_frequency'];
-          id: string;
-          name: string;
-          next_occurrence: string;
-          wallet_name: string;
-        }[];
-      };
-      get_user_accessible_tasks: {
-        Args: {
-          p_include_deleted?: boolean;
-          p_list_statuses?: Database['public']['Enums']['task_board_status'][];
-          p_user_id: string;
-          p_ws_id?: string;
-        };
-        Returns: {
-          task_calendar_hours: Database['public']['Enums']['calendar_hours'];
-          task_closed_at: string;
-          task_completed_at: string;
-          task_created_at: string;
-          task_creator_id: string;
-          task_deleted_at: string;
-          task_description: string;
-          task_end_date: string;
-          task_estimation_points: number;
-          task_id: string;
-          task_is_splittable: boolean;
-          task_list_id: string;
-          task_max_split_duration_minutes: number;
-          task_min_split_duration_minutes: number;
-          task_name: string;
-          task_priority: Database['public']['Enums']['task_priority'];
-          task_start_date: string;
-          task_total_duration: number;
-        }[];
-      };
-      get_user_email: {
-        Args: {
-          p_user_id: string;
-        };
-        Returns: string;
-      };
-      get_user_role: {
-        Args: {
-          user_id: string;
-          ws_id: string;
-        };
-        Returns: string;
-      };
-      get_user_session_stats: {
-        Args: {
-          user_id: string;
-        };
-        Returns: {
-          active_sessions: number;
-          current_session_age: unknown;
-          total_sessions: number;
-        }[];
-      };
-      get_user_sessions: {
-        Args: {
-          user_id: string;
-        };
-        Returns: {
-          created_at: string;
-          ip: string;
-          is_current: boolean;
-          session_id: string;
-          updated_at: string;
-          user_agent: string;
-        }[];
-      };
-      get_user_tasks: {
-        Args: {
-          _board_id: string;
-        };
-        Returns: {
-          board_id: string;
-          completed: boolean;
-          description: string;
-          end_date: string;
-          id: string;
-          list_id: string;
-          name: string;
-          priority: number;
-          start_date: string;
-        }[];
-      };
-      get_user_whitelist_status: {
-        Args: {
-          user_id_param: string;
-        };
-        Returns: {
-          allow_challenge_management: boolean;
-          allow_manage_all_challenges: boolean;
-          allow_role_management: boolean;
-          enabled: boolean;
-          is_whitelisted: boolean;
-        }[];
-      };
-      get_workspace_drive_size: {
-        Args: {
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      get_workspace_member_count: {
-        Args: {
-          p_ws_id: string;
-        };
-        Returns: number;
-      };
-      get_workspace_products_count: {
-        Args: {
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      get_workspace_storage_limit: {
-        Args: {
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      get_workspace_transaction_categories_count: {
-        Args: {
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      get_workspace_transactions_count: {
-        Args: {
-          end_date?: string;
-          start_date?: string;
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      get_workspace_user_groups: {
-        Args: {
-          _ws_id: string;
-          excluded_tags: string[];
-          included_tags: string[];
-          search_query: string;
-        };
-        Returns: {
-          created_at: string;
-          id: string;
-          name: string;
-          notes: string;
-          tag_count: number;
-          tags: string[];
-          ws_id: string;
-        }[];
-      };
-      get_workspace_user_groups_count: {
-        Args: {
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      get_workspace_user_with_details: {
-        Args: {
-          p_user_id: string;
-          p_ws_id: string;
-        };
-        Returns: Json;
-      };
-      get_workspace_users: {
-        Args: {
-          _ws_id: string;
-          excluded_groups: string[];
-          included_groups: string[];
-          search_query: string;
-        };
-        Returns: {
-          address: string;
-          archived: boolean;
-          archived_until: string;
-          avatar_url: string;
-          balance: number;
-          birthday: string;
-          created_at: string;
-          display_name: string;
-          email: string;
-          ethnicity: string;
-          full_name: string;
-          gender: string;
-          group_count: number;
-          groups: string[];
-          guardian: string;
-          id: string;
-          linked_users: Json;
-          national_id: string;
-          note: string;
-          phone: string;
-          updated_at: string;
-          ws_id: string;
-        }[];
-      };
-      get_workspace_users_count: {
-        Args: {
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      get_workspace_wallets_count: {
-        Args: {
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      get_workspace_wallets_expense: {
-        Args: {
-          end_date?: string;
-          start_date?: string;
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      get_workspace_wallets_income: {
-        Args: {
-          end_date?: string;
-          start_date?: string;
-          ws_id: string;
-        };
-        Returns: number;
-      };
-      hard_delete_soft_deleted_items: {
-        Args: never;
-        Returns: undefined;
-      };
-      has_other_owner: {
-        Args: {
-          _user_id: string;
-          _ws_id: string;
-        };
-        Returns: boolean;
-      };
-      has_workspace_permission: {
-        Args: {
-          p_permission: string;
-          p_user_id: string;
-          p_ws_id: string;
-        };
-        Returns: boolean;
-      };
-      insert_ai_chat_message: {
-        Args: {
-          chat_id: string;
-          message: string;
-          source: string;
-        };
-        Returns: undefined;
-      };
-      insert_task_history: {
-        Args: {
-          p_change_type: string;
-          p_field_name?: string;
-          p_metadata?: Json;
-          p_new_value?: Json;
-          p_old_value?: Json;
-          p_task_id: string;
-        };
-        Returns: string;
-      };
-      is_list_accessible: {
-        Args: {
-          _list_id: string;
-        };
-        Returns: boolean;
-      };
-      is_member_invited: {
-        Args: {
-          _org_id: string;
-          _user_id: string;
-        };
-        Returns: boolean;
-      };
-      is_nova_challenge_manager: {
-        Args: never;
-        Returns: boolean;
-      };
-      is_nova_role_manager: {
-        Args: never;
-        Returns: boolean;
-      };
-      is_nova_user_email_in_team: {
-        Args: {
-          _team_id: string;
-          _user_email: string;
-        };
-        Returns: boolean;
-      };
-      is_nova_user_id_in_team: {
-        Args: {
-          _team_id: string;
-          _user_id: string;
-        };
-        Returns: boolean;
-      };
-      is_org_member: {
-        Args: {
-          _org_id: string;
-          _user_id: string;
-        };
-        Returns: boolean;
-      };
-      is_personal_workspace: {
-        Args: {
-          p_ws_id: string;
-        };
-        Returns: boolean;
-      };
-      is_project_member: {
-        Args: {
-          _project_id: string;
-        };
-        Returns: boolean;
-      };
-      is_task_accessible: {
-        Args: {
-          _task_id: string;
-        };
-        Returns: boolean;
-      };
-      is_task_board_member: {
-        Args: {
-          _board_id: string;
-          _user_id: string;
-        };
-        Returns: boolean;
-      };
-      is_tuturuuu_email: {
-        Args: {
-          user_email: string;
-        };
-        Returns: boolean;
-      };
-      is_user_guest: {
-        Args: {
-          user_uuid: string;
-        };
-        Returns: boolean;
-      };
-      is_user_task_in_board: {
-        Args: {
-          _task_id: string;
-          _user_id: string;
-        };
-        Returns: boolean;
-      };
-      is_user_whitelisted: {
-        Args: {
-          user_id_param: string;
-        };
-        Returns: boolean;
-      };
-      is_workspace_owner: {
-        Args: {
-          p_user_id: string;
-          p_ws_id: string;
-        };
-        Returns: boolean;
-      };
-      match_tasks: {
-        Args: {
-          filter_deleted?: boolean;
-          filter_ws_id?: string;
-          match_count?: number;
-          match_threshold?: number;
-          query_embedding: string;
-          query_text: string;
-        };
-        Returns: {
-          closed_at: string;
-          completed_at: string;
-          description: string;
-          end_date: string;
-          id: string;
-          list_id: string;
-          name: string;
-          similarity: number;
-          start_date: string;
-        }[];
-      };
-      normalize_task_sort_keys: {
-        Args: never;
-        Returns: undefined;
-      };
-      nova_get_all_challenges_with_user_stats: {
-        Args: {
-          user_id: string;
-        };
-        Returns: Json;
-      };
-      nova_get_challenge_with_user_stats: {
-        Args: {
-          challenge_id: string;
-          user_id: string;
-        };
-        Returns: Json;
-      };
-      nova_get_user_daily_sessions: {
-        Args: {
-          challenge_id: string;
-          user_id: string;
-        };
-        Returns: number;
-      };
-      nova_get_user_total_sessions: {
-        Args: {
-          challenge_id: string;
-          user_id: string;
-        };
-        Returns: number;
-      };
-      parse_user_agent: {
-        Args: {
-          user_agent: string;
-        };
-        Returns: {
-          browser: string;
-          device_type: string;
-          os: string;
-        }[];
-      };
-      process_notification_batches: {
-        Args: never;
-        Returns: undefined;
-      };
-      process_recurring_transactions: {
-        Args: never;
-        Returns: {
-          processed_count: number;
-          recurring_id: string;
-          transaction_id: string;
-        }[];
-      };
-      revoke_all_cross_app_tokens: {
-        Args: {
-          p_user_id: string;
-        };
-        Returns: undefined;
-      };
-      revoke_all_other_sessions: {
-        Args: {
-          user_id: string;
-        };
-        Returns: number;
-      };
-      revoke_user_session: {
-        Args: {
-          session_id: string;
-          target_user_id: string;
-        };
-        Returns: boolean;
-      };
-      search_users: {
-        Args: {
-          enabled_filter?: boolean;
-          page_number: number;
-          page_size: number;
-          role_filter?: string;
-          search_query: string;
-        };
-        Returns: {
-          allow_challenge_management: boolean;
-          allow_manage_all_challenges: boolean;
-          allow_role_management: boolean;
-          avatar_url: string;
-          bio: string;
-          birthday: string;
-          created_at: string;
-          email: string;
-        };
-        Returns: {
-          avatar_url: string;
-          display_name: string;
-          handle: string;
-          id: string;
-          relevance: number;
-        }[];
-      };
-      should_send_notification: {
-        Args: {
-          p_channel: string;
-          p_event_type: string;
-          p_scope?: Database['public']['Enums']['notification_scope'];
-          p_user_id: string;
-          p_ws_id?: string;
-        };
-        Returns: boolean;
-      };
-      show_limit: {
-        Args: never;
-        Returns: number;
-      };
-      show_trgm: {
-        Args: {
-          '': string;
-        };
-        Returns: string[];
-      };
-      sum_quiz_scores: {
-        Args: {
-          p_set_id: string;
-        };
-        Returns: {
-          sum: number;
-        }[];
-      };
-      transactions_have_same_abs_amount: {
-        Args: {
-          transaction_id_1: string;
-          transaction_id_2: string;
-        };
-        Returns: boolean;
-      };
-      transactions_have_same_amount: {
-        Args: {
-          transaction_id_1: string;
-          transaction_id_2: string;
-        };
-        Returns: boolean;
-      };
-      update_expired_sessions: {
-        Args: never;
-        Returns: undefined;
-      };
-      update_many_tasks: {
-        Args: {
-          updates: Json;
-        };
-        Returns: number;
-      };
-      update_session_total_score: {
-        Args: {
-          challenge_id_param: string;
-          user_id_param: string;
-        };
-        Returns: undefined;
-      };
-      upsert_calendar_events_and_count: {
-        Args: {
-          events: Json;
-        };
-        Returns: Json;
-      };
-      user_is_in_channel: {
-        Args: {
-          p_channel_id: string;
-          p_user_id: string;
-        };
-        Returns: boolean;
-      };
-      validate_cross_app_token: {
-        Args: {
-          p_target_app: string;
-          p_token: string;
-        };
-        Returns: string;
-      };
-      validate_cross_app_token_with_session: {
-        Args: {
-          p_target_app: string;
-          p_token: string;
-        };
-        Returns: {
-          session_data: Json;
-          user_id: string;
-        }[];
-      };
-    };
     Tables: {
       ai_chat_members: {
+        Row: {
+          chat_id: string;
+          created_at: string;
+          email: string;
+        };
         Insert: {
           chat_id: string;
           created_at?: string;
@@ -5063,6 +3589,273 @@ export type Database = {
           },
         ];
       };
+      notification_batches: {
+        Row: {
+          channel: string;
+          created_at: string;
+          email: string | null;
+          error_message: string | null;
+          id: string;
+          notification_count: number;
+          sent_at: string | null;
+          status: string;
+          updated_at: string;
+          user_id: string | null;
+          window_end: string;
+          window_start: string;
+          ws_id: string | null;
+        };
+        Insert: {
+          channel: string;
+          created_at?: string;
+          email?: string | null;
+          error_message?: string | null;
+          id?: string;
+          notification_count?: number;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id?: string | null;
+          window_end: string;
+          window_start: string;
+          ws_id?: string | null;
+        };
+        Update: {
+          channel?: string;
+          created_at?: string;
+          email?: string | null;
+          error_message?: string | null;
+          id?: string;
+          notification_count?: number;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id?: string | null;
+          window_end?: string;
+          window_start?: string;
+          ws_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notification_batches_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notification_batches_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      notification_delivery_log: {
+        Row: {
+          batch_id: string | null;
+          channel: string;
+          created_at: string;
+          error_message: string | null;
+          id: string;
+          notification_id: string;
+          retry_count: number;
+          sent_at: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          batch_id?: string | null;
+          channel: string;
+          created_at?: string;
+          error_message?: string | null;
+          id?: string;
+          notification_id: string;
+          retry_count?: number;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          batch_id?: string | null;
+          channel?: string;
+          created_at?: string;
+          error_message?: string | null;
+          id?: string;
+          notification_id?: string;
+          retry_count?: number;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notification_delivery_log_notification_id_fkey';
+            columns: ['notification_id'];
+            isOneToOne: false;
+            referencedRelation: 'notifications';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      notification_preferences: {
+        Row: {
+          channel: string;
+          created_at: string;
+          digest_frequency: string | null;
+          enabled: boolean;
+          event_type: string;
+          id: string;
+          quiet_hours_end: string | null;
+          quiet_hours_start: string | null;
+          scope: Database['public']['Enums']['notification_scope'];
+          timezone: string | null;
+          updated_at: string;
+          user_id: string;
+          ws_id: string | null;
+        };
+        Insert: {
+          channel: string;
+          created_at?: string;
+          digest_frequency?: string | null;
+          enabled?: boolean;
+          event_type: string;
+          id?: string;
+          quiet_hours_end?: string | null;
+          quiet_hours_start?: string | null;
+          scope?: Database['public']['Enums']['notification_scope'];
+          timezone?: string | null;
+          updated_at?: string;
+          user_id: string;
+          ws_id?: string | null;
+        };
+        Update: {
+          channel?: string;
+          created_at?: string;
+          digest_frequency?: string | null;
+          enabled?: boolean;
+          event_type?: string;
+          id?: string;
+          quiet_hours_end?: string | null;
+          quiet_hours_start?: string | null;
+          scope?: Database['public']['Enums']['notification_scope'];
+          timezone?: string | null;
+          updated_at?: string;
+          user_id?: string;
+          ws_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notification_preferences_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notification_preferences_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      notifications: {
+        Row: {
+          action_url: string | null;
+          archived_at: string | null;
+          code: string | null;
+          created_at: string;
+          created_by: string | null;
+          data: Json | null;
+          description: string | null;
+          email: string | null;
+          entity_id: string | null;
+          entity_type: string | null;
+          expires_at: string | null;
+          id: string;
+          metadata: Json | null;
+          parent_id: string | null;
+          priority: Database['public']['Enums']['notification_priority'];
+          read_at: string | null;
+          scope: Database['public']['Enums']['notification_scope'];
+          title: string;
+          type: string;
+          user_id: string | null;
+          ws_id: string | null;
+        };
+        Insert: {
+          action_url?: string | null;
+          archived_at?: string | null;
+          code?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          data?: Json | null;
+          description?: string | null;
+          email?: string | null;
+          entity_id?: string | null;
+          entity_type?: string | null;
+          expires_at?: string | null;
+          id?: string;
+          metadata?: Json | null;
+          parent_id?: string | null;
+          priority?: Database['public']['Enums']['notification_priority'];
+          read_at?: string | null;
+          scope?: Database['public']['Enums']['notification_scope'];
+          title: string;
+          type: string;
+          user_id?: string | null;
+          ws_id?: string | null;
+        };
+        Update: {
+          action_url?: string | null;
+          archived_at?: string | null;
+          code?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          data?: Json | null;
+          description?: string | null;
+          email?: string | null;
+          entity_id?: string | null;
+          entity_type?: string | null;
+          expires_at?: string | null;
+          id?: string;
+          metadata?: Json | null;
+          parent_id?: string | null;
+          priority?: Database['public']['Enums']['notification_priority'];
+          read_at?: string | null;
+          scope?: Database['public']['Enums']['notification_scope'];
+          title?: string;
+          type?: string;
+          user_id?: string | null;
+          ws_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notifications_parent_id_fkey';
+            columns: ['parent_id'];
+            isOneToOne: false;
+            referencedRelation: 'notifications';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notifications_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notifications_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       nova_challenge_criteria: {
         Row: {
           challenge_id: string;
@@ -5071,285 +3864,6 @@ export type Database = {
           id: string;
           name: string;
         };
-        Update: {
-          archived?: boolean | null;
-          content?: Json;
-          created_at?: null | string;
-          creator_id?: string;
-          deleted?: boolean | null;
-          id?: string;
-          updated_at?: null | string;
-          ws_id?: string;
-        };
-      };
-      notification_batches: {
-        Insert: {
-          channel: string;
-          created_at?: string;
-          email?: null | string;
-          error_message?: null | string;
-          id?: string;
-          notification_count?: number;
-          sent_at?: null | string;
-          status?: string;
-          updated_at?: string;
-          user_id?: null | string;
-          window_end: string;
-          window_start: string;
-          ws_id?: null | string;
-        };
-        Relationships: [
-          {
-            columns: ['ws_id'];
-            foreignKeyName: 'notification_batches_ws_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'workspace_link_counts';
-          },
-          {
-            columns: ['ws_id'];
-            foreignKeyName: 'notification_batches_ws_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'workspaces';
-          },
-        ];
-        Row: {
-          channel: string;
-          created_at: string;
-          email: null | string;
-          error_message: null | string;
-          id: string;
-          notification_count: number;
-          sent_at: null | string;
-          status: string;
-          updated_at: string;
-          user_id: null | string;
-          window_end: string;
-          window_start: string;
-          ws_id: null | string;
-        };
-        Update: {
-          channel?: string;
-          created_at?: string;
-          email?: null | string;
-          error_message?: null | string;
-          id?: string;
-          notification_count?: number;
-          sent_at?: null | string;
-          status?: string;
-          updated_at?: string;
-          user_id?: null | string;
-          window_end?: string;
-          window_start?: string;
-          ws_id?: null | string;
-        };
-      };
-      notification_delivery_log: {
-        Insert: {
-          batch_id?: null | string;
-          channel: string;
-          created_at?: string;
-          error_message?: null | string;
-          id?: string;
-          notification_id: string;
-          retry_count?: number;
-          sent_at?: null | string;
-          status?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            columns: ['notification_id'];
-            foreignKeyName: 'notification_delivery_log_notification_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'notifications';
-          },
-        ];
-        Row: {
-          batch_id: null | string;
-          channel: string;
-          created_at: string;
-          error_message: null | string;
-          id: string;
-          notification_id: string;
-          retry_count: number;
-          sent_at: null | string;
-          status: string;
-          updated_at: string;
-        };
-        Update: {
-          batch_id?: null | string;
-          channel?: string;
-          created_at?: string;
-          error_message?: null | string;
-          id?: string;
-          notification_id?: string;
-          retry_count?: number;
-          sent_at?: null | string;
-          status?: string;
-          updated_at?: string;
-        };
-      };
-      notification_preferences: {
-        Insert: {
-          channel: string;
-          created_at?: string;
-          digest_frequency?: null | string;
-          enabled?: boolean;
-          event_type: string;
-          id?: string;
-          quiet_hours_end?: null | string;
-          quiet_hours_start?: null | string;
-          scope?: Database['public']['Enums']['notification_scope'];
-          timezone?: null | string;
-          updated_at?: string;
-          user_id: string;
-          ws_id?: null | string;
-        };
-        Relationships: [
-          {
-            columns: ['ws_id'];
-            foreignKeyName: 'notification_preferences_ws_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'workspace_link_counts';
-          },
-          {
-            columns: ['ws_id'];
-            foreignKeyName: 'notification_preferences_ws_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'workspaces';
-          },
-        ];
-        Row: {
-          channel: string;
-          created_at: string;
-          digest_frequency: null | string;
-          enabled: boolean;
-          event_type: string;
-          id: string;
-          quiet_hours_end: null | string;
-          quiet_hours_start: null | string;
-          scope: Database['public']['Enums']['notification_scope'];
-          timezone: null | string;
-          updated_at: string;
-          user_id: string;
-          ws_id: null | string;
-        };
-        Update: {
-          channel?: string;
-          created_at?: string;
-          digest_frequency?: null | string;
-          enabled?: boolean;
-          event_type?: string;
-          id?: string;
-          quiet_hours_end?: null | string;
-          quiet_hours_start?: null | string;
-          scope?: Database['public']['Enums']['notification_scope'];
-          timezone?: null | string;
-          updated_at?: string;
-          user_id?: string;
-          ws_id?: null | string;
-        };
-      };
-      notifications: {
-        Insert: {
-          action_url?: null | string;
-          archived_at?: null | string;
-          code?: null | string;
-          created_at?: string;
-          created_by?: null | string;
-          data?: Json | null;
-          description?: null | string;
-          email?: null | string;
-          entity_id?: null | string;
-          entity_type?: null | string;
-          expires_at?: null | string;
-          id?: string;
-          metadata?: Json | null;
-          parent_id?: null | string;
-          priority?: Database['public']['Enums']['notification_priority'];
-          read_at?: null | string;
-          scope?: Database['public']['Enums']['notification_scope'];
-          title: string;
-          type: string;
-          user_id?: null | string;
-          ws_id?: null | string;
-        };
-        Relationships: [
-          {
-            columns: ['parent_id'];
-            foreignKeyName: 'notifications_parent_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'notifications';
-          },
-          {
-            columns: ['ws_id'];
-            foreignKeyName: 'notifications_ws_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'workspace_link_counts';
-          },
-          {
-            columns: ['ws_id'];
-            foreignKeyName: 'notifications_ws_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'workspaces';
-          },
-        ];
-        Row: {
-          action_url: null | string;
-          archived_at: null | string;
-          code: null | string;
-          created_at: string;
-          created_by: null | string;
-          data: Json | null;
-          description: null | string;
-          email: null | string;
-          entity_id: null | string;
-          entity_type: null | string;
-          expires_at: null | string;
-          id: string;
-          metadata: Json | null;
-          parent_id: null | string;
-          priority: Database['public']['Enums']['notification_priority'];
-          read_at: null | string;
-          scope: Database['public']['Enums']['notification_scope'];
-          title: string;
-          type: string;
-          user_id: null | string;
-          ws_id: null | string;
-        };
-        Update: {
-          action_url?: null | string;
-          archived_at?: null | string;
-          code?: null | string;
-          created_at?: string;
-          created_by?: null | string;
-          data?: Json | null;
-          description?: null | string;
-          email?: null | string;
-          entity_id?: null | string;
-          entity_type?: null | string;
-          expires_at?: null | string;
-          id?: string;
-          metadata?: Json | null;
-          parent_id?: null | string;
-          priority?: Database['public']['Enums']['notification_priority'];
-          read_at?: null | string;
-          scope?: Database['public']['Enums']['notification_scope'];
-          title?: string;
-          type?: string;
-          user_id?: null | string;
-          ws_id?: null | string;
-        };
-      };
-      nova_challenge_criteria: {
         Insert: {
           challenge_id: string;
           created_at?: string;
@@ -7378,6 +5892,53 @@ export type Database = {
           },
         ];
       };
+      task_history: {
+        Row: {
+          change_type: string;
+          changed_at: string;
+          changed_by: string | null;
+          deleted_at: string | null;
+          field_name: string | null;
+          id: string;
+          metadata: Json | null;
+          new_value: Json | null;
+          old_value: Json | null;
+          task_id: string;
+        };
+        Insert: {
+          change_type: string;
+          changed_at?: string;
+          changed_by?: string | null;
+          deleted_at?: string | null;
+          field_name?: string | null;
+          id?: string;
+          metadata?: Json | null;
+          new_value?: Json | null;
+          old_value?: Json | null;
+          task_id: string;
+        };
+        Update: {
+          change_type?: string;
+          changed_at?: string;
+          changed_by?: string | null;
+          deleted_at?: string | null;
+          field_name?: string | null;
+          id?: string;
+          metadata?: Json | null;
+          new_value?: Json | null;
+          old_value?: Json | null;
+          task_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_history_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       task_initiatives: {
         Row: {
           archived: boolean | null;
@@ -7403,56 +5964,7 @@ export type Database = {
           updated_at?: string | null;
           ws_id: string;
         };
-      };
-      task_history: {
-        Insert: {
-          change_type: string;
-          changed_at?: string;
-          changed_by?: null | string;
-          deleted_at?: null | string;
-          field_name?: null | string;
-          id?: string;
-          metadata?: Json | null;
-          new_value?: Json | null;
-          old_value?: Json | null;
-          task_id: string;
-        };
-        Relationships: [
-          {
-            columns: ['task_id'];
-            foreignKeyName: 'task_history_task_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'tasks';
-          },
-        ];
-        Row: {
-          change_type: string;
-          changed_at: string;
-          changed_by: null | string;
-          deleted_at: null | string;
-          field_name: null | string;
-          id: string;
-          metadata: Json | null;
-          new_value: Json | null;
-          old_value: Json | null;
-          task_id: string;
-        };
         Update: {
-          change_type?: string;
-          changed_at?: string;
-          changed_by?: null | string;
-          deleted_at?: null | string;
-          field_name?: null | string;
-          id?: string;
-          metadata?: Json | null;
-          new_value?: Json | null;
-          old_value?: Json | null;
-          task_id?: string;
-        };
-      };
-      task_initiatives: {
-        Insert: {
           archived?: boolean | null;
           created_at?: string | null;
           creator_id?: string;
@@ -14301,6 +12813,10 @@ export type Database = {
       };
     };
     Functions: {
+      archive_old_notifications: {
+        Args: { p_days_threshold?: number };
+        Returns: number;
+      };
       atomic_sync_token_operation: {
         Args: {
           p_calendar_id?: string;
@@ -14339,6 +12855,7 @@ export type Database = {
       };
       check_ws_creator: { Args: { ws_id: string }; Returns: boolean };
       cleanup_expired_cross_app_tokens: { Args: never; Returns: undefined };
+      cleanup_expired_notifications: { Args: never; Returns: number };
       cleanup_old_api_key_usage_logs: { Args: never; Returns: undefined };
       cleanup_old_typing_indicators: { Args: never; Returns: undefined };
       cleanup_role_inconsistencies: { Args: never; Returns: undefined };
@@ -14387,6 +12904,47 @@ export type Database = {
           user_id: string;
           workspace_id: string;
         }[];
+      };
+      create_notification: {
+        Args: {
+          p_code?: string;
+          p_created_by?: string;
+          p_data?: Json;
+          p_description?: string;
+          p_email?: string;
+          p_entity_id?: string;
+          p_entity_type?: string;
+          p_priority?: Database['public']['Enums']['notification_priority'];
+          p_scope?: Database['public']['Enums']['notification_scope'];
+          p_title?: string;
+          p_type?: string;
+          p_user_id?: string;
+          p_ws_id?: string;
+        };
+        Returns: string;
+      };
+      create_system_announcement: {
+        Args: {
+          p_action_url?: string;
+          p_data?: Json;
+          p_description: string;
+          p_expires_at?: string;
+          p_priority?: Database['public']['Enums']['notification_priority'];
+          p_title: string;
+        };
+        Returns: string;
+      };
+      create_user_notification: {
+        Args: {
+          p_action_url?: string;
+          p_data?: Json;
+          p_description?: string;
+          p_priority?: Database['public']['Enums']['notification_priority'];
+          p_title: string;
+          p_type: string;
+          p_user_id: string;
+        };
+        Returns: string;
       };
       extract_domain: { Args: { url: string }; Returns: string };
       extract_referrer_domain: { Args: { url: string }; Returns: string };
@@ -14771,6 +13329,26 @@ export type Database = {
           os: string;
         }[];
       };
+      get_or_create_notification_batch:
+        | {
+            Args: {
+              p_channel: string;
+              p_user_id: string;
+              p_window_minutes?: number;
+              p_ws_id: string;
+            };
+            Returns: string;
+          }
+        | {
+            Args: {
+              p_channel: string;
+              p_email?: string;
+              p_user_id: string;
+              p_window_minutes?: number;
+              p_ws_id: string;
+            };
+            Returns: string;
+          };
       get_pending_event_participants: {
         Args: { _event_id: string };
         Returns: number;
@@ -14919,6 +13497,20 @@ export type Database = {
           unique_users_count: number;
         }[];
       };
+      get_task_details: {
+        Args: { p_task_id: string };
+        Returns: {
+          board_id: string;
+          board_name: string;
+          creator_id: string;
+          list_id: string;
+          list_name: string;
+          task_id: string;
+          task_name: string;
+          ws_id: string;
+        }[];
+      };
+      get_task_workspace_id: { Args: { p_task_id: string }; Returns: string };
       get_time_tracking_daily_activity: {
         Args: { p_days_back?: number; p_user_id?: string; p_ws_id: string };
         Returns: Json;
@@ -15028,6 +13620,7 @@ export type Database = {
           user_count: number;
         }[];
       };
+      get_user_email: { Args: { p_user_id: string }; Returns: string };
       get_user_growth_comparison: {
         Args: never;
         Returns: {
@@ -15306,6 +13899,17 @@ export type Database = {
         Args: { chat_id: string; message: string; source: string };
         Returns: undefined;
       };
+      insert_task_history: {
+        Args: {
+          p_change_type: string;
+          p_field_name?: string;
+          p_metadata?: Json;
+          p_new_value?: Json;
+          p_old_value?: Json;
+          p_task_id: string;
+        };
+        Returns: string;
+      };
       is_list_accessible: { Args: { _list_id: string }; Returns: boolean };
       is_member_invited: {
         Args: { _org_id: string; _user_id: string };
@@ -15398,6 +14002,7 @@ export type Database = {
           os: string;
         }[];
       };
+      process_notification_batches: { Args: never; Returns: undefined };
       process_recurring_transactions: {
         Args: never;
         Returns: {
@@ -15456,6 +14061,16 @@ export type Database = {
           id: string;
           relevance: number;
         }[];
+      };
+      should_send_notification: {
+        Args: {
+          p_channel: string;
+          p_event_type: string;
+          p_scope?: Database['public']['Enums']['notification_scope'];
+          p_user_id: string;
+          p_ws_id?: string;
+        };
+        Returns: boolean;
       };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { '': string }; Returns: string[] };
@@ -15520,6 +14135,8 @@ export type Database = {
         | 'ENABLE_EDUCATION'
         | 'ENABLE_CHALLENGES'
         | 'ENABLE_QUIZZES';
+      notification_priority: 'low' | 'medium' | 'high' | 'urgent';
+      notification_scope: 'user' | 'workspace' | 'system';
       platform_service: 'TUTURUUU' | 'REWISE' | 'NOVA' | 'UPSKII';
       product:
         | 'web'
@@ -15773,9 +14390,9 @@ export const Constants = {
         'ENABLE_CHALLENGES',
         'ENABLE_QUIZZES',
       ],
-      notification_priority: ['high', 'low', 'medium', 'urgent'],
-      notification_scope: ['system', 'user', 'workspace'],
-      platform_service: ['NOVA', 'REWISE', 'TUTURUUU', 'UPSKII'],
+      notification_priority: ['low', 'medium', 'high', 'urgent'],
+      notification_scope: ['user', 'workspace', 'system'],
+      platform_service: ['TUTURUUU', 'REWISE', 'NOVA', 'UPSKII'],
       product: [
         'web',
         'nova',

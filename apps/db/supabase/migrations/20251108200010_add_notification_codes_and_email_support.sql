@@ -393,6 +393,7 @@ BEGIN
     -- Create notification for the invitee
     -- Note: workspace_invites table doesn't track who sent the invite (no invited_by column)
     -- Note: user-scoped notifications must have ws_id = NULL per constraint
+    -- Note: role column was removed from workspace_invites in migration 20251104101455
     v_notification_id := public.create_notification(
         p_ws_id := NULL,
         p_user_id := NEW.user_id,
@@ -403,8 +404,7 @@ BEGIN
         p_description := 'You have been invited to join "' || v_workspace_name || '"',
         p_data := jsonb_build_object(
             'workspace_id', NEW.ws_id,
-            'workspace_name', v_workspace_name,
-            'role', NEW.role
+            'workspace_name', v_workspace_name
         ),
         p_entity_type := 'workspace_invite',
         p_entity_id := NEW.ws_id,
