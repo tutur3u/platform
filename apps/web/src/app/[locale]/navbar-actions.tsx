@@ -2,7 +2,6 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { GetStartedButton } from '@tuturuuu/ui/custom/get-started-button';
 import { LanguageWrapper } from '@tuturuuu/ui/custom/language-wrapper';
 import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
-import { ReportProblemDialog } from '@tuturuuu/ui/report-problem-dialog';
 import { getTranslations } from 'next-intl/server';
 import { LOCALE_COOKIE_NAME } from '@/constants/common';
 import { defaultLocale, supportedLocales } from '@/i18n/routing';
@@ -24,9 +23,6 @@ export default async function NavbarActions({
   return (
     <div className="relative flex w-full">
       <div className="flex w-full flex-col gap-2">
-        {/* Report Problem button - only shows in sidebar */}
-        {sbUser && !hideMetadata && <ReportProblemDialog />}
-
         {/* Main actions row */}
         <div className="flex w-full items-center gap-1">
           {sbUser ? (

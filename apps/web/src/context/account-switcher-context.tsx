@@ -9,12 +9,10 @@ import type {
   SwitchAccountOptions,
 } from '@tuturuuu/auth';
 import { createSessionStore } from '@tuturuuu/auth';
-import {
-  createClient,
-  switchClientSession,
-} from '@tuturuuu/supabase/next/client';
 import type { SupabaseSession } from '@tuturuuu/supabase/next/user';
+import { toast } from '@tuturuuu/ui/sonner';
 import { usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   createContext,
   type JSX,
@@ -83,6 +81,7 @@ export function AccountSwitcherProvider({
 }: AccountSwitcherProviderProps): JSX.Element {
   const router = useRouter();
   const pathname = usePathname();
+  const t = useTranslations('account_switcher');
   const [store, setStore] = useState<SessionStore | null>(null);
   const [accounts, setAccounts] = useState<StoredAccountWithEmail[]>([]);
   const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
@@ -157,6 +156,7 @@ export function AccountSwitcherProvider({
         setAccounts(storedAccounts);
 
         // Get current session to sync with store
+        const { createClient } = await import('@tuturuuu/supabase/next/client');
         const client = createClient();
         const {
           data: { session: currentSession },
@@ -331,17 +331,39 @@ export function AccountSwitcherProvider({
       session: SupabaseSession,
       options?: SwitchAccountOptions
     ) => {
-      // Update Supabase client session (sign out + sign in with refresh token)
-      const client = createClient();
-      const freshSession = await switchClientSession(client, session);
+      try {
+        // Update Supabase client session (sign out + sign in with refresh token)
+        const { createClient, switchClientSession } = await import(
+          '@tuturuuu/supabase/next/client'
+        );
+        const client = createClient();
+        const freshSession = await switchClientSession(client, session);
 
-      // If the session was refreshed, update the stored session
-      if (
-        store &&
-        (freshSession.access_token !== session.access_token ||
-          freshSession.refresh_token !== session.refresh_token)
-      ) {
-        await store.updateAccountSession(accountId, freshSession);
+        // If the session was refreshed, update the stored session
+        if (
+          store &&
+          (freshSession.access_token !== session.access_token ||
+            freshSession.refresh_token !== session.refresh_token)
+        ) {
+          await store.updateAccountSession(accountId, freshSession);
+        }
+      } catch (error) {
+        // If switching failed, remove the account and notify user
+        console.error('[handleAccountSwitch] Failed to switch session:', error);
+
+        if (store) {
+          // Remove the failed account
+          await store.removeAccount(accountId);
+          await refreshAccounts();
+
+          // Show error message to user
+          toast.error(t('session_expired'), {
+            description: t('session_expired_description'),
+          });
+        }
+
+        // Re-throw to let the caller handle the error
+        throw error;
       }
 
       // Determine navigation target
@@ -388,7 +410,7 @@ export function AccountSwitcherProvider({
       }
       window.location.href = targetPath;
     },
-    [accounts, store]
+    [accounts, store, refreshAccounts, t]
   );
 
   // Add a new account
@@ -448,6 +470,153 @@ export function AccountSwitcherProvider({
     [store, refreshAccounts, handleAccountSwitch]
   );
 
+  // Helper function to safely switch session without removing account on failure
+  const safeSwitchSession = useCallback(
+    async (accountId: string, session: SupabaseSession): Promise<boolean> => {
+      try {
+        const { createClient, switchClientSession } = await import(
+          '@tuturuuu/supabase/next/client'
+        );
+        const client = createClient();
+        const freshSession = await switchClientSession(client, session);
+
+        // Update the session if it was refreshed
+        if (
+          store &&
+          (freshSession.access_token !== session.access_token ||
+            freshSession.refresh_token !== session.refresh_token)
+        ) {
+          await store.updateAccountSession(accountId, freshSession);
+        }
+
+        return true;
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            `[safeSwitchSession] Failed to switch session for account: ${accountId}`,
+            error
+          );
+        }
+        return false;
+      }
+    },
+    [store]
+  );
+
+  // Helper function to fallback to an available account after a failed switch
+  const fallbackToAvailableAccount = useCallback(
+    async (previousAccountId: string | null) => {
+      if (!store) return;
+
+      try {
+        const remainingAccounts = await store.getAccounts();
+
+        if (remainingAccounts.length === 0) {
+          // No accounts left, redirect to login
+          if (process.env.NODE_ENV === 'development') {
+            console.log(
+              '[fallbackToAvailableAccount] No accounts left, redirecting to login'
+            );
+          }
+          router.push('/login');
+          return;
+        }
+
+        // Build priority list: previous account first, then others
+        const accountsToTry = previousAccountId
+          ? [
+              previousAccountId,
+              ...remainingAccounts
+                .map((acc) => acc.id)
+                .filter((id) => id !== previousAccountId),
+            ]
+          : remainingAccounts.map((acc) => acc.id);
+
+        // Try each account until one succeeds
+        for (const accountId of accountsToTry) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log(
+              `[fallbackToAvailableAccount] Trying to switch to account: ${accountId}`
+            );
+          }
+
+          const accountSession = await store.getAccountSession(accountId);
+          if (!accountSession) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log(
+                `[fallbackToAvailableAccount] No session found for account: ${accountId}`
+              );
+            }
+            // Remove account without session
+            try {
+              await store.removeAccount(accountId);
+              await refreshAccounts();
+            } catch (removeError) {
+              console.error(
+                `[fallbackToAvailableAccount] Failed to remove account: ${accountId}`,
+                removeError
+              );
+            }
+            continue; // Try next account
+          }
+
+          // Try to switch to this account using safe switch
+          const switched = await safeSwitchSession(
+            accountId,
+            accountSession.session
+          );
+
+          if (switched) {
+            // Update store to mark this as active
+            await store.switchAccount(accountId);
+
+            // Success! Navigate to root to reload with new session
+            if (process.env.NODE_ENV === 'development') {
+              console.log(
+                `[fallbackToAvailableAccount] Successfully switched to account: ${accountId}`
+              );
+            }
+            window.location.href = '/';
+            return;
+          } else {
+            // This account failed, remove it and try next one
+            if (process.env.NODE_ENV === 'development') {
+              console.log(
+                `[fallbackToAvailableAccount] Failed to switch to account: ${accountId}, removing`
+              );
+            }
+            try {
+              await store.removeAccount(accountId);
+              await refreshAccounts();
+            } catch (removeError) {
+              console.error(
+                `[fallbackToAvailableAccount] Failed to remove account: ${accountId}`,
+                removeError
+              );
+            }
+            // Continue to next account
+          }
+        }
+
+        // If we couldn't switch to any account, redirect to login
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            '[fallbackToAvailableAccount] Could not switch to any account, redirecting to login'
+          );
+        }
+        router.push('/login');
+      } catch (error) {
+        console.error(
+          '[fallbackToAvailableAccount] Error during fallback:',
+          error
+        );
+        // On error, redirect to login as last resort
+        router.push('/login');
+      }
+    },
+    [store, router, refreshAccounts, safeSwitchSession]
+  );
+
   // Forward declare switchAccount for removeAccount
   const switchAccountRef = useRef<
     | ((
@@ -505,10 +674,25 @@ export function AccountSwitcherProvider({
       }
 
       setIsLoading(true);
+
+      // Store the current active account to fallback to if switch fails
+      const previousAccountId = activeAccountId;
+
       try {
         // Get the account session
         const accountSession = await store.getAccountSession(accountId);
         if (!accountSession) {
+          // Account session not found, remove the account
+          await store.removeAccount(accountId);
+          await refreshAccounts();
+
+          toast.error(t('account_not_found'), {
+            description: t('account_not_found_description'),
+          });
+
+          // Fallback to previous account or another available account
+          await fallbackToAvailableAccount(previousAccountId);
+
           return { success: false, error: 'Account session not found' };
         }
 
@@ -547,15 +731,67 @@ export function AccountSwitcherProvider({
         const result = await store.switchAccount(accountId);
 
         if (result.success) {
-          await handleAccountSwitch(accountId, accountSession.session, options);
+          try {
+            await handleAccountSwitch(
+              accountId,
+              accountSession.session,
+              options
+            );
+          } catch (error) {
+            // handleAccountSwitch already removed the account and showed toast
+            // Fallback to previous account or another available account
+            await fallbackToAvailableAccount(previousAccountId);
+
+            // Return failure result
+            return {
+              success: false,
+              error:
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to switch account',
+            };
+          }
         }
 
         return result;
+      } catch (error) {
+        console.error('[switchAccount] Unexpected error:', error);
+
+        // On any unexpected error, remove the account to keep things working
+        try {
+          await store.removeAccount(accountId);
+          await refreshAccounts();
+
+          toast.error(t('switch_failed'), {
+            description: t('switch_failed_description'),
+          });
+
+          // Fallback to previous account or another available account
+          await fallbackToAvailableAccount(previousAccountId);
+        } catch (removeError) {
+          console.error(
+            '[switchAccount] Failed to remove account:',
+            removeError
+          );
+        }
+
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        };
       } finally {
         setIsLoading(false);
       }
     },
-    [store, activeAccountId, pathname, handleAccountSwitch]
+    [
+      store,
+      activeAccountId,
+      pathname,
+      handleAccountSwitch,
+      refreshAccounts,
+      t,
+      fallbackToAvailableAccount,
+    ]
   );
 
   // Update ref after switchAccount is defined
@@ -580,6 +816,7 @@ export function AccountSwitcherProvider({
   const logout = useCallback(async () => {
     if (!store || !activeAccountId) {
       // No active account, just sign out from Supabase
+      const { createClient } = await import('@tuturuuu/supabase/next/client');
       const client = createClient();
       await client.auth.signOut({ scope: 'local' });
       router.push('/login');
@@ -610,6 +847,7 @@ export function AccountSwitcherProvider({
         if (process.env.NODE_ENV === 'development') {
           console.log('[logout] No other accounts, signing out completely');
         }
+        const { createClient } = await import('@tuturuuu/supabase/next/client');
         const client = createClient();
         await client.auth.signOut({ scope: 'local' });
         router.push('/login');
@@ -633,6 +871,7 @@ export function AccountSwitcherProvider({
     setIsLoading(true);
     try {
       // Sign out from Supabase (revokes current session)
+      const { createClient } = await import('@tuturuuu/supabase/next/client');
       const client = createClient();
       await client.auth.signOut();
 

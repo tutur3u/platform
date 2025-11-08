@@ -38,6 +38,11 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {
+        // Layout handles group selection when groupId is '~'
+        if (groupId === '~') {
+          return null;
+        }
+
         const t = await getTranslations();
 
         const { containsPermission } = await getPermissions({

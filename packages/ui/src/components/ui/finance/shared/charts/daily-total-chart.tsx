@@ -167,7 +167,7 @@ export function DailyTotalChart({
                 type="button"
                 onClick={() => setViewMode('all')}
                 className={cn(
-                  'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                  'rounded-md px-3 py-1.5 font-medium text-xs transition-colors',
                   viewMode === 'all'
                     ? 'bg-background text-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'
@@ -179,7 +179,7 @@ export function DailyTotalChart({
                 type="button"
                 onClick={() => setViewMode('income')}
                 className={cn(
-                  'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                  'rounded-md px-3 py-1.5 font-medium text-xs transition-colors',
                   viewMode === 'income'
                     ? 'bg-background text-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'
@@ -191,7 +191,7 @@ export function DailyTotalChart({
                 type="button"
                 onClick={() => setViewMode('expense')}
                 className={cn(
-                  'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                  'rounded-md px-3 py-1.5 font-medium text-xs transition-colors',
                   viewMode === 'expense'
                     ? 'bg-background text-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'

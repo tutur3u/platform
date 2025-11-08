@@ -1,4 +1,4 @@
-import type { Workspace, WorkspaceUserRole } from '@tuturuuu/types';
+import type { Workspace } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
@@ -15,7 +15,7 @@ interface WorkspaceWrapperProps<TParams extends BaseParams = BaseParams> {
   params: Promise<TParams>;
   children: (
     props: {
-      workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
+      workspace: Workspace & { joined: boolean };
       wsId: string; // The validated UUID from workspace.id
       isPersonal: boolean;
       isRoot: boolean;
@@ -35,7 +35,7 @@ interface WorkspaceWrapperProps<TParams extends BaseParams = BaseParams> {
  * - UUID strings -> validates and uses as-is
  *
  * The children function receives:
- * - workspace: The full workspace object with role and joined status
+ * - workspace: The full workspace object with joined status
  * - wsId: The validated UUID from workspace.id (not the legacy identifier)
  * - All additional params from the original params object (excluding wsId)
  *
@@ -49,6 +49,7 @@ export default async function WorkspaceWrapper<
   const workspace = await getWorkspace(wsId);
 
   if (!workspace) {
+    console.error('Workspace not found:', wsId);
     notFound();
   }
 
@@ -80,7 +81,7 @@ export async function withWorkspace<T extends Record<string, any>>(
   wsId: string,
   Component: React.ComponentType<
     T & {
-      workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
+      workspace: Workspace & { joined: boolean };
       wsId: string;
       isPersonal: boolean;
       isRoot: boolean;
@@ -92,6 +93,7 @@ export async function withWorkspace<T extends Record<string, any>>(
   const workspace = await getWorkspace(wsId);
 
   if (!workspace) {
+    console.error('Workspace not found:', wsId);
     notFound();
   }
 

@@ -116,7 +116,7 @@ export default function ExpandableTaskList({
     };
 
     const boardId = task.list?.board?.id || '';
-    openTask(transformedTask as any, boardId);
+    openTask(transformedTask as any, boardId, undefined);
   };
 
   const getPriorityColor = (priority: string | null) => {
@@ -374,7 +374,7 @@ export default function ExpandableTaskList({
 
                 {/* Description - only show if exists */}
                 {task.description && getDescriptionText(task.description) && (
-                  <p className="line-clamp-3 max-h-16 break-words rounded-lg border border-border/50 bg-muted/30 px-3.5 py-2.5 text-muted-foreground text-xs leading-snug shadow-sm backdrop-blur-sm">
+                  <p className="wrap-break-word line-clamp-3 max-h-16 rounded-lg border border-border/50 bg-muted/30 px-3.5 py-2.5 text-muted-foreground text-xs leading-snug shadow-sm backdrop-blur-sm">
                     {getDescriptionText(task.description)}
                   </p>
                 )}

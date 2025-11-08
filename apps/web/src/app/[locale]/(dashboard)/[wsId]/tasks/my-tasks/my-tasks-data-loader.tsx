@@ -168,6 +168,7 @@ export async function MyTasksDataLoader({
         task.end_date &&
         task.end_date >= todayStart &&
         task.end_date <= todayEnd &&
+        task.end_date >= now && // Exclude tasks that are already overdue
         task.list?.status &&
         ['not_started', 'active'].includes(task.list.status)
     )

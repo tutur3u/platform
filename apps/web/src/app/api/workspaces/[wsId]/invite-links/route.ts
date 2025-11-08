@@ -13,10 +13,8 @@ interface Params {
 }
 
 const CreateInviteLinkSchema = z.object({
-  role: z.string().optional().default('MEMBER'),
-  roleTitle: z.string().optional().default(''),
   maxUses: z.number().int().positive().optional().nullable(),
-  expiresAt: z.string().datetime().optional().nullable(),
+  expiresAt: z.iso.datetime().optional().nullable(),
 });
 
 // POST - Create a new invite link
@@ -75,7 +73,7 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    const { role, roleTitle, maxUses, expiresAt } = validation.data;
+    const { maxUses, expiresAt } = validation.data;
 
     // Use insert-retry strategy to handle unique code generation
     const maxAttempts = 10;
@@ -91,8 +89,6 @@ export async function POST(req: Request, { params }: Params) {
           ws_id: wsId,
           code,
           creator_id: user.id,
-          role,
-          role_title: roleTitle,
           max_uses: maxUses,
           expires_at: expiresAt,
         })

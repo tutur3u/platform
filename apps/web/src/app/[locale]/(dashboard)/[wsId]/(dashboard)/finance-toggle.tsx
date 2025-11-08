@@ -14,7 +14,7 @@ export default function FinanceToggle() {
 
   useEffect(() => {
     if (loading) setLoading(false);
-  }, [showFinanceStats]);
+  }, [loading]);
 
   const handleToggle = () => {
     setLoading(true);

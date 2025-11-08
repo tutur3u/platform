@@ -36,7 +36,7 @@ export function OnlineUsers({
   currentUserId,
 }: OnlineUsersProps) {
   const onlineUsers = Object.values(presenceState)
-    .flatMap((presence) => presence)
+    .flat()
     .filter(isValidPresence);
 
   if (!onlineUsers.length) return null;

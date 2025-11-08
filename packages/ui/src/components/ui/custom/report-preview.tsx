@@ -27,10 +27,10 @@ export default function ReportPreview({
     <div className="overflow-x-auto xl:flex-none">
       <div
         id="printable-area"
-        className={`h-[297mm] w-[210mm] max-w-full flex-none rounded-xl ${theme === 'dark' ? 'bg-foreground/10' : 'bg-white'} print:h-auto print:w-auto print:max-w-none print:rounded-none print:shadow-none print:border-0 print:m-0 print:p-4 mx-auto`}
+        className={`h-[297mm] w-[210mm] max-w-full flex-none rounded-xl ${theme === 'dark' ? 'bg-foreground/10' : 'bg-white'} mx-auto print:m-0 print:h-auto print:w-auto print:max-w-none print:rounded-none print:border-0 print:p-4 print:shadow-none`}
       >
         <div
-          className={`h-full rounded-lg border p-4 ${theme === 'dark' ? 'text-foreground' : 'text-black'} md:p-12 print:border-0 print:rounded-none print:h-auto print:p-8 print:text-black print:bg-white`}
+          className={`h-full rounded-lg border p-4 ${theme === 'dark' ? 'text-foreground' : 'text-black'} md:p-12 print:h-auto print:rounded-none print:border-0 print:bg-white print:p-8 print:text-black`}
         >
           <div className="flex items-center justify-between gap-8">
             {getConfig('BRAND_LOGO_URL') && (
@@ -49,7 +49,7 @@ export default function ReportPreview({
               )}
 
               {getConfig('BRAND_LOCATION') && (
-                <div className="text-center font-semibold text-balance">
+                <div className="text-balance text-center font-semibold">
                   {getConfig('BRAND_LOCATION')}
                 </div>
               )}
@@ -95,7 +95,7 @@ export default function ReportPreview({
             !!getConfig('REPORT_SCORE_TEXT') ||
             !!getConfig('REPORT_FEEDBACK_TEXT')) && (
             <div
-              className={`my-4 flex flex-row justify-stretch rounded border-2 ${theme === 'dark' ? 'border-foreground/50' : 'border-black'} text-sm print:border-black print:rounded-none`}
+              className={`my-4 flex flex-row justify-stretch rounded border-2 ${theme === 'dark' ? 'border-foreground/50' : 'border-black'} text-sm print:rounded-none print:border-black`}
             >
               {getConfig('REPORT_CONTENT_TEXT') && (
                 <div className="flex-2">
@@ -105,7 +105,7 @@ export default function ReportPreview({
                     {getConfig('REPORT_CONTENT_TEXT')}
                   </div>
                   <div
-                    className={`min-h-24 text-ellipsis whitespace-pre-line break-words ${theme === 'dark' ? 'border-foreground/50' : 'border-black'} border-t-2 p-2 font-semibold ${
+                    className={`wrap-break-word min-h-24 text-ellipsis whitespace-pre-line ${theme === 'dark' ? 'border-foreground/50' : 'border-black'} border-t-2 p-2 font-semibold ${
                       !data?.content ? 'text-center underline' : 'text-left'
                     }`}
                   >
@@ -126,7 +126,7 @@ export default function ReportPreview({
                     {getConfig('REPORT_SCORE_TEXT')}
                   </div>
                   <div
-                    className={`flex min-h-24 justify-center text-ellipsis whitespace-pre-line break-words ${theme === 'dark' ? 'border-foreground/50' : 'border-black'} border-t-2 p-2 text-center`}
+                    className={`wrap-break-word flex min-h-24 justify-center text-ellipsis whitespace-pre-line ${theme === 'dark' ? 'border-foreground/50' : 'border-black'} border-t-2 p-2 text-center`}
                   >
                     <span
                       className={
@@ -151,7 +151,7 @@ export default function ReportPreview({
                     {getConfig('REPORT_FEEDBACK_TEXT')}
                   </div>
                   <div
-                    className={`min-h-24 text-ellipsis whitespace-pre-line break-words ${theme === 'dark' ? 'border-foreground/50' : 'border-black'} border-t-2 p-2 font-semibold ${
+                    className={`wrap-break-word min-h-24 text-ellipsis whitespace-pre-line ${theme === 'dark' ? 'border-foreground/50' : 'border-black'} border-t-2 p-2 font-semibold ${
                       !data?.feedback ? 'text-center underline' : 'text-left'
                     }`}
                   >

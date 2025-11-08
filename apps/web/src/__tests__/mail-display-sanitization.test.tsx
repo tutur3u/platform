@@ -879,7 +879,7 @@ describe.skip('MailDisplay - HTML Sanitization', () => {
         expect(bobSmithEl).not.toBeNull();
       } // else skip assertion if not found
       // Use a custom matcher for sara@example.com
-      const saraEl = screen.queryByText((content, node) => {
+      const saraEl = screen.queryByText((_, node) => {
         const hasText = (node: Element | null) =>
           node?.textContent === 'sara@example.com';
         const nodeHasText = hasText(node as Element);

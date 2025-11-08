@@ -1,13 +1,13 @@
 'use client';
 
-import type { Workspace, WorkspaceInfo } from '@/lib/invite/types';
 import { ArrowRight, Check, Loader2, Sparkles, Users } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import type { Workspace, WorkspaceInfo } from '@/lib/invite/types';
 
 interface Props {
   code: string;
@@ -175,7 +175,7 @@ export default function JoinWorkspaceClient({
     return null;
   }
 
-  const { workspace, memberCount, roleTitle } = workspaceInfo;
+  const { workspace, memberCount } = workspaceInfo;
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden p-4">
@@ -241,14 +241,6 @@ export default function JoinWorkspaceClient({
 
             {!joined && (
               <div className="flex flex-wrap items-center justify-center gap-3">
-                {roleTitle && (
-                  <div className="flex items-center gap-1.5 rounded-full bg-dynamic-blue/10 px-3 py-1.5 text-sm">
-                    <div className="h-2 w-2 rounded-full bg-dynamic-blue" />
-                    <span className="font-medium text-foreground/80">
-                      {roleTitle}
-                    </span>
-                  </div>
-                )}
                 <div className="flex items-center gap-1.5 rounded-full bg-dynamic-purple/10 px-3 py-1.5 text-sm">
                   <Users className="h-4 w-4 text-dynamic-purple" />
                   <span className="font-medium text-foreground/80">

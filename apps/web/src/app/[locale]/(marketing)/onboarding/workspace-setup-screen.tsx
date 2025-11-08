@@ -25,7 +25,7 @@ const FormSchema = z.object({
 
 interface WorkspaceSetupScreenProps {
   onBack: () => void;
-  // eslint-disable-next-line no-unused-vars
+
   onContinue: (data: { name: string }) => void;
   initialData?: {
     name?: string | null;

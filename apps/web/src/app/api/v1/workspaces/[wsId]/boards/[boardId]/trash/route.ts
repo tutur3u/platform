@@ -1,3 +1,4 @@
+import { authorize } from '@/lib/api-auth';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -22,34 +23,12 @@ export async function POST(
       );
     }
 
+    const { error: authError } = await authorize(wsId);
+    if (authError) {
+      return authError;
+    }
+
     const supabase = await createClient();
-
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Please sign in to move boards to trash' },
-        { status: 401 }
-      );
-    }
-
-    // Verify workspace access
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (!memberCheck) {
-      return NextResponse.json(
-        { error: "You don't have access to this workspace" },
-        { status: 403 }
-      );
-    }
 
     // Verify board exists and belongs to workspace
     const { data: board, error: boardCheckError } = await supabase

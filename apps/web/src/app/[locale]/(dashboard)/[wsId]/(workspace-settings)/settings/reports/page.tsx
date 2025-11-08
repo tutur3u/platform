@@ -1,3 +1,8 @@
+import { CustomDataTable } from '@/components/custom-data-table';
+import {
+  leadGenerationConfigs,
+  reportConfigs,
+} from '@/constants/configs/reports';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import LeadGenerationPreview from '@tuturuuu/ui/custom/lead-generation-preview';
@@ -6,14 +11,9 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { CustomDataTable } from '@/components/custom-data-table';
-import {
-  leadGenerationConfigs,
-  reportConfigs,
-} from '@/constants/configs/reports';
 import { configColumns } from './columns';
 
 export const metadata: Metadata = {
@@ -205,7 +205,7 @@ async function getConfigs(
   ];
 
   // If rawData is not empty, merge it with configsList
-  if (rawData && rawData.length) {
+  if (rawData?.length) {
     rawData.forEach((config) => {
       const index = configs.findIndex((c) => c.id === config.id);
       if (index !== -1) {

@@ -48,7 +48,7 @@ export function GuestLeadHeader({
             {!hasThreshold && canCreateLeadGenerations ? (
               <Button
                 size="xs"
-                className="w-full md:w-fit border border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/15"
+                className="w-full border border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/15 md:w-fit"
                 title={t('users.guest_leads.create_settings_tooltip')}
               >
                 <Settings className="h-4 w-4" />
@@ -61,7 +61,7 @@ export function GuestLeadHeader({
                 className="w-full md:w-fit"
                 title={t('common.settings')}
               >
-                <Settings className="h-4 w-4 mr-1" />
+                <Settings className="mr-1 h-4 w-4" />
                 {t('common.settings')}
               </Button>
             ) : null}

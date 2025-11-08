@@ -20,6 +20,7 @@ import {
   KeyRound,
   LayoutTemplate,
   ListTodo,
+  Lock,
   MessagesSquare,
   Plus,
   ScrollText,
@@ -28,6 +29,7 @@ import {
   ServerCog,
   Settings2,
   Shield,
+  ShieldCheck,
   Sparkles,
   Trash,
   UserCheck,
@@ -55,6 +57,7 @@ export type RolePermissionGroup = {
   id: string;
   icon?: ReactNode;
   title: string;
+  description?: string;
   permissions: RolePermission[];
 };
 
@@ -75,6 +78,7 @@ export const permissionGroups = ({
               id: 'infrastructure',
               icon: <CircuitBoard />,
               title: t('ws-roles.infrastructure'),
+              description: t('ws-roles.infrastructure_description'),
               permissions: [
                 {
                   id: 'view_infrastructure',
@@ -112,6 +116,7 @@ export const permissionGroups = ({
         id: 'workspace',
         icon: <House />,
         title: t('ws-roles.workspace'),
+        description: t('ws-roles.workspace_description'),
         permissions: [
           ...(wsId === ROOT_WORKSPACE_ID ||
           user?.email?.endsWith('@tuturuuu.com')
@@ -181,6 +186,7 @@ export const permissionGroups = ({
         id: 'ai',
         icon: <Sparkles />,
         title: t('ws-roles.ai'),
+        description: t('ws-roles.ai_description'),
         permissions: [
           {
             id: 'ai_chat',
@@ -578,6 +584,62 @@ export const permissionGroups = ({
             icon: <Search />,
             title: t('ws-roles.view_transactions'),
             description: t('ws-roles.view_transactions_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'view_confidential_amount',
+            icon: <Eye />,
+            title: t('ws-roles.view_confidential_amount'),
+            description: t('ws-roles.view_confidential_amount_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'view_confidential_description',
+            icon: <Eye />,
+            title: t('ws-roles.view_confidential_description'),
+            description: t(
+              'ws-roles.view_confidential_description_description'
+            ),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'view_confidential_category',
+            icon: <Eye />,
+            title: t('ws-roles.view_confidential_category'),
+            description: t('ws-roles.view_confidential_category_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'create_confidential_transactions',
+            icon: <ShieldCheck />,
+            title: t('ws-roles.create_confidential_transactions'),
+            description: t(
+              'ws-roles.create_confidential_transactions_description'
+            ),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'update_confidential_transactions',
+            icon: <Lock />,
+            title: t('ws-roles.update_confidential_transactions'),
+            description: t(
+              'ws-roles.update_confidential_transactions_description'
+            ),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'delete_confidential_transactions',
+            icon: <Trash />,
+            title: t('ws-roles.delete_confidential_transactions'),
+            description: t(
+              'ws-roles.delete_confidential_transactions_description'
+            ),
             disableOnProduction: false,
             disabled: false,
           },

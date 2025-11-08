@@ -147,7 +147,6 @@ export const createCalendarOptimizer = (
 
   // Recursive comprehensive optimization with streaming and hash-based convergence
   const optimizeComprehensively = async (
-    // eslint-disable-next-line no-unused-vars
     streamWriter: (chunk: string) => void,
     options: { gapMinutes?: number } = {}
   ): Promise<void> => {

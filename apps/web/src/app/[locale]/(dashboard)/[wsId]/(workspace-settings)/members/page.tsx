@@ -60,7 +60,7 @@ export default async function WorkspaceMembersPage({
         return (
           <div className="space-y-8">
             {/* Header Section with gradient background */}
-            <div className="relative overflow-hidden rounded-xl border border-border bg-linear-to-br from-background via-background to-foreground/[0.02] p-6 shadow-sm">
+            <div className="relative overflow-hidden rounded-xl border border-border bg-linear-to-br from-background via-background to-foreground/2 p-6 shadow-sm">
               {/* Decorative elements */}
               <div className="-right-4 -top-4 pointer-events-none absolute h-32 w-32 rounded-full bg-dynamic-blue/5 blur-2xl" />
               <div className="-bottom-4 -left-4 pointer-events-none absolute h-32 w-32 rounded-full bg-dynamic-purple/5 blur-2xl" />
@@ -114,14 +114,12 @@ export default async function WorkspaceMembersPage({
 
             {/* Members List Section */}
             <div className="rounded-xl border border-border bg-background p-6 shadow-sm">
-              <div className="grid items-end gap-4 lg:grid-cols-2">
-                <MemberList
-                  workspace={workspace}
-                  members={members}
-                  invited={status === 'invited'}
-                  canManageMembers={canManageMembers}
-                />
-              </div>
+              <MemberList
+                workspace={workspace}
+                members={members}
+                invited={status === 'invited'}
+                canManageMembers={canManageMembers}
+              />
             </div>
 
             {/* Invite Links Section */}
@@ -136,10 +134,7 @@ export default async function WorkspaceMembersPage({
   );
 }
 
-const getMembers = async (
-  wsId: string,
-  { status, roles }: { status: string; roles: string }
-) => {
+const getMembers = async (wsId: string, { status }: { status: string }) => {
   const supabase = await createClient();
   const sbAdmin = await createAdminClient();
 
@@ -155,7 +150,7 @@ const getMembers = async (
   const queryBuilder = supabase
     .from('workspace_members_and_invites')
     .select(
-      'id, handle, email, display_name, avatar_url, pending, role, role_title, created_at',
+      'id, handle, email, display_name, avatar_url, pending, created_at',
       {
         count: 'exact',
       }
@@ -168,10 +163,52 @@ const getMembers = async (
   if (status && status !== 'all')
     queryBuilder.eq('pending', status === 'invited');
 
-  if (roles) queryBuilder.in('role', roles.split(','));
-
   const { data, error } = await queryBuilder;
   if (error) throw error;
+
+  // Fetch workspace creator
+  const { data: workspaceData } = await supabase
+    .from('workspaces')
+    .select('creator_id')
+    .eq('id', wsId)
+    .single();
+
+  // Fetch role memberships for all users with permissions
+  const userIds = data.filter((m) => !m.pending && m.id).map((m) => m.id!);
+  const { data: roleMembershipsData } = await supabase
+    .from('workspace_role_members')
+    .select(
+      'user_id, workspace_roles!inner(id, name, ws_id, workspace_role_permissions(permission, enabled))'
+    )
+    .eq('workspace_roles.ws_id', wsId)
+    .in('user_id', userIds);
+
+  // Fetch default permissions
+  const { data: defaultPermissionsData } = await supabase
+    .from('workspace_default_permissions')
+    .select('permission, enabled')
+    .eq('ws_id', wsId)
+    .eq('enabled', true);
+
+  // Build role map with permissions
+  const roleMap = new Map<
+    string,
+    Array<{
+      id: string;
+      name: string;
+      permissions: Array<{ permission: string; enabled: boolean }>;
+    }>
+  >();
+  roleMembershipsData?.forEach((rm: any) => {
+    if (!roleMap.has(rm.user_id)) {
+      roleMap.set(rm.user_id, []);
+    }
+    roleMap.get(rm.user_id)?.push({
+      id: rm.workspace_roles.id,
+      name: rm.workspace_roles.name,
+      permissions: rm.workspace_roles.workspace_role_permissions || [],
+    });
+  });
 
   return data.map(({ email, ...rest }) => {
     return {
@@ -186,6 +223,17 @@ const getMembers = async (
           .length === 0
           ? email
           : undefined,
+      is_creator: workspaceData?.creator_id === rest.id,
+      roles: rest.id ? roleMap.get(rest.id) || [] : [],
+      default_permissions: defaultPermissionsData || [],
     };
-  }) as User[];
+  }) as (User & {
+    is_creator: boolean;
+    roles: Array<{
+      id: string;
+      name: string;
+      permissions: Array<{ permission: string; enabled: boolean }>;
+    }>;
+    default_permissions: Array<{ permission: string; enabled: boolean }>;
+  })[];
 };

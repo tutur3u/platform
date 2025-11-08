@@ -17,11 +17,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  let body;
+  let body: { challengeId: string; password: string };
 
   try {
     body = await request.json();
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
   }
 

@@ -39,7 +39,7 @@ async function createGenericClient<T = Database>(
           getAll() {
             return [] as SupabaseCookie[];
           },
-          // eslint-disable-next-line no-unused-vars
+
           setAll(_: SupabaseCookie[]) {},
         }
       : createCookieHandler(cookieStore),
@@ -97,7 +97,7 @@ export async function createDynamicAdminClient(): Promise<SupabaseClient<any>> {
       getAll() {
         return [] as SupabaseCookie[];
       },
-      // eslint-disable-next-line no-unused-vars
+
       setAll(_: SupabaseCookie[]) {},
     },
   });

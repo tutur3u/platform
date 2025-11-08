@@ -60,12 +60,8 @@ jobs:
 
       - name: Build workspace dependencies
         if: steps.check_commits.outputs.skip_build != 'true'
-        run: bunx turbo run build --filter=@tuturuuu/types
+        run: bunx turbo run build --filter=@tuturuuu/types --filter=@tuturuuu/masonry
 
       - name: Build Project Artifacts
         if: steps.check_commits.outputs.skip_build != 'true'
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Deploy Project Artifacts to Vercel
-        if: steps.check_commits.outputs.skip_build != 'true'
-        run: vercel deploy --archive=tgz --prebuilt --token=${{ secrets.VERCEL_TOKEN }}

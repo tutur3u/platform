@@ -103,21 +103,16 @@ export function WorkspaceSection({
           </div>
 
           {/* Content */}
-          <div className="flex min-w-0 flex-1 flex-col">
-            <div className="flex items-center gap-2">
-              <span className="truncate font-medium">{workspace.name}</span>
-              {workspace.personal && (
-                <Badge
-                  variant="outline"
-                  className="shrink-0 text-[10px] uppercase"
-                >
-                  {t('personal')}
-                </Badge>
-              )}
-            </div>
-            <span className="truncate text-muted-foreground text-xs capitalize">
-              {workspace.role}
-            </span>
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <span className="truncate font-medium">{workspace.name}</span>
+            {workspace.personal && (
+              <Badge
+                variant="outline"
+                className="shrink-0 text-[10px] uppercase"
+              >
+                {t('personal')}
+              </Badge>
+            )}
           </div>
 
           {/* Indicator */}

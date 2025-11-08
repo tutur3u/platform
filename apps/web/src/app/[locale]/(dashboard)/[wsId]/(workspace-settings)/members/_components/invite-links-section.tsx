@@ -26,8 +26,8 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import moment from 'moment';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import * as z from 'zod';
 
@@ -50,8 +50,6 @@ interface InviteLink {
   ws_id: string;
   code: string;
   creator_id: string;
-  role: string;
-  role_title: string;
   max_uses: number | null;
   expires_at: string | null;
   created_at: string;
@@ -70,7 +68,6 @@ interface Props {
 }
 
 const CreateLinkSchema = z.object({
-  roleTitle: z.string().optional(),
   maxUses: z.coerce.number().int().positive().optional().nullable(),
   expiresAt: z.string().optional().nullable(),
 });
@@ -93,7 +90,6 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
   const form = useForm({
     resolver: zodResolver(CreateLinkSchema),
     defaultValues: {
-      roleTitle: '',
       maxUses: null,
       expiresAt: null,
     },
@@ -123,7 +119,6 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          roleTitle: values.roleTitle,
           maxUses: values.maxUses,
           expiresAt: values.expiresAt
             ? new Date(values.expiresAt).toISOString()
@@ -278,30 +273,6 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
                   >
                     <FormField
                       control={form.control}
-                      name="roleTitle"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            {t('ws-invite-links.role-title')}
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder={t(
-                                'ws-invite-links.role-title-placeholder'
-                              )}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            {t('ws-invite-links.role-title-description')}
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
                       name="maxUses"
                       render={({ field }) => (
                         <FormItem>
@@ -390,19 +361,12 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
               <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-dynamic-blue/0 via-dynamic-purple/0 to-dynamic-pink/0 opacity-0 transition-opacity group-hover:opacity-[0.03]" />
 
               <div className="relative space-y-4">
-                {/* Header with status and role */}
+                {/* Header with status */}
                 <div className="flex items-start justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       {getStatusBadge(link)}
                     </div>
-                    {link.role_title && (
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-foreground text-sm">
-                          {link.role_title}
-                        </span>
-                      </div>
-                    )}
                   </div>
 
                   {/* Action buttons */}
@@ -547,16 +511,6 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
                       {viewingLink.code}
                     </code>
                   </div>
-                  {viewingLink.role_title && (
-                    <div className="space-y-1">
-                      <p className="text-foreground/60 text-xs uppercase tracking-wide">
-                        {t('ws-invite-links.role-title')}
-                      </p>
-                      <p className="rounded-md bg-background px-3 py-2 font-medium text-sm shadow-sm">
-                        {viewingLink.role_title}
-                      </p>
-                    </div>
-                  )}
                   <div className="space-y-1">
                     <p className="text-foreground/60 text-xs uppercase tracking-wide">
                       {t('ws-invite-links.total-uses')}

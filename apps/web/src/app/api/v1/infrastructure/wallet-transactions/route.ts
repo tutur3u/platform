@@ -16,14 +16,21 @@ export async function GET(req: Request) {
     );
   }
 
-  const { data, error, count } = await supabase
-    .from('wallet_transactions')
-    .select('*', { count: 'exact' })
-    .eq('ws_id', wsId)
-    .range(
-      Number.parseInt(offset, 10),
-      Number.parseInt(offset, 10) + Number.parseInt(limit, 10) - 1
-    );
+  const limitNum = Number.parseInt(limit, 10);
+  const offsetNum = Number.parseInt(offset, 10);
+
+  // Use optimized RPC function with pagination at database level
+  const { data, error } = await supabase.rpc(
+    'get_wallet_transactions_with_permissions',
+    {
+      p_ws_id: wsId,
+      p_limit: limitNum,
+      p_offset: offsetNum,
+      p_order_by: 'taken_at',
+      p_order_direction: 'DESC',
+      p_include_count: true, // Include total count for infrastructure analytics
+    }
+  );
 
   if (error) {
     console.error('Error fetching wallet_transactions:', error);
@@ -33,8 +40,11 @@ export async function GET(req: Request) {
     );
   }
 
+  // Extract total count from first row (all rows have same total_count)
+  const totalCount = data && data.length > 0 ? (data[0]?.total_count ?? 0) : 0;
+
   return NextResponse.json({
     data: data || [],
-    count: count || 0,
+    count: totalCount,
   });
 }

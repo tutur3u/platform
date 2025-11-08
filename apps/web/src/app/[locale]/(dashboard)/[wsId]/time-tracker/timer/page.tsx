@@ -1,8 +1,8 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { getTimeTrackingData } from '@/lib/time-tracking-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getTimeTrackingData } from '@/lib/time-tracking-helper';
 import TimeTrackerWrapper from '../components/time-tracker-wrapper';
 import type { TimeTrackerData } from '../types';
 

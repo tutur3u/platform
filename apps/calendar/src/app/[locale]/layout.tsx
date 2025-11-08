@@ -103,6 +103,7 @@ export function generateStaticParams() {
 export default async function RootLayout({ children, params }: Props) {
   // Ensure that the incoming `locale` is valid
   if (!routing.locales.includes((await params).locale as Locale)) {
+    console.error('Invalid locale:', (await params).locale);
     notFound();
   }
 

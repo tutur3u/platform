@@ -49,6 +49,7 @@ export default async function RootLayout({ children, params }: Props) {
 
   // Ensure that the incoming `locale` is valid
   if (!routing.locales.includes(locale as Locale)) {
+    console.error('Invalid locale:', locale);
     notFound();
   }
 

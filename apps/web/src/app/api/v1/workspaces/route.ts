@@ -19,7 +19,7 @@ export async function GET() {
     // Get all workspaces the user has access to
     const { data: workspaces, error } = await supabase
       .from('workspaces')
-      .select('id, name, personal, workspace_members!inner(role)')
+      .select('id, name, personal, workspace_members!inner(user_id)')
       .eq('workspace_members.user_id', user.id)
       .order('name');
 
@@ -31,12 +31,11 @@ export async function GET() {
       );
     }
 
-    // Transform data to include role information
+    // Transform data
     const transformedWorkspaces = workspaces.map((ws) => ({
       id: ws.id,
       name: ws.name,
       personal: ws.personal,
-      role: ws.workspace_members[0]?.role,
     }));
 
     return NextResponse.json(transformedWorkspaces);

@@ -71,7 +71,11 @@ export async function getCurrentUser(noRedirect?: boolean) {
     .eq('id', user.id)
     .single();
 
-  if (error) notFound();
+  if (error) {
+    console.error('Error getting user:', error);
+    notFound();
+  }
+
   const { user_private_details, ...rest } = data;
   return { ...rest, ...user_private_details } as
     | (User & UserPrivateDetails)
@@ -102,7 +106,7 @@ export async function getUserDefaultWorkspace() {
     if (defaultWorkspaceId) {
       const { data: workspace, error } = await supabase
         .from('workspaces')
-        .select('id, name, personal, workspace_members!inner(role)')
+        .select('id, name, personal, workspace_members!inner(user_id)')
         .eq('id', defaultWorkspaceId)
         .eq('workspace_members.user_id', user.id)
         .single();
@@ -115,7 +119,7 @@ export async function getUserDefaultWorkspace() {
     // If no default workspace or invalid, get the first available workspace
     const { data: workspaces, error } = await supabase
       .from('workspaces')
-      .select('id, name, personal, workspace_members!inner(role)')
+      .select('id, name, personal, workspace_members!inner(user_id)')
       .eq('workspace_members.user_id', user.id)
       .limit(1)
       .maybeSingle();
@@ -140,7 +144,7 @@ export async function updateUserDefaultWorkspace(workspaceId: string) {
   // Verify user has access to the workspace
   const { data: workspace, error: workspaceError } = await supabase
     .from('workspaces')
-    .select('id, workspace_members!inner(role)')
+    .select('id, workspace_members!inner(user_id)')
     .eq('id', workspaceId)
     .eq('workspace_members.user_id', user.id)
     .single();

@@ -385,7 +385,7 @@ export function CopyFromWorkspaceDialog({
                                 {category.name}
                               </div>
                               {category.description && (
-                                <p className="mt-1 break-words text-muted-foreground text-xs leading-relaxed">
+                                <p className="wrap-break-word mt-1 text-muted-foreground text-xs leading-relaxed">
                                   {category.description}
                                 </p>
                               )}
@@ -431,7 +431,7 @@ export function CopyFromWorkspaceDialog({
                                 </span>
                               </div>
                               {category.description && (
-                                <p className="mt-1 break-words text-muted-foreground text-xs leading-relaxed">
+                                <p className="wrap-break-word mt-1 text-muted-foreground text-xs leading-relaxed">
                                   {category.description}
                                 </p>
                               )}

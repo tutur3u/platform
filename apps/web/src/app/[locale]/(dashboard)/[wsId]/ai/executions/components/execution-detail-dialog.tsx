@@ -198,17 +198,17 @@ export function ExecutionDetailDialog({
 
         return match ? (
           <pre
-            className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg border bg-foreground/5 p-4"
+            className="wrap-break-word overflow-x-auto whitespace-pre-wrap rounded-lg border bg-foreground/5 p-4"
             {...props}
           >
-            <code className={`language-${match[1]} break-words`}>
+            <code className={`language-${match[1]} wrap-break-word`}>
               {String(children).replace(/\n$/, '')}
             </code>
           </pre>
         ) : (
           <code
             className={cn(
-              'break-words font-semibold text-foreground',
+              'wrap-break-word font-semibold text-foreground',
               className
             )}
             {...props}
@@ -220,7 +220,7 @@ export function ExecutionDetailDialog({
       table({ children, ...props }: { children?: React.ReactNode }) {
         return (
           <div className="overflow-x-auto">
-            <table className="w-full table-fixed break-words" {...props}>
+            <table className="wrap-break-word w-full table-fixed" {...props}>
               {children}
             </table>
           </div>
@@ -228,7 +228,7 @@ export function ExecutionDetailDialog({
       },
       th({ children, ...props }: { children?: React.ReactNode }) {
         return (
-          <th className="break-words text-foreground" {...props}>
+          <th className="wrap-break-word text-foreground" {...props}>
             {children}
           </th>
         );
@@ -236,7 +236,7 @@ export function ExecutionDetailDialog({
       pre({ children, ...props }: { children?: React.ReactNode }) {
         return (
           <pre
-            className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg border bg-foreground/5"
+            className="wrap-break-word overflow-x-auto whitespace-pre-wrap rounded-lg border bg-foreground/5"
             {...props}
           >
             {children}
@@ -449,13 +449,13 @@ export function ExecutionDetailDialog({
                 <div
                   className={cn(
                     'flex-1 space-y-2',
-                    'prose dark:prose-invert w-full min-w-full break-words text-foreground',
-                    'prose-p:break-words prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden',
-                    'prose-code:break-words prose-code:before:hidden prose-code:after:hidden',
-                    'prose-pre:break-words prose-pre:p-2 prose-li:marker:text-foreground/80',
+                    'prose dark:prose-invert wrap-break-word w-full min-w-full text-foreground',
+                    'prose-p:wrap-break-word prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden',
+                    'prose-code:wrap-break-word prose-code:before:hidden prose-code:after:hidden',
+                    'prose-pre:wrap-break-word prose-pre:p-2 prose-li:marker:text-foreground/80',
                     'prose-th:border prose-tr:border-border prose-th:border-b-4',
                     'prose-th:border-foreground/20 prose-th:p-2 prose-th:text-center',
-                    'prose-td:break-words prose-td:border prose-td:p-2 prose-th:text-lg'
+                    'prose-td:wrap-break-word prose-td:border prose-td:p-2 prose-th:text-lg'
                   )}
                 >
                   <MemoizedReactMarkdown
@@ -507,13 +507,13 @@ export function ExecutionDetailDialog({
                     <div
                       className={cn(
                         'flex-1 space-y-2',
-                        'prose dark:prose-invert w-full min-w-full break-words text-foreground',
-                        'prose-p:break-words prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden',
-                        'prose-code:break-words prose-code:before:hidden prose-code:after:hidden',
-                        'prose-pre:break-words prose-pre:p-2 prose-li:marker:text-foreground/80',
+                        'prose dark:prose-invert wrap-break-word w-full min-w-full text-foreground',
+                        'prose-p:wrap-break-word prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden',
+                        'prose-code:wrap-break-word prose-code:before:hidden prose-code:after:hidden',
+                        'prose-pre:wrap-break-word prose-pre:p-2 prose-li:marker:text-foreground/80',
                         'prose-th:border prose-tr:border-border prose-th:border-b-4',
                         'prose-th:border-foreground/20 prose-th:p-2 prose-th:text-center',
-                        'prose-td:break-words prose-td:border prose-td:p-2 prose-th:text-lg'
+                        'prose-td:wrap-break-word prose-td:border prose-td:p-2 prose-th:text-lg'
                       )}
                     >
                       <MemoizedReactMarkdown
@@ -564,13 +564,13 @@ export function ExecutionDetailDialog({
                     <div
                       className={cn(
                         'flex-1 space-y-2',
-                        'prose dark:prose-invert w-full min-w-full break-words text-foreground',
-                        'prose-p:break-words prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden',
-                        'prose-code:break-words prose-code:before:hidden prose-code:after:hidden',
-                        'prose-pre:break-words prose-pre:p-2 prose-li:marker:text-foreground/80',
+                        'prose dark:prose-invert wrap-break-word w-full min-w-full text-foreground',
+                        'prose-p:wrap-break-word prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden',
+                        'prose-code:wrap-break-word prose-code:before:hidden prose-code:after:hidden',
+                        'prose-pre:wrap-break-word prose-pre:p-2 prose-li:marker:text-foreground/80',
                         'prose-th:border prose-tr:border-border prose-th:border-b-4',
                         'prose-th:border-foreground/20 prose-th:p-2 prose-th:text-center',
-                        'prose-td:break-words prose-td:border prose-td:p-2 prose-th:text-lg'
+                        'prose-td:wrap-break-word prose-td:border prose-td:p-2 prose-th:text-lg'
                       )}
                     >
                       <MemoizedReactMarkdown

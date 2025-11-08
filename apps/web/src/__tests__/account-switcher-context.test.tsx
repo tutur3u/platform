@@ -1,20 +1,20 @@
-import {
-  AccountSwitcherProvider,
-  useAccountSwitcher,
-} from '@/context/account-switcher-context';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { SupabaseSession } from '@tuturuuu/supabase/next/user';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  AccountSwitcherProvider,
+  useAccountSwitcher,
+} from '@/context/account-switcher-context';
 
-// Mock functions - Use vi.hoisted() to ensure they're available in vi.mock factories
-const { mockGetSession, mockSetSession, mockSignOut, mockSwitchClientSession } =
-  vi.hoisted(() => ({
-    mockGetSession: vi.fn(),
-    mockSetSession: vi.fn(),
-    mockSignOut: vi.fn(),
-    mockSwitchClientSession: vi.fn(),
-  }));
+// Mock functions
+const mockGetSession = vi.fn();
+const mockSetSession = vi.fn();
+const mockSignOut = vi.fn();
+const mockSwitchClientSession = vi.fn();
+
+// Mock router
+const mockRouterPush = vi.fn();
 
 // Mock session data
 const mockSession: SupabaseSession = {
@@ -100,7 +100,7 @@ vi.mock('@tuturuuu/auth', () => ({
 // Mock Next.js navigation
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
-    push: vi.fn(),
+    push: mockRouterPush,
     refresh: vi.fn(),
     back: vi.fn(),
   }),
@@ -108,8 +108,40 @@ vi.mock('next/navigation', () => ({
 }));
 
 // Mock window.location for navigation tests
-delete (window as any).location;
-(window as any).location = { href: '' };
+if (typeof window !== 'undefined') {
+  delete (window as any).location;
+  (window as any).location = { href: '' };
+} else {
+  global.window = { location: { href: '' } } as any;
+}
+
+// Mock next-intl
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => {
+    const translations: Record<string, string> = {
+      session_expired: 'Account Session Expired',
+      session_expired_description:
+        'This account has been removed. Please add it again to continue using it.',
+      account_not_found: 'Account Not Found',
+      account_not_found_description:
+        'This account has been removed. Please add it again to continue using it.',
+      switch_failed: 'Account Switch Failed',
+      switch_failed_description:
+        'This account has been removed. Please add it again to continue using it.',
+    };
+    return translations[key] || key;
+  },
+}));
+
+// Mock toast
+vi.mock('@tuturuuu/ui/sonner', () => ({
+  toast: {
+    error: vi.fn(),
+    success: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+  },
+}));
 
 // Mock Supabase client
 vi.mock('@tuturuuu/supabase/next/client', () => ({
@@ -130,8 +162,14 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 describe('AccountSwitcherContext', () => {
   beforeEach(() => {
     // Clear localStorage before each test
-    localStorage.clear();
+    if (
+      typeof localStorage !== 'undefined' &&
+      typeof localStorage.clear === 'function'
+    ) {
+      localStorage.clear();
+    }
     vi.clearAllMocks();
+    mockRouterPush.mockClear();
     eventHandler = null;
 
     // Reset SessionStore mocks to default
@@ -193,7 +231,12 @@ describe('AccountSwitcherContext', () => {
   });
 
   afterEach(() => {
-    localStorage.clear();
+    if (
+      typeof localStorage !== 'undefined' &&
+      typeof localStorage.clear === 'function'
+    ) {
+      localStorage.clear();
+    }
   });
 
   describe('Initialization', () => {
@@ -603,6 +646,350 @@ describe('AccountSwitcherContext', () => {
 
       expect(switchResult.success).toBe(false);
       expect(result.current.activeAccountId).toBe('user-1');
+    });
+
+    it('should fallback to previous account when session not found', async () => {
+      const { result } = renderHook(() => useAccountSwitcher(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isInitialized).toBe(true);
+      });
+
+      const mockAccount1 = {
+        id: 'user-1',
+        encryptedSession: 'encrypted-session-1',
+        email: 'user1@test.com',
+        addedAt: Date.now(),
+        metadata: {
+          displayName: 'Test User 1',
+          avatarUrl: 'https://avatar.test/1.jpg',
+          lastActiveAt: Date.now(),
+        },
+      };
+
+      const mockAccount2 = {
+        id: 'user-2',
+        encryptedSession: 'encrypted-session-2',
+        email: 'user2@test.com',
+        addedAt: Date.now(),
+        metadata: {
+          displayName: 'Test User 2',
+          avatarUrl: 'https://avatar.test/2.jpg',
+          lastActiveAt: Date.now(),
+        },
+      };
+
+      // Add two accounts
+      mockSessionStore.addAccount
+        .mockResolvedValueOnce({ success: true, accountId: 'user-1' })
+        .mockResolvedValueOnce({ success: true, accountId: 'user-2' });
+      mockSessionStore.getAccountsWithEmail.mockResolvedValue([
+        mockAccount1,
+        mockAccount2,
+      ]);
+      mockSessionStore.getActiveAccountId
+        .mockReturnValueOnce('user-1')
+        .mockReturnValueOnce('user-1');
+
+      await result.current.addAccount(mockSession, {
+        switchImmediately: true,
+      });
+
+      await result.current.addAccount(mockSession2, {
+        switchImmediately: false,
+      });
+
+      await waitFor(() => {
+        expect(result.current.activeAccountId).toBe('user-1');
+      });
+
+      // Try to switch to account 2, but it has no session
+      mockSessionStore.getAccountSession
+        .mockResolvedValueOnce(null) // Account 2 has no session (in switchAccount)
+        .mockResolvedValueOnce({ session: mockSession }); // Fallback gets account 1 session
+
+      mockSessionStore.removeAccount.mockResolvedValue({ success: true });
+      mockSessionStore.getAccounts.mockResolvedValue([
+        mockAccount1,
+        mockAccount2,
+      ]); // Both remain initially
+      mockSessionStore.switchAccount.mockResolvedValue({ success: true });
+      mockSwitchClientSession.mockResolvedValue(mockSession);
+      mockSessionStore.updateAccountSession.mockResolvedValue({
+        success: true,
+      });
+
+      await result.current.switchAccount('user-2');
+
+      // Should have tried to remove account 2
+      expect(mockSessionStore.removeAccount).toHaveBeenCalledWith('user-2');
+
+      // Should have shown error toast
+      const { toast } = await import('@tuturuuu/ui/sonner');
+      expect(toast.error).toHaveBeenCalledWith('Account Not Found', {
+        description:
+          'This account has been removed. Please add it again to continue using it.',
+      });
+
+      // Should have fallen back to account 1
+      expect(mockSessionStore.getAccountSession).toHaveBeenCalledWith('user-1');
+      expect(mockSwitchClientSession).toHaveBeenCalledWith(
+        expect.anything(),
+        mockSession
+      );
+      expect(mockSessionStore.switchAccount).toHaveBeenCalledWith('user-1');
+    });
+
+    it('should remove account and show error when session not found', async () => {
+      const { result } = renderHook(() => useAccountSwitcher(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isInitialized).toBe(true);
+      });
+
+      const mockAccountWithEmail = {
+        id: 'user-1',
+        encryptedSession: 'encrypted-session-1',
+        email: 'user1@test.com',
+        addedAt: Date.now(),
+        metadata: {
+          displayName: 'Test User 1',
+          avatarUrl: 'https://avatar.test/1.jpg',
+          lastActiveAt: Date.now(),
+        },
+      };
+
+      mockSessionStore.addAccount.mockResolvedValue({
+        success: true,
+        accountId: 'user-1',
+      });
+      mockSessionStore.getAccountsWithEmail.mockResolvedValue([
+        mockAccountWithEmail,
+      ]);
+      mockSessionStore.getActiveAccountId.mockReturnValue('user-1');
+
+      await result.current.addAccount(mockSession, {
+        switchImmediately: true,
+      });
+
+      await waitFor(() => {
+        expect(result.current.activeAccountId).toBe('user-1');
+      });
+
+      // Simulate session not found
+      // Try to switch to account but it has no session
+      mockSessionStore.getAccountSession.mockResolvedValue(null);
+      mockSessionStore.removeAccount.mockResolvedValue({ success: true });
+      mockSessionStore.getAccounts.mockResolvedValue([mockAccountWithEmail]);
+
+      const switchResult = await result.current.switchAccount('user-1');
+
+      expect(switchResult.success).toBe(false);
+      expect(mockSessionStore.removeAccount).toHaveBeenCalledWith('user-1');
+      const { toast } = await import('@tuturuuu/ui/sonner');
+      expect(toast.error).toHaveBeenCalledWith('Account Not Found', {
+        description:
+          'This account has been removed. Please add it again to continue using it.',
+      });
+      // Fallback should try to get remaining accounts but find the same account
+      expect(mockSessionStore.getAccounts).toHaveBeenCalled();
+    });
+
+    it('should remove account and show error when session switch fails', async () => {
+      const { result } = renderHook(() => useAccountSwitcher(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isInitialized).toBe(true);
+      });
+
+      const mockAccountWithEmail = {
+        id: 'user-1',
+        encryptedSession: 'encrypted-session-1',
+        email: 'user1@test.com',
+        addedAt: Date.now(),
+        metadata: {
+          displayName: 'Test User 1',
+          avatarUrl: 'https://avatar.test/1.jpg',
+          lastActiveAt: Date.now(),
+        },
+      };
+
+      mockSessionStore.addAccount.mockResolvedValue({
+        success: true,
+        accountId: 'user-1',
+      });
+      mockSessionStore.getAccountsWithEmail.mockResolvedValue([
+        mockAccountWithEmail,
+      ]);
+      mockSessionStore.getActiveAccountId.mockReturnValue('user-1');
+
+      await result.current.addAccount(mockSession, {
+        switchImmediately: true,
+      });
+
+      await waitFor(() => {
+        expect(result.current.activeAccountId).toBe('user-1');
+      });
+
+      // Simulate session found but switch fails
+      mockSessionStore.getAccountSession.mockResolvedValue({
+        session: mockSession,
+      });
+      mockSessionStore.switchAccount.mockResolvedValue({ success: true });
+      mockSwitchClientSession.mockRejectedValue(new Error('Session expired'));
+      mockSessionStore.removeAccount.mockResolvedValue({ success: true });
+
+      const switchResult = await result.current.switchAccount('user-1');
+
+      expect(switchResult.success).toBe(false);
+      expect(mockSessionStore.removeAccount).toHaveBeenCalledWith('user-1');
+      const { toast } = await import('@tuturuuu/ui/sonner');
+      expect(toast.error).toHaveBeenCalledWith('Account Session Expired', {
+        description:
+          'This account has been removed. Please add it again to continue using it.',
+      });
+    });
+
+    it('should fallback to previous account when session switch fails', async () => {
+      const { result } = renderHook(() => useAccountSwitcher(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isInitialized).toBe(true);
+      });
+
+      const mockAccount1 = {
+        id: 'user-1',
+        encryptedSession: 'encrypted-session-1',
+        email: 'user1@test.com',
+        addedAt: Date.now(),
+        metadata: {
+          displayName: 'Test User 1',
+          avatarUrl: 'https://avatar.test/1.jpg',
+          lastActiveAt: Date.now(),
+        },
+      };
+
+      const mockAccount2 = {
+        id: 'user-2',
+        encryptedSession: 'encrypted-session-2',
+        email: 'user2@test.com',
+        addedAt: Date.now(),
+        metadata: {
+          displayName: 'Test User 2',
+          avatarUrl: 'https://avatar.test/2.jpg',
+          lastActiveAt: Date.now(),
+        },
+      };
+
+      // Add two accounts
+      mockSessionStore.addAccount
+        .mockResolvedValueOnce({ success: true, accountId: 'user-1' })
+        .mockResolvedValueOnce({ success: true, accountId: 'user-2' });
+      mockSessionStore.getAccountsWithEmail.mockResolvedValue([
+        mockAccount1,
+        mockAccount2,
+      ]);
+      mockSessionStore.getActiveAccountId.mockReturnValue('user-1');
+
+      await result.current.addAccount(mockSession, {
+        switchImmediately: true,
+      });
+
+      await result.current.addAccount(mockSession2, {
+        switchImmediately: false,
+      });
+
+      await waitFor(() => {
+        expect(result.current.activeAccountId).toBe('user-1');
+      });
+
+      // Try to switch to account 2, but session switch fails
+      mockSessionStore.getAccountSession
+        .mockResolvedValueOnce({ session: mockSession2 }) // Account 2 session found
+        .mockResolvedValueOnce({ session: mockSession }); // Fallback gets account 1 session
+
+      mockSessionStore.switchAccount.mockResolvedValue({ success: true });
+      mockSessionStore.removeAccount.mockResolvedValue({ success: true });
+      mockSessionStore.getAccounts.mockResolvedValue([
+        mockAccount1,
+        mockAccount2,
+      ]); // Both remain initially
+      mockSessionStore.updateAccountSession.mockResolvedValue({
+        success: true,
+      });
+
+      // First call fails (switching to account 2), second succeeds (fallback to account 1)
+      mockSwitchClientSession
+        .mockRejectedValueOnce(new Error('Session expired'))
+        .mockResolvedValueOnce(mockSession);
+
+      await result.current.switchAccount('user-2');
+
+      // Should have removed account 2
+      expect(mockSessionStore.removeAccount).toHaveBeenCalledWith('user-2');
+
+      // Should have shown error toast
+      const { toast } = await import('@tuturuuu/ui/sonner');
+      expect(toast.error).toHaveBeenCalledWith('Account Session Expired', {
+        description:
+          'This account has been removed. Please add it again to continue using it.',
+      });
+
+      // Should have fallen back to account 1
+      expect(mockSessionStore.getAccountSession).toHaveBeenCalledWith('user-1');
+      expect(mockSwitchClientSession).toHaveBeenLastCalledWith(
+        expect.anything(),
+        mockSession
+      );
+      expect(mockSessionStore.switchAccount).toHaveBeenCalledWith('user-1');
+    });
+
+    it('should redirect to login when no accounts remain after failed switch', async () => {
+      const { result } = renderHook(() => useAccountSwitcher(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isInitialized).toBe(true);
+      });
+
+      const mockAccountWithEmail = {
+        id: 'user-1',
+        encryptedSession: 'encrypted-session-1',
+        email: 'user1@test.com',
+        addedAt: Date.now(),
+        metadata: {
+          displayName: 'Test User 1',
+          avatarUrl: 'https://avatar.test/1.jpg',
+          lastActiveAt: Date.now(),
+        },
+      };
+
+      mockSessionStore.addAccount.mockResolvedValue({
+        success: true,
+        accountId: 'user-1',
+      });
+      mockSessionStore.getAccountsWithEmail.mockResolvedValue([
+        mockAccountWithEmail,
+      ]);
+      mockSessionStore.getActiveAccountId.mockReturnValue('user-1');
+
+      await result.current.addAccount(mockSession, {
+        switchImmediately: true,
+      });
+
+      await waitFor(() => {
+        expect(result.current.activeAccountId).toBe('user-1');
+      });
+
+      // Try to switch but fail, and no accounts remain
+      mockSessionStore.getAccountSession.mockResolvedValue(null);
+      mockSessionStore.removeAccount.mockResolvedValue({ success: true });
+      mockSessionStore.getAccounts.mockResolvedValue([]); // No accounts left
+
+      const switchResult = await result.current.switchAccount('user-1');
+
+      expect(switchResult.success).toBe(false);
+      expect(mockSessionStore.removeAccount).toHaveBeenCalledWith('user-1');
+      expect(mockRouterPush).toHaveBeenCalledWith('/login');
     });
   });
 

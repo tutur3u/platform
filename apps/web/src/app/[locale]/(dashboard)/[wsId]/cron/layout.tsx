@@ -1,5 +1,5 @@
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import type React from 'react';
@@ -21,8 +21,6 @@ export default async function Layout({ children, params }: LayoutProps) {
   });
 
   if (withoutPermission('ai_lab')) redirect(`/${wsId}`);
-
-  const workspace = await getWorkspace(wsId);
   const user = await getCurrentUser();
 
   const navLinks: NavLink[] = [
@@ -45,12 +43,7 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   return (
     <div>
-      <Navigation
-        currentWsId={wsId}
-        currentRole={workspace?.role}
-        currentUser={user}
-        navLinks={navLinks}
-      />
+      <Navigation currentWsId={wsId} currentUser={user} navLinks={navLinks} />
       {children}
     </div>
   );

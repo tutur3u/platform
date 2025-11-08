@@ -71,12 +71,11 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  let body;
+  let body: unknown;
 
   try {
     body = await request.json();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
   }
 

@@ -1,5 +1,3 @@
-import LoadingStatisticCard from '@/components/loading-statistic-card';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { AuroraForecast } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -8,13 +6,15 @@ import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import LoadingStatisticCard from '@/components/loading-statistic-card';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import UpcomingCalendarEvents from './calendar/upcoming-events';
 import Countdown from './countdown';
 import DashboardCardSkeleton from './dashboard-card-skeleton';
-import NewlyCreatedTasks from './tasks/newly-created-tasks';
 import TasksAssignedToMe from './tasks/tasks-assigned-to-me';
 import TimeTrackingMetrics from './time-tracker/time-tracking-metrics';
 import RecentTumeetPlans from './tumeet/recent-plans';
+import UserGroupQuickActions from './user-groups/quick-actions';
 
 export const metadata: Metadata = {
   title: 'Workspace Details',
@@ -31,7 +31,7 @@ interface Props {
 export default async function WorkspaceHomePage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params} fallback={<LoadingStatisticCard />}>
-      {async ({ workspace, wsId, isPersonal }) => {
+      {async ({ workspace, wsId }) => {
         // At this point, wsId is guaranteed to be a validated UUID
         // and workspace contains the full workspace object with role and joined status
 
@@ -55,46 +55,39 @@ export default async function WorkspaceHomePage({ params }: Props) {
           <>
             {isInternalUser && wsId === ROOT_WORKSPACE_ID && <Countdown />}
             {currentUser && (
-              <div className="grid gap-4 pb-4 md:grid-cols-2">
-                {!isPersonal && (
+              <>
+                <Suspense fallback={null}>
+                  <UserGroupQuickActions wsId={wsId} />
+                </Suspense>
+                <div className="grid gap-4 pb-4 md:grid-cols-2">
                   <Suspense fallback={<DashboardCardSkeleton />}>
-                    <NewlyCreatedTasks wsId={wsId} />
+                    <TasksAssignedToMe
+                      wsId={wsId}
+                      userId={currentUser.id}
+                      isPersonal={workspace.personal}
+                    />
                   </Suspense>
-                )}
 
-                <Suspense fallback={<DashboardCardSkeleton />}>
-                  <TasksAssignedToMe
-                    wsId={wsId}
-                    userId={currentUser.id}
-                    isPersonal={workspace.personal}
-                  />
-                </Suspense>
+                  <Suspense fallback={<DashboardCardSkeleton />}>
+                    <UpcomingCalendarEvents
+                      wsId={wsId}
+                      showNavigation={!disableCalendar}
+                    />
+                  </Suspense>
 
-                <Suspense fallback={<DashboardCardSkeleton />}>
-                  <UpcomingCalendarEvents
-                    wsId={wsId}
-                    showNavigation={!disableCalendar}
-                  />
-                </Suspense>
+                  <Suspense fallback={<DashboardCardSkeleton />}>
+                    <TimeTrackingMetrics
+                      wsId={wsId}
+                      userId={currentUser.id}
+                      isPersonal={workspace.personal}
+                    />
+                  </Suspense>
 
-                <Suspense fallback={<DashboardCardSkeleton />}>
-                  <TimeTrackingMetrics
-                    wsId={wsId}
-                    userId={currentUser.id}
-                    isPersonal={workspace.personal}
-                  />
-                </Suspense>
-
-                <Suspense fallback={<DashboardCardSkeleton />}>
-                  <RecentTumeetPlans
-                    className={
-                      disableCalendar || isPersonal
-                        ? 'col-span-1'
-                        : 'col-span-full'
-                    }
-                  />
-                </Suspense>
-              </div>
+                  <Suspense fallback={<DashboardCardSkeleton />}>
+                    <RecentTumeetPlans />
+                  </Suspense>
+                </div>
+              </>
             )}
           </>
         );

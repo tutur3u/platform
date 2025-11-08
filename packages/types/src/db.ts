@@ -12,7 +12,6 @@ export type InvoiceProduct = Tables<'finance_invoice_products'>;
 export type InvoicePromotion = Tables<'finance_invoice_promotions'>;
 export type Workspace = Tables<'workspaces'>;
 export type WorkspaceUser = Tables<'workspace_users'>;
-export type WorkspaceUserRole = 'MEMBER' | 'ADMIN' | 'OWNER';
 export type WorkspaceFlashcard = Tables<'workspace_flashcards'>;
 export type WorkspaceQuiz = Tables<'workspace_quizzes'>;
 export type WorkspaceTaskBoard = Tables<'workspace_boards'> & {
@@ -154,7 +153,40 @@ export type WorkspaceRole = Tables<'workspace_roles'> & {
     enabled: boolean;
   }[];
   user_count?: number;
+  members?: Array<{
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    email?: string | null;
+  }>;
 };
+
+export type PermissionSource = 'creator' | 'default' | 'role';
+
+export type PermissionWithSource = {
+  id: PermissionId;
+  enabled: boolean;
+  source: PermissionSource;
+  source_name?: string; // role name if source is 'role'
+};
+
+export type MemberWithPermissions = {
+  user: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    email?: string | null;
+  };
+  is_creator: boolean;
+  roles: Array<{
+    id: string;
+    name: string;
+    permissions: Array<{ id: PermissionId; enabled: boolean }>;
+  }>;
+  default_permissions: Array<{ id: PermissionId; enabled: boolean }>;
+  total_permissions: number;
+};
+
 export type WorkspaceUserReport = Tables<'external_user_monthly_reports'> & {
   href?: string;
 };

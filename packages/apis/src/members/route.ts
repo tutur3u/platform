@@ -32,8 +32,6 @@ export async function GET(_: NextRequest, { params }: Params) {
     .select(
       `
       user_id,
-      role,
-      role_title,
       users!inner(
         id,
         display_name,
@@ -59,49 +57,9 @@ export async function GET(_: NextRequest, { params }: Params) {
       display_name: member.users.display_name,
       email: member.users.email,
       avatar_url: member.users.avatar_url,
-      role: member.role,
-      role_title: member.role_title,
     })) || [];
 
   return NextResponse.json({ members });
-}
-
-export async function PUT(req: NextRequest, { params }: Params) {
-  const { wsId } = await params;
-  const searchParams = req.nextUrl.searchParams;
-
-  const userId = searchParams.get('id');
-  const userEmail = searchParams.get('email');
-
-  const supabase = await createClient();
-  const { pending, role, role_title } = await req.json();
-  const resolvedWsId = await normalizeWorkspaceId(wsId);
-
-  const query = supabase
-    .from(
-      pending
-        ? userId
-          ? 'workspace_invites'
-          : 'workspace_email_invites'
-        : 'workspace_members'
-    )
-    .update({ role: role, role_title: role_title })
-    .eq('ws_id', resolvedWsId);
-
-  if (userId) query.eq('user_id', userId);
-  if (userEmail) query.eq('email', userEmail);
-
-  const { error } = await query;
-
-  if (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: 'Error updating workspace member' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({ message: 'success' });
 }
 
 export async function DELETE(req: NextRequest, { params }: Params) {

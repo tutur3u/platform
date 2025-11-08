@@ -79,8 +79,6 @@ export async function GET(_: Request, { params }: Params) {
     return NextResponse.json(
       {
         workspace: inviteLink.workspaces,
-        role: inviteLink.role,
-        roleTitle: inviteLink.role_title,
         memberCount: memberCount || 0,
       },
       { status: 200 }
@@ -150,8 +148,6 @@ export async function POST(_: Request, { params }: Params) {
       .insert({
         ws_id: wsId,
         user_id: user.id,
-        role: inviteLink.role ?? undefined,
-        role_title: inviteLink.role_title ?? undefined,
       });
 
     if (memberError) {

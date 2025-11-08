@@ -1,7 +1,6 @@
 'use client';
 
 import { DEV_MODE, PORT } from '@/constants/common';
-import { trpc } from '@/trpc/client';
 import { generateCrossAppToken, mapUrlToApp } from '@tuturuuu/auth/cross-app';
 import { Eye, EyeOff, Github, Lock, Mail } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -29,8 +28,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useTransition } from 'react';
 import * as z from 'zod';
+import { sendOtpAction, verifyOtpAction } from './actions';
 
 // Constants
 const COOLDOWN_DURATION = 60;
@@ -148,6 +148,10 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     otp: false,
     password: false,
   });
+
+  // Server action transitions
+  const [isPendingSendOtp, startSendOtpTransition] = useTransition();
+  const [isPendingVerifyOtp, startVerifyOtpTransition] = useTransition();
 
   // URL Processing Helper
   const processNextUrl = useCallback(async () => {
@@ -313,72 +317,93 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     setLoading(false);
   };
 
-  const sendOtpMutation = trpc.sendOtp.useMutation({
-    onSuccess: (data) => {
-      if (!data?.error) {
-        toast({
-          title: t('login.success'),
-          description: t('login.otp_sent'),
+  // Combine loading states from server actions and manual loading
+  const _isLoading = loading || isPendingSendOtp || isPendingVerifyOtp;
+
+  // Authentication Functions using Server Actions
+  const sendOtp = async (data: { email: string }) => {
+    if (!locale || !data.email) return;
+
+    startSendOtpTransition(async () => {
+      try {
+        const result = await sendOtpAction({
+          email: data.email,
+          locale,
         });
 
-        otpForm.setValue('otp', '');
-        otpForm.clearErrors('otp');
-        setOtpSent(true);
-        setResendCooldown(COOLDOWN_DURATION);
+        if (result.error) {
+          // Handle error from server action
+          toast({
+            title: t('login.failed'),
+            description: result.error,
+            variant: 'destructive',
+          });
+        } else {
+          // Success
+          toast({
+            title: t('login.success'),
+            description: t('login.otp_sent'),
+          });
 
-        if (DEV_MODE) {
-          window.open(
-            window.location.origin.replace(PORT.toString(), '8004'),
-            '_blank'
-          );
+          otpForm.setValue('otp', '');
+          otpForm.clearErrors('otp');
+          setOtpSent(true);
+          setResendCooldown(COOLDOWN_DURATION);
+
+          if (DEV_MODE) {
+            window.open(
+              window.location.origin.replace(PORT.toString(), '8004'),
+              '_blank'
+            );
+          }
         }
-      } else {
-        // Handle server-side errors returned in the response
-        const errorMessage = data.error || t('login.failed_to_send');
-
+      } catch (error) {
+        console.error('SendOTP Error:', error);
         toast({
           title: t('login.failed'),
-          description: errorMessage,
+          description: t('login.failed_to_send'),
           variant: 'destructive',
         });
       }
-    },
-    onError: (error) => {
-      console.error('SendOTP Error:', error);
+    });
+  };
 
-      // Handle different types of tRPC errors
-      let errorMessage = t('login.failed_to_send');
+  const verifyOtp = async (data: { email: string; otp: string }) => {
+    if (!locale || !data.email || !data.otp) return;
 
-      if (error.data?.code === 'BAD_REQUEST') {
-        errorMessage = error.message || t('login.failed_to_send');
-      } else if (error.data?.code === 'TOO_MANY_REQUESTS') {
-        errorMessage = 'Too many requests. Please try again later.';
-      } else if (error.data?.code === 'INTERNAL_SERVER_ERROR') {
-        errorMessage = 'Server error. Please try again later.';
-      } else if (error.message) {
-        // Use the error message if available
-        errorMessage = error.message;
-      }
+    startVerifyOtpTransition(async () => {
+      try {
+        const result = await verifyOtpAction({
+          email: data.email,
+          otp: data.otp,
+          locale,
+        });
 
-      toast({
-        title: t('login.failed'),
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    },
-  });
+        if (result.error) {
+          // Handle error from server action
+          otpForm.setError('otp', {
+            message: t('login.invalid_verification_code'),
+          });
+          otpForm.setValue('otp', '');
 
-  const verifyOtpMutation = trpc.verifyOtp.useMutation({
-    onSuccess: async (data) => {
-      if (!data?.error) {
-        router.refresh();
-
-        if (await needsMFA()) {
-          setRequiresMFA(true);
+          toast({
+            title: t('login.failed'),
+            description: result.error,
+            variant: 'destructive',
+          });
         } else {
-          window.location.reload();
+          // Success
+          router.refresh();
+
+          if (await needsMFA()) {
+            setRequiresMFA(true);
+          } else {
+            window.location.reload();
+          }
         }
-      } else {
+      } catch (error) {
+        console.error('VerifyOTP Error:', error);
+
         otpForm.setError('otp', {
           message: t('login.invalid_verification_code'),
         });
@@ -386,81 +411,10 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
         toast({
           title: t('login.failed'),
-          description: data.error,
+          description: t('login.failed_to_verify'),
           variant: 'destructive',
         });
       }
-    },
-    onError: (error) => {
-      console.error('VerifyOTP Error:', error);
-
-      // Handle different types of tRPC errors
-      let errorMessage = t('login.failed_to_verify');
-      let formErrorMessage = t('login.invalid_verification_code');
-
-      if (error.data?.code === 'BAD_REQUEST') {
-        if (
-          error.message?.toLowerCase().includes('otp') ||
-          error.message?.toLowerCase().includes('token')
-        ) {
-          errorMessage = t('login.invalid_verification_code');
-          formErrorMessage = t('login.invalid_verification_code');
-        } else if (error.message?.toLowerCase().includes('email')) {
-          errorMessage = error.message || t('login.failed_to_verify');
-          formErrorMessage =
-            error.message || t('login.invalid_verification_code');
-        } else {
-          errorMessage = error.message || t('login.failed_to_verify');
-        }
-      } else if (error.data?.code === 'UNAUTHORIZED') {
-        errorMessage = 'Verification code expired. Please request a new one.';
-        formErrorMessage = 'Code expired';
-      } else if (error.data?.code === 'TOO_MANY_REQUESTS') {
-        errorMessage =
-          'Too many verification attempts. Please try again later.';
-        formErrorMessage = 'Too many attempts';
-      } else if (error.data?.code === 'INTERNAL_SERVER_ERROR') {
-        errorMessage = 'Server error. Please try again later.';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      // Set form error
-      otpForm.setError('otp', {
-        message: formErrorMessage,
-      });
-      otpForm.setValue('otp', '');
-
-      // Show toast notification
-      toast({
-        title: t('login.failed'),
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Combine tRPC loading states with manual loading state
-  const _isLoading =
-    loading || sendOtpMutation.isPending || verifyOtpMutation.isPending;
-
-  // Authentication Functions
-  const sendOtp = async (data: { email: string }) => {
-    if (!locale || !data.email) return;
-
-    sendOtpMutation.mutate({
-      email: data.email,
-      locale,
-    });
-  };
-
-  const verifyOtp = async (data: { email: string; otp: string }) => {
-    if (!locale || !data.email || !data.otp) return;
-
-    verifyOtpMutation.mutate({
-      email: data.email,
-      otp: data.otp,
-      locale,
     });
   };
 
