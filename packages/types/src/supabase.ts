@@ -7,6 +7,11 @@ export type Json =
   | Json[];
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: '13.0.5';
+  };
   public: {
     Tables: {
       ai_chat_members: {
@@ -2183,6 +2188,13 @@ export type Database = {
             columns: ['transaction_id'];
             isOneToOne: true;
             referencedRelation: 'wallet_transactions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoices_transaction_id_fkey';
+            columns: ['transaction_id'];
+            isOneToOne: true;
+            referencedRelation: 'wallet_transactions_secure';
             referencedColumns: ['id'];
           },
           {
@@ -7591,6 +7603,13 @@ export type Database = {
             referencedRelation: 'wallet_transactions';
             referencedColumns: ['id'];
           },
+          {
+            foreignKeyName: 'wallet_transaction_tags_transaction_id_fkey';
+            columns: ['transaction_id'];
+            isOneToOne: false;
+            referencedRelation: 'wallet_transactions_secure';
+            referencedColumns: ['id'];
+          },
         ];
       };
       wallet_transactions: {
@@ -7602,6 +7621,9 @@ export type Database = {
           description: string | null;
           id: string;
           invoice_id: string | null;
+          is_amount_confidential: boolean;
+          is_category_confidential: boolean;
+          is_description_confidential: boolean;
           report_opt_in: boolean;
           taken_at: string;
           wallet_id: string;
@@ -7614,6 +7636,9 @@ export type Database = {
           description?: string | null;
           id?: string;
           invoice_id?: string | null;
+          is_amount_confidential?: boolean;
+          is_category_confidential?: boolean;
+          is_description_confidential?: boolean;
           report_opt_in?: boolean;
           taken_at?: string;
           wallet_id: string;
@@ -7626,6 +7651,9 @@ export type Database = {
           description?: string | null;
           id?: string;
           invoice_id?: string | null;
+          is_amount_confidential?: boolean;
+          is_category_confidential?: boolean;
+          is_description_confidential?: boolean;
           report_opt_in?: boolean;
           taken_at?: string;
           wallet_id?: string;
@@ -11131,10 +11159,24 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'workspace_wallet_transfers_from_transaction_id_fkey';
+            columns: ['from_transaction_id'];
+            isOneToOne: false;
+            referencedRelation: 'wallet_transactions_secure';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'workspace_wallet_transfers_to_transaction_id_fkey';
             columns: ['to_transaction_id'];
             isOneToOne: false;
             referencedRelation: 'wallet_transactions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_wallet_transfers_to_transaction_id_fkey';
+            columns: ['to_transaction_id'];
+            isOneToOne: false;
+            referencedRelation: 'wallet_transactions_secure';
             referencedColumns: ['id'];
           },
         ];
@@ -11390,36 +11432,7 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       calendar_event_participants: {
         Row: {
@@ -12082,6 +12095,97 @@ export type Database = {
           },
         ];
       };
+      wallet_transactions_secure: {
+        Row: {
+          amount: number | null;
+          category_id: string | null;
+          created_at: string | null;
+          creator_id: string | null;
+          description: string | null;
+          id: string | null;
+          invoice_id: string | null;
+          is_amount_confidential: boolean | null;
+          is_category_confidential: boolean | null;
+          is_description_confidential: boolean | null;
+          report_opt_in: boolean | null;
+          taken_at: string | null;
+          wallet_id: string | null;
+        };
+        Insert: {
+          amount?: never;
+          category_id?: never;
+          created_at?: string | null;
+          creator_id?: string | null;
+          description?: never;
+          id?: string | null;
+          invoice_id?: string | null;
+          is_amount_confidential?: boolean | null;
+          is_category_confidential?: boolean | null;
+          is_description_confidential?: boolean | null;
+          report_opt_in?: boolean | null;
+          taken_at?: string | null;
+          wallet_id?: string | null;
+        };
+        Update: {
+          amount?: never;
+          category_id?: never;
+          created_at?: string | null;
+          creator_id?: string | null;
+          description?: never;
+          id?: string | null;
+          invoice_id?: string | null;
+          is_amount_confidential?: boolean | null;
+          is_category_confidential?: boolean | null;
+          is_description_confidential?: boolean | null;
+          report_opt_in?: boolean | null;
+          taken_at?: string | null;
+          wallet_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'wallet_transactions_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'wallet_transactions_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'wallet_transactions_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'wallet_transactions_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'wallet_transactions_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: true;
+            referencedRelation: 'finance_invoices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'wallet_transactions_wallet_id_fkey';
+            columns: ['wallet_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_wallets';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_dataset_row_cells: {
         Row: {
           cells: Json | null;
@@ -12677,14 +12781,27 @@ export type Database = {
         Args: { p_days_back?: number; p_user_id?: string; p_ws_id: string };
         Returns: Json;
       };
-      get_daily_income_expense: {
-        Args: { _ws_id: string; past_days?: number };
-        Returns: {
-          day: string;
-          total_expense: number;
-          total_income: number;
-        }[];
-      };
+      get_daily_income_expense:
+        | {
+            Args: {
+              _ws_id: string;
+              include_confidential?: boolean;
+              past_days?: number;
+            };
+            Returns: {
+              day: string;
+              total_expense: number;
+              total_income: number;
+            }[];
+          }
+        | {
+            Args: { _ws_id: string; past_days?: number };
+            Returns: {
+              day: string;
+              total_expense: number;
+              total_income: number;
+            }[];
+          };
       get_daily_prompt_completion_tokens: {
         Args: { past_days?: number };
         Returns: {
@@ -12816,14 +12933,27 @@ export type Database = {
         Returns: number;
       };
       get_mau_count: { Args: never; Returns: number };
-      get_monthly_income_expense: {
-        Args: { _ws_id: string; past_months?: number };
-        Returns: {
-          month: string;
-          total_expense: number;
-          total_income: number;
-        }[];
-      };
+      get_monthly_income_expense:
+        | {
+            Args: {
+              _ws_id: string;
+              include_confidential?: boolean;
+              past_months?: number;
+            };
+            Returns: {
+              month: string;
+              total_expense: number;
+              total_income: number;
+            }[];
+          }
+        | {
+            Args: { _ws_id: string; past_months?: number };
+            Returns: {
+              month: string;
+              total_expense: number;
+              total_income: number;
+            }[];
+          };
       get_monthly_prompt_completion_tokens: {
         Args: { past_months?: number };
         Returns: {
@@ -13158,6 +13288,82 @@ export type Database = {
           is_whitelisted: boolean;
         }[];
       };
+      get_wallet_expense_count:
+        | {
+            Args: {
+              p_include_confidential?: boolean;
+              p_user_id?: string;
+              p_ws_id: string;
+            };
+            Returns: number;
+          }
+        | { Args: { p_user_id?: string; p_ws_id: string }; Returns: number };
+      get_wallet_expense_sum:
+        | {
+            Args: {
+              p_include_confidential?: boolean;
+              p_user_id?: string;
+              p_ws_id: string;
+            };
+            Returns: number;
+          }
+        | { Args: { p_user_id?: string; p_ws_id: string }; Returns: number };
+      get_wallet_income_count:
+        | {
+            Args: {
+              p_include_confidential?: boolean;
+              p_user_id?: string;
+              p_ws_id: string;
+            };
+            Returns: number;
+          }
+        | { Args: { p_user_id?: string; p_ws_id: string }; Returns: number };
+      get_wallet_income_sum:
+        | { Args: { p_user_id?: string; p_ws_id: string }; Returns: number }
+        | {
+            Args: {
+              p_include_confidential?: boolean;
+              p_user_id?: string;
+              p_ws_id: string;
+            };
+            Returns: number;
+          };
+      get_wallet_transactions_with_permissions: {
+        Args: {
+          p_category_ids?: string[];
+          p_creator_ids?: string[];
+          p_cursor_created_at?: string;
+          p_cursor_taken_at?: string;
+          p_end_date?: string;
+          p_include_count?: boolean;
+          p_limit?: number;
+          p_offset?: number;
+          p_order_by?: string;
+          p_order_direction?: string;
+          p_search_query?: string;
+          p_start_date?: string;
+          p_transaction_ids?: string[];
+          p_user_id?: string;
+          p_wallet_ids?: string[];
+          p_ws_id: string;
+        };
+        Returns: {
+          amount: number;
+          category_id: string;
+          created_at: string;
+          creator_id: string;
+          description: string;
+          id: string;
+          invoice_id: string;
+          is_amount_confidential: boolean;
+          is_category_confidential: boolean;
+          is_description_confidential: boolean;
+          report_opt_in: boolean;
+          taken_at: string;
+          total_count: number;
+          wallet_id: string;
+        }[];
+      };
       get_wau_count: { Args: never; Returns: number };
       get_workspace_drive_size: { Args: { ws_id: string }; Returns: number };
       get_workspace_member_count: {
@@ -13257,14 +13463,34 @@ export type Database = {
       };
       get_workspace_users_count: { Args: { ws_id: string }; Returns: number };
       get_workspace_wallets_count: { Args: { ws_id: string }; Returns: number };
-      get_workspace_wallets_expense: {
-        Args: { end_date?: string; start_date?: string; ws_id: string };
-        Returns: number;
-      };
-      get_workspace_wallets_income: {
-        Args: { end_date?: string; start_date?: string; ws_id: string };
-        Returns: number;
-      };
+      get_workspace_wallets_expense:
+        | {
+            Args: { end_date?: string; start_date?: string; ws_id: string };
+            Returns: number;
+          }
+        | {
+            Args: {
+              end_date?: string;
+              include_confidential?: boolean;
+              start_date?: string;
+              ws_id: string;
+            };
+            Returns: number;
+          };
+      get_workspace_wallets_income:
+        | {
+            Args: { end_date?: string; start_date?: string; ws_id: string };
+            Returns: number;
+          }
+        | {
+            Args: {
+              end_date?: string;
+              include_confidential?: boolean;
+              start_date?: string;
+              ws_id: string;
+            };
+            Returns: number;
+          };
       hard_delete_soft_deleted_items: { Args: never; Returns: undefined };
       has_workspace_permission: {
         Args: { p_permission: string; p_user_id: string; p_ws_id: string };
@@ -13582,7 +13808,13 @@ export type Database = {
         | 'update_user_groups_posts'
         | 'delete_user_groups_posts'
         | 'create_lead_generations'
-        | 'manage_api_keys';
+        | 'manage_api_keys'
+        | 'view_confidential_amount'
+        | 'view_confidential_description'
+        | 'view_confidential_category'
+        | 'create_confidential_transactions'
+        | 'update_confidential_transactions'
+        | 'delete_confidential_transactions';
     };
     CompositeTypes: {
       email_block_status: {
@@ -13833,6 +14065,12 @@ export const Constants = {
         'delete_user_groups_posts',
         'create_lead_generations',
         'manage_api_keys',
+        'view_confidential_amount',
+        'view_confidential_description',
+        'view_confidential_category',
+        'create_confidential_transactions',
+        'update_confidential_transactions',
+        'delete_confidential_transactions',
       ],
     },
   },

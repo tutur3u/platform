@@ -15,6 +15,7 @@ export interface FinanceDashboardSearchParams {
   view?: string;
   startDate?: string;
   endDate?: string;
+  includeConfidential?: string; // 'true' or 'false' from URL search params
 }
 
 export default function FinanceMetrics({
