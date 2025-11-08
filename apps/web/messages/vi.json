@@ -271,6 +271,8 @@
     "generate_explanation": "Tạo lời giải thích",
     "products": "Các sản phẩm",
     "solutions": "Giải pháp",
+    "show-more": "Hiển thị thêm",
+    "show-less": "Ẩn bớt",
     "pricing": "Bảng giá",
     "about": "Giới thiệu",
     "contact": "Liên hệ",
@@ -441,7 +443,8 @@
     "today": "Hôm nay",
     "yesterday": "Hôm qua",
     "transaction": "giao dịch",
-    "transactions": "giao dịch"
+    "transactions": "giao dịch",
+    "more": "thêm"
   },
   "home": {
     "headline": "Lối tắt thông minh của bạn",
@@ -1314,7 +1317,9 @@
     "confidential-toggle-disabled": "Bạn cần quyền để tạo hoặc cập nhật giao dịch bảo mật",
     "amount-redacted": "•••",
     "description-redacted": "[BẢO MẬT]",
-    "category-redacted": "Đã khóa"
+    "category-redacted": "Đã khóa",
+    "net-total": "Tổng ròng",
+    "no-transactions-found": "Không tìm thấy giao dịch nào. Tạo giao dịch đầu tiên của bạn để bắt đầu."
   },
   "workspace-inventory-tabs": {
     "overview": "Tổng quan",

@@ -278,6 +278,8 @@
     "generate_explanation": "Generate explanation",
     "products": "Products",
     "solutions": "Solutions",
+    "show-more": "Show more",
+    "show-less": "Show less",
     "pricing": "Pricing",
     "about": "About",
     "contact": "Contact",
@@ -443,7 +445,8 @@
     "today": "Today",
     "yesterday": "Yesterday",
     "transaction": "transaction",
-    "transactions": "transactions"
+    "transactions": "transactions",
+    "more": "more"
   },
   "home": {
     "headline": "Your intelligent shortcut",
@@ -1222,7 +1225,9 @@
     "confidential-toggle-disabled": "You need permission to create or update confidential transactions",
     "amount-redacted": "•••",
     "description-redacted": "[CONFIDENTIAL]",
-    "category-redacted": "Locked"
+    "category-redacted": "Locked",
+    "net-total": "Net Total",
+    "no-transactions-found": "No transactions found. Create your first transaction to get started."
   },
   "workspace-inventory-tabs": {
     "overview": "Overview",
