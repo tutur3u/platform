@@ -205,7 +205,7 @@ export function TransactionForm({
           <DialogTitle>
             {newContentType === 'wallet'
               ? t('ws-wallets.create')
-              : t('transaction-category-data-table.create_category')}
+              : t('ws-transaction-categories.create')}
           </DialogTitle>
         </DialogHeader>
         {newContentType === 'wallet' ? (
