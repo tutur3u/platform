@@ -29,59 +29,52 @@ async function getDataWithApiKey({
 }) {
   const sbAdmin = await createAdminClient();
 
-  const apiCheckQuery = sbAdmin
+  const { data: apiKeyData, error: apiError } = await sbAdmin
     .from('workspace_api_keys')
     .select('id')
     .eq('ws_id', wsId)
     .eq('value', apiKey)
     .single();
 
-  const mainQuery = sbAdmin
-    .from('wallet_transactions')
-    .select('amount.sum(), workspace_wallets!inner(ws_id)')
-    .eq('workspace_wallets.ws_id', wsId)
-    .lt('amount', 0)
-    .maybeSingle();
-
-  const [apiCheck, response] = await Promise.all([apiCheckQuery, mainQuery]);
-
-  const { error: apiError } = apiCheck;
-
-  if (apiError) {
+  if (apiError || !apiKeyData) {
     console.log(apiError);
     return NextResponse.json({ message: 'Invalid API key' }, { status: 401 });
   }
 
-  const { data, error } = response;
+  // Use the regular client with API key to respect RLS and redaction
+  const supabase = await createClient();
+
+  // Use optimized aggregation function - calculates sum at database level
+  const { data: sum, error } = await supabase.rpc('get_wallet_expense_sum', {
+    p_ws_id: wsId,
+  });
 
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error fetching workspace API configs' },
+      { message: 'Error calculating expense sum' },
       { status: 500 }
     );
   }
 
-  return NextResponse.json(data?.sum || 0);
+  return NextResponse.json(sum ?? 0);
 }
 
 async function getDataFromSession({ wsId }: { wsId: string }) {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from('wallet_transactions')
-    .select('amount.sum(), workspace_wallets!inner(ws_id)')
-    .eq('workspace_wallets.ws_id', wsId)
-    .lt('amount', 0)
-    .maybeSingle();
+  // Use optimized aggregation function - calculates sum at database level
+  const { data: sum, error } = await supabase.rpc('get_wallet_expense_sum', {
+    p_ws_id: wsId,
+  });
 
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error fetching workspace API configs' },
+      { message: 'Error calculating expense sum' },
       { status: 500 }
     );
   }
 
-  return NextResponse.json(data?.sum || 0);
+  return NextResponse.json(sum ?? 0);
 }
