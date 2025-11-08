@@ -48,10 +48,7 @@ export default async function FinancePage({ wsId, searchParams }: Props) {
     includeConfidentialBool
   );
 
-  const { data: recentTransactions } = await getRecentTransactions(
-    wsId,
-    includeConfidentialBool
-  );
+  const { data: recentTransactions } = await getRecentTransactions(wsId);
 
   // Map recent transactions to match the data structure expected by CustomDataTable
   const transactionsData = recentTransactions.map((d) => ({
@@ -157,10 +154,7 @@ async function getMonthlyData(wsId: string, includeConfidential: boolean) {
   return { data: data || [], count };
 }
 
-async function getRecentTransactions(
-  wsId: string,
-  includeConfidential: boolean
-) {
+async function getRecentTransactions(wsId: string) {
   const supabase = await createClient();
 
   // Use RPC function to get redacted transactions with confidential filtering
@@ -171,7 +165,6 @@ async function getRecentTransactions(
       p_order_by: 'taken_at',
       p_order_direction: 'DESC',
       p_limit: 10,
-      p_include_confidential: includeConfidential,
     }
   );
 
