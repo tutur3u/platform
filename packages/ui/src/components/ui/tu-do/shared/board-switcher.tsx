@@ -33,38 +33,13 @@ type BoardWithStatus = {
   created_at: string | null;
 };
 
-function getBoardStatus(board: BoardWithStatus) {
-  if (board.deleted_at) {
-    const deletedDate = new Date(board.deleted_at);
-    const now = new Date();
-    const daysPassed = Math.floor(
-      (now.getTime() - deletedDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    const daysRemaining = Math.max(0, 30 - daysPassed);
-    return {
-      type: 'deleted' as const,
-      label: 'Deleted',
-      daysRemaining,
-      variant: 'destructive' as const,
-      icon: Trash2,
-    };
-  }
-
-  if (board.archived_at) {
-    return {
-      type: 'archived' as const,
-      label: 'Archived',
-      variant: 'secondary' as const,
-      icon: Archive,
-    };
-  }
-
-  return {
-    type: 'active' as const,
-    label: 'Active',
-    variant: 'default' as const,
-    icon: CheckCircle2,
-  };
+function getDaysRemaining(deletedAt: string) {
+  const deletedDate = new Date(deletedAt);
+  const now = new Date();
+  const daysPassed = Math.floor(
+    (now.getTime() - deletedDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  return Math.max(0, 30 - daysPassed);
 }
 
 export function BoardSwitcher({ board }: BoardSwitcherProps) {
@@ -123,9 +98,6 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                   Active Boards
                 </DropdownMenuLabel>
                 {activeBoards.map((otherBoard) => {
-                  const status = getBoardStatus(otherBoard);
-                  const StatusIcon = status.icon;
-
                   return (
                     <DropdownMenuItem
                       key={otherBoard.id}
@@ -145,15 +117,13 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                         </span>
                       </div>
                       <Badge
-                        variant={status.variant}
                         className={cn(
                           'shrink-0 gap-1 px-2 py-0.5 text-[10px]',
-                          status.type === 'active' &&
-                            'bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
+                          'bg-dynamic-green/10 text-dynamic-green'
                         )}
                       >
-                        <StatusIcon className="h-3 w-3" />
-                        {status.label}
+                        <CheckCircle2 className="h-3 w-3" />
+                        Active
                       </Badge>
                     </DropdownMenuItem>
                   );
@@ -169,9 +139,6 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                   Archived Boards
                 </DropdownMenuLabel>
                 {archivedBoards.map((otherBoard) => {
-                  const status = getBoardStatus(otherBoard);
-                  const StatusIcon = status.icon;
-
                   return (
                     <DropdownMenuItem
                       key={otherBoard.id}
@@ -191,11 +158,13 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                         </span>
                       </div>
                       <Badge
-                        variant={status.variant}
-                        className="shrink-0 gap-1 px-2 py-0.5 text-[10px]"
+                        className={cn(
+                          'shrink-0 gap-1 px-2 py-0.5 text-[10px]',
+                          'bg-muted text-muted-foreground'
+                        )}
                       >
-                        <StatusIcon className="h-3 w-3" />
-                        {status.label}
+                        <Archive className="h-3 w-3" />
+                        Archived
                       </Badge>
                     </DropdownMenuItem>
                   );
@@ -213,8 +182,9 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                   Deleted Boards
                 </DropdownMenuLabel>
                 {deletedBoards.map((otherBoard) => {
-                  const status = getBoardStatus(otherBoard);
-                  const StatusIcon = status.icon;
+                  const daysRemaining = getDaysRemaining(
+                    otherBoard.deleted_at ?? ''
+                  );
 
                   return (
                     <DropdownMenuItem
@@ -233,18 +203,18 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                         <span className="truncate font-medium text-sm leading-none">
                           {otherBoard.name || 'Untitled'}
                         </span>
-                        {status.type === 'deleted' && (
-                          <span className="text-[10px] text-muted-foreground leading-none">
-                            {status.daysRemaining} days left
-                          </span>
-                        )}
+                        <span className="text-[10px] text-muted-foreground leading-none">
+                          {daysRemaining} days left
+                        </span>
                       </div>
                       <Badge
-                        variant={status.variant}
-                        className="shrink-0 gap-1 px-2 py-0.5 text-[10px]"
+                        className={cn(
+                          'shrink-0 gap-1 px-2 py-0.5 text-[10px]',
+                          'bg-dynamic-red/10 text-dynamic-red'
+                        )}
                       >
-                        <StatusIcon className="h-3 w-3" />
-                        {status.label}
+                        <Trash2 className="h-3 w-3" />
+                        Deleted
                       </Badge>
                     </DropdownMenuItem>
                   );
