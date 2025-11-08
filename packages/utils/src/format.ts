@@ -84,3 +84,27 @@ export function isValidHttpUrl(url: string | null | undefined): boolean {
     return false;
   }
 }
+
+/**
+ * Format a number as currency with locale-specific formatting
+ * @param amount - The amount to format
+ * @param locale - The locale to use (default: 'vi-VN')
+ * @param currency - The currency code (default: 'VND')
+ * @param options - Additional Intl.NumberFormat options
+ * @returns Formatted currency string
+ */
+export function formatCurrency(
+  amount: number,
+  locale = 'vi-VN',
+  currency = 'VND',
+  options?: Partial<Intl.NumberFormatOptions>
+): string {
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+    signDisplay: 'always',
+    ...options,
+  }).format(amount);
+}

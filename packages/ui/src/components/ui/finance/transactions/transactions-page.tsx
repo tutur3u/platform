@@ -30,6 +30,24 @@ export default async function TransactionsPage({ wsId, searchParams }: Props) {
   const canCreateTransactions = containsPermission('create_transactions');
   const canUpdateTransactions = containsPermission('update_transactions');
   const canDeleteTransactions = containsPermission('delete_transactions');
+  const canCreateConfidentialTransactions = containsPermission(
+    'create_confidential_transactions'
+  );
+  const canUpdateConfidentialTransactions = containsPermission(
+    'update_confidential_transactions'
+  );
+  const canDeleteConfidentialTransactions = containsPermission(
+    'delete_confidential_transactions'
+  );
+  const canViewConfidentialAmount = containsPermission(
+    'view_confidential_amount'
+  );
+  const canViewConfidentialDescription = containsPermission(
+    'view_confidential_description'
+  );
+  const canViewConfidentialCategory = containsPermission(
+    'view_confidential_category'
+  );
 
   if (!canViewTransactions) return notFound();
 
@@ -46,6 +64,9 @@ export default async function TransactionsPage({ wsId, searchParams }: Props) {
             <TransactionForm
               wsId={wsId}
               canCreateTransactions={canCreateTransactions}
+              canCreateConfidentialTransactions={
+                canCreateConfidentialTransactions
+              }
             />
           ) : undefined
         }
@@ -63,6 +84,11 @@ export default async function TransactionsPage({ wsId, searchParams }: Props) {
         }
         canUpdateTransactions={canUpdateTransactions}
         canDeleteTransactions={canDeleteTransactions}
+        canUpdateConfidentialTransactions={canUpdateConfidentialTransactions}
+        canDeleteConfidentialTransactions={canDeleteConfidentialTransactions}
+        canViewConfidentialAmount={canViewConfidentialAmount}
+        canViewConfidentialDescription={canViewConfidentialDescription}
+        canViewConfidentialCategory={canViewConfidentialCategory}
       />
     </>
   );
