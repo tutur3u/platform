@@ -98,6 +98,7 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                   Active Boards
                 </DropdownMenuLabel>
                 {activeBoards.map((otherBoard) => {
+                  const isCurrentBoard = otherBoard.id === board.id;
                   return (
                     <DropdownMenuItem
                       key={otherBoard.id}
@@ -106,7 +107,10 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                           `/${board.ws_id}/tasks/boards/${otherBoard.id}`
                         )
                       }
-                      className="group/item cursor-pointer gap-3 py-2.5"
+                      className={cn(
+                        'group/item cursor-pointer gap-3 py-2.5',
+                        isCurrentBoard && 'bg-dynamic-blue/10 text-dynamic-blue'
+                      )}
                     >
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary transition-colors group-hover/item:bg-primary/20">
                         <LayoutGrid className="h-4 w-4" />
@@ -122,7 +126,7 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                           'bg-dynamic-green/10 text-dynamic-green'
                         )}
                       >
-                        <CheckCircle2 className="h-3 w-3" />
+                        <CheckCircle2 className="h-3 w-3 text-dynamic-green/50" />
                         Active
                       </Badge>
                     </DropdownMenuItem>
@@ -139,6 +143,7 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                   Archived Boards
                 </DropdownMenuLabel>
                 {archivedBoards.map((otherBoard) => {
+                  const isCurrentBoard = otherBoard.id === board.id;
                   return (
                     <DropdownMenuItem
                       key={otherBoard.id}
@@ -147,7 +152,11 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                           `/${board.ws_id}/tasks/boards/${otherBoard.id}`
                         )
                       }
-                      className="group/item cursor-pointer gap-3 py-2.5 opacity-75 hover:opacity-100"
+                      className={cn(
+                        'group/item cursor-pointer gap-3 py-2.5 opacity-75 hover:opacity-100',
+                        isCurrentBoard &&
+                          'bg-dynamic-blue/10 text-dynamic-blue opacity-100'
+                      )}
                     >
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
                         <LayoutGrid className="h-4 w-4" />
@@ -160,10 +169,10 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                       <Badge
                         className={cn(
                           'shrink-0 gap-1 px-2 py-0.5 text-[10px]',
-                          'bg-muted text-muted-foreground'
+                          'bg-muted text-foreground'
                         )}
                       >
-                        <Archive className="h-3 w-3" />
+                        <Archive className="h-3 w-3 text-foreground/50" />
                         Archived
                       </Badge>
                     </DropdownMenuItem>
@@ -185,6 +194,7 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                   const daysRemaining = getDaysRemaining(
                     otherBoard.deleted_at ?? ''
                   );
+                  const isCurrentBoard = otherBoard.id === board.id;
 
                   return (
                     <DropdownMenuItem
@@ -194,7 +204,11 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                           `/${board.ws_id}/tasks/boards/${otherBoard.id}`
                         )
                       }
-                      className="group/item cursor-pointer gap-3 py-2.5 opacity-60 hover:opacity-100"
+                      className={cn(
+                        'group/item cursor-pointer gap-3 py-2.5 opacity-60 hover:opacity-100',
+                        isCurrentBoard &&
+                          'bg-dynamic-blue/10 text-dynamic-blue opacity-100'
+                      )}
                     >
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-destructive/10 text-destructive">
                         <LayoutGrid className="h-4 w-4" />
@@ -213,7 +227,7 @@ export function BoardSwitcher({ board }: BoardSwitcherProps) {
                           'bg-dynamic-red/10 text-dynamic-red'
                         )}
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <Trash2 className="h-3 w-3 text-dynamic-red/50" />
                         Deleted
                       </Badge>
                     </DropdownMenuItem>
