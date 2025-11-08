@@ -21,11 +21,30 @@ export async function GET(req: Request, { params }: Params) {
     const walletIds = searchParams.getAll('walletIds');
     const walletId = searchParams.get('walletId'); // For single wallet view
 
-    // Parse cursor for cursor-based pagination
+    // Parse and validate cursor for cursor-based pagination
     let cursorTakenAt = null;
     let cursorCreatedAt = null;
     if (cursor) {
-      const [taken_at, created_at] = cursor.split('_');
+      const parts = cursor.trim().split('_');
+      if (parts.length !== 2 || !parts[0] || !parts[1]) {
+        return NextResponse.json(
+          { message: 'Invalid cursor format' },
+          { status: 400 }
+        );
+      }
+
+      const [taken_at, created_at] = parts;
+
+      if (
+        Number.isNaN(new Date(taken_at).getTime()) ||
+        Number.isNaN(new Date(created_at).getTime())
+      ) {
+        return NextResponse.json(
+          { message: 'Invalid cursor date format' },
+          { status: 400 }
+        );
+      }
+
       cursorTakenAt = taken_at;
       cursorCreatedAt = created_at;
     }

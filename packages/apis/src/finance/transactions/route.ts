@@ -1,6 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 interface Params {
@@ -38,9 +38,13 @@ export async function GET(req: Request, { params }: Params) {
   // Parse the request URL
   const url = new URL(req.url);
 
-  // Extract query parameters
-  const activePage = url.searchParams.get('page');
-  const itemsPerPage = url.searchParams.get('itemsPerPage');
+  // Extract and validate query parameters for pagination
+  const pageParam = url.searchParams.get('page');
+  const itemsPerPageParam = url.searchParams.get('itemsPerPage');
+
+  const page = Math.max(1, parseInt(pageParam || '1', 10));
+  const itemsPerPage = Math.max(1, parseInt(itemsPerPageParam || '25', 10));
+  const offset = (page - 1) * itemsPerPage;
 
   const supabase = await createClient();
 
@@ -53,13 +57,15 @@ export async function GET(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  // Use the redaction function to get transactions with permission-based field redaction
+  // Use the RPC function with pagination parameters to fetch transactions
   const { data, error } = await supabase.rpc(
     'get_wallet_transactions_with_permissions',
     {
       p_ws_id: wsId,
       p_user_id: user.id,
       p_transaction_ids: undefined,
+      p_limit: itemsPerPage,
+      p_offset: offset,
     }
   );
 
@@ -71,19 +77,16 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  // Apply pagination in memory (TODO: add pagination support to the RPC function)
-  const paginatedData = data
-    ?.slice(
-      (Number(activePage) - 1) * Number(itemsPerPage),
-      Number(activePage) * Number(itemsPerPage)
-    )
-    .sort((a, b) => {
-      const dateA = new Date(a.taken_at).getTime();
-      const dateB = new Date(b.taken_at).getTime();
-      return dateB - dateA;
-    });
+  // The RPC function should ideally handle sorting.
+  // If not, sorting here will only sort the current page of results.
+  // This preserves existing behavior of sorting the returned data.
+  const sortedData = data?.sort((a, b) => {
+    const dateA = new Date(a.taken_at).getTime();
+    const dateB = new Date(b.taken_at).getTime();
+    return dateB - dateA;
+  });
 
-  return NextResponse.json(paginatedData || []);
+  return NextResponse.json(sortedData || []);
 }
 
 export async function POST(req: Request, { params }: Params) {

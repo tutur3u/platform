@@ -5,7 +5,6 @@ import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
 
 interface ConfidentialToggleProps {
   hasPermission: boolean;
@@ -18,16 +17,8 @@ export default function ConfidentialToggle({
   const { getSingle, set, remove } = useSearchParams();
   const includeConfidential = getSingle('includeConfidential') !== 'false'; // Default to true
 
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (loading) setLoading(false);
-  }, [loading]);
-
   const handleToggle = (checked: boolean) => {
     if (!hasPermission) return;
-
-    setLoading(true);
 
     if (checked) {
       // Include confidential (default behavior)
@@ -61,7 +52,6 @@ export default function ConfidentialToggle({
         id="includeConfidential"
         checked={includeConfidential}
         onCheckedChange={handleToggle}
-        disabled={loading}
         className="ml-auto"
       />
 

@@ -22,6 +22,9 @@ interface TransactionCardProps {
       email: string;
       avatar_url: string | null;
     } | null;
+    is_amount_confidential?: boolean;
+    is_description_confidential?: boolean;
+    is_category_confidential?: boolean;
   };
   wsId: string;
 }
@@ -32,9 +35,9 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
 
   // Check if transaction is confidential
   const isConfidential =
-    (transaction as any).is_amount_confidential ||
-    (transaction as any).is_description_confidential ||
-    (transaction as any).is_category_confidential;
+    transaction.is_amount_confidential ||
+    transaction.is_description_confidential ||
+    transaction.is_category_confidential;
 
   return (
     <Card className="group cursor-pointer border-dynamic-gray/20 bg-dynamic-gray/10 transition-all hover:border-primary/50 hover:shadow-md">
@@ -90,7 +93,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
 
             <ConfidentialAmount
               amount={transaction.amount ?? null}
-              isConfidential={(transaction as any).is_amount_confidential}
+              isConfidential={transaction.is_amount_confidential || false}
               className={`font-bold text-lg tabular-nums ${
                 isConfidential
                   ? 'text-dynamic-orange'
