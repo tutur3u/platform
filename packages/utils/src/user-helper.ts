@@ -116,19 +116,20 @@ export async function getUserDefaultWorkspace() {
       }
     }
 
-    // If no default workspace or invalid, get the first available workspace
-    const { data: workspaces, error } = await supabase
+    // If no default workspace or invalid, get the personal workspace
+    const { data: personalWorkspace, error } = await supabase
       .from('workspaces')
       .select('id, name, personal, workspace_members!inner(user_id)')
       .eq('workspace_members.user_id', user.id)
+      .eq('personal', true)
       .limit(1)
       .maybeSingle();
 
-    if (error || !workspaces) {
+    if (error || !personalWorkspace) {
       return null;
     }
 
-    return workspaces;
+    return personalWorkspace;
   } catch (error) {
     console.error('Error getting user default workspace:', error);
     return null;
