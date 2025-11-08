@@ -6,7 +6,6 @@ import {
   Calendar,
   FileText,
   Lock,
-  Minus,
 } from '@tuturuuu/icons';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -14,7 +13,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import { ConfidentialAmount } from '@tuturuuu/ui/finance/transactions/confidential-field';
 import moment from 'moment';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 
 interface TransactionCardProps {
   transaction: Transaction & {
@@ -28,7 +27,6 @@ interface TransactionCardProps {
 }
 
 export function TransactionCard({ transaction }: TransactionCardProps) {
-  const locale = useLocale();
   const t = useTranslations('workspace-finance-transactions');
   const isExpense = (transaction.amount || 0) < 0;
 
@@ -66,7 +64,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
         <div className="flex-1 space-y-1">
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-col items-start justify-start gap-2">
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex flex-wrap items-center gap-2">
                 {transaction.category && (
                   <Badge variant="outline" className="font-medium text-xs">
                     {transaction.category}
@@ -91,7 +89,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
             </div>
 
             <ConfidentialAmount
-              amount={transaction.amount}
+              amount={transaction.amount ?? null}
               isConfidential={(transaction as any).is_amount_confidential}
               className={`font-bold text-lg tabular-nums ${
                 isConfidential

@@ -32,7 +32,7 @@ export async function GET(req: Request, { params }: Params) {
 
     // Combine wallet filters
     const finalWalletIds =
-      walletIds.length > 0 ? walletIds : walletId ? [walletId] : null;
+      walletIds.length > 0 ? walletIds : walletId ? [walletId] : undefined;
 
     // Use optimized RPC function with all filters at database level
     const { data, error } = await supabase.rpc(
@@ -40,14 +40,14 @@ export async function GET(req: Request, { params }: Params) {
       {
         p_ws_id: wsId,
         p_wallet_ids: finalWalletIds,
-        p_category_ids: categoryIds.length > 0 ? categoryIds : null,
-        p_creator_ids: userIds.length > 0 ? userIds : null,
-        p_search_query: q || null,
+        p_category_ids: categoryIds.length > 0 ? categoryIds : undefined,
+        p_creator_ids: userIds.length > 0 ? userIds : undefined,
+        p_search_query: q || undefined,
         p_order_by: 'taken_at',
         p_order_direction: 'DESC',
         p_limit: limit + 1, // Fetch one extra to check for more
-        p_cursor_taken_at: cursorTakenAt,
-        p_cursor_created_at: cursorCreatedAt,
+        p_cursor_taken_at: cursorTakenAt || undefined,
+        p_cursor_created_at: cursorCreatedAt || undefined,
         p_include_count: false, // Don't need total count for infinite scroll
       }
     );

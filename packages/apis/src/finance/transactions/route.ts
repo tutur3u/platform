@@ -59,7 +59,7 @@ export async function GET(req: Request, { params }: Params) {
     {
       p_ws_id: wsId,
       p_user_id: user.id,
-      p_transaction_ids: null,
+      p_transaction_ids: undefined,
     }
   );
 
