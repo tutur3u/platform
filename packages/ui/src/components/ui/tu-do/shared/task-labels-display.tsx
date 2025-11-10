@@ -4,6 +4,7 @@ import { Tag } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import { useTheme } from 'next-themes';
 
 interface TaskLabel {
   id: string;
@@ -113,7 +114,7 @@ interface AccessibleStyles {
 }
 
 // Compute styles enforcing: background at ~10% opacity ("/10"), text full opacity ("/100").
-function computeAccessibleStyles(raw: string): AccessibleStyles | null {
+function computeAccessibleStyles(raw: string, isDark: boolean): AccessibleStyles | null {
   const nameMap: Record<string, string> = {
     red: '#ef4444',
     orange: '#f97316',
@@ -141,16 +142,55 @@ function computeAccessibleStyles(raw: string): AccessibleStyles | null {
   const rgb = hexToRgb(baseHex);
   if (!rgb) return null;
   const lum = luminance(rgb);
-  // 10% opacity = ~0x1A; 30% opacity = ~0x4D
+  // 10% opacity = ~0x1A; 30% opacity = ~0x4D; 60% opacity = ~0x99
   const bg = baseHex + '1a';
-  const border = baseHex + '4d';
+  let border: string;
   let text = baseHex; // full opacity
-  if (lum < 0.22) {
-    // Lighten dark colors moderately (factor 1.25) to produce a soft version (e.g., purple -> light purple) instead of white.
-    text = adjust(baseHex, 1.25);
-  } else if (lum > 0.82) {
-    text = adjust(baseHex, 0.65); // slightly darken very light colors
+
+  // Adjust text color based on theme and luminance
+  if (isDark) {
+    // Dark mode: lighten colors for better visibility
+    border = baseHex + '4d'; // 30% opacity in dark mode
+    if (lum < 0.35) {
+      // Lighten dark colors significantly
+      text = adjust(baseHex, 1.5);
+    } else if (lum < 0.6) {
+      // Moderately lighten mid-tone colors
+      text = adjust(baseHex, 1.25);
+    }
+    // Light colors stay as-is or slightly adjusted
+    else if (lum > 0.85) {
+      text = adjust(baseHex, 0.9);
+    }
+  } else {
+    // Light mode: darken colors aggressively (colors picked for dark mode need significant darkening)
+    if (lum < 0.18) {
+      // Very dark colors: lighten slightly
+      text = adjust(baseHex, 1.4);
+      border = baseHex + '4d'; // 30% opacity for dark colors
+    } else if (lum < 0.35) {
+      // Dark colors: lighten a bit
+      text = adjust(baseHex, 1.2);
+      border = baseHex + '66'; // 40% opacity
+    } else if (lum < 0.55) {
+      // Mid-tone colors: darken moderately
+      text = adjust(baseHex, 0.65);
+      border = adjust(baseHex, 0.65) + '99'; // Use darkened color at 60% opacity
+    } else if (lum < 0.75) {
+      // Bright colors: darken significantly
+      text = adjust(baseHex, 0.5);
+      border = adjust(baseHex, 0.5) + '99'; // Use darkened color at 60% opacity
+    } else if (lum < 0.85) {
+      // Very bright colors: darken heavily
+      text = adjust(baseHex, 0.4);
+      border = adjust(baseHex, 0.4) + '99'; // Use darkened color at 60% opacity
+    } else {
+      // Extremely bright colors (like bright yellows): darken extra heavily
+      text = adjust(baseHex, 0.3);
+      border = adjust(baseHex, 0.3) + '99'; // Use heavily darkened color at 60% opacity
+    }
   }
+
   return { bg, border, text };
 }
 
@@ -161,6 +201,9 @@ export function TaskLabelsDisplay({
   size = 'sm',
   showIcon = true,
 }: TaskLabelsDisplayProps) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+
   if (!labels || labels.length === 0) return null;
 
   // Derive sizing tokens
@@ -181,7 +224,7 @@ export function TaskLabelsDisplay({
   return (
     <div className={cn('flex items-center gap-1 overflow-hidden', className)}>
       {visibleLabels.map((label) => {
-        const styles = computeAccessibleStyles(label.color);
+        const styles = computeAccessibleStyles(label.color, isDark);
         return (
           <Badge
             key={label.id}
@@ -193,10 +236,10 @@ export function TaskLabelsDisplay({
             style={
               styles
                 ? {
-                    backgroundColor: styles.bg,
-                    borderColor: styles.border,
-                    color: styles.text,
-                  }
+                  backgroundColor: styles.bg,
+                  borderColor: styles.border,
+                  color: styles.text,
+                }
                 : undefined
             }
           >
