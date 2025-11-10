@@ -8,7 +8,6 @@ import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { DEV_MODE } from '@/constants/common';
 import { CalendarActiveSyncDebugger } from './active-sync';
 import CalendarClientPage from './client';
-import TasksSidebar from './components/tasks-sidebar';
 
 export const metadata: Metadata = {
   title: 'Calendar',
@@ -53,7 +52,6 @@ export default async function CalendarPage({ params }: PageProps) {
                 experimentalGoogleToken={googleToken}
                 workspace={workspace}
               />
-              <TasksSidebar wsId={wsId} locale={locale} />
             </div>
           </CalendarSyncProvider>
         );

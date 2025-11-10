@@ -59,7 +59,7 @@ export default function TasksSidebarContent({
 
   return (
     <Dialog>
-      <div className="@container slide-in-from-right-5 ml-2 flex h-full max-h-[100vh] w-1/3 flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out xl:flex">
+      <div className="@container slide-in-from-right-5 ml-2 flex h-full max-h-screen w-1/3 flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out xl:flex">
         {/* Header */}
         <div className="@container flex items-center justify-between rounded-t-lg border-border/50 border-b bg-linear-to-r from-background/80 to-background/60 px-4 py-3 backdrop-blur-sm">
           <div className="flex w-full items-center justify-between gap-1">
