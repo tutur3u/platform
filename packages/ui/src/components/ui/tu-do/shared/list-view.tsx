@@ -46,8 +46,10 @@ import { cn } from '@tuturuuu/utils/format';
 import { getTasks, priorityCompare } from '@tuturuuu/utils/task-helper';
 import { format, isPast, isToday, isTomorrow } from 'date-fns';
 import Image from 'next/image';
+import { useTheme } from 'next-themes';
 import { useEffect, useMemo, useState } from 'react';
 import { useTaskDialog } from '../hooks/useTaskDialog';
+import { computeAccessibleLabelStyles } from '../utils/label-colors';
 
 interface Props {
   boardId: string;
@@ -87,6 +89,8 @@ export function ListView({
   searchQuery,
 }: Props) {
   const queryClient = useQueryClient();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
   const [isLoading, setIsLoading] = useState(false);
   const [sortField, setSortField] = useState<SortField>('created_at');
@@ -535,11 +539,19 @@ export function ListView({
                                 <Badge
                                   key={label.id}
                                   variant="outline"
-                                  style={{
-                                    backgroundColor: `color-mix(in srgb, ${label.color} 12%, transparent)`,
-                                    borderColor: `color-mix(in srgb, ${label.color} 25%, transparent)`,
-                                    color: label.color,
-                                  }}
+                                  style={(() => {
+                                    const styles = computeAccessibleLabelStyles(
+                                      label.color,
+                                      isDark
+                                    );
+                                    return styles
+                                      ? {
+                                          backgroundColor: styles.bg,
+                                          borderColor: styles.border,
+                                          color: styles.text,
+                                        }
+                                      : undefined;
+                                  })()}
                                   className="h-4 px-1.5 text-[10px]"
                                 >
                                   {label.name}

@@ -12,6 +12,8 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { useTheme } from 'next-themes';
+import { computeAccessibleLabelStyles } from '../../../utils/label-colors';
 
 interface TaskNewLabelDialogProps {
   open: boolean;
@@ -34,6 +36,9 @@ export function TaskNewLabelDialog({
   onColorChange,
   onConfirm,
 }: TaskNewLabelDialogProps) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -63,11 +68,19 @@ export function TaskNewLabelDialog({
             <div className="flex items-center gap-3">
               <ColorPicker value={newLabelColor} onChange={onColorChange} />
               <Badge
-                style={{
-                  backgroundColor: `color-mix(in srgb, ${newLabelColor} 15%, transparent)`,
-                  borderColor: `color-mix(in srgb, ${newLabelColor} 30%, transparent)`,
-                  color: newLabelColor,
-                }}
+                style={(() => {
+                  const styles = computeAccessibleLabelStyles(
+                    newLabelColor,
+                    isDark
+                  );
+                  return styles
+                    ? {
+                        backgroundColor: styles.bg,
+                        borderColor: styles.border,
+                        color: styles.text,
+                      }
+                    : undefined;
+                })()}
                 className="border"
               >
                 {newLabelName.trim() || 'Preview'}

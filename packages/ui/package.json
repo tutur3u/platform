@@ -181,6 +181,10 @@
       "types": "./src/components/ui/tu-do/shared/estimation-mapping.ts",
       "import": "./src/components/ui/tu-do/shared/estimation-mapping.ts"
     },
+    "./tu-do/utils/label-colors": {
+      "types": "./src/components/ui/tu-do/utils/label-colors.ts",
+      "import": "./src/components/ui/tu-do/utils/label-colors.ts"
+    },
     "./tu-do/boards/*": "./src/components/ui/tu-do/boards/*.tsx",
     "./*": "./src/components/ui/*.tsx"
   },
