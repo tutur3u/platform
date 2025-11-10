@@ -11,7 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 interface Item {
   id: string;
@@ -26,12 +26,13 @@ interface LabelItem extends Item {
 interface LabelProjectFilterProps {
   labels: LabelItem[];
   projects: Item[];
-  selectedWorkspaceIds: string[];
   selectedLabelIds: string[];
   selectedProjectIds: string[];
   onSelectedLabelIdsChange: (ids: string[]) => void;
   onSelectedProjectIdsChange: (ids: string[]) => void;
 }
+
+type ViewType = 'main' | 'labels' | 'projects';
 
 export function LabelProjectFilter({
   labels,
@@ -42,15 +43,11 @@ export function LabelProjectFilter({
   onSelectedProjectIdsChange,
 }: LabelProjectFilterProps) {
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState('main');
+  const [view, setView] = useState<ViewType>('main');
 
-  const filteredLabels = useMemo(() => {
-    return labels;
-  }, [labels]);
+  const filteredLabels = labels;
 
-  const filteredProjects = useMemo(() => {
-    return projects;
-  }, [projects]);
+  const filteredProjects = projects;
 
   const handleLabelSelect = (id: string) => {
     const newIds = selectedLabelIds.includes(id)
@@ -86,7 +83,7 @@ export function LabelProjectFilter({
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        <PopoverContent className="w-64 p-0" align="start">
+        <PopoverContent className="max-w-64 p-0" align="start">
           {view === 'main' && (
             <div className="p-2">
               <button
@@ -130,14 +127,20 @@ export function LabelProjectFilter({
               <ScrollArea className="max-h-[180px]">
                 {filteredLabels.length > 0 ? (
                   filteredLabels.map((label) => (
-                    <div
+                    <Button
                       key={label.id}
                       onClick={() => handleLabelSelect(label.id)}
-                      className="flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-muted"
+                      className="flex h-auto w-full items-start justify-start gap-2 rounded-md px-2 py-2 text-sm hover:bg-muted"
+                      variant="ghost"
                     >
                       <Checkbox checked={selectedLabelIds.includes(label.id)} />
-                      <span style={{ color: label.color }}>{label.name}</span>
-                    </div>
+                      <span
+                        style={{ color: label.color }}
+                        className="line-clamp-2 min-w-0 whitespace-normal break-words text-left"
+                      >
+                        {label.name}
+                      </span>
+                    </Button>
                   ))
                 ) : (
                   <div className="px-2 py-2 text-center text-muted-foreground text-sm">
@@ -148,7 +151,7 @@ export function LabelProjectFilter({
             </div>
           )}
           {view === 'projects' && (
-            <div className="p-2">
+            <div className="w-full p-2">
               <button
                 type="button"
                 onClick={() => setView('main')}
@@ -157,19 +160,22 @@ export function LabelProjectFilter({
                 <ArrowLeft className="h-4 w-4" />
                 <span>Projects</span>
               </button>
-              <ScrollArea className="max-h-[180px]">
+              <ScrollArea className="max-h-[180px] w-full">
                 {filteredProjects.length > 0 ? (
                   filteredProjects.map((project) => (
-                    <div
+                    <Button
                       key={project.id}
                       onClick={() => handleProjectSelect(project.id)}
-                      className="flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-muted"
+                      className="flex h-auto w-full items-start justify-start gap-2 rounded-md px-2 py-2 text-sm hover:bg-muted"
+                      variant="ghost"
                     >
                       <Checkbox
                         checked={selectedProjectIds.includes(project.id)}
                       />
-                      <span>{project.name}</span>
-                    </div>
+                      <span className="line-clamp-2 min-w-0 whitespace-normal break-words text-left">
+                        {project.name}
+                      </span>
+                    </Button>
                   ))
                 ) : (
                   <div className="px-2 py-2 text-center text-muted-foreground text-sm">

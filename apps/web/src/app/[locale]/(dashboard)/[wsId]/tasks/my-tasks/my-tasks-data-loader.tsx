@@ -1,6 +1,34 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import MyTasksContent from './my-tasks-content';
 
+interface TaskAssignee {
+  task_id: string;
+  user: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null;
+}
+
+interface TaskLabel {
+  task_id: string;
+  label: {
+    id: string;
+    name: string;
+    color: string;
+    created_at: string;
+  } | null;
+}
+
+interface TaskProject {
+  task_id: string;
+  project: {
+    id: string;
+    name: string;
+    ws_id: string;
+  } | null;
+}
+
 export async function MyTasksDataLoader({
   wsId,
   userId,
@@ -52,9 +80,9 @@ export async function MyTasksDataLoader({
   // Fetch related data for all tasks
   const taskIds = allTasks?.map((t) => t.id) || [];
 
-  let assigneesData: any[] | null = [];
-  let labelsData: any[] | null = [];
-  let projectsData: any[] | null = [];
+  let assigneesData: TaskAssignee[] | null = [];
+  let labelsData: TaskLabel[] | null = [];
+  let projectsData: TaskProject[] | null = [];
 
   if (taskIds.length > 0) {
     const [assigneesResult, labelsResult, projectsResult] = await Promise.all([
@@ -104,7 +132,7 @@ export async function MyTasksDataLoader({
     projectsData = projectsResult.data;
   }
 
-  const assigneesByTaskId = new Map<string, any[]>();
+  const assigneesByTaskId = new Map<string, { user: TaskAssignee['user'] }[]>();
   if (assigneesData) {
     for (const assignee of assigneesData) {
       if (!assigneesByTaskId.has(assignee.task_id)) {
@@ -114,7 +142,7 @@ export async function MyTasksDataLoader({
     }
   }
 
-  const labelsByTaskId = new Map<string, any[]>();
+  const labelsByTaskId = new Map<string, { label: TaskLabel['label'] }[]>();
   if (labelsData) {
     for (const label of labelsData) {
       if (!labelsByTaskId.has(label.task_id)) {
@@ -124,7 +152,10 @@ export async function MyTasksDataLoader({
     }
   }
 
-  const projectsByTaskId = new Map<string, any[]>();
+  const projectsByTaskId = new Map<
+    string,
+    { project: TaskProject['project'] }[]
+  >();
   if (projectsData) {
     for (const project of projectsData) {
       if (!projectsByTaskId.has(project.task_id)) {
