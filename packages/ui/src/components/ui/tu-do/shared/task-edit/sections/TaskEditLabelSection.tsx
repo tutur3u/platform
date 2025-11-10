@@ -5,7 +5,9 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
+import { useTheme } from 'next-themes';
 import { memo, useMemo, useState } from 'react';
+import { computeAccessibleLabelStyles } from '../../../utils/label-colors';
 
 interface WorkspaceTaskLabel {
   id: string;
@@ -29,6 +31,8 @@ export const TaskEditLabelSection = memo(function TaskEditLabelSection({
   onToggleLabel,
   onCreateNew,
 }: TaskEditLabelSectionProps) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredLabels = useMemo(() => {
@@ -94,11 +98,19 @@ export const TaskEditLabelSection = memo(function TaskEditLabelSection({
                 .map((label) => (
                   <Badge
                     key={label.id}
-                    style={{
-                      backgroundColor: `color-mix(in srgb, ${label.color} 15%, transparent)`,
-                      borderColor: `color-mix(in srgb, ${label.color} 30%, transparent)`,
-                      color: label.color,
-                    }}
+                    style={(() => {
+                      const styles = computeAccessibleLabelStyles(
+                        label.color,
+                        isDark
+                      );
+                      return styles
+                        ? {
+                            backgroundColor: styles.bg,
+                            borderColor: styles.border,
+                            color: styles.text,
+                          }
+                        : undefined;
+                    })()}
                     className="h-6 cursor-pointer border px-2 text-xs"
                     onClick={() => onToggleLabel(label)}
                   >
@@ -135,11 +147,19 @@ export const TaskEditLabelSection = memo(function TaskEditLabelSection({
                       )}
                     >
                       <Badge
-                        style={{
-                          backgroundColor: `color-mix(in srgb, ${label.color} 15%, transparent)`,
-                          borderColor: `color-mix(in srgb, ${label.color} 30%, transparent)`,
-                          color: label.color,
-                        }}
+                        style={(() => {
+                          const styles = computeAccessibleLabelStyles(
+                            label.color,
+                            isDark
+                          );
+                          return styles
+                            ? {
+                                backgroundColor: styles.bg,
+                                borderColor: styles.border,
+                                color: styles.text,
+                              }
+                            : undefined;
+                        })()}
                         className="border px-2 text-xs"
                       >
                         {label.name}

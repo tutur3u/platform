@@ -413,11 +413,11 @@ export async function getPermissions({
     permissionsData.length > 0 || defaultData.length > 0 || isCreator;
 
   if (DEV_MODE) {
-    console.log('--------------------');
-    console.log('Is creator', isCreator);
+    // console.log('--------------------');
+    // console.log('Is creator', isCreator);
     // console.log('Workspace permissions', permissionsData);
     // console.log('Default permissions', defaultData);
-    console.log('Has permissions', hasPermissions);
+    // console.log('Has permissions', hasPermissions);
     // console.log('--------------------');
   }
 
