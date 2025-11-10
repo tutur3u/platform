@@ -1,4 +1,5 @@
 import LoadingStatisticCard from '@tuturuuu/ui/finance/shared/loaders/statistics';
+import ConfidentialToggle from '@tuturuuu/ui/finance/shared/confidential-toggle';
 import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
 import ExpenseStatistics from '@tuturuuu/ui/finance/statistics/expense';
 import IncomeStatistics from '@tuturuuu/ui/finance/statistics/income';
@@ -7,6 +8,7 @@ import TotalBalanceStatistics from '@tuturuuu/ui/finance/statistics/total-balanc
 import TransactionCategoriesStatistics from '@tuturuuu/ui/finance/statistics/transaction-categories';
 import TransactionsStatistics from '@tuturuuu/ui/finance/statistics/transactions';
 import WalletsStatistics from '@tuturuuu/ui/finance/statistics/wallets';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { Suspense } from 'react';
 import { FinanceCategoryStatistics } from './categories/finance';
 import FinanceToggle from './finance-toggle';
@@ -21,10 +23,19 @@ export default async function FinanceStatistics({
   const sp = await searchParams;
   const { showFinanceStats } = sp;
 
+  // Check if user has permission to view confidential amounts
+  const { permissions } = await getPermissions({ wsId });
+  const canViewConfidentialAmount = permissions.includes(
+    'view_confidential_amount'
+  );
+
   return (
     <>
       <FinanceCategoryStatistics wsId={wsId} />
       <FinanceToggle />
+      {canViewConfidentialAmount && (
+        <ConfidentialToggle hasPermission={canViewConfidentialAmount} />
+      )}
 
       {showFinanceStats ? (
         <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">

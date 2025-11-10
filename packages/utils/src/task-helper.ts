@@ -1868,6 +1868,16 @@ export function calculateSortKey(
   // Case 3: Inserting between two tasks
   const gap = nextSortKey - prevSortKey;
 
+  // Check for inverted sort keys (e.g., in "done" lists sorted by completed_at)
+  // This happens when visual order (by completion date) differs from sort_key order
+  if (gap <= 0) {
+    throw new SortKeyGapExhaustedError(
+      prevSortKey,
+      nextSortKey,
+      `Cannot insert between inverted sort keys ${prevSortKey} and ${nextSortKey}. Gap (${gap}) is inverted or zero. Normalization required.`
+    );
+  }
+
   // Gap exhausted - cannot fit another integer between them
   if (gap <= 1) {
     throw new SortKeyGapExhaustedError(

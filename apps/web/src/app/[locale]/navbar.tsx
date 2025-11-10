@@ -3,6 +3,7 @@ import { Navbar as SharedNavbar } from '@tuturuuu/ui/navbar';
 import { Suspense } from 'react';
 import LocalWorkspaceSelect from './local-workspace-select';
 import NavbarActions from './navbar-actions';
+import NavbarLogoLink from './navbar-logo-link';
 import NavbarSeparator from './navbar-separator';
 import { MainNavigationMenu } from './navigation-menu';
 import ServerMenu from './server-menu';
@@ -34,6 +35,14 @@ export default async function Navbar({
     <SharedNavbar
       logo="/media/logos/transparent.png"
       title={<LogoTitle />}
+      customLogoLink={
+        <Suspense>
+          <NavbarLogoLink
+            logo="/media/logos/transparent.png"
+            title={<LogoTitle />}
+          />
+        </Suspense>
+      }
       afterTitle={
         <Suspense
           fallback={

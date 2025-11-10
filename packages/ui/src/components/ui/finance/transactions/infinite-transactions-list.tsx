@@ -1,14 +1,22 @@
 'use client';
 
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { Calendar, Loader2, TrendingDown, TrendingUp } from '@tuturuuu/icons';
+import {
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  TrendingDown,
+  TrendingUp,
+} from '@tuturuuu/icons';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { cn } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import 'moment/locale/vi';
-import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TransactionCard } from './transaction-card';
 import { TransactionEditDialog } from './transaction-edit-dialog';
@@ -19,6 +27,11 @@ interface InfiniteTransactionsListProps {
   initialData?: Transaction[];
   canUpdateTransactions?: boolean;
   canDeleteTransactions?: boolean;
+  canUpdateConfidentialTransactions?: boolean;
+  canDeleteConfidentialTransactions?: boolean;
+  canViewConfidentialAmount?: boolean;
+  canViewConfidentialDescription?: boolean;
+  canViewConfidentialCategory?: boolean;
 }
 
 interface TransactionResponse {
@@ -31,14 +44,19 @@ interface GroupedTransactions {
   date: string;
   label: string;
   transactions: Transaction[];
+  isExpanded?: boolean;
 }
 
 export function InfiniteTransactionsList({
   wsId,
   walletId,
-  // initialData = [],
   canUpdateTransactions,
   canDeleteTransactions,
+  canUpdateConfidentialTransactions,
+  canDeleteConfidentialTransactions,
+  canViewConfidentialAmount,
+  canViewConfidentialDescription,
+  canViewConfidentialCategory,
 }: InfiniteTransactionsListProps) {
   const t = useTranslations();
   const locale = useLocale();
@@ -48,6 +66,7 @@ export function InfiniteTransactionsList({
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   // Set moment locale
   useEffect(() => {
@@ -65,12 +84,23 @@ export function InfiniteTransactionsList({
   };
 
   const handleTransactionUpdate = () => {
-    // Invalidate all transaction-related queries (including infinite scroll)
     queryClient.invalidateQueries({
       predicate: (query) =>
         Array.isArray(query.queryKey) &&
         typeof query.queryKey[0] === 'string' &&
         query.queryKey[0].includes(`/api/workspaces/${wsId}/transactions`),
+    });
+  };
+
+  const toggleGroup = (dateKey: string) => {
+    setExpandedGroups((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(dateKey)) {
+        newSet.delete(dateKey);
+      } else {
+        newSet.add(dateKey);
+      }
+      return newSet;
     });
   };
 
@@ -125,10 +155,9 @@ export function InfiniteTransactionsList({
     initialPageParam: undefined,
   });
 
-  // Get all transactions before any conditional returns
   const allTransactions = data?.pages.flatMap((page) => page.data) || [];
 
-  // Group transactions by date - must be called before any early returns
+  // Group transactions by date
   const groupedTransactions = useMemo(() => {
     const groups: GroupedTransactions[] = [];
     const now = moment();
@@ -137,7 +166,6 @@ export function InfiniteTransactionsList({
       const transactionDate = moment(transaction.taken_at);
       const dateKey = transactionDate.format('YYYY-MM-DD');
 
-      // Determine the label based on the date
       let label: string;
       const daysDiff = now.diff(transactionDate, 'days');
 
@@ -155,7 +183,6 @@ export function InfiniteTransactionsList({
         label = transactionDate.format('YYYY');
       }
 
-      // Find or create group
       let group = groups.find((g) => g.date === dateKey);
       if (!group) {
         group = { date: dateKey, label, transactions: [] };
@@ -188,17 +215,28 @@ export function InfiniteTransactionsList({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex flex-col items-center justify-center gap-4 py-16">
+        <div className="relative">
+          <div className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
+          <Loader2 className="relative h-12 w-12 animate-spin text-primary" />
+        </div>
+        <p className="animate-pulse text-muted-foreground text-sm">
+          {t('common.loading')}...
+        </p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/10 p-4 text-center">
-        <p className="text-dynamic-red text-sm">
-          {t('common.error')}:{' '}
+      <div className="rounded-2xl border border-dynamic-red/30 bg-linear-to-br from-dynamic-red/10 to-dynamic-red/5 p-8 text-center shadow-sm">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-dynamic-red/20">
+          <TrendingDown className="h-8 w-8 text-dynamic-red" />
+        </div>
+        <h3 className="mb-2 font-semibold text-dynamic-red text-lg">
+          {t('common.error')}
+        </h3>
+        <p className="text-muted-foreground text-sm">
           {error instanceof Error ? error.message : 'Unknown error'}
         </p>
       </div>
@@ -207,98 +245,221 @@ export function InfiniteTransactionsList({
 
   if (allTransactions.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed p-8 text-center">
-        <p className="text-muted-foreground">{t('common.no-results')}</p>
+      <div className="rounded-2xl border border-muted-foreground/20 border-dashed bg-muted/20 p-12 text-center">
+        <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+          <Calendar className="h-10 w-10 text-muted-foreground" />
+        </div>
+        <h3 className="mb-2 font-semibold text-foreground text-lg">
+          {t('common.no-results')}
+        </h3>
+        <p className="text-muted-foreground text-sm">
+          {t('workspace-finance-transactions.no-transactions-found')}
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {groupedTransactions.map((group) => {
-        // Calculate daily total
-        const dailyTotal = group.transactions.reduce(
-          (sum, transaction) => sum + (transaction.amount || 0),
-          0
-        );
+    <div className="space-y-6">
+      {groupedTransactions.map((group, groupIndex) => {
+        const dailyTotal = group.transactions.reduce((sum, transaction) => {
+          if (
+            transaction.amount === null &&
+            (transaction as any).is_amount_confidential
+          ) {
+            return sum;
+          }
+          return sum + (transaction.amount || 0);
+        }, 0);
+
         const isPositive = dailyTotal >= 0;
+        const hasRedactedAmounts = group.transactions.some(
+          (t: any) => t.amount === null && t.is_amount_confidential
+        );
+        const allAmountsRedacted = group.transactions.every(
+          (t: any) => t.amount === null && t.is_amount_confidential
+        );
+
+        const isExpanded = expandedGroups.has(group.date);
+        const displayCount = isExpanded ? group.transactions.length : 3;
+
+        // Calculate stats for the group
+        const amounts = group.transactions
+          .filter((t: any) => !(t.amount === null && t.is_amount_confidential))
+          .map((t) => t.amount || 0);
+        const income = amounts.filter((a) => a > 0).reduce((a, b) => a + b, 0);
+        const expense = amounts.filter((a) => a < 0).reduce((a, b) => a + b, 0);
 
         return (
           <div
             key={group.date}
-            className="space-y-4 rounded-xl border border-dynamic-gray/20 bg-dynamic-gray/10 p-2 md:p-4"
+            className={cn(
+              'group/group rounded-2xl border border-border/50 bg-card shadow-sm transition-all duration-300',
+              'hover:shadow-md'
+            )}
+            style={{
+              animationDelay: `${groupIndex * 50}ms`,
+              animation: 'fadeInUp 0.4s ease-out forwards',
+            }}
           >
             {/* Date header */}
-            <div className="sticky top-0 z-10 border-border/40 border-b pt-1 pb-3 shadow-sm">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                    <Calendar className="h-5 w-5 text-primary" />
+            <div className="border-border/40 border-b bg-muted/30 px-6 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                {/* Left: Date info */}
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 shadow-sm ring-1 ring-primary/20">
+                    <Calendar className="h-6 w-6 text-primary" />
                   </div>
-                  <div className="space-y-0.5">
-                    <h3 className="font-semibold text-base text-foreground">
+                  <div className="space-y-1">
+                    <h3 className="font-bold text-foreground text-lg">
                       {group.label}
                     </h3>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-3 text-muted-foreground text-xs">
                       <Badge
                         variant="secondary"
-                        className="font-normal text-xs"
+                        className="font-medium text-xs"
                       >
                         {group.transactions.length}{' '}
                         {group.transactions.length === 1
                           ? t('date_groups.transaction')
                           : t('date_groups.transactions')}
                       </Badge>
+                      {!allAmountsRedacted && income > 0 && (
+                        <div className="flex items-center gap-1">
+                          <TrendingUp className="h-3 w-3 text-dynamic-green" />
+                          <span className="text-dynamic-green">
+                            {Intl.NumberFormat(locale, {
+                              style: 'currency',
+                              currency: 'VND',
+                              notation: 'compact',
+                              maximumFractionDigits: 1,
+                            }).format(income)}
+                          </span>
+                        </div>
+                      )}
+                      {!allAmountsRedacted && expense < 0 && (
+                        <div className="flex items-center gap-1">
+                          <TrendingDown className="h-3 w-3 text-dynamic-red" />
+                          <span className="text-dynamic-red">
+                            {Intl.NumberFormat(locale, {
+                              style: 'currency',
+                              currency: 'VND',
+                              notation: 'compact',
+                              maximumFractionDigits: 1,
+                            }).format(Math.abs(expense))}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                {/* Daily total */}
-                <div className="flex items-center gap-2">
-                  {isPositive ? (
-                    <TrendingUp className="h-4 w-4 text-dynamic-green" />
-                  ) : (
-                    <TrendingDown className="h-4 w-4 text-dynamic-red" />
-                  )}
-                  <div
-                    className={`font-bold text-base tabular-nums ${
-                      isPositive ? 'text-dynamic-green' : 'text-dynamic-red'
-                    }`}
-                  >
-                    {Intl.NumberFormat(locale, {
-                      style: 'currency',
-                      currency: 'VND',
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                      signDisplay: 'always',
-                    }).format(dailyTotal)}
+                {/* Right: Daily total */}
+                {!allAmountsRedacted ? (
+                  <div className="flex items-center gap-3">
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-muted-foreground text-xs">
+                        {t('workspace-finance-transactions.net-total')}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={cn(
+                            'flex h-8 w-8 items-center justify-center rounded-full',
+                            isPositive
+                              ? 'bg-dynamic-green/10'
+                              : 'bg-dynamic-red/10'
+                          )}
+                        >
+                          {isPositive ? (
+                            <TrendingUp className="h-4 w-4 text-dynamic-green" />
+                          ) : (
+                            <TrendingDown className="h-4 w-4 text-dynamic-red" />
+                          )}
+                        </div>
+                        <div
+                          className={cn(
+                            'font-bold text-xl tabular-nums',
+                            isPositive
+                              ? 'text-dynamic-green'
+                              : 'text-dynamic-red'
+                          )}
+                        >
+                          {hasRedactedAmounts && '≈ '}
+                          {Intl.NumberFormat(locale, {
+                            style: 'currency',
+                            currency: 'VND',
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                            signDisplay: 'always',
+                          }).format(dailyTotal)}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <span className="font-medium text-sm italic">
+                      {t('workspace-finance-transactions.amount-redacted')}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Transactions for this date */}
-            <div className="grid gap-3">
-              {group.transactions.map((transaction) => (
-                <button
-                  type="button"
+            {/* Transactions list */}
+            <div className="space-y-3 p-4">
+              {group.transactions.slice(0, displayCount).map((transaction) => (
+                <div
                   key={transaction.id}
                   onClick={() => handleTransactionClick(transaction)}
                   className="cursor-pointer"
                 >
-                  <TransactionCard transaction={transaction} wsId={wsId} />
-                </button>
+                  <TransactionCard
+                    transaction={transaction}
+                    wsId={wsId}
+                    onEdit={() => handleTransactionClick(transaction)}
+                    canEdit={canUpdateTransactions}
+                    canDelete={canDeleteTransactions}
+                  />
+                </div>
               ))}
+
+              {/* Show more/less button */}
+              {group.transactions.length > 3 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full border border-dashed transition-all hover:border-solid hover:bg-muted"
+                  onClick={() => toggleGroup(group.date)}
+                >
+                  {isExpanded ? (
+                    <>
+                      <ChevronUp className="mr-2 h-4 w-4" />
+                      {t('common.show-less')}
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="mr-2 h-4 w-4" />
+                      {t('common.show-more')} (
+                      {group.transactions.length - displayCount}{' '}
+                      {t('date_groups.more')})
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </div>
         );
       })}
 
       {/* Auto-load trigger */}
-      <div ref={loadMoreRef} className="py-4">
+      <div ref={loadMoreRef} className="py-6">
         {isFetchingNextPage && (
-          <div className="flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="flex items-center justify-center gap-3">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <span className="text-muted-foreground text-sm">
+              {t('common.loading')}...
+            </span>
           </div>
         )}
 
@@ -306,18 +467,22 @@ export function InfiniteTransactionsList({
           <div className="flex justify-center">
             <Button
               variant="outline"
+              size="lg"
               onClick={() => fetchNextPage()}
-              className="w-full md:w-auto"
+              className="w-full transition-all hover:scale-105 md:w-auto"
             >
+              <ChevronDown className="mr-2 h-4 w-4" />
               {t('user-data-table.common.load_more')}
             </Button>
           </div>
         )}
 
         {!hasNextPage && allTransactions.length > 10 && (
-          <p className="text-center text-muted-foreground text-sm">
-            {t('user-data-table.common.end_of_list')}
-          </p>
+          <div className="rounded-xl border border-dashed bg-muted/20 p-6 text-center">
+            <p className="text-muted-foreground text-sm">
+              🎉 {t('user-data-table.common.end_of_list')}
+            </p>
+          </div>
         )}
       </div>
 
@@ -331,8 +496,27 @@ export function InfiniteTransactionsList({
           onUpdate={handleTransactionUpdate}
           canUpdateTransactions={canUpdateTransactions}
           canDeleteTransactions={canDeleteTransactions}
+          canUpdateConfidentialTransactions={canUpdateConfidentialTransactions}
+          canDeleteConfidentialTransactions={canDeleteConfidentialTransactions}
+          canViewConfidentialAmount={canViewConfidentialAmount}
+          canViewConfidentialDescription={canViewConfidentialDescription}
+          canViewConfidentialCategory={canViewConfidentialCategory}
         />
       )}
+
+      {/* CSS animations */}
+      <style>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 }

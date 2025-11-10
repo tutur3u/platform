@@ -49,28 +49,28 @@ const estimationTypes = [
     value: 'fibonacci' as const,
     actualValue: 'fibonacci' as const,
     label: 'Fibonacci',
-    description: 'Fibonacci sequence (configurable range)',
+    description: '0, 1, 2, 3, 5, 8',
     color: 'bg-dynamic-blue/10 text-dynamic-blue',
   },
   {
     value: 'linear' as const,
     actualValue: 'linear' as const,
     label: 'Linear',
-    description: 'Linear scale (configurable range)',
+    description: '0, 1, 2, 3, 4, 5',
     color: 'bg-dynamic-green/10 text-dynamic-green',
   },
   {
     value: 'exponential' as const,
     actualValue: 'exponential' as const,
     label: 'Exponential',
-    description: 'Powers of 2 (configurable range)',
+    description: '0, 1, 2, 4, 8, 16',
     color: 'bg-dynamic-purple/10 text-dynamic-purple',
   },
   {
     value: 't-shirt' as const,
     actualValue: 't-shirt' as const,
     label: 'T-Shirt Sizes',
-    description: 'Size scale (configurable range)',
+    description: '-, XS, S, M, L, XL',
     color: 'bg-dynamic-orange/10 text-dynamic-orange',
   },
 ];
@@ -98,8 +98,8 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
 
   const getFibonacciDescription = (isExtended: boolean) => {
     return isExtended
-      ? 'Fibonacci sequence (0, 1, 1, 2, 3, 5, 8, 13, 21)'
-      : 'Fibonacci sequence (0, 1, 1, 2, 3, 5, 8)';
+      ? 'Fibonacci sequence (0, 1, 2, 3, 5, 8, 13, 21)'
+      : 'Fibonacci sequence (0, 1, 2, 3, 5, 8)';
   };
 
   const getLinearDescription = (isExtended: boolean) => {
@@ -517,11 +517,14 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                 >
                   <SelectTrigger
                     id="estimation-method"
-                    className="flex h-full items-center justify-start text-left text-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5"
+                    className="flex h-full w-full items-center justify-between text-left text-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 [&>svg]:rotate-180 data-[state=open]:[&>svg]:rotate-0"
                   >
                     <SelectValue placeholder="Select estimation method" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent
+                    align="end"
+                    className="w-[var(--radix-select-trigger-width)]"
+                  >
                     {estimationTypes.map((type) => (
                       <SelectItem
                         key={type.value}
@@ -533,7 +536,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                           <div className="mt-1 text-muted-foreground text-sm">
                             {type.value === 'none'
                               ? type.description
-                              : `${type.description} (range configurable below)`}
+                              : `${type.description}`}
                           </div>
                         </div>
                       </SelectItem>
@@ -702,7 +705,11 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                 </Button>
                 <Button
                   onClick={handleUpdateEstimationType}
-                  disabled={isSubmitting}
+                  disabled={
+                    isSubmitting ||
+                    (!editingBoard?.estimation_type &&
+                      selectedEstimationType === 'none')
+                  }
                 >
                   {isSubmitting ? (
                     <>

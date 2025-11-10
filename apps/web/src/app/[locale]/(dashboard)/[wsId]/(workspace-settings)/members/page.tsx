@@ -114,14 +114,12 @@ export default async function WorkspaceMembersPage({
 
             {/* Members List Section */}
             <div className="rounded-xl border border-border bg-background p-6 shadow-sm">
-              <div className="grid items-end gap-4 lg:grid-cols-2">
-                <MemberList
-                  workspace={workspace}
-                  members={members}
-                  invited={status === 'invited'}
-                  canManageMembers={canManageMembers}
-                />
-              </div>
+              <MemberList
+                workspace={workspace}
+                members={members}
+                invited={status === 'invited'}
+                canManageMembers={canManageMembers}
+              />
             </div>
 
             {/* Invite Links Section */}
@@ -168,6 +166,50 @@ const getMembers = async (wsId: string, { status }: { status: string }) => {
   const { data, error } = await queryBuilder;
   if (error) throw error;
 
+  // Fetch workspace creator
+  const { data: workspaceData } = await supabase
+    .from('workspaces')
+    .select('creator_id')
+    .eq('id', wsId)
+    .single();
+
+  // Fetch role memberships for all users with permissions
+  const userIds = data.filter((m) => !m.pending && m.id).map((m) => m.id!);
+  const { data: roleMembershipsData } = await supabase
+    .from('workspace_role_members')
+    .select(
+      'user_id, workspace_roles!inner(id, name, ws_id, workspace_role_permissions(permission, enabled))'
+    )
+    .eq('workspace_roles.ws_id', wsId)
+    .in('user_id', userIds);
+
+  // Fetch default permissions
+  const { data: defaultPermissionsData } = await supabase
+    .from('workspace_default_permissions')
+    .select('permission, enabled')
+    .eq('ws_id', wsId)
+    .eq('enabled', true);
+
+  // Build role map with permissions
+  const roleMap = new Map<
+    string,
+    Array<{
+      id: string;
+      name: string;
+      permissions: Array<{ permission: string; enabled: boolean }>;
+    }>
+  >();
+  roleMembershipsData?.forEach((rm: any) => {
+    if (!roleMap.has(rm.user_id)) {
+      roleMap.set(rm.user_id, []);
+    }
+    roleMap.get(rm.user_id)?.push({
+      id: rm.workspace_roles.id,
+      name: rm.workspace_roles.name,
+      permissions: rm.workspace_roles.workspace_role_permissions || [],
+    });
+  });
+
   return data.map(({ email, ...rest }) => {
     return {
       ...rest,
@@ -181,6 +223,17 @@ const getMembers = async (wsId: string, { status }: { status: string }) => {
           .length === 0
           ? email
           : undefined,
+      is_creator: workspaceData?.creator_id === rest.id,
+      roles: rest.id ? roleMap.get(rest.id) || [] : [],
+      default_permissions: defaultPermissionsData || [],
     };
-  }) as User[];
+  }) as (User & {
+    is_creator: boolean;
+    roles: Array<{
+      id: string;
+      name: string;
+      permissions: Array<{ permission: string; enabled: boolean }>;
+    }>;
+    default_permissions: Array<{ permission: string; enabled: boolean }>;
+  })[];
 };

@@ -20,6 +20,11 @@ interface TransactionsInfinitePageProps {
   exportContent?: React.ReactNode;
   canUpdateTransactions?: boolean;
   canDeleteTransactions?: boolean;
+  canUpdateConfidentialTransactions?: boolean;
+  canDeleteConfidentialTransactions?: boolean;
+  canViewConfidentialAmount?: boolean;
+  canViewConfidentialDescription?: boolean;
+  canViewConfidentialCategory?: boolean;
 }
 
 export function TransactionsInfinitePage({
@@ -28,6 +33,11 @@ export function TransactionsInfinitePage({
   exportContent,
   canUpdateTransactions,
   canDeleteTransactions,
+  canUpdateConfidentialTransactions,
+  canDeleteConfidentialTransactions,
+  canViewConfidentialAmount,
+  canViewConfidentialDescription,
+  canViewConfidentialCategory,
 }: TransactionsInfinitePageProps) {
   const t = useTranslations();
   const router = useRouter();
@@ -120,6 +130,11 @@ export function TransactionsInfinitePage({
           wsId={wsId}
           canUpdateTransactions={canUpdateTransactions}
           canDeleteTransactions={canDeleteTransactions}
+          canUpdateConfidentialTransactions={canUpdateConfidentialTransactions}
+          canDeleteConfidentialTransactions={canDeleteConfidentialTransactions}
+          canViewConfidentialAmount={canViewConfidentialAmount}
+          canViewConfidentialDescription={canViewConfidentialDescription}
+          canViewConfidentialCategory={canViewConfidentialCategory}
         />
       </Suspense>
     </div>

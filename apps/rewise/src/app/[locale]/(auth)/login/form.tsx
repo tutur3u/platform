@@ -17,11 +17,12 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import * as z from 'zod';
+import { sendOtpAction, verifyOtpAction } from './actions';
 
 const FormSchema = z.object({
   email: z.string().email(),
@@ -30,7 +31,6 @@ const FormSchema = z.object({
 
 export default function LoginForm() {
   const t = useTranslations('login');
-  const locale = useLocale();
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -50,9 +50,16 @@ export default function LoginForm() {
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Server action transitions
+  const [isPendingSendOtp, startSendOtpTransition] = useTransition();
+  const [isPendingVerifyOtp, startVerifyOtpTransition] = useTransition();
+
   // Resend cooldown
   const cooldown = 60;
   const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Combine loading states
+  const _isLoading = loading || isPendingSendOtp || isPendingVerifyOtp;
 
   const maxOTPLength = 6;
 
@@ -80,62 +87,77 @@ export default function LoginForm() {
   }, [resendCooldown]);
 
   const sendOtp = async (data: { email: string }) => {
-    if (!locale || !data.email) return;
-    setLoading(true);
+    if (!data.email) return;
 
-    const res = await fetch('/api/auth/otp/send', {
-      method: 'POST',
-      body: JSON.stringify({ ...data, locale }),
+    startSendOtpTransition(async () => {
+      try {
+        const result = await sendOtpAction({
+          email: data.email,
+        });
+
+        if (result.error) {
+          toast({
+            title: t('failed'),
+            description: result.error,
+          });
+        } else {
+          // Success
+          toast({
+            title: t('success'),
+            description: t('otp_sent'),
+          });
+
+          form.setValue('otp', '');
+          form.clearErrors('otp');
+          setOtpSent(true);
+          setResendCooldown(cooldown);
+        }
+      } catch (error) {
+        console.error('SendOTP Error:', error);
+        toast({
+          title: t('failed'),
+          description: t('failed_to_send'),
+        });
+      }
     });
-
-    if (res.ok) {
-      // Notify user
-      toast({
-        title: t('success'),
-        description: t('otp_sent'),
-      });
-
-      // OTP has been sent
-      form.setValue('otp', '');
-      form.clearErrors('otp');
-      setOtpSent(true);
-
-      // Reset cooldown
-      setResendCooldown(cooldown);
-    } else {
-      toast({
-        title: t('failed'),
-        description: t('failed_to_send'),
-      });
-    }
-
-    setLoading(false);
   };
 
   const verifyOtp = async (data: { email: string; otp: string }) => {
-    if (!locale || !data.email || !data.otp) return;
-    setLoading(true);
+    if (!data.email || !data.otp) return;
 
-    const res = await fetch('/api/auth/otp/verify', {
-      method: 'POST',
-      body: JSON.stringify({ ...data, locale }),
+    startVerifyOtpTransition(async () => {
+      try {
+        const result = await verifyOtpAction({
+          email: data.email,
+          otp: data.otp,
+        });
+
+        if (result.error) {
+          form.setError('otp', { message: t('invalid_verification_code') });
+          form.setValue('otp', '');
+
+          toast({
+            title: t('failed'),
+            description: result.error,
+          });
+        } else {
+          // Success
+          const nextUrl = searchParams.get('nextUrl');
+          router.push(nextUrl ?? '/onboarding');
+          router.refresh();
+        }
+      } catch (error) {
+        console.error('VerifyOTP Error:', error);
+
+        form.setError('otp', { message: t('invalid_verification_code') });
+        form.setValue('otp', '');
+
+        toast({
+          title: t('failed'),
+          description: t('failed_to_verify'),
+        });
+      }
     });
-
-    if (res.ok) {
-      const nextUrl = searchParams.get('nextUrl');
-      router.push(nextUrl ?? '/onboarding');
-      router.refresh();
-    } else {
-      setLoading(false);
-
-      form.setError('otp', { message: t('invalid_verification_code') });
-      form.setValue('otp', '');
-
-      toast({
-        title: t('failed'),
-        description: t('failed_to_verify'),
-      });
-    }
   };
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
@@ -166,7 +188,7 @@ export default function LoginForm() {
                 <Input
                   placeholder={t('email_placeholder')}
                   {...field}
-                  disabled={otpSent || loading}
+                  disabled={otpSent || _isLoading}
                 />
               </FormControl>
 
@@ -194,7 +216,7 @@ export default function LoginForm() {
                       if (value.length === maxOTPLength)
                         form.handleSubmit(onSubmit)();
                     }}
-                    disabled={loading}
+                    disabled={_isLoading}
                   >
                     <InputOTPGroup className="w-full justify-center">
                       {Array.from({ length: maxOTPLength }).map((_, index) => (
@@ -209,7 +231,7 @@ export default function LoginForm() {
 
                   <Button
                     onClick={() => sendOtp({ email: form.getValues('email') })}
-                    disabled={loading || resendCooldown > 0}
+                    disabled={_isLoading || resendCooldown > 0}
                     className="md:w-full"
                     variant="secondary"
                     type="button"
@@ -234,13 +256,13 @@ export default function LoginForm() {
               href={window.location.origin.replace('7804', '8004')}
               target="_blank"
               className="col-span-full"
-              aria-disabled={loading}
+              aria-disabled={_isLoading}
             >
               <Button
                 type="button"
                 className="w-full"
                 variant="outline"
-                disabled={loading}
+                disabled={_isLoading}
               >
                 <Mail size={18} className="mr-1" />
                 {t('open_inbucket')}
@@ -254,13 +276,13 @@ export default function LoginForm() {
             type="submit"
             className="w-full"
             disabled={
-              loading ||
+              _isLoading ||
               form.formState.isSubmitting ||
               !form.formState.isValid ||
               (otpSent && !form.formState.dirtyFields.otp)
             }
           >
-            {loading ? t('processing') : t('continue')}
+            {_isLoading ? t('processing') : t('continue')}
           </Button>
         </div>
       </form>

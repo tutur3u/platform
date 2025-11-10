@@ -27,6 +27,7 @@ import type { NavLink } from '@/components/navigation';
 import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import { useSidebar } from '@/context/sidebar-context';
 import { useActiveTimerSession } from '@/hooks/use-active-timer-session';
+import { FeedbackButton } from './feedback-button';
 import { Nav } from './nav';
 
 interface MailProps {
@@ -572,6 +573,7 @@ export function Structure({
       sidebarContent={sidebarContent}
       actions={actions}
       userPopover={userPopover}
+      feedbackButton={<FeedbackButton isCollapsed={isCollapsed} />}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       hideSizeToggle={behavior === 'hover'}

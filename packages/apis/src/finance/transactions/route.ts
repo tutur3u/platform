@@ -1,6 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 interface Params {
@@ -17,6 +17,9 @@ const TransactionSchema = z.object({
   taken_at: z.union([z.string(), z.date()]),
   report_opt_in: z.boolean().optional(),
   tag_ids: z.array(z.string().uuid()).optional(),
+  is_amount_confidential: z.boolean().optional(),
+  is_description_confidential: z.boolean().optional(),
+  is_category_confidential: z.boolean().optional(),
 });
 export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
@@ -35,31 +38,55 @@ export async function GET(req: Request, { params }: Params) {
   // Parse the request URL
   const url = new URL(req.url);
 
-  // Extract query parameters
-  const activePage = url.searchParams.get('page');
-  const itemsPerPage = url.searchParams.get('itemsPerPage');
+  // Extract and validate query parameters for pagination
+  const pageParam = url.searchParams.get('page');
+  const itemsPerPageParam = url.searchParams.get('itemsPerPage');
+
+  const page = Math.max(1, parseInt(pageParam || '1', 10));
+  const itemsPerPage = Math.max(1, parseInt(itemsPerPageParam || '25', 10));
+  const offset = (page - 1) * itemsPerPage;
 
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from('wallet_transactions')
-    .select('*, workspace_wallets!inner(ws_id)')
-    .eq('workspace_wallets.ws_id', wsId)
-    .range(
-      (Number(activePage) - 1) * Number(itemsPerPage),
-      Number(activePage) * Number(itemsPerPage) - 1
-    )
-    .order('taken_at', { ascending: false });
+  // Get authenticated user for permission checks
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Use the RPC function with pagination parameters to fetch transactions
+  const { data, error } = await supabase.rpc(
+    'get_wallet_transactions_with_permissions',
+    {
+      p_ws_id: wsId,
+      p_user_id: user.id,
+      p_transaction_ids: undefined,
+      p_limit: itemsPerPage,
+      p_offset: offset,
+    }
+  );
 
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error fetching transaction' },
+      { message: 'Error fetching transactions' },
       { status: 500 }
     );
   }
 
-  return NextResponse.json(data);
+  // The RPC function should ideally handle sorting.
+  // If not, sorting here will only sort the current page of results.
+  // This preserves existing behavior of sorting the returned data.
+  const sortedData = data?.sort((a, b) => {
+    const dateA = new Date(a.taken_at).getTime();
+    const dateB = new Date(b.taken_at).getTime();
+    return dateB - dateA;
+  });
+
+  return NextResponse.json(sortedData || []);
 }
 
 export async function POST(req: Request, { params }: Params) {
@@ -114,6 +141,25 @@ export async function POST(req: Request, { params }: Params) {
   const tagIds = data.tag_ids;
   delete data.tag_ids;
 
+  // Check if any confidential flags are being set
+  const hasConfidentialFields =
+    data.is_amount_confidential ||
+    data.is_description_confidential ||
+    data.is_category_confidential;
+
+  // If creating confidential transaction, check permission
+  if (
+    hasConfidentialFields &&
+    withoutPermission('create_confidential_transactions')
+  ) {
+    return NextResponse.json(
+      {
+        message: 'Insufficient permissions to create confidential transactions',
+      },
+      { status: 403 }
+    );
+  }
+
   // Ensure wallet is in this workspace
   const { data: walletCheck, error: walletErr } = await supabase
     .from('workspace_wallets')
@@ -139,6 +185,9 @@ export async function POST(req: Request, { params }: Params) {
           : data.taken_at.toISOString(),
       report_opt_in: data.report_opt_in || false,
       creator_id: wsUser.virtual_user_id,
+      is_amount_confidential: data.is_amount_confidential || false,
+      is_description_confidential: data.is_description_confidential || false,
+      is_category_confidential: data.is_category_confidential || false,
     })
     .select('id')
     .single();

@@ -38,6 +38,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
+import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import debounce from 'lodash/debounce';
 import { useTranslations } from 'next-intl';
@@ -481,44 +482,33 @@ export default function NoteList({ wsId }: { wsId: string }) {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {displayedNotes.map((note) => (
               <Card
                 key={note.id}
-                className={`group transition ${
+                onClick={() => handleEditNote(note)}
+                className={`group cursor-pointer transition ${
                   note.archived
                     ? 'border-dynamic-green/30 bg-dynamic-green/5'
-                    : 'hover:border-dynamic-purple/30'
+                    : 'hover:border-dynamic-purple/30 hover:shadow-md'
                 }`}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 space-y-2">
-                      <p
-                        className={`cursor-pointer text-sm leading-relaxed hover:underline ${
-                          note.archived
-                            ? 'text-muted-foreground line-through'
-                            : 'text-foreground'
-                        }`}
-                        onClick={() => handleEditNote(note)}
-                      >
-                        {note.title || 'Untitled Note'}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-muted-foreground text-xs">
-                          {new Date(note.created_at).toLocaleDateString()}
-                        </p>
-                        {note.archived && (
-                          <Badge
-                            variant="outline"
-                            className="text-dynamic-green text-xs"
-                          >
-                            {t('actions.archived')}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
+                <CardContent className="flex h-full flex-col p-4">
+                  {/* Header with title and actions */}
+                  <div className="mb-1 flex items-start justify-between gap-3">
+                    <h3
+                      className={`flex-1 font-bold text-base leading-tight ${
+                        note.archived
+                          ? 'text-muted-foreground line-through'
+                          : 'text-foreground'
+                      }`}
+                    >
+                      {note.title || 'Untitled Note'}
+                    </h3>
+                    <div
+                      className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -539,21 +529,30 @@ export default function NoteList({ wsId }: { wsId: string }) {
                           {!note.archived ? (
                             <>
                               <DropdownMenuItem
-                                onClick={() => handleConvertNote(note)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleConvertNote(note);
+                                }}
                                 disabled={isConverting}
                               >
                                 <CheckCircle className="mr-2 h-4 w-4 text-dynamic-green" />
                                 {t('actions.convert')}
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => handleEditNote(note)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditNote(note);
+                                }}
                                 disabled={isUpdating}
                               >
                                 <Edit3 className="mr-2 h-4 w-4 text-dynamic-blue" />
                                 {t('actions.edit')}
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => handleDeleteNote(note.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteNote(note.id);
+                                }}
                                 disabled={isDeleting}
                                 className="text-dynamic-red focus:text-dynamic-red"
                               >
@@ -570,6 +569,37 @@ export default function NoteList({ wsId }: { wsId: string }) {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
+                  </div>
+
+                  <div className="mb-3 flex items-center gap-2">
+                    <p className="text-muted-foreground text-xs">
+                      {new Date(note.created_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </p>
+                    {note.archived && (
+                      <Badge
+                        variant="outline"
+                        className="text-dynamic-green text-xs"
+                      >
+                        {t('actions.archived')}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Read-only TipTap editor with limited height */}
+                  <div className="relative flex-1">
+                    <div className="pointer-events-none h-[256px] overflow-hidden">
+                      <RichTextEditor
+                        content={note.content}
+                        readOnly={true}
+                        className="border-0 p-0! text-sm"
+                      />
+                    </div>
+                    {/* Fade gradient at bottom */}
+                    <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-12 bg-linear-to-t from-background to-transparent" />
                   </div>
                 </CardContent>
               </Card>

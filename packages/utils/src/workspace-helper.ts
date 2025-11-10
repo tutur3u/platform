@@ -4,12 +4,11 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { PermissionId, Workspace } from '@tuturuuu/types';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { notFound, redirect } from 'next/navigation';
 import { ROOT_WORKSPACE_ID, resolveWorkspaceId } from './constants';
 import { isValidTuturuuuEmail } from './email/client';
 import { permissions as rolePermissions } from './permissions';
-
-// import { DEV_MODE } from '@tuturuuu/utils/constants';
 
 export { toWorkspaceSlug } from './constants';
 
@@ -370,11 +369,13 @@ export async function getPermissions({
 
   const resolvedWorkspaceId = resolveWorkspaceId(wsId);
 
+  // FIX: Query user's role memberships and join with permissions
   const permissionsQuery = supabase
-    .from('workspace_role_permissions')
-    .select('permission, role_id')
-    .eq('ws_id', resolvedWorkspaceId)
-    .eq('enabled', true);
+    .from('workspace_role_members')
+    .select('workspace_roles!inner(workspace_role_permissions(permission))')
+    .eq('user_id', user.id)
+    .eq('workspace_roles.ws_id', resolvedWorkspaceId)
+    .eq('workspace_roles.workspace_role_permissions.enabled', true);
 
   const workspaceQuery = supabase
     .from('workspaces')
@@ -398,22 +399,27 @@ export async function getPermissions({
   const { data: workspaceData, error: workspaceError } = workspaceRes;
   const { data: defaultData, error: defaultError } = defaultRes;
 
-  if (!workspaceData) notFound();
+  if (!workspaceData) {
+    console.error('Workspace not found in getPermissions', resolvedWorkspaceId);
+    notFound();
+  }
+
   if (permissionsError) throw permissionsError;
   if (workspaceError) throw workspaceError;
   if (defaultError) throw defaultError;
 
-  const hasPermissions = permissionsData.length > 0 || defaultData.length > 0;
   const isCreator = workspaceData.creator_id === user.id;
+  const hasPermissions =
+    permissionsData.length > 0 || defaultData.length > 0 || isCreator;
 
-  // if (DEV_MODE) {
-  //   console.log('--------------------');
-  //   console.log('Is creator', isCreator);
-  //   console.log('Workspace permissions', permissionsData);
-  //   console.log('Default permissions', defaultData);
-  //   console.log('Has permissions', hasPermissions);
-  //   console.log('--------------------');
-  // }
+  if (DEV_MODE) {
+    console.log('--------------------');
+    console.log('Is creator', isCreator);
+    // console.log('Workspace permissions', permissionsData);
+    // console.log('Default permissions', defaultData);
+    console.log('Has permissions', hasPermissions);
+    // console.log('--------------------');
+  }
 
   if (!isCreator && !hasPermissions) {
     if (redirectTo) {
@@ -429,15 +435,23 @@ export async function getPermissions({
 
   const permissions = isCreator
     ? rolePermissions({ wsId: resolvedWorkspaceId, user }).map(({ id }) => id)
-    : [...permissionsData, ...defaultData]
-        .map(({ permission }) => permission)
-        .filter((value, index, self) => self.indexOf(value) === index);
+    : [
+        // permissions from role memberships
+        ...permissionsData.flatMap(
+          (m) =>
+            m.workspace_roles?.workspace_role_permissions?.map(
+              (p) => p.permission
+            ) || []
+        ),
+        // default workspace permissions
+        ...defaultData.map((d) => d.permission),
+      ].filter((value, index, self) => self.indexOf(value) === index);
 
   const containsPermission = (permission: PermissionId) =>
-    permissions.includes(permission);
+    isCreator || permissions.includes(permission);
 
   const withoutPermission = (permission: PermissionId) =>
-    !containsPermission(permission);
+    !isCreator && !containsPermission(permission);
 
   return { permissions, containsPermission, withoutPermission };
 }
@@ -454,7 +468,10 @@ export async function getWorkspaceUser(id: string, userId: string) {
     .eq('platform_user_id', userId)
     .single();
 
-  if (error) notFound();
+  if (error) {
+    console.error('Error fetching workspace user:', error);
+    notFound();
+  }
 
   return data;
 }

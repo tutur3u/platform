@@ -5,12 +5,12 @@ import {
   UserCheck,
   Users,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 
 interface UserGroupQuickActionsProps {
   wsId: string;
@@ -134,9 +134,9 @@ export default async function UserGroupQuickActions({
 
 async function checkFeatureEnabled(wsId: string): Promise<boolean> {
   try {
-    const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
-    const { data } = await supabase
+    const { data } = await sbAdmin
       .from('workspace_secrets')
       .select('value')
       .eq('ws_id', wsId)

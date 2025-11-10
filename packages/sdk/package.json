@@ -57,7 +57,7 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.10.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.7"
+    "vitest": "^4.0.8"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -10,13 +10,16 @@ const enabled = true;
 
 export default async function IncomeStatistics({
   wsId,
-  searchParams: { view, startDate, endDate } = {},
+  searchParams: { view, startDate, endDate, includeConfidential } = {},
 }: {
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;
 }) {
   const supabase = await createClient();
   const t = await getTranslations();
+
+  // Parse includeConfidential from URL param (defaults to true if not set)
+  const includeConfidentialBool = includeConfidential !== 'false';
 
   const { data: income } = enabled
     ? await supabase.rpc('get_workspace_wallets_income', {
@@ -33,6 +36,7 @@ export default async function IncomeStatistics({
                 .endOf(view as OpUnitType)
                 .toISOString()
             : undefined,
+        include_confidential: includeConfidentialBool,
       })
     : { data: 0 };
 

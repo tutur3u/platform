@@ -1,0 +1,10 @@
+# Bun configuration
+# We use Vitest for testing via Turborepo
+
+[test]
+# Redirect to turbo test runner
+preload = ["./tests/bun-test-redirect.ts"]
+
+[install]
+# Explicitly set the linker to isolated
+linker = "isolated"

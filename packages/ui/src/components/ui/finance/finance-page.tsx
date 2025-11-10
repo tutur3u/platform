@@ -4,6 +4,7 @@ import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { BudgetAlerts } from '@tuturuuu/ui/finance/budgets/budget-alerts';
 import { DailyTotalChart } from '@tuturuuu/ui/finance/shared/charts/daily-total-chart';
 import { MonthlyTotalChart } from '@tuturuuu/ui/finance/shared/charts/monthly-total-chart';
+import ConfidentialToggle from '@tuturuuu/ui/finance/shared/confidential-toggle';
 import { DashboardHeader } from '@tuturuuu/ui/finance/shared/dashboard-header';
 import { Filter } from '@tuturuuu/ui/finance/shared/filter';
 import LoadingStatisticCard from '@tuturuuu/ui/finance/shared/loaders/statistics';
@@ -29,12 +30,23 @@ interface Props {
 export default async function FinancePage({ wsId, searchParams }: Props) {
   const sp = searchParams;
 
-  const { containsPermission } = await getPermissions({ wsId });
+  const { containsPermission, permissions } = await getPermissions({ wsId });
 
   if (!containsPermission('view_finance_stats')) return notFound();
 
-  const { data: dailyData } = await getDailyData(wsId);
-  const { data: monthlyData } = await getMonthlyData(wsId);
+  // Check if user has permission to view confidential amounts
+  const canViewConfidentialAmount = permissions.includes(
+    'view_confidential_amount'
+  );
+
+  // Parse includeConfidential from URL param (defaults to true if not set)
+  const includeConfidentialBool = sp.includeConfidential !== 'false';
+
+  const { data: dailyData } = await getDailyData(wsId, includeConfidentialBool);
+  const { data: monthlyData } = await getMonthlyData(
+    wsId,
+    includeConfidentialBool
+  );
 
   const { data: recentTransactions } = await getRecentTransactions(wsId);
 
@@ -50,6 +62,10 @@ export default async function FinancePage({ wsId, searchParams }: Props) {
       <DashboardHeader />
 
       <Filter className="mb-4" />
+
+      {canViewConfidentialAmount && (
+        <ConfidentialToggle hasPermission={canViewConfidentialAmount} />
+      )}
 
       <BudgetAlerts wsId={wsId} className="mb-4" />
 
@@ -110,11 +126,12 @@ export default async function FinancePage({ wsId, searchParams }: Props) {
   );
 }
 
-async function getDailyData(wsId: string) {
+async function getDailyData(wsId: string, includeConfidential: boolean) {
   const supabase = await createClient();
 
   const queryBuilder = supabase.rpc('get_daily_income_expense', {
     _ws_id: wsId,
+    include_confidential: includeConfidential,
   });
 
   const { data, error, count } = await queryBuilder;
@@ -123,11 +140,12 @@ async function getDailyData(wsId: string) {
   return { data: data || [], count };
 }
 
-async function getMonthlyData(wsId: string) {
+async function getMonthlyData(wsId: string, includeConfidential: boolean) {
   const supabase = await createClient();
 
   const queryBuilder = supabase.rpc('get_monthly_income_expense', {
     _ws_id: wsId,
+    include_confidential: includeConfidential,
   });
 
   const { data, error, count } = await queryBuilder;
@@ -139,29 +157,76 @@ async function getMonthlyData(wsId: string) {
 async function getRecentTransactions(wsId: string) {
   const supabase = await createClient();
 
-  const queryBuilder = supabase
-    .from('wallet_transactions')
-    .select(
-      '*, workspace_wallets!inner(name, ws_id), transaction_categories(name)',
-      {
-        count: 'exact',
-      }
-    )
-    .eq('workspace_wallets.ws_id', wsId)
-    .order('taken_at', { ascending: false })
-    .limit(10);
-
-  const { data: rawData, error } = await queryBuilder;
+  // Use RPC function to get redacted transactions with confidential filtering
+  const { data: transactions, error } = await supabase.rpc(
+    'get_wallet_transactions_with_permissions',
+    {
+      p_ws_id: wsId,
+      p_order_by: 'taken_at',
+      p_order_direction: 'DESC',
+      p_limit: 10,
+    }
+  );
 
   if (error) throw error;
 
-  const data = rawData.map(
-    ({ workspace_wallets, transaction_categories, ...rest }) => ({
-      ...rest,
-      wallet: workspace_wallets?.name,
-      category: transaction_categories?.name,
-    })
-  );
+  const filteredTransactions = transactions || [];
+
+  if (filteredTransactions.length === 0) {
+    return { data: [] };
+  }
+
+  // Get unique wallet IDs and category IDs
+  const walletIds = [
+    ...new Set(
+      filteredTransactions.map((t: any) => t.wallet_id).filter(Boolean)
+    ),
+  ];
+  const categoryIds = [
+    ...new Set(
+      filteredTransactions.map((t: any) => t.category_id).filter(Boolean)
+    ),
+  ];
+
+  // Fetch wallet names
+  const walletMap = new Map<string, string>();
+  if (walletIds.length > 0) {
+    const { data: wallets, error: walletError } = await supabase
+      .from('workspace_wallets')
+      .select('id, name')
+      .in('id', walletIds)
+      .eq('ws_id', wsId);
+
+    if (!walletError && wallets) {
+      wallets.forEach((w) => {
+        if (w.id && w.name) walletMap.set(w.id, w.name);
+      });
+    }
+  }
+
+  // Fetch category names
+  const categoryMap = new Map<string, string>();
+  if (categoryIds.length > 0) {
+    const { data: categories, error: categoryError } = await supabase
+      .from('transaction_categories')
+      .select('id, name')
+      .in('id', categoryIds);
+
+    if (!categoryError && categories) {
+      categories.forEach((c) => {
+        if (c.id && c.name) categoryMap.set(c.id, c.name);
+      });
+    }
+  }
+
+  // Combine transaction data with wallet/category names
+  const data = filteredTransactions.map((transaction: any) => ({
+    ...transaction,
+    wallet: transaction.wallet_id ? walletMap.get(transaction.wallet_id) : null,
+    category: transaction.category_id
+      ? categoryMap.get(transaction.category_id)
+      : null,
+  }));
 
   return { data };
 }
