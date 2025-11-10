@@ -102,7 +102,7 @@ import { UserPresenceAvatarsComponent } from './user-presence-avatars';
 // Module-level Supabase client singleton to avoid repeated instantiation
 const supabase = createClient();
 
-interface TaskEditDialogProps {
+export interface TaskEditDialogProps {
   wsId: string;
   task?: Task;
   boardId: string;

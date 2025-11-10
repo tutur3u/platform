@@ -9,8 +9,9 @@ import {
 } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
+import type { TaskEditDialogProps } from './task-edit-dialog';
 
-const TaskEditDialog = dynamic(
+const TaskEditDialog = dynamic<TaskEditDialogProps>(
   () =>
     import('./task-edit-dialog').then((mod) => ({
       default: mod.TaskEditDialog,
