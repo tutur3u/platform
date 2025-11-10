@@ -1026,7 +1026,6 @@ export default function MyTasksContent({
             <LabelProjectFilter
               labels={availableLabels || []}
               projects={availableProjects || []}
-              selectedWorkspaceIds={taskFilters.workspaceIds}
               selectedLabelIds={taskFilters.labelIds}
               selectedProjectIds={taskFilters.projectIds}
               onSelectedLabelIdsChange={handleLabelFilterChange}
