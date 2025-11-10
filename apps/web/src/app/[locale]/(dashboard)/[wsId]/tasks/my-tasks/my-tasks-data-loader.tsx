@@ -20,15 +20,6 @@ interface TaskLabel {
   } | null;
 }
 
-interface TaskProject {
-  task_id: string;
-  project: {
-    id: string;
-    name: string;
-    ws_id: string;
-  } | null;
-}
-
 export async function MyTasksDataLoader({
   wsId,
   userId,
@@ -82,7 +73,7 @@ export async function MyTasksDataLoader({
 
   let assigneesData: TaskAssignee[] | null = [];
   let labelsData: TaskLabel[] | null = [];
-  let projectsData: TaskProject[] | null = [];
+  let projectsData: any[] | null = [];
 
   if (taskIds.length > 0) {
     const [assigneesResult, labelsResult, projectsResult] = await Promise.all([
@@ -118,11 +109,7 @@ export async function MyTasksDataLoader({
         .select(
           `
           task_id,
-          project:task_projects(
-            id,
-            name,
-            ws_id
-          )
+          project:task_projects(*)
         `
         )
         .in('task_id', taskIds),
@@ -152,10 +139,7 @@ export async function MyTasksDataLoader({
     }
   }
 
-  const projectsByTaskId = new Map<
-    string,
-    { project: TaskProject['project'] }[]
-  >();
+  const projectsByTaskId = new Map<string, { project: any }[]>();
   if (projectsData) {
     for (const project of projectsData) {
       if (!projectsByTaskId.has(project.task_id)) {
