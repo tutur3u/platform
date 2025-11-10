@@ -22,8 +22,6 @@ interface PageProps {
 }
 
 export default async function CalendarPage({ params }: PageProps) {
-  const { locale } = await params;
-
   return (
     <WorkspaceWrapper params={params}>
       {async ({ workspace, wsId }) => {
