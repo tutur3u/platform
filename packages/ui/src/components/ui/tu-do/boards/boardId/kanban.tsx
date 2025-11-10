@@ -2163,6 +2163,7 @@ export function KanbanBoard({
                           }
                           selectedTasks={selectedTasks}
                           isMultiSelectMode={isMultiSelectMode}
+                          setIsMultiSelectMode={setIsMultiSelectMode}
                           onTaskSelect={handleTaskSelect}
                           onClearSelection={clearSelection}
                           dragPreviewPosition={

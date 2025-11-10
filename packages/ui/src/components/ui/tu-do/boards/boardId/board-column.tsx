@@ -39,6 +39,7 @@ interface BoardColumnProps {
   onUpdate?: () => void;
   selectedTasks?: Set<string>;
   isMultiSelectMode?: boolean;
+  setIsMultiSelectMode?: (value: boolean) => void;
   isPersonalWorkspace?: boolean;
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
   onClearSelection?: () => void;
@@ -65,6 +66,7 @@ function BoardColumnInner({
   onTaskSelect,
   onClearSelection,
   isMultiSelectMode,
+  setIsMultiSelectMode,
   isPersonalWorkspace,
   onAddTask,
   dragPreviewPosition,
@@ -128,6 +130,26 @@ function BoardColumnInner({
     [attributes, listeners, isDragging, isOverlay]
   );
 
+  const handleSelectAll = () => {
+    if (!onTaskSelect || !setIsMultiSelectMode || tasks.length === 0) return;
+
+    setIsMultiSelectMode(true);
+    // Select all tasks in this list
+    tasks.forEach((task) => {
+      if (selectedTasks?.has(task.id)) return;
+
+      const fakeEvent = {
+        shiftKey: false,
+        ctrlKey: false,
+        metaKey: false,
+        preventDefault: () => {},
+        stopPropagation: () => {},
+      } as React.MouseEvent;
+
+      onTaskSelect(task.id, fakeEvent);
+    });
+  };
+
   return (
     <Card
       ref={setNodeRef}
@@ -171,24 +193,7 @@ function BoardColumnInner({
             boardId={boardId}
             wsId={wsId}
             onUpdate={handleUpdate}
-            onSelectAll={
-              onTaskSelect && tasks.length > 0
-                ? () => {
-                    // Select all tasks in this list
-                    tasks.forEach((task) => {
-                      // Simulate shift+click to add to selection
-                      const fakeEvent = {
-                        shiftKey: true,
-                        ctrlKey: false,
-                        metaKey: false,
-                        preventDefault: () => {},
-                        stopPropagation: () => {},
-                      } as React.MouseEvent;
-                      onTaskSelect(task.id, fakeEvent);
-                    });
-                  }
-                : undefined
-            }
+            onSelectAll={handleSelectAll}
           />
         </div>
       </div>
