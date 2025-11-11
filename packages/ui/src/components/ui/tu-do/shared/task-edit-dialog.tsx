@@ -15,8 +15,6 @@ import {
   Loader2,
   MoreVertical,
   Plus,
-  Search,
-  Settings,
   Tag,
   Timer,
   Trash,
@@ -64,7 +62,6 @@ import {
 import { convertJsonContentToYjsState } from '@tuturuuu/utils/yjs-helper';
 import dayjs from 'dayjs';
 import debounce from 'lodash/debounce';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import React, {
   useCallback,
@@ -735,17 +732,13 @@ function TaskEditDialogComponent({
   // ============================================================================
   // LABELS MANAGEMENT - Workspace labels, selected labels, and creation
   // ============================================================================
-  const { data: workspaceLabelsData = [], isLoading: labelsLoading } =
-    useWorkspaceLabels(workspaceId);
+  const { data: workspaceLabelsData = [] } = useWorkspaceLabels(workspaceId);
   const [availableLabels, setAvailableLabels] = useState<WorkspaceTaskLabel[]>(
     []
   );
   const [selectedLabels, setSelectedLabels] = useState<WorkspaceTaskLabel[]>(
     task?.labels || []
   );
-  const [newLabelName, setNewLabelName] = useState('');
-  const [newLabelColor, setNewLabelColor] = useState('gray');
-  const [creatingLabel, setCreatingLabel] = useState(false);
 
   // Label color utility functions
   const normalizeHex = (input: string): string | null => {
@@ -879,15 +872,12 @@ function TaskEditDialogComponent({
   // ASSIGNEES & MEMBERS - Workspace members and task assignees
   // ============================================================================
   const [workspaceMembers, setWorkspaceMembers] = useState<any[]>([]);
-  const [loadingMembers, setLoadingMembers] = useState(false);
   const [selectedAssignees, setSelectedAssignees] = useState<any[]>(
     task?.assignees || []
   );
-  const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
 
   const fetchWorkspaceMembers = useCallback(async (wsId: string) => {
     try {
-      setLoadingMembers(true);
       const { data: members, error } = await supabase
         .from('workspace_members')
         .select(
@@ -925,8 +915,6 @@ function TaskEditDialogComponent({
       }
     } catch (e) {
       console.error('Failed fetching workspace members', e);
-    } finally {
-      setLoadingMembers(false);
     }
   }, []);
 
@@ -934,15 +922,12 @@ function TaskEditDialogComponent({
   // PROJECTS - Task projects and selection
   // ============================================================================
   const [taskProjects, setTaskProjects] = useState<any[]>([]);
-  const [loadingProjects, setLoadingProjects] = useState(false);
   const [selectedProjects, setSelectedProjects] = useState<any[]>(
     task?.projects || []
   );
-  const [projectSearchQuery, setProjectSearchQuery] = useState('');
 
   const fetchTaskProjects = useCallback(async (wsId: string) => {
     try {
-      setLoadingProjects(true);
       const { data: projects, error } = await supabase
         .from('task_projects')
         .select('id, name, status')
@@ -960,8 +945,6 @@ function TaskEditDialogComponent({
       }
     } catch (e) {
       console.error('Failed fetching task projects', e);
-    } finally {
-      setLoadingProjects(false);
     }
   }, []);
 
@@ -1102,10 +1085,6 @@ function TaskEditDialogComponent({
 
   // Dropdown open states for controlled closing behavior
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
-  const [isListDropdownOpen, setIsListDropdownOpen] = useState(false);
-  const [isPriorityDropdownOpen, setIsPriorityDropdownOpen] = useState(false);
-  const [isEstimationDropdownOpen, setIsEstimationDropdownOpen] =
-    useState(false);
 
   // Popover states for inline metadata badges
   const [isPriorityPopoverOpen, setIsPriorityPopoverOpen] = useState(false);
@@ -1114,6 +1093,7 @@ function TaskEditDialogComponent({
   const [isLabelsPopoverOpen, setIsLabelsPopoverOpen] = useState(false);
   const [isProjectsPopoverOpen, setIsProjectsPopoverOpen] = useState(false);
   const [isAssigneesPopoverOpen, setIsAssigneesPopoverOpen] = useState(false);
+  const [isListPopoverOpen, setIsListPopoverOpen] = useState(false);
 
   // Metadata section collapse state
   const [isMetadataExpanded, setIsMetadataExpanded] = useState(true);
@@ -1186,7 +1166,6 @@ function TaskEditDialogComponent({
   // UI STATE - Dialog and options visibility
   // ============================================================================
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showOptionsSidebar, setShowOptionsSidebar] = useState(false);
   const [createMultiple, setCreateMultiple] = useState(false);
   const [showSyncWarning, setShowSyncWarning] = useState(false);
 
@@ -1460,6 +1439,45 @@ function TaskEditDialogComponent({
     [isCreateMode, task?.id, queryClient, boardId, toast]
   );
 
+  const updateList = useCallback(
+    async (newListId: string) => {
+      if (newListId === selectedListId) return;
+      setSelectedListId(newListId);
+      if (isCreateMode || !task?.id || task?.id === 'new') {
+        return;
+      }
+      try {
+        const { error } = await supabase
+          .from('tasks')
+          .update({ list_id: newListId })
+          .eq('id', task.id);
+        if (error) throw error;
+        await invalidateTaskCaches(queryClient, boardId);
+        toast({
+          title: 'List updated',
+          description: 'Task moved to new list',
+        });
+        onUpdate();
+      } catch (e: any) {
+        console.error('Failed updating list', e);
+        toast({
+          title: 'Failed to update list',
+          description: e.message || 'Please try again',
+          variant: 'destructive',
+        });
+      }
+    },
+    [
+      selectedListId,
+      isCreateMode,
+      task?.id,
+      queryClient,
+      boardId,
+      toast,
+      onUpdate,
+    ]
+  );
+
   const handleEndDateChange = useCallback(
     (date: Date | undefined) => {
       if (date) {
@@ -1478,32 +1496,6 @@ function TaskEditDialogComponent({
       }
     },
     [updateEndDate]
-  );
-
-  const updateList = useCallback(
-    async (newListId: string) => {
-      if (newListId === selectedListId) return;
-      setSelectedListId(newListId);
-      if (isCreateMode || !task?.id || task?.id === 'new') {
-        return;
-      }
-      try {
-        const { error } = await supabase
-          .from('tasks')
-          .update({ list_id: newListId })
-          .eq('id', task.id);
-        if (error) throw error;
-        await invalidateTaskCaches(queryClient, boardId);
-      } catch (e: any) {
-        console.error('Failed updating list', e);
-        toast({
-          title: 'Failed to update list',
-          description: e.message || 'Please try again',
-          variant: 'destructive',
-        });
-      }
-    },
-    [selectedListId, isCreateMode, task?.id, queryClient, boardId, toast]
   );
 
   const saveNameToDatabase = useCallback(
@@ -1649,99 +1641,6 @@ function TaskEditDialogComponent({
     },
     [selectedLabels, isCreateMode, task?.id, boardId, queryClient, toast]
   );
-
-  const handleCreateLabel = useCallback(async () => {
-    if (!newLabelName.trim() || !boardConfig) return;
-    setCreatingLabel(true);
-    try {
-      let wsId: string | undefined = (boardConfig as any)?.ws_id;
-      if (!wsId) {
-        const { data: board } = await supabase
-          .from('workspace_boards')
-          .select('ws_id')
-          .eq('id', boardId)
-          .single();
-        wsId = (board as any)?.ws_id;
-      }
-      if (!wsId) throw new Error('Workspace id not found');
-      const { data, error } = await supabase
-        .from('workspace_task_labels')
-        .insert({
-          ws_id: wsId,
-          name: newLabelName.trim(),
-          color: newLabelColor,
-        })
-        .select('id,name,color,created_at')
-        .single();
-      if (error) throw error;
-      if (data) {
-        setAvailableLabels((prev) =>
-          [data as any, ...prev].sort((a, b) =>
-            (a?.name || '')
-              .toLowerCase()
-              .localeCompare((b?.name || '').toLowerCase())
-          )
-        );
-        setSelectedLabels((prev) =>
-          [data as any, ...prev].sort((a, b) =>
-            (a?.name || '')
-              .toLowerCase()
-              .localeCompare((b?.name || '').toLowerCase())
-          )
-        );
-
-        if (task?.id) {
-          const { error: linkErr } = await supabase
-            .from('task_labels')
-            .insert({ task_id: task?.id, label_id: (data as any).id });
-
-          if (linkErr) {
-            setSelectedLabels((prev) =>
-              prev.filter((l) => l.id !== (data as any).id)
-            );
-            toast({
-              title: 'Label created (not linked)',
-              description: 'Label saved but could not be attached to task.',
-              variant: 'destructive',
-            });
-          } else {
-            await invalidateTaskCaches(queryClient, boardId);
-            onUpdate();
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(
-                new CustomEvent('workspace-label-created', {
-                  detail: { wsId, label: data },
-                })
-              );
-            }
-            toast({
-              title: 'Label created & linked',
-              description: 'New label added and attached to this task.',
-            });
-          }
-        }
-
-        setNewLabelName('');
-      }
-    } catch (e: any) {
-      toast({
-        title: 'Label creation failed',
-        description: e.message || 'Unable to create label',
-        variant: 'destructive',
-      });
-    } finally {
-      setCreatingLabel(false);
-    }
-  }, [
-    newLabelName,
-    boardConfig,
-    newLabelColor,
-    boardId,
-    task?.id,
-    queryClient,
-    onUpdate,
-    toast,
-  ]);
 
   const toggleAssignee = useCallback(
     async (member: any) => {
@@ -2581,8 +2480,6 @@ function TaskEditDialogComponent({
       setSelectedPeriod('PM');
     } else {
       if (isCreateMode && filters) {
-        setShowOptionsSidebar(false);
-
         // Apply labels from filters
         if (filters.labels && filters.labels.length > 0) {
           setSelectedLabels(filters.labels);
@@ -3581,85 +3478,75 @@ function TaskEditDialogComponent({
                     Create multiple
                   </label>
                 )}
-                {isCreateMode ? (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                    onClick={() => setShowOptionsSidebar((open) => !open)}
-                    title="Toggle options"
+                {task?.id && (
+                  <DropdownMenu
+                    open={isMoreMenuOpen}
+                    onOpenChange={setIsMoreMenuOpen}
                   >
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  task?.id && (
-                    <DropdownMenu
-                      open={isMoreMenuOpen}
-                      onOpenChange={setIsMoreMenuOpen}
-                    >
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                          title="More options"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => {
-                            navigator.clipboard.writeText(task.id);
-                            toast({
-                              title: 'Task ID copied',
-                              description:
-                                'Task ID has been copied to clipboard',
-                            });
-                            setIsMoreMenuOpen(false);
-                          }}
-                        >
-                          <Copy className="mr-2 h-4 w-4" />
-                          Copy ID
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            const url = `${window.location.origin}${pathname?.split('/tasks/')[0]}/tasks/${task.id}`;
-                            navigator.clipboard.writeText(url);
-                            toast({
-                              title: 'Link copied',
-                              description:
-                                'Task link has been copied to clipboard',
-                            });
-                            setIsMoreMenuOpen(false);
-                          }}
-                        >
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          Copy Link
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setShowOptionsSidebar((open) => !open);
-                            setIsMoreMenuOpen(false);
-                          }}
-                        >
-                          <Settings className="mr-2 h-4 w-4" />
-                          Options
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setShowDeleteConfirm(true);
-                            setIsMoreMenuOpen(false);
-                          }}
-                          className="text-dynamic-red focus:text-dynamic-red"
-                        >
-                          <Trash className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                        title="More options"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          // Navigate to board view
+                          const boardUrl = `/${wsId}/tasks/boards/${boardId}`;
+                          window.location.href = boardUrl;
+                          setIsMoreMenuOpen(false);
+                        }}
+                      >
+                        <ListTodo className="mr-2 h-4 w-4" />
+                        View Board
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => {
+                          navigator.clipboard.writeText(task.id);
+                          toast({
+                            title: 'Task ID copied',
+                            description: 'Task ID has been copied to clipboard',
+                          });
+                          setIsMoreMenuOpen(false);
+                        }}
+                      >
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copy ID
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          const url = `${window.location.origin}${pathname?.split('/tasks/')[0]}/tasks/${task.id}`;
+                          navigator.clipboard.writeText(url);
+                          toast({
+                            title: 'Link copied',
+                            description:
+                              'Task link has been copied to clipboard',
+                          });
+                          setIsMoreMenuOpen(false);
+                        }}
+                      >
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        Copy Link
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setShowDeleteConfirm(true);
+                          setIsMoreMenuOpen(false);
+                        }}
+                        className="text-dynamic-red focus:text-dynamic-red"
+                      >
+                        <Trash className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
                 <Button
                   variant="ghost"
@@ -3813,94 +3700,107 @@ function TaskEditDialogComponent({
                 </div>
 
                 {/* Task Metadata Tags - Inline Bubble Pop-ups */}
-                <div>
+                <div className="border-y bg-muted/30">
                   {/* Header with toggle button */}
                   <button
                     type="button"
                     onClick={() => setIsMetadataExpanded(!isMetadataExpanded)}
-                    className="flex w-full items-center justify-between px-4 py-2 text-left transition-colors hover:bg-muted/50 md:px-8"
+                    className="flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors hover:bg-muted/50 md:px-8"
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
                       <ChevronDown
                         className={cn(
-                          'h-4 w-4 text-muted-foreground transition-transform',
+                          'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
                           !isMetadataExpanded && '-rotate-90'
                         )}
                       />
-                      <span className="font-medium text-muted-foreground text-sm">
-                        Task Details
+                      <span className="shrink-0 font-semibold text-foreground text-sm">
+                        Properties
                       </span>
                       {/* Summary badges when collapsed */}
                       {!isMetadataExpanded && (
-                        <div className="ml-2 flex items-center gap-1.5">
+                        <div className="scrollbar-hide ml-2 flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
                           {priority && (
-                            <div
+                            <Badge
+                              variant="secondary"
                               className={cn(
-                                'h-2 w-2 rounded-full',
-                                priority === 'critical' && 'bg-dynamic-red',
-                                priority === 'high' && 'bg-dynamic-orange',
-                                priority === 'normal' && 'bg-dynamic-yellow',
-                                priority === 'low' && 'bg-dynamic-blue'
+                                'h-5 shrink-0 gap-1 border px-2 font-medium text-[10px]',
+                                priority === 'critical' &&
+                                  'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red',
+                                priority === 'high' &&
+                                  'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange',
+                                priority === 'normal' &&
+                                  'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow',
+                                priority === 'low' &&
+                                  'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue'
                               )}
-                            />
+                            >
+                              <Flag className="h-2.5 w-2.5" />
+                              {priority === 'critical'
+                                ? 'Urgent'
+                                : priority.charAt(0).toUpperCase() +
+                                  priority.slice(1)}
+                            </Badge>
                           )}
-                          {endDate && (
-                            <Calendar className="h-3 w-3 text-muted-foreground" />
+                          {(startDate || endDate) && (
+                            <Badge
+                              variant="secondary"
+                              className="h-5 shrink-0 gap-1 border border-dynamic-orange/30 bg-dynamic-orange/10 px-2 font-medium text-[10px] text-dynamic-orange"
+                            >
+                              <Calendar className="h-2.5 w-2.5" />
+                              {startDate && endDate
+                                ? 'Scheduled'
+                                : endDate
+                                  ? 'Due'
+                                  : 'Start'}
+                            </Badge>
                           )}
                           {estimationPoints != null && (
-                            <Timer className="h-3 w-3 text-muted-foreground" />
+                            <Badge
+                              variant="secondary"
+                              className="h-5 shrink-0 gap-1 border border-dynamic-purple/30 bg-dynamic-purple/10 px-2 font-medium text-[10px] text-dynamic-purple"
+                            >
+                              <Timer className="h-2.5 w-2.5" />
+                              Est.
+                            </Badge>
                           )}
                           {selectedLabels.length > 0 && (
-                            <div className="flex items-center gap-0.5">
-                              <Tag className="h-3 w-3 text-muted-foreground" />
-                              {selectedLabels.length === 1 ? (
-                                <span className="text-muted-foreground text-xs">
-                                  {selectedLabels[0]?.name}
-                                </span>
-                              ) : (
-                                <Badge
-                                  variant="secondary"
-                                  className="h-4 shrink-0 px-1 text-[9px]"
-                                >
-                                  {selectedLabels.length}
-                                </Badge>
-                              )}
-                            </div>
+                            <Badge
+                              variant="secondary"
+                              className="h-5 shrink-0 gap-1 border border-dynamic-indigo/30 bg-dynamic-indigo/10 px-2 font-medium text-[10px] text-dynamic-indigo"
+                            >
+                              <Tag className="h-2.5 w-2.5" />
+                              {selectedLabels.length}
+                            </Badge>
                           )}
                           {selectedProjects.length > 0 && (
-                            <div className="flex items-center gap-0.5">
-                              <Box className="h-3 w-3 text-muted-foreground" />
-                              {selectedProjects.length === 1 ? (
-                                <span className="text-muted-foreground text-xs">
-                                  {selectedProjects[0]?.name}
-                                </span>
-                              ) : (
-                                <Badge
-                                  variant="secondary"
-                                  className="h-4 shrink-0 px-1 text-[9px]"
-                                >
-                                  {selectedProjects.length}
-                                </Badge>
-                              )}
-                            </div>
+                            <Badge
+                              variant="secondary"
+                              className="h-5 shrink-0 gap-1 border border-dynamic-sky/30 bg-dynamic-sky/10 px-2 font-medium text-[10px] text-dynamic-sky"
+                            >
+                              <Box className="h-2.5 w-2.5" />
+                              {selectedProjects.length}
+                            </Badge>
+                          )}
+                          {selectedListId && (
+                            <Badge
+                              variant="secondary"
+                              className="h-5 shrink-0 gap-1 border border-dynamic-green/30 bg-dynamic-green/10 px-2 font-medium text-[10px] text-dynamic-green"
+                            >
+                              <ListTodo className="h-2.5 w-2.5" />
+                              {availableLists?.find(
+                                (l) => l.id === selectedListId
+                              )?.name || 'List'}
+                            </Badge>
                           )}
                           {selectedAssignees.length > 0 && (
-                            <div className="flex items-center gap-0.5">
-                              <Users className="h-3 w-3 text-muted-foreground" />
-                              {selectedAssignees.length === 1 ? (
-                                <span className="text-muted-foreground text-xs">
-                                  {selectedAssignees[0]?.display_name ||
-                                    'Unknown'}
-                                </span>
-                              ) : (
-                                <Badge
-                                  variant="secondary"
-                                  className="h-4 shrink-0 px-1 text-[9px]"
-                                >
-                                  {selectedAssignees.length}
-                                </Badge>
-                              )}
-                            </div>
+                            <Badge
+                              variant="secondary"
+                              className="h-5 shrink-0 gap-1 border border-dynamic-cyan/30 bg-dynamic-cyan/10 px-2 font-medium text-[10px] text-dynamic-cyan"
+                            >
+                              <Users className="h-2.5 w-2.5" />
+                              {selectedAssignees.length}
+                            </Badge>
                           )}
                         </div>
                       )}
@@ -3909,8 +3809,8 @@ function TaskEditDialogComponent({
 
                   {/* Expandable badges section */}
                   {isMetadataExpanded && (
-                    <div className="scrollbar-none overflow-x-auto px-4 py-2 md:px-8">
-                      <div className="flex items-center gap-2">
+                    <div className="border-t px-4 py-3 md:px-8">
+                      <div className="flex flex-wrap items-center gap-2">
                         {/* Priority Badge */}
                         <Popover
                           open={isPriorityPopoverOpen}
@@ -3920,38 +3820,35 @@ function TaskEditDialogComponent({
                             <button
                               type="button"
                               className={cn(
-                                'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
+                                'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
                                 priority
                                   ? priority === 'critical'
-                                    ? 'border-dynamic-red/30 bg-dynamic-red/15 font-semibold text-dynamic-red hover:bg-dynamic-red/25'
+                                    ? 'border-dynamic-red/30 bg-dynamic-red/15 text-dynamic-red hover:border-dynamic-red/50 hover:bg-dynamic-red/20'
                                     : priority === 'high'
-                                      ? 'border-dynamic-orange/30 bg-dynamic-orange/15 text-dynamic-orange hover:bg-dynamic-orange/25'
+                                      ? 'border-dynamic-orange/30 bg-dynamic-orange/15 text-dynamic-orange hover:border-dynamic-orange/50 hover:bg-dynamic-orange/20'
                                       : priority === 'normal'
-                                        ? 'border-dynamic-yellow/30 bg-dynamic-yellow/15 text-dynamic-yellow hover:bg-dynamic-yellow/25'
-                                        : 'border-dynamic-blue/30 bg-dynamic-blue/15 text-dynamic-blue hover:bg-dynamic-blue/25'
-                                  : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
+                                        ? 'border-dynamic-yellow/30 bg-dynamic-yellow/15 text-dynamic-yellow hover:border-dynamic-yellow/50 hover:bg-dynamic-yellow/20'
+                                        : 'border-dynamic-blue/30 bg-dynamic-blue/15 text-dynamic-blue hover:border-dynamic-blue/50 hover:bg-dynamic-blue/20'
+                                  : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground'
                               )}
                             >
-                              <Flag className="h-3 w-3" />
+                              <Flag className="h-3.5 w-3.5" />
                               <span>
                                 {priority
                                   ? priority === 'critical'
-                                    ? '🔥 Urgent'
-                                    : priority === 'high'
-                                      ? 'High'
-                                      : priority === 'normal'
-                                        ? 'Medium'
-                                        : 'Low'
+                                    ? 'Urgent'
+                                    : priority.charAt(0).toUpperCase() +
+                                      priority.slice(1)
                                   : 'Priority'}
                               </span>
                             </button>
                           </PopoverTrigger>
-                          <PopoverContent align="start" className="w-56 p-2">
-                            <div className="space-y-1">
+                          <PopoverContent align="start" className="w-56 p-0">
+                            <div className="p-1">
                               {[
                                 {
                                   value: 'critical',
-                                  label: '🔥 Urgent',
+                                  label: 'Urgent',
                                   color: 'text-dynamic-red',
                                 },
                                 {
@@ -3978,14 +3875,15 @@ function TaskEditDialogComponent({
                                     setIsPriorityPopoverOpen(false);
                                   }}
                                   className={cn(
-                                    'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted',
-                                    opt.color,
-                                    priority === opt.value && 'bg-muted'
+                                    'flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted',
+                                    priority === opt.value &&
+                                      'bg-muted font-medium'
                                   )}
                                 >
-                                  {opt.label}
+                                  <Flag className={cn('h-4 w-4', opt.color)} />
+                                  <span className="flex-1">{opt.label}</span>
                                   {priority === opt.value && (
-                                    <Check className="ml-auto h-4 w-4" />
+                                    <Check className="h-4 w-4 shrink-0 text-primary" />
                                   )}
                                 </button>
                               ))}
@@ -3998,14 +3896,78 @@ function TaskEditDialogComponent({
                                       updatePriority(null);
                                       setIsPriorityPopoverOpen(false);
                                     }}
-                                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-dynamic-red text-sm transition-colors hover:bg-dynamic-red/10"
+                                    className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-dynamic-red/80 text-sm transition-colors hover:bg-dynamic-red/10 hover:text-dynamic-red"
                                   >
                                     <X className="h-4 w-4" />
-                                    Clear
+                                    Clear priority
                                   </button>
                                 </>
                               )}
                             </div>
+                          </PopoverContent>
+                        </Popover>
+
+                        {/* List Badge */}
+                        <Popover
+                          open={isListPopoverOpen}
+                          onOpenChange={setIsListPopoverOpen}
+                        >
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className={cn(
+                                'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
+                                selectedListId
+                                  ? 'border-dynamic-green/30 bg-dynamic-green/15 text-dynamic-green hover:border-dynamic-green/50 hover:bg-dynamic-green/20'
+                                  : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground'
+                              )}
+                            >
+                              <ListTodo className="h-3.5 w-3.5" />
+                              <span>
+                                {selectedListId
+                                  ? availableLists?.find(
+                                      (l) => l.id === selectedListId
+                                    )?.name || 'List'
+                                  : 'List'}
+                              </span>
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent align="start" className="w-64 p-0">
+                            {!availableLists || availableLists.length === 0 ? (
+                              <div className="p-4 text-center text-muted-foreground text-sm">
+                                No lists found
+                              </div>
+                            ) : (
+                              <div
+                                className="max-h-60 overflow-y-auto overscroll-contain"
+                                onWheel={(e) => e.stopPropagation()}
+                              >
+                                <div className="p-1">
+                                  {availableLists.map((list) => (
+                                    <button
+                                      key={list.id}
+                                      type="button"
+                                      onClick={() => {
+                                        updateList(list.id);
+                                        setIsListPopoverOpen(false);
+                                      }}
+                                      className={cn(
+                                        'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted',
+                                        selectedListId === list.id &&
+                                          'bg-muted font-medium'
+                                      )}
+                                    >
+                                      <span className="flex-1">
+                                        {list.name}
+                                      </span>
+                                      {selectedListId === list.id && (
+                                        <Check className="h-4 w-4 shrink-0 text-primary" />
+                                      )}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </PopoverContent>
                         </Popover>
 
@@ -4018,13 +3980,13 @@ function TaskEditDialogComponent({
                             <button
                               type="button"
                               className={cn(
-                                'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
+                                'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
                                 startDate || endDate
-                                  ? 'border-dynamic-orange/30 bg-dynamic-orange/15 text-dynamic-orange hover:bg-dynamic-orange/25'
-                                  : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
+                                  ? 'border-dynamic-orange/30 bg-dynamic-orange/15 text-dynamic-orange hover:border-dynamic-orange/50 hover:bg-dynamic-orange/20'
+                                  : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground'
                               )}
                             >
-                              <Calendar className="h-3 w-3" />
+                              <Calendar className="h-3.5 w-3.5" />
                               <span>
                                 {startDate || endDate
                                   ? `${startDate ? new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No start'} → ${endDate ? new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No due'}`
@@ -4151,13 +4113,13 @@ function TaskEditDialogComponent({
                               <button
                                 type="button"
                                 className={cn(
-                                  'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
+                                  'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
                                   estimationPoints != null
-                                    ? 'border-dynamic-purple/30 bg-dynamic-purple/15 text-dynamic-purple hover:bg-dynamic-purple/25'
-                                    : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
+                                    ? 'border-dynamic-purple/30 bg-dynamic-purple/15 text-dynamic-purple hover:border-dynamic-purple/50 hover:bg-dynamic-purple/20'
+                                    : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground'
                                 )}
                               >
-                                <Timer className="h-3 w-3" />
+                                <Timer className="h-3.5 w-3.5" />
                                 <span>
                                   {estimationPoints != null
                                     ? mapEstimationPoints(
@@ -4168,8 +4130,8 @@ function TaskEditDialogComponent({
                                 </span>
                               </button>
                             </PopoverTrigger>
-                            <PopoverContent align="start" className="w-56 p-2">
-                              <div className="space-y-1">
+                            <PopoverContent align="start" className="w-56 p-0">
+                              <div className="p-1">
                                 {estimationIndices.map((idx) => (
                                   <button
                                     key={idx}
@@ -4179,16 +4141,19 @@ function TaskEditDialogComponent({
                                       setIsEstimationPopoverOpen(false);
                                     }}
                                     className={cn(
-                                      'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted',
-                                      estimationPoints === idx && 'bg-muted'
+                                      'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted',
+                                      estimationPoints === idx &&
+                                        'bg-muted font-medium'
                                     )}
                                   >
-                                    {mapEstimationPoints(
-                                      idx,
-                                      boardConfig.estimation_type
-                                    )}
+                                    <span className="flex-1">
+                                      {mapEstimationPoints(
+                                        idx,
+                                        boardConfig.estimation_type
+                                      )}
+                                    </span>
                                     {estimationPoints === idx && (
-                                      <Check className="ml-auto h-4 w-4" />
+                                      <Check className="h-4 w-4 shrink-0 text-primary" />
                                     )}
                                   </button>
                                 ))}
@@ -4201,10 +4166,10 @@ function TaskEditDialogComponent({
                                         updateEstimation(null);
                                         setIsEstimationPopoverOpen(false);
                                       }}
-                                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-dynamic-red text-sm transition-colors hover:bg-dynamic-red/10"
+                                      className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-dynamic-red/80 text-sm transition-colors hover:bg-dynamic-red/10 hover:text-dynamic-red"
                                     >
                                       <X className="h-4 w-4" />
-                                      Clear
+                                      Clear estimate
                                     </button>
                                   </>
                                 )}
@@ -4222,13 +4187,13 @@ function TaskEditDialogComponent({
                             <button
                               type="button"
                               className={cn(
-                                'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
+                                'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
                                 selectedLabels.length > 0
-                                  ? 'border-dynamic-indigo/30 bg-dynamic-indigo/15 text-dynamic-indigo hover:bg-dynamic-indigo/25'
-                                  : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
+                                  ? 'border-dynamic-indigo/30 bg-dynamic-indigo/15 text-dynamic-indigo hover:border-dynamic-indigo/50 hover:bg-dynamic-indigo/20'
+                                  : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground'
                               )}
                             >
-                              <Tag className="h-3 w-3" />
+                              <Tag className="h-3.5 w-3.5" />
                               <span>
                                 {selectedLabels.length === 0
                                   ? 'Labels'
@@ -4238,77 +4203,87 @@ function TaskEditDialogComponent({
                               </span>
                             </button>
                           </PopoverTrigger>
-                          <PopoverContent align="start" className="w-72 p-3">
-                            <div className="space-y-2">
-                              <Label className="text-xs">Labels</Label>
-                              {selectedLabels.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5">
-                                  {selectedLabels.map((label) => {
-                                    const styles = computeAccessibleLabelStyles(
-                                      label.color
-                                    );
-                                    return (
-                                      <Badge
-                                        key={label.id}
-                                        variant="secondary"
-                                        className="h-6 cursor-pointer gap-1 px-2 text-xs transition-opacity hover:opacity-80"
-                                        style={
-                                          styles
-                                            ? {
-                                                backgroundColor: styles.bg,
-                                                borderColor: styles.border,
-                                                color: styles.text,
-                                              }
-                                            : undefined
-                                        }
-                                        onClick={() => toggleLabel(label)}
-                                      >
-                                        {label.name}
-                                        <X className="h-2.5 w-2.5" />
-                                      </Badge>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                              <div
-                                className="max-h-72 overflow-y-auto overscroll-contain"
-                                onWheel={(e) => e.stopPropagation()}
-                              >
-                                <div className="space-y-1 pr-2">
-                                  {availableLabels
-                                    .filter(
-                                      (l) =>
-                                        !selectedLabels.some(
-                                          (sl) => sl.id === l.id
-                                        )
-                                    )
-                                    .map((label) => {
-                                      const styles =
-                                        computeAccessibleLabelStyles(
-                                          label.color
-                                        );
-                                      return (
-                                        <button
-                                          key={label.id}
-                                          type="button"
-                                          onClick={() => toggleLabel(label)}
-                                          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
-                                        >
-                                          <span
-                                            className="h-3 w-3 rounded-full"
-                                            style={{
-                                              backgroundColor:
-                                                styles?.bg || '#ccc',
-                                            }}
-                                          />
-                                          {label.name}
-                                          <Plus className="ml-auto h-4 w-4" />
-                                        </button>
-                                      );
-                                    })}
-                                </div>
+                          <PopoverContent align="start" className="w-72 p-0">
+                            {availableLabels.length === 0 ? (
+                              <div className="p-4 text-center text-muted-foreground text-sm">
+                                No labels found
                               </div>
-                            </div>
+                            ) : (
+                              <>
+                                {selectedLabels.length > 0 && (
+                                  <div className="border-b p-2">
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {selectedLabels.map((label) => {
+                                        const styles =
+                                          computeAccessibleLabelStyles(
+                                            label.color
+                                          );
+                                        return (
+                                          <Badge
+                                            key={label.id}
+                                            variant="secondary"
+                                            className="h-6 cursor-pointer gap-1 px-2 text-xs transition-opacity hover:opacity-80"
+                                            style={
+                                              styles
+                                                ? {
+                                                    backgroundColor: styles.bg,
+                                                    borderColor: styles.border,
+                                                    color: styles.text,
+                                                  }
+                                                : undefined
+                                            }
+                                            onClick={() => toggleLabel(label)}
+                                          >
+                                            {label.name}
+                                            <X className="h-2.5 w-2.5" />
+                                          </Badge>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+                                <div
+                                  className="max-h-60 overflow-y-auto overscroll-contain"
+                                  onWheel={(e) => e.stopPropagation()}
+                                >
+                                  <div className="p-1">
+                                    {availableLabels
+                                      .filter(
+                                        (l) =>
+                                          !selectedLabels.some(
+                                            (sl) => sl.id === l.id
+                                          )
+                                      )
+                                      .map((label) => {
+                                        const styles =
+                                          computeAccessibleLabelStyles(
+                                            label.color
+                                          );
+                                        return (
+                                          <button
+                                            key={label.id}
+                                            type="button"
+                                            onClick={() => toggleLabel(label)}
+                                            className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                                          >
+                                            <span
+                                              className="h-3 w-3 shrink-0 rounded-full"
+                                              style={{
+                                                backgroundColor:
+                                                  styles?.bg || '#ccc',
+                                              }}
+                                            />
+                                            <span className="flex-1">
+                                              {label.name}
+                                            </span>
+                                            <Plus className="h-4 w-4 shrink-0" />
+                                          </button>
+                                        );
+                                      })}
+                                  </div>
+                                </div>
+                              </>
+                            )}
                           </PopoverContent>
                         </Popover>
 
@@ -4321,13 +4296,13 @@ function TaskEditDialogComponent({
                             <button
                               type="button"
                               className={cn(
-                                'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
+                                'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
                                 selectedProjects.length > 0
-                                  ? 'border-dynamic-sky/30 bg-dynamic-sky/15 text-dynamic-sky hover:bg-dynamic-sky/25'
-                                  : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
+                                  ? 'border-dynamic-sky/30 bg-dynamic-sky/15 text-dynamic-sky hover:border-dynamic-sky/50 hover:bg-dynamic-sky/20'
+                                  : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground'
                               )}
                             >
-                              <Box className="h-3 w-3" />
+                              <Box className="h-3.5 w-3.5" />
                               <span>
                                 {selectedProjects.length === 0
                                   ? 'Projects'
@@ -4337,54 +4312,61 @@ function TaskEditDialogComponent({
                               </span>
                             </button>
                           </PopoverTrigger>
-                          <PopoverContent align="start" className="w-72 p-3">
-                            <div className="space-y-2">
-                              <Label className="text-xs">Projects</Label>
-                              {selectedProjects.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5">
-                                  {selectedProjects.map((project) => (
-                                    <Badge
-                                      key={project.id}
-                                      variant="secondary"
-                                      className="item-center h-auto cursor-pointer gap-1 whitespace-normal border-dynamic-sky/30 bg-dynamic-sky/10 px-2 text-dynamic-sky text-xs transition-opacity hover:opacity-80"
-                                      onClick={() => toggleProject(project)}
-                                    >
-                                      <span className="wrap-break-word">
-                                        {project.name}
-                                      </span>
-                                      <X className="h-2.5 w-2.5 shrink-0" />
-                                    </Badge>
-                                  ))}
-                                </div>
-                              )}
-                              <div
-                                className="max-h-72 overflow-y-auto overscroll-contain"
-                                onWheel={(e) => e.stopPropagation()}
-                              >
-                                <div className="space-y-1 pr-2">
-                                  {taskProjects
-                                    .filter(
-                                      (p) =>
-                                        !selectedProjects.some(
-                                          (sp) => sp.id === p.id
-                                        )
-                                    )
-                                    .map((project) => (
-                                      <button
-                                        key={project.id}
-                                        type="button"
-                                        onClick={() => toggleProject(project)}
-                                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
-                                      >
-                                        <span className="wrap-break-word flex-1 whitespace-normal">
-                                          {project.name}
-                                        </span>
-                                        <Plus className="ml-auto h-4 w-4 shrink-0" />
-                                      </button>
-                                    ))}
-                                </div>
+                          <PopoverContent align="start" className="w-72 p-0">
+                            {taskProjects.length === 0 ? (
+                              <div className="p-4 text-center text-muted-foreground text-sm">
+                                No projects found
                               </div>
-                            </div>
+                            ) : (
+                              <>
+                                {selectedProjects.length > 0 && (
+                                  <div className="border-b p-2">
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {selectedProjects.map((project) => (
+                                        <Badge
+                                          key={project.id}
+                                          variant="secondary"
+                                          className="item-center h-auto cursor-pointer gap-1 whitespace-normal border-dynamic-sky/30 bg-dynamic-sky/10 px-2 text-dynamic-sky text-xs transition-opacity hover:opacity-80"
+                                          onClick={() => toggleProject(project)}
+                                        >
+                                          <span className="wrap-break-word">
+                                            {project.name}
+                                          </span>
+                                          <X className="h-2.5 w-2.5 shrink-0" />
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                <div
+                                  className="max-h-60 overflow-y-auto overscroll-contain"
+                                  onWheel={(e) => e.stopPropagation()}
+                                >
+                                  <div className="p-1">
+                                    {taskProjects
+                                      .filter(
+                                        (p) =>
+                                          !selectedProjects.some(
+                                            (sp) => sp.id === p.id
+                                          )
+                                      )
+                                      .map((project) => (
+                                        <button
+                                          key={project.id}
+                                          type="button"
+                                          onClick={() => toggleProject(project)}
+                                          className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                                        >
+                                          <span className="wrap-break-word flex-1 whitespace-normal">
+                                            {project.name}
+                                          </span>
+                                          <Plus className="h-4 w-4 shrink-0" />
+                                        </button>
+                                      ))}
+                                  </div>
+                                </div>
+                              </>
+                            )}
                           </PopoverContent>
                         </Popover>
 
@@ -4397,13 +4379,13 @@ function TaskEditDialogComponent({
                             <button
                               type="button"
                               className={cn(
-                                'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs transition-all',
+                                'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
                                 selectedAssignees.length > 0
-                                  ? 'border-dynamic-orange/30 bg-dynamic-orange/15 text-dynamic-orange hover:bg-dynamic-orange/25'
-                                  : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
+                                  ? 'border-dynamic-cyan/30 bg-dynamic-cyan/15 text-dynamic-cyan hover:border-dynamic-cyan/50 hover:bg-dynamic-cyan/20'
+                                  : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground'
                               )}
                             >
-                              <Users className="h-3 w-3" />
+                              <Users className="h-3.5 w-3.5" />
                               <span>
                                 {selectedAssignees.length === 0
                                   ? 'Assignees'
@@ -4414,76 +4396,88 @@ function TaskEditDialogComponent({
                               </span>
                             </button>
                           </PopoverTrigger>
-                          <PopoverContent align="start" className="w-72 p-3">
-                            <div className="space-y-2">
-                              <Label className="text-xs">Assignees</Label>
-                              {selectedAssignees.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5">
-                                  {selectedAssignees.map((assignee) => (
-                                    <Badge
-                                      key={assignee.id || assignee.user_id}
-                                      variant="secondary"
-                                      className="h-6 cursor-pointer gap-1.5 px-2 text-xs transition-opacity hover:opacity-80"
-                                      onClick={() => toggleAssignee(assignee)}
-                                    >
-                                      <Avatar className="h-3.5 w-3.5">
-                                        <AvatarImage
-                                          src={assignee.avatar_url}
-                                          alt={
-                                            assignee.display_name || 'Unknown'
-                                          }
-                                        />
-                                        <AvatarFallback className="text-[8px]">
-                                          {(assignee.display_name ||
-                                            'Unknown')[0]?.toUpperCase()}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      {assignee.display_name || 'Unknown'}
-                                      <X className="h-2.5 w-2.5" />
-                                    </Badge>
-                                  ))}
-                                </div>
-                              )}
-                              <div
-                                className="max-h-72 overflow-y-auto overscroll-contain"
-                                onWheel={(e) => e.stopPropagation()}
-                              >
-                                <div className="space-y-1 pr-2">
-                                  {workspaceMembers
-                                    .filter(
-                                      (m) =>
-                                        !selectedAssignees.some(
-                                          (a) =>
-                                            (a.id || a.user_id) ===
-                                            (m.user_id || m.id)
-                                        )
-                                    )
-                                    .map((member) => (
-                                      <button
-                                        key={member.user_id}
-                                        type="button"
-                                        onClick={() => toggleAssignee(member)}
-                                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
-                                      >
-                                        <Avatar className="h-5 w-5">
-                                          <AvatarImage
-                                            src={member.avatar_url}
-                                            alt={
-                                              member.display_name || 'Unknown'
-                                            }
-                                          />
-                                          <AvatarFallback className="text-[9px]">
-                                            {(member.display_name ||
-                                              'Unknown')[0]?.toUpperCase()}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        {member.display_name || 'Unknown'}
-                                        <Plus className="ml-auto h-4 w-4" />
-                                      </button>
-                                    ))}
-                                </div>
+                          <PopoverContent align="start" className="w-72 p-0">
+                            {workspaceMembers.length === 0 ? (
+                              <div className="p-4 text-center text-muted-foreground text-sm">
+                                No members found
                               </div>
-                            </div>
+                            ) : (
+                              <>
+                                {selectedAssignees.length > 0 && (
+                                  <div className="border-b p-2">
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {selectedAssignees.map((assignee) => (
+                                        <Badge
+                                          key={assignee.id || assignee.user_id}
+                                          variant="secondary"
+                                          className="h-6 cursor-pointer gap-1.5 px-2 text-xs transition-opacity hover:opacity-80"
+                                          onClick={() =>
+                                            toggleAssignee(assignee)
+                                          }
+                                        >
+                                          <Avatar className="h-3.5 w-3.5">
+                                            <AvatarImage
+                                              src={assignee.avatar_url}
+                                              alt={
+                                                assignee.display_name ||
+                                                'Unknown'
+                                              }
+                                            />
+                                            <AvatarFallback className="text-[8px]">
+                                              {(assignee.display_name ||
+                                                'Unknown')[0]?.toUpperCase()}
+                                            </AvatarFallback>
+                                          </Avatar>
+                                          {assignee.display_name || 'Unknown'}
+                                          <X className="h-2.5 w-2.5" />
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                <div
+                                  className="max-h-60 overflow-y-auto overscroll-contain"
+                                  onWheel={(e) => e.stopPropagation()}
+                                >
+                                  <div className="p-1">
+                                    {workspaceMembers
+                                      .filter(
+                                        (m) =>
+                                          !selectedAssignees.some(
+                                            (a) =>
+                                              (a.id || a.user_id) ===
+                                              (m.user_id || m.id)
+                                          )
+                                      )
+                                      .map((member) => (
+                                        <button
+                                          key={member.user_id}
+                                          type="button"
+                                          onClick={() => toggleAssignee(member)}
+                                          className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                                        >
+                                          <Avatar className="h-5 w-5 shrink-0 border">
+                                            <AvatarImage
+                                              src={member.avatar_url}
+                                              alt={
+                                                member.display_name || 'Unknown'
+                                              }
+                                            />
+                                            <AvatarFallback className="text-[9px]">
+                                              {(member.display_name ||
+                                                'Unknown')[0]?.toUpperCase()}
+                                            </AvatarFallback>
+                                          </Avatar>
+                                          <span className="flex-1">
+                                            {member.display_name || 'Unknown'}
+                                          </span>
+                                          <Plus className="h-4 w-4 shrink-0" />
+                                        </button>
+                                      ))}
+                                  </div>
+                                </div>
+                              </>
+                            )}
                           </PopoverContent>
                         </Popover>
                       </div>
@@ -4579,845 +4573,6 @@ function TaskEditDialogComponent({
             </div>
           </div>
 
-          {/* Simplified Right sidebar - toggleable */}
-          {showOptionsSidebar && (
-            <div className="fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l bg-background shadow-lg transition-all duration-300 sm:w-[380px] md:relative md:z-auto md:w-[380px] md:bg-linear-to-b md:from-muted/20 md:to-muted/5 md:shadow-none">
-              {/* Sidebar header with icon */}
-              <div className="border-border/50 border-b bg-linear-to-b from-background/95 to-background/80 px-6 py-4 backdrop-blur-md">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/10">
-                      <Settings className="h-4 w-4 text-dynamic-orange" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground text-sm leading-none tracking-tight">
-                        Task Options
-                      </h3>
-                      <p className="mt-1 text-muted-foreground text-xs">
-                        Configure task settings
-                      </p>
-                    </div>
-                  </div>
-                  {/* Close sidebar button */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 shrink-0"
-                    onClick={() => setShowOptionsSidebar(false)}
-                    title="Close sidebar"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="scrollbar-thin flex-1 overflow-y-auto">
-                <div className="space-y-4 p-4 md:space-y-5 md:p-6">
-                  {/* Essential Options - Always Visible */}
-
-                  {/* Start time tracker */}
-                  <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
-                    <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                      <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                        <Timer className="h-3.5 w-3.5 text-dynamic-orange" />
-                      </div>
-                      Time Tracker
-                    </Label>
-                    <Button
-                      asChild
-                      variant="outline"
-                      className="h-8 w-full justify-center text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm"
-                    >
-                      <Link
-                        href={`/${wsId}/time-tracker/timer?taskSelect=${task?.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Start tracking time
-                      </Link>
-                    </Button>
-                  </div>
-
-                  {/* List Selection */}
-                  <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
-                    <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                      <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                        <ListTodo className="h-3.5 w-3.5 text-dynamic-orange" />
-                      </div>
-                      List
-                    </Label>
-                    <DropdownMenu
-                      open={isListDropdownOpen}
-                      onOpenChange={setIsListDropdownOpen}
-                    >
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm"
-                        >
-                          <span className="truncate">
-                            {availableLists.find(
-                              (list) => list.id === selectedListId
-                            )?.name || 'Select list'}
-                          </span>
-                          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-[320px] md:w-[376px]">
-                        {availableLists.map((list) => (
-                          <DropdownMenuItem
-                            key={list.id}
-                            onClick={() => {
-                              updateList(list.id);
-                              setIsListDropdownOpen(false);
-                            }}
-                            className={cn(
-                              'cursor-pointer transition-colors',
-                              selectedListId === list.id &&
-                                'bg-dynamic-orange/10 font-medium text-dynamic-orange'
-                            )}
-                          >
-                            <Check
-                              className={cn(
-                                'h-4 w-4',
-                                selectedListId === list.id
-                                  ? 'opacity-100'
-                                  : 'opacity-0'
-                              )}
-                            />
-                            {list.name}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  {/* Priority (Dropdown) */}
-                  <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
-                    <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                      <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                        <Flag className="h-3.5 w-3.5 text-dynamic-orange" />
-                      </div>
-                      Priority
-                    </Label>
-                    <DropdownMenu
-                      open={isPriorityDropdownOpen}
-                      onOpenChange={setIsPriorityDropdownOpen}
-                    >
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            'h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm',
-                            priority === 'critical' &&
-                              'border-dynamic-red bg-dynamic-red/10 font-semibold text-dynamic-red hover:bg-dynamic-red/20'
-                          )}
-                          title="Priority — Alt+1 Urgent, Alt+2 High, Alt+3 Medium, Alt+4 Low, Alt+0 Clear"
-                        >
-                          <span className="truncate">
-                            {priority
-                              ? priority === 'critical'
-                                ? '🔥 Urgent'
-                                : priority === 'high'
-                                  ? 'High'
-                                  : priority === 'normal'
-                                    ? 'Medium'
-                                    : 'Low'
-                              : 'Set priority'}
-                          </span>
-                          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-[220px]">
-                        {[
-                          {
-                            value: 'critical',
-                            label: '🔥 Urgent',
-                            dot: 'bg-dynamic-red',
-                            className: 'font-semibold text-dynamic-red',
-                          },
-                          {
-                            value: 'high',
-                            label: 'High',
-                            dot: 'bg-dynamic-orange',
-                            className: '',
-                          },
-                          {
-                            value: 'normal',
-                            label: 'Medium',
-                            dot: 'bg-dynamic-yellow',
-                            className: '',
-                          },
-                          {
-                            value: 'low',
-                            label: 'Low',
-                            dot: 'bg-dynamic-blue',
-                            className: '',
-                          },
-                        ].map((opt) => (
-                          <DropdownMenuItem
-                            key={opt.value}
-                            onClick={() => {
-                              updatePriority(opt.value as TaskPriority);
-                              setIsPriorityDropdownOpen(false);
-                            }}
-                            className={cn(
-                              'cursor-pointer',
-                              opt.className,
-                              priority === opt.value &&
-                                opt.value === 'critical' &&
-                                'bg-dynamic-red/10'
-                            )}
-                          >
-                            <span
-                              className={cn(
-                                'mr-2 inline-block h-2 w-2 rounded-full',
-                                opt.dot
-                              )}
-                            />
-                            <span className="flex-1">{opt.label}</span>
-                            {priority === (opt.value as any) && (
-                              <Check className="h-4 w-4" />
-                            )}
-                          </DropdownMenuItem>
-                        ))}
-                        <DropdownMenuItem
-                          onClick={() => {
-                            updatePriority(null);
-                            setIsPriorityDropdownOpen(false);
-                          }}
-                          className="cursor-pointer text-dynamic-red focus:text-dynamic-red"
-                        >
-                          <X className="mr-2 h-4 w-4" /> Clear priority
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  {/* Estimation (Dropdown) */}
-                  {boardConfig?.estimation_type && (
-                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
-                      <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                        <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                          <Timer className="h-3.5 w-3.5 text-dynamic-orange" />
-                        </div>
-                        Estimation
-                      </Label>
-                      <DropdownMenu
-                        open={isEstimationDropdownOpen}
-                        onOpenChange={setIsEstimationDropdownOpen}
-                      >
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm"
-                            title="Estimation Alt+Shift+0..7 set, Alt+Shift+X clear"
-                          >
-                            <span className="truncate">
-                              {typeof estimationPoints === 'number'
-                                ? mapEstimationPoints(
-                                    estimationPoints,
-                                    boardConfig.estimation_type
-                                  )
-                                : 'Set estimation'}
-                            </span>
-                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-[220px]">
-                          {estimationIndices.map((idx) => (
-                            <DropdownMenuItem
-                              key={idx}
-                              onClick={() => {
-                                updateEstimation(idx);
-                                setIsEstimationDropdownOpen(false);
-                              }}
-                              className="cursor-pointer"
-                            >
-                              <span className="flex-1">
-                                {mapEstimationPoints(
-                                  idx,
-                                  boardConfig.estimation_type
-                                )}
-                              </span>
-                              {idx === estimationPoints && (
-                                <Check className="h-4 w-4" />
-                              )}
-                            </DropdownMenuItem>
-                          ))}
-                          <DropdownMenuItem
-                            onClick={() => {
-                              updateEstimation(null);
-                              setIsEstimationDropdownOpen(false);
-                            }}
-                            className="cursor-pointer text-dynamic-red focus:text-dynamic-red"
-                          >
-                            <X className="mr-2 h-4 w-4" /> Clear estimation
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  )}
-
-                  {/* Dates Module - Combined Start Date, Due Date, and Quick Actions */}
-                  <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
-                    <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                      <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                        <Calendar className="h-3.5 w-3.5 text-dynamic-orange" />
-                      </div>
-                      Dates
-                    </Label>
-                    <div className="space-y-3">
-                      {/* Start Date */}
-                      <div className="space-y-1.5">
-                        <Label className="font-normal text-muted-foreground text-xs">
-                          Start Date
-                        </Label>
-                        <DateTimePicker
-                          date={startDate}
-                          setDate={updateStartDate}
-                          showTimeSelect={true}
-                          allowClear={true}
-                          showFooterControls={true}
-                          maxDate={endDate}
-                        />
-                      </div>
-
-                      {/* Due Date */}
-                      <div className="space-y-1.5">
-                        <Label className="font-normal text-muted-foreground text-xs">
-                          Due Date
-                        </Label>
-
-                        <DateTimePicker
-                          date={endDate}
-                          setDate={handleEndDateChange}
-                          showTimeSelect={true}
-                          allowClear={true}
-                          showFooterControls={true}
-                          minDate={startDate}
-                        />
-
-                        {/* Date Range Warning */}
-                        {startDate && endDate && startDate > endDate && (
-                          <div className="flex items-center gap-2 rounded-md border border-dynamic-orange/30 bg-dynamic-orange/10 px-3 py-2 text-xs">
-                            <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-dynamic-orange" />
-                            <span className="text-dynamic-orange">
-                              Start date is after due date
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Quick Due Date Actions */}
-                        <div className="space-y-1.5 pt-2">
-                          <Label className="font-normal text-muted-foreground text-xs">
-                            Quick Actions
-                          </Label>
-                          <div className="grid grid-cols-2 gap-1.5 md:gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="xs"
-                              onClick={() => handleQuickDueDate(0)}
-                              disabled={isLoading}
-                              className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                              title="Today â€“ Alt+T"
-                            >
-                              Today
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="xs"
-                              onClick={() => handleQuickDueDate(1)}
-                              disabled={isLoading}
-                              className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                              title="Tomorrow â€“ Alt+M"
-                            >
-                              Tomorrow
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="xs"
-                              onClick={() => {
-                                const daysUntilEndOfWeek = 6 - dayjs().day();
-                                handleQuickDueDate(daysUntilEndOfWeek);
-                              }}
-                              disabled={isLoading}
-                              className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                              title="End of this week (Saturday)"
-                            >
-                              This week
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="xs"
-                              onClick={() => handleQuickDueDate(7)}
-                              disabled={isLoading}
-                              className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                              title="Next week â€“ Alt+W"
-                            >
-                              Next week
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Advanced Options */}
-                  <div className="space-y-4">
-                    {/* Labels Section */}
-                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
-                      <Label className="flex items-center justify-between gap-2">
-                        <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                            <Tag className="h-3.5 w-3.5 text-dynamic-orange" />
-                          </div>
-                          Labels
-                        </span>
-                      </Label>
-                      {boardConfig && (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Input
-                              placeholder="New label name"
-                              value={newLabelName}
-                              onChange={(e) => setNewLabelName(e.target.value)}
-                              className="h-8 flex-1 text-xs transition-all focus:border-dynamic-orange/50"
-                            />
-                            <select
-                              className="h-8 rounded-md border bg-background px-2 text-xs transition-all hover:border-dynamic-orange/50 focus:border-dynamic-orange/50 focus:outline-none focus:ring-1 focus:ring-dynamic-orange/20"
-                              value={newLabelColor}
-                              onChange={(e) => setNewLabelColor(e.target.value)}
-                            >
-                              {[
-                                'red',
-                                'orange',
-                                'yellow',
-                                'green',
-                                'blue',
-                                'indigo',
-                                'purple',
-                                'pink',
-                                'gray',
-                              ].map((c) => (
-                                <option key={c} value={c}>
-                                  {c.charAt(0).toUpperCase() + c.slice(1)}
-                                </option>
-                              ))}
-                            </select>
-                            <Button
-                              type="button"
-                              size="xs"
-                              className="h-8 bg-dynamic-orange px-3 text-white text-xs shadow-sm hover:bg-dynamic-orange/90"
-                              onClick={handleCreateLabel}
-                              disabled={creatingLabel || !newLabelName.trim()}
-                            >
-                              {creatingLabel ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                'Add'
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-
-                      {labelsLoading ? (
-                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-6">
-                          <Loader2 className="h-4 w-4 animate-spin text-dynamic-orange" />
-                          <p className="text-muted-foreground text-xs">
-                            Loading labels...
-                          </p>
-                        </div>
-                      ) : availableLabels.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-6">
-                          <Tag className="h-4 w-4 text-muted-foreground/40" />
-                          <div className="text-center">
-                            <p className="font-medium text-muted-foreground text-xs">
-                              No labels yet
-                            </p>
-                            <p className="mt-1 text-[10px] text-muted-foreground/60">
-                              Create your first label above
-                            </p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-wrap gap-1.5 md:gap-2">
-                          {availableLabels.map((label) => {
-                            const active = selectedLabels.some(
-                              (l) => l.id === label.id
-                            );
-                            const styles = computeAccessibleLabelStyles(
-                              label.color
-                            );
-                            return (
-                              <Button
-                                key={label.id}
-                                type="button"
-                                variant={active ? 'default' : 'outline'}
-                                size="xs"
-                                onClick={() => toggleLabel(label)}
-                                className={cn(
-                                  'h-7 border px-3 text-xs transition-all',
-                                  !active &&
-                                    'bg-background hover:border-dynamic-orange/50',
-                                  active && 'shadow-sm'
-                                )}
-                                style={
-                                  active && styles
-                                    ? {
-                                        backgroundColor: styles.bg,
-                                        borderColor: styles.border,
-                                        color: styles.text,
-                                      }
-                                    : undefined
-                                }
-                              >
-                                {label.name || 'Unnamed'}
-                                {active && <X className="ml-1.5 h-3 w-3" />}
-                              </Button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Projects Section */}
-                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
-                      <Label className="flex items-center justify-between gap-2">
-                        <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                            <Box className="h-3.5 w-3.5 text-dynamic-orange" />
-                          </div>
-                          Projects
-                        </span>
-                        {selectedProjects.length > 0 && (
-                          <Badge
-                            variant="secondary"
-                            className="h-5 rounded-full px-2 font-semibold text-[10px]"
-                          >
-                            {selectedProjects.length}
-                          </Badge>
-                        )}
-                      </Label>
-
-                      {loadingProjects ? (
-                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-8">
-                          <Loader2 className="h-5 w-5 animate-spin text-dynamic-orange" />
-                          <p className="text-muted-foreground text-xs">
-                            Loading projects...
-                          </p>
-                        </div>
-                      ) : taskProjects.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-8">
-                          <Box className="h-5 w-5 text-muted-foreground/40" />
-                          <p className="text-center text-muted-foreground text-xs">
-                            No projects available
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2.5">
-                          {/* Search input */}
-                          <div className="relative">
-                            <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                            <Input
-                              type="text"
-                              placeholder="Search projects..."
-                              value={projectSearchQuery}
-                              onChange={(e) =>
-                                setProjectSearchQuery(e.target.value)
-                              }
-                              className="h-8 border-muted-foreground/20 bg-background/50 pl-8 text-xs placeholder:text-muted-foreground/50"
-                            />
-                            {projectSearchQuery && (
-                              <button
-                                type="button"
-                                onClick={() => setProjectSearchQuery('')}
-                                className="-translate-y-1/2 absolute top-1/2 right-2 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Selected projects (if any) */}
-                          {selectedProjects.length > 0 && (
-                            <div className="space-y-1.5">
-                              <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                                Selected ({selectedProjects.length})
-                              </p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {selectedProjects.map((project) => (
-                                  <Button
-                                    key={`selected-project-${project.id}`}
-                                    type="button"
-                                    variant="default"
-                                    size="xs"
-                                    onClick={() => toggleProject(project)}
-                                    className="h-auto items-center gap-1.5 whitespace-normal rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
-                                  >
-                                    <span className="wrap-break-word">
-                                      {project.name}
-                                    </span>
-                                    <X className="h-3 w-3 shrink-0 opacity-70" />
-                                  </Button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Available projects */}
-                          <div className="space-y-1.5">
-                            {(() => {
-                              const filteredProjects = taskProjects.filter(
-                                (project) => {
-                                  const isSelected = selectedProjects.some(
-                                    (p) => p.id === project.id
-                                  );
-                                  const matchesSearch =
-                                    !projectSearchQuery ||
-                                    (project.name || '')
-                                      .toLowerCase()
-                                      .includes(
-                                        projectSearchQuery.toLowerCase()
-                                      );
-                                  return !isSelected && matchesSearch;
-                                }
-                              );
-
-                              if (filteredProjects.length === 0) {
-                                return projectSearchQuery ? (
-                                  <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
-                                    <Search className="h-4 w-4 text-muted-foreground/40" />
-                                    <p className="text-center text-muted-foreground text-xs">
-                                      No projects found
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <div className="rounded-lg bg-muted/30 py-3 text-center">
-                                    <p className="text-muted-foreground text-xs">
-                                      All projects selected
-                                    </p>
-                                  </div>
-                                );
-                              }
-
-                              return (
-                                <>
-                                  <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                                    Available ({filteredProjects.length})
-                                  </p>
-                                  <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
-                                    {filteredProjects.map((project) => (
-                                      <button
-                                        key={`available-project-${project.id}`}
-                                        type="button"
-                                        onClick={() => toggleProject(project)}
-                                        className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
-                                      >
-                                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-dynamic-orange/10">
-                                          <ListTodo className="h-4 w-4 text-dynamic-orange" />
-                                        </div>
-                                        <div className="flex-1">
-                                          <span className="wrap-break-word block whitespace-normal text-sm">
-                                            {project.name}
-                                          </span>
-                                          {project.status && (
-                                            <span className="block text-muted-foreground text-xs">
-                                              {project.status}
-                                            </span>
-                                          )}
-                                        </div>
-                                        <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                                      </button>
-                                    ))}
-                                  </div>
-                                </>
-                              );
-                            })()}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Assignees Section */}
-                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-linear-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
-                      <Label className="flex items-center justify-between gap-2">
-                        <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                            <Users className="h-3.5 w-3.5 text-dynamic-orange" />
-                          </div>
-                          Assignees
-                        </span>
-                        {selectedAssignees.length > 0 && (
-                          <Badge
-                            variant="secondary"
-                            className="h-5 rounded-full px-2 font-semibold text-[10px]"
-                          >
-                            {selectedAssignees.length}
-                          </Badge>
-                        )}
-                      </Label>
-
-                      {loadingMembers ? (
-                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-8">
-                          <Loader2 className="h-5 w-5 animate-spin text-dynamic-orange" />
-                          <p className="text-muted-foreground text-xs">
-                            Loading members...
-                          </p>
-                        </div>
-                      ) : workspaceMembers.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-8">
-                          <Users className="h-5 w-5 text-muted-foreground/40" />
-                          <p className="text-center text-muted-foreground text-xs">
-                            No workspace members
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2.5">
-                          {/* Search input */}
-                          <div className="relative">
-                            <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                            <Input
-                              type="text"
-                              placeholder="Search members..."
-                              value={assigneeSearchQuery}
-                              onChange={(e) =>
-                                setAssigneeSearchQuery(e.target.value)
-                              }
-                              className="h-8 border-muted-foreground/20 bg-background/50 pl-8 text-xs placeholder:text-muted-foreground/50"
-                            />
-                            {assigneeSearchQuery && (
-                              <button
-                                type="button"
-                                onClick={() => setAssigneeSearchQuery('')}
-                                className="-translate-y-1/2 absolute top-1/2 right-2 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Selected assignees (if any) */}
-                          {selectedAssignees.length > 0 && (
-                            <div className="space-y-1.5">
-                              <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                                Selected ({selectedAssignees.length})
-                              </p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {selectedAssignees.map((assignee) => (
-                                  <Button
-                                    key={`selected-assignee-${assignee.id || assignee.user_id}`}
-                                    type="button"
-                                    variant="default"
-                                    size="xs"
-                                    onClick={() => toggleAssignee(assignee)}
-                                    className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
-                                  >
-                                    <Avatar className="h-4 w-4">
-                                      <AvatarImage
-                                        src={assignee.avatar_url}
-                                        alt={assignee.display_name || 'Unknown'}
-                                      />
-                                      <AvatarFallback className="bg-dynamic-orange/20 font-bold text-[9px]">
-                                        {(assignee.display_name ||
-                                          'Unknown')[0]?.toUpperCase()}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    {assignee.display_name || 'Unknown'}
-                                    <X className="h-3 w-3 opacity-70" />
-                                  </Button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Available members */}
-                          <div className="space-y-1.5">
-                            {(() => {
-                              const filteredMembers = workspaceMembers.filter(
-                                (member) => {
-                                  const memberId = member.user_id || member.id;
-                                  const isSelected = selectedAssignees.some(
-                                    (a) => (a.id || a.user_id) === memberId
-                                  );
-                                  const matchesSearch =
-                                    !assigneeSearchQuery ||
-                                    (member.display_name || '')
-                                      .toLowerCase()
-                                      .includes(
-                                        assigneeSearchQuery.toLowerCase()
-                                      );
-                                  return !isSelected && matchesSearch;
-                                }
-                              );
-
-                              if (filteredMembers.length === 0) {
-                                return assigneeSearchQuery ? (
-                                  <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
-                                    <Search className="h-4 w-4 text-muted-foreground/40" />
-                                    <p className="text-center text-muted-foreground text-xs">
-                                      No members found
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <div className="rounded-lg bg-muted/30 py-3 text-center">
-                                    <p className="text-muted-foreground text-xs">
-                                      All members assigned
-                                    </p>
-                                  </div>
-                                );
-                              }
-
-                              return (
-                                <>
-                                  <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                                    Available ({filteredMembers.length})
-                                  </p>
-                                  <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
-                                    {filteredMembers.map((member) => (
-                                      <button
-                                        key={`available-member-${member.user_id}`}
-                                        type="button"
-                                        onClick={() => toggleAssignee(member)}
-                                        className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
-                                      >
-                                        <Avatar className="h-7 w-7 shrink-0">
-                                          <AvatarImage
-                                            src={member.avatar_url}
-                                            alt={
-                                              member.display_name || 'Unknown'
-                                            }
-                                          />
-                                          <AvatarFallback className="bg-muted font-semibold text-muted-foreground text-xs group-hover:bg-dynamic-orange/20 group-hover:text-dynamic-orange">
-                                            {(member.display_name ||
-                                              'Unknown')[0]?.toUpperCase()}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <span className="flex-1 truncate text-sm">
-                                          {member.display_name || 'Unknown'}
-                                        </span>
-                                        <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                                      </button>
-                                    ))}
-                                  </div>
-                                </>
-                              );
-                            })()}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Mobile floating save button - hidden in edit mode when collaboration is enabled */}
           {(isCreateMode || !collaborationMode) && (
             <div className="fixed right-4 bottom-4 z-40 md:hidden">
@@ -5435,16 +4590,6 @@ function TaskEditDialogComponent({
                 )}
               </Button>
             </div>
-          )}
-
-          {/* Overlay when sidebar is open */}
-          {showOptionsSidebar && (
-            <button
-              type="button"
-              className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden"
-              onClick={() => setShowOptionsSidebar(false)}
-              aria-label="Close sidebar"
-            />
           )}
         </DialogContent>
       </Dialog>
