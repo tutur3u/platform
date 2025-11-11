@@ -3691,6 +3691,13 @@ export type Database = {
         };
         Relationships: [
           {
+            foreignKeyName: 'notification_delivery_log_batch_id_fkey';
+            columns: ['batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'notification_batches';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'notification_delivery_log_notification_id_fkey';
             columns: ['notification_id'];
             isOneToOne: false;
@@ -13389,6 +13396,7 @@ export type Database = {
         | {
             Args: {
               p_channel: string;
+              p_email?: string;
               p_user_id: string;
               p_window_minutes?: number;
               p_ws_id: string;
@@ -13398,7 +13406,6 @@ export type Database = {
         | {
             Args: {
               p_channel: string;
-              p_email?: string;
               p_user_id: string;
               p_window_minutes?: number;
               p_ws_id: string;
