@@ -102,16 +102,17 @@ import { UserPresenceAvatarsComponent } from './user-presence-avatars';
 // Module-level Supabase client singleton to avoid repeated instantiation
 const supabase = createClient();
 
-interface TaskEditDialogProps {
+export interface TaskEditDialogProps {
   wsId: string;
   task?: Task;
   boardId: string;
   isOpen: boolean;
+  availableLists?: TaskList[];
+  filters?: TaskFilters;
+  mode?: 'edit' | 'create';
+  collaborationMode?: boolean;
   onClose: () => void;
   onUpdate: () => void;
-  availableLists?: TaskList[];
-  onOpenTask?: (taskId: string) => void;
-  filters?: TaskFilters;
 }
 
 // Helper types
@@ -218,17 +219,13 @@ function TaskEditDialogComponent({
   task,
   boardId,
   isOpen,
-  onClose,
-  onUpdate,
   availableLists: propAvailableLists,
-  onOpenTask,
+  filters,
   mode = 'edit',
   collaborationMode = false,
-  filters,
-}: TaskEditDialogProps & {
-  mode?: 'edit' | 'create';
-  collaborationMode?: boolean;
-}) {
+  onClose,
+  onUpdate,
+}: TaskEditDialogProps) {
   const isCreateMode = mode === 'create';
   const pathname = usePathname();
   const { toast } = useToast();
@@ -3004,99 +3001,6 @@ function TaskEditDialogComponent({
       fetchAllWorkspaces();
     }
   }, [isOpen, fetchAllWorkspaces]);
-
-  // Listen for task mention clicks
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleTaskMentionClick = async (event: Event) => {
-      const customEvent = event as CustomEvent<{
-        taskId: string;
-        taskName: string;
-      }>;
-      const { taskId } = customEvent.detail;
-
-      if (!taskId || !onOpenTask) return;
-
-      if (
-        hasUnsavedChangesRef.current &&
-        !isCreateMode &&
-        name?.trim() &&
-        !isLoading &&
-        task?.id
-      ) {
-        try {
-          let currentDescription = description;
-          if (flushEditorPendingRef.current) {
-            const flushedContent = flushEditorPendingRef.current();
-            if (flushedContent) {
-              currentDescription = flushedContent;
-            }
-          }
-
-          let descriptionString: string | null = null;
-          if (currentDescription) {
-            try {
-              descriptionString = JSON.stringify(currentDescription);
-            } catch (serializationError) {
-              console.error(
-                'Failed to serialize description:',
-                serializationError
-              );
-              descriptionString = null;
-            }
-          }
-
-          const taskUpdates: any = {
-            name: name.trim(),
-            description: descriptionString,
-            priority: priority,
-            start_date: startDate ? startDate.toISOString() : null,
-            end_date: endDate ? endDate.toISOString() : null,
-            list_id: selectedListId,
-            estimation_points: estimationPoints ?? null,
-          };
-
-          await updateTaskMutation.mutateAsync({
-            taskId: task.id,
-            updates: taskUpdates,
-          });
-
-          await invalidateTaskCaches(queryClient, boardId);
-          onUpdate();
-
-          console.log('âœ… Task saved before navigation');
-        } catch (error) {
-          console.error('Failed to save before navigation:', error);
-        }
-      }
-
-      onOpenTask(taskId);
-    };
-
-    document.addEventListener('taskMentionClick', handleTaskMentionClick);
-
-    return () => {
-      document.removeEventListener('taskMentionClick', handleTaskMentionClick);
-    };
-  }, [
-    isOpen,
-    onOpenTask,
-    isCreateMode,
-    name,
-    isLoading,
-    task?.id,
-    description,
-    priority,
-    startDate,
-    endDate,
-    selectedListId,
-    estimationPoints,
-    updateTaskMutation,
-    queryClient,
-    boardId,
-    onUpdate,
-  ]);
 
   // Load draft when opening in create mode
   useEffect(() => {

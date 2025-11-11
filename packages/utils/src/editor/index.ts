@@ -1,5 +1,5 @@
-export { convertListItemToTask } from './convert-to-task';
-export type {
-  ConvertToTaskOptions,
-  ConvertToTaskResult,
+export {
+  type ConvertToTaskOptions,
+  type ConvertToTaskResult,
+  convertListItemToTask,
 } from './convert-to-task';
