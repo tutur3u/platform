@@ -14131,6 +14131,12 @@ export type Database = {
           sum: number;
         }[];
       };
+      sync_my_notifications: {
+        Args: never;
+        Returns: {
+          updated_count: number;
+        }[];
+      };
       transactions_have_same_abs_amount: {
         Args: { transaction_id_1: string; transaction_id_2: string };
         Returns: boolean;

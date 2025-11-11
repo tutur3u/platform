@@ -6,6 +6,7 @@ import {
   useNotifications,
   useUpdateNotification,
 } from '@/hooks/useNotifications';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   AtSign,
   Bell,
@@ -65,7 +66,7 @@ export default function NotificationPopoverClient({
 }: NotificationPopoverClientProps) {
   const [open, setOpen] = useState(false);
   const params = useParams();
-  const router = useRouter();
+  const queryClient = useQueryClient();
 
   // Only use wsId if it's a valid UUID (to filter out 'internal', 'personal', etc.)
   // If not a UUID, we'll fetch all notifications across workspaces
@@ -98,6 +99,7 @@ export default function NotificationPopoverClient({
   const handleMarkAsRead = async (id: string, isUnread: boolean) => {
     try {
       await updateNotification.mutateAsync({ id, read: isUnread });
+      // Optimistic update is handled by the useUpdateNotification hook
     } catch (error) {
       console.error('Failed to update notification:', error);
       toast.error('Failed to update notification');
@@ -178,9 +180,9 @@ export default function NotificationPopoverClient({
                   onMarkAsRead={handleMarkAsRead}
                   markAsReadText={markAsReadText}
                   markAsUnreadText={markAsUnreadText}
+                  queryClient={queryClient}
                   onActionComplete={() => {
                     setOpen(false);
-                    router.refresh();
                   }}
                 />
               ))}
@@ -218,6 +220,7 @@ interface NotificationCardProps {
   onMarkAsRead: (id: string, isUnread: boolean) => void;
   markAsReadText: string;
   markAsUnreadText: string;
+  queryClient: any;
   onActionComplete?: () => void;
 }
 
@@ -227,6 +230,7 @@ function NotificationCard({
   onMarkAsRead,
   markAsReadText,
   markAsUnreadText,
+  queryClient,
   onActionComplete,
 }: NotificationCardProps) {
   const isUnread = !notification.read_at;
@@ -250,25 +254,54 @@ function NotificationCard({
 
           if (res.ok) {
             // Update notification metadata
-            await fetch(`/api/v1/notifications/${notification.id}/metadata`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                action_taken: accept ? 'accepted' : 'declined',
-                action_timestamp: new Date().toISOString(),
-              }),
-            });
-
-            toast.success(
-              accept ? 'Workspace invite accepted' : 'Workspace invite declined'
+            const updateRes = await fetch(
+              `/api/v1/notifications/${notification.id}/metadata`,
+              {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  action_taken: accept ? 'accepted' : 'declined',
+                  action_timestamp: new Date().toISOString(),
+                }),
+              }
             );
 
-            // Mark as read and refresh
-            onMarkAsRead(notification.id, true);
-            router.refresh();
-            onActionComplete?.();
+            if (updateRes.ok) {
+              // Invalidate and refetch queries to ensure both popover and page are in sync
+              await Promise.all([
+                queryClient.invalidateQueries({
+                  queryKey: ['workspaces'],
+                  refetchType: 'active',
+                }),
+                queryClient.invalidateQueries({
+                  queryKey: ['notifications'],
+                  refetchType: 'active',
+                }),
+                queryClient.refetchQueries({
+                  queryKey: ['notifications'],
+                  type: 'active',
+                }),
+              ]);
+
+              toast.success(
+                accept
+                  ? 'Workspace invite accepted'
+                  : 'Workspace invite declined'
+              );
+
+              // Mark as read after successful action
+              onMarkAsRead(notification.id, true);
+
+              // Refresh router to update workspace list in sidebar
+              router.refresh();
+              onActionComplete?.();
+            } else {
+              toast.error('Failed to update notification');
+            }
           } else {
-            toast.error('Failed to process invite');
+            const errorData = await res.json();
+            console.error('Failed to process invite:', errorData);
+            toast.error(errorData.error || 'Failed to process invite');
           }
           break;
         }

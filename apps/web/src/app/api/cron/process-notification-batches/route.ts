@@ -1,0 +1,329 @@
+import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import { render } from '@react-email/render';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import NotificationDigestEmail from '@tuturuuu/transactional/emails/notification-digest';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+
+// This API route should be called by a cron job (pg_cron, Trigger.dev, or external cron service)
+// It processes pending notification batches and sends email digests
+
+export async function POST(req: NextRequest) {
+  try {
+    // Verify the request is authorized (check for cron secret)
+    const authHeader = req.headers.get('authorization');
+    const cronSecret = process.env.CRON_SECRET;
+
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const sbAdmin = await createAdminClient();
+
+    // Get AWS SES credentials from workspace_email_credentials
+    const { data: credentials, error: credentialsError } = await sbAdmin
+      .from('workspace_email_credentials')
+      .select('*')
+      .eq('ws_id', ROOT_WORKSPACE_ID)
+      .maybeSingle();
+
+    if (credentialsError || !credentials) {
+      console.error('Error fetching SES credentials:', credentialsError);
+      return NextResponse.json(
+        {
+          error: 'Email credentials not configured',
+          processed: 0,
+          failed: 0,
+        },
+        { status: 500 }
+      );
+    }
+
+    // Create SES client
+    const sesClient = new SESClient({
+      region: credentials.region,
+      credentials: {
+        accessKeyId: credentials.access_id,
+        secretAccessKey: credentials.access_key,
+      },
+    });
+
+    // Get all pending batches where window_end has passed
+    const { data: batches, error: batchesError } = await sbAdmin
+      .from('notification_batches')
+      .select('*')
+      .eq('status', 'pending')
+      .lte('window_end', new Date().toISOString())
+      .order('window_end', { ascending: true })
+      .limit(50); // Process max 50 batches per run
+
+    if (batchesError) {
+      console.error('Error fetching batches:', batchesError);
+      return NextResponse.json(
+        { error: 'Error fetching batches', processed: 0, failed: 0 },
+        { status: 500 }
+      );
+    }
+
+    if (!batches || batches.length === 0) {
+      return NextResponse.json({
+        message: 'No pending batches to process',
+        processed: 0,
+        failed: 0,
+      });
+    }
+
+    let processedCount = 0;
+    let failedCount = 0;
+    const results = [];
+
+    // Process each batch
+    for (const batch of batches) {
+      try {
+        // Mark batch as processing
+        await sbAdmin
+          .from('notification_batches')
+          .update({
+            status: 'processing',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', batch.id)
+          .eq('status', 'pending'); // Double-check status hasn't changed
+
+        // Get all pending notifications for this batch
+        const { data: deliveryLogs, error: logsError } = await sbAdmin
+          .from('notification_delivery_log')
+          .select(
+            `
+            notification_id,
+            notifications (
+              id,
+              type,
+              title,
+              description,
+              data,
+              created_at
+            )
+          `
+          )
+          .eq('batch_id', batch.id)
+          .eq('status', 'pending')
+          .eq('channel', 'email')
+          .order('notifications(created_at)', { ascending: false });
+
+        if (logsError || !deliveryLogs || deliveryLogs.length === 0) {
+          // No notifications to send, mark batch as sent
+          await sbAdmin
+            .from('notification_batches')
+            .update({
+              status: 'sent',
+              sent_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', batch.id);
+
+          results.push({
+            batch_id: batch.id,
+            status: 'skipped',
+            reason: 'no_notifications',
+          });
+          processedCount++;
+          continue;
+        }
+
+        // Get user details (either by user_id or email)
+        let userEmail: string;
+        let userName: string;
+
+        if (batch.user_id) {
+          const { data: user } = await sbAdmin
+            .from('users')
+            .select('email:user_private_details(email), display_name')
+            .eq('id', batch.user_id)
+            .single();
+
+          const emailData = user?.email as unknown as Array<{ email: string }>;
+          userEmail = emailData?.[0]?.email || batch.email || '';
+          userName = user?.display_name || userEmail;
+        } else {
+          // Email-only (pending user)
+          userEmail = batch.email || '';
+          userName = userEmail;
+        }
+
+        if (!userEmail) {
+          throw new Error('No email address found for batch');
+        }
+
+        // Get workspace details (if workspace-scoped)
+        let workspaceName = 'Tuturuuu';
+        let workspaceUrl =
+          process.env.NEXT_PUBLIC_APP_URL || 'https://tuturuuu.com';
+
+        if (batch.ws_id) {
+          const { data: workspace } = await sbAdmin
+            .from('workspaces')
+            .select('name')
+            .eq('id', batch.ws_id)
+            .single();
+
+          if (workspace) {
+            workspaceName = workspace.name || 'Unknown Workspace';
+            workspaceUrl = `${workspaceUrl}/${batch.ws_id}`;
+          }
+        }
+
+        if (!workspaceUrl) {
+          workspaceUrl = 'https://tuturuuu.com';
+        }
+
+        // Format notifications for email template
+        const notifications = deliveryLogs
+          .map((log: any) => log.notifications)
+          .filter(Boolean)
+          .map((n: any) => ({
+            id: n.id,
+            type: n.type,
+            title: n.title,
+            description: n.description,
+            data: n.data,
+            createdAt: n.created_at,
+          }));
+
+        // Render email using React Email template
+        const emailHtml = await render(
+          NotificationDigestEmail({
+            userName,
+            workspaceName,
+            notifications,
+            workspaceUrl,
+          })
+        );
+
+        // Send email via SES
+        const sourceEmail =
+          credentials.source_email || 'notifications@tuturuuu.com';
+        const command = new SendEmailCommand({
+          Source: sourceEmail,
+          Destination: {
+            ToAddresses: [userEmail],
+          },
+          Message: {
+            Subject: {
+              Data: `${notifications.length} new notification${notifications.length !== 1 ? 's' : ''} from ${workspaceName}`,
+            },
+            Body: {
+              Html: { Data: emailHtml },
+            },
+          },
+        });
+
+        const sesResponse = await sesClient.send(command);
+
+        if (sesResponse.$metadata.httpStatusCode !== 200) {
+          throw new Error(
+            `SES returned status ${sesResponse.$metadata.httpStatusCode}`
+          );
+        }
+
+        // Mark all delivery logs as sent
+        await sbAdmin
+          .from('notification_delivery_log')
+          .update({
+            status: 'sent',
+            sent_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('batch_id', batch.id)
+          .eq('status', 'pending');
+
+        // Mark batch as sent
+        await sbAdmin
+          .from('notification_batches')
+          .update({
+            status: 'sent',
+            sent_at: new Date().toISOString(),
+            notification_count: notifications.length,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', batch.id);
+
+        results.push({
+          batch_id: batch.id,
+          status: 'sent',
+          email: userEmail,
+          notification_count: notifications.length,
+        });
+        processedCount++;
+      } catch (error) {
+        console.error(`Error processing batch ${batch.id}:`, error);
+
+        // Mark batch as failed
+        await sbAdmin
+          .from('notification_batches')
+          .update({
+            status: 'failed',
+            error_message:
+              error instanceof Error ? error.message : 'Unknown error',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', batch.id);
+
+        // Mark delivery logs as failed and increment retry_count
+        // Note: Supabase doesn't support .raw() - we'll increment in a separate query
+        const { data: failedLogs } = await sbAdmin
+          .from('notification_delivery_log')
+          .select('id, retry_count')
+          .eq('batch_id', batch.id)
+          .eq('status', 'pending');
+
+        if (failedLogs) {
+          for (const log of failedLogs) {
+            await sbAdmin
+              .from('notification_delivery_log')
+              .update({
+                status: 'failed',
+                error_message:
+                  error instanceof Error ? error.message : 'Unknown error',
+                retry_count: (log.retry_count || 0) + 1,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', log.id);
+          }
+        }
+
+        results.push({
+          batch_id: batch.id,
+          status: 'failed',
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        failedCount++;
+      }
+    }
+
+    return NextResponse.json({
+      message: 'Batch processing completed',
+      processed: processedCount,
+      failed: failedCount,
+      results,
+    });
+  } catch (error) {
+    console.error('Error in notification batch processor:', error);
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// Allow GET for health checks
+export async function GET() {
+  return NextResponse.json({
+    status: 'ok',
+    message: 'Notification batch processor endpoint',
+  });
+}

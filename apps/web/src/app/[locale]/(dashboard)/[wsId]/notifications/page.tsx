@@ -20,7 +20,8 @@ export default async function NotificationsPage({
 
         return (
           <div className="container mx-auto max-w-4xl py-8">
-            <NotificationList wsId={wsId} userId={user.id} />
+            {/* Pass null for wsId to show all notifications across workspaces */}
+            <NotificationList wsId={null} userId={user.id} currentWsId={wsId} />
           </div>
         );
       }}

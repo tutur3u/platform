@@ -102,44 +102,19 @@ export async function GET(req: Request) {
     const { wsId, scope, limit, offset, unreadOnly, type, priority } =
       queryParams.data;
 
-    // Get all workspaces the user has access to
-    const { data: userWorkspaces } = await supabase
-      .from('workspace_members')
-      .select('ws_id')
-      .eq('user_id', user.id);
-
-    const accessibleWorkspaceIds = userWorkspaces?.map((m) => m.ws_id) || [];
-
-    // If wsId provided, verify user has access to that specific workspace
-    if (wsId && !accessibleWorkspaceIds.includes(wsId)) {
-      return NextResponse.json(
-        { error: 'Access denied to workspace' },
-        { status: 403 }
-      );
-    }
-
     // Build query - DO NOT add order yet, apply it after all filters
+    // Include workspace name via join
+    // NOTE: We rely entirely on RLS policies for access control
+    // RLS handles: user_id matches, email matches, workspace membership, etc.
     let query = supabase
       .from('notifications')
-      .select('*', { count: 'exact' })
-      .eq('user_id', user.id);
+      .select('*, workspace:workspaces(name)', { count: 'exact' });
 
-    // Filter by workspace if provided, otherwise show all accessible workspaces
-    // IMPORTANT: Always include user-scoped notifications (ws_id IS NULL)
+    // Filter by workspace if specifically requested
     if (wsId) {
-      // Include both workspace-specific AND user-scoped notifications
-      query = query.or(`ws_id.eq.${wsId},and(scope.eq.user,ws_id.is.null)`);
-    } else if (accessibleWorkspaceIds.length > 0) {
-      // User wants all notifications across their workspaces
-      // Include workspace notifications AND user-scoped notifications
-      const wsIdFilter = accessibleWorkspaceIds
-        .map((id) => `ws_id.eq.${id}`)
-        .join(',');
-      query = query.or(`${wsIdFilter},and(scope.eq.user,ws_id.is.null)`);
-    } else {
-      // No workspaces - only show user-scoped and system notifications
-      query = query.or('scope.eq.user,scope.eq.system');
+      query = query.eq('ws_id', wsId);
     }
+    // Otherwise: fetch ALL notifications for this user (RLS handles access control)
 
     // Filter by scope if provided
     if (scope) {
@@ -180,8 +155,18 @@ export async function GET(req: Request) {
       );
     }
 
+    // Transform notifications to include workspace_name in data
+    const transformedNotifications = (notifications || []).map((n: any) => ({
+      ...n,
+      data: {
+        ...n.data,
+        workspace_name: n.workspace?.name || n.data?.workspace_name,
+      },
+      workspace: undefined, // Remove the joined workspace object
+    }));
+
     return NextResponse.json({
-      notifications: notifications || [],
+      notifications: transformedNotifications,
       count: count || 0,
       limit,
       offset,
@@ -241,56 +226,21 @@ export async function PATCH(req: Request) {
 
     const { wsId, scope, action } = validatedData.data;
 
-    // Get all workspaces the user has access to
-    const { data: userWorkspaces } = await supabase
-      .from('workspace_members')
-      .select('ws_id')
-      .eq('user_id', user.id);
-
-    const accessibleWorkspaceIds = userWorkspaces?.map((m) => m.ws_id) || [];
-
-    // If wsId provided, verify user has access to that specific workspace
-    if (wsId && !accessibleWorkspaceIds.includes(wsId)) {
-      return NextResponse.json(
-        { error: 'Access denied to workspace' },
-        { status: 403 }
-      );
-    }
-
     // Perform bulk update
     const update =
       action === 'mark_all_read'
         ? { read_at: new Date().toISOString() }
         : { read_at: null };
 
-    // Build the filter condition based on wsId (must match GET logic)
-    let filterCondition = '';
+    // Build query - RLS handles access control completely
+    // This allows updating notifications matched by user_id OR email
+    let query = supabase.from('notifications').update(update);
 
+    // Filter by workspace if specifically requested
     if (wsId) {
-      // Include both workspace-specific AND user-scoped notifications
-      // This matches the GET endpoint logic
-      filterCondition = `ws_id.eq.${wsId},and(scope.eq.user,ws_id.is.null)`;
-    } else if (accessibleWorkspaceIds.length > 0) {
-      // User wants to update all notifications across their workspaces
-      // Include workspace notifications AND user-scoped notifications
-      const wsIdFilter = accessibleWorkspaceIds
-        .map((id) => `ws_id.eq.${id}`)
-        .join(',');
-      filterCondition = `${wsIdFilter},and(scope.eq.user,ws_id.is.null)`;
-    } else {
-      // No workspaces - only show user-scoped and system notifications
-      filterCondition = 'scope.eq.user,scope.eq.system';
+      query = query.eq('ws_id', wsId);
     }
-
-    let query = supabase
-      .from('notifications')
-      .update(update)
-      .eq('user_id', user.id);
-
-    // Apply workspace/scope filter
-    if (filterCondition) {
-      query = query.or(filterCondition);
-    }
+    // Otherwise: update ALL notifications for this user (RLS handles access control)
 
     // Filter by scope if provided (additional filter)
     if (scope) {

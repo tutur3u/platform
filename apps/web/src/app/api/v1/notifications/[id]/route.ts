@@ -43,9 +43,10 @@ export async function PATCH(
     const { read } = validatedData.data;
 
     // Verify notification belongs to user
+    // RLS policies handle access control (user_id OR email match)
     const { data: notification } = await supabase
       .from('notifications')
-      .select('ws_id, user_id')
+      .select('id, ws_id, user_id, email')
       .eq('id', id)
       .single();
 
@@ -56,11 +57,34 @@ export async function PATCH(
       );
     }
 
-    if (notification.user_id !== user.id) {
+    // Additional verification: check both user_id and email
+    // Get email from auth.users (more reliable)
+    const { data: authUser } = await supabase.auth.getUser();
+    let userEmail = authUser.user?.email;
+
+    // Fallback: try from user_private_details
+    if (!userEmail) {
+      const { data: currentUserData } = await supabase
+        .from('users')
+        .select('email:user_private_details(email)')
+        .eq('id', user.id)
+        .single();
+
+      userEmail = (currentUserData?.email as any)?.[0]?.email;
+    }
+
+    const userIdMatches = notification.user_id === user.id;
+    const emailMatches =
+      notification.email &&
+      userEmail &&
+      notification.email.toLowerCase() === userEmail.toLowerCase();
+    const belongsToUser = userIdMatches || emailMatches;
+
+    if (!belongsToUser) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    // Update notification
+    // Update notification (RLS policies handle final access control)
     const update = read
       ? { read_at: new Date().toISOString() }
       : { read_at: null };
@@ -112,9 +136,10 @@ export async function DELETE(
     const { id } = await params;
 
     // Verify notification belongs to user
+    // RLS policies handle access control (user_id OR email match)
     const { data: notification } = await supabase
       .from('notifications')
-      .select('user_id')
+      .select('id, user_id, email')
       .eq('id', id)
       .single();
 
@@ -125,11 +150,34 @@ export async function DELETE(
       );
     }
 
-    if (notification.user_id !== user.id) {
+    // Additional verification: check both user_id and email
+    // Get email from auth.users (more reliable)
+    const { data: authUser } = await supabase.auth.getUser();
+    let userEmail = authUser.user?.email;
+
+    // Fallback: try from user_private_details
+    if (!userEmail) {
+      const { data: currentUserData } = await supabase
+        .from('users')
+        .select('email:user_private_details(email)')
+        .eq('id', user.id)
+        .single();
+
+      userEmail = (currentUserData?.email as any)?.[0]?.email;
+    }
+
+    const userIdMatches = notification.user_id === user.id;
+    const emailMatches =
+      notification.email &&
+      userEmail &&
+      notification.email.toLowerCase() === userEmail.toLowerCase();
+    const belongsToUser = userIdMatches || emailMatches;
+
+    if (!belongsToUser) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    // Delete notification
+    // Delete notification (RLS policies handle final access control)
     const { error } = await supabase
       .from('notifications')
       .delete()

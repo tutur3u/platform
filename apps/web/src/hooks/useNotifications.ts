@@ -50,7 +50,7 @@ interface UseNotificationsOptions {
 
 /**
  * Hook to fetch notifications with pagination
- * If wsId is not provided, fetches notifications across all workspaces
+ * @param wsId - If provided, filters to specific workspace. If omitted, fetches all notifications across all workspaces.
  */
 export function useNotifications({
   wsId,
@@ -198,16 +198,20 @@ export function useUpdateNotification() {
 
 /**
  * Hook to mark all notifications as read
+ * @param wsId - If provided, marks only notifications for that workspace. If omitted, marks all notifications as read.
  */
 export function useMarkAllAsRead() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (wsId: string) => {
+    mutationFn: async (wsId?: string) => {
       const response = await fetch('/api/v1/notifications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wsId, action: 'mark_all_read' }),
+        body: JSON.stringify({
+          ...(wsId && { wsId }),
+          action: 'mark_all_read',
+        }),
       });
 
       if (!response.ok) {
@@ -262,8 +266,12 @@ export function useDeleteNotification() {
 
 /**
  * Hook to subscribe to realtime notification updates
+ * Subscribes to all notifications for the user, regardless of workspace
  */
-export function useNotificationSubscription(_: string, userId: string) {
+export function useNotificationSubscription(
+  _wsId: string | null,
+  userId: string
+) {
   const queryClient = useQueryClient();
   const supabase = createClient();
 

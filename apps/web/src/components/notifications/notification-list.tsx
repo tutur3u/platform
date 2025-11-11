@@ -60,13 +60,15 @@ import React, { useState } from 'react';
 dayjs.extend(relativeTime);
 
 interface NotificationListProps {
-  wsId: string;
+  wsId: string | null;
   userId: string;
+  currentWsId?: string; // Current workspace for building links
 }
 
 export default function NotificationList({
   wsId,
   userId,
+  currentWsId,
 }: NotificationListProps) {
   const t = useTranslations('notifications');
   const queryClient = useQueryClient();
@@ -75,9 +77,9 @@ export default function NotificationList({
   const [page, setPage] = useState(0);
   const pageSize = 20;
 
-  // Fetch notifications
+  // Fetch notifications (wsId=null means show all notifications across workspaces)
   const { data, isLoading } = useNotifications({
-    wsId,
+    wsId: wsId || undefined,
     limit: pageSize,
     offset: page * pageSize,
     unreadOnly: showUnreadOnly,
@@ -88,8 +90,8 @@ export default function NotificationList({
   const updateNotification = useUpdateNotification();
   const markAllAsRead = useMarkAllAsRead();
 
-  // Subscribe to realtime updates
-  useNotificationSubscription(wsId, userId);
+  // Subscribe to realtime updates (use currentWsId or null)
+  useNotificationSubscription(currentWsId || null, userId);
 
   const handleMarkAsRead = (id: string, isUnread: boolean) => {
     updateNotification.mutate(
@@ -107,7 +109,7 @@ export default function NotificationList({
   };
 
   const handleMarkAllAsRead = () => {
-    markAllAsRead.mutate(wsId, {
+    markAllAsRead.mutate(wsId || undefined, {
       onSuccess: () => {
         toast.success(t('mark-all-read'));
       },
@@ -323,7 +325,7 @@ export default function NotificationList({
                 notifications={group.notifications}
                 onMarkAsRead={handleMarkAsRead}
                 t={t}
-                wsId={wsId}
+                wsId={currentWsId || wsId || ''}
                 updateNotification={updateNotification}
                 queryClient={queryClient}
               />
@@ -333,7 +335,7 @@ export default function NotificationList({
                 notification={group.notifications[0]}
                 onMarkAsRead={handleMarkAsRead}
                 t={t}
-                wsId={wsId}
+                wsId={currentWsId || wsId || ''}
                 isUpdating={
                   updateNotification.isPending &&
                   updateNotification.variables?.id ===
@@ -517,11 +519,19 @@ function NotificationCard({
 
         {/* Content */}
         <div className="min-w-0 flex-1">
-          {/* Type badge and timestamp */}
-          <div className="mb-1 flex items-center gap-2 text-xs">
+          {/* Type badge, workspace, and timestamp */}
+          <div className="mb-1 flex flex-wrap items-center gap-2 text-xs">
             <span className="text-foreground/60 uppercase tracking-wide">
               {t(`types.${notification.type}`)}
             </span>
+            {notification.data?.workspace_name && (
+              <>
+                <span className="text-foreground/40">•</span>
+                <span className="rounded bg-foreground/10 px-1.5 py-0.5 font-medium text-foreground/70">
+                  {notification.data.workspace_name}
+                </span>
+              </>
+            )}
             <span className="text-foreground/40">•</span>
             <span className="text-foreground/60">
               {dayjs(notification.created_at).fromNow()}
@@ -910,15 +920,18 @@ function getNotificationIcon(type: string) {
 
 function getEntityLink(
   notification: Notification,
-  wsId: string
+  currentWsId: string
 ): string | null {
-  const { entity_type, entity_id, data } = notification;
+  const { entity_type, entity_id, data, ws_id } = notification;
+
+  // Use the notification's workspace ID if available, otherwise use current workspace
+  const targetWsId = ws_id || currentWsId;
 
   if (entity_type === 'task' && entity_id) {
     const boardId = data?.board_id;
     return boardId
-      ? `/${wsId}/tasks/${entity_id}`
-      : `/${wsId}/tasks/${entity_id}`;
+      ? `/${targetWsId}/tasks/${entity_id}`
+      : `/${targetWsId}/tasks/${entity_id}`;
   }
 
   if (entity_type === 'workspace' && entity_id) {
