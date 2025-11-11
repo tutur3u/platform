@@ -16,6 +16,7 @@ import type {
 } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { User } from '@tuturuuu/types/primitives/User';
+import { toast } from '@tuturuuu/ui/sonner';
 
 export async function getTaskBoard(
   supabase: TypedSupabaseClient,
@@ -1435,6 +1436,7 @@ export function useCreateBoardWithTemplate(wsId: string) {
       return createBoardWithTemplate(supabase, wsId, name, templateId);
     },
     onSuccess: () => {
+      toast.success('Board created sucessfully');
       queryClient.invalidateQueries({ queryKey: ['boards'] });
       queryClient.invalidateQueries({ queryKey: ['all-boards'] });
     },

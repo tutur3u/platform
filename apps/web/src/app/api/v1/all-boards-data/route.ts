@@ -1,20 +1,37 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const searchParamsSchema = z.object({
+  wsIds: z
+    .string()
+    .transform((val) => val.split(',').filter((id) => id.trim() !== ''))
+    .pipe(z.array(z.string()).min(1, 'At least one workspace ID is required')),
+  q: z.string().default(''),
+  page: z.coerce.number().int().positive().default(1),
+  pageSize: z.coerce.number().int().positive().default(10),
+});
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const wsIds = searchParams.get('wsIds')?.split(',');
-  const q = searchParams.get('q') || '';
-  const page = searchParams.get('page') || '1';
-  const pageSize = searchParams.get('pageSize') || '10';
 
-  if (!wsIds) {
+  // Validate search params
+  const parseResult = searchParamsSchema.safeParse({
+    wsIds: searchParams.get('wsIds') ?? '',
+    q: searchParams.get('q') ?? '',
+    page: searchParams.get('page') ?? '1',
+    pageSize: searchParams.get('pageSize') ?? '10',
+  });
+
+  if (!parseResult.success) {
     return NextResponse.json(
-      { error: 'Workspace IDs are required' },
+      { error: 'Invalid query', details: parseResult.error.format() },
       { status: 400 }
     );
   }
+
+  const { wsIds, q, page, pageSize } = parseResult.data;
 
   try {
     const supabase = await createClient();
@@ -29,13 +46,9 @@ export async function GET(request: Request) {
 
     if (q) queryBuilder.ilike('name', `%${q}%`);
 
-    if (page && pageSize) {
-      const parsedPage = parseInt(page, 10);
-      const parsedSize = parseInt(pageSize, 10);
-      const start = (parsedPage - 1) * parsedSize;
-      const end = parsedPage * parsedSize;
-      queryBuilder.range(start, end).limit(parsedSize);
-    }
+    const start = (page - 1) * pageSize;
+    const end = page * pageSize;
+    queryBuilder.range(start, end).limit(pageSize);
 
     const { data: boards, error: boardsError, count } = await queryBuilder;
     if (boardsError) throw boardsError;
@@ -57,18 +70,26 @@ export async function GET(request: Request) {
     if (listsError) throw listsError;
 
     // Fetch tasks with proper deleted filter
-    const { data: tasks, error: tasksError } = await supabase
-      .from('tasks')
-      .select(
-        'id, name, description, closed_at, priority, start_date, end_date, created_at, list_id'
-      )
-      .in(
-        'list_id',
-        (taskLists || []).map((l) => l.id)
-      )
-      .is('deleted_at', null);
+    const listIds = (taskLists || []).map((l) => l.id);
+    let tasks: any[] | null = null;
+    let tasksError = null;
 
-    if (tasksError) throw tasksError;
+    if (listIds.length === 0) {
+      tasks = [];
+    } else {
+      const result = await supabase
+        .from('tasks')
+        .select(
+          'id, name, description, closed_at, priority, start_date, end_date, created_at, list_id'
+        )
+        .in('list_id', listIds)
+        .is('deleted_at', null);
+
+      tasks = result.data;
+      tasksError = result.error;
+
+      if (tasksError) throw tasksError;
+    }
 
     // Group data by board
     const boardsWithData = boards.map((board) => ({
