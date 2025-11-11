@@ -230,9 +230,7 @@ export function BoardViews({
                   </div>
                 )}
                 <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                  <span className="font-medium text-primary">
-                    View Details
-                  </span>
+                  <span className="font-medium text-primary">View Details</span>
                   <ArrowRight className="h-3 w-3 text-primary" />
                 </div>
               </div>
@@ -243,9 +241,7 @@ export function BoardViews({
         {safeData.length === 0 && (
           <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-12 text-center">
             <LayoutGrid className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <h3 className="mb-2 font-semibold text-lg">
-              No boards found
-            </h3>
+            <h3 className="mb-2 font-semibold text-lg">No boards found</h3>
             <p className="text-muted-foreground text-sm">
               Create your first task board to get started.
             </p>
@@ -291,9 +287,7 @@ export function BoardViews({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">📋 All Tasks</SelectItem>
-                  <SelectItem value="not_started">
-                    ⏸️ Not Started
-                  </SelectItem>
+                  <SelectItem value="not_started">⏸️ Not Started</SelectItem>
                   <SelectItem value="active">🔄 Active</SelectItem>
                   <SelectItem value="done">✅ Done</SelectItem>
                   <SelectItem value="closed">🔒 Closed</SelectItem>
