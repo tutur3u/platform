@@ -20,7 +20,7 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AuthButton } from './auth-button';
 import { type NavItem, useNavigation } from './shared/navigation-config';
 
@@ -93,9 +93,20 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
         <MenuIcon className="h-5 w-5" />
       </SheetTrigger>
 
-      <SheetContent side="right" className="w-full border-l p-0 md:hidden">
+      <SheetContent
+        side="right"
+        className="w-full border-l p-0 md:hidden max-h-[100dvh] gap-0"
+        onTouchMove={(e) => {
+          // Allow scrolling only within the scrollable container
+          const target = e.target as HTMLElement;
+          const scrollableContainer = target.closest('[data-scrollable]');
+          if (!scrollableContainer) {
+            e.preventDefault();
+          }
+        }}
+      >
         <SheetTitle />
-        <div className="flex h-full flex-col">
+        <div className="flex h-full flex-col overflow-hidden touch-none">
           {/* Header with Auth and Theme */}
           <div className="border-b px-6 py-6">
             <div className={cn('items-center gap-3', user ? 'grid' : 'flex')}>
@@ -109,10 +120,14 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
           </div>
 
           {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="flex flex-col space-y-4 py-6">
+          <div
+            data-scrollable
+            className="flex-1 overflow-y-auto min-h-0 overscroll-contain touch-auto"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
+            <div className="flex flex-col py-6">
               {/* Main Links */}
-              <div className="grid gap-2 px-4 font-medium">
+              <div className="grid gap-2 px-4 mb-4 font-medium">
                 {mainLinks.map((item) => (
                   <MobileNavLink
                     key={item.href}
