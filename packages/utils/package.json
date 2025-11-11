@@ -18,7 +18,6 @@
     "@tuturuuu/google": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/types": "workspace:*",
-    "@tuturuuu/ui": "workspace:*",
     "clsx": "^2.1.1",
     "dayjs": "^1.11.19",
     "moment": "^2.30.1",
