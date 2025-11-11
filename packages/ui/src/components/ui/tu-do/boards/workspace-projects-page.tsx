@@ -1,10 +1,10 @@
 import {
-  QueryClient,
-  HydrationBoundary,
   dehydrate,
+  HydrationBoundary,
+  QueryClient,
 } from '@tanstack/react-query';
-import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import {
   getPermissions,
   getWorkspaces,
@@ -140,7 +140,7 @@ export default async function WorkspaceProjectsPage({
         wsId={wsId}
         wsIds={wsIds}
         isPersonal={isPersonal}
-        workspaces={workspaces}
+        workspaces={workspaces ?? undefined}
         personalWorkspaceId={personalWorkspace?.id}
         defaultWsId={wsId}
       />
