@@ -114,8 +114,8 @@ export default function AuthProviderStatsComponent({
                 cx="50%"
                 cy="50%"
                 outerRadius={100}
-                label={({ provider, percentage }) =>
-                  `${provider}: ${percentage}%`
+                label={({ name, percent }) =>
+                  `${name}: ${((percent ?? 0) * 100).toFixed(1)}%`
                 }
               >
                 {providerStats.map((_, index) => (
