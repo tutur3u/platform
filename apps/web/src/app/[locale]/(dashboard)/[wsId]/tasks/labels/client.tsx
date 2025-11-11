@@ -41,8 +41,10 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
+import { computeAccessibleLabelStyles } from '@tuturuuu/ui/tu-do/utils/label-colors';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import { useMemo, useState } from 'react';
 
 interface TaskLabel {
@@ -73,6 +75,8 @@ const colorPresets = [
 
 export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
   const router = useRouter();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
   const [labels, setLabels] = useState<TaskLabel[]>(initialLabels);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingLabel, setEditingLabel] = useState<TaskLabel | null>(null);
@@ -317,11 +321,19 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
                   <p className="mb-2 text-muted-foreground text-xs">Preview</p>
                   <Badge
                     variant="outline"
-                    style={{
-                      backgroundColor: `color-mix(in srgb, ${formData.color} 15%, transparent)`,
-                      borderColor: `color-mix(in srgb, ${formData.color} 30%, transparent)`,
-                      color: formData.color,
-                    }}
+                    style={(() => {
+                      const styles = computeAccessibleLabelStyles(
+                        formData.color || '#EF4444',
+                        !!isDark
+                      );
+                      return styles
+                        ? {
+                            backgroundColor: styles.bg,
+                            borderColor: styles.border,
+                            color: styles.text,
+                          }
+                        : undefined;
+                    })()}
                     className="font-medium"
                   >
                     {formData.name || 'Label Preview'}
@@ -402,11 +414,19 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <Badge
                     variant="outline"
-                    style={{
-                      backgroundColor: `color-mix(in srgb, ${label.color} 15%, transparent)`,
-                      borderColor: `color-mix(in srgb, ${label.color} 30%, transparent)`,
-                      color: label.color,
-                    }}
+                    style={(() => {
+                      const styles = computeAccessibleLabelStyles(
+                        label.color,
+                        !!isDark
+                      );
+                      return styles
+                        ? {
+                            backgroundColor: styles.bg,
+                            borderColor: styles.border,
+                            color: styles.text,
+                          }
+                        : undefined;
+                    })()}
                     className="font-semibold text-sm"
                   >
                     {label.name}
@@ -538,11 +558,19 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
                   <p className="mb-2 text-muted-foreground text-xs">Preview</p>
                   <Badge
                     variant="outline"
-                    style={{
-                      backgroundColor: `color-mix(in srgb, ${formData.color} 15%, transparent)`,
-                      borderColor: `color-mix(in srgb, ${formData.color} 30%, transparent)`,
-                      color: formData.color,
-                    }}
+                    style={(() => {
+                      const styles = computeAccessibleLabelStyles(
+                        formData.color || '#EF4444',
+                        !!isDark
+                      );
+                      return styles
+                        ? {
+                            backgroundColor: styles.bg,
+                            borderColor: styles.border,
+                            color: styles.text,
+                          }
+                        : undefined;
+                    })()}
                     className="font-medium"
                   >
                     {formData.name || 'Label Preview'}
