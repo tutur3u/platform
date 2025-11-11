@@ -9,7 +9,9 @@ import { ProjectRowActions } from './row-actions';
 
 export const projectColumns = (
   t: (key: string) => string,
-  namespace: string | undefined
+  namespace: string | undefined,
+  isPersonal?: boolean,
+  wsId?: string
 ): ColumnDef<WorkspaceTaskBoard>[] => [
   // {
   //   id: 'select',
@@ -136,6 +138,9 @@ export const projectColumns = (
   {
     id: 'actions',
     header: ({ column }) => <DataTableColumnHeader t={t} column={column} />,
-    cell: ({ row }) => <ProjectRowActions row={row} />,
+    cell: ({ row }) =>
+      wsId ? (
+        <ProjectRowActions row={row} isPersonal={isPersonal} wsId={wsId} />
+      ) : null,
   },
 ];
