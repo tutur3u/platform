@@ -1,5 +1,14 @@
 'use client';
 
+import type {
+  NotificationChannel,
+  NotificationEventType,
+} from '@/hooks/useNotificationPreferences';
+import {
+  useNotificationPreferences,
+  useUpdateNotificationPreferences,
+} from '@/hooks/useNotificationPreferences';
+import { Bell, BellOff, Loader2 } from '@tuturuuu/icons';
 import {
   Card,
   CardContent,
@@ -7,20 +16,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Switch } from '@tuturuuu/ui/switch';
 import { Label } from '@tuturuuu/ui/label';
-import { Bell, BellOff, Loader2 } from '@tuturuuu/icons';
-import {
-  useNotificationPreferences,
-  useUpdateNotificationPreferences,
-} from '@/hooks/useNotificationPreferences';
-import { useTranslations } from 'next-intl';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import type {
-  NotificationChannel,
-  NotificationEventType,
-} from '@/hooks/useNotificationPreferences';
 
 interface WorkspaceNotificationToggleProps {
   wsId: string;
@@ -67,28 +67,6 @@ export default function WorkspaceNotificationToggle({
   const handleToggleAll = async (enabled: boolean) => {
     setIsUpdating(true);
     try {
-      // Extract existing advanced settings from any preference
-      const existingPref = preferences?.[0];
-      const advancedSettings: {
-        digestFrequency?: string;
-        quietHoursStart?: string;
-        quietHoursEnd?: string;
-        timezone?: string;
-      } = {};
-
-      if (existingPref?.digest_frequency) {
-        advancedSettings.digestFrequency = existingPref.digest_frequency;
-      }
-      if (existingPref?.quiet_hours_start) {
-        advancedSettings.quietHoursStart = existingPref.quiet_hours_start;
-      }
-      if (existingPref?.quiet_hours_end) {
-        advancedSettings.quietHoursEnd = existingPref.quiet_hours_end;
-      }
-      if (existingPref?.timezone) {
-        advancedSettings.timezone = existingPref.timezone;
-      }
-
       // Create preferences for all event types and channels
       const allPreferences = ALL_EVENT_TYPES.flatMap((eventType) =>
         CHANNELS.map((channel) => ({
@@ -101,7 +79,6 @@ export default function WorkspaceNotificationToggle({
       await updatePreferences.mutateAsync({
         wsId,
         preferences: allPreferences,
-        ...advancedSettings,
       });
 
       toast.success(
@@ -173,7 +150,7 @@ export default function WorkspaceNotificationToggle({
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-foreground/60">
+        <p className="text-foreground/60 text-sm">
           {t('workspace-toggle.description')}
         </p>
       </CardContent>

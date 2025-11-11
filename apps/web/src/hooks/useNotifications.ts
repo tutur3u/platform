@@ -5,8 +5,25 @@ import { useEffect } from 'react';
 export type NotificationType =
   | 'task_assigned'
   | 'task_updated'
+  | 'task_completed'
+  | 'task_reopened'
+  | 'task_priority_changed'
+  | 'task_due_date_changed'
+  | 'task_start_date_changed'
+  | 'task_estimation_changed'
+  | 'task_moved'
   | 'task_mention'
-  | 'workspace_invite';
+  | 'task_title_changed'
+  | 'task_description_changed'
+  | 'task_label_added'
+  | 'task_label_removed'
+  | 'task_project_linked'
+  | 'task_project_unlinked'
+  | 'task_assignee_removed'
+  | 'workspace_invite'
+  | 'system_announcement'
+  | 'account_update'
+  | 'security_alert';
 
 export interface Notification {
   id: string;

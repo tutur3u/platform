@@ -1,26 +1,25 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { useTaskHistory, type TaskHistoryEntry } from '@/hooks/useTaskHistory';
-import { format } from 'date-fns';
-import { vi, enUS } from 'date-fns/locale';
-import { useLocale } from 'next-intl';
+import { type TaskHistoryEntry, useTaskHistory } from '@/hooks/useTaskHistory';
 import {
-  User,
-  FileText,
-  Flag,
-  Calendar,
-  Clock,
-  Target,
   ArrowRight,
-  Tag,
-  FolderKanban,
-  UserMinus,
+  Calendar,
   CheckCircle2,
   CircleDot,
+  Clock,
+  FileText,
+  Flag,
+  FolderKanban,
+  Tag,
+  Target,
+  User,
+  UserMinus,
 } from '@tuturuuu/icons';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { format, type Locale } from 'date-fns';
+import { enUS, vi } from 'date-fns/locale';
+import { useLocale, useTranslations } from 'next-intl';
 
 interface TaskHistoryTimelineProps {
   wsId: string;
@@ -127,7 +126,7 @@ function HistoryEntry({ entry, isLast, dateLocale }: HistoryEntryProps) {
     <div className="relative flex gap-3">
       {/* Timeline line */}
       {!isLast && (
-        <div className="bg-border absolute left-5 top-12 h-[calc(100%+1rem)] w-px" />
+        <div className="absolute top-12 left-5 h-[calc(100%+1rem)] w-px bg-border" />
       )}
 
       {/* Avatar */}
@@ -141,7 +140,7 @@ function HistoryEntry({ entry, isLast, dateLocale }: HistoryEntryProps) {
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="font-medium text-sm">{userName}</span>
-            <div className="bg-muted text-muted-foreground flex items-center gap-1 rounded-md px-2 py-0.5 text-xs">
+            <div className="flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-muted-foreground text-xs">
               {icon}
               <span>{description.action}</span>
             </div>
@@ -209,7 +208,7 @@ function getChangeIcon(
 
 function getChangeDescription(
   entry: TaskHistoryEntry,
-  t: (key: string, values?: Record<string, any>) => string
+  t: any
 ): { action: string; details?: React.ReactNode } {
   if (entry.change_type === 'field_updated') {
     const fieldKey = entry.field_name || 'unknown';
@@ -224,7 +223,7 @@ function getChangeDescription(
     const details = (
       <div className="flex items-center gap-2">
         <span className="text-foreground/60 line-through">{oldValue}</span>
-        <ArrowRight className="text-muted-foreground h-4 w-4" />
+        <ArrowRight className="h-4 w-4 text-muted-foreground" />
         <span className="font-medium">{newValue}</span>
       </div>
     );

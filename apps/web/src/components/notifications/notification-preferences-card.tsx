@@ -1,6 +1,14 @@
 'use client';
 
+import {
+  getPreferenceValue,
+  type NotificationChannel,
+  type NotificationEventType,
+  useNotificationPreferences,
+  useUpdateNotificationPreferences,
+} from '@/hooks/useNotificationPreferences';
 import { Bell } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
   CardContent,
@@ -8,18 +16,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Switch } from '@tuturuuu/ui/switch';
-import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect } from 'react';
-import {
-  useNotificationPreferences,
-  useUpdateNotificationPreferences,
-  usePreferenceValue,
-  type NotificationChannel,
-  type NotificationEventType,
-} from '@/hooks/useNotificationPreferences';
+import { useEffect, useState } from 'react';
 
 interface NotificationPreferencesCardProps {
   wsId: string;
@@ -75,7 +75,7 @@ export default function NotificationPreferencesCard({
       EVENT_TYPES.forEach((eventType) => {
         prefs[eventType] = {};
         CHANNELS.forEach((channel) => {
-          prefs[eventType][channel] = usePreferenceValue(
+          prefs[eventType]![channel] = getPreferenceValue(
             preferences,
             eventType,
             channel

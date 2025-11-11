@@ -20,9 +20,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-  Circle,
-  Clock,
   ClipboardList,
+  Clock,
   Edit3,
   Eye,
   EyeOff,
@@ -162,7 +161,7 @@ export default function NotificationList({
           g.entityType === notification.entity_type &&
           g.notifications.length > 0 &&
           Math.abs(
-            new Date(g.notifications[0].created_at).getTime() -
+            new Date(g.notifications[0]!.created_at).getTime() -
               new Date(notification.created_at).getTime()
           ) < TIME_WINDOW_MS
       );
@@ -328,16 +327,17 @@ export default function NotificationList({
                 updateNotification={updateNotification}
                 queryClient={queryClient}
               />
-            ) : (
+            ) : group.notifications[0] ? (
               <NotificationCard
-                key={group.notifications[0].id}
+                key={group.notifications[0]?.id}
                 notification={group.notifications[0]}
                 onMarkAsRead={handleMarkAsRead}
                 t={t}
                 wsId={wsId}
                 isUpdating={
                   updateNotification.isPending &&
-                  updateNotification.variables?.id === group.notifications[0].id
+                  updateNotification.variables?.id ===
+                    group.notifications[0]?.id
                 }
                 onActionComplete={() => {
                   // Refresh notifications after action
@@ -346,7 +346,7 @@ export default function NotificationList({
                   });
                 }}
               />
-            )
+            ) : null
           )}
         </div>
       )}
@@ -542,7 +542,7 @@ function NotificationCard({
 
           {/* Change details - show before/after states */}
           {notification.data?.changes && (
-            <ChangeDetails changes={notification.data.changes} t={t} />
+            <ChangeDetails changes={notification.data.changes} />
           )}
 
           {/* Single field change (for older notifications or simple changes) */}
@@ -658,8 +658,10 @@ function GroupedNotificationCard({
 
   // Get the first notification for summary
   const firstNotification = notifications[0];
-  const taskName = firstNotification.data?.task_name || 'Task';
-  const entityLink = getEntityLink(firstNotification, wsId);
+  const taskName = firstNotification?.data?.task_name || 'Task';
+  const entityLink = firstNotification
+    ? getEntityLink(firstNotification, wsId)
+    : null;
 
   // Create a summary of notification types
   const typeCount = notifications.reduce(
@@ -718,7 +720,7 @@ function GroupedNotificationCard({
               : 'bg-foreground/10 text-foreground/60'
           }`}
         >
-          {getNotificationIcon(firstNotification.type || 'task_updated')}
+          {getNotificationIcon(firstNotification?.type || 'task_updated')}
         </div>
 
         {/* Content */}
@@ -736,7 +738,7 @@ function GroupedNotificationCard({
                 </h3>
                 <p className="text-foreground/60 text-xs">{summaryText}</p>
                 <p className="mt-1 text-foreground/40 text-xs">
-                  {dayjs(firstNotification.created_at).fromNow()}
+                  {dayjs(firstNotification?.created_at).fromNow()}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -772,10 +774,7 @@ function GroupedNotificationCard({
                     {/* Show change details in grouped view */}
                     {notification.data?.changes && (
                       <div className="mt-1.5">
-                        <ChangeDetails
-                          changes={notification.data.changes}
-                          t={t}
-                        />
+                        <ChangeDetails changes={notification.data.changes} />
                       </div>
                     )}
                     {notification.data?.change_type &&
@@ -982,8 +981,7 @@ function getNotificationActions(
   }
 }
 
-// Helper component to display change details with before/after states
-function ChangeDetails({ changes, t }: { changes: any; t: any }) {
+function ChangeDetails({ changes }: { changes: any }) {
   const changeEntries = Object.entries(changes);
 
   if (changeEntries.length === 0) return null;
@@ -1020,7 +1018,6 @@ function SingleChangeDetail({
   changeType,
   oldValue,
   newValue,
-  t,
 }: {
   changeType: string;
   oldValue?: any;
@@ -1111,7 +1108,7 @@ function formatValue(value: any, field: string): string {
   // Handle estimation (estimation_points)
   if (field === 'estimation' || field === 'estimation_points') {
     const num = Number(value);
-    if (!isNaN(num)) {
+    if (!Number.isNaN(num)) {
       return `${num} hour${num !== 1 ? 's' : ''}`;
     }
     return String(value);
@@ -1119,7 +1116,7 @@ function formatValue(value: any, field: string): string {
 
   // Handle long strings
   if (typeof value === 'string' && value.length > 50) {
-    return value.substring(0, 50) + '...';
+    return `${value.substring(0, 50)}...`;
   }
 
   // Handle all other strings - capitalize first letter

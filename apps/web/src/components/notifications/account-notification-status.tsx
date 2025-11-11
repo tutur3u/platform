@@ -1,18 +1,17 @@
 'use client';
 
-import { AlertTriangle, Settings, ExternalLink } from '@tuturuuu/icons';
+import { AlertTriangle, ExternalLink, Settings } from '@tuturuuu/icons';
+import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Button } from '@tuturuuu/ui/button';
-import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
-import { useAccountNotificationPreferences } from '@/hooks/useAccountNotificationPreferences';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { useAccountNotificationPreferences } from '@/hooks/useAccountNotificationPreferences';
 
 export default function AccountNotificationStatus() {
   const { data: accountPreferences, isLoading } =

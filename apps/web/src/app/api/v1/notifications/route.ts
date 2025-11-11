@@ -298,7 +298,11 @@ export async function PATCH(req: Request) {
     }
 
     // Only update notifications with the opposite read status
-    query = query.is('read_at', action === 'mark_all_read' ? null : 'not.null');
+    if (action === 'mark_all_read') {
+      query = query.is('read_at', null);
+    } else {
+      query = query.not('read_at', 'is', null);
+    }
 
     const { error } = await query;
 

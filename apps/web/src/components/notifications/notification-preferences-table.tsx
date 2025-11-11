@@ -1,12 +1,28 @@
 'use client';
 
 import {
+  ACCOUNT_EVENT_GROUPS,
+  WORKSPACE_EVENT_GROUPS,
+} from '@/constants/notification-event-groups';
+import {
+  type AccountNotificationEventType,
+  useAccountNotificationPreferences,
+  useUpdateAccountNotificationPreferences,
+} from '@/hooks/useAccountNotificationPreferences';
+import {
+  type NotificationChannel,
+  type NotificationEventType,
+  useNotificationPreferences,
+  useUpdateNotificationPreferences,
+} from '@/hooks/useNotificationPreferences';
+import {
   Bell,
   ChevronDown,
   ChevronRight,
-  Search,
   Loader2,
+  Search,
 } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
   CardContent,
@@ -14,31 +30,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Switch } from '@tuturuuu/ui/switch';
-import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect, useMemo } from 'react';
-import {
-  useNotificationPreferences,
-  useUpdateNotificationPreferences,
-  usePreferenceValue,
-  type NotificationChannel,
-  type NotificationEventType,
-} from '@/hooks/useNotificationPreferences';
-import {
-  useAccountNotificationPreferences,
-  useUpdateAccountNotificationPreferences,
-  useAccountPreferenceValue,
-  type AccountNotificationEventType,
-} from '@/hooks/useAccountNotificationPreferences';
-import {
-  WORKSPACE_EVENT_GROUPS,
-  ACCOUNT_EVENT_GROUPS,
-  type EventGroup,
-} from '@/constants/notification-event-groups';
+import { useEffect, useMemo, useState } from 'react';
 
 type EventType = NotificationEventType | AccountNotificationEventType;
 type PreferenceData = Record<string, Record<string, boolean>>;
@@ -54,7 +51,6 @@ const CHANNELS: NotificationChannel[] = ['web', 'email', 'push'];
 export default function NotificationPreferencesTable({
   scope,
   wsId,
-  showAdvanced = false,
 }: NotificationPreferencesTableProps) {
   const t = useTranslations('notifications.settings');
   const tEvents = useTranslations('notifications.settings.events');
@@ -71,7 +67,6 @@ export default function NotificationPreferencesTable({
   const { data: preferences, isLoading } = isWorkspace
     ? workspaceQuery
     : accountQuery;
-  const updatePreferences = isWorkspace ? updateWorkspace : updateAccount;
 
   // Get the appropriate event groups
   const eventGroups = isWorkspace
@@ -109,7 +104,7 @@ export default function NotificationPreferencesTable({
         prefs[eventType] = {};
         CHANNELS.forEach((channel) => {
           const key = `${eventType}-${channel}`;
-          prefs[eventType][channel] = existingPrefs.get(key) ?? true;
+          prefs[eventType]![channel] = existingPrefs.get(key) ?? true;
         });
       });
     });
@@ -166,7 +161,16 @@ export default function NotificationPreferencesTable({
       // No missing preferences, mark as initialized
       setHasInitialized(true);
     }
-  }, [preferences, hasInitialized, isInitializing]);
+  }, [
+    preferences,
+    hasInitialized,
+    isInitializing,
+    eventGroups.forEach,
+    isWorkspace,
+    updateAccount.mutateAsync,
+    updateWorkspace.mutateAsync,
+    wsId,
+  ]);
 
   // Update local preferences from fetched data (after initialization, on subsequent updates)
   useEffect(() => {
@@ -185,13 +189,13 @@ export default function NotificationPreferencesTable({
         prefs[eventType] = {};
         CHANNELS.forEach((channel) => {
           const key = `${eventType}-${channel}`;
-          prefs[eventType][channel] = existingPrefs.get(key) ?? true;
+          prefs[eventType]![channel] = existingPrefs.get(key) ?? true;
         });
       });
     });
 
     setLocalPreferences(prefs);
-  }, [preferences, hasInitialized]);
+  }, [preferences, hasInitialized, eventGroups.forEach]);
 
   // Filter groups based on search query
   const filteredGroups = useMemo(() => {
@@ -218,18 +222,6 @@ export default function NotificationPreferencesTable({
     // Calculate the new value first
     const currentValue = localPreferences[eventType]?.[channel] ?? true;
     const newValue = !currentValue;
-
-    // Extract current advanced settings from existing preferences
-    // to preserve them when updating individual preferences
-    const existingPref = preferences?.find(
-      (p) => p.event_type === eventType && p.channel === channel
-    );
-    const advancedSettings = {
-      digestFrequency: existingPref?.digest_frequency,
-      quietHoursStart: existingPref?.quiet_hours_start,
-      quietHoursEnd: existingPref?.quiet_hours_end,
-      timezone: existingPref?.timezone,
-    };
 
     // Update local state immediately (optimistic update)
     setLocalPreferences((prev) => {
@@ -259,19 +251,17 @@ export default function NotificationPreferencesTable({
         await updateWorkspace.mutateAsync({
           wsId,
           preferences: preferencesToSave as any,
-          ...advancedSettings,
         });
       } else {
         await updateAccount.mutateAsync({
           preferences: preferencesToSave as any,
-          ...advancedSettings,
         });
       }
     } catch (error) {
       // Rollback on error - restore the original value
       setLocalPreferences((prev) => {
         const newPrefs = { ...prev };
-        newPrefs[eventType][channel] = currentValue;
+        newPrefs[eventType]![channel] = currentValue;
         return newPrefs;
       });
       toast.error(t('save-failed'));
@@ -304,18 +294,6 @@ export default function NotificationPreferencesTable({
       enabled: boolean;
     }> = [];
 
-    // Extract advanced settings from first existing preference in the group
-    // to preserve them during bulk update
-    const firstExistingPref = preferences?.find((p) =>
-      group.events.some((event) => p.event_type === event)
-    );
-    const advancedSettings = {
-      digestFrequency: firstExistingPref?.digest_frequency,
-      quietHoursStart: firstExistingPref?.quiet_hours_start,
-      quietHoursEnd: firstExistingPref?.quiet_hours_end,
-      timezone: firstExistingPref?.timezone,
-    };
-
     // Update local state
     setLocalPreferences((prev) => {
       const newPrefs = { ...prev };
@@ -324,7 +302,7 @@ export default function NotificationPreferencesTable({
           newPrefs[eventType] = {};
         }
         CHANNELS.forEach((channel) => {
-          newPrefs[eventType][channel] = enabled;
+          newPrefs[eventType]![channel] = enabled;
           preferencesToSave.push({
             eventType: eventType as any,
             channel,
@@ -340,12 +318,10 @@ export default function NotificationPreferencesTable({
         await updateWorkspace.mutateAsync({
           wsId,
           preferences: preferencesToSave as any,
-          ...advancedSettings,
         });
       } else {
         await updateAccount.mutateAsync({
           preferences: preferencesToSave as any,
-          ...advancedSettings,
         });
       }
       toast.success(t('bulk-action-success'));
@@ -440,7 +416,7 @@ export default function NotificationPreferencesTable({
       <CardContent className="space-y-6">
         {/* Search bar */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={t('search-events')}
             value={searchQuery}
@@ -473,8 +449,9 @@ export default function NotificationPreferencesTable({
                 {/* Group header */}
                 <div className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
                   <button
+                    type="button"
                     onClick={() => toggleGroupCollapse(group.id)}
-                    className="flex items-center gap-2 text-sm font-semibold hover:text-foreground/80"
+                    className="flex items-center gap-2 font-semibold text-sm hover:text-foreground/80"
                     aria-expanded={!collapsedGroups.has(group.id)}
                     aria-label={`${collapsedGroups.has(group.id) ? 'Expand' : 'Collapse'} ${tGroups(group.labelKey as any)}`}
                   >
@@ -567,7 +544,7 @@ export default function NotificationPreferencesTable({
                                   aria-label={`${tChannels(channel)} notifications for ${tEvents(eventType as any)}`}
                                 />
                                 {isSaving && (
-                                  <div className="absolute -right-5 top-1/2 -translate-y-1/2">
+                                  <div className="-right-5 -translate-y-1/2 absolute top-1/2">
                                     <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                                   </div>
                                 )}

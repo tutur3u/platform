@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-export type NotificationChannel = 'web' | 'email' | 'push';
+export type NotificationChannel = 'web' | 'email' | 'push' | 'sms';
 export type NotificationEventType =
   // Task assignment and general updates
   | 'task_assigned'
@@ -108,11 +108,11 @@ export function useUpdateNotificationPreferences() {
 }
 
 /**
- * Helper hook to get preference value for a specific event type and channel
+ * Helper function to get preference value for a specific event type and channel
  * Note: This assumes the preference exists in the database.
  * The UI should create missing preferences on initialization.
  */
-export function usePreferenceValue(
+export function getPreferenceValue(
   preferences: NotificationPreference[] | undefined,
   eventType: NotificationEventType,
   channel: NotificationChannel
