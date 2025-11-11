@@ -473,7 +473,7 @@ export function Structure({
       <div
         key={navState.history.length}
         className={cn(
-          'absolute flex h-full w-full flex-col transition-transform duration-300 ease-in-out',
+          'absolute flex h-full w-full flex-col transition-transform duration-300 ease-in-out min-h-0',
           navState.direction === 'forward'
             ? 'slide-in-from-right animate-in'
             : 'slide-in-from-left animate-in',
@@ -482,18 +482,20 @@ export function Structure({
         )}
       >
         {navState.history.length === 0 ? (
-          <Nav
-            key={`${user?.id}-root`}
-            wsId={wsId}
-            isCollapsed={isCollapsed}
-            links={filteredCurrentLinks}
-            onSubMenuClick={handleNavChange}
-            onClick={() => {
-              if (window.innerWidth < 768) {
-                setIsCollapsed(true);
-              }
-            }}
-          />
+          <div className="scrollbar-none flex-1 overflow-y-auto min-h-0">
+            <Nav
+              key={`${user?.id}-root`}
+              wsId={wsId}
+              isCollapsed={isCollapsed}
+              links={filteredCurrentLinks}
+              onSubMenuClick={handleNavChange}
+              onClick={() => {
+                if (window.innerWidth < 768) {
+                  setIsCollapsed(true);
+                }
+              }}
+            />
+          </div>
         ) : (
           <>
             <Nav

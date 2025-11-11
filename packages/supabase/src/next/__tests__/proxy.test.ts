@@ -36,7 +36,7 @@ vi.mock('../common', () => ({
   }),
 }));
 
-describe('Supabase Middleware', () => {
+describe('Supabase Proxy', () => {
   const mockRequest = {
     headers: new Map(),
     cookies: {
@@ -85,10 +85,10 @@ describe('Supabase Middleware', () => {
     expect(cookieHandler.setAll).toBeDefined();
   });
 
-  it('should return response and user', async () => {
+  it('should return response and JWT Payload', async () => {
     const response = await updateSession(mockRequest as any);
     expect(response.res).toBeDefined();
     expect(response.res.headers).toBeDefined();
-    expect(response.user).toBeNull();
+    expect(response.claims).toBeNull();
   });
 });
