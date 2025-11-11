@@ -1088,7 +1088,7 @@ export default function TranslationsComparison({
               setCurrentPage(1);
             }}
           >
-            <SelectTrigger className="w-[80px]">
+            <SelectTrigger className="w-20">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -1125,7 +1125,7 @@ export default function TranslationsComparison({
               <TableHead>English</TableHead>
               <TableHead>Vietnamese</TableHead>
               <TableHead className="w-[140px]">Status</TableHead>
-              <TableHead className="w-[80px]">Actions</TableHead>
+              <TableHead className="w-20">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

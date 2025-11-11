@@ -1037,27 +1037,6 @@
         "security": "Bảo mật",
         "security-description": "Cảnh báo bảo mật và thông báo tài khoản quan trọng"
       },
-      "advanced": {
-        "digest-frequency": "Tần suất tóm tắt Email",
-        "digest-description": "Chọn tần suất bạn muốn nhận thông báo email",
-        "frequency": "Tần suất",
-        "frequency-immediate": "Ngay lập tức (khi xảy ra)",
-        "frequency-hourly": "Tóm tắt theo giờ",
-        "frequency-daily": "Tóm tắt hàng ngày",
-        "frequency-weekly": "Tóm tắt hàng tuần",
-        "digest-frequency-help": "Email tóm tắt gộp nhiều thông báo thành một email duy nhất theo tần suất bạn chọn.",
-        "quiet-hours": "Giờ yên tĩnh",
-        "quiet-hours-description": "Đặt thời gian bạn không muốn nhận thông báo",
-        "start-time": "Thời gian bắt đầu",
-        "end-time": "Thời gian kết thúc",
-        "timezone": "Múi giờ",
-        "quiet-hours-start": "Thời gian bắt đầu giờ yên tĩnh",
-        "quiet-hours-end": "Thời gian kết thúc giờ yên tĩnh",
-        "quiet-hours-help": "Trong giờ yên tĩnh, thông báo sẽ được giữ lại và gửi khi khoảng thời gian kết thúc.",
-        "digest-updated": "Đã cập nhật tần suất tóm tắt thành công",
-        "quiet-hours-updated": "Đã cập nhật giờ yên tĩnh thành công",
-        "update-failed": "Cập nhật cài đặt thất bại. Vui lòng thử lại."
-      },
       "browser": {
         "browser-notifications": "Thông báo trình duyệt",
         "status-granted": "Đã bật",

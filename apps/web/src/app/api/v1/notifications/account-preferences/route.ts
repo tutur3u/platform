@@ -1,6 +1,6 @@
 import {
-  createClient,
   createAdminClient,
+  createClient,
 } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -20,20 +20,13 @@ const updateSchema = z.object({
       enabled: z.boolean(),
     })
   ),
-  // Optional advanced settings
-  digestFrequency: z
-    .enum(['immediate', 'hourly', 'daily', 'weekly'])
-    .optional(),
-  quietHoursStart: z.string().nullable().optional(), // Format: "HH:MM"
-  quietHoursEnd: z.string().nullable().optional(), // Format: "HH:MM"
-  timezone: z.string().optional(),
 });
 
 /**
  * GET /api/v1/notifications/account-preferences
  * Gets account-level notification preferences for the authenticated user
  */
-export async function GET(request: Request) {
+export async function GET(_: Request) {
   try {
     const supabase = await createClient();
 
@@ -101,13 +94,7 @@ export async function PUT(request: Request) {
       );
     }
 
-    const {
-      preferences,
-      digestFrequency,
-      quietHoursStart,
-      quietHoursEnd,
-      timezone,
-    } = validatedData.data;
+    const { preferences } = validatedData.data;
 
     // If preferences array is not empty, update individual preferences
     if (preferences.length > 0) {
@@ -154,10 +141,6 @@ export async function PUT(request: Request) {
         channel: pref.channel,
         enabled: pref.enabled,
         scope: 'user' as const,
-        digest_frequency: digestFrequency || 'immediate',
-        quiet_hours_start: quietHoursStart || null,
-        quiet_hours_end: quietHoursEnd || null,
-        timezone: timezone || 'UTC',
       }));
 
       const { error: insertError } = await supabase
@@ -168,36 +151,6 @@ export async function PUT(request: Request) {
         console.error('Error inserting account preferences:', insertError);
         return NextResponse.json(
           { error: 'Failed to update preferences' },
-          { status: 500 }
-        );
-      }
-    }
-
-    // If only advanced settings are being updated (empty preferences array),
-    // update all existing account-level preferences
-    if (
-      preferences.length === 0 &&
-      (digestFrequency || quietHoursStart || quietHoursEnd || timezone)
-    ) {
-      const updateData: Record<string, any> = {};
-      if (digestFrequency) updateData.digest_frequency = digestFrequency;
-      if (quietHoursStart !== undefined)
-        updateData.quiet_hours_start = quietHoursStart || null;
-      if (quietHoursEnd !== undefined)
-        updateData.quiet_hours_end = quietHoursEnd || null;
-      if (timezone) updateData.timezone = timezone;
-
-      const { error } = await supabase
-        .from('notification_preferences')
-        .update(updateData)
-        .is('ws_id', null) // Account-level preferences
-        .eq('user_id', user.id)
-        .eq('scope', 'user');
-
-      if (error) {
-        console.error('Error updating advanced settings:', error);
-        return NextResponse.json(
-          { error: 'Failed to update advanced settings' },
           { status: 500 }
         );
       }

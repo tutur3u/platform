@@ -24,7 +24,7 @@ export interface Notification {
 }
 
 interface UseNotificationsOptions {
-  wsId: string;
+  wsId?: string;
   limit?: number;
   offset?: number;
   unreadOnly?: boolean;
@@ -33,6 +33,7 @@ interface UseNotificationsOptions {
 
 /**
  * Hook to fetch notifications with pagination
+ * If wsId is not provided, fetches notifications across all workspaces
  */
 export function useNotifications({
   wsId,
@@ -42,19 +43,23 @@ export function useNotifications({
   type,
 }: UseNotificationsOptions) {
   return useQuery({
-    queryKey: ['notifications', wsId, limit, offset, unreadOnly, type],
+    queryKey: ['notifications', wsId || 'all', limit, offset, unreadOnly, type],
     queryFn: async () => {
       const params = new URLSearchParams({
-        wsId,
         limit: limit.toString(),
         offset: offset.toString(),
         unreadOnly: unreadOnly.toString(),
+        ...(wsId && { wsId }),
         ...(type && { type }),
       });
 
-      const response = await fetch(`/api/v1/notifications?${params}`);
+      const url = `/api/v1/notifications?${params}`;
+      const response = await fetch(url);
+
       if (!response.ok) {
-        throw new Error('Failed to fetch notifications');
+        throw new Error(
+          `Failed to fetch notifications: ${response.status} ${response.statusText}`
+        );
       }
 
       const data = await response.json();
@@ -65,7 +70,6 @@ export function useNotifications({
         offset: number;
       };
     },
-    enabled: !!wsId,
     staleTime: 30000, // Keep data fresh for 30s to prevent excessive refetches
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
@@ -242,7 +246,7 @@ export function useDeleteNotification() {
 /**
  * Hook to subscribe to realtime notification updates
  */
-export function useNotificationSubscription(wsId: string, userId: string) {
+export function useNotificationSubscription(_: string, userId: string) {
   const queryClient = useQueryClient();
   const supabase = createClient();
 

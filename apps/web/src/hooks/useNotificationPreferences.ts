@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export type NotificationChannel = 'web' | 'email' | 'push';
 export type NotificationEventType =
@@ -34,10 +34,6 @@ export interface NotificationPreference {
   channel: NotificationChannel;
   enabled: boolean;
   scope?: 'user' | 'workspace' | 'system';
-  digest_frequency?: 'immediate' | 'hourly' | 'daily' | 'weekly';
-  quiet_hours_start?: string | null;
-  quiet_hours_end?: string | null;
-  timezone?: string;
   created_at: string;
   updated_at: string;
 }
@@ -79,10 +75,6 @@ export function useUpdateNotificationPreferences() {
     mutationFn: async ({
       wsId,
       preferences,
-      digestFrequency,
-      quietHoursStart,
-      quietHoursEnd,
-      timezone,
     }: {
       wsId: string;
       preferences: Array<{
@@ -90,10 +82,6 @@ export function useUpdateNotificationPreferences() {
         channel: NotificationChannel;
         enabled: boolean;
       }>;
-      digestFrequency?: 'immediate' | 'hourly' | 'daily' | 'weekly';
-      quietHoursStart?: string;
-      quietHoursEnd?: string;
-      timezone?: string;
     }) => {
       const response = await fetch('/api/v1/notifications/preferences', {
         method: 'PUT',
@@ -101,10 +89,6 @@ export function useUpdateNotificationPreferences() {
         body: JSON.stringify({
           wsId,
           preferences,
-          digestFrequency,
-          quietHoursStart,
-          quietHoursEnd,
-          timezone,
         }),
       });
 

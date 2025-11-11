@@ -945,27 +945,6 @@
         "security": "Security",
         "security-description": "Security alerts and important account notifications"
       },
-      "advanced": {
-        "digest-frequency": "Email Digest Frequency",
-        "digest-description": "Choose how often you want to receive email notifications",
-        "frequency": "Frequency",
-        "frequency-immediate": "Immediate (as they happen)",
-        "frequency-hourly": "Hourly digest",
-        "frequency-daily": "Daily digest",
-        "frequency-weekly": "Weekly digest",
-        "digest-frequency-help": "Digest emails group multiple notifications into a single email at your chosen frequency.",
-        "quiet-hours": "Quiet Hours",
-        "quiet-hours-description": "Set times when you don't want to receive notifications",
-        "start-time": "Start Time",
-        "end-time": "End Time",
-        "timezone": "Timezone",
-        "quiet-hours-start": "Quiet hours start time",
-        "quiet-hours-end": "Quiet hours end time",
-        "quiet-hours-help": "During quiet hours, notifications will be held and delivered when the period ends.",
-        "digest-updated": "Digest frequency updated successfully",
-        "quiet-hours-updated": "Quiet hours updated successfully",
-        "update-failed": "Failed to update settings. Please try again."
-      },
       "browser": {
         "browser-notifications": "Browser Notifications",
         "status-granted": "Enabled",

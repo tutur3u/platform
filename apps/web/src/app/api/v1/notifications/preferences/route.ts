@@ -2,7 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const querySchema = z.object({
@@ -42,20 +42,13 @@ const updateSchema = z.object({
       enabled: z.boolean(),
     })
   ),
-  // Optional advanced settings
-  digestFrequency: z
-    .enum(['immediate', 'hourly', 'daily', 'weekly'])
-    .optional(),
-  quietHoursStart: z.string().nullable().optional(),
-  quietHoursEnd: z.string().nullable().optional(),
-  timezone: z.string().optional(),
 });
 
 /**
  * GET /api/v1/notifications/preferences
  * Gets notification preferences for the authenticated user in a workspace
  */
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
@@ -155,14 +148,7 @@ export async function PUT(request: Request) {
       );
     }
 
-    const {
-      wsId,
-      preferences,
-      digestFrequency,
-      quietHoursStart,
-      quietHoursEnd,
-      timezone,
-    } = validatedData.data;
+    const { wsId, preferences } = validatedData.data;
 
     // Verify user has access to workspace using admin client to bypass RLS
     const supabaseAdmin = await createAdminClient();
@@ -224,10 +210,6 @@ export async function PUT(request: Request) {
         channel: pref.channel,
         enabled: pref.enabled,
         scope: 'workspace' as const,
-        digest_frequency: digestFrequency || 'immediate',
-        quiet_hours_start: quietHoursStart || null,
-        quiet_hours_end: quietHoursEnd || null,
-        timezone: timezone || 'UTC',
       }));
 
       const { error: insertError } = await supabase
@@ -238,36 +220,6 @@ export async function PUT(request: Request) {
         console.error('Error inserting preferences:', insertError);
         return NextResponse.json(
           { error: 'Failed to update preferences' },
-          { status: 500 }
-        );
-      }
-    }
-
-    // If only advanced settings are being updated (empty preferences array),
-    // update all existing preferences for this workspace
-    if (
-      preferences.length === 0 &&
-      (digestFrequency || quietHoursStart || quietHoursEnd || timezone)
-    ) {
-      const updateData: Record<string, any> = {};
-      if (digestFrequency) updateData.digest_frequency = digestFrequency;
-      if (quietHoursStart !== undefined)
-        updateData.quiet_hours_start = quietHoursStart || null;
-      if (quietHoursEnd !== undefined)
-        updateData.quiet_hours_end = quietHoursEnd || null;
-      if (timezone) updateData.timezone = timezone;
-
-      const { error } = await supabase
-        .from('notification_preferences')
-        .update(updateData)
-        .eq('ws_id', wsId)
-        .eq('user_id', user.id)
-        .eq('scope', 'workspace');
-
-      if (error) {
-        console.error('Error updating advanced settings:', error);
-        return NextResponse.json(
-          { error: 'Failed to update advanced settings' },
           { status: 500 }
         );
       }

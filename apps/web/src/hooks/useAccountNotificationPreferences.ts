@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export type NotificationChannel = 'web' | 'email' | 'push';
 export type AccountNotificationEventType =
@@ -8,8 +8,6 @@ export type AccountNotificationEventType =
   | 'security_alerts'
   | 'workspace_activity';
 
-export type DigestFrequency = 'immediate' | 'hourly' | 'daily' | 'weekly';
-
 export interface AccountNotificationPreference {
   id: string;
   ws_id: null;
@@ -18,10 +16,6 @@ export interface AccountNotificationPreference {
   channel: NotificationChannel;
   enabled: boolean;
   scope: 'user';
-  digest_frequency?: DigestFrequency;
-  quiet_hours_start?: string | null;
-  quiet_hours_end?: string | null;
-  timezone?: string;
   created_at: string;
   updated_at: string;
 }
@@ -53,20 +47,12 @@ export function useUpdateAccountNotificationPreferences() {
   return useMutation({
     mutationFn: async ({
       preferences,
-      digestFrequency,
-      quietHoursStart,
-      quietHoursEnd,
-      timezone,
     }: {
       preferences: Array<{
         eventType: AccountNotificationEventType;
         channel: NotificationChannel;
         enabled: boolean;
       }>;
-      digestFrequency?: DigestFrequency;
-      quietHoursStart?: string;
-      quietHoursEnd?: string;
-      timezone?: string;
     }) => {
       const response = await fetch(
         '/api/v1/notifications/account-preferences',
@@ -75,10 +61,6 @@ export function useUpdateAccountNotificationPreferences() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             preferences,
-            digestFrequency,
-            quietHoursStart,
-            quietHoursEnd,
-            timezone,
           }),
         }
       );

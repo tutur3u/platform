@@ -3710,14 +3710,10 @@ export type Database = {
         Row: {
           channel: string;
           created_at: string;
-          digest_frequency: string | null;
           enabled: boolean;
           event_type: string;
           id: string;
-          quiet_hours_end: string | null;
-          quiet_hours_start: string | null;
           scope: Database['public']['Enums']['notification_scope'];
-          timezone: string | null;
           updated_at: string;
           user_id: string;
           ws_id: string | null;
@@ -3725,14 +3721,10 @@ export type Database = {
         Insert: {
           channel: string;
           created_at?: string;
-          digest_frequency?: string | null;
           enabled?: boolean;
           event_type: string;
           id?: string;
-          quiet_hours_end?: string | null;
-          quiet_hours_start?: string | null;
           scope?: Database['public']['Enums']['notification_scope'];
-          timezone?: string | null;
           updated_at?: string;
           user_id: string;
           ws_id?: string | null;
@@ -3740,14 +3732,10 @@ export type Database = {
         Update: {
           channel?: string;
           created_at?: string;
-          digest_frequency?: string | null;
           enabled?: boolean;
           event_type?: string;
           id?: string;
-          quiet_hours_end?: string | null;
-          quiet_hours_start?: string | null;
           scope?: Database['public']['Enums']['notification_scope'];
-          timezone?: string | null;
           updated_at?: string;
           user_id?: string;
           ws_id?: string | null;
