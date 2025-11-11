@@ -71,14 +71,16 @@ export async function PATCH(
 
     // Merge new metadata with existing data
     const updatedData = {
-      ...(notification.data || {}),
+      ...(typeof notification.data === 'object' && notification.data !== null
+        ? (notification.data as Record<string, unknown>)
+        : {}),
       ...validatedMetadata.data,
-    };
+    } as Record<string, unknown>;
 
     // Update the notification
     const { error: updateError } = await supabase
       .from('notifications')
-      .update({ data: updatedData })
+      .update({ data: updatedData as any })
       .eq('id', id)
       .eq('user_id', user.id);
 
