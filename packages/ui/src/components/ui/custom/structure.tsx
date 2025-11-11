@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Menu, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 
 interface StructureProps {
   isCollapsed: boolean;
@@ -37,6 +37,26 @@ export function Structure({
   onMouseEnter,
   onMouseLeave,
 }: StructureProps) {
+  // Lock body scroll when sidebar is open on mobile
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const isMobile = window.innerWidth < 768; // md breakpoint
+    if (isMobile && !isCollapsed) {
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+
+      return () => {
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isCollapsed]);
+
   return (
     <>
       <nav className="fixed inset-x-0 top-0 z-30 max-sm:border-b md:hidden">
@@ -69,12 +89,12 @@ export function Structure({
         <div className="relative w-full">
           <aside
             className={cn(
-              'group fixed z-50 flex h-full flex-col overflow-hidden border-r backdrop-blur-lg transition-all duration-300 ease-in-out md:z-20',
+              'group fixed z-50 flex h-[100dvh] flex-col overflow-hidden border-l backdrop-blur-lg transition-all duration-300 ease-in-out md:z-20 md:border-r md:border-l-0 md:left-0 right-0 left-auto',
               isCollapsed
                 ? 'w-16 bg-background/50 max-md:w-0'
                 : 'w-64 bg-background max-sm:w-full',
               'max-md:absolute',
-              isCollapsed && 'max-md:-translate-x-full'
+              isCollapsed && 'max-md:translate-x-full'
             )}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
@@ -110,7 +130,7 @@ export function Structure({
                 </div>
               </div>
             </div>
-            <div className="scrollbar-none flex flex-1 flex-col gap-y-1 overflow-y-auto overflow-x-hidden">
+            <div className="scrollbar-none flex flex-1 flex-col gap-y-1 overflow-y-auto overflow-x-hidden overscroll-contain">
               {sidebarContent}
             </div>
             {feedbackButton && (
