@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
   Box,
@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   CircleSlash,
   Clock,
+  Copy,
   FileText,
   Image as ImageIcon,
   Link2,
@@ -46,8 +47,11 @@ import {
   HoverCardTrigger,
 } from '@tuturuuu/ui/hover-card';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import {
+  createTask,
+  invalidateTaskCaches,
   useBoardConfig,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
@@ -124,6 +128,7 @@ function TaskCardInner({
   selectedTasks,
 }: TaskCardProps) {
   const { wsId } = useParams();
+  const queryClient = useQueryClient();
 
   const [isLoading, setIsLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -375,6 +380,61 @@ function TaskCardInner({
       openTask,
     ]
   );
+
+  const handleDuplicateTask = async () => {
+    try {
+      const supabase = createClient();
+
+      const taskData: Partial<Task> = {
+        name: task.name.trim(),
+        description: task.description,
+        priority: task.priority,
+        start_date: startDate ? startDate.toISOString() : null,
+        end_date: endDate ? endDate.toISOString() : null,
+        estimation_points: task.estimation_points ?? null,
+      } as any;
+      const newTask = await createTask(supabase, task.list_id, taskData);
+
+      // Link existing labels to duplicated task
+      if (task.labels && task.labels.length > 0) {
+        await supabase.from('task_labels').insert(
+          task.labels.map((label) => ({
+            task_id: newTask.id,
+            label_id: label.id,
+          }))
+        );
+      }
+
+      // Link existing assignees to duplicated task
+      if (task.assignees && task.assignees.length > 0) {
+        await supabase.from('task_assignees').insert(
+          task.assignees.map((assignee) => ({
+            task_id: newTask.id,
+            user_id: assignee.id,
+          }))
+        );
+      }
+
+      // Link existing projects to duplicated task
+      if (task.projects && task.projects.length > 0) {
+        await supabase.from('task_project_tasks').insert(
+          task.projects.map((project) => ({
+            task_id: newTask.id,
+            project_id: project.id,
+          }))
+        );
+      }
+
+      await invalidateTaskCaches(queryClient, boardId);
+      toast.success('Task duplicated successfully');
+      onUpdate();
+    } catch (error: any) {
+      console.error('Error creating task:', error);
+      toast.error(error.message || 'Please try again later');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const taskBadges = useMemo(() => {
     // Collect all badges into an array for overflow handling
@@ -789,6 +849,13 @@ function TaskCardInner({
                     )}
 
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={handleDuplicateTask}
+                    className="cursor-pointer"
+                  >
+                    <Copy className="h-4 w-4 text-foreground" />
+                    Duplicate task
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={(e) =>
                       handleMenuItemSelect(e as unknown as Event, () => {
