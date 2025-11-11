@@ -43,7 +43,9 @@ export function WorkspaceProjectsHeader({
         </div>
         <TaskBoardForm
           wsId={
-            selectedWsId ?? (isPersonal ? personalWorkspaceId : defaultWsId) ?? wsId
+            selectedWsId ??
+            (isPersonal ? personalWorkspaceId : defaultWsId) ??
+            wsId
           }
         >
           <Button className="flex items-center gap-2">
