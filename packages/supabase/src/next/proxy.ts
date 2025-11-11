@@ -3,11 +3,11 @@ import type { Database } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { checkEnvVariables } from './common';
-import type { SupabaseUser } from './user';
+import type { SupabaseJwtPayload } from './user';
 
 export async function updateSession(request: NextRequest): Promise<{
   res: NextResponse;
-  user: SupabaseUser | null;
+  claims: SupabaseJwtPayload | null;
 }> {
   try {
     let supabaseResponse = NextResponse.next({
@@ -35,12 +35,10 @@ export async function updateSession(request: NextRequest): Promise<{
     });
 
     // IMPORTANT: Avoid writing any logic between createServerClient and
-    // supabase.auth.getUser(). A simple mistake could make it very hard to debug
+    // supabase.auth.getClaims(). A simple mistake could make it very hard to debug
     // issues with users being randomly logged out.
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data } = await supabase.auth.getClaims();
 
     // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're
     // creating a new response object with NextResponse.next() make sure to:
@@ -59,13 +57,13 @@ export async function updateSession(request: NextRequest): Promise<{
       res: NextResponse.next({
         request,
       }),
-      user,
+      claims: data?.claims || null,
     };
   } catch (error) {
     console.error('Error updating session:', error);
     return {
       res: NextResponse.next({ request }),
-      user: null,
+      claims: null,
     };
   }
 }

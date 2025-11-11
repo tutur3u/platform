@@ -278,6 +278,8 @@
     "generate_explanation": "Generate explanation",
     "products": "Products",
     "solutions": "Solutions",
+    "show-more": "Show more",
+    "show-less": "Show less",
     "pricing": "Pricing",
     "about": "About",
     "contact": "Contact",
@@ -443,7 +445,8 @@
     "today": "Today",
     "yesterday": "Yesterday",
     "transaction": "transaction",
-    "transactions": "transactions"
+    "transactions": "transactions",
+    "more": "more"
   },
   "home": {
     "headline": "Your intelligent shortcut",
@@ -1413,7 +1416,9 @@
     "confidential-toggle-disabled": "You need permission to create or update confidential transactions",
     "amount-redacted": "•••",
     "description-redacted": "[CONFIDENTIAL]",
-    "category-redacted": "Locked"
+    "category-redacted": "Locked",
+    "net-total": "Net Total",
+    "no-transactions-found": "No transactions found. Create your first transaction to get started."
   },
   "workspace-inventory-tabs": {
     "overview": "Overview",
@@ -3526,7 +3531,7 @@
     "reset-password": "Reset password",
     "view-full-settings": "View full settings",
     "default-workspace": "Default workspace",
-    "default-workspace-description": "Choose which workspace to redirect to when you visit the homepage. If no default is set, you'll be redirected to your first available workspace.",
+    "default-workspace-description": "Choose which workspace to redirect to when you visit the homepage. If no default is set, you'll be redirected to your personal workspace.",
     "full-name": "Full name",
     "full-name-description": "Your full name will be used to display on certificates",
     "full-name-min-error": "Full name must be at least {min} character",

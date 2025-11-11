@@ -271,6 +271,8 @@
     "generate_explanation": "Tạo lời giải thích",
     "products": "Các sản phẩm",
     "solutions": "Giải pháp",
+    "show-more": "Hiển thị thêm",
+    "show-less": "Ẩn bớt",
     "pricing": "Bảng giá",
     "about": "Giới thiệu",
     "contact": "Liên hệ",
@@ -441,7 +443,8 @@
     "today": "Hôm nay",
     "yesterday": "Hôm qua",
     "transaction": "giao dịch",
-    "transactions": "giao dịch"
+    "transactions": "giao dịch",
+    "more": "thêm"
   },
   "home": {
     "headline": "Lối tắt thông minh của bạn",
@@ -1505,7 +1508,9 @@
     "confidential-toggle-disabled": "Bạn cần quyền để tạo hoặc cập nhật giao dịch bảo mật",
     "amount-redacted": "•••",
     "description-redacted": "[BẢO MẬT]",
-    "category-redacted": "Đã khóa"
+    "category-redacted": "Đã khóa",
+    "net-total": "Tổng ròng",
+    "no-transactions-found": "Không tìm thấy giao dịch nào. Tạo giao dịch đầu tiên của bạn để bắt đầu."
   },
   "workspace-inventory-tabs": {
     "overview": "Tổng quan",
@@ -3681,7 +3686,7 @@
     "full-settings": "Xem tất cả cài đặt",
     "view-full-settings": "Xem tất cả cài đặt",
     "default-workspace": "Không gian làm việc mặc định",
-    "default-workspace-description": "Chọn không gian làm việc nào để chuyển hướng đến khi bạn truy cập trang chủ. \nNếu không có mặc định được đặt, bạn sẽ được chuyển hướng đến không gian làm việc có sẵn đầu tiên của bạn.",
+    "default-workspace-description": "Chọn không gian làm việc nào để chuyển hướng đến khi bạn truy cập trang chủ. \nNếu không có mặc định được đặt, bạn sẽ được chuyển hướng đến không gian làm việc cá nhân của bạn.",
     "full-name": "Họ và tên",
     "full-name-description": "Tên đầy đủ của bạn sẽ được sử dụng để hiển thị trên chứng chỉ",
     "full-name-min-error": "Họ và tên phải ít nhất {min} kí tự",
