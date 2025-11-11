@@ -27,7 +27,7 @@ export function WorkspaceProjectsHeader({
 }: WorkspaceProjectsHeaderProps) {
   const t = useTranslations();
   const [selectedWsId, setSelectedWsId] = useState<string | null>(
-    isPersonal ? personalWorkspaceId ?? null : defaultWsId ?? null
+    isPersonal ? (personalWorkspaceId ?? null) : (defaultWsId ?? null)
   );
 
   return (
