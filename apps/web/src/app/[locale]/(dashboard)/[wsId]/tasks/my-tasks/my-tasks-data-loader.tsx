@@ -1,6 +1,25 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import MyTasksContent from './my-tasks-content';
 
+interface TaskAssignee {
+  task_id: string;
+  user: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null;
+}
+
+interface TaskLabel {
+  task_id: string;
+  label: {
+    id: string;
+    name: string;
+    color: string;
+    created_at: string;
+  } | null;
+}
+
 export async function MyTasksDataLoader({
   wsId,
   userId,
@@ -17,7 +36,7 @@ export async function MyTasksDataLoader({
     'get_user_accessible_tasks',
     {
       p_user_id: userId,
-      p_ws_id: wsId,
+      p_ws_id: isPersonal ? undefined : wsId,
       p_include_deleted: false,
       p_list_statuses: ['not_started', 'active', 'done'],
     }
@@ -52,11 +71,12 @@ export async function MyTasksDataLoader({
   // Fetch related data for all tasks
   const taskIds = allTasks?.map((t) => t.id) || [];
 
-  let assigneesData: any[] | null = [];
-  let labelsData: any[] | null = [];
+  let assigneesData: TaskAssignee[] | null = [];
+  let labelsData: TaskLabel[] | null = [];
+  let projectsData: any[] | null = [];
 
   if (taskIds.length > 0) {
-    const [assigneesResult, labelsResult] = await Promise.all([
+    const [assigneesResult, labelsResult, projectsResult] = await Promise.all([
       supabase
         .from('task_assignees')
         .select(
@@ -84,12 +104,22 @@ export async function MyTasksDataLoader({
         `
         )
         .in('task_id', taskIds),
+      supabase
+        .from('task_project_tasks')
+        .select(
+          `
+          task_id,
+          project:task_projects(*)
+        `
+        )
+        .in('task_id', taskIds),
     ]);
     assigneesData = assigneesResult.data;
     labelsData = labelsResult.data;
+    projectsData = projectsResult.data;
   }
 
-  const assigneesByTaskId = new Map<string, any[]>();
+  const assigneesByTaskId = new Map<string, { user: TaskAssignee['user'] }[]>();
   if (assigneesData) {
     for (const assignee of assigneesData) {
       if (!assigneesByTaskId.has(assignee.task_id)) {
@@ -99,13 +129,23 @@ export async function MyTasksDataLoader({
     }
   }
 
-  const labelsByTaskId = new Map<string, any[]>();
+  const labelsByTaskId = new Map<string, { label: TaskLabel['label'] }[]>();
   if (labelsData) {
     for (const label of labelsData) {
       if (!labelsByTaskId.has(label.task_id)) {
         labelsByTaskId.set(label.task_id, []);
       }
       labelsByTaskId.get(label.task_id)!.push({ label: label.label });
+    }
+  }
+
+  const projectsByTaskId = new Map<string, { project: any }[]>();
+  if (projectsData) {
+    for (const project of projectsData) {
+      if (!projectsByTaskId.has(project.task_id)) {
+        projectsByTaskId.set(project.task_id, []);
+      }
+      projectsByTaskId.get(project.task_id)!.push({ project: project.project });
     }
   }
 
@@ -137,6 +177,7 @@ export async function MyTasksDataLoader({
     list: listsData?.find((l) => l.id === task.list_id) || null,
     assignees: assigneesByTaskId.get(task.id) || [],
     labels: labelsByTaskId.get(task.id) || [],
+    projects: projectsByTaskId.get(task.id) || [],
   }));
 
   // Filter tasks by categories
