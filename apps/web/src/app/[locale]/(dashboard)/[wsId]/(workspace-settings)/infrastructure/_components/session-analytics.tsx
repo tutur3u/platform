@@ -121,8 +121,8 @@ export default function SessionAnalyticsComponent({
                   cx="50%"
                   cy="50%"
                   outerRadius={80}
-                  label={({ device_type, percentage }) =>
-                    `${device_type}: ${percentage}%`
+                  label={({ name, percent }) =>
+                    `${name}: ${((percent ?? 0) * 100).toFixed(1)}%`
                   }
                 >
                   {deviceStats.map((entry, index) => (
