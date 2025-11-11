@@ -381,6 +381,13 @@ function TaskCardInner({
     ]
   );
 
+  // Refs for measuring badge widths
+  const containerRef = useRef<HTMLDivElement>(null);
+  const badgeRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const hiddenBadgeNumRef = useRef<HTMLDivElement>(null);
+  const descriptionMetaRef = useRef<HTMLDivElement>(null);
+  const [visibleBadgeCount, setVisibleBadgeCount] = useState(2);
+
   const handleDuplicateTask = async () => {
     try {
       const supabase = createClient();
@@ -445,7 +452,13 @@ function TaskCardInner({
       badges.push({
         id: 'priority',
         element: (
-          <div key="priority" className="flex-none overflow-hidden">
+          <div
+            key="priority"
+            className="flex-none overflow-hidden"
+            ref={(el) => {
+              if (el) badgeRefs.current.set('priority', el);
+            }}
+          >
             {getPriorityIndicator(task.priority)}
           </div>
         ),
@@ -468,6 +481,9 @@ function TaskCardInner({
                 : 'border-dynamic-gray/30 bg-dynamic-gray/10 text-dynamic-gray'
             )}
             title={`${descriptionMeta.checkedCheckboxes} of ${descriptionMeta.totalCheckboxes} sub-tasks completed`}
+            ref={(el) => {
+              if (el) badgeRefs.current.set('subtasks', el as any);
+            }}
           >
             <ListTodo className="h-3 w-3" />
             {descriptionMeta.checkedCheckboxes}/
@@ -482,7 +498,13 @@ function TaskCardInner({
       badges.push({
         id: 'projects',
         element: (
-          <div key="projects" className="min-w-0 shrink-0">
+          <div
+            key="projects"
+            className="min-w-0 shrink-0"
+            ref={(el) => {
+              if (el) badgeRefs.current.set('projects', el);
+            }}
+          >
             <Badge
               variant="secondary"
               className={cn(
@@ -505,7 +527,13 @@ function TaskCardInner({
       badges.push({
         id: 'estimation',
         element: (
-          <div key="estimation" className="min-w-0 shrink-0">
+          <div
+            key="estimation"
+            className="min-w-0 shrink-0"
+            ref={(el) => {
+              if (el) badgeRefs.current.set('estimation', el);
+            }}
+          >
             <TaskEstimationDisplay
               points={task.estimation_points}
               size="sm"
@@ -522,7 +550,13 @@ function TaskCardInner({
       badges.push({
         id: 'labels',
         element: (
-          <div key="labels" className="flex min-w-0 shrink-0 flex-wrap gap-1">
+          <div
+            key="labels"
+            className="flex min-w-0 shrink-0 flex-wrap gap-1"
+            ref={(el) => {
+              if (el) badgeRefs.current.set('labels', el);
+            }}
+          >
             <TaskLabelsDisplay
               labels={[...task.labels].sort((a, b) =>
                 a.name.toLowerCase().localeCompare(b.name.toLowerCase())
@@ -536,8 +570,62 @@ function TaskCardInner({
     return badges;
   }, [task, boardConfig, descriptionMeta]);
 
-  const visibleBadges = taskBadges.slice(0, 2);
-  const hiddenBadges = taskBadges.slice(2);
+  // Calculate visible badges based on available width
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const calculateVisibleBadges = () => {
+      const container = containerRef.current;
+      const hiddenBadgeNum = hiddenBadgeNumRef.current;
+      if (!container || !hiddenBadgeNum) return;
+
+      const containerWidth = container.clientWidth;
+      const gap = 4; // gap-1 = 4px
+
+      // Get description meta width
+      let descriptionMetaWidth = 0;
+      if (descriptionMetaRef.current) {
+        descriptionMetaWidth = descriptionMetaRef.current.offsetWidth + gap;
+      }
+
+      // Calculate total width needed for each badge
+      let totalWidth = descriptionMetaWidth;
+      let count = 0;
+
+      for (let i = 0; i < taskBadges.length; i++) {
+        const badge = taskBadges[i];
+        const badgeElement = badgeRefs.current.get(badge?.id || '');
+        if (!badgeElement) continue;
+
+        const isLastBadge = i === taskBadges.length - 1;
+        const badgeWidth = badgeElement.offsetWidth + (isLastBadge ? 0 : gap);
+
+        const totalNeeded = totalWidth + badgeWidth;
+
+        if (totalNeeded <= containerWidth) {
+          totalWidth += badgeWidth;
+          count = i + 1;
+        } else {
+          break;
+        }
+      }
+
+      // Ensure at least 0 badges are visible
+      setVisibleBadgeCount(Math.max(0, count));
+    };
+
+    // Initial calculation
+    calculateVisibleBadges();
+
+    // Recalculate on resize
+    const resizeObserver = new ResizeObserver(calculateVisibleBadges);
+    resizeObserver.observe(containerRef.current);
+
+    return () => resizeObserver.disconnect();
+  }, [taskBadges]);
+
+  const visibleBadges = taskBadges.slice(0, visibleBadgeCount);
+  const hiddenBadges = taskBadges.slice(visibleBadgeCount);
 
   return (
     <Card
@@ -965,12 +1053,16 @@ function TaskCardInner({
             Hide bottom row entirely when in done/closed list
           */
           <div className="flex items-center gap-2">
-            <div className="scrollbar-hide flex w-full min-w-0 items-center gap-1 overflow-auto whitespace-nowrap rounded-lg">
+            <div
+              ref={containerRef}
+              className="scrollbar-hide flex w-full items-center gap-1 overflow-auto whitespace-nowrap rounded-lg"
+            >
               {visibleBadges.map((badge) => badge.element)}
               {hiddenBadges.length > 0 && (
                 <HoverCard openDelay={200}>
                   <HoverCardTrigger asChild>
                     <Badge
+                      ref={hiddenBadgeNumRef}
                       variant="secondary"
                       className="cursor-pointer border border-border bg-muted/50 font-medium text-[10px] text-muted-foreground hover:bg-muted"
                     >
@@ -997,7 +1089,10 @@ function TaskCardInner({
                 descriptionMeta.hasImages ||
                 descriptionMeta.hasVideos ||
                 descriptionMeta.hasLinks) && (
-                <div className="flex min-w-0 shrink-0 items-center gap-0.5">
+                <div
+                  ref={descriptionMetaRef}
+                  className="flex min-w-0 shrink-0 items-center gap-0.5"
+                >
                   {descriptionMeta.hasText && (
                     <div
                       className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
