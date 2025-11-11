@@ -1,14 +1,74 @@
 {
   "name": "@tuturuuu/supabase",
+  "version": "0.2.3",
+  "description": "Supabase client and utilities for Next.js applications with SSR support, cookie handling, and TypeScript type safety",
+  "keywords": [
+    "supabase",
+    "nextjs",
+    "ssr",
+    "database",
+    "authentication",
+    "postgresql",
+    "realtime",
+    "typescript"
+  ],
   "license": "MIT",
-  "version": "0.1.1",
-  "main": "./src/index.ts",
+  "author": "Tuturuuu",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tutur3u/platform.git",
+    "directory": "packages/supabase"
+  },
+  "bugs": {
+    "url": "https://github.com/tutur3u/platform/issues"
+  },
+  "homepage": "https://github.com/tutur3u/platform/tree/main/packages/supabase#readme",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "src", "README.md", "LICENSE"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./next/client": {
+      "types": "./dist/next/client.d.ts",
+      "default": "./dist/next/client.js"
+    },
+    "./next/common": {
+      "types": "./dist/next/common.d.ts",
+      "default": "./dist/next/common.js"
+    },
+    "./next/proxy": {
+      "types": "./dist/next/proxy.d.ts",
+      "default": "./dist/next/proxy.js"
+    },
+    "./next/realtime": {
+      "types": "./dist/next/realtime.d.ts",
+      "default": "./dist/next/realtime.js"
+    },
+    "./next/server": {
+      "types": "./dist/next/server.d.ts",
+      "default": "./dist/next/server.js"
+    },
+    "./next/user": {
+      "types": "./dist/next/user.d.ts",
+      "default": "./dist/next/user.js"
+    }
+  },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
+    "build": "tsc --build",
+    "build:watch": "tsc --build --watch",
+    "clean": "rm -rf dist .turbo",
+    "prepublishOnly": "bun run clean && bun run build",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",
@@ -23,11 +83,19 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.10.0",
     "@types/react": "^19.2.2",
+    "next": "^16.0.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.8"
   },
-  "exports": {
-    "./*": "./src/*.ts"
+  "peerDependencies": {
+    "next": ">=15.0.0",
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
   },
-  "packageManager": "bun@1.3.1"
+  "packageManager": "bun@1.3.1",
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }

@@ -261,7 +261,6 @@ export type NovaSubmissionData = NovaSubmissionWithScores & {
     email?: string | null;
   };
 };
-
 export type CourseCertificate = Tables<'course_certificates'>;
 export type CertificateTemplate =
   Database['public']['Enums']['certificate_templates'];

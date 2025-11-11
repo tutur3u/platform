@@ -3589,6 +3589,324 @@ export type Database = {
           },
         ];
       };
+      notification_batches: {
+        Row: {
+          channel: string;
+          created_at: string;
+          email: string | null;
+          error_message: string | null;
+          id: string;
+          notification_count: number;
+          sent_at: string | null;
+          status: string;
+          updated_at: string;
+          user_id: string | null;
+          window_end: string;
+          window_start: string;
+          ws_id: string | null;
+        };
+        Insert: {
+          channel: string;
+          created_at?: string;
+          email?: string | null;
+          error_message?: string | null;
+          id?: string;
+          notification_count?: number;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id?: string | null;
+          window_end: string;
+          window_start: string;
+          ws_id?: string | null;
+        };
+        Update: {
+          channel?: string;
+          created_at?: string;
+          email?: string | null;
+          error_message?: string | null;
+          id?: string;
+          notification_count?: number;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id?: string | null;
+          window_end?: string;
+          window_start?: string;
+          ws_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notification_batches_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notification_batches_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      notification_delivery_log: {
+        Row: {
+          batch_id: string | null;
+          channel: string;
+          created_at: string;
+          error_message: string | null;
+          id: string;
+          notification_id: string;
+          retry_count: number;
+          sent_at: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          batch_id?: string | null;
+          channel: string;
+          created_at?: string;
+          error_message?: string | null;
+          id?: string;
+          notification_id: string;
+          retry_count?: number;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          batch_id?: string | null;
+          channel?: string;
+          created_at?: string;
+          error_message?: string | null;
+          id?: string;
+          notification_id?: string;
+          retry_count?: number;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notification_delivery_log_batch_id_fkey';
+            columns: ['batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'notification_batches';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notification_delivery_log_notification_id_fkey';
+            columns: ['notification_id'];
+            isOneToOne: false;
+            referencedRelation: 'notifications';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      notification_preferences: {
+        Row: {
+          channel: string;
+          created_at: string;
+          enabled: boolean;
+          event_type: string;
+          id: string;
+          scope: Database['public']['Enums']['notification_scope'];
+          updated_at: string;
+          user_id: string;
+          ws_id: string | null;
+        };
+        Insert: {
+          channel: string;
+          created_at?: string;
+          enabled?: boolean;
+          event_type: string;
+          id?: string;
+          scope?: Database['public']['Enums']['notification_scope'];
+          updated_at?: string;
+          user_id: string;
+          ws_id?: string | null;
+        };
+        Update: {
+          channel?: string;
+          created_at?: string;
+          enabled?: boolean;
+          event_type?: string;
+          id?: string;
+          scope?: Database['public']['Enums']['notification_scope'];
+          updated_at?: string;
+          user_id?: string;
+          ws_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notification_preferences_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notification_preferences_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      notifications: {
+        Row: {
+          action_url: string | null;
+          archived_at: string | null;
+          code: string | null;
+          created_at: string;
+          created_by: string | null;
+          data: Json | null;
+          description: string | null;
+          email: string | null;
+          entity_id: string | null;
+          entity_type: string | null;
+          expires_at: string | null;
+          id: string;
+          metadata: Json | null;
+          parent_id: string | null;
+          priority: Database['public']['Enums']['notification_priority'];
+          read_at: string | null;
+          scope: Database['public']['Enums']['notification_scope'];
+          title: string;
+          type: string;
+          user_id: string | null;
+          ws_id: string | null;
+        };
+        Insert: {
+          action_url?: string | null;
+          archived_at?: string | null;
+          code?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          data?: Json | null;
+          description?: string | null;
+          email?: string | null;
+          entity_id?: string | null;
+          entity_type?: string | null;
+          expires_at?: string | null;
+          id?: string;
+          metadata?: Json | null;
+          parent_id?: string | null;
+          priority?: Database['public']['Enums']['notification_priority'];
+          read_at?: string | null;
+          scope?: Database['public']['Enums']['notification_scope'];
+          title: string;
+          type: string;
+          user_id?: string | null;
+          ws_id?: string | null;
+        };
+        Update: {
+          action_url?: string | null;
+          archived_at?: string | null;
+          code?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          data?: Json | null;
+          description?: string | null;
+          email?: string | null;
+          entity_id?: string | null;
+          entity_type?: string | null;
+          expires_at?: string | null;
+          id?: string;
+          metadata?: Json | null;
+          parent_id?: string | null;
+          priority?: Database['public']['Enums']['notification_priority'];
+          read_at?: string | null;
+          scope?: Database['public']['Enums']['notification_scope'];
+          title?: string;
+          type?: string;
+          user_id?: string | null;
+          ws_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notifications_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'notifications_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'notifications_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notifications_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notifications_parent_id_fkey';
+            columns: ['parent_id'];
+            isOneToOne: false;
+            referencedRelation: 'notifications';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notifications_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'notifications_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'notifications_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notifications_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notifications_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notifications_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       nova_challenge_criteria: {
         Row: {
           challenge_id: string;
@@ -5621,6 +5939,53 @@ export type Database = {
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_history: {
+        Row: {
+          change_type: string;
+          changed_at: string;
+          changed_by: string | null;
+          deleted_at: string | null;
+          field_name: string | null;
+          id: string;
+          metadata: Json | null;
+          new_value: Json | null;
+          old_value: Json | null;
+          task_id: string;
+        };
+        Insert: {
+          change_type: string;
+          changed_at?: string;
+          changed_by?: string | null;
+          deleted_at?: string | null;
+          field_name?: string | null;
+          id?: string;
+          metadata?: Json | null;
+          new_value?: Json | null;
+          old_value?: Json | null;
+          task_id: string;
+        };
+        Update: {
+          change_type?: string;
+          changed_at?: string;
+          changed_by?: string | null;
+          deleted_at?: string | null;
+          field_name?: string | null;
+          id?: string;
+          metadata?: Json | null;
+          new_value?: Json | null;
+          old_value?: Json | null;
+          task_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_history_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
             referencedColumns: ['id'];
           },
         ];
@@ -12499,6 +12864,10 @@ export type Database = {
       };
     };
     Functions: {
+      archive_old_notifications: {
+        Args: { p_days_threshold?: number };
+        Returns: number;
+      };
       atomic_sync_token_operation: {
         Args: {
           p_calendar_id?: string;
@@ -12537,6 +12906,7 @@ export type Database = {
       };
       check_ws_creator: { Args: { ws_id: string }; Returns: boolean };
       cleanup_expired_cross_app_tokens: { Args: never; Returns: undefined };
+      cleanup_expired_notifications: { Args: never; Returns: number };
       cleanup_old_api_key_usage_logs: { Args: never; Returns: undefined };
       cleanup_old_typing_indicators: { Args: never; Returns: undefined };
       cleanup_role_inconsistencies: { Args: never; Returns: undefined };
@@ -12585,6 +12955,47 @@ export type Database = {
           user_id: string;
           workspace_id: string;
         }[];
+      };
+      create_notification: {
+        Args: {
+          p_code?: string;
+          p_created_by?: string;
+          p_data?: Json;
+          p_description?: string;
+          p_email?: string;
+          p_entity_id?: string;
+          p_entity_type?: string;
+          p_priority?: Database['public']['Enums']['notification_priority'];
+          p_scope?: Database['public']['Enums']['notification_scope'];
+          p_title?: string;
+          p_type?: string;
+          p_user_id?: string;
+          p_ws_id?: string;
+        };
+        Returns: string;
+      };
+      create_system_announcement: {
+        Args: {
+          p_action_url?: string;
+          p_data?: Json;
+          p_description: string;
+          p_expires_at?: string;
+          p_priority?: Database['public']['Enums']['notification_priority'];
+          p_title: string;
+        };
+        Returns: string;
+      };
+      create_user_notification: {
+        Args: {
+          p_action_url?: string;
+          p_data?: Json;
+          p_description?: string;
+          p_priority?: Database['public']['Enums']['notification_priority'];
+          p_title: string;
+          p_type: string;
+          p_user_id: string;
+        };
+        Returns: string;
       };
       extract_domain: { Args: { url: string }; Returns: string };
       extract_referrer_domain: { Args: { url: string }; Returns: string };
@@ -12969,6 +13380,26 @@ export type Database = {
           os: string;
         }[];
       };
+      get_or_create_notification_batch:
+        | {
+            Args: {
+              p_channel: string;
+              p_email?: string;
+              p_user_id: string;
+              p_window_minutes?: number;
+              p_ws_id: string;
+            };
+            Returns: string;
+          }
+        | {
+            Args: {
+              p_channel: string;
+              p_user_id: string;
+              p_window_minutes?: number;
+              p_ws_id: string;
+            };
+            Returns: string;
+          };
       get_pending_event_participants: {
         Args: { _event_id: string };
         Returns: number;
@@ -13117,6 +13548,20 @@ export type Database = {
           unique_users_count: number;
         }[];
       };
+      get_task_details: {
+        Args: { p_task_id: string };
+        Returns: {
+          board_id: string;
+          board_name: string;
+          creator_id: string;
+          list_id: string;
+          list_name: string;
+          task_id: string;
+          task_name: string;
+          ws_id: string;
+        }[];
+      };
+      get_task_workspace_id: { Args: { p_task_id: string }; Returns: string };
       get_time_tracking_daily_activity: {
         Args: { p_days_back?: number; p_user_id?: string; p_ws_id: string };
         Returns: Json;
@@ -13226,6 +13671,7 @@ export type Database = {
           user_count: number;
         }[];
       };
+      get_user_email: { Args: { p_user_id: string }; Returns: string };
       get_user_growth_comparison: {
         Args: never;
         Returns: {
@@ -13504,6 +13950,17 @@ export type Database = {
         Args: { chat_id: string; message: string; source: string };
         Returns: undefined;
       };
+      insert_task_history: {
+        Args: {
+          p_change_type: string;
+          p_field_name?: string;
+          p_metadata?: Json;
+          p_new_value?: Json;
+          p_old_value?: Json;
+          p_task_id: string;
+        };
+        Returns: string;
+      };
       is_list_accessible: { Args: { _list_id: string }; Returns: boolean };
       is_member_invited: {
         Args: { _org_id: string; _user_id: string };
@@ -13596,6 +14053,7 @@ export type Database = {
           os: string;
         }[];
       };
+      process_notification_batches: { Args: never; Returns: undefined };
       process_recurring_transactions: {
         Args: never;
         Returns: {
@@ -13655,12 +14113,28 @@ export type Database = {
           relevance: number;
         }[];
       };
+      should_send_notification: {
+        Args: {
+          p_channel: string;
+          p_event_type: string;
+          p_scope?: Database['public']['Enums']['notification_scope'];
+          p_user_id: string;
+          p_ws_id?: string;
+        };
+        Returns: boolean;
+      };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { '': string }; Returns: string[] };
       sum_quiz_scores: {
         Args: { p_set_id: string };
         Returns: {
           sum: number;
+        }[];
+      };
+      sync_my_notifications: {
+        Args: never;
+        Returns: {
+          updated_count: number;
         }[];
       };
       transactions_have_same_abs_amount: {
@@ -13718,6 +14192,8 @@ export type Database = {
         | 'ENABLE_EDUCATION'
         | 'ENABLE_CHALLENGES'
         | 'ENABLE_QUIZZES';
+      notification_priority: 'low' | 'medium' | 'high' | 'urgent';
+      notification_scope: 'user' | 'workspace' | 'system';
       platform_service: 'TUTURUUU' | 'REWISE' | 'NOVA' | 'UPSKII';
       product:
         | 'web'
@@ -13971,6 +14447,8 @@ export const Constants = {
         'ENABLE_CHALLENGES',
         'ENABLE_QUIZZES',
       ],
+      notification_priority: ['low', 'medium', 'high', 'urgent'],
+      notification_scope: ['user', 'workspace', 'system'],
       platform_service: ['TUTURUUU', 'REWISE', 'NOVA', 'UPSKII'],
       product: [
         'web',

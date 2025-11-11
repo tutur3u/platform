@@ -41,6 +41,7 @@
     "test:watch": "turbo run test:watch",
     "format": "biome format",
     "format:fix": "biome format --write",
+    "ff": "biome format --write",
     "lint": "biome lint",
     "lint:fix": "biome lint --write",
     "format-and-lint": "biome check",
