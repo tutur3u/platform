@@ -50,6 +50,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/sonner';
+import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useTranslations } from 'next-intl';
@@ -1125,6 +1126,16 @@ function formatValue(value: any, field: string): string {
       return `${num} hour${num !== 1 ? 's' : ''}`;
     }
     return String(value);
+  }
+
+  // Handle description fields - extract text from TipTap JSON
+  if (field === 'description') {
+    const descriptionText = getDescriptionText(value);
+    // Truncate long descriptions
+    if (descriptionText.length > 50) {
+      return `${descriptionText.substring(0, 50)}...`;
+    }
+    return descriptionText || 'Not set';
   }
 
   // Handle long strings

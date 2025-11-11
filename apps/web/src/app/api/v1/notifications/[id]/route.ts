@@ -81,6 +81,23 @@ export async function PATCH(
     const belongsToUser = userIdMatches || emailMatches;
 
     if (!belongsToUser) {
+      console.error('ACCESS DENIED - Notification update failed:', {
+        notificationId: id,
+        notification: {
+          user_id: notification.user_id,
+          email: notification.email,
+          ws_id: notification.ws_id,
+        },
+        currentUser: {
+          id: user.id,
+          email: userEmail,
+        },
+        checks: {
+          userIdMatches,
+          emailMatches,
+          belongsToUser,
+        },
+      });
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
@@ -95,7 +112,14 @@ export async function PATCH(
       .eq('id', id);
 
     if (error) {
-      console.error('Error updating notification:', error);
+      console.error('Error updating notification:', {
+        error,
+        notificationId: id,
+        userId: user.id,
+        update,
+        message:
+          'RLS policy may be blocking this update. Check if migrations are applied.',
+      });
       return NextResponse.json(
         { error: 'Failed to update notification' },
         { status: 500 }
@@ -117,7 +141,7 @@ export async function PATCH(
  * Deletes a single notification
  */
 export async function DELETE(
-  req: Request,
+  _: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
