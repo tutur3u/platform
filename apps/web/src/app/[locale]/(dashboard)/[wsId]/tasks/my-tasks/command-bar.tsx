@@ -239,9 +239,9 @@ export function CommandBar({
       {/* Subtle glow effect */}
       <div className="-z-10 absolute inset-0 rounded-2xl bg-linear-to-br from-primary/8 to-dynamic-purple/6 opacity-0 blur-2xl transition-opacity duration-500 group-focus-within:opacity-100 md:rounded-3xl" />
       {/* Main Input Area */}
-      <div className="group relative rounded-2xl border border-border/0 bg-linear-to-br from-background to-primary/15 transition-all duration-300 hover:shadow-xl focus-within:border-white/10 focus-within:shadow-[0_20px_50px_-15px_rgba(var(--primary)/0.15)] md:rounded-3xl">
+      <div className="group relative rounded-2xl border border-border/0 bg-linear-to-br from-background to-primary/15 transition-all duration-300 focus-within:border-border/40 focus-within:shadow-[0_20px_50px_-15px_rgba(var(--primary)/0.15)] hover:shadow-xl md:rounded-3xl">
         {/* Scrollable Textarea Container */}
-        <div className="mt-4 mx-4 max-h-[220px] overflow-y-auto md:max-h-[250px] overflow-hidden [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-foreground/30">
+        <div className="mx-4 mt-4 max-h-[220px] overflow-hidden overflow-y-auto md:max-h-[250px] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-2">
           <Textarea
             id="my-tasks-command-bar-textarea"
             value={value}
@@ -254,7 +254,7 @@ export function CommandBar({
         </div>
 
         {/* Bottom Action Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/5 px-3 py-3 sm:flex-nowrap md:px-4 md:py-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-border/5 border-t px-3 py-3 sm:flex-nowrap md:px-4 md:py-4">
           {/* Left Side: Location + Settings + AI + Destination Display */}
           <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Location Button - Only for Tasks */}
