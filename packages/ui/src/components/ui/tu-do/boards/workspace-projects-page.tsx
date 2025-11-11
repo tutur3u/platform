@@ -11,7 +11,6 @@ import {
   isPersonalWorkspace,
 } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
-import { EnhancedBoardsView } from './enhanced-boards-view';
 import { WorkspaceProjectsHeader } from './workspace-projects-header';
 
 interface Props {
