@@ -1,6 +1,5 @@
 'use client';
 
-import type { Workspace } from '@tuturuuu/types';
 import { Plus } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
@@ -8,13 +7,22 @@ import { useState } from 'react';
 import { EnhancedBoardsView } from './enhanced-boards-view';
 import { TaskBoardForm } from './form';
 
+interface WorkspaceInfo {
+  id: string;
+  name: string | null;
+  avatar_url: string | null;
+  logo_url: string | null;
+  personal: boolean;
+  created_at: string | null;
+}
+
 interface WorkspaceProjectsHeaderProps {
   isPersonal: boolean;
   personalWorkspaceId?: string;
   defaultWsId?: string;
   wsId: string;
   wsIds?: string[];
-  workspaces?: Workspace[];
+  workspaces?: WorkspaceInfo[];
 }
 
 export function WorkspaceProjectsHeader({

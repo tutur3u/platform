@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { X } from '@tuturuuu/icons';
-import type { Workspace, WorkspaceTaskBoard } from '@tuturuuu/types';
+import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { useBoardActions } from '@tuturuuu/ui/hooks/use-board-actions';
@@ -13,6 +13,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BOARD_RETENTION_DAYS } from '../../../../constants/boards';
 import { BoardViews } from './board-views';
 import { CopyBoardDialog } from './copy-board-dialog';
+
+interface WorkspaceInfo {
+  id: string;
+  name: string | null;
+  avatar_url: string | null;
+  logo_url: string | null;
+  personal: boolean;
+  created_at: string | null;
+}
 
 interface AnalyticsFilters {
   timeView: 'week' | 'month' | 'year';
@@ -32,7 +41,7 @@ interface EnhancedBoardsViewProps {
   wsId: string;
   wsIds?: string[];
   isPersonal?: boolean;
-  workspaces?: Workspace[];
+  workspaces?: WorkspaceInfo[];
   onSelectedWorkspaceChange?: (wsId: string | null) => void;
 }
 
@@ -97,7 +106,7 @@ export function EnhancedBoardsView({
   );
 
   const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(
-    personalWs?.id || (workspaces && workspaces[0]?.id) || null
+    personalWs?.id || workspaces?.[0]?.id || null
   );
 
   useEffect(() => {
