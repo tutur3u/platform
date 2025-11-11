@@ -293,7 +293,7 @@ export default function MyTasksContent({
 
   // Fetch workspace labels (always fetch for CommandBar)
   const { data: workspaceLabels = [] } = useQuery({
-    queryKey: ['workspaceLabels', allWorkspaceIds],
+    queryKey: ['workspaceLabels', JSON.stringify(allWorkspaceIds)],
     queryFn: async () => {
       if (allWorkspaceIds.length === 0) return [];
       const promises = allWorkspaceIds.map((wsId) =>
@@ -307,7 +307,7 @@ export default function MyTasksContent({
 
   // Fetch workspace projects for CommandBar
   const { data: workspaceProjects = [] } = useQuery({
-    queryKey: ['workspaceProjects', allWorkspaceIds],
+    queryKey: ['workspaceProjects', JSON.stringify(allWorkspaceIds)],
     queryFn: async () => {
       if (allWorkspaceIds.length === 0) return [];
       const supabase = createClient();

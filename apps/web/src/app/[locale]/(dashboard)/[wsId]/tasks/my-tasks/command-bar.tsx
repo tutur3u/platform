@@ -239,19 +239,22 @@ export function CommandBar({
       {/* Subtle glow effect */}
       <div className="-z-10 absolute inset-0 rounded-2xl bg-linear-to-br from-primary/8 to-dynamic-purple/6 opacity-0 blur-2xl transition-opacity duration-500 group-focus-within:opacity-100 md:rounded-3xl" />
       {/* Main Input Area */}
-      <div className="group relative">
-        <Textarea
-          id="my-tasks-command-bar-textarea"
-          value={value}
-          onChange={(e) => onValueChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="What's on your mind?"
-          className="max-h-[280px] min-h-[150px] resize-none rounded-2xl border border-border/0 bg-linear-to-br from-background to-primary/15 px-4 pt-4 pb-14 text-base leading-relaxed transition-all duration-300 placeholder:text-muted-foreground/40 hover:shadow-xl focus-visible:border-white/10 focus-visible:shadow-[0_20px_50px_-15px_rgba(var(--primary)/0.15)] focus-visible:ring-0 sm:px-6 md:min-h-[200px] md:rounded-3xl md:px-8 md:pt-6 md:pb-16 md:text-lg lg:text-xl"
-          disabled={isLoading}
-        />
+      <div className="group relative rounded-2xl border border-border/0 bg-linear-to-br from-background to-primary/15 transition-all duration-300 hover:shadow-xl focus-within:border-white/10 focus-within:shadow-[0_20px_50px_-15px_rgba(var(--primary)/0.15)] md:rounded-3xl">
+        {/* Scrollable Textarea Container */}
+        <div className="mt-4 mx-4 max-h-[220px] overflow-y-auto md:max-h-[250px] overflow-hidden [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-foreground/30">
+          <Textarea
+            id="my-tasks-command-bar-textarea"
+            value={value}
+            onChange={(e) => onValueChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="What's on your mind?"
+            className="h-full w-full resize-none border-0 bg-transparent p-2 text-base leading-relaxed placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-0 sm:px-6 md:min-h-[100px] md:px-2 md:pt-2 md:text-lg lg:text-xl"
+            disabled={isLoading}
+          />
+        </div>
 
         {/* Bottom Action Bar */}
-        <div className="absolute right-3 bottom-3 left-3 flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap md:right-4 md:bottom-4 md:left-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/5 px-3 py-3 sm:flex-nowrap md:px-4 md:py-4">
           {/* Left Side: Location + Settings + AI + Destination Display */}
           <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Location Button - Only for Tasks */}
