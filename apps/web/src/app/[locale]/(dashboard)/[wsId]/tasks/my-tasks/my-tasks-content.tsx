@@ -2,12 +2,15 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  Box,
   Calendar,
   Clock,
   Flag,
   LayoutDashboard,
   ListTodo,
+  Tag,
   Users,
+  X,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskWithRelations } from '@tuturuuu/types';
@@ -31,6 +34,12 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@tuturuuu/ui/tooltip';
 import { TaskNewLabelDialog } from '@tuturuuu/ui/tu-do/boards/boardId/task-dialogs/TaskNewLabelDialog';
 import { TaskNewProjectDialog } from '@tuturuuu/ui/tu-do/boards/boardId/task-dialogs/TaskNewProjectDialog';
 import { TaskBoardForm } from '@tuturuuu/ui/tu-do/boards/form';
@@ -44,11 +53,10 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CommandBar, type TaskOptions } from './command-bar';
+import { LabelProjectFilter } from './label-project-filter';
+import { TaskFilter } from './task-filter';
 import TaskList from './task-list';
-import type {
-  JournalTaskResponse,
-  WorkspaceLabel,
-} from './task-preview-dialog';
+import type { JournalTaskResponse } from './task-preview-dialog';
 import { TaskPreviewDialog } from './task-preview-dialog';
 
 dayjs.extend(utc);
@@ -91,6 +99,18 @@ export default function MyTasksContent({
   const [newListName, setNewListName] = useState<string>('');
   const [commandBarLoading, setCommandBarLoading] = useState(false);
   const [commandBarInput, setCommandBarInput] = useState('');
+
+  const [taskFilters, setTaskFilters] = useState<{
+    workspaceIds: string[];
+    boardIds: string[];
+    labelIds: string[];
+    projectIds: string[];
+  }>({
+    workspaceIds: ['all'],
+    boardIds: ['all'],
+    labelIds: [],
+    projectIds: [],
+  });
 
   // Task creation state
   const [pendingTaskTitle, setPendingTaskTitle] = useState<string>('');
@@ -208,7 +228,32 @@ export default function MyTasksContent({
       if (error) throw error;
       return data || [];
     },
-    enabled: isPersonal && boardSelectorOpen,
+    enabled: isPersonal,
+  });
+
+  const { data: allBoardsData = [] } = useQuery({
+    queryKey: ['all-user-boards'],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data: memberData, error: memberError } = await supabase
+        .from('workspace_members')
+        .select('ws_id');
+
+      if (memberError) throw memberError;
+
+      const workspaceIds = memberData?.map((m) => m.ws_id) || [];
+      if (workspaceIds.length === 0) return [];
+
+      const { data, error } = await supabase
+        .from('workspace_boards')
+        .select('id, name, ws_id')
+        .in('ws_id', workspaceIds)
+        .is('deleted_at', null);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isPersonal,
   });
 
   // Fetch all boards with their lists for selected workspace
@@ -241,32 +286,41 @@ export default function MyTasksContent({
     ? boardsDataRaw
     : ((boardsDataRaw as any)?.boards ?? []);
 
+  const allWorkspaceIds = useMemo(
+    () => workspacesData?.map((ws) => ws.id) || [],
+    [workspacesData]
+  );
+
   // Fetch workspace labels (always fetch for CommandBar)
   const { data: workspaceLabels = [] } = useQuery({
-    queryKey: ['workspace', wsId, 'labels'],
+    queryKey: ['workspaceLabels', JSON.stringify(allWorkspaceIds)],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/labels`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch labels');
-      }
-      return (await response.json()) as WorkspaceLabel[];
+      if (allWorkspaceIds.length === 0) return [];
+      const promises = allWorkspaceIds.map((wsId) =>
+        fetch(`/api/v1/workspaces/${wsId}/labels`).then((res) => res.json())
+      );
+      const results = await Promise.all(promises);
+      return results.flat().filter(Boolean);
     },
+    enabled: isPersonal && allWorkspaceIds.length > 0,
   });
 
   // Fetch workspace projects for CommandBar
   const { data: workspaceProjects = [] } = useQuery({
-    queryKey: ['workspace', wsId, 'projects'],
+    queryKey: ['workspaceProjects', JSON.stringify(allWorkspaceIds)],
     queryFn: async () => {
+      if (allWorkspaceIds.length === 0) return [];
       const supabase = createClient();
       const { data, error } = await supabase
         .from('task_projects')
-        .select('id, name')
-        .eq('ws_id', wsId)
+        .select('id, name, ws_id')
+        .in('ws_id', allWorkspaceIds)
         .order('name', { ascending: true });
 
       if (error) throw error;
       return data || [];
     },
+    enabled: isPersonal && allWorkspaceIds.length > 0,
   });
 
   // Fetch workspace members for CommandBar
@@ -638,6 +692,21 @@ export default function MyTasksContent({
     setTaskCreatorMode(null);
   };
 
+  const handleFilterChange = useCallback(
+    (newFilters: Partial<typeof taskFilters>) => {
+      setTaskFilters((prev) => ({ ...prev, ...newFilters }));
+    },
+    []
+  );
+
+  const handleLabelFilterChange = useCallback((ids: string[]) => {
+    setTaskFilters((prev) => ({ ...prev, labelIds: ids }));
+  }, []);
+
+  const handleProjectFilterChange = useCallback((ids: string[]) => {
+    setTaskFilters((prev) => ({ ...prev, projectIds: ids }));
+  }, []);
+
   // Label creation handlers
   const handleCreateNewLabel = async () => {
     if (!newLabelName.trim()) return;
@@ -707,6 +776,146 @@ export default function MyTasksContent({
       setSelectedListId('');
     }
   }, [selectedWorkspaceId, boardSelectorOpen]);
+
+  const allVisibleTasks = useMemo(() => {
+    return [
+      ...(overdueTasks || []),
+      ...(todayTasks || []),
+      ...(upcomingTasks || []),
+    ];
+  }, [overdueTasks, todayTasks, upcomingTasks]);
+
+  const allVisibleLabels = useMemo(() => {
+    const labelIds = new Set<string>();
+    allVisibleTasks.forEach((task) => {
+      task.labels?.forEach((l) => {
+        if (l.label) {
+          labelIds.add(l.label.id);
+        }
+      });
+    });
+    return workspaceLabels.filter((label) => labelIds.has(label.id));
+  }, [allVisibleTasks, workspaceLabels]);
+
+  const allVisibleProjects = useMemo(() => {
+    const projectIds = new Set<string>();
+    allVisibleTasks.forEach((task) => {
+      task.projects?.forEach((p) => {
+        if (p.project) {
+          projectIds.add(p.project.id);
+        }
+      });
+    });
+    return workspaceProjects.filter((project) => projectIds.has(project.id));
+  }, [allVisibleTasks, workspaceProjects]);
+
+  const tasksFilteredByWorkspaceAndBoard = useMemo(() => {
+    const { workspaceIds, boardIds } = taskFilters;
+
+    if (workspaceIds.includes('all') && boardIds.includes('all')) {
+      return { overdueTasks, todayTasks, upcomingTasks };
+    }
+
+    const filterFn = (task: TaskWithRelations) => {
+      const wsOk =
+        workspaceIds.includes('all') ||
+        workspaceIds.includes(task.list?.board?.ws_id ?? '');
+      const boardOk =
+        boardIds.includes('all') ||
+        boardIds.includes(task.list?.board?.id ?? '');
+      return wsOk && boardOk;
+    };
+
+    return {
+      overdueTasks: overdueTasks?.filter(filterFn),
+      todayTasks: todayTasks?.filter(filterFn),
+      upcomingTasks: upcomingTasks?.filter(filterFn),
+    };
+  }, [taskFilters, overdueTasks, todayTasks, upcomingTasks]);
+
+  const availableLabels = useMemo(() => {
+    const { workspaceIds, boardIds } = taskFilters;
+    if (workspaceIds.includes('all') && boardIds.includes('all')) {
+      return allVisibleLabels;
+    }
+
+    const allTasks = [
+      ...(tasksFilteredByWorkspaceAndBoard.overdueTasks || []),
+      ...(tasksFilteredByWorkspaceAndBoard.todayTasks || []),
+      ...(tasksFilteredByWorkspaceAndBoard.upcomingTasks || []),
+    ];
+    const labelIds = new Set<string>();
+    allTasks.forEach((task) => {
+      task.labels?.forEach((l) => {
+        if (l.label) {
+          labelIds.add(l.label.id);
+        }
+      });
+    });
+    return allVisibleLabels.filter((label) => labelIds.has(label.id));
+  }, [tasksFilteredByWorkspaceAndBoard, allVisibleLabels, taskFilters]);
+
+  const availableProjects = useMemo(() => {
+    const { workspaceIds, boardIds } = taskFilters;
+    if (workspaceIds.includes('all') && boardIds.includes('all')) {
+      return allVisibleProjects;
+    }
+
+    const allTasks = [
+      ...(tasksFilteredByWorkspaceAndBoard.overdueTasks || []),
+      ...(tasksFilteredByWorkspaceAndBoard.todayTasks || []),
+      ...(tasksFilteredByWorkspaceAndBoard.upcomingTasks || []),
+    ];
+    const projectIds = new Set<string>();
+    allTasks.forEach((task) => {
+      task.projects?.forEach((p) => {
+        if (p.project) {
+          projectIds.add(p.project.id);
+        }
+      });
+    });
+    return allVisibleProjects.filter((project) => projectIds.has(project.id));
+  }, [tasksFilteredByWorkspaceAndBoard, allVisibleProjects, taskFilters]);
+
+  const filteredTasks = useMemo(() => {
+    const { workspaceIds, boardIds, labelIds, projectIds } = taskFilters;
+
+    if (
+      workspaceIds.includes('all') &&
+      boardIds.includes('all') &&
+      labelIds.length === 0 &&
+      projectIds.length === 0
+    ) {
+      return { overdueTasks, todayTasks, upcomingTasks };
+    }
+
+    const filterFn = (task: TaskWithRelations) => {
+      const wsOk =
+        workspaceIds.includes('all') ||
+        workspaceIds.includes(task.list?.board?.ws_id ?? '');
+      const boardOk =
+        boardIds.includes('all') ||
+        boardIds.includes(task.list?.board?.id ?? '');
+      const labelOk =
+        labelIds.length === 0 ||
+        task.labels?.some((l) => l.label && labelIds.includes(l.label.id));
+      const projectOk =
+        projectIds.length === 0 ||
+        task.projects?.some(
+          (p) => p.project && projectIds.includes(p.project.id)
+        );
+
+      return wsOk && boardOk && labelOk && projectOk;
+    };
+
+    return {
+      overdueTasks: overdueTasks?.filter(filterFn),
+      todayTasks: todayTasks?.filter(filterFn),
+      upcomingTasks: upcomingTasks?.filter(filterFn),
+    };
+  }, [taskFilters, overdueTasks, todayTasks, upcomingTasks]);
+
+  // Auto-select first board and list when dialog opens or workspace changes
 
   return (
     <div className="space-y-6">
@@ -796,14 +1005,219 @@ export default function MyTasksContent({
       {/* Spacer for breathing room */}
       <div className="h-4" />
 
+      {isPersonal && (
+        <div className="space-y-2">
+          <div className="flex flex-nowrap justify-start gap-2">
+            <TaskFilter
+              workspaces={(workspacesData || []).map((ws) => ({
+                ...ws,
+                name: ws.name || 'Unnamed Workspace',
+              }))}
+              boards={(allBoardsData || []).map((board) => ({
+                ...board,
+                name: board.name || 'Unnamed Board',
+              }))}
+              onFilterChange={handleFilterChange}
+              onCreateNewBoard={() => {
+                setNewBoardName('');
+                setNewBoardDialogOpen(true);
+              }}
+            />
+            <LabelProjectFilter
+              labels={availableLabels || []}
+              projects={availableProjects || []}
+              selectedLabelIds={taskFilters.labelIds}
+              selectedProjectIds={taskFilters.projectIds}
+              onSelectedLabelIdsChange={handleLabelFilterChange}
+              onSelectedProjectIdsChange={handleProjectFilterChange}
+            />
+
+            {/* Filter Chips */}
+            {(taskFilters.workspaceIds.length > 1 ||
+              !taskFilters.workspaceIds.includes('all') ||
+              taskFilters.boardIds.length > 1 ||
+              !taskFilters.boardIds.includes('all') ||
+              taskFilters.labelIds.length > 0 ||
+              taskFilters.projectIds.length > 0) && (
+              <div className="flex items-center gap-2">
+                {(!taskFilters.workspaceIds.includes('all') ||
+                  !taskFilters.boardIds.includes('all')) && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Badge
+                          variant="secondary"
+                          className="group/chip flex items-center gap-x-1.5 rounded-md bg-dynamic-blue/10 px-2.5 py-1 font-medium text-dynamic-blue text-sm"
+                        >
+                          <span>
+                            {(() => {
+                              const selectedWorkspaces = workspacesData?.filter(
+                                (ws) => taskFilters.workspaceIds.includes(ws.id)
+                              );
+                              const selectedBoards = allBoardsData?.filter(
+                                (b) => taskFilters.boardIds.includes(b.id)
+                              );
+
+                              const workspaceText =
+                                !taskFilters.workspaceIds.includes('all')
+                                  ? taskFilters.workspaceIds.length > 1
+                                    ? `${taskFilters.workspaceIds.length} Workspaces`
+                                    : selectedWorkspaces?.[0]?.name
+                                  : '';
+
+                              const boardText = !taskFilters.boardIds.includes(
+                                'all'
+                              )
+                                ? taskFilters.boardIds.length > 1
+                                  ? `${taskFilters.boardIds.length} Boards`
+                                  : selectedBoards?.[0]?.name
+                                : '';
+
+                              if (workspaceText && boardText) {
+                                return `${workspaceText} / ${boardText}`;
+                              } else if (workspaceText) {
+                                return workspaceText;
+                              } else if (boardText) {
+                                return boardText;
+                              }
+                              return '';
+                            })()}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setTaskFilters((prev) => ({
+                                ...prev,
+                                workspaceIds: ['all'],
+                                boardIds: ['all'],
+                              }))
+                            }
+                            className="h-full w-0 overflow-hidden pr-0 opacity-0 transition-all group-hover/chip:w-4 group-hover/chip:pr-1 group-hover/chip:opacity-100"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </Badge>
+                      </TooltipTrigger>
+                      {(taskFilters.workspaceIds.length > 1 ||
+                        taskFilters.boardIds.length > 1) && (
+                        <TooltipContent>
+                          {!taskFilters.workspaceIds.includes('all') &&
+                            workspacesData
+                              ?.filter((ws) =>
+                                taskFilters.workspaceIds.includes(ws.id)
+                              )
+                              .map((ws) => <div key={ws.id}>{ws.name}</div>)}
+                          {!taskFilters.boardIds.includes('all') &&
+                            allBoardsData
+                              ?.filter((b) =>
+                                taskFilters.boardIds.includes(b.id)
+                              )
+                              .map((b) => <div key={b.id}>{b.name}</div>)}
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                {taskFilters.labelIds.length > 0 && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Badge
+                          variant="secondary"
+                          className="group/chip flex items-center gap-x-1.5 rounded-md bg-dynamic-blue/10 px-2.5 py-1 font-medium text-dynamic-blue text-sm"
+                        >
+                          <Tag className="h-3.5 w-3.5" />
+                          <span>
+                            {taskFilters.labelIds.length > 1
+                              ? `${taskFilters.labelIds.length} Labels`
+                              : workspaceLabels?.find(
+                                  (l) => l.id === taskFilters.labelIds[0]
+                                )?.name}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setTaskFilters((prev) => ({
+                                ...prev,
+                                labelIds: [],
+                              }))
+                            }
+                            className="h-full w-0 overflow-hidden pr-0 opacity-0 transition-all group-hover/chip:w-4 group-hover/chip:pr-1 group-hover/chip:opacity-100"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </Badge>
+                      </TooltipTrigger>
+                      {taskFilters.labelIds.length > 1 && (
+                        <TooltipContent>
+                          {workspaceLabels
+                            ?.filter((l) => taskFilters.labelIds.includes(l.id))
+                            .map((l) => (
+                              <div key={l.id}>{l.name}</div>
+                            ))}
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                {taskFilters.projectIds.length > 0 && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Badge
+                          variant="secondary"
+                          className="group/chip flex items-center gap-x-1.5 rounded-md bg-dynamic-blue/10 px-2.5 py-1 font-medium text-dynamic-blue text-sm"
+                        >
+                          <Box className="h-3.5 w-3.5" />
+                          <span>
+                            {taskFilters.projectIds.length > 1
+                              ? `${taskFilters.projectIds.length} Projects`
+                              : workspaceProjects?.find(
+                                  (p) => p.id === taskFilters.projectIds[0]
+                                )?.name}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setTaskFilters((prev) => ({
+                                ...prev,
+                                projectIds: [],
+                              }))
+                            }
+                            className="h-full w-0 overflow-hidden pr-0 opacity-0 transition-all group-hover/chip:w-4 group-hover/chip:pr-1 group-hover/chip:opacity-100"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </Badge>
+                      </TooltipTrigger>
+                      {taskFilters.projectIds.length > 1 && (
+                        <TooltipContent>
+                          {workspaceProjects
+                            ?.filter((p) =>
+                              taskFilters.projectIds.includes(p.id)
+                            )
+                            .map((p) => (
+                              <div key={p.id}>{p.name}</div>
+                            ))}
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Content Area - Task List */}
       <div className="fade-in mt-6 animate-in space-y-6 duration-300">
         <TaskList
           isPersonal={isPersonal}
           commandBarLoading={commandBarLoading}
-          overdueTasks={overdueTasks}
-          todayTasks={todayTasks}
-          upcomingTasks={upcomingTasks}
+          overdueTasks={filteredTasks.overdueTasks}
+          todayTasks={filteredTasks.todayTasks}
+          upcomingTasks={filteredTasks.upcomingTasks}
           totalActiveTasks={totalActiveTasks}
           collapsedSections={collapsedSections}
           toggleSection={toggleSection}

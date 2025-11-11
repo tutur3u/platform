@@ -54,7 +54,7 @@ jobs:
         run: bun install
 
       - name: Build workspace dependencies
-        run: bunx turbo run build --filter='@tuturuuu/types'
+        run: bunx turbo run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase
 
       - name: Test
         run: bun run test

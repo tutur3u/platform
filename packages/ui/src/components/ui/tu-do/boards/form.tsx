@@ -169,7 +169,6 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
         // Pass the created board data (with id) to onFinish
         onFinish?.({ ...formData, id: newBoard.id });
         setOpen(false);
-        router.refresh();
         form.reset();
       }
     } catch (error) {

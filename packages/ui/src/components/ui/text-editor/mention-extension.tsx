@@ -315,21 +315,20 @@ export const Mention = Node.create({
       dom.appendChild(avatarWrapper);
       dom.appendChild(label);
 
-      // Make task mentions clickable
+      // Make task mentions clickable - open in new tab
       if (currentEntityType === 'task') {
         dom.style.cursor = 'pointer';
         dom.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          // Emit custom event that can be listened to by parent components
-          const event = new CustomEvent('taskMentionClick', {
-            detail: {
-              taskId: currentEntityId,
-              taskName: currentDisplayName,
-            },
-            bubbles: true,
-          });
-          dom.dispatchEvent(event);
+
+          // Extract workspace ID from current URL path
+          const pathSegments = window.location.pathname.split('/');
+          const wsId = pathSegments[1];
+
+          // Open task in new tab
+          const taskUrl = `/${wsId}/tasks/${currentEntityId}`;
+          window.open(taskUrl, '_blank', 'noopener,noreferrer');
         });
       }
 

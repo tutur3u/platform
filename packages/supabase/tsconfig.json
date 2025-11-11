@@ -3,8 +3,19 @@
   "compilerOptions": {
     "baseUrl": ".",
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "declarationDir": "dist",
+    "emitDeclarationOnly": false,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
   },
   "include": ["src"],
-  "exclude": ["node_modules", "dist", ".turbo"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".turbo",
+    "**/*.test.ts",
+    "**/__tests__/**"
+  ]
 }

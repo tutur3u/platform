@@ -9,8 +9,9 @@ import {
 } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
+import type { TaskEditDialogProps } from './task-edit-dialog';
 
-const TaskEditDialog = dynamic(
+const TaskEditDialog = dynamic<TaskEditDialogProps>(
   () =>
     import('./task-edit-dialog').then((mod) => ({
       default: mod.TaskEditDialog,
@@ -26,7 +27,7 @@ const TaskEditDialog = dynamic(
  * It lazy-loads the actual dialog component only when first opened
  */
 export function TaskDialogManager() {
-  const { state, triggerClose, triggerUpdate, openTaskById, closeDialog } =
+  const { state, triggerClose, triggerUpdate, closeDialog } =
     useTaskDialogContext();
   const router = useRouter();
   const pathname = usePathname();
@@ -83,13 +84,12 @@ export function TaskDialogManager() {
       task={state.task}
       boardId={state.boardId || ''}
       isOpen={state.isOpen}
-      onClose={handleClose}
-      onUpdate={triggerUpdate}
       availableLists={state.availableLists}
+      filters={state.filters}
       mode={state.mode}
       collaborationMode={state.collaborationMode}
-      onOpenTask={openTaskById}
-      filters={state.filters}
+      onClose={handleClose}
+      onUpdate={triggerUpdate}
     />
   );
 }
