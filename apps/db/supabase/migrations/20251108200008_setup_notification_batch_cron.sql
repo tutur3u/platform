@@ -15,20 +15,26 @@ DECLARE
   v_email_body TEXT;
   v_notification_count INTEGER;
 BEGIN
+  -- Harden search_path to prevent privilege escalation
+  SET LOCAL search_path = pg_temp, public;
+
   -- Find all pending batches where window_end has passed
+  -- Use FOR UPDATE SKIP LOCKED to atomically claim batches and prevent race conditions
   FOR v_batch IN
     SELECT *
     FROM public.notification_batches
     WHERE status = 'pending'
       AND window_end <= now()
     ORDER BY window_end ASC
+    FOR UPDATE SKIP LOCKED
   LOOP
     BEGIN
-      -- Mark batch as processing
+      -- Mark batch as processing (with status check to ensure we still own it)
       UPDATE public.notification_batches
       SET status = 'processing',
           updated_at = now()
-      WHERE id = v_batch.id;
+      WHERE id = v_batch.id
+        AND status = 'pending'; -- Double-check status hasn't changed
 
       -- Get all pending notifications for this batch
       v_notifications := '[]'::jsonb;
@@ -138,11 +144,25 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Schedule the function to run every 2 minutes
-SELECT cron.schedule(
-  'process-notification-batches',
-  '*/2 * * * *', -- Every 2 minutes
-  'SELECT public.process_notification_batches()'
-);
+-- Make idempotent by checking if job already exists
+DO $$
+BEGIN
+  -- Only create the cron job if it doesn't already exist
+  IF NOT EXISTS (
+    SELECT 1
+    FROM cron.job
+    WHERE jobname = 'process-notification-batches'
+  ) THEN
+    PERFORM cron.schedule(
+      'process-notification-batches',
+      '*/2 * * * *', -- Every 2 minutes
+      'SELECT public.process_notification_batches()'
+    );
+    RAISE NOTICE 'Created cron job: process-notification-batches';
+  ELSE
+    RAISE NOTICE 'Cron job already exists: process-notification-batches';
+  END IF;
+END $$;
 
 -- Add comment for documentation
 COMMENT ON FUNCTION public.process_notification_batches IS 'Processes pending notification batches and sends email digests. Runs every 2 minutes via pg_cron.';

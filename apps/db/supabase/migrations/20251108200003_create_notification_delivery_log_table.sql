@@ -12,6 +12,11 @@ CREATE TABLE IF NOT EXISTS public.notification_delivery_log (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Add CHECK constraints to validate channel and status values
+ALTER TABLE public.notification_delivery_log
+    ADD CONSTRAINT notification_delivery_log_channel_check CHECK (channel IN ('email', 'sms', 'push')),
+    ADD CONSTRAINT notification_delivery_log_status_check CHECK (status IN ('pending', 'sent', 'failed'));
+
 -- Add indexes for efficient querying
 CREATE INDEX IF NOT EXISTS idx_notification_delivery_log_notification ON public.notification_delivery_log(notification_id);
 CREATE INDEX IF NOT EXISTS idx_notification_delivery_log_status ON public.notification_delivery_log(status, channel);
@@ -35,14 +40,14 @@ CREATE POLICY "Users can view their own delivery logs"
 CREATE POLICY "System can insert delivery logs"
     ON public.notification_delivery_log
     FOR INSERT
-    WITH CHECK (true);
+    WITH CHECK (false);
 
 -- Policy: System can update delivery logs
 CREATE POLICY "System can update delivery logs"
     ON public.notification_delivery_log
     FOR UPDATE
-    USING (true)
-    WITH CHECK (true);
+    USING (false)
+    WITH CHECK (false);
 
 -- Function to update the updated_at timestamp
 CREATE OR REPLACE FUNCTION public.update_notification_delivery_log_updated_at()
@@ -63,5 +68,5 @@ CREATE TRIGGER update_notification_delivery_log_updated_at
 COMMENT ON TABLE public.notification_delivery_log IS 'Tracks delivery attempts for notifications via different channels (email, SMS, push)';
 COMMENT ON COLUMN public.notification_delivery_log.channel IS 'Delivery channel: email, sms, push';
 COMMENT ON COLUMN public.notification_delivery_log.status IS 'Delivery status: pending, sent, failed';
-COMMENT ON COLUMN public.notification_delivery_log.batch_id IS 'Reference to notification batch for grouped deliveries (5-15 min window)';
+COMMENT ON COLUMN public.notification_delivery_log.batch_id IS 'Reference to notification batch for grouped deliveries (10-minute window)';
 COMMENT ON COLUMN public.notification_delivery_log.retry_count IS 'Number of retry attempts for failed deliveries';

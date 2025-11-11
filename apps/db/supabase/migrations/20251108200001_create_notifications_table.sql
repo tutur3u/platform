@@ -14,6 +14,33 @@ CREATE TABLE IF NOT EXISTS public.notifications (
     created_by UUID -- User who triggered the notification (if applicable)
 );
 
+-- Add foreign key constraints with ON DELETE SET NULL
+-- (user_id is made nullable in a later migration to support system broadcasts)
+ALTER TABLE public.notifications
+    ADD CONSTRAINT notifications_user_id_fkey
+        FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL,
+    ADD CONSTRAINT notifications_created_by_fkey
+        FOREIGN KEY (created_by) REFERENCES public.users(id) ON DELETE SET NULL;
+
+-- Add CHECK constraint to validate notification types
+-- Note: If notification types grow significantly, consider migrating to a lookup table
+ALTER TABLE public.notifications
+    ADD CONSTRAINT notifications_type_check CHECK (type IN (
+        'task_assigned',
+        'task_updated',
+        'task_mention',
+        'task_label_added',
+        'task_label_removed',
+        'task_title_changed',
+        'task_description_changed',
+        'task_priority_changed',
+        'task_due_date_changed',
+        'task_start_date_changed',
+        'task_estimation_changed',
+        'workspace_invite',
+        'system_announcement'
+    ));
+
 -- Add indexes for efficient querying
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_ws_id ON public.notifications(ws_id);
@@ -58,7 +85,7 @@ CREATE POLICY "Users can update their own notifications"
 CREATE POLICY "System can insert notifications"
     ON public.notifications
     FOR INSERT
-    WITH CHECK (true);
+    WITH CHECK (false);
 
 -- Policy: Users can delete their own notifications
 CREATE POLICY "Users can delete their own notifications"

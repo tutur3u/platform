@@ -94,6 +94,9 @@ RETURNS BOOLEAN AS $$
 DECLARE
     v_preference BOOLEAN;
 BEGIN
+    -- Harden search_path to prevent privilege escalation
+    SET LOCAL search_path = pg_temp, public;
+
     -- Check if user has explicitly set a preference
     SELECT enabled INTO v_preference
     FROM public.notification_preferences

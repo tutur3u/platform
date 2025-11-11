@@ -114,7 +114,7 @@ CREATE POLICY "Users can update user notifications"
 CREATE POLICY "System can insert notifications"
   ON public.notifications
   FOR INSERT
-  WITH CHECK (true);
+  WITH CHECK (false);
 
 -- Policy: Users can delete their own workspace notifications
 CREATE POLICY "Users can delete workspace notifications"

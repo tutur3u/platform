@@ -14,6 +14,17 @@ CREATE TABLE IF NOT EXISTS public.notification_batches (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Add foreign key constraint from notification_delivery_log.batch_id to this table
+-- (notification_delivery_log was created in the previous migration before this table existed)
+ALTER TABLE public.notification_delivery_log
+    ADD CONSTRAINT notification_delivery_log_batch_id_fkey
+        FOREIGN KEY (batch_id) REFERENCES public.notification_batches(id) ON DELETE CASCADE;
+
+-- Add CHECK constraints to validate channel and status values
+ALTER TABLE public.notification_batches
+    ADD CONSTRAINT notification_batches_channel_check CHECK (channel IN ('email', 'sms', 'push')),
+    ADD CONSTRAINT notification_batches_status_check CHECK (status IN ('pending', 'processing', 'sent', 'failed'));
+
 -- Add indexes for efficient querying
 CREATE INDEX IF NOT EXISTS idx_notification_batches_user ON public.notification_batches(user_id, ws_id);
 CREATE INDEX IF NOT EXISTS idx_notification_batches_status ON public.notification_batches(status, window_end);
@@ -37,8 +48,8 @@ CREATE POLICY "Users can view their own batches"
 CREATE POLICY "System can manage batches"
     ON public.notification_batches
     FOR ALL
-    USING (true)
-    WITH CHECK (true);
+    USING (false)
+    WITH CHECK (false);
 
 -- Function to update the updated_at timestamp
 CREATE OR REPLACE FUNCTION public.update_notification_batches_updated_at()
@@ -68,6 +79,9 @@ DECLARE
     v_window_start TIMESTAMPTZ;
     v_window_end TIMESTAMPTZ;
 BEGIN
+    -- Harden search_path to prevent privilege escalation
+    SET LOCAL search_path = pg_temp, public;
+
     -- Try to find an existing pending batch within the window
     SELECT id INTO v_batch_id
     FROM public.notification_batches

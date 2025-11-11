@@ -4,6 +4,9 @@ RETURNS UUID AS $$
 DECLARE
     v_ws_id UUID;
 BEGIN
+    -- Harden search_path to prevent privilege escalation
+    SET LOCAL search_path = pg_temp, public;
+
     SELECT wb.ws_id INTO v_ws_id
     FROM public.tasks t
     JOIN public.task_lists tl ON t.list_id = tl.id
@@ -27,6 +30,9 @@ RETURNS TABLE (
     creator_id UUID
 ) AS $$
 BEGIN
+    -- Harden search_path to prevent privilege escalation
+    SET LOCAL search_path = pg_temp, public;
+
     RETURN QUERY
     SELECT
         t.name as task_name,
@@ -63,6 +69,9 @@ DECLARE
     v_should_send_email BOOLEAN;
     v_batch_id UUID;
 BEGIN
+    -- Harden search_path to prevent privilege escalation
+    SET LOCAL search_path = pg_temp, public;
+
     -- Check if web notifications are enabled for this user
     v_should_send_web := public.should_send_notification(p_ws_id, p_user_id, p_type, 'web');
 
@@ -135,6 +144,9 @@ DECLARE
     v_assigner_name TEXT;
     v_notification_id UUID;
 BEGIN
+    -- Harden search_path to prevent privilege escalation
+    SET LOCAL search_path = pg_temp, public;
+
     -- Get task details
     SELECT * INTO v_task_details FROM public.get_task_details(NEW.task_id);
 
@@ -183,6 +195,9 @@ DECLARE
     v_description TEXT;
     v_updater_name TEXT;
 BEGIN
+    -- Harden search_path to prevent privilege escalation
+    SET LOCAL search_path = pg_temp, public;
+
     -- Only notify if task is actually updated (not inserted or deleted)
     IF TG_OP != 'UPDATE' THEN
         RETURN NEW;
