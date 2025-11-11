@@ -108,6 +108,12 @@ export interface TaskEditDialogProps {
   filters?: TaskFilters;
   mode?: 'edit' | 'create';
   collaborationMode?: boolean;
+  currentUser?: {
+    id: string;
+    display_name?: string;
+    email?: string;
+    avatar_url?: string;
+  };
   onClose: () => void;
   onUpdate: () => void;
 }
@@ -220,6 +226,7 @@ function TaskEditDialogComponent({
   filters,
   mode = 'edit',
   collaborationMode = false,
+  currentUser: propsCurrentUser,
   onClose,
   onUpdate,
 }: TaskEditDialogProps) {
@@ -303,7 +310,16 @@ function TaskEditDialogComponent({
   // ============================================================================
   // USER & COLLABORATION - User state and Yjs collaboration setup
   // ============================================================================
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(
+    propsCurrentUser
+      ? {
+          id: propsCurrentUser.id,
+          display_name: propsCurrentUser.display_name || null,
+          avatar_url: propsCurrentUser.avatar_url || null,
+          email: propsCurrentUser.email || null,
+        }
+      : null
+  );
 
   const userColor: string | undefined = useMemo(() => {
     const hashCode = (str: string) => {
@@ -352,27 +368,17 @@ function TaskEditDialogComponent({
     return collaborationEnabled && !synced;
   }, [isOpen, isCreateMode, collaborationMode, task?.id, synced]);
 
+  // Update user state when propsCurrentUser changes
   useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('id, display_name')
-          .eq('id', user.id)
-          .single();
-
-        if (userData) {
-          setUser(userData);
-        }
-      }
-    };
-
-    getUser();
-  }, []);
+    if (propsCurrentUser) {
+      setUser({
+        id: propsCurrentUser.id,
+        display_name: propsCurrentUser.display_name || null,
+        avatar_url: propsCurrentUser.avatar_url || null,
+        email: propsCurrentUser.email || null,
+      });
+    }
+  }, [propsCurrentUser]);
 
   // ============================================================================
   // REALTIME SYNC - Subscribe to task changes from other users
@@ -2185,42 +2191,53 @@ function TaskEditDialogComponent({
   ]);
 
   const handleClose = useCallback(async () => {
-    if (isLoading) return;
-
-    // Flush any pending name update before closing
-    await flushNameUpdate();
-
-    // Check if we're in collaboration mode and not synced
+    // Check if we're in collaboration mode and not synced - show warning
     if (collaborationMode && !isCreateMode && (!synced || !connected)) {
       setShowSyncWarning(true);
       return;
     }
 
-    // Save Yjs description to database for embeddings and calculations
-    if (
-      collaborationMode &&
-      !isCreateMode &&
-      task?.id &&
-      flushEditorPendingRef.current
-    ) {
-      await saveYjsDescriptionToDatabase({
-        taskId: task.id,
-        getContent: flushEditorPendingRef.current,
-        boardId,
-        queryClient,
-        context: 'close',
-      });
-    }
-
-    // Safe to close
-    try {
-      if (!isCreateMode && typeof window !== 'undefined') {
-        localStorage.removeItem(draftStorageKey);
-      }
-    } catch {}
+    // Close dialog immediately for instant UX
     onClose();
+
+    // Handle background saves asynchronously (non-blocking)
+    const performBackgroundSaves = async () => {
+      try {
+        // Flush any pending name update
+        if (flushNameUpdate) {
+          await flushNameUpdate();
+        }
+
+        // Save Yjs description to database for embeddings and calculations
+        if (
+          collaborationMode &&
+          !isCreateMode &&
+          task?.id &&
+          flushEditorPendingRef.current
+        ) {
+          await saveYjsDescriptionToDatabase({
+            taskId: task.id,
+            getContent: flushEditorPendingRef.current,
+            boardId,
+            queryClient,
+            context: 'close',
+          });
+        }
+
+        // Clean up draft storage
+        try {
+          if (!isCreateMode && typeof window !== 'undefined') {
+            localStorage.removeItem(draftStorageKey);
+          }
+        } catch {}
+      } catch (error) {
+        console.error('Error during background save on close:', error);
+      }
+    };
+
+    // Run saves in background without blocking close
+    performBackgroundSaves();
   }, [
-    isLoading,
     flushNameUpdate,
     collaborationMode,
     isCreateMode,
@@ -2235,31 +2252,47 @@ function TaskEditDialogComponent({
 
   const handleForceClose = useCallback(async () => {
     setShowSyncWarning(false);
-    // Flush any pending name update before force closing
-    await flushNameUpdate();
 
-    // Save Yjs description to database for embeddings and calculations
-    if (
-      collaborationMode &&
-      !isCreateMode &&
-      task?.id &&
-      flushEditorPendingRef.current
-    ) {
-      await saveYjsDescriptionToDatabase({
-        taskId: task.id,
-        getContent: flushEditorPendingRef.current,
-        boardId,
-        queryClient,
-        context: 'force-close',
-      });
-    }
-
-    try {
-      if (!isCreateMode && typeof window !== 'undefined') {
-        localStorage.removeItem(draftStorageKey);
-      }
-    } catch {}
+    // Close dialog immediately for instant UX
     onClose();
+
+    // Handle background saves asynchronously (non-blocking)
+    const performBackgroundSaves = async () => {
+      try {
+        // Flush any pending name update
+        if (flushNameUpdate) {
+          await flushNameUpdate();
+        }
+
+        // Save Yjs description to database for embeddings and calculations
+        if (
+          collaborationMode &&
+          !isCreateMode &&
+          task?.id &&
+          flushEditorPendingRef.current
+        ) {
+          await saveYjsDescriptionToDatabase({
+            taskId: task.id,
+            getContent: flushEditorPendingRef.current,
+            boardId,
+            queryClient,
+            context: 'force-close',
+          });
+        }
+
+        // Clean up draft storage
+        try {
+          if (!isCreateMode && typeof window !== 'undefined') {
+            localStorage.removeItem(draftStorageKey);
+          }
+        } catch {}
+      } catch (error) {
+        console.error('Error during background save on force close:', error);
+      }
+    };
+
+    // Run saves in background without blocking close
+    performBackgroundSaves();
   }, [
     isCreateMode,
     draftStorageKey,
@@ -3464,9 +3497,15 @@ function TaskEditDialogComponent({
                 )}
 
                 {/* Online Users */}
-                {collaborationMode && isOpen && !isCreateMode && (
+                {collaborationMode && isOpen && !isCreateMode && user && (
                   <UserPresenceAvatarsComponent
                     channelName={`task_presence_${task?.id}`}
+                    currentUser={{
+                      id: user.id || '',
+                      email: user.email || '',
+                      display_name: user.display_name || undefined,
+                      avatar_url: user.avatar_url || undefined,
+                    }}
                   />
                 )}
                 {isCreateMode && (
@@ -3694,7 +3733,7 @@ function TaskEditDialogComponent({
                       }
                     }}
                     placeholder="What needs to be done?"
-                    className="h-auto border-0 bg-transparent p-4 pb-0 font-bold text-2xl text-foreground leading-tight tracking-tight shadow-none transition-colors placeholder:text-muted-foreground/30 focus-visible:outline-0 focus-visible:ring-0 md:px-8 md:pt-4 md:pb-2 md:text-2xl"
+                    className="h-auto border-0 bg-transparent p-4 font-bold text-2xl text-foreground leading-tight tracking-tight shadow-none transition-colors placeholder:text-muted-foreground/30 focus-visible:outline-0 focus-visible:ring-0 md:px-8 md:pt-4 md:text-2xl"
                     autoFocus
                   />
                 </div>
@@ -3779,7 +3818,9 @@ function TaskEditDialogComponent({
                               className="h-5 shrink-0 gap-1 border border-dynamic-sky/30 bg-dynamic-sky/10 px-2 font-medium text-[10px] text-dynamic-sky"
                             >
                               <Box className="h-2.5 w-2.5" />
-                              {selectedProjects.length}
+                              {selectedProjects.length === 1
+                                ? selectedProjects[0]?.name
+                                : selectedProjects.length}
                             </Badge>
                           )}
                           {selectedListId && (
@@ -4487,87 +4528,92 @@ function TaskEditDialogComponent({
 
                 {/* Task Description - Full editor experience with subtle border */}
                 <div ref={editorRef} className="relative pb-8">
-                  {isYjsSyncing ? (
-                    <div className="flex min-h-[400px] items-center justify-center">
-                      <div className="flex flex-col items-center gap-3">
-                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                        <p className="text-muted-foreground text-sm">
+                  <div
+                    ref={richTextEditorRef}
+                    className={cn(
+                      'relative transition-opacity duration-300',
+                      isYjsSyncing ? 'opacity-50' : 'opacity-100'
+                    )}
+                  >
+                    <RichTextEditor
+                      content={description}
+                      onChange={setDescription}
+                      writePlaceholder="Add a detailed description, attach files, or use markdown..."
+                      titlePlaceholder=""
+                      className="min-h-[400px] border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
+                      workspaceId={workspaceId || undefined}
+                      onImageUpload={handleImageUpload}
+                      flushPendingRef={flushEditorPendingRef}
+                      initialCursorOffset={targetEditorCursorRef.current}
+                      onEditorReady={handleEditorReady}
+                      boardId={boardId}
+                      availableLists={availableLists}
+                      queryClient={queryClient}
+                      onArrowUp={(cursorOffset) => {
+                        // Focus the title input when pressing arrow up at the start
+                        if (titleInputRef.current) {
+                          titleInputRef.current.focus();
+
+                          // Apply smart cursor positioning
+                          if (cursorOffset !== undefined) {
+                            const textLength =
+                              titleInputRef.current.value.length;
+                            // Use the stored position from last down arrow, or the offset from editor
+                            const targetPosition =
+                              lastCursorPositionRef.current ??
+                              Math.min(cursorOffset, textLength);
+                            titleInputRef.current.setSelectionRange(
+                              targetPosition,
+                              targetPosition
+                            );
+                            // Clear the stored position after use
+                            lastCursorPositionRef.current = null;
+                          }
+                        }
+                      }}
+                      onArrowLeft={() => {
+                        // Focus the title input at the end when pressing arrow left at the start
+                        if (titleInputRef.current) {
+                          titleInputRef.current.focus();
+                          // Set cursor to the end of the input
+                          const length = titleInputRef.current.value.length;
+                          titleInputRef.current.setSelectionRange(
+                            length,
+                            length
+                          );
+                        }
+                      }}
+                      yjsDoc={
+                        isOpen && !isCreateMode && collaborationMode
+                          ? doc
+                          : null
+                      }
+                      yjsProvider={
+                        isOpen && !isCreateMode && collaborationMode
+                          ? provider
+                          : null
+                      }
+                      allowCollaboration={
+                        isOpen && !isCreateMode && collaborationMode
+                      }
+                      editable={!isYjsSyncing}
+                    />
+                    {/* Collaboration sync indicator - shows while Yjs is syncing */}
+                    {isYjsSyncing && (
+                      <div className="pointer-events-none absolute top-4 right-4 flex items-center gap-2 rounded-lg border bg-background/95 px-3 py-2 shadow-lg backdrop-blur-sm md:right-8">
+                        <Loader2 className="h-4 w-4 animate-spin text-dynamic-yellow" />
+                        <p className="text-muted-foreground text-xs">
                           Syncing collaboration state...
                         </p>
                       </div>
-                    </div>
-                  ) : (
-                    <div ref={richTextEditorRef} className="relative">
-                      <RichTextEditor
-                        content={description}
-                        onChange={setDescription}
-                        writePlaceholder="Add a detailed description, attach files, or use markdown..."
-                        titlePlaceholder=""
-                        className="min-h-[400px] border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
-                        workspaceId={workspaceId || undefined}
-                        onImageUpload={handleImageUpload}
-                        flushPendingRef={flushEditorPendingRef}
-                        initialCursorOffset={targetEditorCursorRef.current}
-                        onEditorReady={handleEditorReady}
-                        boardId={boardId}
-                        availableLists={availableLists}
-                        queryClient={queryClient}
-                        onArrowUp={(cursorOffset) => {
-                          // Focus the title input when pressing arrow up at the start
-                          if (titleInputRef.current) {
-                            titleInputRef.current.focus();
-
-                            // Apply smart cursor positioning
-                            if (cursorOffset !== undefined) {
-                              const textLength =
-                                titleInputRef.current.value.length;
-                              // Use the stored position from last down arrow, or the offset from editor
-                              const targetPosition =
-                                lastCursorPositionRef.current ??
-                                Math.min(cursorOffset, textLength);
-                              titleInputRef.current.setSelectionRange(
-                                targetPosition,
-                                targetPosition
-                              );
-                              // Clear the stored position after use
-                              lastCursorPositionRef.current = null;
-                            }
-                          }
-                        }}
-                        onArrowLeft={() => {
-                          // Focus the title input at the end when pressing arrow left at the start
-                          if (titleInputRef.current) {
-                            titleInputRef.current.focus();
-                            // Set cursor to the end of the input
-                            const length = titleInputRef.current.value.length;
-                            titleInputRef.current.setSelectionRange(
-                              length,
-                              length
-                            );
-                          }
-                        }}
-                        yjsDoc={
-                          isOpen && !isCreateMode && collaborationMode
-                            ? doc
-                            : null
-                        }
-                        yjsProvider={
-                          isOpen && !isCreateMode && collaborationMode
-                            ? provider
-                            : null
-                        }
-                        allowCollaboration={
-                          isOpen && !isCreateMode && collaborationMode
-                        }
+                    )}
+                    {isOpen && !isCreateMode && collaborationMode && (
+                      <CursorOverlayWrapper
+                        channelName={`editor-cursor-${task?.id}`}
+                        containerRef={richTextEditorRef}
                       />
-                      {isOpen && !isCreateMode && collaborationMode && (
-                        <CursorOverlayWrapper
-                          channelName={`editor-cursor-${task?.id}`}
-                          containerRef={richTextEditorRef}
-                        />
-                      )}
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

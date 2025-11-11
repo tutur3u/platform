@@ -20,6 +20,12 @@ interface UserPresenceAvatarsProps {
   currentUserId?: string;
   maxDisplay?: number;
   avatarClassName?: string;
+  currentUser?: {
+    id: string;
+    email: string;
+    display_name?: string;
+    avatar_url?: string;
+  };
 }
 
 export function TaskViewerAvatarsComponent({
@@ -55,8 +61,15 @@ export function TaskViewerAvatarsComponent({
 
 export function UserPresenceAvatarsComponent({
   channelName,
+  currentUser,
 }: {
   channelName: string;
+  currentUser?: {
+    id: string;
+    email: string;
+    display_name?: string;
+    avatar_url?: string;
+  };
 }) {
   const { presenceState, currentUserId } = usePresence(channelName);
 
@@ -65,6 +78,7 @@ export function UserPresenceAvatarsComponent({
       presenceState={presenceState}
       currentUserId={currentUserId}
       maxDisplay={5}
+      currentUser={currentUser}
     />
   );
 }
@@ -74,13 +88,25 @@ export function UserPresenceAvatars({
   currentUserId,
   maxDisplay = 5,
   avatarClassName,
+  currentUser,
 }: UserPresenceAvatarsProps) {
   const uniqueUsers = Object.entries(presenceState)
     .map(([, presences]) => presences[0]?.user)
     .filter(Boolean);
 
+  // Check if current user is in presence state (connected)
+  const currentUserInPresence = uniqueUsers.some(
+    (u) => u?.id === currentUserId
+  );
+
+  // If we have currentUser prop but they're not in presence state yet, add them with a flag
+  const allUsers =
+    currentUser && !currentUserInPresence
+      ? [{ ...currentUser, _isConnecting: true }, ...uniqueUsers]
+      : uniqueUsers;
+
   // Sort users to place current user first
-  const sortedUsers = [...uniqueUsers].sort((a, b) => {
+  const sortedUsers = [...allUsers].sort((a, b) => {
     const aIsCurrentUser = a?.id === currentUserId;
     const bIsCurrentUser = b?.id === currentUserId;
 
@@ -92,8 +118,8 @@ export function UserPresenceAvatars({
   const displayUsers = sortedUsers.slice(0, maxDisplay);
   const remainingCount = Math.max(0, sortedUsers.length - maxDisplay);
 
-  // Don't render anything if no users online
-  if (uniqueUsers.length === 0) return null;
+  // Don't render anything if no users (including currentUser)
+  if (allUsers.length === 0) return null;
 
   return (
     <div className="-space-x-2 flex items-center">
@@ -101,13 +127,19 @@ export function UserPresenceAvatars({
       {displayUsers.map((user) => {
         if (!user || !user.id) return null;
         const isCurrentUser = user.id === currentUserId;
+        const isConnecting = (user as any)._isConnecting;
         const presences = presenceState[user.id] || [];
         const presenceCount = presences.length;
 
         return (
           <HoverCard key={user.id}>
             <HoverCardTrigger asChild>
-              <div className="relative transition-transform hover:z-10 hover:scale-110">
+              <div
+                className={cn(
+                  'relative transition-all hover:z-10 hover:scale-110',
+                  isConnecting ? 'opacity-40' : 'opacity-100'
+                )}
+              >
                 <Avatar
                   className={cn(
                     'size-7 border-2 border-background ring-1 ring-border transition-shadow hover:ring-2 sm:size-8',

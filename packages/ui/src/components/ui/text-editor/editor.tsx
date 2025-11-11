@@ -62,6 +62,7 @@ interface RichTextEditorProps {
   availableLists?: TaskList[];
   queryClient?: QueryClient;
   allowCollaboration?: boolean;
+  editable?: boolean;
 }
 
 export function RichTextEditor({
@@ -87,6 +88,7 @@ export function RichTextEditor({
   yjsDoc = null,
   yjsProvider = null,
   allowCollaboration = false,
+  editable = true,
 }: RichTextEditorProps) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dragCounterRef = useRef(0);
@@ -237,7 +239,7 @@ export function RichTextEditor({
       onVideoUpload: onImageUploadRef.current,
     }),
     content: allowCollaboration ? undefined : content,
-    editable: !readOnly,
+    editable: editable && !readOnly,
     immediatelyRender: false,
     editorProps: {
       attributes: {
