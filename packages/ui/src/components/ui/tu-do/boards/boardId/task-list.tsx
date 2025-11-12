@@ -164,7 +164,7 @@ function VirtualizedTaskListInner({
   optimisticUpdateInProgress,
 }: VirtualizedTaskListProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const { setNodeRef: setDroppableRef, isOver: isColumnDragOver } =
+  const { setNodeRef: setDroppableRef, isOver: isColumnDragOverRaw } =
     useDroppable({
       id: `column-surface-${column.id}`,
       data: {
@@ -188,18 +188,30 @@ function VirtualizedTaskListInner({
 
   const shouldVirtualize = tasks.length > VIRTUALIZE_THRESHOLD;
   const [isDraggingHere, setIsDraggingHere] = useState(false);
+  const [draggedTaskListId, setDraggedTaskListId] = useState<string | null>(
+    null
+  );
+
+  // Only show column drag-over effect if task is from a different column
+  const isColumnDragOver =
+    isColumnDragOverRaw && draggedTaskListId !== column.id;
 
   // Monitor drag state to widen window while a task from this column is dragged
   useDndMonitor({
     onDragStart(event) {
       const t = event.active.data?.current?.task as Task | undefined;
-      if (t && t.list_id === column.id) setIsDraggingHere(true);
+      if (t) {
+        setDraggedTaskListId(t.list_id);
+        if (t.list_id === column.id) setIsDraggingHere(true);
+      }
     },
     onDragEnd() {
       setIsDraggingHere(false);
+      setDraggedTaskListId(null);
     },
     onDragCancel() {
       setIsDraggingHere(false);
+      setDraggedTaskListId(null);
     },
   });
 
