@@ -445,4 +445,67 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Event description HTML rendering styles */
+  .event-description {
+    /* Typography */
+    line-height: 1.4;
+
+    /* Paragraphs */
+    p {
+      margin: 0;
+      padding: 0;
+
+      & + p {
+        margin-top: 0.25rem;
+      }
+    }
+
+    /* Links */
+    a {
+      color: inherit;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      font-weight: 500;
+      transition: opacity 0.2s;
+
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+
+    /* Emphasis */
+    em,
+    i {
+      font-style: italic;
+      opacity: 0.95;
+    }
+
+    strong,
+    b {
+      font-weight: 600;
+    }
+
+    u {
+      text-decoration: underline;
+    }
+
+    /* Lists */
+    ul,
+    ol {
+      margin: 0.25rem 0;
+      padding-left: 1.25rem;
+    }
+
+    li {
+      margin: 0.125rem 0;
+    }
+
+    /* Line breaks */
+    br {
+      display: block;
+      content: "";
+      margin-top: 0.25rem;
+    }
+  }
 }

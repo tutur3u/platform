@@ -428,7 +428,14 @@ export const CalendarContent = ({
         <WeekdayBar locale={locale} view={view} dates={dates} />
       )}
 
-      <div className="scrollbar-none relative flex-1 overflow-auto bg-background/50">
+      <div
+        className="scrollbar-none relative flex-1 overflow-auto bg-background/50 focus:outline-none"
+        tabIndex={0}
+        onWheel={(e) => {
+          // Ensure scroll events are always captured
+          e.currentTarget.focus();
+        }}
+      >
         {view === 'month' && dates?.[0] ? (
           <MonthCalendar
             date={dates[0]}

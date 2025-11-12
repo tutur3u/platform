@@ -45,6 +45,8 @@ export async function performIncrementalActiveSync(
   startDate: Date,
   endDate: Date
 ) {
+  const syncStartTime = Date.now();
+
   // Convert string dates to Date objects if needed
   const startDateObj =
     startDate instanceof Date ? startDate : new Date(startDate);
@@ -306,13 +308,17 @@ export async function performIncrementalActiveSync(
           wsId,
           allEvents,
           startDateObj,
-          endDateObj
+          endDateObj,
+          calendarId
         );
 
+        const syncDuration = Date.now() - syncStartTime;
         console.log('✅ [DEBUG] incrementalActiveSync completed:', {
           eventsInserted: result.eventsInserted,
           eventsUpdated: result.eventsUpdated,
           eventsDeleted: result.eventsDeleted,
+          durationMs: syncDuration,
+          calendarId,
         });
 
         if (nextSyncToken) {
@@ -358,7 +364,8 @@ async function incrementalActiveSync(
   wsId: string,
   eventsToSync: calendar_v3.Schema$Event[],
   startDate: Date,
-  endDate: Date
+  endDate: Date,
+  calendarId: string = 'primary'
 ) {
   const supabase = await createClient();
 
@@ -369,6 +376,7 @@ async function incrementalActiveSync(
 
   console.log('🔍 [DEBUG] incrementalActiveSync called with:', {
     wsId,
+    calendarId,
     eventsToSyncCount: eventsToSync.length,
     startDate: startDateObj.toISOString(),
     endDate: endDateObj.toISOString(),
@@ -383,11 +391,11 @@ async function incrementalActiveSync(
   });
 
   const formattedEventsToUpsert = eventsToUpsert.map((event) => {
-    return formatEventForDb(event, wsId);
+    return formatEventForDb(event, wsId, calendarId);
   });
 
   const formattedEventsToDelete = eventsToDelete.map((event) => {
-    return formatEventForDb(event, wsId);
+    return formatEventForDb(event, wsId, calendarId);
   });
 
   console.log('✅ [DEBUG] Events formatted:', {
@@ -427,20 +435,48 @@ async function incrementalActiveSync(
 
   if (formattedEventsToUpsert && formattedEventsToUpsert.length > 0) {
     console.log('🔍 [DEBUG] Upserting events...');
-    const { data: upsertData, error: upsertError } = await supabase.rpc(
-      'upsert_calendar_events_and_count',
-      {
-        events: formattedEventsToUpsert,
-      }
-    );
 
-    console.log('🔍 [DEBUG] Upsert result:', upsertData);
-    if (upsertError) {
-      console.log('❌ [DEBUG] Upsert error:', upsertError);
-      throw new Error(upsertError.message);
+    // Batch large event sets for better performance
+    const BATCH_SIZE = 500; // Process 500 events at a time
+    const batches = [];
+
+    for (let i = 0; i < formattedEventsToUpsert.length; i += BATCH_SIZE) {
+      batches.push(formattedEventsToUpsert.slice(i, i + BATCH_SIZE));
     }
 
-    upsertResult = upsertData as { inserted: number; updated: number };
+    console.log(`🔍 [DEBUG] Processing ${formattedEventsToUpsert.length} events in ${batches.length} batches`);
+
+    // Process batches in parallel for better performance
+    const batchPromises = batches.map(async (batch, index) => {
+      const batchStartTime = Date.now();
+      const { data: batchData, error: batchError } = await supabase.rpc(
+        'upsert_calendar_events_and_count',
+        { events: batch }
+      );
+
+      const batchDuration = Date.now() - batchStartTime;
+      console.log(`✅ [DEBUG] Batch ${index + 1}/${batches.length} completed in ${batchDuration}ms`);
+
+      if (batchError) {
+        console.log(`❌ [DEBUG] Batch ${index + 1} error:`, batchError);
+        throw new Error(batchError.message);
+      }
+
+      return batchData as { inserted: number; updated: number };
+    });
+
+    const batchResults = await Promise.all(batchPromises);
+
+    // Aggregate results from all batches
+    upsertResult = batchResults.reduce(
+      (totals, result) => ({
+        inserted: totals.inserted + (result?.inserted || 0),
+        updated: totals.updated + (result?.updated || 0),
+      }),
+      { inserted: 0, updated: 0 }
+    );
+
+    console.log('✅ [DEBUG] All batches completed. Total upsert result:', upsertResult);
   }
 
   return {

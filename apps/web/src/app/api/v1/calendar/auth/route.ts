@@ -16,7 +16,9 @@ export async function GET(request: NextRequest) {
 
   const authUrl = auth.generateAuthUrl({
     state: wsId,
-    scope: ['https://www.googleapis.com/auth/calendar.events'],
+    scope: [
+      'https://www.googleapis.com/auth/calendar', // Full calendar access (includes events and calendar list)
+    ],
     prompt: 'consent',
     access_type: 'offline',
   });

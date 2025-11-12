@@ -7,6 +7,7 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import EventDescription from './event-description';
 import UpcomingEventDetails from './upcoming-event-details';
 
 interface UpcomingCalendarEventsProps {
@@ -83,9 +84,10 @@ export default async function UpcomingCalendarEvents({
                     </div>
 
                     {event.description && (
-                      <p className="line-clamp-2 text-dynamic-cyan/70 text-xs">
-                        {event.description}
-                      </p>
+                      <EventDescription
+                        description={event.description}
+                        className="line-clamp-2 text-dynamic-cyan/70 text-xs"
+                      />
                     )}
 
                     <UpcomingEventDetails event={event} />

@@ -612,6 +612,54 @@ export type Database = {
           },
         ];
       };
+      calendar_connections: {
+        Row: {
+          calendar_id: string;
+          calendar_name: string;
+          color: string | null;
+          created_at: string;
+          id: string;
+          is_enabled: boolean;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          calendar_id: string;
+          calendar_name: string;
+          color?: string | null;
+          created_at?: string;
+          id?: string;
+          is_enabled?: boolean;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          calendar_id?: string;
+          calendar_name?: string;
+          color?: string | null;
+          created_at?: string;
+          id?: string;
+          is_enabled?: boolean;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_connections_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_connections_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       calendar_event_colors: {
         Row: {
           value: string;
@@ -8531,6 +8579,7 @@ export type Database = {
           created_at: string | null;
           description: string;
           end_at: string;
+          google_calendar_id: string | null;
           google_event_id: string | null;
           id: string;
           location: string | null;
@@ -8545,6 +8594,7 @@ export type Database = {
           created_at?: string | null;
           description?: string;
           end_at: string;
+          google_calendar_id?: string | null;
           google_event_id?: string | null;
           id?: string;
           location?: string | null;
@@ -8559,6 +8609,7 @@ export type Database = {
           created_at?: string | null;
           description?: string;
           end_at?: string;
+          google_calendar_id?: string | null;
           google_event_id?: string | null;
           id?: string;
           location?: string | null;

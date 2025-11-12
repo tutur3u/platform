@@ -1,35 +1,49 @@
 'use client';
 
-import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Sparkles } from '@tuturuuu/icons';
 import type { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types';
-import { Button } from '@tuturuuu/ui/button';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
-import AddEventButton from './components/add-event-button';
 import AddEventDialog from './components/add-event-dialog';
-import AutoScheduleComprehensiveDialog from './components/auto-schedule-comprehensive-dialog';
-import TestEventGeneratorButton from './components/test-event-generator-button';
+import CalendarConnectionsManager from './components/calendar-connections-manager';
+
+interface CalendarConnection {
+  id: string;
+  ws_id: string;
+  calendar_id: string;
+  calendar_name: string;
+  is_enabled: boolean;
+  color: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 export default function CalendarClientPage({
   experimentalGoogleToken,
+  calendarConnections,
   workspace,
 }: {
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
+  calendarConnections: CalendarConnection[];
   workspace: Workspace;
 }) {
   const t = useTranslations('calendar');
   const locale = useLocale();
   const [isAddEventDialogOpen, setIsAddEventDialogOpen] = useState(false);
 
-  const extras =
-    workspace.id === ROOT_WORKSPACE_ID ? (
-      <div className="grid w-full items-center gap-2 md:flex md:w-auto">
-        <AddEventButton onOpenDialog={() => setIsAddEventDialogOpen(true)} />
-        {DEV_MODE && <TestEventGeneratorButton wsId={workspace.id} />}
+  const extras = (
+    <div className="grid w-full items-center gap-2 md:flex md:w-auto">
+      {experimentalGoogleToken && (
+        <CalendarConnectionsManager
+          wsId={workspace.id}
+          initialConnections={calendarConnections}
+          hasGoogleAuth={!!experimentalGoogleToken}
+        />
+      )}
+      {/* <AddEventButton onOpenDialog={() => setIsAddEventDialogOpen(true)} /> */}
+      {/* {DEV_MODE && <TestEventGeneratorButton wsId={workspace.id} />} */}
+      {/* {DEV_MODE && (
         <AutoScheduleComprehensiveDialog wsId={workspace.id}>
           <Button
             variant="default"
@@ -40,8 +54,9 @@ export default function CalendarClientPage({
             Auto-Schedule
           </Button>
         </AutoScheduleComprehensiveDialog>
-      </div>
-    ) : undefined;
+      )} */}
+    </div>
+  );
 
   return (
     <>

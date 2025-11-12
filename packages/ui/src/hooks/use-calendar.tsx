@@ -81,6 +81,10 @@ const CalendarContext = createContext<{
 
   isDragging: boolean;
   setIsDragging: (v: boolean) => void;
+  hoveredBaseEventId: string | null;
+  setHoveredBaseEventId: (id: string | null) => void;
+  hoveredEventColumn: number | null;
+  setHoveredEventColumn: (column: number | null) => void;
 }>({
   getEvent: () => undefined,
   getCurrentEvents: () => [],
@@ -108,6 +112,10 @@ const CalendarContext = createContext<{
 
   isDragging: false,
   setIsDragging: () => undefined,
+  hoveredBaseEventId: null,
+  setHoveredBaseEventId: () => undefined,
+  hoveredEventColumn: null,
+  setHoveredEventColumn: () => undefined,
 });
 
 // Add this interface before the updateEvent function
@@ -1306,6 +1314,12 @@ export const CalendarProvider = ({
   );
 
   const [isDragging, setIsDragging] = useState(false);
+  const [hoveredBaseEventId, setHoveredBaseEventId] = useState<string | null>(
+    null
+  );
+  const [hoveredEventColumn, setHoveredEventColumn] = useState<number | null>(
+    null
+  );
 
   const values = {
     getEvent,
@@ -1340,6 +1354,10 @@ export const CalendarProvider = ({
 
     isDragging,
     setIsDragging,
+    hoveredBaseEventId,
+    setHoveredBaseEventId,
+    hoveredEventColumn,
+    setHoveredEventColumn,
   };
 
   // Clean up any pending updates when component unmounts

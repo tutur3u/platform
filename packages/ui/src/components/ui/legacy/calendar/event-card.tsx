@@ -16,6 +16,7 @@ import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors'
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
+import { containsHtml, sanitizeHtml } from '@tuturuuu/utils/html-sanitizer';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { useEffect, useRef, useState } from 'react';
@@ -67,13 +68,27 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     _dayPosition,
     _overlapCount,
     _overlapGroup,
+    _column,
+    google_calendar_id,
+    _calendarName,
+    _calendarColor,
   } = event;
 
   // Default values for overlap properties if not provided
   const overlapCount = _overlapCount || 1;
   const overlapGroup = _overlapGroup || [id];
+  const columnIndex = _column ?? 0;
 
-  const { updateEvent, hideModal, openModal, deleteEvent } = useCalendar();
+  const {
+    updateEvent,
+    hideModal,
+    openModal,
+    deleteEvent,
+    hoveredBaseEventId,
+    setHoveredBaseEventId,
+    hoveredEventColumn,
+    setHoveredEventColumn,
+  } = useCalendar();
   const { settings } = useCalendarSettings();
   const tz = settings?.timezone?.timezone;
 
@@ -315,35 +330,50 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       const hasOverlaps = overlapCount > 1;
 
       // Width calculation based on overlap count
-      let eventWidth, eventLeft;
+      let eventWidth: number, eventLeft: number;
 
       if (hasOverlaps) {
-        // Calculate the position of this event within its overlap group
-        // Sort the overlap group by ID to ensure consistent ordering
-        const sortedGroup = [...overlapGroup].sort();
-        const positionIndex = sortedGroup.indexOf(id);
+        // Use the column index from the graph coloring algorithm
+        // Column 0 = base layer (full width), Column 1+ = stacked layers
 
-        // Split width calculation - give each event an equal portion of the column
-        // Use a small gap between events for visual separation
-        const gap = 2;
-        const totalGap = gap * (overlapCount - 1);
-        const availableWidth = columnWidth - totalGap;
-        const singleWidth = availableWidth / overlapCount;
+        // Configuration for layered stacking
+        const baseMargin = 4; // Base margin for the day column
+        const layerIndent = 8; // Indent for each layer (more visible)
+        const layerWidthReduction = 8; // Width reduction per layer
+        const minEventWidth = 60; // Minimum width to remain readable
 
-        // Calculate width and position
-        eventWidth = singleWidth;
-        eventLeft = dateIdx * columnWidth + positionIndex * (singleWidth + gap);
+        if (columnIndex === 0) {
+          // Column 0 (base layer): FULL WIDTH - same as non-overlapping
+          eventWidth = columnWidth - baseMargin;
+          eventLeft = dateIdx * columnWidth + dateIdx * 2;
+        } else {
+          // Column 1+ (stacked layers): indented and slightly narrower
+          const indent = layerIndent * columnIndex;
+          const widthReduction = layerWidthReduction * columnIndex;
+
+          eventWidth = Math.max(
+            minEventWidth,
+            columnWidth - widthReduction - 4
+          );
+          eventLeft = dateIdx * columnWidth + indent + dateIdx * 2;
+        }
       } else {
         // No overlaps - use full width (with small margin)
-        eventWidth = columnWidth - 8;
-        eventLeft = dateIdx * (columnWidth + 2); // 4px margin on each side
+        eventWidth = columnWidth - 4;
+        eventLeft = dateIdx * columnWidth + dateIdx * 2;
       }
 
       cardEl.style.width = `${eventWidth}px`;
       cardEl.style.left = `${eventLeft}px`;
 
-      // All events at same z-index for level ordering
-      cardEl.style.zIndex = '10';
+      // Smart z-index layering: Column-based stacking
+      // Column 0 = lower z-index (bottom layer)
+      // Column 1+ = higher z-index (top layer)
+      if (hasOverlaps) {
+        cardEl.style.zIndex = String(10 + columnIndex);
+      } else {
+        cardEl.style.zIndex = '10';
+      }
 
       // Store the initial position
       currentPositionRef.current = {
@@ -365,16 +395,37 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     // Check if the event is in the past
     const isPastEvent = endDate.isBefore(dayjs());
 
-    // Set opacity based on whether the event is in the past
-    cardEl.style.opacity = isPastEvent ? '0.5' : '1';
-    cardEl.style.pointerEvents = 'all';
+    // Check if this event should be transparent due to hover state
+    // An event is transparent if:
+    // 1. There are overlaps
+    // 2. Another event is being hovered
+    // 3. This event's column is higher than the hovered event's column
+    // 4. Both events are in the same overlap group
+    const shouldBeTransparent =
+      overlapCount > 1 &&
+      hoveredBaseEventId &&
+      hoveredEventColumn !== null &&
+      columnIndex > hoveredEventColumn &&
+      overlapGroup.includes(hoveredBaseEventId);
+
+    // Set opacity based on transparency state, then past event state
+    if (shouldBeTransparent) {
+      cardEl.style.opacity = '0.05';
+      cardEl.style.pointerEvents = 'none';
+    } else if (isPastEvent) {
+      cardEl.style.opacity = '0.5';
+      cardEl.style.pointerEvents = 'all';
+    } else {
+      cardEl.style.opacity = '1';
+      cardEl.style.pointerEvents = 'all';
+    }
 
     return () => observer.disconnect();
   }, [
     id,
     startDate,
     duration,
-    level,
+    columnIndex,
     dates,
     _isMultiDay,
     _dayPosition,
@@ -382,6 +433,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     endHours,
     overlapCount,
     overlapGroup,
+    hoveredBaseEventId,
+    hoveredEventColumn,
   ]);
 
   // Event resizing - only enable for non-multi-day events or the start/end segments
@@ -904,6 +957,36 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       });
   };
 
+  // Determine if this event has calendar source info
+  const hasCalendarInfo =
+    google_calendar_id && google_calendar_id !== 'primary';
+  const calendarDisplayName =
+    _calendarName ||
+    (google_calendar_id === 'primary'
+      ? 'Primary Calendar'
+      : google_calendar_id);
+
+  // Calculate stacking position for visual effects
+  // Note: Actual column-based positioning is handled in the useEffect
+  const hasOverlaps = overlapCount > 1;
+
+  // Check if an event in the same group is being hovered
+  // This event should be transparent if:
+  // 1. There are overlaps
+  // 2. Another event is being hovered
+  // 3. This event's column is higher than the hovered event's column
+  // 4. Both events are in the same overlap group
+  const shouldBeTransparent =
+    hasOverlaps &&
+    hoveredBaseEventId &&
+    hoveredEventColumn !== null &&
+    columnIndex > hoveredEventColumn &&
+    overlapGroup.includes(hoveredBaseEventId);
+
+  // For visual effects, check if this is likely a shorter event (higher in stack)
+  // Shorter events get enhanced visual treatment
+  const isLikelyTopEvent = hasOverlaps && duration < 1.5; // Events < 1.5 hours likely on top
+
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
@@ -911,14 +994,18 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           ref={cardRef}
           id={`event-${id}`}
           className={cn(
-            'pointer-events-auto absolute max-w-none select-none overflow-hidden rounded-r-md rounded-l border-l-2 transition-colors duration-300',
-            'group transition-all hover:ring-1 focus:outline-none',
+            'pointer-events-auto absolute max-w-none select-none overflow-hidden rounded-r-md rounded-l transition-all duration-300',
+            'group hover:ring-1 focus:outline-none',
             {
               'transform shadow-md': isDragging || isResizing, // Subtle transform during interaction
+              'shadow-sm': hasOverlaps && !isDragging && !isResizing, // Subtle shadow for stacked events
+              'hover:shadow-md': hasOverlaps, // Enhanced shadow on hover for stacked events
               'opacity-50': isPastEvent, // Lower opacity for past events
               'rounded-l-none border-l-4': showStartIndicator, // Special styling for continuation from previous day
               'rounded-r-none border-r-4': showEndIndicator, // Special styling for continuation to next day
+              'border-l-[3px]': hasCalendarInfo, // Thicker border for calendar events
             },
+            level ? 'border border-l-2' : 'border-l-2',
             border,
             text,
             getBackgroundStyle() // Use dynamic background based on status
@@ -932,9 +1019,32 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             willChange:
               isDragging || isResizing ? 'transform, top, left' : 'auto', // GPU acceleration
             transform: isDragging || isResizing ? 'translateZ(0)' : 'none', // Force GPU acceleration during interaction
+            // Add calendar color accent if available
+            borderLeftColor: _calendarColor || undefined,
+            // Enhanced border for shorter events (likely on top)
+            borderLeftWidth:
+              hasOverlaps && isLikelyTopEvent ? '3px' : undefined,
+            // Significantly lowered opacity for stacked events when base is hovered
+            opacity: shouldBeTransparent ? 0.05 : 1,
+            // Maintain pointer events even when transparent
+            pointerEvents: shouldBeTransparent ? 'none' : undefined,
           }}
-          onMouseEnter={() => setIsHovering(true)}
-          onMouseLeave={() => setIsHovering(false)}
+          onMouseEnter={() => {
+            setIsHovering(true);
+            // Set this event as hovered (any level) so events above it become transparent
+            if (hasOverlaps) {
+              setHoveredBaseEventId(id);
+              setHoveredEventColumn(columnIndex);
+            }
+          }}
+          onMouseLeave={() => {
+            setIsHovering(false);
+            // Clear hover state
+            if (hasOverlaps) {
+              setHoveredBaseEventId(null);
+              setHoveredEventColumn(null);
+            }
+          }}
           tabIndex={0}
           onClick={(e) => {
             // Only open modal if we haven't just finished dragging or resizing
@@ -949,7 +1059,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             wasResizedRef.current = false;
           }}
           role="button"
-          aria-label={`Event: ${title || 'Untitled event'}`}
+          aria-label={`Event: ${title || 'Untitled event'}${hasCalendarInfo ? ` from ${calendarDisplayName}` : ''}`}
+          title={
+            hasCalendarInfo ? `Calendar: ${calendarDisplayName}` : undefined
+          }
         >
           {/* Continuation indicators for multi-day events */}
           {showStartIndicator && (
@@ -1025,29 +1138,12 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             >
               <div
                 className={cn(
-                  'space-x-1 font-semibold text-xs',
+                  'flex flex-wrap items-start gap-1 font-semibold text-xs',
                   duration <= 0.5 ? 'line-clamp-1' : 'line-clamp-2'
                 )}
               >
-                {locked && (
-                  <Lock
-                    className="-translate-y-0.5 mt-0.5 inline-block h-3 w-3 shrink-0 opacity-70"
-                    aria-label="Event locked"
-                  />
-                )}
-                {typeof localEvent.google_event_id === 'string' &&
-                  localEvent.google_event_id.trim() !== '' && (
-                    <img
-                      src="/media/google-calendar-icon.png"
-                      alt="Google Calendar"
-                      className="mr-1 inline-block h-4 w-4 align-text-bottom"
-                      title="Synced from Google Calendar"
-                      data-testid="google-calendar-logo"
-                      width={18}
-                      height={18}
-                    />
-                  )}
-                <span className="min-w-0 overflow-hidden text-ellipsis">
+                <span className="min-w-0 flex-1 overflow-hidden text-ellipsis">
+                  {localEvent.locked && '🔒 '}
                   {localEvent.title || 'Untitled event'}
                 </span>
               </div>
@@ -1073,9 +1169,14 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
               {/* Show description if there's enough space */}
               {(duration > 1 || _isMultiDay) && description && (
-                <div className="mt-1 line-clamp-2 text-xs opacity-80">
-                  {description}
-                </div>
+                <div
+                  className="event-description mt-1 line-clamp-2 text-xs"
+                  dangerouslySetInnerHTML={{
+                    __html: containsHtml(description)
+                      ? sanitizeHtml(description)
+                      : description,
+                  }}
+                />
               )}
             </div>
           </div>

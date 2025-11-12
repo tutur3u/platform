@@ -142,6 +142,7 @@ export const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
     const eventLevels = new Map<string, number>();
     const eventOverlapCounts = new Map<string, number>();
     const eventOverlapGroups = new Map<string, string[]>();
+    const eventColumns = new Map<string, number>();
 
     // Group events by day
     const eventsByDay = new Map<string, CalendarEvent[]>();
@@ -221,14 +222,76 @@ export const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
         }
       });
 
-      // Now assign overlap information to each event
+      // Now assign column positions using a graph coloring approach
       overlapGroups.forEach((group) => {
-        const eventIds = group.map((event) => event.id);
+        // For each group, assign column positions
+        // Column 0 = all non-overlapping events with each other
+        // Column 1+ = events that overlap with column 0
 
-        // For each event in the group, store the group and count
-        group.forEach((event) => {
-          eventOverlapCounts.set(event.id, group.length);
-          eventOverlapGroups.set(event.id, eventIds);
+        // Sort group by start time, then duration (longest first)
+        const sortedGroup = [...group].sort((a, b) => {
+          const aStart = new Date(a.start_at).getTime();
+          const bStart = new Date(b.start_at).getTime();
+          if (aStart !== bStart) return aStart - bStart;
+
+          const aDuration =
+            new Date(a.end_at).getTime() - new Date(a.start_at).getTime();
+          const bDuration =
+            new Date(b.end_at).getTime() - new Date(b.start_at).getTime();
+
+          // Longer events first
+          return bDuration - aDuration;
+        });
+
+        // Assign columns using greedy coloring
+        const groupEventColumns = new Map<string, number>();
+        const columnEndTimes: number[] = [];
+
+        sortedGroup.forEach((event) => {
+          const eventStart = new Date(event.start_at).getTime();
+          const eventEnd = new Date(event.end_at).getTime();
+
+          // Find the first column where this event can fit
+          let column = -1;
+          for (let i = 0; i < columnEndTimes.length; i++) {
+            if (eventStart >= columnEndTimes[i]) {
+              column = i;
+              break;
+            }
+          }
+
+          // If no existing column works, create a new one
+          if (column === -1) {
+            column = columnEndTimes.length;
+          }
+
+          groupEventColumns.set(event.id, column);
+          columnEndTimes[column] = eventEnd;
+        });
+
+        // Now create the ordered list based on column assignment
+        // Column 0 events first (sorted by duration), then column 1, etc.
+        const maxColumn = Math.max(...Array.from(groupEventColumns.values()));
+        const orderedEventIds: string[] = [];
+
+        for (let col = 0; col <= maxColumn; col++) {
+          const colEvents = sortedGroup
+            .filter((e) => groupEventColumns.get(e.id) === col)
+            .sort((a, b) => {
+              const aDuration =
+                new Date(a.end_at).getTime() - new Date(a.start_at).getTime();
+              const bDuration =
+                new Date(b.end_at).getTime() - new Date(b.start_at).getTime();
+              return bDuration - aDuration; // Longest first
+            });
+          orderedEventIds.push(...colEvents.map((e) => e.id));
+        }
+
+        // For each event in the group, store the ordered group and column number
+        sortedGroup.forEach((event) => {
+          eventOverlapCounts.set(event.id, sortedGroup.length);
+          eventOverlapGroups.set(event.id, orderedEventIds);
+          eventColumns.set(event.id, groupEventColumns.get(event.id) || 0);
         });
       });
 
@@ -265,6 +328,7 @@ export const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
       _level: eventLevels.get(event.id) || 0,
       _overlapCount: eventOverlapCounts.get(event.id) || 1,
       _overlapGroup: eventOverlapGroups.get(event.id) || [event.id],
+      _column: eventColumns.get(event.id) || 0,
     }));
   };
 
