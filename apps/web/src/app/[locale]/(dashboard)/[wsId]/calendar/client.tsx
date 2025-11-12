@@ -8,6 +8,7 @@ import { useState } from 'react';
 import AddEventDialog from './components/add-event-dialog';
 import CalendarConnectionsManager from './components/calendar-connections-manager';
 import QuickCalendarToggle from './components/quick-calendar-toggle';
+import SyncDebugPanel from './components/sync-debug-panel';
 
 interface CalendarConnection {
   id: string;
@@ -82,6 +83,7 @@ export default function CalendarClientPage({
         isOpen={isAddEventDialogOpen}
         onClose={() => setIsAddEventDialogOpen(false)}
       />
+      <SyncDebugPanel />
     </>
   );
 }

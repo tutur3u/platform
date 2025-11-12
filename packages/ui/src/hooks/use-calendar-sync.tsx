@@ -20,6 +20,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { toast } from '../components/ui/sonner';
 
 // Type for calendar connection
 type CalendarConnection = {
@@ -31,6 +32,14 @@ type CalendarConnection = {
   color: string | null;
   created_at: string;
   updated_at: string;
+};
+
+// Sync status type
+type SyncStatus = {
+  state: 'idle' | 'syncing' | 'success' | 'error';
+  message?: string;
+  lastSyncTime?: Date;
+  direction?: 'google-to-tuturuuu' | 'tuturuuu-to-google' | 'both';
 };
 
 const CalendarSyncContext = createContext<{
@@ -69,6 +78,9 @@ const CalendarSyncContext = createContext<{
   enabledCalendarIds: Set<string>;
   updateCalendarConnection: (connectionId: string, isEnabled: boolean) => void;
 
+  // Sync status
+  syncStatus: SyncStatus;
+
   // Loading states
   isLoading: boolean;
   isSyncing: boolean;
@@ -98,6 +110,9 @@ const CalendarSyncContext = createContext<{
   calendarConnections: [],
   enabledCalendarIds: new Set(),
   updateCalendarConnection: () => {},
+
+  // Sync status
+  syncStatus: { state: 'idle' },
 
   // Loading states
   isLoading: false,
@@ -147,6 +162,7 @@ export const CalendarSyncProvider = ({
   const [isActiveSyncOn, setIsActiveSyncOn] = useState(true);
   const [calendarCache, setCalendarCache] = useState<CalendarCache>({});
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>({ state: 'idle' });
   const prevGoogleDataRef = useRef<string>('');
   const prevDatesRef = useRef<string>('');
   const isForcedRef = useRef<boolean>(false);
@@ -298,6 +314,20 @@ export const CalendarSyncProvider = ({
 
       if (dbError) {
         setError(dbError);
+
+        // Notify user of database fetch failure
+        toast.error('Failed to load calendar events', {
+          description:
+            dbError.message || 'Could not retrieve events from database',
+          duration: 5000,
+        });
+
+        setSyncStatus({
+          state: 'error',
+          message: 'Failed to load calendar events',
+          lastSyncTime: new Date(),
+        });
+
         return null;
       }
 
@@ -354,6 +384,20 @@ export const CalendarSyncProvider = ({
           ': ' +
           googleResponse.details?.reason;
         setError(new Error(errorMessage));
+
+        // Notify user of Google Calendar fetch failure
+        toast.error('Failed to fetch Google Calendar', {
+          description:
+            errorMessage || 'Could not retrieve events from Google Calendar',
+          duration: 5000,
+        });
+
+        setSyncStatus({
+          state: 'error',
+          message: 'Failed to fetch from Google Calendar',
+          lastSyncTime: new Date(),
+        });
+
         return null;
       }
 
@@ -408,10 +452,24 @@ export const CalendarSyncProvider = ({
       }
 
       setIsSyncing(true);
+      setSyncStatus({
+        state: 'syncing',
+        message: 'Syncing from Google Calendar...',
+        direction: 'google-to-tuturuuu',
+      });
+
       try {
         // Check if we can proceed with sync
         const canProceed = await canProceedWithSync(wsId);
         if (!canProceed) {
+          setSyncStatus({
+            state: 'error',
+            message: 'Another sync is in progress. Please wait.',
+          });
+          toast.error('Sync in progress', {
+            description:
+              'Another sync operation is already running. Please wait.',
+          });
           return;
         }
 
@@ -433,7 +491,20 @@ export const CalendarSyncProvider = ({
 
         if (!activeSyncResponse.ok) {
           const errorData = await activeSyncResponse.json();
-          setError(new Error(errorData.error));
+          const errorMessage = errorData.error || 'Failed to sync calendar';
+
+          setError(new Error(errorMessage));
+          setSyncStatus({
+            state: 'error',
+            message: errorMessage,
+            lastSyncTime: new Date(),
+          });
+
+          // Show detailed error toast
+          toast.error('Calendar sync failed', {
+            description: errorMessage,
+            duration: 5000,
+          });
           return;
         }
 
@@ -449,6 +520,12 @@ export const CalendarSyncProvider = ({
         }
 
         setError(null);
+        setSyncStatus({
+          state: 'success',
+          message: 'Sync completed successfully',
+          lastSyncTime: new Date(),
+          direction: 'google-to-tuturuuu',
+        });
 
         // Refresh the cache to trigger queryClient to refetch the data from database
         refresh();
@@ -462,6 +539,24 @@ export const CalendarSyncProvider = ({
           });
           await new Promise((resolve) => setTimeout(resolve, 1000)); // Longer delay at completion
         }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred during sync';
+
+        setError(error instanceof Error ? error : new Error(errorMessage));
+        setSyncStatus({
+          state: 'error',
+          message: errorMessage,
+          lastSyncTime: new Date(),
+        });
+
+        // Show critical error toast
+        toast.error('Critical sync error', {
+          description: errorMessage,
+          duration: 7000,
+        });
       } finally {
         setIsSyncing(false);
       }
@@ -720,7 +815,157 @@ export const CalendarSyncProvider = ({
     hasProcessedInitialData.current = false;
   }, []);
 
-  const syncToGoogle = async () => {};
+  const syncToGoogle = useCallback(async () => {
+    // Helper to dispatch debug logs
+    const logDebug = (
+      type: 'info' | 'success' | 'warning' | 'error',
+      message: string,
+      details?: any
+    ) => {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('calendar-debug-log', {
+            detail: {
+              id: `${Date.now()}-${Math.random()}`,
+              timestamp: new Date(),
+              type,
+              message,
+              details,
+            },
+          })
+        );
+      }
+      console.log(
+        `[SYNC TO GOOGLE ${type.toUpperCase()}]`,
+        message,
+        details || ''
+      );
+    };
+
+    logDebug('info', '🚀 Starting sync to Google Calendar', {
+      wsId,
+      hasGoogleToken: !!experimentalGoogleToken,
+      dateRange: dates.map((d) => d.toISOString()),
+    });
+
+    if (!experimentalGoogleToken || !wsId) {
+      logDebug('error', 'Google Calendar not connected');
+      toast.error('Google Calendar not connected', {
+        description: 'Please connect your Google Calendar first',
+      });
+      return;
+    }
+
+    setIsSyncing(true);
+    setSyncStatus({
+      state: 'syncing',
+      message: 'Syncing to Google Calendar...',
+      direction: 'tuturuuu-to-google',
+    });
+
+    try {
+      const startDate = dayjs(dates[0]).startOf('day');
+      const endDate = dayjs(dates[dates.length - 1]).endOf('day');
+
+      logDebug('info', '📅 Date range for sync', {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+      });
+
+      logDebug('info', '🔍 Current events in memory', {
+        totalEvents: events.length,
+        eventsWithGoogleId: events.filter((e: any) => e.google_event_id).length,
+        eventsWithoutGoogleId: events.filter((e: any) => !e.google_event_id)
+          .length,
+      });
+
+      const requestBody = {
+        wsId,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+      };
+
+      logDebug('info', '📤 Sending API request', requestBody);
+
+      const response = await fetch('/api/v1/calendar/auth/sync-to-google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+
+      logDebug('info', '📥 API response received', {
+        status: response.status,
+        ok: response.ok,
+      });
+
+      const result = await response.json();
+
+      logDebug('info', '📊 API response data', result);
+
+      if (!response.ok) {
+        logDebug('error', 'API request failed', result);
+        throw new Error(result.error || 'Failed to sync to Google Calendar');
+      }
+
+      // Update sync status
+      setSyncStatus({
+        state: 'success',
+        message: `Synced ${result.syncedCount} event(s) to Google Calendar`,
+        lastSyncTime: new Date(),
+        direction: 'tuturuuu-to-google',
+      });
+
+      logDebug(
+        'success',
+        `✅ Sync completed: ${result.syncedCount} events synced`,
+        result
+      );
+
+      // Show success notification
+      toast.success('Synced to Google Calendar', {
+        description: `${result.syncedCount} event(s) synced successfully`,
+      });
+
+      // If there were errors, show them
+      if (result.errorCount > 0 && result.errors) {
+        logDebug(
+          'warning',
+          `⚠️ ${result.errorCount} events failed to sync`,
+          result.errors
+        );
+        toast.warning('Some events failed to sync', {
+          description: `${result.errorCount} event(s) failed. Check debug panel for details.`,
+          duration: 7000,
+        });
+      }
+
+      // Refresh to ensure we have the latest data
+      logDebug('info', '🔄 Refreshing events from database');
+      refresh();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'An unexpected error occurred while syncing to Google';
+
+      logDebug('error', '❌ Sync failed', { error, errorMessage });
+
+      setError(error instanceof Error ? error : new Error(errorMessage));
+      setSyncStatus({
+        state: 'error',
+        message: errorMessage,
+        lastSyncTime: new Date(),
+      });
+
+      toast.error('Failed to sync to Google Calendar', {
+        description: errorMessage,
+        duration: 7000,
+      });
+    } finally {
+      setIsSyncing(false);
+      logDebug('info', '🏁 Sync operation completed');
+    }
+  }, [wsId, dates, experimentalGoogleToken, refresh, events]);
 
   const value = {
     data,
@@ -747,6 +992,9 @@ export const CalendarSyncProvider = ({
     enabledCalendarIds,
     updateCalendarConnection,
 
+    // Sync status
+    syncStatus,
+
     // Loading states
     isLoading: isDatabaseLoading || isGoogleLoading,
     isSyncing,
@@ -768,5 +1016,5 @@ export const useCalendarSync = () => {
   return context;
 };
 
-// Export the CalendarConnection type for use in other components
-export type { CalendarConnection };
+// Export types for use in other components
+export type { CalendarConnection, SyncStatus };

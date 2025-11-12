@@ -1,6 +1,15 @@
 'use client';
 
-import { Calendar, Eye, EyeOff } from '@tuturuuu/icons';
+import {
+  AlertCircle,
+  Calendar,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  Loader2,
+  RefreshCw,
+  Upload,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
@@ -8,7 +17,14 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useMemo, useState } from 'react';
 
 export default function QuickCalendarToggle() {
-  const { calendarConnections, updateCalendarConnection } = useCalendarSync();
+  const {
+    calendarConnections,
+    updateCalendarConnection,
+    syncStatus,
+    syncToGoogle,
+    syncToTuturuuu,
+    isSyncing,
+  } = useCalendarSync();
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
   const [isOpen, setIsOpen] = useState(false);
 
@@ -120,11 +136,80 @@ export default function QuickCalendarToggle() {
           </div>
 
           {calendarConnections.length > 0 && (
-            <div className="border-border border-t pt-2">
+            <div className="space-y-2 border-border border-t pt-2">
               <p className="text-muted-foreground text-xs">
                 {enabledCount} of {calendarConnections.length} calendar
                 {calendarConnections.length !== 1 ? 's' : ''} visible
               </p>
+
+              {/* Sync Status Indicator */}
+              {syncStatus.state !== 'idle' && (
+                <div
+                  className={`flex items-center gap-2 rounded-md p-2 text-xs ${
+                    syncStatus.state === 'syncing'
+                      ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300'
+                      : syncStatus.state === 'success'
+                        ? 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-300'
+                        : 'bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-300'
+                  }`}
+                >
+                  {syncStatus.state === 'syncing' && (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  )}
+                  {syncStatus.state === 'success' && (
+                    <CheckCircle2 className="h-3 w-3" />
+                  )}
+                  {syncStatus.state === 'error' && (
+                    <AlertCircle className="h-3 w-3" />
+                  )}
+                  <span className="flex-1 truncate">{syncStatus.message}</span>
+                  {syncStatus.lastSyncTime && (
+                    <span className="text-[10px] opacity-70">
+                      {new Date(syncStatus.lastSyncTime).toLocaleTimeString(
+                        [],
+                        {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        }
+                      )}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Sync Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => syncToTuturuuu()}
+                  disabled={isSyncing}
+                  className="flex-1 gap-2"
+                >
+                  {isSyncing &&
+                  syncStatus.direction === 'google-to-tuturuuu' ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-3 w-3" />
+                  )}
+                  <span className="text-xs">From Google</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => syncToGoogle()}
+                  disabled={isSyncing}
+                  className="flex-1 gap-2"
+                >
+                  {isSyncing &&
+                  syncStatus.direction === 'tuturuuu-to-google' ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Upload className="h-3 w-3" />
+                  )}
+                  <span className="text-xs">To Google</span>
+                </Button>
+              </div>
             </div>
           )}
         </div>
