@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import AddEventDialog from './components/add-event-dialog';
 import CalendarConnectionsManager from './components/calendar-connections-manager';
+import QuickCalendarToggle from './components/quick-calendar-toggle';
 
 interface CalendarConnection {
   id: string;
@@ -35,11 +36,14 @@ export default function CalendarClientPage({
   const extras = (
     <div className="grid w-full items-center gap-2 md:flex md:w-auto">
       {experimentalGoogleToken && (
-        <CalendarConnectionsManager
-          wsId={workspace.id}
-          initialConnections={calendarConnections}
-          hasGoogleAuth={!!experimentalGoogleToken}
-        />
+        <>
+          <QuickCalendarToggle />
+          <CalendarConnectionsManager
+            wsId={workspace.id}
+            initialConnections={calendarConnections}
+            hasGoogleAuth={!!experimentalGoogleToken}
+          />
+        </>
       )}
       {/* <AddEventButton onOpenDialog={() => setIsAddEventDialogOpen(true)} /> */}
       {/* {DEV_MODE && <TestEventGeneratorButton wsId={workspace.id} />} */}

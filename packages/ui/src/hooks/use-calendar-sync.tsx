@@ -21,6 +21,18 @@ import {
   useState,
 } from 'react';
 
+// Type for calendar connection
+type CalendarConnection = {
+  id: string;
+  ws_id: string;
+  calendar_id: string;
+  calendar_name: string;
+  is_enabled: boolean;
+  color: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 const CalendarSyncContext = createContext<{
   data: WorkspaceCalendarEvent[] | null;
   googleData: WorkspaceCalendarEvent[] | null;
@@ -52,6 +64,11 @@ const CalendarSyncContext = createContext<{
 
   syncToGoogle: () => Promise<void>;
 
+  // Calendar connections and filtering
+  calendarConnections: CalendarConnection[];
+  enabledCalendarIds: Set<string>;
+  updateCalendarConnection: (connectionId: string, isEnabled: boolean) => void;
+
   // Loading states
   isLoading: boolean;
   isSyncing: boolean;
@@ -76,6 +93,11 @@ const CalendarSyncContext = createContext<{
 
   // Sync to Google
   syncToGoogle: async () => {},
+
+  // Calendar connections and filtering
+  calendarConnections: [],
+  enabledCalendarIds: new Set(),
+  updateCalendarConnection: () => {},
 
   // Loading states
   isLoading: false,
@@ -104,10 +126,12 @@ export const CalendarSyncProvider = ({
   children,
   wsId,
   experimentalGoogleToken,
+  initialCalendarConnections = [],
 }: {
   children: React.ReactNode;
   wsId: Workspace['id'];
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
+  initialCalendarConnections?: CalendarConnection[];
 }) => {
   const [data, setData] = useState<WorkspaceCalendarEvent[] | null>(null);
   const [googleData, setGoogleData] = useState<WorkspaceCalendarEvent[] | null>(
@@ -128,13 +152,39 @@ export const CalendarSyncProvider = ({
   const isForcedRef = useRef<boolean>(false);
   const queryClient = useQueryClient();
 
+  // Calendar connections state
+  const [calendarConnections, setCalendarConnections] = useState<
+    CalendarConnection[]
+  >(initialCalendarConnections);
+
+  // Compute enabled calendar IDs
+  const enabledCalendarIds = useMemo(() => {
+    return new Set(
+      calendarConnections
+        .filter((conn) => conn.is_enabled)
+        .map((conn) => conn.calendar_id)
+    );
+  }, [calendarConnections]);
+
+  // Update calendar connection state
+  const updateCalendarConnection = useCallback(
+    (connectionId: string, isEnabled: boolean) => {
+      setCalendarConnections((prev) =>
+        prev.map((conn) =>
+          conn.id === connectionId ? { ...conn, is_enabled: isEnabled } : conn
+        )
+      );
+    },
+    []
+  );
+
   // Helper to generate cache key from dates
-  const getCacheKey = (dateRange: Date[]) => {
+  const getCacheKey = useCallback((dateRange: Date[]) => {
     if (!dateRange || dateRange.length === 0) {
       return '';
     }
     return `${dateRange[0]!.toISOString()}-${dateRange[dateRange.length - 1]!.toISOString()}`;
-  };
+  }, []);
 
   // Helper to check if a date range includes today (current week issue)
   const includesCurrentWeek = useCallback((dateRange: Date[]) => {
@@ -179,7 +229,7 @@ export const CalendarSyncProvider = ({
   };
 
   // Helper to update cache safely
-  const updateCache = (cacheKey: string, update: CacheUpdate) => {
+  const updateCache = useCallback((cacheKey: string, update: CacheUpdate) => {
     setCalendarCache((prev) => {
       const existing = prev[cacheKey] || {
         dbEvents: [],
@@ -208,7 +258,7 @@ export const CalendarSyncProvider = ({
         },
       };
     });
-  };
+  }, []);
 
   // Fetch database events with caching
   const { data: fetchedData, isLoading: isDatabaseLoading } = useQuery({
@@ -321,7 +371,7 @@ export const CalendarSyncProvider = ({
   });
 
   // Helper to check if dates have actually changed
-  const areDatesEqual = (newDates: Date[]) => {
+  const areDatesEqual = useCallback((newDates: Date[]) => {
     const newDatesStr = JSON.stringify(newDates.map((d) => d.toISOString()));
     const prevDatesStr = prevDatesRef.current;
     const areEqual = newDatesStr === prevDatesStr;
@@ -329,7 +379,7 @@ export const CalendarSyncProvider = ({
       prevDatesRef.current = newDatesStr;
     }
     return areEqual;
-  };
+  }, []);
 
   // Invalidate and refetch events
   const refresh = useCallback(() => {
@@ -341,7 +391,7 @@ export const CalendarSyncProvider = ({
     queryClient.invalidateQueries({
       queryKey: ['databaseCalendarEvents', wsId, cacheKey],
     });
-  }, [queryClient, wsId, dates]);
+  }, [queryClient, wsId, dates, getCacheKey]);
 
   // Sync Google events of current view to Tuturuuu database
   const syncToTuturuuu = useCallback(
@@ -501,6 +551,9 @@ export const CalendarSyncProvider = ({
     experimentalGoogleToken?.ws_id,
     calendarCache,
     includesCurrentWeek,
+    areDatesEqual,
+    getCacheKey,
+    updateCache,
   ]);
 
   /*
@@ -508,9 +561,9 @@ export const CalendarSyncProvider = ({
   */
 
   // Create a unique signature for an event based on its content
-  const createEventSignature = (event: CalendarEvent): string => {
+  const createEventSignature = useCallback((event: CalendarEvent): string => {
     return `${event.title}|${event.description || ''}|${event.start_at}|${event.end_at}`;
-  };
+  }, []);
 
   // Detect and remove duplicate events
   const removeDuplicateEvents = useCallback(
@@ -593,7 +646,7 @@ export const CalendarSyncProvider = ({
       // Return the filtered list without duplicates
       return eventsData.filter((event) => !eventsToDelete.includes(event.id));
     },
-    [wsId, queryClient]
+    [wsId, queryClient, createEventSignature]
   );
 
   useEffect(() => {
@@ -602,14 +655,35 @@ export const CalendarSyncProvider = ({
         const result = await removeDuplicateEvents(
           fetchedData as CalendarEvent[]
         );
-        setEvents(result);
+
+        // Filter events by enabled calendars
+        // If no calendar connections exist (not using Google Calendar), show all events
+        // If connections exist, only show events from enabled calendars or events without a google_calendar_id
+        const filteredEvents =
+          calendarConnections.length > 0
+            ? result.filter((event) => {
+                const eventCalendarId = (event as any).google_calendar_id;
+                // Show events without google_calendar_id (manually created events)
+                // Or events from enabled calendars
+                return (
+                  !eventCalendarId || enabledCalendarIds.has(eventCalendarId)
+                );
+              })
+            : result;
+
+        setEvents(filteredEvents);
       } else {
         setEvents([]);
       }
     };
 
     processEvents();
-  }, [fetchedData, removeDuplicateEvents]);
+  }, [
+    fetchedData,
+    removeDuplicateEvents,
+    calendarConnections.length,
+    enabledCalendarIds,
+  ]);
 
   const eventsWithoutAllDays = useMemo(() => {
     // Process events immediately when they change
@@ -668,6 +742,11 @@ export const CalendarSyncProvider = ({
     allDayEvents,
     refresh,
 
+    // Calendar connections and filtering
+    calendarConnections,
+    enabledCalendarIds,
+    updateCalendarConnection,
+
     // Loading states
     isLoading: isDatabaseLoading || isGoogleLoading,
     isSyncing,
@@ -688,3 +767,6 @@ export const useCalendarSync = () => {
     );
   return context;
 };
+
+// Export the CalendarConnection type for use in other components
+export type { CalendarConnection };

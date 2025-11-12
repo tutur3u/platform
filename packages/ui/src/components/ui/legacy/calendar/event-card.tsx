@@ -19,7 +19,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { containsHtml, sanitizeHtml } from '@tuturuuu/utils/html-sanitizer';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -122,7 +122,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   // const durationMinutes = Math.round(durationMs / (1000 * 60));
 
   // Refs for DOM elements
-  const cardRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLButtonElement>(null);
   const handleRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -150,7 +150,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const statusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Show temporary status feedback
-  const showStatusFeedback = (status: 'success' | 'error') => {
+  const showStatusFeedback = useCallback((status: 'success' | 'error') => {
     setUpdateStatus(status);
 
     // Clear any existing timeout
@@ -174,12 +174,15 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         statusTimeoutRef.current = null;
       }
     }, 1500);
-  };
+  }, []);
 
   // Batch visual state updates to reduce renders
-  const updateVisualState = (updates: Partial<typeof visualState>) => {
-    setVisualState((prev) => ({ ...prev, ...updates }));
-  };
+  const updateVisualState = useCallback(
+    (updates: Partial<typeof visualState>) => {
+      setVisualState((prev) => ({ ...prev, ...updates }));
+    },
+    []
+  );
 
   // Debounced update function to reduce API calls
   const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -189,55 +192,58 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   } | null>(null);
 
   // Schedule a throttled update
-  const scheduleUpdate = (updateData: { start_at: string; end_at: string }) => {
-    // For multi-day events, we need to update the original event
-    const eventId = event._originalId || id;
+  const scheduleUpdate = useCallback(
+    (updateData: { start_at: string; end_at: string }) => {
+      // For multi-day events, we need to update the original event
+      const eventId = event._originalId || id;
 
-    // Store the latest update data
-    pendingUpdateRef.current = updateData;
-    syncPendingRef.current = true;
+      // Store the latest update data
+      pendingUpdateRef.current = updateData;
+      syncPendingRef.current = true;
 
-    // Immediately update local event data for UI rendering
-    setLocalEvent((prev) => ({
-      ...prev,
-      ...updateData,
-    }));
+      // Immediately update local event data for UI rendering
+      setLocalEvent((prev) => ({
+        ...prev,
+        ...updateData,
+      }));
 
-    // Show syncing state immediately
-    setIsSyncing(true);
-    setUpdateStatus('syncing');
+      // Show syncing state immediately
+      setIsSyncing(true);
+      setUpdateStatus('syncing');
 
-    // Only start a new timer if there isn't one already
-    if (!updateTimeoutRef.current) {
-      updateTimeoutRef.current = setTimeout(() => {
-        if (pendingUpdateRef.current) {
-          updateEvent(eventId, pendingUpdateRef.current)
-            .then(() => {
-              showStatusFeedback('success');
-            })
-            .catch((error) => {
-              console.error('Failed to update event:', error);
-              showStatusFeedback('error');
+      // Only start a new timer if there isn't one already
+      if (!updateTimeoutRef.current) {
+        updateTimeoutRef.current = setTimeout(() => {
+          if (pendingUpdateRef.current) {
+            updateEvent(eventId, pendingUpdateRef.current)
+              .then(() => {
+                showStatusFeedback('success');
+              })
+              .catch((error) => {
+                console.error('Failed to update event:', error);
+                showStatusFeedback('error');
 
-              // Revert to original data on error
-              setLocalEvent(event);
-            })
-            .finally(() => {
-              syncPendingRef.current = false;
-              setTimeout(() => {
-                if (!syncPendingRef.current) {
-                  setIsSyncing(false);
-                }
-              }, 300);
-            });
+                // Revert to original data on error
+                setLocalEvent(event);
+              })
+              .finally(() => {
+                syncPendingRef.current = false;
+                setTimeout(() => {
+                  if (!syncPendingRef.current) {
+                    setIsSyncing(false);
+                  }
+                }, 300);
+              });
 
-          pendingUpdateRef.current = null;
-        }
+            pendingUpdateRef.current = null;
+          }
 
-        updateTimeoutRef.current = null;
-      }, 250); // Throttle to once every 250ms
-    }
-  };
+          updateTimeoutRef.current = null;
+        }, 250); // Throttle to once every 250ms
+      }
+    },
+    [updateEvent, event, id, showStatusFeedback]
+  );
 
   // Clean up any pending updates
   useEffect(() => {
@@ -338,8 +344,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
         // Configuration for layered stacking
         const baseMargin = 4; // Base margin for the day column
-        const layerIndent = 8; // Indent for each layer (more visible)
-        const layerWidthReduction = 8; // Width reduction per layer
+        const layerIndent = 16; // Indent for each layer (more visible)
+        const layerWidthReduction = 16; // Width reduction per layer
         const minEventWidth = 60; // Minimum width to remain readable
 
         if (columnIndex === 0) {
@@ -435,6 +441,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     overlapGroup,
     hoveredBaseEventId,
     hoveredEventColumn,
+    endDate.isBefore,
   ]);
 
   // Event resizing - only enable for non-multi-day events or the start/end segments
@@ -623,6 +630,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     event._originalId,
     startHours,
     locked,
+    endDate.clone,
+    scheduleUpdate,
+    showStatusFeedback, // Update visual state
+    updateVisualState,
   ]);
 
   // Event dragging - only enable for non-multi-day events
@@ -873,6 +884,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     _isMultiDay,
     event._originalId,
     locked,
+    scheduleUpdate,
+    showStatusFeedback, // Update visual state for immediate feedback
+    updateVisualState,
   ]);
 
   // Color styles based on event color
@@ -896,10 +910,11 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const showStartIndicator = _isMultiDay && _dayPosition !== 'start';
   const showEndIndicator = _isMultiDay && _dayPosition !== 'end';
 
+  const { settings: calendarSettings } = useCalendarSettings();
+
   // Format time for display
   const formatEventTime = (date: Date | dayjs.Dayjs) => {
-    const { settings } = useCalendarSettings();
-    const timeFormat = settings.appearance.timeFormat;
+    const timeFormat = calendarSettings.appearance.timeFormat;
     const d = dayjs.isDayjs(date)
       ? date
       : tz === 'auto'
@@ -990,7 +1005,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div
+        <button
+          type="button"
           ref={cardRef}
           id={`event-${id}`}
           className={cn(
@@ -1058,7 +1074,6 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             wasDraggedRef.current = false;
             wasResizedRef.current = false;
           }}
-          role="button"
           aria-label={`Event: ${title || 'Untitled event'}${hasCalendarInfo ? ` from ${calendarDisplayName}` : ''}`}
           title={
             hasCalendarInfo ? `Calendar: ${calendarDisplayName}` : undefined
@@ -1171,6 +1186,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               {(duration > 1 || _isMultiDay) && description && (
                 <div
                   className="event-description mt-1 line-clamp-2 text-xs"
+                  // biome-ignore lint/security/noDangerouslySetInnerHtml: <html is sanitized>
                   dangerouslySetInnerHTML={{
                     __html: containsHtml(description)
                       ? sanitizeHtml(description)
@@ -1189,10 +1205,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                 'absolute inset-x-0 bottom-0 cursor-s-resize hover:bg-primary/20',
                 'h-2 transition-colors'
               )}
-              aria-label="Resize event"
             />
           )}
-        </div>
+        </button>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-48">
         <ContextMenuItem

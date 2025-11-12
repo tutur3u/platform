@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
+import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useCallback, useEffect, useState } from 'react';
@@ -46,6 +47,8 @@ export default function CalendarConnectionsManager({
   initialConnections,
   hasGoogleAuth,
 }: CalendarConnectionsManagerProps) {
+  const { updateCalendarConnection: updateContextConnection } =
+    useCalendarSync();
   const [connections, setConnections] =
     useState<CalendarConnection[]>(initialConnections);
   const [availableCalendars, setAvailableCalendars] = useState<
@@ -121,6 +124,9 @@ export default function CalendarConnectionsManager({
     isEnabled: boolean
   ) => {
     try {
+      // Optimistically update context
+      updateContextConnection(connectionId, isEnabled);
+
       const response = await fetch('/api/v1/calendar/connections', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -131,10 +137,14 @@ export default function CalendarConnectionsManager({
         await refreshConnections();
         toast.success(isEnabled ? 'Calendar enabled' : 'Calendar disabled');
       } else {
+        // Revert on error
+        updateContextConnection(connectionId, !isEnabled);
         const data = await response.json();
         toast.error(data.error || 'Failed to update calendar');
       }
     } catch (_error) {
+      // Revert on error
+      updateContextConnection(connectionId, !isEnabled);
       toast.error('Failed to update calendar');
     }
   };
