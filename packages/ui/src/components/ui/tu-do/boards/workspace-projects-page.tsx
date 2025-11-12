@@ -1,17 +1,17 @@
 import {
-  dehydrate,
-  HydrationBoundary,
   QueryClient,
+  HydrationBoundary,
+  dehydrate,
 } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { Plus } from '@tuturuuu/icons';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
-import {
-  getPermissions,
-  getWorkspaces,
-  isPersonalWorkspace,
-} from '@tuturuuu/utils/workspace-helper';
+import { Button } from '@tuturuuu/ui/button';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
-import { WorkspaceProjectsHeader } from './workspace-projects-header';
+import { EnhancedBoardsView } from './enhanced-boards-view';
+import { TaskBoardForm } from './form';
 
 interface Props {
   wsId: string;
@@ -22,24 +22,21 @@ interface Props {
   };
 }
 
-async function getData({
-  wsIds,
-  q,
-  page = '1',
-  pageSize = '10',
-}: {
-  wsIds: string[];
-  q?: string;
-  page?: string;
-  pageSize?: string;
-}) {
+async function getData(
+  wsId: string,
+  {
+    q,
+    page = '1',
+    pageSize = '10',
+  }: { q?: string; page?: string; pageSize?: string }
+) {
   const supabase = await createClient();
 
   // Build the main query for boards
   const queryBuilder = supabase
     .from('workspace_boards')
     .select('*', { count: 'exact' })
-    .in('ws_id', wsIds)
+    .eq('ws_id', wsId)
     .order('name', { ascending: true })
     .order('created_at', { ascending: false });
 
@@ -118,32 +115,36 @@ export default async function WorkspaceProjectsPage({
   const page = searchParams.page || '1';
   const pageSize = searchParams.pageSize || '10';
 
-  const isPersonal = await isPersonalWorkspace(wsId);
-  const workspaces = await getWorkspaces();
-  const personalWorkspace = workspaces?.find((ws) => ws.personal);
-
-  const wsIds =
-    isPersonal && workspaces ? workspaces.map((ws) => ws.id) : [wsId];
-
-  const queryKey = isPersonal
-    ? ['all-boards', wsIds, q, page, pageSize]
-    : ['boards', wsId, q, page, pageSize];
-
+  // Prefetch with the exact same query key structure that the client will use
   await queryClient.prefetchQuery({
-    queryKey,
-    queryFn: () => getData({ wsIds, q, page, pageSize }),
+    queryKey: ['boards', wsId, q, page, pageSize],
+    queryFn: () => getData(wsId, { q, page, pageSize }),
   });
 
+  const t = await getTranslations();
+
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <WorkspaceProjectsHeader
-        wsId={wsId}
-        wsIds={wsIds}
-        isPersonal={isPersonal}
-        workspaces={workspaces ?? undefined}
-        personalWorkspaceId={personalWorkspace?.id}
-        defaultWsId={wsId}
-      />
-    </HydrationBoundary>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-2">
+          <h1 className="font-bold text-2xl tracking-tight">
+            {t('ws-task-boards.plural')}
+          </h1>
+          <p className="text-muted-foreground">
+            {t('ws-task-boards.description')}
+          </p>
+        </div>
+        <TaskBoardForm wsId={wsId}>
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            {t('ws-task-boards.create')}
+          </Button>
+        </TaskBoardForm>
+      </div>
+
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <EnhancedBoardsView wsId={wsId} />
+      </HydrationBoundary>
+    </div>
   );
 }

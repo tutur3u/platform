@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 
-export type CalendarView = 'day' | '4-days' | 'week' | 'month';
+export type CalendarView = 'day' | '4-days' | 'week' | 'month' | 'agenda';
 
 export function useViewTransition() {
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -20,7 +20,13 @@ export function useViewTransition() {
       }
 
       // Determine transition type and direction
-      const viewOrder: CalendarView[] = ['day', '4-days', 'week', 'month'];
+      const viewOrder: CalendarView[] = [
+        'day',
+        '4-days',
+        'week',
+        'month',
+        'agenda',
+      ];
       const oldIndex = viewOrder.indexOf(oldView);
       const newIndex = viewOrder.indexOf(newView);
 

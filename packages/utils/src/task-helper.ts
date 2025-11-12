@@ -1435,8 +1435,7 @@ export function useCreateBoardWithTemplate(wsId: string) {
       return createBoardWithTemplate(supabase, wsId, name, templateId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['boards'] });
-      queryClient.invalidateQueries({ queryKey: ['all-boards'] });
+      queryClient.invalidateQueries({ queryKey: ['workspace-boards', wsId] });
     },
     onError: (error) => {
       console.error('Error creating board:', error);

@@ -32,8 +32,8 @@ export async function GET(request: Request) {
   }
 
   // Get the user's tokens with more defensive query
-  let googleTokens;
-  let googleTokensError;
+  let googleTokens: any;
+  let googleTokensError: any;
 
   let timeMin: Date | null = null;
   let timeMax: Date | null = null;
@@ -163,22 +163,72 @@ export async function GET(request: Request) {
     }
 
     try {
+      const fetchStartTime = Date.now();
+
       const auth = getGoogleAuthClient(tokens);
       const calendar = google.calendar({ version: 'v3', auth });
 
-      const response = await calendar.events.list({
-        calendarId: 'primary',
-        timeMin: timeMin.toISOString(),
-        timeMax: timeMax.toISOString(),
-        singleEvents: true, // separate recurring events
-        orderBy: 'startTime',
-        maxResults: 1000,
+      // Get calendar connections to determine which calendars to sync from
+      const { data: calendarConnections, error: connectionsError } =
+        await supabase
+          .from('calendar_connections')
+          .select('calendar_id, is_enabled')
+          .eq('ws_id', wsId)
+          .eq('is_enabled', true);
+
+      if (connectionsError) {
+        console.error('Error fetching calendar connections:', connectionsError);
+        // Fall back to primary calendar if no connections found
+      }
+
+      // Determine which calendar IDs to fetch from
+      const calendarIds =
+        calendarConnections && calendarConnections.length > 0
+          ? calendarConnections.map((conn) => conn.calendar_id)
+          : ['primary']; // Default to primary if no connections
+
+      // Fetch events from all connected calendars IN PARALLEL for better performance
+      const fetchPromises = calendarIds.map(async (calendarId) => {
+        try {
+          const response = await calendar.events.list({
+            calendarId,
+            timeMin: timeMin?.toISOString(),
+            timeMax: timeMax?.toISOString(),
+            singleEvents: true, // separate recurring events
+            orderBy: 'startTime',
+            maxResults: 1000,
+          });
+
+          const events = response.data.items || [];
+
+          // Add calendar_id to each event for tracking
+          return events.map((event) => ({
+            ...event,
+            sourceCalendarId: calendarId,
+          }));
+        } catch (calendarError: any) {
+          console.error(
+            `Error fetching events from calendar ${calendarId}:`,
+            calendarError
+          );
+          // Return empty array for failed calendars to continue with others
+          return [];
+        }
       });
 
-      const events = response.data.items || [];
+      // Wait for all calendar fetches to complete in parallel
+      const calendarResults = await Promise.all(fetchPromises);
+
+      // Flatten all events from all calendars
+      const allEvents = calendarResults.flat();
+
+      const fetchDuration = Date.now() - fetchStartTime;
+      console.log(
+        `✅ [PERF] Fetched ${allEvents.length} events from ${calendarIds.length} calendars in ${fetchDuration}ms (${Math.round(fetchDuration / calendarIds.length)}ms per calendar)`
+      );
 
       // format the events to match the expected structure
-      const formattedEvents = events.map((event) => {
+      const formattedEvents = allEvents.map((event) => {
         // Use the new timezone-aware conversion for all-day events
         const { start_at, end_at } = convertGoogleAllDayEvent(
           event.start?.dateTime || event.start?.date || '',
@@ -190,6 +240,7 @@ export async function GET(request: Request) {
 
         return {
           google_event_id: event.id,
+          google_calendar_id: event.sourceCalendarId,
           title: event.summary || 'Untitled Event',
           description: event.description || '',
           start_at,

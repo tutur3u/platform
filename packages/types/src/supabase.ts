@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '13.0.5';
-  };
   public: {
     Tables: {
       ai_chat_members: {
@@ -610,6 +605,54 @@ export type Database = {
           },
           {
             foreignKeyName: 'calendar_auth_tokens_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      calendar_connections: {
+        Row: {
+          calendar_id: string;
+          calendar_name: string;
+          color: string | null;
+          created_at: string;
+          id: string;
+          is_enabled: boolean;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          calendar_id: string;
+          calendar_name: string;
+          color?: string | null;
+          created_at?: string;
+          id?: string;
+          is_enabled?: boolean;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          calendar_id?: string;
+          calendar_name?: string;
+          color?: string | null;
+          created_at?: string;
+          id?: string;
+          is_enabled?: boolean;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_connections_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_connections_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -8536,6 +8579,7 @@ export type Database = {
           created_at: string | null;
           description: string;
           end_at: string;
+          google_calendar_id: string | null;
           google_event_id: string | null;
           id: string;
           location: string | null;
@@ -8550,6 +8594,7 @@ export type Database = {
           created_at?: string | null;
           description?: string;
           end_at: string;
+          google_calendar_id?: string | null;
           google_event_id?: string | null;
           id?: string;
           location?: string | null;
@@ -8564,6 +8609,7 @@ export type Database = {
           created_at?: string | null;
           description?: string;
           end_at?: string;
+          google_calendar_id?: string | null;
           google_event_id?: string | null;
           id?: string;
           location?: string | null;
@@ -11797,7 +11843,36 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       calendar_event_participants: {
         Row: {

@@ -56,7 +56,8 @@ const getColorFromGoogleColorId = (colorId?: string): string => {
 // Format event for database upsert and deletion
 export const formatEventForDb = (
   event: calendar_v3.Schema$Event,
-  ws_id: string
+  ws_id: string,
+  google_calendar_id?: string
 ) => {
   const { start_at, end_at } = convertGoogleAllDayEvent(
     event.start?.dateTime || event.start?.date || '',
@@ -66,6 +67,7 @@ export const formatEventForDb = (
 
   return {
     google_event_id: event.id,
+    google_calendar_id: google_calendar_id || 'primary',
     title: event.summary || 'Untitled Event',
     description: event.description || '',
     start_at,

@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import dayjs from 'dayjs';
+import type { CalendarView } from '../../../../hooks/use-view-transition';
 
 export function CalendarHeader({
   t,
@@ -25,11 +26,11 @@ export function CalendarHeader({
   locale: string;
   date: Date;
   setDate: React.Dispatch<React.SetStateAction<Date>>;
-  view: 'day' | '4-days' | 'week' | 'month';
+  view: CalendarView;
   offset: number;
   availableViews: { value: string; label: string; disabled?: boolean }[];
 
-  onViewChange: (view: 'day' | '4-days' | 'week' | 'month') => void;
+  onViewChange: (view: CalendarView) => void;
   extras?: React.ReactNode;
 }) {
   const views = availableViews.filter((view) => view?.disabled !== true);
@@ -103,7 +104,9 @@ export function CalendarHeader({
                   ? t('this-week')
                   : view === 'month'
                     ? t('this-month')
-                    : t('current')}
+                    : view === 'agenda'
+                      ? t('this-week')
+                      : t('current')}
             </Button>
             <Button
               variant="outline"
@@ -119,9 +122,7 @@ export function CalendarHeader({
             <div className="w-full flex-1 md:w-auto">
               <Select
                 value={view}
-                onValueChange={(value) =>
-                  onViewChange(value as 'day' | '4-days' | 'week' | 'month')
-                }
+                onValueChange={(value) => onViewChange(value as CalendarView)}
               >
                 <SelectTrigger className="h-8 w-full">
                   <SelectValue placeholder={t('view')} />

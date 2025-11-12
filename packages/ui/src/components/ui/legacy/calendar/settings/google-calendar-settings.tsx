@@ -329,20 +329,27 @@ export function GoogleCalendarSettings({
 
     setIsDisconnecting(true);
     try {
-      const supabase = createClient();
+      // Use the API endpoint to disconnect
+      const response = await fetch(
+        `/api/v1/calendar/auth/tokens?wsId=${wsId}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
-      const { error } = await supabase
-        .from('calendar_auth_tokens')
-        .delete()
-        .eq('id', experimentalGoogleToken.id);
-
-      if (error) {
-        throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to disconnect');
       }
+
+      // Also delete all calendar connections for this workspace
+      const supabase = createClient();
+      await supabase.from('calendar_connections').delete().eq('ws_id', wsId);
 
       toast({
         title: 'Disconnected',
-        description: 'Google Calendar has been disconnected successfully',
+        description:
+          'Google Calendar has been disconnected successfully. You can reconnect to use the new multi-calendar feature.',
       });
 
       setGoogleCalendarConnected(false);

@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Menu, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { useEffect, type ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 
 interface StructureProps {
   isCollapsed: boolean;
@@ -89,11 +89,10 @@ export function Structure({
         <div className="relative w-full">
           <aside
             className={cn(
-              'group fixed z-50 flex h-[100dvh] flex-col overflow-hidden border-l backdrop-blur-lg transition-all duration-300 ease-in-out md:z-20 md:border-r md:border-l-0 md:left-0 right-0 left-auto',
+              'group fixed top-0 right-0 left-auto z-50 flex h-dvh flex-col overflow-hidden border-l backdrop-blur-lg transition-all duration-300 ease-in-out md:left-0 md:z-20 md:border-r md:border-l-0',
               isCollapsed
                 ? 'w-16 bg-background/50 max-md:w-0'
                 : 'w-64 bg-background max-sm:w-full',
-              'max-md:absolute',
               isCollapsed && 'max-md:translate-x-full'
             )}
             onMouseEnter={onMouseEnter}

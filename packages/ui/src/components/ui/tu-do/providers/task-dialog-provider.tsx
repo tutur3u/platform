@@ -110,13 +110,13 @@ export function useTaskDialogContext() {
 interface TaskDialogProviderProps {
   children: ReactNode;
   onUpdate?: () => void;
-  isPersonalWorkspace: boolean;
+  isPersonalWorkspace?: boolean;
 }
 
 export function TaskDialogProvider({
   children,
   onUpdate: externalOnUpdate,
-  isPersonalWorkspace,
+  isPersonalWorkspace = false,
 }: TaskDialogProviderProps) {
   const [state, setState] = useState<TaskDialogState>({
     isOpen: false,

@@ -4,6 +4,7 @@ import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useState } from 'react';
+import { AgendaView } from './agenda-view';
 import { CalendarHeader } from './calendar-header';
 import { CalendarViewWithTrail } from './calendar-view-with-trail';
 import { CreateEventButton } from './create-event-button';
@@ -61,10 +62,8 @@ export const CalendarContent = ({
   externalState?: {
     date: Date;
     setDate: React.Dispatch<React.SetStateAction<Date>>;
-    view: 'day' | '4-days' | 'week' | 'month';
-    setView: React.Dispatch<
-      React.SetStateAction<'day' | '4-days' | 'week' | 'month'>
-    >;
+    view: CalendarView;
+    setView: React.Dispatch<React.SetStateAction<CalendarView>>;
     availableViews: { value: string; label: string; disabled?: boolean }[];
   };
   extras?: React.ReactNode;
@@ -207,7 +206,17 @@ export const CalendarContent = ({
     setDate(newDate);
     const gridDates = getMonthGridDates(newDate, firstDayNumber);
     setDates(gridDates);
-  }, [date, settings, setView, setDate, setDates]);
+  }, [date, settings, setDates]);
+
+  const enableAgendaView = useCallback(() => {
+    const newDate = new Date(date);
+    newDate.setHours(0, 0, 0, 0);
+
+    transition('agenda', () => {
+      handleSetView('agenda');
+      setDates([newDate]);
+    });
+  }, [date, transition, handleSetView, setDates]);
 
   // Initialize available views
   useEffect(() => {
@@ -237,6 +246,11 @@ export const CalendarContent = ({
           label: t('month'),
           disabled: false,
         },
+        {
+          value: 'agenda',
+          label: t('agenda'),
+          disabled: false,
+        },
       ]);
     }
 
@@ -246,6 +260,7 @@ export const CalendarContent = ({
       else if (externalState.view === '4-days') enable4DayView();
       else if (externalState.view === 'week') enableWeekView();
       else if (externalState.view === 'month') enableMonthView();
+      else if (externalState.view === 'agenda') enableAgendaView();
     } else {
       // Default to week view if no setting is provided
       enableWeekView();
@@ -257,6 +272,7 @@ export const CalendarContent = ({
     enable4DayView,
     enableWeekView,
     enableMonthView,
+    enableAgendaView,
     externalState,
   ]);
 
@@ -342,6 +358,10 @@ export const CalendarContent = ({
         firstDayNumber = 6;
       const gridDates = getMonthGridDates(date, firstDayNumber);
       setDates(gridDates);
+    } else if (view === 'agenda') {
+      const newDate = new Date(date);
+      newDate.setHours(0, 0, 0, 0);
+      setDates([newDate]);
     }
   }, [date, view, settings, setDates]);
 
@@ -387,12 +407,21 @@ export const CalendarContent = ({
         case 'm':
           enableMonthView();
           break;
+        case 'a':
+          enableAgendaView();
+          break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [enableDayView, enable4DayView, enableWeekView, enableMonthView]);
+  }, [
+    enableDayView,
+    enable4DayView,
+    enableWeekView,
+    enableMonthView,
+    enableAgendaView,
+  ]);
 
   if (!initialized || !view || !dates.length) return null;
 
@@ -412,23 +441,39 @@ export const CalendarContent = ({
           setDate={handleSetDate}
           view={view}
           offset={
-            view === 'day' ? 1 : view === '4-days' ? 4 : view === 'week' ? 7 : 0
+            view === 'day'
+              ? 1
+              : view === '4-days'
+                ? 4
+                : view === 'week'
+                  ? 7
+                  : view === 'agenda'
+                    ? 7
+                    : 0
           }
           onViewChange={(newView) => {
             if (newView === 'day') enableDayView();
             else if (newView === '4-days') enable4DayView();
             else if (newView === 'week') enableWeekView();
             else if (newView === 'month') enableMonthView();
+            else if (newView === 'agenda') enableAgendaView();
           }}
           extras={extras}
         />
       )}
 
-      {view !== 'month' && (
+      {view !== 'month' && view !== 'agenda' && (
         <WeekdayBar locale={locale} view={view} dates={dates} />
       )}
 
-      <div className="scrollbar-none relative flex-1 overflow-auto bg-background/50">
+      <div
+        className="scrollbar-none relative flex-1 overflow-auto bg-background/50 focus:outline-none"
+        tabIndex={0}
+        onWheel={(e) => {
+          // Ensure scroll events are always captured
+          e.currentTarget.focus();
+        }}
+      >
         {view === 'month' && dates?.[0] ? (
           <MonthCalendar
             date={dates[0]}
@@ -436,6 +481,8 @@ export const CalendarContent = ({
             visibleDates={dates}
             viewedMonth={date}
           />
+        ) : view === 'agenda' && dates?.[0] ? (
+          <AgendaView startDate={dates[0]} workspace={workspace} />
         ) : (
           <CalendarViewWithTrail dates={dates} />
         )}
