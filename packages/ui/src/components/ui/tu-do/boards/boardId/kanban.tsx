@@ -446,19 +446,14 @@ export function KanbanBoard({
           const columnId = over.data?.current?.columnId || over.id;
           if (!columnId) return;
           targetListId = String(columnId);
-
-          // Only set drag preview if moving to a different column
-          const originalListId = pickedUpTaskColumn.current;
-          if (originalListId !== targetListId) {
-            // Dropping on empty column surface - preview at end
-            setDragPreviewPosition({
-              listId: targetListId,
-              overTaskId: null,
-              position: 'empty',
-              task: activeTask,
-              height: cachedHeight,
-            });
-          }
+          // Dropping on empty column surface - preview at end
+          setDragPreviewPosition({
+            listId: targetListId,
+            overTaskId: null,
+            position: 'empty',
+            task: activeTask,
+            height: cachedHeight,
+          });
         } else {
           return;
         }
