@@ -38,7 +38,11 @@ function sanitizeUrl(url: string): string | null {
     const trimmed = url.trim();
 
     // Allow relative URLs
-    if (trimmed.startsWith('/') || trimmed.startsWith('./') || trimmed.startsWith('../')) {
+    if (
+      trimmed.startsWith('/') ||
+      trimmed.startsWith('./') ||
+      trimmed.startsWith('../')
+    ) {
       return trimmed;
     }
 

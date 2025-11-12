@@ -10,17 +10,17 @@ import {
 } from '@tuturuuu/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTheme } from 'next-themes';
+import type { CalendarView } from '../../../../../hooks/use-view-transition';
 
 export type CalendarTheme = 'light' | 'dark' | 'system';
 export type FirstDayOfWeek = 'sunday' | 'monday' | 'saturday';
 export type TimeFormat = '12h' | '24h';
-export type DefaultView = 'day' | '4-days' | 'week' | 'month';
 
 export type AppearanceData = {
   theme: CalendarTheme;
   firstDayOfWeek: FirstDayOfWeek;
   timeFormat: TimeFormat;
-  defaultView: DefaultView;
+  defaultView: CalendarView;
   showWeekNumbers: boolean;
   showDeclinedEvents: boolean;
   showWeekends: boolean;

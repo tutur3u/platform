@@ -1,12 +1,13 @@
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
+import type { CalendarView } from '../../../../hooks/use-view-transition';
 import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
 
 interface DayTitleProps {
-  view: 'day' | '4-days' | 'week' | 'month';
+  view: CalendarView;
   date: Date;
   weekday: string;
 }

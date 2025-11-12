@@ -32,8 +32,8 @@ export async function GET(request: Request) {
   }
 
   // Get the user's tokens with more defensive query
-  let googleTokens;
-  let googleTokensError;
+  let googleTokens: any;
+  let googleTokensError: any;
 
   let timeMin: Date | null = null;
   let timeMax: Date | null = null;
@@ -169,11 +169,12 @@ export async function GET(request: Request) {
       const calendar = google.calendar({ version: 'v3', auth });
 
       // Get calendar connections to determine which calendars to sync from
-      const { data: calendarConnections, error: connectionsError } = await supabase
-        .from('calendar_connections')
-        .select('calendar_id, is_enabled')
-        .eq('ws_id', wsId)
-        .eq('is_enabled', true);
+      const { data: calendarConnections, error: connectionsError } =
+        await supabase
+          .from('calendar_connections')
+          .select('calendar_id, is_enabled')
+          .eq('ws_id', wsId)
+          .eq('is_enabled', true);
 
       if (connectionsError) {
         console.error('Error fetching calendar connections:', connectionsError);
@@ -181,17 +182,18 @@ export async function GET(request: Request) {
       }
 
       // Determine which calendar IDs to fetch from
-      const calendarIds = calendarConnections && calendarConnections.length > 0
-        ? calendarConnections.map((conn) => conn.calendar_id)
-        : ['primary']; // Default to primary if no connections
+      const calendarIds =
+        calendarConnections && calendarConnections.length > 0
+          ? calendarConnections.map((conn) => conn.calendar_id)
+          : ['primary']; // Default to primary if no connections
 
       // Fetch events from all connected calendars IN PARALLEL for better performance
       const fetchPromises = calendarIds.map(async (calendarId) => {
         try {
           const response = await calendar.events.list({
             calendarId,
-            timeMin: timeMin.toISOString(),
-            timeMax: timeMax.toISOString(),
+            timeMin: timeMin?.toISOString(),
+            timeMax: timeMax?.toISOString(),
             singleEvents: true, // separate recurring events
             orderBy: 'startTime',
             maxResults: 1000,
@@ -205,7 +207,10 @@ export async function GET(request: Request) {
             sourceCalendarId: calendarId,
           }));
         } catch (calendarError: any) {
-          console.error(`Error fetching events from calendar ${calendarId}:`, calendarError);
+          console.error(
+            `Error fetching events from calendar ${calendarId}:`,
+            calendarError
+          );
           // Return empty array for failed calendars to continue with others
           return [];
         }
@@ -218,7 +223,9 @@ export async function GET(request: Request) {
       const allEvents = calendarResults.flat();
 
       const fetchDuration = Date.now() - fetchStartTime;
-      console.log(`✅ [PERF] Fetched ${allEvents.length} events from ${calendarIds.length} calendars in ${fetchDuration}ms (${Math.round(fetchDuration / calendarIds.length)}ms per calendar)`);
+      console.log(
+        `✅ [PERF] Fetched ${allEvents.length} events from ${calendarIds.length} calendars in ${fetchDuration}ms (${Math.round(fetchDuration / calendarIds.length)}ms per calendar)`
+      );
 
       // format the events to match the expected structure
       const formattedEvents = allEvents.map((event) => {

@@ -6,51 +6,6 @@ import { useTranslations } from 'next-intl';
 
 export default function NavbarCalendarHeader() {
   const t = useTranslations('calendar');
-  // const { date, setDate, view, setView, availableViews } = useCalendar();
-
-  // const title = dayjs(date)
-  //   .locale(locale)
-  //   .format(locale === 'vi' ? 'MMMM, YYYY' : 'MMMM YYYY')
-  //   .replace(/^\w/, (c) => c.toUpperCase());
-
-  // const getOffset = () => {
-  //   return view === 'day' ? 1 : view === '4-days' ? 4 : view === 'week' ? 7 : 0;
-  // };
-
-  // const handleNext = () =>
-  //   setDate((date) => {
-  //     const newDate = new Date(date);
-  //     if (view === 'month') {
-  //       newDate.setMonth(newDate.getMonth() + 1);
-  //     } else {
-  //       newDate.setDate(newDate.getDate() + getOffset());
-  //     }
-  //     return newDate;
-  //   });
-
-  // const handlePrev = () =>
-  //   setDate((date) => {
-  //     const newDate = new Date(date);
-  //     if (view === 'month') {
-  //       newDate.setMonth(newDate.getMonth() - 1);
-  //     } else {
-  //       newDate.setDate(newDate.getDate() - getOffset());
-  //     }
-  //     return newDate;
-  //   });
-
-  // const selectToday = () => setDate(new Date());
-  // const isToday = () => dayjs(date).isSame(dayjs(), 'day');
-  // const isCurrentMonth = () =>
-  //   view === 'month' &&
-  //   date.getMonth() === new Date().getMonth() &&
-  //   date.getFullYear() === new Date().getFullYear();
-
-  // const onViewChange = (newView: string) => {
-  //   setView(newView as 'day' | '4-days' | 'week' | 'month');
-  // };
-
-  // const views = availableViews.filter((view) => view?.disabled !== true);
 
   return (
     <div className="flex items-center justify-between gap-2">
@@ -66,14 +21,7 @@ export default function NavbarCalendarHeader() {
           <ChevronLeft className="h-4 w-4" />
         </Button>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 text-md"
-          // onClick={isToday() || isCurrentMonth() ? undefined : selectToday}
-          // disabled={isToday() || isCurrentMonth()}
-          disabled
-        >
+        <Button variant="ghost" size="sm" className="h-8 text-md" disabled>
           {/* {view === 'day'
             ? t('today')
             : view === 'week'

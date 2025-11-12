@@ -106,23 +106,31 @@ export async function POST(request: Request) {
       .eq('is_enabled', true);
 
     if (connectionsError) {
-      console.log('❌ [DEBUG] Error fetching calendar connections:', connectionsError);
+      console.log(
+        '❌ [DEBUG] Error fetching calendar connections:',
+        connectionsError
+      );
       // Fall back to primary calendar if no connections found
     }
 
     // Determine which calendar IDs to sync from
-    const calendarIds = calendarConnections && calendarConnections.length > 0
-      ? calendarConnections.map((conn) => conn.calendar_id)
-      : ['primary']; // Default to primary if no connections
+    const calendarIds =
+      calendarConnections && calendarConnections.length > 0
+        ? calendarConnections.map((conn) => conn.calendar_id)
+        : ['primary']; // Default to primary if no connections
 
     console.log('🔍 [DEBUG] Syncing from calendars:', calendarIds);
 
     // 5. Fetch eventsToUpsert and eventsToDelete from incremental active sync for each calendar
     // Process all calendars IN PARALLEL for much better performance
-    console.log(`🔍 [DEBUG] Starting parallel sync for ${calendarIds.length} calendars...`);
+    console.log(
+      `🔍 [DEBUG] Starting parallel sync for ${calendarIds.length} calendars...`
+    );
 
     const syncPromises = calendarIds.map(async (calendarId) => {
-      console.log(`🔍 [DEBUG] Calling performIncrementalActiveSync for calendar: ${calendarId}...`);
+      console.log(
+        `🔍 [DEBUG] Calling performIncrementalActiveSync for calendar: ${calendarId}...`
+      );
 
       try {
         const incrementalActiveSyncResult = await performIncrementalActiveSync(
@@ -161,15 +169,21 @@ export async function POST(request: Request) {
           eventsDeleted: number;
         };
 
-        console.log(`✅ [DEBUG] performIncrementalActiveSync completed for calendar ${calendarId}:`, {
-          eventsInserted: syncResult.eventsInserted,
-          eventsUpdated: syncResult.eventsUpdated,
-          eventsDeleted: syncResult.eventsDeleted,
-        });
+        console.log(
+          `✅ [DEBUG] performIncrementalActiveSync completed for calendar ${calendarId}:`,
+          {
+            eventsInserted: syncResult.eventsInserted,
+            eventsUpdated: syncResult.eventsUpdated,
+            eventsDeleted: syncResult.eventsDeleted,
+          }
+        );
 
         return syncResult;
       } catch (error) {
-        console.error(`❌ [DEBUG] Error syncing calendar ${calendarId}:`, error);
+        console.error(
+          `❌ [DEBUG] Error syncing calendar ${calendarId}:`,
+          error
+        );
         return { eventsInserted: 0, eventsUpdated: 0, eventsDeleted: 0 };
       }
     });
@@ -187,7 +201,10 @@ export async function POST(request: Request) {
       { eventsInserted: 0, eventsUpdated: 0, eventsDeleted: 0 }
     );
 
-    console.log('✅ [DEBUG] All calendars synced in parallel, totals:', syncResult);
+    console.log(
+      '✅ [DEBUG] All calendars synced in parallel, totals:',
+      syncResult
+    );
 
     console.log('🔍 [DEBUG] Updating last upsert...');
     await updateLastUpsert(wsId, supabase);
@@ -221,7 +238,9 @@ export async function POST(request: Request) {
     }
 
     const routeDuration = Date.now() - routeStartTime;
-    console.log(`✅ [PERF] Active sync completed in ${routeDuration}ms for ${calendarIds.length} calendars`);
+    console.log(
+      `✅ [PERF] Active sync completed in ${routeDuration}ms for ${calendarIds.length} calendars`
+    );
     console.log('✅ [DEBUG] Returning success response');
 
     return NextResponse.json({

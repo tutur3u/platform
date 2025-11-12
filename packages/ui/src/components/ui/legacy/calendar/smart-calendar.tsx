@@ -2,6 +2,7 @@
 
 import type { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types';
 import { CalendarProvider } from '@tuturuuu/ui/hooks/use-calendar';
+import type { CalendarView } from '../../../../hooks/use-view-transition';
 import { CalendarContent } from './calendar-content';
 import {
   type CalendarSettings,
@@ -31,10 +32,8 @@ export const SmartCalendar = ({
   externalState?: {
     date: Date;
     setDate: React.Dispatch<React.SetStateAction<Date>>;
-    view: 'day' | '4-days' | 'week' | 'month';
-    setView: React.Dispatch<
-      React.SetStateAction<'day' | '4-days' | 'week' | 'month'>
-    >;
+    view: CalendarView;
+    setView: React.Dispatch<React.SetStateAction<CalendarView>>;
     availableViews: { value: string; label: string; disabled?: boolean }[];
   };
   extras?: React.ReactNode;

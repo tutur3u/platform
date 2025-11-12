@@ -444,7 +444,9 @@ async function incrementalActiveSync(
       batches.push(formattedEventsToUpsert.slice(i, i + BATCH_SIZE));
     }
 
-    console.log(`🔍 [DEBUG] Processing ${formattedEventsToUpsert.length} events in ${batches.length} batches`);
+    console.log(
+      `🔍 [DEBUG] Processing ${formattedEventsToUpsert.length} events in ${batches.length} batches`
+    );
 
     // Process batches in parallel for better performance
     const batchPromises = batches.map(async (batch, index) => {
@@ -455,7 +457,9 @@ async function incrementalActiveSync(
       );
 
       const batchDuration = Date.now() - batchStartTime;
-      console.log(`✅ [DEBUG] Batch ${index + 1}/${batches.length} completed in ${batchDuration}ms`);
+      console.log(
+        `✅ [DEBUG] Batch ${index + 1}/${batches.length} completed in ${batchDuration}ms`
+      );
 
       if (batchError) {
         console.log(`❌ [DEBUG] Batch ${index + 1} error:`, batchError);
@@ -476,7 +480,10 @@ async function incrementalActiveSync(
       { inserted: 0, updated: 0 }
     );
 
-    console.log('✅ [DEBUG] All batches completed. Total upsert result:', upsertResult);
+    console.log(
+      '✅ [DEBUG] All batches completed. Total upsert result:',
+      upsertResult
+    );
   }
 
   return {

@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { canProceedWithSync } from '@tuturuuu/trigger/calendar-sync-coordination';
 import type {
@@ -103,14 +104,10 @@ export const CalendarSyncProvider = ({
   children,
   wsId,
   experimentalGoogleToken,
-  useQuery,
-  useQueryClient,
 }: {
   children: React.ReactNode;
   wsId: Workspace['id'];
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
-  useQuery: any;
-  useQueryClient: any;
 }) => {
   const [data, setData] = useState<WorkspaceCalendarEvent[] | null>(null);
   const [googleData, setGoogleData] = useState<WorkspaceCalendarEvent[] | null>(

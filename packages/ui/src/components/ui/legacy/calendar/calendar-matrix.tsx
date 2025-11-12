@@ -254,7 +254,7 @@ export const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
           // Find the first column where this event can fit
           let column = -1;
           for (let i = 0; i < columnEndTimes.length; i++) {
-            if (eventStart >= columnEndTimes[i]) {
+            if (eventStart >= columnEndTimes[i]!) {
               column = i;
               break;
             }

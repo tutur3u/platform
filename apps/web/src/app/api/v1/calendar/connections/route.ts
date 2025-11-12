@@ -89,12 +89,13 @@ export async function POST(request: Request) {
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: 'Invalid request data', details: validation.error.errors },
+        { error: 'Invalid request data', details: validation.error.issues },
         { status: 400 }
       );
     }
 
-    const { wsId, calendarId, calendarName, color, isEnabled } = validation.data;
+    const { wsId, calendarId, calendarName, color, isEnabled } =
+      validation.data;
 
     // Insert the calendar connection
     const { data: connection, error: insertError } = await supabase
@@ -157,7 +158,7 @@ export async function PATCH(request: Request) {
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: 'Invalid request data', details: validation.error.errors },
+        { error: 'Invalid request data', details: validation.error.issues },
         { status: 400 }
       );
     }
@@ -166,8 +167,10 @@ export async function PATCH(request: Request) {
 
     // Build the update object dynamically
     const updateData: Record<string, any> = {};
-    if (updates.isEnabled !== undefined) updateData.is_enabled = updates.isEnabled;
-    if (updates.calendarName !== undefined) updateData.calendar_name = updates.calendarName;
+    if (updates.isEnabled !== undefined)
+      updateData.is_enabled = updates.isEnabled;
+    if (updates.calendarName !== undefined)
+      updateData.calendar_name = updates.calendarName;
     if (updates.color !== undefined) updateData.color = updates.color;
 
     // Update the calendar connection

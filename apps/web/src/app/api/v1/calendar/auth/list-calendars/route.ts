@@ -103,7 +103,8 @@ export async function GET(request: Request) {
     if (error.code === 403 || error.status === 403) {
       return NextResponse.json(
         {
-          error: 'Insufficient permissions. Please disconnect and reconnect your Google Calendar to grant required permissions.',
+          error:
+            'Insufficient permissions. Please disconnect and reconnect your Google Calendar to grant required permissions.',
           requiresReauth: true,
           details: 'The calendar.readonly scope is required to list calendars',
         },
@@ -114,7 +115,8 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         error: 'Failed to fetch calendar list',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        details:
+          process.env.NODE_ENV === 'development' ? error.message : undefined,
       },
       { status: 500 }
     );
