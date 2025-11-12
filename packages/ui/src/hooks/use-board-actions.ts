@@ -50,19 +50,21 @@ interface BoardActionOptions {
   onSuccess?: () => void;
 }
 
-export function useBoardActions(queryKeyToInvalidate: string[]) {
+export function useBoardActions(wsId: string) {
   const queryClient = useQueryClient();
 
   const softDeleteMutation = useMutation<
     any,
     Error,
-    { wsId: string; boardId: string; options?: BoardActionOptions }
+    { boardId: string; options?: BoardActionOptions }
   >({
-    mutationFn: ({ wsId, boardId }) => boardAction(wsId, boardId, 'PUT'),
+    mutationFn: ({ boardId }) => boardAction(wsId, boardId, 'PUT'),
     onSuccess: (_, { options }) => {
       toast.success('Board moved to trash successfully');
+      // Invalidate all queries that start with ['boards', wsId]
+      // Using exact: false (default) to match all queries with this prefix
       queryClient.invalidateQueries({
-        queryKey: queryKeyToInvalidate,
+        queryKey: ['boards', wsId],
       });
       options?.onSuccess?.();
     },
@@ -76,13 +78,14 @@ export function useBoardActions(queryKeyToInvalidate: string[]) {
   const permanentDeleteMutation = useMutation<
     any,
     Error,
-    { wsId: string; boardId: string; options?: BoardActionOptions }
+    { boardId: string; options?: BoardActionOptions }
   >({
-    mutationFn: ({ wsId, boardId }) => boardAction(wsId, boardId, 'DELETE'),
+    mutationFn: ({ boardId }) => boardAction(wsId, boardId, 'DELETE'),
     onSuccess: (_, { options }) => {
       toast.success('Board permanently deleted successfully');
+      // Invalidate all queries that start with ['boards', wsId]
       queryClient.invalidateQueries({
-        queryKey: queryKeyToInvalidate,
+        queryKey: ['boards', wsId],
       });
       options?.onSuccess?.();
     },
@@ -96,14 +99,15 @@ export function useBoardActions(queryKeyToInvalidate: string[]) {
   const restoreMutation = useMutation<
     any,
     Error,
-    { wsId: string; boardId: string; options?: BoardActionOptions }
+    { boardId: string; options?: BoardActionOptions }
   >({
-    mutationFn: ({ wsId, boardId }) =>
+    mutationFn: ({ boardId }) =>
       boardAction(wsId, boardId, 'PATCH', { restore: true }),
     onSuccess: (_, { options }) => {
       toast.success('Board restored successfully');
+      // Invalidate all queries that start with ['boards', wsId]
       queryClient.invalidateQueries({
-        queryKey: queryKeyToInvalidate,
+        queryKey: ['boards', wsId],
       });
       options?.onSuccess?.();
     },
@@ -117,13 +121,14 @@ export function useBoardActions(queryKeyToInvalidate: string[]) {
   const archiveMutation = useMutation<
     any,
     Error,
-    { wsId: string; boardId: string; options?: BoardActionOptions }
+    { boardId: string; options?: BoardActionOptions }
   >({
-    mutationFn: ({ wsId, boardId }) => archiveAction(wsId, boardId, 'POST'),
+    mutationFn: ({ boardId }) => archiveAction(wsId, boardId, 'POST'),
     onSuccess: (_, { options }) => {
       toast.success('Board archived successfully');
+      // Invalidate all queries that start with ['boards', wsId]
       queryClient.invalidateQueries({
-        queryKey: queryKeyToInvalidate,
+        queryKey: ['boards', wsId],
       });
       options?.onSuccess?.();
     },
@@ -137,13 +142,14 @@ export function useBoardActions(queryKeyToInvalidate: string[]) {
   const unarchiveMutation = useMutation<
     any,
     Error,
-    { wsId: string; boardId: string; options?: BoardActionOptions }
+    { boardId: string; options?: BoardActionOptions }
   >({
-    mutationFn: ({ wsId, boardId }) => archiveAction(wsId, boardId, 'DELETE'),
+    mutationFn: ({ boardId }) => archiveAction(wsId, boardId, 'DELETE'),
     onSuccess: (_, { options }) => {
       toast.success('Board unarchived successfully');
+      // Invalidate all queries that start with ['boards', wsId]
       queryClient.invalidateQueries({
-        queryKey: queryKeyToInvalidate,
+        queryKey: ['boards', wsId],
       });
       options?.onSuccess?.();
     },
@@ -155,30 +161,15 @@ export function useBoardActions(queryKeyToInvalidate: string[]) {
   });
 
   return {
-    softDeleteBoard: (
-      wsId: string,
-      boardId: string,
-      options?: BoardActionOptions
-    ) => softDeleteMutation.mutate({ wsId, boardId, options }),
-    permanentDeleteBoard: (
-      wsId: string,
-      boardId: string,
-      options?: BoardActionOptions
-    ) => permanentDeleteMutation.mutate({ wsId, boardId, options }),
-    restoreBoard: (
-      wsId: string,
-      boardId: string,
-      options?: BoardActionOptions
-    ) => restoreMutation.mutate({ wsId, boardId, options }),
-    archiveBoard: (
-      wsId: string,
-      boardId: string,
-      options?: BoardActionOptions
-    ) => archiveMutation.mutate({ wsId, boardId, options }),
-    unarchiveBoard: (
-      wsId: string,
-      boardId: string,
-      options?: BoardActionOptions
-    ) => unarchiveMutation.mutate({ wsId, boardId, options }),
+    softDeleteBoard: (boardId: string, options?: BoardActionOptions) =>
+      softDeleteMutation.mutate({ boardId, options }),
+    permanentDeleteBoard: (boardId: string, options?: BoardActionOptions) =>
+      permanentDeleteMutation.mutate({ boardId, options }),
+    restoreBoard: (boardId: string, options?: BoardActionOptions) =>
+      restoreMutation.mutate({ boardId, options }),
+    archiveBoard: (boardId: string, options?: BoardActionOptions) =>
+      archiveMutation.mutate({ boardId, options }),
+    unarchiveBoard: (boardId: string, options?: BoardActionOptions) =>
+      unarchiveMutation.mutate({ boardId, options }),
   };
 }

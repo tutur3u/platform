@@ -39,26 +39,18 @@ import { TaskBoardForm } from './form';
 
 interface ProjectRowActionsProps {
   row: Row<WorkspaceTaskBoard>;
-  isPersonal?: boolean;
-  wsId: string;
 }
 
-export function ProjectRowActions({
-  row,
-  isPersonal,
-  wsId,
-}: ProjectRowActionsProps) {
+export function ProjectRowActions({ row }: ProjectRowActionsProps) {
   const t = useTranslations();
   const data = row.original;
-
-  const keyForInvalidation = isPersonal ? ['all-boards'] : ['boards', wsId];
   const {
     softDeleteBoard,
     permanentDeleteBoard,
     restoreBoard,
     archiveBoard,
     unarchiveBoard,
-  } = useBoardActions(keyForInvalidation);
+  } = useBoardActions(data.ws_id);
 
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -238,7 +230,7 @@ export function ProjectRowActions({
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => softDeleteBoard(data.ws_id, data.id)}
+              onClick={() => softDeleteBoard(data.id)}
               className="bg-dynamic-red text-white hover:bg-dynamic-red/90"
             >
               {t('ws-task-boards.row_actions.dialog.delete_button')}
@@ -268,7 +260,7 @@ export function ProjectRowActions({
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => restoreBoard(data.ws_id, data.id)}
+              onClick={() => restoreBoard(data.id)}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {t('ws-task-boards.row_actions.dialog.restore_button')}
@@ -301,7 +293,7 @@ export function ProjectRowActions({
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => permanentDeleteBoard(data.ws_id, data.id)}
+              onClick={() => permanentDeleteBoard(data.id)}
               className="bg-dynamic-red text-white hover:bg-dynamic-red/90"
             >
               {t('ws-task-boards.row_actions.dialog.delete_perm_button')}
@@ -331,7 +323,7 @@ export function ProjectRowActions({
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => archiveBoard(data.ws_id, data.id)}
+              onClick={() => archiveBoard(data.id)}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {t('ws-task-boards.row_actions.dialog.archive_button')}
@@ -364,7 +356,7 @@ export function ProjectRowActions({
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => unarchiveBoard(data.ws_id, data.id)}
+              onClick={() => unarchiveBoard(data.id)}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {t('ws-task-boards.row_actions.dialog.unarchive_button')}

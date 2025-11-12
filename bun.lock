@@ -921,7 +921,6 @@
         "@tuturuuu/google": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
-        "@tuturuuu/types": "workspace:*",
         "clsx": "^2.1.1",
         "dayjs": "^1.11.19",
         "moment": "^2.30.1",
@@ -936,6 +935,7 @@
         "zod": "^4.1.12",
       },
       "devDependencies": {
+        "@tuturuuu/types": "workspace:*",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^24.10.1",
         "@types/react": "^19.2.3",
