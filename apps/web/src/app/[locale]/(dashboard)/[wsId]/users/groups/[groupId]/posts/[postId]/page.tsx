@@ -1,20 +1,9 @@
-import {
-  Check,
-  CheckCheck,
-  CircleHelp,
-  Clock,
-  Send,
-  UserCheck,
-  X,
-} from '@tuturuuu/icons';
+import { Check, CheckCheck, CircleHelp, Clock, Send, X } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import {
-  getGuestGroup,
-  getPermissions,
-} from '@tuturuuu/utils/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { format } from 'date-fns';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
@@ -88,8 +77,6 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
         const canSendUserGroupPostEmails = containsPermission(
           'send_user_group_post_emails'
         );
-
-        const isGuestGroup = (await getGuestGroup({ groupId })) ?? false;
 
         return (
           <div>
@@ -204,14 +191,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
                   key={`post-${postId}-${user.id}-${status.checked === status.count}`}
                   className="relative"
                 >
-                  {isGuestGroup && (user.attendance_count ?? 0) < 2 && (
-                    <div className="-top-2 -right-2 absolute z-10 flex items-center gap-1 rounded-full border border-amber-200 bg-amber-100 px-2 py-1 font-medium text-amber-800 text-xs">
-                      <UserCheck className="h-3 w-3" />
-                      {t('common.requires_attendance', { count: 2 })}
-                    </div>
-                  )}
                   <UserCard
-                    isGuest={isGuestGroup}
                     user={user}
                     wsId={wsId}
                     post={{
@@ -219,10 +199,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
                       group_id: groupId,
                       group_name: group.name,
                     }}
-                    disableEmailSending={
-                      (isGuestGroup && (user.attendance_count ?? 0) < 2) ||
-                      status.sent?.includes(user.id)
-                    }
+                    disableEmailSending={status.sent?.includes(user.id)}
                     hideEmailSending={!canSendUserGroupPostEmails}
                     canUpdateUserGroupsPosts={canUpdateUserGroupsPosts}
                   />

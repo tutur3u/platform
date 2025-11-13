@@ -42,6 +42,7 @@
   },
   "exports": {
     "./timezones": "./src/timezones.json",
+    "./email/validation": "./src/email/validation.ts",
     "./*": "./src/*.ts",
     "./common/scan": "./src/common/scan.tsx",
     "./common/nextjs": "./src/common/nextjs.tsx",

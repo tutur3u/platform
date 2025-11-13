@@ -1796,7 +1796,8 @@
     "delete-error": "Không thể xóa mục chặn",
     "operation-failed": "Thao tác thất bại",
     "network-error": "Đã xảy ra lỗi mạng. Vui lòng thử lại.",
-    "error": "Lỗi"
+    "error": "Lỗi",
+    "value-empty": "Giá trị không thể trống"
   },
   "email-blacklist-data-table": {
     "id": "Mã số",
