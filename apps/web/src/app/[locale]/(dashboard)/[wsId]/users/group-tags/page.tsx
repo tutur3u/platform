@@ -1,4 +1,5 @@
 import { CustomDataTable } from '@/components/custom-data-table';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -29,38 +30,42 @@ export default async function WorkspaceUserGroupTagsPage({
   params,
   searchParams,
 }: Props) {
-  const { wsId } = await params;
-  const { data, count } = await getGroupTags(wsId, await searchParams);
-  const t = await getTranslations('ws-user-group-tags');
-
-  const tags = data.map((tag) => ({
-    ...tag,
-    href: `/${wsId}/users/group-tags/${tag.id}`,
-  }));
-
   return (
-    <>
-      <FeatureSummary
-        pluralTitle={t('plural')}
-        singularTitle={t('singular')}
-        description={t('description')}
-        createTitle={t('create')}
-        createDescription={t('create_description')}
-        form={<GroupTagForm wsId={wsId} />}
-      />
-      <Separator className="my-4" />
-      <CustomDataTable
-        columnGenerator={groupTagColumns}
-        namespace="user-group-tag-data-table"
-        data={tags}
-        count={count}
-        defaultVisibility={{
-          id: false,
-          color: false,
-          created_at: false,
-        }}
-      />
-    </>
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+        const { data, count } = await getGroupTags(wsId, await searchParams);
+        const t = await getTranslations('ws-user-group-tags');
+
+        const tags = data.map((tag) => ({
+          ...tag,
+          href: `/${wsId}/users/group-tags/${tag.id}`,
+        }));
+        return (
+          <>
+            <FeatureSummary
+              pluralTitle={t('plural')}
+              singularTitle={t('singular')}
+              description={t('description')}
+              createTitle={t('create')}
+              createDescription={t('create_description')}
+              form={<GroupTagForm wsId={wsId} />}
+            />
+            <Separator className="my-4" />
+            <CustomDataTable
+              columnGenerator={groupTagColumns}
+              namespace="user-group-tag-data-table"
+              data={tags}
+              count={count}
+              defaultVisibility={{
+                id: false,
+                color: false,
+                created_at: false,
+              }}
+            />
+          </>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
 

@@ -6,6 +6,7 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { invoiceColumns } from './columns';
@@ -31,7 +32,10 @@ export default async function InvoicesPage({
   canDeleteInvoices = false,
 }: Props) {
   const t = await getTranslations();
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
   const { data: rawData, count } = await getData(wsId, await searchParams);
 
   const data = rawData.map((d) => ({
