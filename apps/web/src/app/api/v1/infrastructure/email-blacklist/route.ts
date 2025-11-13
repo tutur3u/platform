@@ -1,5 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import {
+  EMAIL_BLACKLIST_REGEX,
+  DOMAIN_BLACKLIST_REGEX,
+} from '@tuturuuu/utils/email/validation';
 import { z } from 'zod';
 
 const CreateEmailBlacklistSchema = z.object({
@@ -76,18 +80,16 @@ export async function POST(req: Request) {
     const body = await req.json();
     const validatedData = CreateEmailBlacklistSchema.parse(body);
 
-    // Additional validation based on entry type
+    // Additional validation based on entry type, sharing patterns with UI & database constraints
     if (validatedData.entry_type === 'email') {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(validatedData.value)) {
+      if (!EMAIL_BLACKLIST_REGEX.test(validatedData.value)) {
         return NextResponse.json(
           { message: 'Invalid email address format' },
           { status: 400 }
         );
       }
     } else if (validatedData.entry_type === 'domain') {
-      const domainRegex = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/i;
-      if (!domainRegex.test(validatedData.value)) {
+      if (!DOMAIN_BLACKLIST_REGEX.test(validatedData.value)) {
         return NextResponse.json(
           { message: 'Invalid domain format' },
           { status: 400 }

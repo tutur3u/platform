@@ -1704,7 +1704,8 @@
     "delete-error": "Unable to delete the blacklist entry",
     "operation-failed": "Operation failed",
     "network-error": "Network error occurred. Please try again.",
-    "error": "Error"
+    "error": "Error",
+    "value-empty": "Value cannot be empty"
   },
   "email-blacklist-data-table": {
     "id": "ID",

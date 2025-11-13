@@ -28,7 +28,6 @@ import { useEffect, useState } from 'react';
 interface Props {
   user: WorkspaceUser;
   wsId: string;
-  isGuest: boolean | null;
   post: UserGroupPost;
   hideEmailSending: boolean;
   disableEmailSending: boolean;
@@ -50,7 +49,6 @@ export interface UserGroupPost {
 function UserCard({
   user,
   wsId,
-  isGuest,
   post,
   hideEmailSending,
   disableEmailSending,
@@ -175,7 +173,6 @@ function UserCard({
         postId: post.id!,
         groupId: post.group_id!,
         post,
-        isGuest,
         users: [
           {
             id: user.id,
