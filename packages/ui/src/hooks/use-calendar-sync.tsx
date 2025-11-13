@@ -166,6 +166,8 @@ export const CalendarSyncProvider = ({
   const prevGoogleDataRef = useRef<string>('');
   const prevDatesRef = useRef<string>('');
   const isForcedRef = useRef<boolean>(false);
+  const lastSyncTimeRef = useRef<number>(0);
+  const syncDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const queryClient = useQueryClient();
 
   // Calendar connections state
@@ -280,6 +282,8 @@ export const CalendarSyncProvider = ({
   const { data: fetchedData, isLoading: isDatabaseLoading } = useQuery({
     queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
     enabled: !!wsId && dates.length > 0,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
     queryFn: async () => {
       const cacheKey = getCacheKey(dates);
       if (!cacheKey) return null;
@@ -343,7 +347,7 @@ export const CalendarSyncProvider = ({
       setData(fetchedData);
       return fetchedData;
     },
-    refetchInterval: 30000,
+    refetchInterval: 60000, // Reduced from 30s to 60s to lower load
   });
 
   // Fetch google events with caching
@@ -351,6 +355,8 @@ export const CalendarSyncProvider = ({
     queryKey: ['googleCalendarEvents', wsId, getCacheKey(dates)],
     enabled:
       !!wsId && experimentalGoogleToken?.ws_id === wsId && dates.length > 0,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
     queryFn: async () => {
       const cacheKey = getCacheKey(dates);
       if (!cacheKey) return null;
@@ -411,7 +417,7 @@ export const CalendarSyncProvider = ({
       setError(null);
       return googleResponse.events;
     },
-    refetchInterval: 30000,
+    refetchInterval: 60000, // Reduced from 30s to 60s to lower load
   });
 
   // Helper to check if dates have actually changed
@@ -445,12 +451,26 @@ export const CalendarSyncProvider = ({
         percentage: number;
         statusMessage: string;
         changesMade: boolean;
-      }) => void
+      }) => void,
+      options?: { skipCooldown?: boolean }
     ) => {
       if (!isActiveSyncOn) {
         return;
       }
 
+      // Cooldown check: prevent syncs more frequent than every 30 seconds (unless skipCooldown is true)
+      const now = Date.now();
+      const timeSinceLastSync = now - lastSyncTimeRef.current;
+      const SYNC_COOLDOWN_MS = 30000; // 30 seconds
+
+      if (!options?.skipCooldown && timeSinceLastSync < SYNC_COOLDOWN_MS) {
+        console.log(
+          `🔒 Sync skipped - cooldown active (${Math.ceil((SYNC_COOLDOWN_MS - timeSinceLastSync) / 1000)}s remaining)`
+        );
+        return;
+      }
+
+      lastSyncTimeRef.current = now;
       setIsSyncing(true);
       setSyncStatus({
         state: 'syncing',
@@ -473,8 +493,12 @@ export const CalendarSyncProvider = ({
           return;
         }
 
-        const startDate = dayjs(dates[0]).startOf('day');
-        const endDate = dayjs(dates[dates.length - 1]).endOf('day');
+        // Use fixed date range for consistent incremental sync (60 days past, 90 days future)
+        // This ensures sync tokens work properly instead of constantly changing ranges
+        // Reduced from 270 days to 150 days for better performance
+        const now = new Date();
+        const startDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+        const endDate = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
         const activeSyncResponse = await fetch(
           `/api/v1/calendar/auth/active-sync`,
@@ -561,10 +585,10 @@ export const CalendarSyncProvider = ({
         setIsSyncing(false);
       }
     },
-    [wsId, dates, isActiveSyncOn, refresh]
+    [wsId, isActiveSyncOn, refresh]
   );
 
-  // Sync to Tuturuuu database when google data changes for current view
+  // Sync to Tuturuuu database when google data changes for current view (debounced)
   useEffect(() => {
     // If have not connected to google, don't sync
     if (experimentalGoogleToken?.ws_id !== wsId) {
@@ -578,10 +602,24 @@ export const CalendarSyncProvider = ({
     const hasDataChanged = currentGoogleDataStr !== prevGoogleDataRef.current;
 
     if (hasDataChanged) {
-      syncToTuturuuu();
-      // Update refs with current values
-      prevGoogleDataRef.current = currentGoogleDataStr;
+      // Clear any pending sync
+      if (syncDebounceTimerRef.current) {
+        clearTimeout(syncDebounceTimerRef.current);
+      }
+
+      // Debounce sync by 2 seconds to prevent rapid consecutive syncs
+      syncDebounceTimerRef.current = setTimeout(() => {
+        syncToTuturuuu();
+        prevGoogleDataRef.current = currentGoogleDataStr;
+      }, 2000);
     }
+
+    // Cleanup on unmount
+    return () => {
+      if (syncDebounceTimerRef.current) {
+        clearTimeout(syncDebounceTimerRef.current);
+      }
+    };
   }, [fetchedGoogleData, syncToTuturuuu, wsId, experimentalGoogleToken?.ws_id]);
 
   // Trigger sync when isActiveSyncOn becomes true
@@ -603,13 +641,8 @@ export const CalendarSyncProvider = ({
     experimentalGoogleToken?.ws_id,
   ]);
 
-  // Trigger refetch from DB and Google when changing views AND there are changes in Google data
-  // This will trigger syncToTuturuuu()
+  // Trigger refetch from DB when changing views (optimized to reduce load)
   useEffect(() => {
-    // If have not connected to google, don't sync
-    if (experimentalGoogleToken?.ws_id !== wsId) {
-      return;
-    }
     // Skip if dates haven't actually changed
     if (areDatesEqual(dates)) {
       return;
@@ -618,32 +651,26 @@ export const CalendarSyncProvider = ({
     const cacheKey = getCacheKey(dates);
     const cacheData = calendarCache[cacheKey];
 
-    // For current week, always force a fresh fetch to ensure sync is up to date
+    // For current week, force a fresh database fetch
     const isCurrentWeek = includesCurrentWeek(dates);
 
-    if (cacheData) {
+    if (cacheData && isCurrentWeek) {
       isForcedRef.current = true;
-      // For current week, also reset the cache timestamp to force refresh
-      if (isCurrentWeek) {
-        updateCache(cacheKey, {
-          dbLastUpdated: 0,
-          googleLastUpdated: 0,
-        });
-      }
+      // For current week, reset database cache timestamp to force refresh
+      updateCache(cacheKey, {
+        dbLastUpdated: 0,
+      });
     }
 
-    // Trigger a refetch of both database and google events
+    // Only invalidate database queries (cheap) - not Google queries (expensive)
+    // Google sync will happen automatically via the 30s cooldown mechanism
     queryClient.invalidateQueries({
       queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
-    });
-    queryClient.invalidateQueries({
-      queryKey: ['googleCalendarEvents', wsId, getCacheKey(dates)],
     });
   }, [
     dates,
     queryClient,
     wsId,
-    experimentalGoogleToken?.ws_id,
     calendarCache,
     includesCurrentWeek,
     areDatesEqual,
