@@ -30,6 +30,7 @@ export interface MeetTogetherPlanWithParticipants extends MeetTogetherPlan {
 // Server component props type
 interface MeetTogetherPageProps {
   wsId?: string;
+  path?: string;
   searchParams?: Promise<{
     page?: string;
     pageSize?: string;
@@ -39,6 +40,7 @@ interface MeetTogetherPageProps {
 
 export async function MeetTogetherPage({
   wsId,
+  path,
   searchParams,
 }: MeetTogetherPageProps) {
   const locale = await getLocale();
@@ -191,6 +193,7 @@ export async function MeetTogetherPage({
               currentPage={page}
               pageSize={pageSize}
               user={user}
+              path={path}
             />
           ) : (
             <Card className="border-border/50 bg-linear-to-br from-dynamic-blue/5 to-dynamic-purple/5">

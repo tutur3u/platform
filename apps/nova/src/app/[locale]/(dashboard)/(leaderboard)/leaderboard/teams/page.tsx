@@ -2,7 +2,6 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { BasicInformation } from '../components/basic-information-component';
 import type {
@@ -12,35 +11,39 @@ import type {
 import LeaderboardClient from './client';
 import TeamsLeaderboardFallback from './fallback';
 
-export const revalidate = 60;
-
 export default async function Page({
+  params,
   searchParams,
 }: {
+  params: Promise<{
+    locale: string;
+  }>;
   searchParams: Promise<{
     page?: string;
   }>;
 }) {
-  const locale = await getLocale();
   return (
     <div className="container mx-auto px-4 py-8">
       <Suspense fallback={<TeamsLeaderboardFallback />}>
-        <TeamsLeaderboardContent locale={locale} searchParams={searchParams} />
+        <TeamsLeaderboardContent params={params} searchParams={searchParams} />
       </Suspense>
     </div>
   );
 }
 
 async function TeamsLeaderboardContent({
-  locale,
+  params,
   searchParams,
 }: {
-  locale: string;
+  params: Promise<{
+    locale: string;
+  }>;
   searchParams: Promise<{
     page?: string;
     challenge?: string;
   }>;
 }) {
+  const { locale } = await params;
   const { page = '1', challenge = 'all' } = await searchParams;
   const pageNumber = parseInt(page, 10);
 

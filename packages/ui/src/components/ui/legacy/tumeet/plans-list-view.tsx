@@ -20,11 +20,13 @@ export function PlansListView({
   locale,
   t,
   user,
+  path = '/meet-together/plans',
 }: {
   plans: MeetTogetherPlanWithParticipants[];
   locale: string;
   t: any;
   user?: { id: string } | null;
+  path?: string;
 }) {
   if (plans.length === 0) {
     return (
@@ -78,7 +80,7 @@ export function PlansListView({
             {/* Make the rest clickable */}
             <Link
               target="_blank"
-              href={`/meet-together/plans/${plan.id?.replace(/-/g, '')}`}
+              href={`${path}/${plan.id?.replace(/-/g, '')}`}
               className="block"
             >
               {/* Description */}

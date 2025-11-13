@@ -2,8 +2,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
 import { ImageResponse } from 'next/og';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(
   _: Request,
   { params }: { params: Promise<{ userId: string }> }

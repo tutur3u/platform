@@ -353,14 +353,9 @@ function QRImageUpload({
                 {t('qr.image_upload.drop_files')}
               </span>
               <span className="text-muted-foreground"> {t('common.or')} </span>
-              <button
-                type="button"
-                className="text-primary hover:underline"
-                onClick={handleBrowseFiles}
-                disabled={isLoading}
-              >
+              <span className="text-primary hover:underline">
                 {t('qr.image_upload.browse')}
-              </button>
+              </span>
             </div>
             <div className="space-y-1 text-muted-foreground text-xs">
               <div>
@@ -393,7 +388,7 @@ function QRImageUpload({
                 )}
               />
             </div>
-            <div className="min-w-0 flex-grow">
+            <div className="min-w-0 grow">
               <div className="flex items-center space-x-2">
                 <ImageIcon className="h-4 w-4 text-muted-foreground" />
                 <span className="truncate font-medium text-sm">

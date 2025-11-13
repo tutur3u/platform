@@ -18,7 +18,6 @@ import { generateObject, streamObject } from 'ai';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 
-export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 

@@ -1,7 +1,5 @@
 import { ImageResponse } from 'next/og';
 
-export const dynamic = 'force-static';
-
 export async function GET() {
   try {
     return new ImageResponse(

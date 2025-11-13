@@ -10,14 +10,18 @@ import { notFound, redirect } from 'next/navigation';
 import { BoardClient } from '../../shared/board-client';
 
 interface Props {
-  wsId: string;
-  boardId: string;
+  params: Promise<{
+    wsId: string;
+    boardId: string;
+  }>;
 }
 
-export default async function TaskBoardPage({ wsId, boardId }: Props) {
+export default async function TaskBoardPage({ params }: Props) {
+  const { wsId: id, boardId } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace?.id;
   const supabase = await createClient();
 
-  const workspace = await getWorkspace(wsId);
   const board = await getTaskBoard(supabase, boardId);
 
   // If board doesn't exist, redirect to boards list page

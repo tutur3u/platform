@@ -1,7 +1,7 @@
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import NewInvoicePage from '@tuturuuu/ui/finance/invoices/new-invoice-page';
-import type { Metadata } from 'next';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
@@ -23,7 +23,7 @@ export default async function WorkspaceInvoicesPage({ params }: Props) {
           wsId,
         });
         if (withoutPermission('create_invoices')) notFound();
-        return <NewInvoicePage wsId={wsId} />;
+        return <NewInvoicePage params={params} />;
       }}
     </WorkspaceWrapper>
   );

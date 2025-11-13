@@ -16,6 +16,7 @@ interface MeetTogetherClientProps {
   currentPage: number;
   pageSize: number;
   user?: { id: string } | null;
+  path?: string;
 }
 
 export function MeetTogetherClient({
@@ -26,6 +27,7 @@ export function MeetTogetherClient({
   currentPage,
   pageSize,
   user,
+  path,
 }: MeetTogetherClientProps) {
   const t = useTranslations('meet-together');
   const [view, setView] = useState<'grid' | 'list'>('grid');
@@ -39,9 +41,21 @@ export function MeetTogetherClient({
 
       {/* Plans content */}
       {view === 'list' ? (
-        <PlansListView plans={plans} locale={locale} t={t} user={user} />
+        <PlansListView
+          path={path}
+          plans={plans}
+          locale={locale}
+          t={t}
+          user={user}
+        />
       ) : (
-        <PlansGrid plans={plans} locale={locale} t={t} user={user} />
+        <PlansGrid
+          path={path}
+          plans={plans}
+          locale={locale}
+          t={t}
+          user={user}
+        />
       )}
 
       {/* Pagination */}
