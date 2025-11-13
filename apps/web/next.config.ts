@@ -37,34 +37,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-
-  async headers() {
-    return [
-      {
-        source: '/api/v1/:path*',
-        headers: [
-          { key: 'Access-Control-Allow-Credentials', value: 'true' },
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: isDev ? '*' : 'https://tuturuuu.com',
-          },
-          {
-            key: 'Access-Control-Allow-Methods',
-            value: 'GET,DELETE,PATCH,POST,PUT,OPTIONS',
-          },
-          {
-            key: 'Access-Control-Allow-Headers',
-            value:
-              'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, rsc, RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Url',
-          },
-          {
-            key: 'Access-Control-Max-Age',
-            value: '86400',
-          },
-        ],
-      },
-    ];
-  },
 };
 
 export default withNextIntl(nextConfig);
