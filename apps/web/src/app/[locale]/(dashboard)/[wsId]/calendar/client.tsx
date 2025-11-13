@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import AddEventDialog from './components/add-event-dialog';
@@ -83,7 +84,7 @@ export default function CalendarClientPage({
         isOpen={isAddEventDialogOpen}
         onClose={() => setIsAddEventDialogOpen(false)}
       />
-      <SyncDebugPanel />
+      {DEV_MODE && <SyncDebugPanel />}
     </>
   );
 }
