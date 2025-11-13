@@ -84,13 +84,26 @@ export default function EmailBlacklistForm({
     value: string,
     type: 'email' | 'domain'
   ): string | null => {
+    // Check for empty or whitespace-only values
+    if (value.trim() === '') {
+      return t('email-blacklist.value-empty');
+    }
+
     if (type === 'email') {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      // Email validation: Must match standard email format (local@domain)
+      // Allows alphanumeric, dots, hyphens, underscores, plus signs in local part
+      // Domain part must be valid domain format with at least one TLD (requires dot)
+      // Note: Changed * to + to require TLD (database uses * but we enforce stricter validation)
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
       if (!emailRegex.test(value)) {
         return t('email-blacklist.invalid-email');
       }
     } else if (type === 'domain') {
-      const domainRegex = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/i;
+      // Domain validation: Must match valid domain format
+      // Allows alphanumeric, hyphens in labels, separated by dots
+      // Each label must start and end with alphanumeric character
+      // Top-level domain must be at least 2 characters
+      const domainRegex = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
       if (!domainRegex.test(value)) {
         return t('email-blacklist.invalid-domain');
       }
