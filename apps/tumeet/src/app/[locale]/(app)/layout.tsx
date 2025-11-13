@@ -1,21 +1,17 @@
-import { CommonFooter } from '@tuturuuu/ui/custom/common-footer';
-import { getTranslations } from 'next-intl/server';
+import type { Locale } from '@/i18n/routing';
+import { setRequestLocale } from 'next-intl/server';
 import type React from 'react';
-import { DEV_MODE } from '@/constants/common';
+import ServerLayout from './server-layout';
 
 interface LayoutProps {
+  params: Promise<{
+    locale: string;
+  }>;
   children: React.ReactNode;
 }
 
-export default async function Layout({ children }: LayoutProps) {
-  const t = await getTranslations();
-  return (
-    <>
-      {/* <Navbar hideMetadata /> */}
-      <div id="main-content" className="flex flex-col pt-[53px]">
-        {children}
-      </div>
-      <CommonFooter t={t} devMode={DEV_MODE} />
-    </>
-  );
+export default async function Layout({ params, children }: LayoutProps) {
+  const { locale } = await params;
+  setRequestLocale(locale as Locale);
+  return <ServerLayout>{children}</ServerLayout>;
 }

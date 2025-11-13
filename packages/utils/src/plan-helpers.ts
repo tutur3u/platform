@@ -17,7 +17,7 @@ export async function getPlan(planId: string) {
   const { data, error } = await queryBuilder;
 
   if (error) {
-    console.log(error);
+    console.error(error);
     notFound();
   }
 
