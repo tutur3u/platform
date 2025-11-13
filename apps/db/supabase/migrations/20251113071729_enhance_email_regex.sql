@@ -1,6 +1,6 @@
 -- Update email validation constraint to require TLD (at least one dot in domain)
--- Changes * to + to match stricter client/API validation
--- This ensures emails like sam@tuturuu are rejected (no TLD)
+-- Pattern kept in sync with packages/utils/src/email/validation.ts::EMAIL_BLACKLIST_REGEX
+-- Changes * to + to match stricter client/API validation so emails like sam@tuturuu are rejected
 
 -- Drop existing constraint
 ALTER TABLE public.email_blacklist

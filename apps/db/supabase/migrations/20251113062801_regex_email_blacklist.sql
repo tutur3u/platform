@@ -1,7 +1,8 @@
 -- Add validation constraints for email_blacklist entry types
 -- Ensures email entries match valid email format and domain entries match valid domain format
 
--- Email validation: Must match standard email format (local@domain)
+-- Email validation mirrors packages/utils/src/email/validation.ts::EMAIL_BLACKLIST_REGEX
+-- Must match standard email format (local@domain) with valid domain structure
 -- Allows alphanumeric, dots, hyphens, underscores, plus signs in local part
 -- Domain part must be valid domain format
 ALTER TABLE public.email_blacklist
@@ -11,7 +12,7 @@ CHECK (
     value ~ '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$'
 );
 
--- Domain validation: Must match valid domain format
+-- Domain validation mirrors packages/utils/src/email/validation.ts::DOMAIN_BLACKLIST_REGEX
 -- Allows alphanumeric, hyphens in labels, separated by dots
 -- Each label must start and end with alphanumeric character
 -- Top-level domain must be at least 2 characters

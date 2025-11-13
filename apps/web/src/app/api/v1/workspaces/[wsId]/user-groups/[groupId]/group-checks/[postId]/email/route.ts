@@ -178,7 +178,7 @@ export async function POST(
       failureCount,
       blockedCount,
     },
-    { status: failureCount > 0 ? 500 : successCount > 0 ? 200 : 404 }
+    { status: failureCount > 0 ? 500 : 200 }
   );
 }
 
