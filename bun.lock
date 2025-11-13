@@ -99,6 +99,7 @@
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
+        "@tuturuuu/vercel": "workspace:*",
         "dayjs": "^1.11.19",
         "nanoid": "^5.1.6",
         "negotiator": "^1.0.0",
@@ -436,7 +437,7 @@
         "cronstrue": "^3.9.0",
         "date-fns": "^4.1.0",
         "dayjs": "^1.11.19",
-        "dodopayments": "^2.4.5",
+        "dodopayments": "^2.4.6",
         "dompurify": "^3.3.0",
         "framer-motion": "^12.23.24",
         "html2canvas-pro": "^1.5.13",
@@ -675,7 +676,7 @@
         "@polar-sh/checkout": "^0.1.14",
         "@polar-sh/nextjs": "^0.7.0",
         "@polar-sh/sdk": "^0.41.3",
-        "dodopayments": "^2.4.5",
+        "dodopayments": "^2.4.6",
         "dodopayments-checkout": "^1.3.1",
       },
       "devDependencies": {
@@ -2657,7 +2658,7 @@
 
     "devlop": ["devlop@1.1.0", "", { "dependencies": { "dequal": "^2.0.0" } }, "sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA=="],
 
-    "dodopayments": ["dodopayments@2.4.5", "", { "dependencies": { "standardwebhooks": "^1.0.0" }, "bin": { "dodopayments": "bin/cli" } }, "sha512-v2lPNvhA1DamLzHpNGzgiS/hslcO2jUGG0xBi16NNzEWRI4qPAzcxRVdDmNryoCBrZeCzEHxv5jviB3cYXVq7w=="],
+    "dodopayments": ["dodopayments@2.4.6", "", { "dependencies": { "standardwebhooks": "^1.0.0" }, "bin": { "dodopayments": "bin/cli" } }, "sha512-9/hctsxRXV9e1rlJ4A7SdDRT4hJTGgPJeMGCRPNx6yyeKYVy/uTA+4Tv/5ki87Hym4Wg/dwx6prWu5E9y3Po7A=="],
 
     "dodopayments-checkout": ["dodopayments-checkout@1.3.1", "", {}, "sha512-PHnhIf2QW1mnL5RSU++8rw94nd9jvYOUHK9h6nOu+V9eEjQr33xFNyGPR2I3N4bK+fKB10aQx3X4MgwvR3RfCg=="],
 
