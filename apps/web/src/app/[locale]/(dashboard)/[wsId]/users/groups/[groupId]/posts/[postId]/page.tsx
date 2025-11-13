@@ -1,11 +1,4 @@
-import {
-  Check,
-  CheckCheck,
-  CircleHelp,
-  Clock,
-  Send,
-  X,
-} from '@tuturuuu/icons';
+import { Check, CheckCheck, CircleHelp, Clock, Send, X } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -84,7 +77,6 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
         const canSendUserGroupPostEmails = containsPermission(
           'send_user_group_post_emails'
         );
-
 
         return (
           <div>
@@ -207,9 +199,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
                       group_id: groupId,
                       group_name: group.name,
                     }}
-                    disableEmailSending={
-                      status.sent?.includes(user.id)
-                    }
+                    disableEmailSending={status.sent?.includes(user.id)}
                     hideEmailSending={!canSendUserGroupPostEmails}
                     canUpdateUserGroupsPosts={canUpdateUserGroupsPosts}
                   />
