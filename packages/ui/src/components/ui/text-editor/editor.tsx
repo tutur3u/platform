@@ -1,12 +1,14 @@
 'use client';
 
 import type { QueryClient } from '@tanstack/react-query';
+import DragHandle from '@tiptap/extension-drag-handle-react';
 import {
   type Editor,
   EditorContent,
   type JSONContent,
   useEditor,
 } from '@tiptap/react';
+import { GripVertical } from '@tuturuuu/icons';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type SupabaseProvider from '@tuturuuu/ui/hooks/supabase-provider';
 import { debounce } from 'lodash';
@@ -571,6 +573,20 @@ export function RichTextEditor({
           availableLists={availableLists}
           queryClient={queryClient}
         />
+      )}
+      {!readOnly && editor && (
+        <DragHandle
+          editor={editor}
+          computePositionConfig={{
+            placement: 'left',
+            strategy: 'fixed',
+          }}
+          className="left-2!"
+        >
+          <div className="flex size-5 cursor-grab items-center justify-center text-muted-foreground transition-colors hover:text-foreground">
+            <GripVertical />
+          </div>
+        </DragHandle>
       )}
       <EditorContent editor={editor} className="h-full" />
       {isDraggingOver && (
