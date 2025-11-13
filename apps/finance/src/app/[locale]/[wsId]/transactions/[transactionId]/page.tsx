@@ -1,4 +1,5 @@
 import TransactionDetailsPage from '@tuturuuu/ui/finance/transactions/transactionId/transaction-details-page';
+import { Suspense } from 'react';
 
 interface Props {
   params: Promise<{
@@ -11,13 +12,9 @@ interface Props {
 export default async function WorkspaceTransactionDetailsPage({
   params,
 }: Props) {
-  const { wsId, transactionId, locale } = await params;
-
   return (
-    <TransactionDetailsPage
-      wsId={wsId}
-      transactionId={transactionId}
-      locale={locale}
-    />
+    <Suspense>
+      <TransactionDetailsPage params={params} />
+    </Suspense>
   );
 }

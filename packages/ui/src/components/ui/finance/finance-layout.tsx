@@ -1,19 +1,22 @@
 import { Navigation, type NavLink } from '@tuturuuu/ui/custom/navigation';
 import { QuickActions } from '@tuturuuu/ui/finance/shared/quick-actions';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 import type React from 'react';
 
 interface FinanceLayoutProps {
-  wsId: string;
+  params: Promise<{
+    wsId: string;
+  }>;
   children: React.ReactNode;
 }
 
 export default async function FinanceLayout({
+  params,
   children,
-  wsId,
 }: FinanceLayoutProps) {
+  const { wsId } = await params;
   const t = await getTranslations('workspace-finance-tabs');
 
   const { withoutPermission } = await getPermissions({

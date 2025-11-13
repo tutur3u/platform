@@ -12,25 +12,27 @@ import { invoiceColumns } from './columns';
 import { PendingInvoicesTable } from './pending-invoices-table';
 
 interface Props {
-  wsId: string;
-  searchParams: {
+  params: Promise<{
+    wsId: string;
+  }>;
+  searchParams: Promise<{
     q: string;
     page: string;
     pageSize: string;
-  };
+  }>;
   canCreateInvoices?: boolean;
   canDeleteInvoices?: boolean;
 }
 
 export default async function InvoicesPage({
-  wsId,
+  params,
   searchParams,
   canCreateInvoices = false,
   canDeleteInvoices = false,
 }: Props) {
   const t = await getTranslations();
-
-  const { data: rawData, count } = await getData(wsId, searchParams);
+  const { wsId } = await params;
+  const { data: rawData, count } = await getData(wsId, await searchParams);
 
   const data = rawData.map((d) => ({
     ...d,
