@@ -38,7 +38,7 @@
     "@tuturuuu/utils": "workspace:*",
     "ai": "^5.0.93",
     "dayjs": "^1.11.19",
-    "next": "^16.0.2",
+    "next": "^16.0.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "streamdown": "^1.4.0",

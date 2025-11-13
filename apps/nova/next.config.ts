@@ -4,6 +4,7 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
+  reactCompiler: true,
   reactStrictMode: true,
   cacheComponents: true,
   poweredByHeader: false,
