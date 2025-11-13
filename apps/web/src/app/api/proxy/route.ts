@@ -1,10 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
-export const runtime = 'nodejs';
-
 // Disable SSL certificate verification
 // eslint-disable-next-line turbo/no-undeclared-env-vars
+
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 export async function GET(request: Request) {
