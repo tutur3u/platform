@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { getLocale } from 'next-intl/server';
+import { cacheLife } from 'next/cache';
 import { Suspense } from 'react';
 import type { BasicInformation } from '../components/basic-information-component';
 import type {
@@ -12,8 +13,6 @@ import type {
 import LeaderboardClient from './client';
 import TeamsLeaderboardFallback from './fallback';
 
-export const revalidate = 60;
-
 export default async function Page({
   searchParams,
 }: {
@@ -21,6 +20,9 @@ export default async function Page({
     page?: string;
   }>;
 }) {
+  'use cache';
+  cacheLife('minutes');
+
   const locale = await getLocale();
   return (
     <div className="container mx-auto px-4 py-8">

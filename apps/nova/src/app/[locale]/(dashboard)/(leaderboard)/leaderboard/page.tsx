@@ -3,15 +3,14 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
-import { redirect } from 'next/navigation';
 import { getLocale } from 'next-intl/server';
+import { cacheLife } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import LeaderboardClient from './client';
 import type { BasicInformation } from './components/basic-information-component';
 import type { LeaderboardEntry } from './components/leaderboard';
 import LeaderboardFallback from './fallback';
-
-export const revalidate = 60;
 
 export default async function Page({
   searchParams,
@@ -22,6 +21,9 @@ export default async function Page({
     challenge?: string;
   }>;
 }) {
+  'use cache';
+  cacheLife('minutes');
+
   return (
     <div className="container mx-auto px-4 py-8">
       <Suspense fallback={<LeaderboardFallback />}>
