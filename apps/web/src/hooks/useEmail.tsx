@@ -50,11 +50,11 @@ const useEmail = () => {
       ...user,
       content: ReactDOMServer.renderToString(
         <PostEmailTemplate
-            post={post}
-            username={user.username}
-            isHomeworkDone={user?.is_completed}
-            notes={user?.notes || undefined}
-          />
+          post={post}
+          username={user.username}
+          isHomeworkDone={user?.is_completed}
+          notes={user?.notes || undefined}
+        />
       ),
     }));
 
