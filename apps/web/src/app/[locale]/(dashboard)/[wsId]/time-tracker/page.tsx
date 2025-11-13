@@ -10,12 +10,16 @@ import {
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 import { ActivityHeatmap } from './components/activity-heatmap';
 
 export const metadata: Metadata = {
   title: 'Time Tracker',
   description: 'Manage Time Tracker in your Tuturuuu workspace.',
 };
+
+// Revalidate every 5 minutes for cached data
+export const revalidate = 300;
 
 const formatDuration = (seconds: number | undefined): string => {
   const safeSeconds = Math.max(0, Math.floor(seconds || 0));
@@ -29,98 +33,137 @@ const formatDuration = (seconds: number | undefined): string => {
   return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
-export default async function TimeTrackerPage() {
-  const user = await getCurrentSupabaseUser();
+// Optimized date calculations - cache date objects
+function getDateBoundaries() {
+  const now = Date.now();
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  
+  const dayOfWeek = today.getDay();
+  const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - daysToSubtract);
+  
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  
+  // Only fetch last year of data for performance
+  const oneYearAgo = new Date(today);
+  oneYearAgo.setFullYear(today.getFullYear() - 1);
+  
+  return {
+    today: today.getTime(),
+    startOfWeek: startOfWeek.getTime(),
+    startOfMonth: startOfMonth.getTime(),
+    oneYearAgo: oneYearAgo.getTime(),
+    todayDateStr: today.toDateString(),
+  };
+}
+
+// Optimized streak calculation - use date string manipulation instead of Date objects
+function calculateStreak(activityDays: Set<string>, todayDateStr: string): number {
+  if (activityDays.size === 0) return 0;
+  
+  // Parse today once
+  const today = new Date(todayDateStr);
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  
+  let streak = 0;
+  let checkDate = new Date(today);
+  
+  // If today has activity, start counting from today
+  if (activityDays.has(checkDate.toDateString())) {
+    while (activityDays.has(checkDate.toDateString())) {
+      streak++;
+      checkDate.setTime(checkDate.getTime() - oneDayMs);
+    }
+  } else {
+    // If today has no activity, check yesterday and count backwards
+    checkDate.setTime(checkDate.getTime() - oneDayMs);
+    while (activityDays.has(checkDate.toDateString())) {
+      streak++;
+      checkDate.setTime(checkDate.getTime() - oneDayMs);
+    }
+  }
+  
+  return streak;
+}
+
+async function fetchTimeTrackingStats(userId: string) {
   const supabase = await createClient();
-
-  if (!user) return notFound();
-
+  const boundaries = getDateBoundaries();
+  
+  // Optimized query: only fetch last year of data with date filtering
   const { data: sessions } = await supabase
     .from('time_tracking_sessions')
     .select('start_time, duration_seconds')
-    .eq('user_id', user.id)
-    .not('duration_seconds', 'is', null);
+    .eq('user_id', userId)
+    .not('duration_seconds', 'is', null)
+    .gte('start_time', new Date(boundaries.oneYearAgo).toISOString())
+    .order('start_time', { ascending: false })
 
-  // Calculate stats
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  // Use ISO week (Monday-based) for consistency with frontend
-  const startOfWeek = new Date(today);
-  const dayOfWeek = today.getDay();
-  const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Monday = 0, Sunday = 6
-  startOfWeek.setDate(today.getDate() - daysToSubtract);
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  if (!sessions || sessions.length === 0) {
+    return {
+      todayTime: 0,
+      weekTime: 0,
+      monthTime: 0,
+      streak: 0,
+      dailyActivity: [],
+    };
+  }
 
-  let todayTime = 0;
-  let weekTime = 0;
-  let monthTime = 0;
+  // Pre-calculate boundaries as timestamps for faster comparison
+  const todayTime = boundaries.today;
+  const weekTime = boundaries.startOfWeek;
+  const monthTime = boundaries.startOfMonth;
+  
+  let todayDuration = 0;
+  let weekDuration = 0;
+  let monthDuration = 0;
   const activityDays = new Set<string>();
+  const dailyActivityMap = new Map<string, { duration: number; sessions: number }>();
 
-  if (sessions) {
-    for (const session of sessions) {
-      if (!session.duration_seconds) continue;
+  // Single pass through sessions - optimize Date object creation
+  // Use array length caching for micro-optimization
+  const sessionsLength = sessions.length;
+  for (let i = 0; i < sessionsLength; i++) {
+    const session = sessions[i];
+    if (!session || !session.duration_seconds || !session.start_time) continue;
 
-      const startTime = new Date(session.start_time);
-      const duration = session.duration_seconds;
+    // Parse timestamp once
+    const startTimeMs = new Date(session.start_time).getTime();
+    const duration = session.duration_seconds;
+    
+    // Fast timestamp comparisons
+    if (startTimeMs >= todayTime) {
+      todayDuration += duration;
+    }
+    if (startTimeMs >= weekTime) {
+      weekDuration += duration;
+    }
+    if (startTimeMs >= monthTime) {
+      monthDuration += duration;
+    }
 
-      if (startTime >= today) {
-        todayTime += duration;
+    // Build activity days set and daily activity map in one pass
+    const dateStr = session.start_time.split('T')[0];
+    if (dateStr) {
+      const dateObj = new Date(dateStr);
+      activityDays.add(dateObj.toDateString());
+      
+      const existing = dailyActivityMap.get(dateStr);
+      if (existing) {
+        existing.duration += duration;
+        existing.sessions += 1;
+      } else {
+        dailyActivityMap.set(dateStr, {
+          duration,
+          sessions: 1,
+        });
       }
-      if (startTime >= startOfWeek) {
-        weekTime += duration;
-      }
-      if (startTime >= startOfMonth) {
-        monthTime += duration;
-      }
-
-      activityDays.add(startTime.toDateString());
     }
   }
 
-  // Calculate streak - count consecutive days with activity
-  let streak = 0;
-  if (activityDays.size > 0) {
-    const currentDate = new Date(today);
-
-    // If today has activity, start counting from today
-    if (activityDays.has(currentDate.toDateString())) {
-      while (activityDays.has(currentDate.toDateString())) {
-        streak++;
-        currentDate.setDate(currentDate.getDate() - 1);
-      }
-    } else {
-      // If today has no activity, check yesterday and count backwards
-      currentDate.setDate(currentDate.getDate() - 1);
-      while (activityDays.has(currentDate.toDateString())) {
-        streak++;
-        currentDate.setDate(currentDate.getDate() - 1);
-      }
-    }
-  }
-
-  // Calculate daily activity for the past year (for heatmap)
-  const dailyActivityMap = new Map<
-    string,
-    { duration: number; sessions: number }
-  >();
-
-  if (sessions) {
-    sessions.forEach((session) => {
-      if (!session.duration_seconds) return;
-
-      const dateStr = new Date(session.start_time).toISOString().split('T')[0];
-      if (!dateStr) return;
-
-      const existing = dailyActivityMap.get(dateStr) || {
-        duration: 0,
-        sessions: 0,
-      };
-      dailyActivityMap.set(dateStr, {
-        duration: existing.duration + session.duration_seconds,
-        sessions: existing.sessions + 1,
-      });
-    });
-  }
+  const streak = calculateStreak(activityDays, boundaries.todayDateStr);
 
   const dailyActivity = Array.from(dailyActivityMap.entries()).map(
     ([date, data]) => ({
@@ -130,185 +173,262 @@ export default async function TimeTrackerPage() {
     })
   );
 
-  const stats = {
-    todayTime,
-    weekTime,
-    monthTime,
+  return {
+    todayTime: todayDuration,
+    weekTime: weekDuration,
+    monthTime: monthDuration,
     streak,
     dailyActivity,
   };
+}
+
+// Stats card component with cached date formatting
+function StatsCard({ stats }: { stats: Awaited<ReturnType<typeof fetchTimeTrackingStats>> }) {
+  // Cache date formatting calculations
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+  const weekdayName = now.toLocaleDateString('en-US', { weekday: 'long' });
+  
+  // Calculate week range once
+  const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - daysToSubtract);
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  const weekRange = `${startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+  
+  const monthName = now.toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-dynamic-blue to-dynamic-purple shadow-lg">
+            <TrendingUp className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <CardTitle className="text-lg sm:text-xl">
+              Your Progress
+            </CardTitle>
+            <CardDescription>
+              Track your productivity metrics ⚡
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {/* Today */}
+          <div className="rounded-lg border border-dynamic-blue/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-dynamic-blue/10 p-2 shadow-sm">
+                <Calendar className="h-4 w-4 text-dynamic-blue" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-muted-foreground text-xs">
+                    Today
+                  </p>
+                  <span className="text-sm">{isWeekend ? '🏖️' : '💼'}</span>
+                </div>
+                <p className="text-muted-foreground/80 text-xs">{weekdayName}</p>
+                <p className="font-bold text-lg">
+                  {formatDuration(stats.todayTime)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* This Week */}
+          <div className="rounded-lg border border-dynamic-green/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-dynamic-green/10 p-2 shadow-sm">
+                <TrendingUp className="h-4 w-4 text-dynamic-green" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-muted-foreground text-xs">
+                    This Week
+                  </p>
+                  <span className="text-sm">📊</span>
+                </div>
+                <p className="text-muted-foreground/80 text-xs">{weekRange}</p>
+                <p className="font-bold text-lg">
+                  {formatDuration(stats.weekTime)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* This Month */}
+          <div className="rounded-lg border border-dynamic-purple/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-dynamic-purple/10 p-2 shadow-sm">
+                <Zap className="h-4 w-4 text-dynamic-purple" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-muted-foreground text-xs">
+                    This Month
+                  </p>
+                  <span className="text-sm">🚀</span>
+                </div>
+                <p className="text-muted-foreground/80 text-xs">{monthName}</p>
+                <p className="font-bold text-lg">
+                  {formatDuration(stats.monthTime)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Streak */}
+          <div className="rounded-lg border border-dynamic-orange/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-dynamic-orange/10 p-2 shadow-sm">
+                <Clock className="h-4 w-4 text-dynamic-orange" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-muted-foreground text-xs">
+                    Streak
+                  </p>
+                  <span className="text-sm">
+                    {stats.streak >= 7 ? '🏆' : '⭐'}
+                  </span>
+                </div>
+                <p className="text-muted-foreground/80 text-xs">
+                  {stats.streak > 0 ? 'consecutive days' : 'start today!'}
+                </p>
+                <p className="font-bold text-lg">{stats.streak} days</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Loading skeleton for stats
+function StatsCardSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
+          <div className="space-y-2">
+            <div className="h-5 w-32 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-48 animate-pulse rounded bg-muted" />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="h-20 animate-pulse rounded-lg bg-muted"
+            />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Heatmap card with loading state
+function HeatmapCard({ dailyActivity }: { dailyActivity: Array<{ date: string; duration: number; sessions: number }> }) {
+  const totalDuration = dailyActivity.reduce((sum, day) => sum + day.duration, 0);
+  
+  return (
+    <Card className="relative overflow-visible">
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-dynamic-green to-dynamic-cyan shadow-lg">
+            <Calendar className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <CardTitle className="text-lg sm:text-xl">
+              Activity Heatmap
+            </CardTitle>
+            <CardDescription>
+              {totalDuration > 0
+                ? `${formatDuration(totalDuration)} tracked this year 🔥`
+                : 'Start tracking to see your activity pattern 🌱'}
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="relative overflow-visible [&>div>div:first-child]:hidden">
+          <ActivityHeatmap dailyActivity={dailyActivity} />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function HeatmapCardSkeleton() {
+  return (
+    <Card className="relative overflow-visible">
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
+          <div className="space-y-2">
+            <div className="h-5 w-40 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-56 animate-pulse rounded bg-muted" />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="h-64 animate-pulse rounded-lg bg-muted" />
+      </CardContent>
+    </Card>
+  );
+}
+
+export default async function TimeTrackerPage() {
+  const user = await getCurrentSupabaseUser();
+  if (!user) return notFound();
+
+  // Fetch stats in parallel with Suspense boundaries
+  const statsPromise = fetchTimeTrackingStats(user.id);
 
   return (
     <div className="grid gap-4 pb-4">
-      {/* Stats Overview - Enhanced for sidebar */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-purple-600 shadow-lg">
-              <TrendingUp className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <CardTitle className="text-lg sm:text-xl">
-                Your Progress
-              </CardTitle>
-              <CardDescription>
-                Track your productivity metrics ⚡
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Custom sidebar-optimized stats layout */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {/* Today */}
-            <div className="rounded-lg border border-dynamic-blue/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-dynamic-blue/10 p-2 shadow-sm">
-                  <Calendar className="h-4 w-4 text-blue-500" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-muted-foreground text-xs">
-                      Today
-                    </p>
-                    <span className="text-sm">
-                      {new Date().getDay() === 0 || new Date().getDay() === 6
-                        ? '🏖️'
-                        : '💼'}
-                    </span>
-                  </div>
-                  <p className="text-muted-foreground/80 text-xs">
-                    {new Date().toLocaleDateString('en-US', {
-                      weekday: 'long',
-                    })}
-                  </p>
-                  <p className="font-bold text-lg">
-                    {formatDuration(stats.todayTime)}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* This Week */}
-            <div className="rounded-lg border border-dynamic-green/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-dynamic-green/10 p-2 shadow-sm">
-                  <TrendingUp className="h-4 w-4 text-green-500" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-muted-foreground text-xs">
-                      This Week
-                    </p>
-                    <span className="text-sm">📊</span>
-                  </div>
-                  <p className="text-muted-foreground/80 text-xs">
-                    {(() => {
-                      const today = new Date();
-                      const dayOfWeek = today.getDay();
-                      const daysToSubtract =
-                        dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-                      const startOfWeek = new Date(today);
-                      startOfWeek.setDate(today.getDate() - daysToSubtract);
-                      const endOfWeek = new Date(startOfWeek);
-                      endOfWeek.setDate(startOfWeek.getDate() + 6);
-                      return `${startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-                    })()}
-                  </p>
-                  <p className="font-bold text-lg">
-                    {formatDuration(stats.weekTime)}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* This Month */}
-            <div className="rounded-lg border border-dynamic-purple/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-dynamic-purple/10 p-2 shadow-sm">
-                  <Zap className="h-4 w-4 text-purple-500" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-muted-foreground text-xs">
-                      This Month
-                    </p>
-                    <span className="text-sm">🚀</span>
-                  </div>
-                  <p className="text-muted-foreground/80 text-xs">
-                    {new Date().toLocaleDateString('en-US', {
-                      month: 'long',
-                      year: 'numeric',
-                    })}
-                  </p>
-                  <p className="font-bold text-lg">
-                    {formatDuration(stats.monthTime)}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Streak */}
-            <div className="rounded-lg border border-dynamic-orange/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-dynamic-orange/10 p-2 shadow-sm">
-                  <Clock className="h-4 w-4 text-orange-500" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-muted-foreground text-xs">
-                      Streak
-                    </p>
-                    <span className="text-sm">
-                      {stats.streak >= 7 ? '🏆' : '⭐'}
-                    </span>
-                  </div>
-                  <p className="text-muted-foreground/80 text-xs">
-                    {stats.streak > 0 ? 'consecutive days' : 'start today!'}
-                  </p>
-                  <p className="font-bold text-lg">{stats.streak} days</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Activity Heatmap - Enhanced with better header */}
-      {stats.dailyActivity && (
-        <Card className="relative overflow-visible">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-emerald-500 to-teal-600 shadow-lg">
-                <Calendar className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <CardTitle className="text-lg sm:text-xl">
-                  Activity Heatmap
-                </CardTitle>
-                <CardDescription>
-                  {(() => {
-                    const totalDuration =
-                      stats.dailyActivity?.reduce(
-                        (sum, day) => sum + day.duration,
-                        0
-                      ) || 0;
-                    return totalDuration > 0
-                      ? `${formatDuration(totalDuration)} tracked this year 🔥`
-                      : 'Start tracking to see your activity pattern 🌱';
-                  })()}
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {/* Remove the original header from ActivityHeatmap component and provide overflow space */}
-            <div className="relative overflow-visible [&>div>div:first-child]:hidden">
-              <ActivityHeatmap dailyActivity={stats.dailyActivity} />
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <Suspense fallback={<StatsCardSkeleton />}>
+        <StatsCardWrapper statsPromise={statsPromise} />
+      </Suspense>
+      
+      <Suspense fallback={<HeatmapCardSkeleton />}>
+        <HeatmapCardWrapper statsPromise={statsPromise} />
+      </Suspense>
     </div>
   );
+}
+
+// Separate async components for Suspense boundaries
+async function StatsCardWrapper({
+  statsPromise,
+}: {
+  statsPromise: Promise<Awaited<ReturnType<typeof fetchTimeTrackingStats>>>;
+}) {
+  const stats = await statsPromise;
+  return <StatsCard stats={stats} />;
+}
+
+async function HeatmapCardWrapper({
+  statsPromise,
+}: {
+  statsPromise: Promise<Awaited<ReturnType<typeof fetchTimeTrackingStats>>>;
+}) {
+  const stats = await statsPromise;
+  // if (!stats.dailyActivity || stats.dailyActivity.length === 0) {
+  //   return null;
+  // }
+  return <HeatmapCard dailyActivity={stats.dailyActivity} />;
 }
