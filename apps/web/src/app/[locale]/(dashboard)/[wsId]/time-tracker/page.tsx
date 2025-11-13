@@ -9,14 +9,19 @@ import {
 } from '@tuturuuu/ui/card';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { ActivityHeatmap } from './components/activity-heatmap';
 
-export const metadata: Metadata = {
-  title: 'Time Tracker',
-  description: 'Manage Time Tracker in your Tuturuuu workspace.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('time-tracker');
+
+  return {
+    title: t('metadata.title'),
+    description: t('metadata.description'),
+  };
+}
 
 // Revalidate every 5 minutes for cached data
 export const revalidate = 300;
@@ -182,13 +187,23 @@ async function fetchTimeTrackingStats(userId: string) {
   };
 }
 
+type Translator = Awaited<ReturnType<typeof getTranslations>>;
+
 // Stats card component with cached date formatting
-function StatsCard({ stats }: { stats: Awaited<ReturnType<typeof fetchTimeTrackingStats>> }) {
+function StatsCard({
+  stats,
+  locale,
+  t,
+}: {
+  stats: Awaited<ReturnType<typeof fetchTimeTrackingStats>>;
+  locale: string;
+  t: Translator;
+}) {
   // Cache date formatting calculations
   const now = new Date();
   const dayOfWeek = now.getDay();
   const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-  const weekdayName = now.toLocaleDateString('en-US', { weekday: 'long' });
+  const weekdayName = now.toLocaleDateString(locale, { weekday: 'long' });
   
   // Calculate week range once
   const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
@@ -196,9 +211,9 @@ function StatsCard({ stats }: { stats: Awaited<ReturnType<typeof fetchTimeTracki
   startOfWeek.setDate(now.getDate() - daysToSubtract);
   const endOfWeek = new Date(startOfWeek);
   endOfWeek.setDate(startOfWeek.getDate() + 6);
-  const weekRange = `${startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+  const weekRange = `${startOfWeek.toLocaleDateString(locale, { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString(locale, { month: 'short', day: 'numeric' })}`;
   
-  const monthName = now.toLocaleDateString('en-US', {
+  const monthName = now.toLocaleDateString(locale, {
     month: 'long',
     year: 'numeric',
   });
@@ -212,10 +227,10 @@ function StatsCard({ stats }: { stats: Awaited<ReturnType<typeof fetchTimeTracki
           </div>
           <div>
             <CardTitle className="text-lg sm:text-xl">
-              Your Progress
+              {t('stats.title')}
             </CardTitle>
             <CardDescription>
-              Track your productivity metrics ⚡
+              {t('stats.description')}
             </CardDescription>
           </div>
         </div>
@@ -231,7 +246,7 @@ function StatsCard({ stats }: { stats: Awaited<ReturnType<typeof fetchTimeTracki
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-muted-foreground text-xs">
-                    Today
+                    {t('stats.today.title')}
                   </p>
                   <span className="text-sm">{isWeekend ? '🏖️' : '💼'}</span>
                 </div>
@@ -252,7 +267,7 @@ function StatsCard({ stats }: { stats: Awaited<ReturnType<typeof fetchTimeTracki
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-muted-foreground text-xs">
-                    This Week
+                    {t('stats.week.title')}
                   </p>
                   <span className="text-sm">📊</span>
                 </div>
@@ -273,7 +288,7 @@ function StatsCard({ stats }: { stats: Awaited<ReturnType<typeof fetchTimeTracki
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-muted-foreground text-xs">
-                    This Month
+                    {t('stats.month.title')}
                   </p>
                   <span className="text-sm">🚀</span>
                 </div>
@@ -294,16 +309,20 @@ function StatsCard({ stats }: { stats: Awaited<ReturnType<typeof fetchTimeTracki
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-muted-foreground text-xs">
-                    Streak
+                    {t('stats.streak.title')}
                   </p>
                   <span className="text-sm">
                     {stats.streak >= 7 ? '🏆' : '⭐'}
                   </span>
                 </div>
                 <p className="text-muted-foreground/80 text-xs">
-                  {stats.streak > 0 ? 'consecutive days' : 'start today!'}
+                  {stats.streak > 0
+                    ? t('stats.streak.statusActive')
+                    : t('stats.streak.statusEmpty')}
                 </p>
-                <p className="font-bold text-lg">{stats.streak} days</p>
+                <p className="font-bold text-lg">
+                  {t('stats.streak.count', { count: stats.streak })}
+                </p>
               </div>
             </div>
           </div>
@@ -341,7 +360,13 @@ function StatsCardSkeleton() {
 }
 
 // Heatmap card with loading state
-function HeatmapCard({ dailyActivity }: { dailyActivity: Array<{ date: string; duration: number; sessions: number }> }) {
+function HeatmapCard({
+  dailyActivity,
+  t,
+}: {
+  dailyActivity: Array<{ date: string; duration: number; sessions: number }>;
+  t: Translator;
+}) {
   const totalDuration = dailyActivity.reduce((sum, day) => sum + day.duration, 0);
   
   return (
@@ -353,12 +378,14 @@ function HeatmapCard({ dailyActivity }: { dailyActivity: Array<{ date: string; d
           </div>
           <div>
             <CardTitle className="text-lg sm:text-xl">
-              Activity Heatmap
+              {t('heatmap.title')}
             </CardTitle>
             <CardDescription>
               {totalDuration > 0
-                ? `${formatDuration(totalDuration)} tracked this year 🔥`
-                : 'Start tracking to see your activity pattern 🌱'}
+                ? t('heatmap.trackedThisYear', {
+                    duration: formatDuration(totalDuration),
+                  })
+                : t('heatmap.startTracking')}
             </CardDescription>
           </div>
         </div>
@@ -391,7 +418,11 @@ function HeatmapCardSkeleton() {
   );
 }
 
-export default async function TimeTrackerPage() {
+export default async function TimeTrackerPage({
+  params,
+}: {
+  params: { locale: string; wsId: string };
+}) {
   const user = await getCurrentSupabaseUser();
   if (!user) return notFound();
 
@@ -401,7 +432,7 @@ export default async function TimeTrackerPage() {
   return (
     <div className="grid gap-4 pb-4">
       <Suspense fallback={<StatsCardSkeleton />}>
-        <StatsCardWrapper statsPromise={statsPromise} />
+        <StatsCardWrapper statsPromise={statsPromise} locale={params.locale} />
       </Suspense>
       
       <Suspense fallback={<HeatmapCardSkeleton />}>
@@ -414,11 +445,16 @@ export default async function TimeTrackerPage() {
 // Separate async components for Suspense boundaries
 async function StatsCardWrapper({
   statsPromise,
+  locale,
 }: {
   statsPromise: Promise<Awaited<ReturnType<typeof fetchTimeTrackingStats>>>;
+  locale: string;
 }) {
-  const stats = await statsPromise;
-  return <StatsCard stats={stats} />;
+  const [stats, t] = await Promise.all([
+    statsPromise,
+    getTranslations('time-tracker'),
+  ]);
+  return <StatsCard stats={stats} t={t} locale={locale} />;
 }
 
 async function HeatmapCardWrapper({
@@ -426,9 +462,12 @@ async function HeatmapCardWrapper({
 }: {
   statsPromise: Promise<Awaited<ReturnType<typeof fetchTimeTrackingStats>>>;
 }) {
-  const stats = await statsPromise;
+  const [stats, t] = await Promise.all([
+    statsPromise,
+    getTranslations('time-tracker'),
+  ]);
   // if (!stats.dailyActivity || stats.dailyActivity.length === 0) {
   //   return null;
   // }
-  return <HeatmapCard dailyActivity={stats.dailyActivity} />;
+  return <HeatmapCard dailyActivity={stats.dailyActivity} t={t} />;
 }

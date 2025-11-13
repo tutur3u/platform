@@ -6653,6 +6653,36 @@
     "select_group_placeholder": "Select a group",
     "no_groups": "No groups available"
   },
+  "time-tracker": {
+    "metadata": {
+      "title": "Time Tracker",
+      "description": "Manage Time Tracker in your Tuturuuu workspace."
+    },
+    "stats": {
+      "title": "Your Progress",
+      "description": "Track your productivity metrics ⚡",
+      "today": {
+        "title": "Today"
+      },
+      "week": {
+        "title": "This Week"
+      },
+      "month": {
+        "title": "This Month"
+      },
+      "streak": {
+        "title": "Streak",
+        "statusActive": "consecutive days",
+        "statusEmpty": "start today!",
+        "count": "{count} days"
+      }
+    },
+    "heatmap": {
+      "title": "Activity Heatmap",
+      "trackedThisYear": "{duration} tracked this year 🔥",
+      "startTracking": "Start tracking to see your activity pattern 🌱"
+    }
+  },
   "command_palette": {
     "title": "Command Center",
     "ai_assistant": "AI Assistant",

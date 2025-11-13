@@ -6451,6 +6451,36 @@
     "select_group_placeholder": "Chọn một nhóm",
     "no_groups": "Không có nhóm nào"
   },
+  "time-tracker": {
+    "metadata": {
+      "title": "Theo dõi thời gian",
+      "description": "Quản lý Time Tracker trong workspace Tuturuuu của bạn."
+    },
+    "stats": {
+      "title": "Tiến độ của bạn",
+      "description": "Theo dõi các chỉ số năng suất ⚡",
+      "today": {
+        "title": "Hôm nay"
+      },
+      "week": {
+        "title": "Tuần này"
+      },
+      "month": {
+        "title": "Tháng này"
+      },
+      "streak": {
+        "title": "Chuỗi ngày",
+        "statusActive": "ngày liên tiếp",
+        "statusEmpty": "bắt đầu ngay hôm nay!",
+        "count": "{count} ngày"
+      }
+    },
+    "heatmap": {
+      "title": "Bản đồ nhiệt hoạt động",
+      "trackedThisYear": "{duration} đã được ghi nhận trong năm nay 🔥",
+      "startTracking": "Bắt đầu chấm công để xem xu hướng hoạt động của bạn 🌱"
+    }
+  },
   "command_palette": {
     "title": "Trung Tâm Lệnh",
     "ai_assistant": "Trợ Lý AI",
