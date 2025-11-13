@@ -9,4 +9,3 @@ export const isValidBlacklistEmail = (value: string): boolean =>
 
 export const isValidBlacklistDomain = (value: string): boolean =>
   DOMAIN_BLACKLIST_REGEX.test(value);
-
