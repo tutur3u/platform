@@ -12,11 +12,6 @@ import { DEV_MODE } from '@/constants/common';
 const forceEnableEmailSending = false;
 const disableEmailSending = DEV_MODE && !forceEnableEmailSending;
 
-const domainBlacklist = [
-  // for initial customer migration
-  'easy.com',
-];
-
 export async function POST(
   req: NextRequest,
   {
@@ -99,6 +94,54 @@ export async function POST(
     );
   }
 
+  // Check all emails in batch using RPC function
+  const supabase = await createClient();
+  const userEmails = data.users.map((user) => user.email);
+  const { data: blockStatuses, error: blockCheckError } = await supabase.rpc(
+    'get_email_block_statuses',
+    { p_emails: userEmails }
+  );
+
+  if (blockCheckError) {
+    console.error('Error checking email blacklist:', blockCheckError);
+    return NextResponse.json(
+      { message: 'Error checking email blacklist' },
+      { status: 500 }
+    );
+  }
+
+  // Create a Set of blocked emails for quick lookup
+  const blockedEmails = new Set(
+    (blockStatuses || [])
+      .filter((status) => status.is_blocked)
+      .map((status) => status.email)
+  );
+
+  // Log blocked emails for visibility
+  if (blockedEmails.size > 0) {
+    console.log(
+      `Filtered out ${blockedEmails.size} blocked email(s):`,
+      Array.from(blockedEmails)
+    );
+  }
+
+  // Filter out users with blocked emails
+  const allowedUsers = data.users.filter(
+    (user) => !blockedEmails.has(user.email)
+  );
+
+  if (allowedUsers.length === 0) {
+    return NextResponse.json(
+      {
+        message: 'All recipient emails are blacklisted',
+        successCount: 0,
+        failureCount: 0,
+        blockedCount: data.users.length,
+      },
+      { status: 400 }
+    );
+  }
+
   const sesClient = new SESClient({
     region: credentials.region,
     credentials: {
@@ -108,7 +151,7 @@ export async function POST(
   });
 
   const results = await Promise.all(
-    data.users.map(async (user) => {
+    allowedUsers.map(async (user) => {
       const subject = `Easy Center | Báo cáo tiến độ ngày ${dayjs(data.date).format('DD/MM/YYYY')} của ${user.username}`;
       return sendEmail({
         wsId,
@@ -126,12 +169,14 @@ export async function POST(
 
   const successCount = results.filter((result) => result).length;
   const failureCount = results.filter((result) => !result).length;
+  const blockedCount = blockedEmails.size;
 
   return NextResponse.json(
     {
       message: 'Emails sent and logged',
       successCount,
       failureCount,
+      blockedCount,
     },
     { status: failureCount > 0 ? 500 : successCount > 0 ? 200 : 404 }
   );
@@ -188,10 +233,7 @@ const sendEmail = async ({
       },
     };
 
-    if (
-      !disableEmailSending &&
-      !domainBlacklist.some((domain) => recipient.includes(domain))
-    ) {
+    if (!disableEmailSending) {
       console.log('Sending email:', params);
       const command = new SendEmailCommand(params);
       const sesResponse = await client.send(command);
