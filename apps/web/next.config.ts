@@ -7,6 +7,7 @@ const isDev = process.env.NODE_ENV === 'development';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  cacheComponents: true,
   poweredByHeader: false,
   transpilePackages: [
     '@tuturuuu/ai',
