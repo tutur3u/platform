@@ -1,5 +1,5 @@
 import TaskBoardPage from '@tuturuuu/ui/tu-do/boards/boardId/task-board-page';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { Suspense } from 'react';
 
 interface Props {
   params: Promise<{
@@ -9,9 +9,9 @@ interface Props {
 }
 
 export default async function WorkspaceTaskBoardPage({ params }: Props) {
-  const { wsId: id, boardId } = await params;
-  const workspace = await getWorkspace(id);
-  const wsId = workspace?.id;
-
-  return <TaskBoardPage wsId={wsId} boardId={boardId} />;
+  return (
+    <Suspense>
+      <TaskBoardPage params={params} />
+    </Suspense>
+  );
 }

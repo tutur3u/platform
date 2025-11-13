@@ -1,25 +1,27 @@
 import {
-  QueryClient,
-  HydrationBoundary,
   dehydrate,
+  HydrationBoundary,
+  QueryClient,
 } from '@tanstack/react-query';
 import { Plus } from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { EnhancedBoardsView } from './enhanced-boards-view';
 import { TaskBoardForm } from './form';
 
 interface Props {
-  wsId: string;
-  searchParams: {
+  params: Promise<{
+    wsId: string;
+  }>;
+  searchParams: Promise<{
     q?: string;
     page?: string;
     pageSize?: string;
-  };
+  }>;
 }
 
 async function getData(
@@ -101,9 +103,14 @@ async function getData(
 }
 
 export default async function WorkspaceProjectsPage({
-  wsId,
+  params,
   searchParams,
 }: Props) {
+  const { wsId: id } = await params;
+  const sp = await searchParams;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace?.id;
+
   const { withoutPermission } = await getPermissions({
     wsId,
   });
@@ -111,9 +118,9 @@ export default async function WorkspaceProjectsPage({
   if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
   const queryClient = new QueryClient();
-  const q = searchParams.q || '';
-  const page = searchParams.page || '1';
-  const pageSize = searchParams.pageSize || '10';
+  const q = sp.q || '';
+  const page = sp.page || '1';
+  const pageSize = sp.pageSize || '10';
 
   // Prefetch with the exact same query key structure that the client will use
   await queryClient.prefetchQuery({
