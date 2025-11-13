@@ -51,7 +51,6 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   return (
     <div className="flex h-screen max-h-screen min-h-screen flex-col overflow-y-auto bg-linear-to-br from-dynamic-light-red/10 via-dynamic-light-pink/5 to-dynamic-light-blue/10">
-      {/* <div className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue absolute -z-20 h-full w-full bg-linear-to-r" /> */}
       <Structure
         locale={locale}
         user={user}
