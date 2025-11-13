@@ -47,6 +47,21 @@ export async function performIncrementalActiveSync(
 ) {
   const syncStartTime = Date.now();
 
+  // Initialize metrics tracking
+  const metrics = {
+    tokenOperationsMs: 0,
+    googleApiFetchMs: 0,
+    eventProcessingMs: 0,
+    databaseWritesMs: 0,
+    apiCallsCount: 0,
+    pagesFetched: 0,
+    retryCount: 0,
+    eventsFetchedTotal: 0,
+    eventsFilteredOut: 0,
+    batchCount: 0,
+    syncTokenUsed: false,
+  };
+
   // Convert string dates to Date objects if needed
   const startDateObj =
     startDate instanceof Date ? startDate : new Date(startDate);
@@ -78,6 +93,7 @@ export async function performIncrementalActiveSync(
     );
   }
 
+  const tokenOpStart = Date.now();
   console.log('🔍 [DEBUG] Creating Supabase client...');
   const supabase = await createClient();
   console.log('✅ [DEBUG] Supabase client created successfully');
@@ -89,6 +105,8 @@ export async function performIncrementalActiveSync(
     .eq('user_id', userId)
     .eq('ws_id', wsId) // Add ws_id to the query
     .maybeSingle();
+
+  metrics.tokenOperationsMs = Date.now() - tokenOpStart;
 
   console.log('🔍 [DEBUG] Database query result:', {
     hasData: !!result.data,
@@ -201,6 +219,8 @@ export async function performIncrementalActiveSync(
       syncToken,
     });
 
+    metrics.syncTokenUsed = !!syncToken;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let allEvents: any[] = [];
     let pageToken: string | undefined;
@@ -208,6 +228,7 @@ export async function performIncrementalActiveSync(
     let pageCount = 0;
     let useDateRangeFallback = false;
 
+    const googleApiFetchStart = Date.now();
     console.log('🔍 [DEBUG] Starting to fetch events from Google Calendar...');
 
     // Try sync token first, fallback to date range if no sync token exists
@@ -216,6 +237,7 @@ export async function performIncrementalActiveSync(
         '🔍 [DEBUG] No sync token found, using date range fallback...'
       );
       useDateRangeFallback = true;
+      metrics.syncTokenUsed = false;
     }
 
     do {
@@ -245,11 +267,15 @@ export async function performIncrementalActiveSync(
       }
 
       try {
+        metrics.apiCallsCount++;
         const res = await calendar.events.list(requestParams);
+        metrics.pagesFetched++;
 
         console.log('🔍 [DEBUG] Page', pageCount, 'results:', res.data);
 
         const events = res.data.items || [];
+        metrics.eventsFetchedTotal += events.length;
+
         console.log(`🔍 [DEBUG] Page ${pageCount} results:`, {
           eventsCount: events.length,
           hasNextPageToken: !!res.data.nextPageToken,
@@ -270,10 +296,12 @@ export async function performIncrementalActiveSync(
           apiError.code === 410 &&
           !useDateRangeFallback
         ) {
+          metrics.retryCount++;
           console.log(
             '🔍 [DEBUG] Sync token expired or invalid (410 error), falling back to date range...'
           );
           useDateRangeFallback = true;
+          metrics.syncTokenUsed = false;
 
           // Clear the sync token from database since it's invalid
           try {
@@ -295,6 +323,8 @@ export async function performIncrementalActiveSync(
       }
     } while (pageToken);
 
+    metrics.googleApiFetchMs = Date.now() - googleApiFetchStart;
+
     console.log('✅ [DEBUG] Finished fetching events:', {
       totalEvents: allEvents.length,
       hasNextSyncToken: !!nextSyncToken,
@@ -311,6 +341,9 @@ export async function performIncrementalActiveSync(
           endDateObj,
           calendarId
         );
+        metrics.eventProcessingMs = result.timings.eventProcessingMs;
+        metrics.databaseWritesMs = result.timings.databaseWritesMs;
+        metrics.batchCount = result.timings.batchCount;
 
         const syncDuration = Date.now() - syncStartTime;
         console.log('✅ [DEBUG] incrementalActiveSync completed:', {
@@ -327,7 +360,10 @@ export async function performIncrementalActiveSync(
           console.log('✅ [DEBUG] Next sync token stored successfully');
         }
 
-        return result;
+        return {
+          ...result,
+          metrics,
+        };
       } catch (error) {
         console.error('❌ [DEBUG] Error in incrementalActiveSync:', {
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -348,6 +384,12 @@ export async function performIncrementalActiveSync(
       eventsInserted: 0,
       eventsUpdated: 0,
       eventsDeleted: 0,
+      metrics,
+      timings: {
+        eventProcessingMs: 0,
+        databaseWritesMs: 0,
+        batchCount: 0,
+      },
     };
   } catch (error) {
     console.error('❌ [DEBUG] Error in performIncrementalActiveSync:', {
@@ -367,6 +409,7 @@ async function incrementalActiveSync(
   endDate: Date,
   calendarId: string = 'primary'
 ) {
+  const processingStart = Date.now();
   const supabase = await createClient();
 
   // Convert string dates to Date objects if needed
@@ -398,10 +441,15 @@ async function incrementalActiveSync(
     return formatEventForDb(event, wsId, calendarId);
   });
 
+  const eventProcessingMs = Date.now() - processingStart;
+
   console.log('✅ [DEBUG] Events formatted:', {
     formattedEventsToUpsertCount: formattedEventsToUpsert.length,
     formattedEventsToDeleteCount: formattedEventsToDelete.length,
   });
+
+  const dbWriteStart = Date.now();
+  let batchCount = 0;
 
   if (formattedEventsToDelete && formattedEventsToDelete.length > 0) {
     console.log('🔍 [DEBUG] Deleting events...');
@@ -410,21 +458,47 @@ async function incrementalActiveSync(
       .filter((id): id is string => id !== null && id !== undefined);
 
     if (validEventIds.length > 0) {
-      const { error: deleteError } = await supabase
-        .from('workspace_calendar_events')
-        .delete()
-        .in('google_event_id', validEventIds)
-        .eq('ws_id', wsId);
+      // Batch deletes to avoid "URI too long" error when deleting many events
+      const DELETE_BATCH_SIZE = 50; // Conservative batch size for URL safety
+      const deleteBatches = [];
 
-      console.log('🔍 [DEBUG] Delete result:', {
-        hasError: !!deleteError,
-        errorMessage: deleteError?.message,
-      });
-
-      if (deleteError) {
-        console.log('❌ [DEBUG] Delete error:', deleteError);
-        throw new Error(deleteError.message);
+      for (let i = 0; i < validEventIds.length; i += DELETE_BATCH_SIZE) {
+        deleteBatches.push(validEventIds.slice(i, i + DELETE_BATCH_SIZE));
       }
+
+      batchCount += deleteBatches.length;
+
+      console.log(
+        `🔍 [DEBUG] Deleting ${validEventIds.length} events in ${deleteBatches.length} batches`
+      );
+
+      // Process delete batches sequentially to avoid overwhelming the database
+      for (let i = 0; i < deleteBatches.length; i++) {
+        const batch = deleteBatches[i];
+        if (!batch) continue;
+
+        const { error: deleteError } = await supabase
+          .from('workspace_calendar_events')
+          .delete()
+          .in('google_event_id', batch)
+          .eq('ws_id', wsId);
+
+        console.log(
+          `🔍 [DEBUG] Delete batch ${i + 1}/${deleteBatches.length}:`,
+          {
+            hasError: !!deleteError,
+            batchSize: batch.length,
+            errorMessage: deleteError?.message,
+          }
+        );
+
+        if (deleteError) {
+          console.log(`❌ [DEBUG] Delete batch ${i + 1} error:`, deleteError);
+          throw new Error(deleteError.message);
+        }
+      }
+
+      console.log('✅ [DEBUG] All delete batches completed successfully');
     }
   }
 
@@ -443,6 +517,8 @@ async function incrementalActiveSync(
     for (let i = 0; i < formattedEventsToUpsert.length; i += BATCH_SIZE) {
       batches.push(formattedEventsToUpsert.slice(i, i + BATCH_SIZE));
     }
+
+    batchCount += batches.length;
 
     console.log(
       `🔍 [DEBUG] Processing ${formattedEventsToUpsert.length} events in ${batches.length} batches`
@@ -486,9 +562,16 @@ async function incrementalActiveSync(
     );
   }
 
+  const databaseWritesMs = Date.now() - dbWriteStart;
+
   return {
     eventsInserted: upsertResult?.inserted || 0,
     eventsUpdated: upsertResult?.updated || 0,
     eventsDeleted: formattedEventsToDelete?.length || 0,
+    timings: {
+      eventProcessingMs,
+      databaseWritesMs,
+      batchCount,
+    },
   };
 }
