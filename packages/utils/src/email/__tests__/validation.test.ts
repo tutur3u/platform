@@ -45,4 +45,3 @@ describe('email blacklist validation utils', () => {
     });
   });
 });
-
