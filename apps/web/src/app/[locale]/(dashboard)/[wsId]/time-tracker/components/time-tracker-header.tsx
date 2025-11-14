@@ -1,8 +1,8 @@
 import { Timer } from '@tuturuuu/icons';
-import { getTranslations } from 'next-intl/server';
+import { useTranslations } from 'next-intl';
 
-export default async function TimeTrackerHeader() {
-  const t = await getTranslations('time-tracker');
+export default function TimeTrackerHeader() {
+  const t = useTranslations('time-tracker');
   return (
     <div className="space-y-4">
       {/* Main Header Section */}

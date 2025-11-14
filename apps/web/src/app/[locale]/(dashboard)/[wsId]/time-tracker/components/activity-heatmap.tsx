@@ -269,6 +269,9 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
 
   // Pre-compute week grid data structure - memoized to avoid recreating 371+ dayjs objects on every render
   const weekGridData = useMemo(() => {
+    // Compute today inside memo to avoid stale closure and unnecessary recalculations
+    const memoToday = dayjs().tz(userTimezone);
+
     const activityMap = new Map<
       string,
       { duration: number; sessions: number }
@@ -288,7 +291,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
     > = [];
 
     // Start from 365 days ago
-    const startDate = today.subtract(364, 'day');
+    const startDate = memoToday.subtract(364, 'day');
     // Align to Monday (start of ISO week)
     const firstMonday = startDate.startOf('isoWeek');
 
@@ -301,7 +304,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
         const dateStr = currentDate.format('YYYY-MM-DD');
         const activity = activityMap.get(dateStr);
 
-        if (currentDate.isAfter(today, 'day')) {
+        if (currentDate.isAfter(memoToday, 'day')) {
           // Future dates
           currentWeek.push(null);
         } else {
@@ -318,7 +321,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
     }
 
     return { weeks, activityMap };
-  }, [dailyActivity, userTimezone, today]);
+  }, [dailyActivity, userTimezone]);
 
   const weeks = weekGridData.weeks;
 

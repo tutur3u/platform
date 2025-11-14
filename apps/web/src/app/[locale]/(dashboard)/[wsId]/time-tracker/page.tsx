@@ -13,7 +13,6 @@ import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { ActivityHeatmap } from './components/activity-heatmap';
-import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -37,7 +36,7 @@ const formatDuration = (seconds: number | undefined): string => {
   return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
-// Optimized date calculations - cache date objects
+// Optimized date calculations - cache date objects and return Today as Date
 function getDateBoundaries() {
   const now = Date.now();
   const today = new Date(now);
@@ -56,29 +55,27 @@ function getDateBoundaries() {
 
   return {
     today: today.getTime(),
+    todayDate: today, // Pass Date object directly to avoid reparsing
     startOfWeek: startOfWeek.getTime(),
     startOfMonth: startOfMonth.getTime(),
     oneYearAgo: oneYearAgo.getTime(),
-    todayDateStr: today.toDateString(),
   };
 }
 
-// Optimized streak calculation - use date string manipulation instead of Date objects
-function calculateStreak(
-  activityDays: Set<string>,
-  todayDateStr: string
-): number {
+// Optimized streak calculation - use Date object directly, normalize comparisons once
+function calculateStreak(activityDays: Set<string>, todayDate: Date): number {
   if (activityDays.size === 0) return 0;
 
-  // Parse today once
-  const today = new Date(todayDateStr);
   const oneDayMs = 24 * 60 * 60 * 1000;
 
   let streak = 0;
-  let checkDate = new Date(today);
+  let checkDate = new Date(todayDate); // Clone to avoid mutating input
+
+  // Normalize today's dateString once for comparison
+  const todayDateStr = checkDate.toDateString();
 
   // If today has activity, start counting from today
-  if (activityDays.has(checkDate.toDateString())) {
+  if (activityDays.has(todayDateStr)) {
     while (activityDays.has(checkDate.toDateString())) {
       streak++;
       checkDate.setTime(checkDate.getTime() - oneDayMs);
@@ -95,10 +92,9 @@ function calculateStreak(
   return streak;
 }
 
-async function fetchTimeTrackingStats(userId: string, wsId: string) {
+async function fetchTimeTrackingStats(userId: string, wsId: string, isPersonal: boolean) {
   const supabase = await createClient();
 
-  const isPersonal = await isPersonalWorkspace(wsId);
   const boundaries = getDateBoundaries();
 
   // Optimized query: only fetch last year of data with date filtering
@@ -193,7 +189,7 @@ async function fetchTimeTrackingStats(userId: string, wsId: string) {
     }
   }
 
-  const streak = calculateStreak(activityDays, boundaries.todayDateStr);
+  const streak = calculateStreak(activityDays, boundaries.todayDate);
 
   const dailyActivity = Array.from(dailyActivityMap.entries()).map(
     ([date, data]) => ({
@@ -422,12 +418,12 @@ export default async function TimeTrackerPage({
 }) {
   return (
     <WorkspaceWrapper params={params}>
-      {async ({ wsId, locale }) => {
+      {async ({ wsId, locale, isPersonal }) => {
         const user = await getCurrentSupabaseUser();
         if (!user) return notFound();
 
         // Fetch stats in parallel with Suspense boundaries
-        const statsPromise = fetchTimeTrackingStats(user.id, wsId);
+        const statsPromise = fetchTimeTrackingStats(user.id, wsId, isPersonal);
         return (
           <div className="grid gap-4 pb-4">
             <Suspense fallback={<StatsCardSkeleton />}>
