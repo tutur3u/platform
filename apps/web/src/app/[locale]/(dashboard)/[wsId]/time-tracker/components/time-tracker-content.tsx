@@ -64,8 +64,6 @@ interface TimeTrackerContentProps {
   isUserLoading: boolean;
 }
 
-
-
 export default function TimeTrackerContent({
   wsId,
   initialData,
@@ -76,20 +74,23 @@ export default function TimeTrackerContent({
 
   const currentUserId = currentUser?.id || null;
 
-  const getPriorityBadge = useCallback((priority: TaskPriority | null | undefined) => {
-  switch (priority) {
-    case 'critical':
-      return { text: t('priority.urgent'), color: 'bg-red-500' };
-    case 'high':
-      return { text: t('priority.high'), color: 'bg-orange-500' };
-    case 'normal':
-      return { text: t('priority.medium'), color: 'bg-yellow-500' };
-    case 'low':
-      return { text: t('priority.low'), color: 'bg-green-500' };
-    default:
-      return { text: t('priority.noPriority'), color: 'bg-gray-500' };
-  }
-}, [t]);
+  const getPriorityBadge = useCallback(
+    (priority: TaskPriority | null | undefined) => {
+      switch (priority) {
+        case 'critical':
+          return { text: t('priority.urgent'), color: 'bg-red-500' };
+        case 'high':
+          return { text: t('priority.high'), color: 'bg-orange-500' };
+        case 'normal':
+          return { text: t('priority.medium'), color: 'bg-yellow-500' };
+        case 'low':
+          return { text: t('priority.low'), color: 'bg-green-500' };
+        default:
+          return { text: t('priority.noPriority'), color: 'bg-gray-500' };
+      }
+    },
+    [t]
+  );
 
   // Use React Query for running session to sync with command palette
   const { data: runningSessionFromQuery } = useQuery({
@@ -380,7 +381,7 @@ export default function TimeTrackerContent({
               toast.error(
                 t('errors.failedToLoad', {
                   name,
-                  message: result.reason.message || 'Unknown error'
+                  message: result.reason.message || 'Unknown error',
                 })
               );
             }
@@ -622,9 +623,7 @@ export default function TimeTrackerContent({
                   <CardTitle className="text-lg sm:text-xl">
                     {t('taskWorkspace')}
                   </CardTitle>
-                  <CardDescription>
-                    {t('dragTasksDescription')}
-                  </CardDescription>
+                  <CardDescription>{t('dragTasksDescription')}</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -1199,7 +1198,11 @@ export default function TimeTrackerContent({
                     setElapsedTime(0);
                     await fetchData();
 
-                    toast.success(t('toast.resumedSession', { title: recentSessions[0].title }));
+                    toast.success(
+                      t('toast.resumedSession', {
+                        title: recentSessions[0].title,
+                      })
+                    );
                     setShowContinueConfirm(false);
                   } catch (error) {
                     console.error('Error resuming session:', error);
@@ -1337,7 +1340,9 @@ export default function TimeTrackerContent({
                                 : 'text-green-600 dark:text-green-400'
                             )}
                           >
-                            {isUnassigned ? t('unassigned') : t('assignedToYou')}
+                            {isUnassigned
+                              ? t('unassigned')
+                              : t('assignedToYou')}
                           </span>
                         </div>
                       </div>

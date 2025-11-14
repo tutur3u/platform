@@ -178,7 +178,11 @@ export function SimpleTimerControls({
 
       onSessionUpdate();
 
-      toast.success(t('sessionCompleted', { duration: formatDuration(response.session?.duration_seconds || 0) }));
+      toast.success(
+        t('sessionCompleted', {
+          duration: formatDuration(response.session?.duration_seconds || 0),
+        })
+      );
     } catch (error) {
       console.error('Error stopping timer:', error);
       toast.error(t('stopTimerFailed'));
@@ -515,7 +519,9 @@ export function SimpleTimerControls({
                 {justCompleted.title}
               </p>
               <p className="font-medium text-green-600 text-sm">
-                {t('durationCompleted', { duration: formatDuration(justCompleted.duration_seconds || 0) })}
+                {t('durationCompleted', {
+                  duration: formatDuration(justCompleted.duration_seconds || 0),
+                })}
               </p>
             </div>
           </div>

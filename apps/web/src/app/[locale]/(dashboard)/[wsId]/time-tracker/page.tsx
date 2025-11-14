@@ -25,7 +25,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-
 const formatDuration = (seconds: number | undefined): string => {
   const safeSeconds = Math.max(0, Math.floor(seconds || 0));
   const hours = Math.floor(safeSeconds / 3600);
@@ -43,18 +42,18 @@ function getDateBoundaries() {
   const now = Date.now();
   const today = new Date(now);
   today.setHours(0, 0, 0, 0);
-  
+
   const dayOfWeek = today.getDay();
   const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
   const startOfWeek = new Date(today);
   startOfWeek.setDate(today.getDate() - daysToSubtract);
-  
+
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  
+
   // Only fetch last year of data for performance
   const oneYearAgo = new Date(today);
   oneYearAgo.setFullYear(today.getFullYear() - 1);
-  
+
   return {
     today: today.getTime(),
     startOfWeek: startOfWeek.getTime(),
@@ -65,16 +64,19 @@ function getDateBoundaries() {
 }
 
 // Optimized streak calculation - use date string manipulation instead of Date objects
-function calculateStreak(activityDays: Set<string>, todayDateStr: string): number {
+function calculateStreak(
+  activityDays: Set<string>,
+  todayDateStr: string
+): number {
   if (activityDays.size === 0) return 0;
-  
+
   // Parse today once
   const today = new Date(todayDateStr);
   const oneDayMs = 24 * 60 * 60 * 1000;
-  
+
   let streak = 0;
   let checkDate = new Date(today);
-  
+
   // If today has activity, start counting from today
   if (activityDays.has(checkDate.toDateString())) {
     while (activityDays.has(checkDate.toDateString())) {
@@ -89,7 +91,7 @@ function calculateStreak(activityDays: Set<string>, todayDateStr: string): numbe
       checkDate.setTime(checkDate.getTime() - oneDayMs);
     }
   }
-  
+
   return streak;
 }
 
@@ -98,7 +100,7 @@ async function fetchTimeTrackingStats(userId: string, wsId: string) {
 
   const isPersonal = await isPersonalWorkspace(wsId);
   const boundaries = getDateBoundaries();
-  
+
   // Optimized query: only fetch last year of data with date filtering
   // If personal workspace: fetch all sessions for user
   // If not personal: only fetch sessions from this workspace
@@ -108,14 +110,15 @@ async function fetchTimeTrackingStats(userId: string, wsId: string) {
     .eq('user_id', userId)
     .not('duration_seconds', 'is', null)
     .gte('start_time', new Date(boundaries.oneYearAgo).toISOString());
-  
+
   // Only filter by ws_id if it's not a personal workspace
   if (!isPersonal) {
     query = query.eq('ws_id', wsId);
   }
-  
-  const { data: sessions, error } = await query
-    .order('start_time', { ascending: false });
+
+  const { data: sessions, error } = await query.order('start_time', {
+    ascending: false,
+  });
 
   if (error) {
     console.error('Error fetching time tracking stats:', error);
@@ -142,12 +145,15 @@ async function fetchTimeTrackingStats(userId: string, wsId: string) {
   const todayTime = boundaries.today;
   const weekTime = boundaries.startOfWeek;
   const monthTime = boundaries.startOfMonth;
-  
+
   let todayDuration = 0;
   let weekDuration = 0;
   let monthDuration = 0;
   const activityDays = new Set<string>();
-  const dailyActivityMap = new Map<string, { duration: number; sessions: number }>();
+  const dailyActivityMap = new Map<
+    string,
+    { duration: number; sessions: number }
+  >();
 
   // Single pass through sessions - optimize Date object creation
   // Use array length caching for micro-optimization
@@ -159,7 +165,7 @@ async function fetchTimeTrackingStats(userId: string, wsId: string) {
     // Parse timestamp once
     const startTimeMs = new Date(session.start_time).getTime();
     const duration = session.duration_seconds;
-    
+
     // Fast timestamp comparisons
     if (startTimeMs >= todayTime) {
       todayDuration += duration;
@@ -175,7 +181,7 @@ async function fetchTimeTrackingStats(userId: string, wsId: string) {
     const localDayStr = new Date(session.start_time).toDateString(); // local day for streaks
     activityDays.add(localDayStr);
     const utcDayKey = session.start_time.slice(0, 10); // "YYYY-MM-DD" from ISO UTC
-    const existing = dailyActivityMap.get(utcDayKey);    
+    const existing = dailyActivityMap.get(utcDayKey);
     if (existing) {
       existing.duration += duration;
       existing.sessions += 1;
@@ -206,9 +212,6 @@ async function fetchTimeTrackingStats(userId: string, wsId: string) {
   };
 }
 
-
-
-
 // Stats card component with cached date formatting
 async function StatsCard({
   stats,
@@ -222,7 +225,7 @@ async function StatsCard({
   const dayOfWeek = now.getDay();
   const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
   const weekdayName = now.toLocaleDateString(locale, { weekday: 'long' });
-  
+
   // Calculate week range once
   const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
   const startOfWeek = new Date(now);
@@ -230,7 +233,7 @@ async function StatsCard({
   const endOfWeek = new Date(startOfWeek);
   endOfWeek.setDate(startOfWeek.getDate() + 6);
   const weekRange = `${startOfWeek.toLocaleDateString(locale, { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString(locale, { month: 'short', day: 'numeric' })}`;
-  
+
   const monthName = now.toLocaleDateString(locale, {
     month: 'long',
     year: 'numeric',
@@ -249,9 +252,7 @@ async function StatsCard({
             <CardTitle className="text-lg sm:text-xl">
               {t('stats.title')}
             </CardTitle>
-            <CardDescription>
-              {t('stats.description')}
-            </CardDescription>
+            <CardDescription>{t('stats.description')}</CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -270,7 +271,9 @@ async function StatsCard({
                   </p>
                   <span className="text-sm">{isWeekend ? '🏖️' : '💼'}</span>
                 </div>
-                <p className="text-muted-foreground/80 text-xs">{weekdayName}</p>
+                <p className="text-muted-foreground/80 text-xs">
+                  {weekdayName}
+                </p>
                 <p className="font-bold text-lg">
                   {formatDuration(stats.todayTime)}
                 </p>
@@ -368,10 +371,7 @@ function StatsCardSkeleton() {
       <CardContent>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="h-20 animate-pulse rounded-lg bg-muted"
-            />
+            <div key={i} className="h-20 animate-pulse rounded-lg bg-muted" />
           ))}
         </div>
       </CardContent>
@@ -381,11 +381,10 @@ function StatsCardSkeleton() {
 
 // Heatmap card with loading state
 function HeatmapCard({
-  dailyActivity
+  dailyActivity,
 }: {
   dailyActivity: Array<{ date: string; duration: number; sessions: number }>;
 }) {
-  
   return (
     <Card className="relative overflow-visible">
       <CardContent className="pt-6">
@@ -426,24 +425,23 @@ export default async function TimeTrackerPage({
       {async ({ wsId, locale }) => {
         const user = await getCurrentSupabaseUser();
         if (!user) return notFound();
-        
-        
-          // Fetch stats in parallel with Suspense boundaries
-          const statsPromise = fetchTimeTrackingStats(user.id, wsId);
+
+        // Fetch stats in parallel with Suspense boundaries
+        const statsPromise = fetchTimeTrackingStats(user.id, wsId);
         return (
           <div className="grid gap-4 pb-4">
-          <Suspense fallback={<StatsCardSkeleton />}>
-            <StatsCardWrapper statsPromise={statsPromise} locale={locale} />
-          </Suspense>
-          
-          <Suspense fallback={<HeatmapCardSkeleton />}>
-            <HeatmapCardWrapper statsPromise={statsPromise} />
-          </Suspense>
-        </div>
-        )
+            <Suspense fallback={<StatsCardSkeleton />}>
+              <StatsCardWrapper statsPromise={statsPromise} locale={locale} />
+            </Suspense>
+
+            <Suspense fallback={<HeatmapCardSkeleton />}>
+              <HeatmapCardWrapper statsPromise={statsPromise} />
+            </Suspense>
+          </div>
+        );
       }}
     </WorkspaceWrapper>
-  )
+  );
 }
 
 // Separate async components for Suspense boundaries
@@ -467,5 +465,5 @@ async function HeatmapCardWrapper({
   // if (!stats.dailyActivity || stats.dailyActivity.length === 0) {
   //   return null;
   // }
-  return <HeatmapCard dailyActivity={stats.dailyActivity}  />;
+  return <HeatmapCard dailyActivity={stats.dailyActivity} />;
 }
