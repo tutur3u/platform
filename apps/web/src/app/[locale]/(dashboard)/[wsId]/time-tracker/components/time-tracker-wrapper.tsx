@@ -26,18 +26,18 @@ export default function TimeTrackerWrapper({
   const router = useRouter();
   const t = useTranslations('time-tracker.modes');
 
-    const { data: currentUser, isLoading: isUserLoading } = useQuery({
-      queryKey: ['current-user'],
-      queryFn: async () => {
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        return user;
-      },
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
-    });
+  const { data: currentUser, isLoading: isUserLoading } = useQuery({
+    queryKey: ['current-user'],
+    queryFn: async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      return user;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
 
   // Check URL parameter or localStorage for mode preference
   const [isAdvancedMode, setIsAdvancedMode] = useState(() => {
@@ -127,7 +127,12 @@ export default function TimeTrackerWrapper({
         </Card>
 
         {/* Advanced Timer Component */}
-        <TimeTrackerContent wsId={wsId} initialData={initialData} currentUser={currentUser ?? null} isUserLoading={isUserLoading} />
+        <TimeTrackerContent
+          wsId={wsId}
+          initialData={initialData}
+          currentUser={currentUser ?? null}
+          isUserLoading={isUserLoading}
+        />
       </div>
     );
   }
@@ -163,7 +168,12 @@ export default function TimeTrackerWrapper({
       </Card>
 
       {/* Simple Timer Component */}
-      <SimpleTimeTrackerContent wsId={wsId} initialData={initialData} currentUser={currentUser ?? null} isUserLoading={isUserLoading} />
+      <SimpleTimeTrackerContent
+        wsId={wsId}
+        initialData={initialData}
+        currentUser={currentUser ?? null}
+        isUserLoading={isUserLoading}
+      />
     </div>
   );
 }

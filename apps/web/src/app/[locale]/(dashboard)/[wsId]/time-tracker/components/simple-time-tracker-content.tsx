@@ -14,7 +14,7 @@ import type {
   TimeTrackerData,
 } from '../types';
 import { SimpleTimerControls } from './simple-timer-controls';
-import type {User} from '@tuturuuu/types/primitives/User';
+import type { User } from '@tuturuuu/types/primitives/User';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -230,10 +230,12 @@ export default function SimpleTimeTrackerContent({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">{t('stats.today.title')}</CardTitle>
+            <CardTitle className="font-medium text-sm">
+              {t('stats.today.title')}
+            </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className='gap-2 flex flex-col'>
+          <CardContent className="gap-2 flex flex-col">
             <div className="font-bold text-2xl">
               {formatDuration(todayStats.todayTime)}
             </div>
@@ -247,10 +249,12 @@ export default function SimpleTimeTrackerContent({
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">{t('stats.week.title')}</CardTitle>
+            <CardTitle className="font-medium text-sm">
+              {t('stats.week.title')}
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className='gap-2 flex flex-col'>
+          <CardContent className="gap-2 flex flex-col">
             <div className="font-bold text-2xl">
               {formatDuration(todayStats.weekTime)}
             </div>
@@ -264,11 +268,15 @@ export default function SimpleTimeTrackerContent({
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">{t('stats.streak.title')}</CardTitle>
+            <CardTitle className="font-medium text-sm">
+              {t('stats.streak.title')}
+            </CardTitle>
             <Timer className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className='gap-2 flex flex-col'>
-            <div className="font-bold text-2xl">{t('stats.streak.count', { count: todayStats.streak })}</div>
+          <CardContent className="gap-2 flex flex-col">
+            <div className="font-bold text-2xl">
+              {t('stats.streak.count', { count: todayStats.streak })}
+            </div>
             <p className="text-muted-foreground text-xs">
               {todayStats.streak > 0
                 ? t('stats.streak.messageActive')

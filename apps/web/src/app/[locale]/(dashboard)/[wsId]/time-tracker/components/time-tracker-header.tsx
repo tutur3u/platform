@@ -1,11 +1,10 @@
 import { Timer } from '@tuturuuu/icons';
 import { getTranslations } from 'next-intl/server';
-  
+
 export default async function TimeTrackerHeader() {
   const t = await getTranslations('time-tracker');
   return (
     <div className="space-y-4">
-
       {/* Main Header Section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex-1 space-y-3">
@@ -27,4 +26,3 @@ export default async function TimeTrackerHeader() {
     </div>
   );
 }
-

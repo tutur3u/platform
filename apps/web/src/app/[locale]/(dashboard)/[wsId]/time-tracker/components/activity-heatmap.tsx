@@ -73,7 +73,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
   const t = useTranslations('time-tracker.heatmap');
   const locale = useLocale();
   dayjs.locale(locale);
-  
+
   const [heatmapSettings] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('heatmap-settings');
@@ -269,7 +269,10 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
 
   // Pre-compute week grid data structure - memoized to avoid recreating 371+ dayjs objects on every render
   const weekGridData = useMemo(() => {
-    const activityMap = new Map<string, { duration: number; sessions: number }>();
+    const activityMap = new Map<
+      string,
+      { duration: number; sessions: number }
+    >();
     dailyActivity?.forEach((activity) => {
       const activityDate = dayjs.utc(activity.date).tz(userTimezone);
       const dateStr = activityDate.format('YYYY-MM-DD');
@@ -358,7 +361,6 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
     [t]
   );
 
-
   const totalDuration =
     dailyActivity?.reduce((sum, day) => sum + day.duration, 0) || 0;
 
@@ -398,11 +400,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
 
   // Helper function to render a heatmap section - memoized to prevent recreation
   const renderHeatmapSection = useCallback(
-    (
-      weeksSubset: typeof weeks,
-      sectionKey: string,
-      isMobile = false
-    ) => {
+    (weeksSubset: typeof weeks, sectionKey: string, isMobile = false) => {
       // Calculate global index offset for proper unique keys
       let globalOffset = 0;
       if (sectionKey === 'mobile-second')
@@ -413,188 +411,192 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
       if (sectionKey === 'desktop-second')
         globalOffset = desktopFirstRow.flat().length;
 
-    return (
-      <div
-        className={cn(
-          'relative space-y-1.5 overflow-visible',
-          isMobile ? 'space-y-1' : 'space-y-2'
-        )}
-      >
-        {/* Month Labels */}
+      return (
         <div
-          className="grid font-medium text-gray-500 text-xs dark:text-gray-400"
-          style={{
-            gridTemplateColumns: `repeat(${weeksSubset.length}, minmax(0, 1fr))`,
-            gap: isMobile ? '1.5px' : '2.5px',
-          }}
+          className={cn(
+            'relative space-y-1.5 overflow-visible',
+            isMobile ? 'space-y-1' : 'space-y-2'
+          )}
         >
-          {getMonthLabelsForWeeks(weeksSubset).map(({ label, weekIndex }) => (
-            <div
-              key={`${sectionKey}-${label}-${weekIndex}`}
-              className="text-center"
-              style={{ gridColumnStart: weekIndex + 1 }}
-            >
-              <span
-                className={cn(
-                  isMobile ? 'text-[10px]' : 'text-xs',
-                  'sm:hidden'
-                )}
+          {/* Month Labels */}
+          <div
+            className="grid font-medium text-gray-500 text-xs dark:text-gray-400"
+            style={{
+              gridTemplateColumns: `repeat(${weeksSubset.length}, minmax(0, 1fr))`,
+              gap: isMobile ? '1.5px' : '2.5px',
+            }}
+          >
+            {getMonthLabelsForWeeks(weeksSubset).map(({ label, weekIndex }) => (
+              <div
+                key={`${sectionKey}-${label}-${weekIndex}`}
+                className="text-center"
+                style={{ gridColumnStart: weekIndex + 1 }}
               >
-                {label.slice(0, 1)}
-              </span>
-              <span className="hidden text-xs sm:inline">{label}</span>
-            </div>
-          ))}
-        </div>
-        {/* Grid with improved overflow handling */}
-        <div
-          className="relative grid grid-flow-col grid-rows-7 overflow-visible"
-          style={{
-            gridTemplateColumns: `repeat(${weeksSubset.length}, minmax(0, 1fr))`,
-            gap: isMobile ? '1.5px' : '2.5px',
-          }}
-        >
-          {weeksSubset.flat().map((day, index) => {
-            const globalIndex = globalOffset + index;
-
-            if (!day) {
-              return (
-                <div
-                  key={globalIndex}
+                <span
                   className={cn(
-                    '/30 aspect-square rounded-[2px] border bg-gray-100/80 dark:border-gray-700/30 dark:bg-gray-800/60',
-                    isMobile
-                      ? 'min-h-[11px] min-w-[11px]'
-                      : 'min-h-[13px] min-w-[13px] sm:min-h-[15px] sm:min-w-[15px]'
+                    isMobile ? 'text-[10px]' : 'text-xs',
+                    'sm:hidden'
                   )}
-                />
-              );
-            }
+                >
+                  {label.slice(0, 1)}
+                </span>
+                <span className="hidden text-xs sm:inline">{label}</span>
+              </div>
+            ))}
+          </div>
+          {/* Grid with improved overflow handling */}
+          <div
+            className="relative grid grid-flow-col grid-rows-7 overflow-visible"
+            style={{
+              gridTemplateColumns: `repeat(${weeksSubset.length}, minmax(0, 1fr))`,
+              gap: isMobile ? '1.5px' : '2.5px',
+            }}
+          >
+            {weeksSubset.flat().map((day, index) => {
+              const globalIndex = globalOffset + index;
 
-            const intensity = getIntensity(day.activity?.duration || 0);
-            const isToday = day.date.isSame(today, 'day');
-
-            return (
-              <Tooltip key={globalIndex}>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
+              if (!day) {
+                return (
+                  <div
+                    key={globalIndex}
                     className={cn(
-                      'relative aspect-square rounded-[2px] transition-all duration-200 ease-out focus:outline-none',
+                      '/30 aspect-square rounded-[2px] border bg-gray-100/80 dark:border-gray-700/30 dark:bg-gray-800/60',
                       isMobile
                         ? 'min-h-[11px] min-w-[11px]'
-                        : 'min-h-[13px] min-w-[13px] sm:min-h-[15px] sm:min-w-[15px]',
-                      getColorClass(intensity),
-                      // Enhanced hover and focus states with better z-index
-                      'hover:z-10 hover:scale-110 hover:shadow-lg hover:ring-2 hover:ring-emerald-400/60 hover:ring-offset-1',
-                      'focus:z-10 focus:scale-110 focus:ring-2 focus:ring-emerald-400/50 focus:ring-offset-1',
-                      'dark:hover:ring-emerald-500/50 dark:hover:ring-offset-gray-900',
-                      'dark:focus:ring-emerald-500/50 dark:focus:ring-offset-gray-900',
-                      // Today indicator with higher z-index
-                      isToday &&
-                        'z-20 shadow-lg ring-2 ring-blue-500/80 ring-offset-2 dark:ring-blue-400/70 dark:ring-offset-gray-900',
-                      // Mobile specific hover states
-                      isMobile && 'hover:scale-[1.2] sm:hover:scale-110'
+                        : 'min-h-[13px] min-w-[13px] sm:min-h-[15px] sm:min-w-[15px]'
                     )}
-                    aria-label={t('aria.activityFor', {
-                      date: day.date.format('MMMM D, YYYY'),
-                      duration: day.activity
-                        ? formatDuration(day.activity.duration)
-                        : t('noActivity'),
-                    })}
                   />
-                </TooltipTrigger>
-                <TooltipContent
-                  side="top"
-                  className="pointer-events-none z-50 max-w-sm border border-border/20 bg-white/98 p-3 shadow-2xl backdrop-blur-lg dark:bg-gray-900/98"
-                  sideOffset={8}
-                  avoidCollisions={true}
-                  collisionPadding={8}
-                >
-                  <div className="space-y-2.5">
-                    <div className="font-semibold text-gray-900 dark:text-gray-100">
-                      {day.date.format('dd, DD/MM/YYYY')}
-                      {settings.timeReference === 'smart' && (
-                        <div className="mt-1 text-gray-500 text-xs dark:text-gray-400">
-                          {day.date.fromNow()}
+                );
+              }
+
+              const intensity = getIntensity(day.activity?.duration || 0);
+              const isToday = day.date.isSame(today, 'day');
+
+              return (
+                <Tooltip key={globalIndex}>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className={cn(
+                        'relative aspect-square rounded-[2px] transition-all duration-200 ease-out focus:outline-none',
+                        isMobile
+                          ? 'min-h-[11px] min-w-[11px]'
+                          : 'min-h-[13px] min-w-[13px] sm:min-h-[15px] sm:min-w-[15px]',
+                        getColorClass(intensity),
+                        // Enhanced hover and focus states with better z-index
+                        'hover:z-10 hover:scale-110 hover:shadow-lg hover:ring-2 hover:ring-emerald-400/60 hover:ring-offset-1',
+                        'focus:z-10 focus:scale-110 focus:ring-2 focus:ring-emerald-400/50 focus:ring-offset-1',
+                        'dark:hover:ring-emerald-500/50 dark:hover:ring-offset-gray-900',
+                        'dark:focus:ring-emerald-500/50 dark:focus:ring-offset-gray-900',
+                        // Today indicator with higher z-index
+                        isToday &&
+                          'z-20 shadow-lg ring-2 ring-blue-500/80 ring-offset-2 dark:ring-blue-400/70 dark:ring-offset-gray-900',
+                        // Mobile specific hover states
+                        isMobile && 'hover:scale-[1.2] sm:hover:scale-110'
+                      )}
+                      aria-label={t('aria.activityFor', {
+                        date: day.date.format('MMMM D, YYYY'),
+                        duration: day.activity
+                          ? formatDuration(day.activity.duration)
+                          : t('noActivity'),
+                      })}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    className="pointer-events-none z-50 max-w-sm border border-border/20 bg-white/98 p-3 shadow-2xl backdrop-blur-lg dark:bg-gray-900/98"
+                    sideOffset={8}
+                    avoidCollisions={true}
+                    collisionPadding={8}
+                  >
+                    <div className="space-y-2.5">
+                      <div className="font-semibold text-gray-900 dark:text-gray-100">
+                        {day.date.format('dd, DD/MM/YYYY')}
+                        {settings.timeReference === 'smart' && (
+                          <div className="mt-1 text-gray-500 text-xs dark:text-gray-400">
+                            {day.date.fromNow()}
+                          </div>
+                        )}
+                      </div>
+                      {day.activity ? (
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <div
+                                className={cn(
+                                  'h-2.5 w-2.5 rounded-full shadow-sm',
+                                  intensity === 0
+                                    ? 'bg-gray-400'
+                                    : intensity === 1
+                                      ? 'bg-emerald-300'
+                                      : intensity === 2
+                                        ? 'bg-emerald-400'
+                                        : intensity === 3
+                                          ? 'bg-emerald-500'
+                                          : 'bg-emerald-600'
+                                )}
+                              />
+                              <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                {formatDuration(day.activity.duration)}
+                              </span>
+                            </div>
+                            <span className="text-gray-500 dark:text-gray-400">
+                              {t('tracked')}
+                            </span>
+                          </div>
+                          {day.activity.sessions > 0 && (
+                            <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                              <div className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+                              <span>
+                                {t('sessions', {
+                                  count: day.activity.sessions,
+                                })}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1">
+                              {[...Array(5)].map((_, i) => (
+                                <div
+                                  key={i}
+                                  className={cn(
+                                    'h-1.5 w-1.5 rounded-full transition-colors',
+                                    i < intensity
+                                      ? 'bg-emerald-500'
+                                      : 'bg-gray-300 dark:bg-gray-600'
+                                  )}
+                                />
+                              ))}
+                            </div>
+                            <span className="font-medium text-gray-500 text-xs dark:text-gray-400">
+                              {t('level', { level: intensity })}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+                          <div className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+                          <span className="text-sm">
+                            {t('noActivityRecorded')}
+                          </span>
+                        </div>
+                      )}
+                      {isToday && (
+                        <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-2.5 py-1.5 dark:bg-blue-900/40">
+                          <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-blue-500 shadow-sm" />
+                          <span className="font-semibold text-blue-600 text-sm dark:text-blue-400">
+                            {t('today')}
+                          </span>
                         </div>
                       )}
                     </div>
-                    {day.activity ? (
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <div
-                              className={cn(
-                                'h-2.5 w-2.5 rounded-full shadow-sm',
-                                intensity === 0
-                                  ? 'bg-gray-400'
-                                  : intensity === 1
-                                    ? 'bg-emerald-300'
-                                    : intensity === 2
-                                      ? 'bg-emerald-400'
-                                      : intensity === 3
-                                        ? 'bg-emerald-500'
-                                        : 'bg-emerald-600'
-                              )}
-                            />
-                            <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                              {formatDuration(day.activity.duration)}
-                            </span>
-                          </div>
-                          <span className="text-gray-500 dark:text-gray-400">
-                            {t('tracked')}
-                          </span>
-                        </div>
-                        {day.activity.sessions > 0 && (
-                          <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-                            <div className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-                            <span>
-                              {t('sessions', { count: day.activity.sessions })}
-                            </span>
-                          </div>
-                        )}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1">
-                            {[...Array(5)].map((_, i) => (
-                              <div
-                                key={i}
-                                className={cn(
-                                  'h-1.5 w-1.5 rounded-full transition-colors',
-                                  i < intensity
-                                    ? 'bg-emerald-500'
-                                    : 'bg-gray-300 dark:bg-gray-600'
-                                )}
-                              />
-                            ))}
-                          </div>
-                          <span className="font-medium text-gray-500 text-xs dark:text-gray-400">
-                            {t('level', { level: intensity })}
-                          </span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
-                        <div className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-                        <span className="text-sm">{t('noActivityRecorded')}</span>
-                      </div>
-                    )}
-                    {isToday && (
-                      <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-2.5 py-1.5 dark:bg-blue-900/40">
-                        <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-blue-500 shadow-sm" />
-                        <span className="font-semibold text-blue-600 text-sm dark:text-blue-400">
-                          {t('today')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
         </div>
-      </div>
-    );
+      );
     },
     [
       weeks,
@@ -675,7 +677,8 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
                     {month.month.format('MMMM YYYY')}
                   </div>
                   <div className="text-gray-500 text-sm dark:text-gray-400">
-                    {formatDuration(month.duration)} • {t('sessions', { count: month.sessions })}
+                    {formatDuration(month.duration)} •{' '}
+                    {t('sessions', { count: month.sessions })}
                   </div>
                 </div>
               </TooltipContent>
@@ -736,7 +739,11 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
             </h4>
             <div className="flex items-center gap-3 text-gray-600 text-xs dark:text-gray-400">
               <span>{t('activeDays', { count: monthlyStats.activeDays })}</span>
-              <span>{t('trackedDuration', { duration: formatDuration(monthlyStats.totalDuration) })}</span>
+              <span>
+                {t('trackedDuration', {
+                  duration: formatDuration(monthlyStats.totalDuration),
+                })}
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -835,7 +842,14 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
         </div>
       </div>
     );
-  }, [currentMonth, dailyActivity, userTimezone, today, settings.timeReference, t]);
+  }, [
+    currentMonth,
+    dailyActivity,
+    userTimezone,
+    today,
+    settings.timeReference,
+    t,
+  ]);
 
   // Optimized monthly data processing - single-pass algorithm with inline streak calculation
   const monthlyData = useMemo(() => {
@@ -1046,25 +1060,33 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
 
       <div className="mb-2 grid grid-cols-2 gap-2 text-xs">
         <div>
-          <div className="text-blue-600 dark:text-blue-400">{t('cards.total')}</div>
+          <div className="text-blue-600 dark:text-blue-400">
+            {t('cards.total')}
+          </div>
           <div className="font-medium text-blue-900 dark:text-blue-100">
             {formatDuration(data.totalDuration)}
           </div>
         </div>
         <div>
-          <div className="text-blue-600 dark:text-blue-400">{t('cards.daily')}</div>
+          <div className="text-blue-600 dark:text-blue-400">
+            {t('cards.daily')}
+          </div>
           <div className="font-medium text-blue-900 dark:text-blue-100">
             {formatDuration(Math.round(data.avgDaily))}
           </div>
         </div>
         <div>
-          <div className="text-blue-600 dark:text-blue-400">{t('cards.sessions')}</div>
+          <div className="text-blue-600 dark:text-blue-400">
+            {t('cards.sessions')}
+          </div>
           <div className="font-medium text-blue-900 dark:text-blue-100">
             {data.totalSessions}
           </div>
         </div>
         <div>
-          <div className="text-blue-600 dark:text-blue-400">{t('cards.days')}</div>
+          <div className="text-blue-600 dark:text-blue-400">
+            {t('cards.days')}
+          </div>
           <div className="font-medium text-blue-900 dark:text-blue-100">
             {data.activeDays}
           </div>
@@ -1115,25 +1137,33 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
 
         <div className="mb-2 grid grid-cols-2 gap-2 text-xs">
           <div>
-            <div className="text-green-600 dark:text-green-400">{t('cards.total')}</div>
+            <div className="text-green-600 dark:text-green-400">
+              {t('cards.total')}
+            </div>
             <div className="font-medium text-green-900 dark:text-green-100">
               {formatDuration(data.totalDuration)}
             </div>
           </div>
           <div>
-            <div className="text-green-600 dark:text-green-400">{t('cards.daily')}</div>
+            <div className="text-green-600 dark:text-green-400">
+              {t('cards.daily')}
+            </div>
             <div className="font-medium text-green-900 dark:text-green-100">
               {formatDuration(Math.round(avgDailyDuration))}
             </div>
           </div>
           <div>
-            <div className="text-green-600 dark:text-green-400">{t('cards.sessions')}</div>
+            <div className="text-green-600 dark:text-green-400">
+              {t('cards.sessions')}
+            </div>
             <div className="font-medium text-green-900 dark:text-green-100">
               {data.totalSessions}
             </div>
           </div>
           <div>
-            <div className="text-green-600 dark:text-green-400">{t('cards.days')}</div>
+            <div className="text-green-600 dark:text-green-400">
+              {t('cards.days')}
+            </div>
             <div className="font-medium text-green-900 dark:text-green-100">
               {data.activeDays}
             </div>
@@ -1186,7 +1216,9 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
           <h4 className="font-semibold text-muted-foreground/80 text-sm">
             {name}
           </h4>
-          <span className="text-muted-foreground/60 text-xs">{t('cards.nextMonth')}</span>
+          <span className="text-muted-foreground/60 text-xs">
+            {t('cards.nextMonth')}
+          </span>
         </div>
         <div className="rounded-full bg-muted/50 px-2 py-1 font-medium text-muted-foreground/70 text-xs backdrop-blur-sm">
           {t('cards.plan')}
@@ -1196,7 +1228,9 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
       <div className="mb-2 grid grid-cols-2 gap-2 text-xs opacity-50">
         <div>
           <div className="text-muted-foreground/60">{t('cards.target')}</div>
-          <div className="font-medium text-muted-foreground/60">{t('cards.setGoal')}</div>
+          <div className="font-medium text-muted-foreground/60">
+            {t('cards.setGoal')}
+          </div>
         </div>
         <div>
           <div className="text-muted-foreground/60">{t('cards.focus')}</div>
@@ -1206,11 +1240,15 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
         </div>
         <div>
           <div className="text-muted-foreground/60">{t('cards.sessions')}</div>
-          <div className="font-medium text-muted-foreground/60">{t('cards.planAhead')}</div>
+          <div className="font-medium text-muted-foreground/60">
+            {t('cards.planAhead')}
+          </div>
         </div>
         <div>
           <div className="text-muted-foreground/60">{t('cards.growth')}</div>
-          <div className="font-medium text-muted-foreground/60">{t('cards.keepGoing')}</div>
+          <div className="font-medium text-muted-foreground/60">
+            {t('cards.keepGoing')}
+          </div>
         </div>
       </div>
 
@@ -1497,14 +1535,16 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
             <Calendar className="h-5 w-5 text-white" />
           </div>
           <div>
-          <h3 className="font-semibold text-gray-900 text-lg sm:text-xl dark:text-gray-100">
-            {t('title')}
-          </h3>
-          <p className="text-gray-600 text-sm sm:text-base dark:text-gray-400">
-            {totalDuration > 0
-              ? t('trackedThisYear', { duration: formatDuration(totalDuration) })
-              : t('startTracking')}
-          </p>
+            <h3 className="font-semibold text-gray-900 text-lg sm:text-xl dark:text-gray-100">
+              {t('title')}
+            </h3>
+            <p className="text-gray-600 text-sm sm:text-base dark:text-gray-400">
+              {totalDuration > 0
+                ? t('trackedThisYear', {
+                    duration: formatDuration(totalDuration),
+                  })
+                : t('startTracking')}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -1581,7 +1621,9 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
                 )}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-xs">{t('settings.options')}</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-xs">
+                {t('settings.options')}
+              </DropdownMenuLabel>
               <DropdownMenuCheckboxItem
                 className="text-xs hover:cursor-pointer"
                 checked={settings.timeReference === 'smart'}
@@ -1615,7 +1657,9 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
 
           {/* Legend */}
           <div className="flex items-center gap-2 rounded-lg bg-white/80 px-3 py-2 text-gray-600 text-xs shadow-sm ring-1 ring-gray-200/50 sm:gap-3 dark:bg-gray-800/80 dark:text-gray-400 dark:ring-gray-700/50">
-            <span className="hidden font-medium sm:inline">{t('legend.less')}</span>
+            <span className="hidden font-medium sm:inline">
+              {t('legend.less')}
+            </span>
             <div className="flex items-center gap-1">
               {[0, 1, 2, 3, 4].map((intensity) => (
                 <div
@@ -1628,7 +1672,9 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
                 />
               ))}
             </div>
-            <span className="hidden font-medium sm:inline">{t('legend.more')}</span>
+            <span className="hidden font-medium sm:inline">
+              {t('legend.more')}
+            </span>
           </div>
         </div>
       </div>
@@ -1642,8 +1688,10 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
               <div className="flex items-center justify-between">
                 <p className="font-medium text-blue-900 dark:text-blue-100">
                   💡{' '}
-                  {settings.viewMode === 'original' && t('onboarding.originalTitle')}
-                  {settings.viewMode === 'hybrid' && t('onboarding.hybridTitle')}
+                  {settings.viewMode === 'original' &&
+                    t('onboarding.originalTitle')}
+                  {settings.viewMode === 'hybrid' &&
+                    t('onboarding.hybridTitle')}
                   {settings.viewMode === 'calendar-only' &&
                     t('onboarding.calendarOnlyTitle')}
                   {settings.viewMode === 'compact-cards' &&
@@ -1651,7 +1699,9 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
                 </p>
                 {onboardingState.viewCount > 0 && (
                   <span className="text-blue-600 text-xs opacity-75 dark:text-blue-400">
-                    {t('onboarding.viewNumber', { count: onboardingState.viewCount + 1 })}
+                    {t('onboarding.viewNumber', {
+                      count: onboardingState.viewCount + 1,
+                    })}
                   </span>
                 )}
               </div>
@@ -1803,4 +1853,3 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
     </div>
   );
 }
-
