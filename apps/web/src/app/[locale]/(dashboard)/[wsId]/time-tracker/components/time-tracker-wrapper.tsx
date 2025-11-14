@@ -6,9 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { TimeTrackerData } from '../types';
 import SimpleTimeTrackerContent from './simple-time-tracker-content';
 import TimeTrackerContent from './time-tracker-content';
+import { useQuery } from '@tanstack/react-query';
+import { createClient } from '@tuturuuu/supabase/next/client';
 
 interface TimeTrackerWrapperProps {
   wsId: string;
@@ -21,6 +24,20 @@ export default function TimeTrackerWrapper({
 }: TimeTrackerWrapperProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const t = useTranslations('time-tracker.modes');
+
+    const { data: currentUser, isLoading: isUserLoading } = useQuery({
+      queryKey: ['current-user'],
+      queryFn: async () => {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        return user;
+      },
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
+    });
 
   // Check URL parameter or localStorage for mode preference
   const [isAdvancedMode, setIsAdvancedMode] = useState(() => {
@@ -59,9 +76,8 @@ export default function TimeTrackerWrapper({
     url.searchParams.set('mode', 'advanced');
     router.replace(url.pathname + url.search, { scroll: false });
 
-    toast.success('Switched to Advanced Mode', {
-      description:
-        'Access to Pomodoro timer, advanced settings, and more features',
+    toast.success(t('switchedToAdvanced'), {
+      description: t('advancedToastDescription'),
       duration: 3000,
     });
   };
@@ -73,8 +89,8 @@ export default function TimeTrackerWrapper({
     url.searchParams.set('mode', 'simple');
     router.replace(url.pathname + url.search, { scroll: false });
 
-    toast.success('Switched to Simple Mode', {
-      description: 'Clean, focused time tracking experience',
+    toast.success(t('switchedToSimple'), {
+      description: t('simpleToastDescription'),
       duration: 3000,
     });
   };
@@ -89,7 +105,7 @@ export default function TimeTrackerWrapper({
               <div className="flex items-center gap-2">
                 <Settings className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                 <span className="text-orange-800 dark:text-orange-200">
-                  Advanced Mode
+                  {t('advancedMode')}
                 </span>
               </div>
               <Button
@@ -99,20 +115,19 @@ export default function TimeTrackerWrapper({
                 className="border-orange-300 bg-white text-orange-700 hover:bg-orange-100 dark:border-orange-700 dark:bg-orange-950/30 dark:text-orange-300 dark:hover:bg-orange-950/50"
               >
                 <Zap className="mr-2 h-4 w-4" />
-                Switch to Simple
+                {t('switchToSimple')}
               </Button>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             <p className="text-orange-700 text-sm dark:text-orange-300">
-              You're using the advanced timer with Pomodoro modes, break
-              reminders, drag-and-drop, and detailed settings.
+              {t('advancedDescription')}
             </p>
           </CardContent>
         </Card>
 
         {/* Advanced Timer Component */}
-        <TimeTrackerContent wsId={wsId} initialData={initialData} />
+        <TimeTrackerContent wsId={wsId} initialData={initialData} currentUser={currentUser ?? null} isUserLoading={isUserLoading} />
       </div>
     );
   }
@@ -126,7 +141,7 @@ export default function TimeTrackerWrapper({
             <div className="flex items-center gap-2">
               <Timer className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               <span className="text-blue-800 dark:text-blue-200">
-                Simple Mode
+                {t('simpleMode')}
               </span>
             </div>
             <Button
@@ -136,21 +151,19 @@ export default function TimeTrackerWrapper({
               className="border-blue-300 bg-white text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950/30 dark:text-blue-300 dark:hover:bg-blue-950/50"
             >
               <Settings className="mr-2 h-4 w-4" />
-              Switch to Advanced
+              {t('switchToAdvanced')}
             </Button>
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
           <p className="text-blue-700 text-sm dark:text-blue-300">
-            You're using the simplified timer focused on easy, quick time
-            tracking. Switch to advanced mode for Pomodoro timers, break
-            reminders, drag-and-drop, and detailed features.
+            {t('simpleDescription')}
           </p>
         </CardContent>
       </Card>
 
       {/* Simple Timer Component */}
-      <SimpleTimeTrackerContent wsId={wsId} initialData={initialData} />
+      <SimpleTimeTrackerContent wsId={wsId} initialData={initialData} currentUser={currentUser ?? null} isUserLoading={isUserLoading} />
     </div>
   );
 }

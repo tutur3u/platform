@@ -52,7 +52,7 @@
   "codeQL.githubDatabase.download": "never",
   "IDX.aI.enableInlineCompletion": true,
   "IDX.aI.enableCodebaseIndexing": true,
-  "i18n-ally.sourceLanguage": "en",
+  "i18n-ally.sourceLanguage": "vi",
   "typescript.experimental.useTsgo": false,
   "cSpell.words": ["Tuturuuu", "tuturuuu"],
   "python-envs.defaultEnvManager": "ms-python.python:venv",

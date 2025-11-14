@@ -37,8 +37,9 @@ import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import type {
   ExtendedWorkspaceTask,
   SessionWithRelations,
@@ -51,6 +52,7 @@ import {
   useTaskCounts,
 } from '../utils';
 import { TimerControls } from './timer-controls';
+import type { User } from '@tuturuuu/types/primitives/User';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -58,45 +60,36 @@ dayjs.extend(timezone);
 interface TimeTrackerContentProps {
   wsId: string;
   initialData: TimeTrackerData;
+  currentUser: User | null;
+  isUserLoading: boolean;
 }
 
-const getPriorityBadge = (priority: TaskPriority | null | undefined) => {
-  switch (priority) {
-    case 'critical':
-      return { text: 'Urgent', color: 'bg-red-500' };
-    case 'high':
-      return { text: 'High', color: 'bg-orange-500' };
-    case 'normal':
-      return { text: 'Medium', color: 'bg-yellow-500' };
-    case 'low':
-      return { text: 'Low', color: 'bg-green-500' };
-    default:
-      return { text: 'No Priority', color: 'bg-gray-500' };
-  }
-};
+
 
 export default function TimeTrackerContent({
   wsId,
   initialData,
+  currentUser,
+  isUserLoading,
 }: TimeTrackerContentProps) {
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const t = useTranslations('time-tracker.content');
 
-  useEffect(() => {
-    const getUser = async () => {
-      try {
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        setCurrentUserId(user?.id || null);
-      } catch (error) {
-        console.error('Error getting current user:', error);
-        setCurrentUserId(null);
-      }
-    };
+  const currentUserId = currentUser?.id || null;
 
-    getUser();
-  }, []);
+  const getPriorityBadge = useCallback((priority: TaskPriority | null | undefined) => {
+  switch (priority) {
+    case 'critical':
+      return { text: t('priority.urgent'), color: 'bg-red-500' };
+    case 'high':
+      return { text: t('priority.high'), color: 'bg-orange-500' };
+    case 'normal':
+      return { text: t('priority.medium'), color: 'bg-yellow-500' };
+    case 'low':
+      return { text: t('priority.low'), color: 'bg-green-500' };
+    default:
+      return { text: t('priority.noPriority'), color: 'bg-gray-500' };
+  }
+}, [t]);
 
   // Use React Query for running session to sync with command palette
   const { data: runningSessionFromQuery } = useQuery({
@@ -111,7 +104,7 @@ export default function TimeTrackerContent({
     },
     refetchInterval: 30000, // 30 seconds
     initialData: initialData.runningSession,
-    enabled: !!currentUserId,
+    enabled: !!currentUser,
   });
 
   const [currentSession, setCurrentSession] =
@@ -125,7 +118,7 @@ export default function TimeTrackerContent({
 
   // Sync React Query data with local state
   useEffect(() => {
-    if (currentUserId && runningSessionFromQuery !== undefined) {
+    if (currentUser && runningSessionFromQuery !== undefined) {
       setCurrentSession(runningSessionFromQuery);
       setIsRunning(!!runningSessionFromQuery);
       if (runningSessionFromQuery) {
@@ -142,7 +135,7 @@ export default function TimeTrackerContent({
         setElapsedTime(0);
       }
     }
-  }, [runningSessionFromQuery, currentUserId]);
+  }, [runningSessionFromQuery, currentUser]);
 
   // Timer state (only for current user)
   const [elapsedTime, setElapsedTime] = useState(() => {
@@ -385,7 +378,10 @@ export default function TimeTrackerContent({
             // Only show error toast for critical failures, not for tasks
             if (name !== 'tasks') {
               toast.error(
-                `Failed to load ${name}: ${result.reason.message || 'Unknown error'}`
+                t('errors.failedToLoad', {
+                  name,
+                  message: result.reason.message || 'Unknown error'
+                })
               );
             }
             return fallback;
@@ -429,7 +425,7 @@ export default function TimeTrackerContent({
           setRetryCount((prev) => prev + 1);
 
           if (!isRetry) {
-            toast.error(`Failed to load time tracking data: ${message}`);
+            toast.error(t('errors.failedToLoadData', { message }));
           }
         }
       } finally {
@@ -466,7 +462,7 @@ export default function TimeTrackerContent({
             throw new Error(assignError.message || 'Failed to assign task');
           }
 
-          toast.success(`Assigned "${task.name}" to yourself`);
+          toast.success(t('toast.assignedToYourself', { taskName: task.name }));
         }
 
         // Start session
@@ -492,11 +488,11 @@ export default function TimeTrackerContent({
         setElapsedTime(0);
         await fetchData();
 
-        toast.success(`Started: ${task.name}`);
+        toast.success(t('toast.startedTask', { taskName: task.name }));
         setShowTaskSelector(false);
       } catch (error) {
         console.error('Error starting task session:', error);
-        toast.error('Failed to start task session');
+        toast.error(t('toast.failedToStart'));
       }
     },
     [wsId, apiCall, currentUserId, categories, fetchData]
@@ -595,13 +591,13 @@ export default function TimeTrackerContent({
   // Use memoized task counts
   const { myTasksCount, unassignedCount } = useTaskCounts(tasks);
 
-  if (!currentUserId) {
+  if (isUserLoading) {
     return (
       <div className="flex items-center justify-center py-24">
         <div className="space-y-4 text-center">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
           <p className="animate-pulse text-muted-foreground text-sm">
-            Loading time tracker...
+            {t('loading')}
           </p>
         </div>
       </div>
@@ -624,10 +620,10 @@ export default function TimeTrackerContent({
                 </div>
                 <div>
                   <CardTitle className="text-lg sm:text-xl">
-                    Task Workspace
+                    {t('taskWorkspace')}
                   </CardTitle>
                   <CardDescription>
-                    Drag tasks to timer to start tracking 🎯
+                    {t('dragTasksDescription')}
                   </CardDescription>
                 </div>
               </div>
@@ -653,7 +649,7 @@ export default function TimeTrackerContent({
                     )}
                   >
                     <CheckCircle className="h-3 w-3" />
-                    My Tasks
+                    {t('myTasks')}
                     {myTasksCount > 0 && (
                       <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
                         {myTasksCount}
@@ -689,7 +685,7 @@ export default function TimeTrackerContent({
                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                       />
                     </svg>
-                    Unassigned
+                    {t('unassigned')}
                     {unassignedCount > 0 && (
                       <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
                         {unassignedCount}
@@ -702,7 +698,7 @@ export default function TimeTrackerContent({
                 <div className="flex gap-2">
                   <div className="flex-1">
                     <Input
-                      placeholder="Search tasks..."
+                      placeholder={t('searchTasks')}
                       value={tasksSidebarSearch}
                       onChange={(e) => setTasksSidebarSearch(e.target.value)}
                       className="h-8 text-xs"
@@ -718,10 +714,10 @@ export default function TimeTrackerContent({
                     }
                   >
                     <SelectTrigger className="h-8 w-24 text-xs">
-                      <SelectValue placeholder="Board" />
+                      <SelectValue placeholder={t('board')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Boards</SelectItem>
+                      <SelectItem value="all">{t('allBoards')}</SelectItem>
                       {[
                         ...new Set(
                           tasks
@@ -745,10 +741,10 @@ export default function TimeTrackerContent({
                     }
                   >
                     <SelectTrigger className="h-8 w-20 text-xs">
-                      <SelectValue placeholder="List" />
+                      <SelectValue placeholder={t('list')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Lists</SelectItem>
+                      <SelectItem value="all">{t('allLists')}</SelectItem>
                       {[
                         ...new Set(
                           tasks
@@ -771,7 +767,7 @@ export default function TimeTrackerContent({
                   tasksSidebarFilters.assignee !== 'all') && (
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-muted-foreground text-xs">
-                      Active filters:
+                      {t('activeFilters')}
                     </span>
                     {tasksSidebarSearch && (
                       <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-blue-700 text-xs dark:bg-blue-900/30 dark:text-blue-300">
@@ -822,10 +818,10 @@ export default function TimeTrackerContent({
                     {tasksSidebarFilters.assignee !== 'all' && (
                       <span className="inline-flex items-center gap-1 rounded-md bg-orange-100 px-2 py-1 text-orange-700 text-xs dark:bg-orange-900/30 dark:text-orange-300">
                         {tasksSidebarFilters.assignee === 'mine'
-                          ? 'My Tasks'
+                          ? t('myTasks')
                           : tasksSidebarFilters.assignee === 'unassigned'
-                            ? 'Unassigned'
-                            : 'Assignee Filter'}
+                            ? t('unassigned')
+                            : t('assigneeFilter')}
                         <button
                           type="button"
                           onClick={() =>
@@ -852,7 +848,7 @@ export default function TimeTrackerContent({
                       }}
                       className="text-muted-foreground text-xs hover:text-foreground"
                     >
-                      Clear all
+                      {t('clearAll')}
                     </button>
                   </div>
                 )}
@@ -873,11 +869,10 @@ export default function TimeTrackerContent({
                       <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-4 text-center">
                         <CheckCircle className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
                         <p className="mb-2 font-medium text-muted-foreground text-sm">
-                          No tasks available
+                          {t('noTasksAvailable')}
                         </p>
                         <p className="mb-3 text-muted-foreground text-xs">
-                          Create tasks in your project boards to start tracking
-                          time
+                          {t('createTasksInstruction')}
                         </p>
                         <Link href={`/${wsId}/tasks/boards`}>
                           <Button
@@ -885,7 +880,7 @@ export default function TimeTrackerContent({
                             size="sm"
                             className="text-xs"
                           >
-                            Go to Tasks Tab
+                            {t('goToTasksTab')}
                           </Button>
                         </Link>
                       </div>
@@ -897,7 +892,7 @@ export default function TimeTrackerContent({
                       <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-6 text-center">
                         <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
                         <p className="text-muted-foreground text-sm">
-                          No tasks found matching your criteria.
+                          {t('noTasksFound')}
                         </p>
                       </div>
                     );
@@ -918,7 +913,7 @@ export default function TimeTrackerContent({
                             ` (filtered from ${tasks.length} total)`}
                         </span>
                         <span className="font-medium text-blue-600 dark:text-blue-400">
-                          Drag to timer →
+                          {t('dragToTimer')}
                         </span>
                       </div>
 
@@ -1129,7 +1124,7 @@ export default function TimeTrackerContent({
               formatDuration={formatDuration}
               apiCall={apiCall}
               isDraggingTask={isDraggingTask}
-              currentUserId={currentUserId}
+              currentUserId={currentUserId ?? null}
             />
           </div>
         </div>
@@ -1145,10 +1140,10 @@ export default function TimeTrackerContent({
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                  Continue Last Session?
+                  {t('continueLastSession')}
                 </h3>
                 <p className="text-gray-600 text-sm dark:text-gray-400">
-                  Resume your previous work session
+                  {t('resumePreviousSession')}
                 </p>
               </div>
             </div>
@@ -1185,7 +1180,7 @@ export default function TimeTrackerContent({
                 onClick={() => setShowContinueConfirm(false)}
                 className="flex-1"
               >
-                Cancel
+                {t('cancel')}
               </Button>
               <Button
                 onClick={async () => {
@@ -1204,16 +1199,16 @@ export default function TimeTrackerContent({
                     setElapsedTime(0);
                     await fetchData();
 
-                    toast.success(`Resumed: "${recentSessions[0].title}"`);
+                    toast.success(t('toast.resumedSession', { title: recentSessions[0].title }));
                     setShowContinueConfirm(false);
                   } catch (error) {
                     console.error('Error resuming session:', error);
-                    toast.error('Failed to resume session');
+                    toast.error(t('toast.failedToResume'));
                   }
                 }}
                 className="flex-1"
               >
-                Continue Session
+                {t('continueSession')}
               </Button>
             </div>
           </div>
@@ -1230,11 +1225,10 @@ export default function TimeTrackerContent({
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                  Choose Your Next Task
+                  {t('chooseNextTask')}
                 </h3>
                 <p className="text-gray-600 text-sm dark:text-gray-400">
-                  Tasks prioritized: Your urgent tasks → Urgent unassigned →
-                  Your other tasks
+                  {t('tasksPrioritized')}
                 </p>
               </div>
             </div>
@@ -1246,11 +1240,10 @@ export default function TimeTrackerContent({
                   <div className="rounded-lg border-2 border-gray-300 border-dashed p-8 text-center dark:border-gray-600">
                     <CheckSquare className="mx-auto mb-3 h-8 w-8 text-gray-400" />
                     <h4 className="mb-2 font-medium text-gray-900 dark:text-gray-100">
-                      No Tasks Available
+                      {t('noTasksAvailableTitle')}
                     </h4>
                     <p className="mb-4 text-gray-600 text-sm dark:text-gray-400">
-                      You don't have any assigned tasks. Create a new task or
-                      check available boards.
+                      {t('noAssignedTasksMessage')}
                     </p>
 
                     <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
@@ -1269,7 +1262,7 @@ export default function TimeTrackerContent({
                         className="gap-2"
                       >
                         <PlusCircle className="h-4 w-4" />
-                        Create Task
+                        {t('createTask')}
                       </Button>
                       <Button
                         variant="outline"
@@ -1280,7 +1273,7 @@ export default function TimeTrackerContent({
                         className="gap-2"
                       >
                         <LayoutDashboard className="h-4 w-4" />
-                        View Boards
+                        {t('viewBoards')}
                       </Button>
                     </div>
                   </div>
@@ -1344,7 +1337,7 @@ export default function TimeTrackerContent({
                                 : 'text-green-600 dark:text-green-400'
                             )}
                           >
-                            {isUnassigned ? 'Unassigned' : 'Assigned to you'}
+                            {isUnassigned ? t('unassigned') : t('assignedToYou')}
                           </span>
                         </div>
                       </div>
@@ -1362,7 +1355,7 @@ export default function TimeTrackerContent({
                 variant="outline"
                 onClick={() => setShowTaskSelector(false)}
               >
-                Cancel
+                {t('cancel')}
               </Button>
               {availableTasks.length > 0 && (
                 <div className="flex items-center gap-4">
@@ -1378,7 +1371,7 @@ export default function TimeTrackerContent({
                       window.location.href = `/${wsId}/tasks/boards`;
                     }}
                   >
-                    View All Tasks
+                    {t('viewAllTasks')}
                   </Button>
                 </div>
               )}

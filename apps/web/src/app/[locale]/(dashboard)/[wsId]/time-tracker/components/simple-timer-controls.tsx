@@ -17,6 +17,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import type { ExtendedWorkspaceTask, SessionWithRelations } from '../types';
 
@@ -55,6 +56,7 @@ export function SimpleTimerControls({
   apiCall,
 }: SimpleTimerControlsProps) {
   const queryClient = useQueryClient();
+  const t = useTranslations('time-tracker.simple');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionTitle, setSessionTitle] = useState('');
   const [sessionDescription, setSessionDescription] = useState('');
@@ -88,7 +90,7 @@ export function SimpleTimerControls({
   // Start timer
   const startTimer = useCallback(async () => {
     if (!sessionTitle.trim()) {
-      toast.error("Please enter what you're working on");
+      toast.error(t('enterTitleError'));
       return;
     }
 
@@ -118,10 +120,10 @@ export function SimpleTimerControls({
       });
 
       onSessionUpdate();
-      toast.success('Timer started!');
+      toast.success(t('timerStarted'));
     } catch (error) {
       console.error('Error starting timer:', error);
-      toast.error('Failed to start timer');
+      toast.error(t('startTimerFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -176,12 +178,10 @@ export function SimpleTimerControls({
 
       onSessionUpdate();
 
-      toast.success(
-        `Session completed! Tracked ${formatDuration(response.session?.duration_seconds || 0)}`
-      );
+      toast.success(t('sessionCompleted', { duration: formatDuration(response.session?.duration_seconds || 0) }));
     } catch (error) {
       console.error('Error stopping timer:', error);
-      toast.error('Failed to stop timer');
+      toast.error(t('stopTimerFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -220,10 +220,10 @@ export function SimpleTimerControls({
       setElapsedTime(0);
 
       onSessionUpdate();
-      toast.success('Timer paused');
+      toast.success(t('timerPaused'));
     } catch (error) {
       console.error('Error pausing timer:', error);
-      toast.error('Failed to pause timer');
+      toast.error(t('pauseTimerFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -264,10 +264,10 @@ export function SimpleTimerControls({
       });
 
       onSessionUpdate();
-      toast.success('Timer resumed!');
+      toast.success(t('timerResumed'));
     } catch (error) {
       console.error('Error resuming timer:', error);
-      toast.error('Failed to resume timer');
+      toast.error(t('resumeTimerFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -336,7 +336,7 @@ export function SimpleTimerControls({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Timer className="h-5 w-5" />
-          Simple Timer
+          {t('title')}
         </CardTitle>
       </CardHeader>
 
@@ -350,7 +350,7 @@ export function SimpleTimerControls({
               </div>
               <div className="mt-2 flex items-center justify-center gap-2 text-green-600/70 text-sm dark:text-green-400/70">
                 <div className="h-2 w-2 animate-pulse rounded-full bg-green-500"></div>
-                Recording time
+                {t('recordingTime')}
               </div>
             </div>
 
@@ -379,7 +379,7 @@ export function SimpleTimerControls({
                 className="flex-1"
               >
                 <Pause className="mr-2 h-4 w-4" />
-                Pause
+                {t('pause')}
               </Button>
               <Button
                 onClick={stopTimer}
@@ -388,7 +388,7 @@ export function SimpleTimerControls({
                 className="flex-1"
               >
                 <Square className="mr-2 h-4 w-4" />
-                Stop
+                {t('stop')}
               </Button>
             </div>
           </div>
@@ -399,7 +399,7 @@ export function SimpleTimerControls({
               <div className="mb-3 flex items-center justify-center gap-2">
                 <Pause className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                 <span className="font-semibold text-amber-700 text-lg dark:text-amber-300">
-                  Paused
+                  {t('paused')}
                 </span>
               </div>
               <div className="font-bold font-mono text-3xl text-amber-600 dark:text-amber-400">
@@ -423,7 +423,7 @@ export function SimpleTimerControls({
                 className="flex-1 bg-green-600 text-white hover:bg-green-700"
               >
                 <Play className="mr-2 h-4 w-4" />
-                Resume
+                {t('resume')}
               </Button>
               <Button
                 onClick={stopTimer}
@@ -432,7 +432,7 @@ export function SimpleTimerControls({
                 className="flex-1"
               >
                 <Square className="mr-2 h-4 w-4" />
-                Stop
+                {t('stop')}
               </Button>
             </div>
           </div>
@@ -441,11 +441,11 @@ export function SimpleTimerControls({
           <div className="space-y-4">
             <div>
               <Label htmlFor="session-title" className="font-medium text-sm">
-                What are you working on?
+                {t('whatAreYouWorkingOn')}
               </Label>
               <Input
                 id="session-title"
-                placeholder="Enter what you're working on..."
+                placeholder={t('enterWhatYoureWorkingOn')}
                 value={sessionTitle}
                 onChange={(e) => setSessionTitle(e.target.value)}
                 className="mt-1"
@@ -456,11 +456,11 @@ export function SimpleTimerControls({
             <div className="space-y-3">
               <div>
                 <Label htmlFor="session-description" className="text-sm">
-                  Description
+                  {t('description')}
                 </Label>
                 <Textarea
                   id="session-description"
-                  placeholder="Add notes about this session..."
+                  placeholder={t('addNotes')}
                   value={sessionDescription}
                   onChange={(e) => setSessionDescription(e.target.value)}
                   rows={2}
@@ -470,17 +470,17 @@ export function SimpleTimerControls({
 
               <div>
                 <Label htmlFor="category-select" className="text-sm">
-                  Category
+                  {t('category')}
                 </Label>
                 <Select
                   value={selectedCategoryId}
                   onValueChange={setSelectedCategoryId}
                 >
                   <SelectTrigger id="category-select" className="mt-1">
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue placeholder={t('selectCategory')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No category</SelectItem>
+                    <SelectItem value="none">{t('noCategory')}</SelectItem>
                     {categories.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
@@ -498,7 +498,7 @@ export function SimpleTimerControls({
               size="lg"
             >
               <Play className="mr-2 h-5 w-5" />
-              Start Timer
+              {t('startTimer')}
             </Button>
           </div>
         )}
@@ -510,12 +510,12 @@ export function SimpleTimerControls({
           <div className="zoom-in animate-in rounded-lg border bg-background p-6 shadow-xl duration-300">
             <div className="text-center">
               <CheckCircle className="mx-auto mb-4 h-12 w-12 animate-pulse text-green-500" />
-              <h3 className="mb-2 font-semibold text-lg">Well done! 🎉</h3>
+              <h3 className="mb-2 font-semibold text-lg">{t('wellDone')}</h3>
               <p className="mb-1 text-muted-foreground">
                 {justCompleted.title}
               </p>
               <p className="font-medium text-green-600 text-sm">
-                {formatDuration(justCompleted.duration_seconds || 0)} completed
+                {t('durationCompleted', { duration: formatDuration(justCompleted.duration_seconds || 0) })}
               </p>
             </div>
           </div>
