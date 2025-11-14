@@ -92,7 +92,11 @@ function calculateStreak(activityDays: Set<string>, todayDate: Date): number {
   return streak;
 }
 
-async function fetchTimeTrackingStats(userId: string, wsId: string, isPersonal: boolean) {
+async function fetchTimeTrackingStats(
+  userId: string,
+  wsId: string,
+  isPersonal: boolean
+) {
   const supabase = await createClient();
 
   const boundaries = getDateBoundaries();
