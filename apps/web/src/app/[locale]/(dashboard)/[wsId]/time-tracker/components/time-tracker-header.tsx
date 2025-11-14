@@ -1,8 +1,11 @@
 import { Timer } from '@tuturuuu/icons';
-
-export default function TimeTrackerHeader() {
+import { getTranslations } from 'next-intl/server';
+  
+export default async function TimeTrackerHeader() {
+  const t = await getTranslations('time-tracker');
   return (
     <div className="space-y-4">
+
       {/* Main Header Section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex-1 space-y-3">
@@ -12,10 +15,10 @@ export default function TimeTrackerHeader() {
             </div>
             <div>
               <h1 className="font-bold text-2xl tracking-tight sm:text-3xl">
-                Time Tracker
+                {t('metadata.title')}
               </h1>
               <p className="text-muted-foreground text-sm sm:text-base">
-                Track and manage your time across projects
+                {t('metadata.description')}
               </p>
             </div>
           </div>
@@ -24,3 +27,4 @@ export default function TimeTrackerHeader() {
     </div>
   );
 }
+

@@ -13,6 +13,8 @@ import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { ActivityHeatmap } from './components/activity-heatmap';
+import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('time-tracker');
@@ -23,8 +25,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-// Revalidate every 5 minutes for cached data
-export const revalidate = 300;
 
 const formatDuration = (seconds: number | undefined): string => {
   const safeSeconds = Math.max(0, Math.floor(seconds || 0));
@@ -93,18 +93,40 @@ function calculateStreak(activityDays: Set<string>, todayDateStr: string): numbe
   return streak;
 }
 
-async function fetchTimeTrackingStats(userId: string) {
+async function fetchTimeTrackingStats(userId: string, wsId: string) {
   const supabase = await createClient();
+
+  const isPersonal = await isPersonalWorkspace(wsId);
   const boundaries = getDateBoundaries();
   
   // Optimized query: only fetch last year of data with date filtering
-  const { data: sessions } = await supabase
+  // If personal workspace: fetch all sessions for user
+  // If not personal: only fetch sessions from this workspace
+  let query = supabase
     .from('time_tracking_sessions')
     .select('start_time, duration_seconds')
     .eq('user_id', userId)
     .not('duration_seconds', 'is', null)
-    .gte('start_time', new Date(boundaries.oneYearAgo).toISOString())
-    .order('start_time', { ascending: false })
+    .gte('start_time', new Date(boundaries.oneYearAgo).toISOString());
+  
+  // Only filter by ws_id if it's not a personal workspace
+  if (!isPersonal) {
+    query = query.eq('ws_id', wsId);
+  }
+  
+  const { data: sessions, error } = await query
+    .order('start_time', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching time tracking stats:', error);
+    return {
+      todayTime: 0,
+      weekTime: 0,
+      monthTime: 0,
+      streak: 0,
+      dailyActivity: [],
+    };
+  }
 
   if (!sessions || sessions.length === 0) {
     return {
@@ -149,22 +171,19 @@ async function fetchTimeTrackingStats(userId: string) {
       monthDuration += duration;
     }
 
-    // Build activity days set and daily activity map in one pass
-    const dateStr = session.start_time.split('T')[0];
-    if (dateStr) {
-      const dateObj = new Date(dateStr);
-      activityDays.add(dateObj.toDateString());
-      
-      const existing = dailyActivityMap.get(dateStr);
-      if (existing) {
-        existing.duration += duration;
-        existing.sessions += 1;
-      } else {
-        dailyActivityMap.set(dateStr, {
-          duration,
-          sessions: 1,
-        });
-      }
+    // Build activity days set (local day) and daily activity map (UTC YYYY-MM-DD) in one pass
+    const localDayStr = new Date(session.start_time).toDateString(); // local day for streaks
+    activityDays.add(localDayStr);
+    const utcDayKey = session.start_time.slice(0, 10); // "YYYY-MM-DD" from ISO UTC
+    const existing = dailyActivityMap.get(utcDayKey);    
+    if (existing) {
+      existing.duration += duration;
+      existing.sessions += 1;
+    } else {
+      dailyActivityMap.set(utcDayKey, {
+        duration,
+        sessions: 1,
+      });
     }
   }
 
@@ -187,17 +206,16 @@ async function fetchTimeTrackingStats(userId: string) {
   };
 }
 
-type Translator = Awaited<ReturnType<typeof getTranslations>>;
+
+
 
 // Stats card component with cached date formatting
-function StatsCard({
+async function StatsCard({
   stats,
   locale,
-  t,
 }: {
   stats: Awaited<ReturnType<typeof fetchTimeTrackingStats>>;
   locale: string;
-  t: Translator;
 }) {
   // Cache date formatting calculations
   const now = new Date();
@@ -217,6 +235,8 @@ function StatsCard({
     month: 'long',
     year: 'numeric',
   });
+
+  const t = await getTranslations('time-tracker');
 
   return (
     <Card>
@@ -361,37 +381,15 @@ function StatsCardSkeleton() {
 
 // Heatmap card with loading state
 function HeatmapCard({
-  dailyActivity,
-  t,
+  dailyActivity
 }: {
   dailyActivity: Array<{ date: string; duration: number; sessions: number }>;
-  t: Translator;
 }) {
-  const totalDuration = dailyActivity.reduce((sum, day) => sum + day.duration, 0);
   
   return (
     <Card className="relative overflow-visible">
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-dynamic-green to-dynamic-cyan shadow-lg">
-            <Calendar className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <CardTitle className="text-lg sm:text-xl">
-              {t('heatmap.title')}
-            </CardTitle>
-            <CardDescription>
-              {totalDuration > 0
-                ? t('heatmap.trackedThisYear', {
-                    duration: formatDuration(totalDuration),
-                  })
-                : t('heatmap.startTracking')}
-            </CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="relative overflow-visible [&>div>div:first-child]:hidden">
+      <CardContent className="pt-6">
+        <div className="relative overflow-visible">
           <ActivityHeatmap dailyActivity={dailyActivity} />
         </div>
       </CardContent>
@@ -421,25 +419,31 @@ function HeatmapCardSkeleton() {
 export default async function TimeTrackerPage({
   params,
 }: {
-  params: { locale: string; wsId: string };
+  params: Promise<{ locale: string; wsId: string }>;
 }) {
-  const user = await getCurrentSupabaseUser();
-  if (!user) return notFound();
-
-  // Fetch stats in parallel with Suspense boundaries
-  const statsPromise = fetchTimeTrackingStats(user.id);
-
   return (
-    <div className="grid gap-4 pb-4">
-      <Suspense fallback={<StatsCardSkeleton />}>
-        <StatsCardWrapper statsPromise={statsPromise} locale={params.locale} />
-      </Suspense>
-      
-      <Suspense fallback={<HeatmapCardSkeleton />}>
-        <HeatmapCardWrapper statsPromise={statsPromise} />
-      </Suspense>
-    </div>
-  );
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId, locale }) => {
+        const user = await getCurrentSupabaseUser();
+        if (!user) return notFound();
+        
+        
+          // Fetch stats in parallel with Suspense boundaries
+          const statsPromise = fetchTimeTrackingStats(user.id, wsId);
+        return (
+          <div className="grid gap-4 pb-4">
+          <Suspense fallback={<StatsCardSkeleton />}>
+            <StatsCardWrapper statsPromise={statsPromise} locale={locale} />
+          </Suspense>
+          
+          <Suspense fallback={<HeatmapCardSkeleton />}>
+            <HeatmapCardWrapper statsPromise={statsPromise} />
+          </Suspense>
+        </div>
+        )
+      }}
+    </WorkspaceWrapper>
+  )
 }
 
 // Separate async components for Suspense boundaries
@@ -450,11 +454,8 @@ async function StatsCardWrapper({
   statsPromise: Promise<Awaited<ReturnType<typeof fetchTimeTrackingStats>>>;
   locale: string;
 }) {
-  const [stats, t] = await Promise.all([
-    statsPromise,
-    getTranslations('time-tracker'),
-  ]);
-  return <StatsCard stats={stats} t={t} locale={locale} />;
+  const stats = await statsPromise;
+  return <StatsCard stats={stats} locale={locale} />;
 }
 
 async function HeatmapCardWrapper({
@@ -462,12 +463,9 @@ async function HeatmapCardWrapper({
 }: {
   statsPromise: Promise<Awaited<ReturnType<typeof fetchTimeTrackingStats>>>;
 }) {
-  const [stats, t] = await Promise.all([
-    statsPromise,
-    getTranslations('time-tracker'),
-  ]);
+  const stats = await statsPromise;
   // if (!stats.dailyActivity || stats.dailyActivity.length === 0) {
   //   return null;
   // }
-  return <HeatmapCard dailyActivity={stats.dailyActivity} t={t} />;
+  return <HeatmapCard dailyActivity={stats.dailyActivity}  />;
 }

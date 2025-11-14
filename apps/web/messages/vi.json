@@ -6454,7 +6454,7 @@
   "time-tracker": {
     "metadata": {
       "title": "Theo dõi thời gian",
-      "description": "Quản lý Time Tracker trong workspace Tuturuuu của bạn."
+      "description": "Quản lý trình theo dõi thời gian trong không gian làm việc của bạn."
     },
     "stats": {
       "title": "Tiến độ của bạn",
@@ -6471,14 +6471,114 @@
       "streak": {
         "title": "Chuỗi ngày",
         "statusActive": "ngày liên tiếp",
-        "statusEmpty": "bắt đầu ngay hôm nay!",
+        "statusEmpty": "Bắt đầu ngay hôm nay!",
         "count": "{count} ngày"
       }
     },
     "heatmap": {
       "title": "Bản đồ nhiệt hoạt động",
       "trackedThisYear": "{duration} đã được ghi nhận trong năm nay 🔥",
-      "startTracking": "Bắt đầu chấm công để xem xu hướng hoạt động của bạn 🌱"
+      "startTracking": "Bắt đầu theo dõi thời gian để xem xu hướng hoạt động của bạn 🌱",
+      "view": "Chế độ xem",
+      "months": {
+        "jan": "Tháng Một",
+        "feb": "Tháng Hai",
+        "mar": "Tháng Ba",
+        "apr": "Tháng Tư",
+        "may": "Tháng Năm",
+        "jun": "Tháng Sáu",
+        "jul": "Tháng Bảy",
+        "aug": "Tháng Tám",
+        "sep": "Tháng Chín",
+        "oct": "Tháng Mười",
+        "nov": "Tháng Mười Một",
+        "dec": "Tháng Mười Hai"
+      },
+      "days": {
+        "sun": "Chủ Nhật",
+        "mon": "Thứ Hai",
+        "tue": "Thứ Ba",
+        "wed": "Thứ Tư",
+        "thu": "Thứ Năm",
+        "fri": "Thứ Sáu",
+        "sat": "Thứ Bảy",
+        "monShort": "T2",
+        "tueShort": "T3",
+        "wedShort": "T4",
+        "thuShort": "T5",
+        "friShort": "T6",
+        "satShort": "T7",
+        "sunShort": "CN"
+      },
+      "tracked": "Đã ghi nhận",
+      "sessions": "{count, plural, =0 {Không có phiên} =1 {1 phiên} other {# phiên}}",
+      "level": "Mức {level}",
+      "noActivity": "Không có hoạt động",
+      "noActivityRecorded": "Không có hoạt động được ghi nhận",
+      "today": "Hôm nay",
+      "yearActivityPattern": "Mẫu hoạt động năm {year}",
+      "activeDays": "{count, plural, =0 {Không có ngày hoạt động} =1 {1 ngày hoạt động} other {# ngày hoạt động}}",
+      "trackedDuration": "Đã ghi nhận: {duration}",
+      "monthsCount": "{count, plural, =0 {Không có tháng} =1 {1 tháng} other {# tháng}}",
+      "settings": {
+        "displayMode": "Chế độ hiển thị",
+        "originalGrid": "Lưới gốc",
+        "hybridView": "Chế độ xem kết hợp",
+        "calendarOnly": "Chỉ lịch",
+        "compactCards": "Thẻ nhỏ gọn",
+        "options": "Tùy chọn",
+        "showSmartTimeReferences": "Hiển thị tham chiếu thời gian thông minh",
+        "showHelpfulTips": "Hiển thị mẹo hữu ích"
+      },
+      "legend": {
+        "less": "Ít",
+        "more": "Nhiều",
+        "levelIntensity": "Cường độ mức {level}"
+      },
+      "onboarding": {
+        "originalTitle": "Chế độ xem lưới gốc",
+        "hybridTitle": "Chế độ xem kết hợp",
+        "calendarOnlyTitle": "Chế độ xem lịch",
+        "compactCardsTitle": "Chế độ xem thẻ nhỏ gọn",
+        "viewNumber": "Lần xem #{count}",
+        "originalDescription": "Đây là bản đồ nhiệt kiểu GitHub cổ điển hiển thị hoạt động của bạn trong năm qua. Mỗi ô vuông đại diện cho một ngày, với màu sắc đậm hơn cho thấy hoạt động nhiều hơn.",
+        "hybridDescription": "Chế độ xem này kết hợp tổng quan năm với lịch hàng tháng. Sử dụng thanh năm để nhanh chóng điều hướng đến bất kỳ tháng nào, sau đó xem hoạt động chi tiết trong lịch bên dưới.",
+        "calendarOnlyDescription": "Tập trung vào hoạt động hàng tháng với chế độ xem lịch sạch sẽ này. Điều hướng giữa các tháng bằng các nút mũi tên để xem các mẫu theo dõi của bạn theo thời gian.",
+        "compactCardsDescription": "Xem tổng quan nhanh về hoạt động của bạn với các thẻ nhỏ gọn này. Xem tóm tắt hàng tháng, xu hướng và thống kê trong nháy mắt.",
+        "tip": "💡 Mẹo: Bạn có thể chuyển đổi giữa các chế độ xem bất cứ lúc nào bằng menu cài đặt",
+        "hideTooltip": "Ẩn mẹo này",
+        "closeAria": "Đóng mẹo hướng dẫn"
+      },
+      "cards": {
+        "overall": "Tổng quan",
+        "total": "Tổng",
+        "daily": "Trung bình ngày",
+        "sessions": "Phiên",
+        "days": "Ngày",
+        "nextMonth": "Tháng tới",
+        "plan": "Kế hoạch",
+        "target": "Mục tiêu",
+        "setGoal": "Đặt mục tiêu",
+        "focus": "Tập trung",
+        "stayConsistent": "Duy trì nhất quán",
+        "planAhead": "Lên kế hoạch trước",
+        "growth": "Tăng trưởng",
+        "keepGoing": "Tiếp tục",
+        "keepMomentum": "Giữ đà phát triển!",
+        "getStarted": "Bắt đầu",
+        "beginJourney": "Bắt đầu hành trình của bạn",
+        "new": "Mới",
+        "startTimerSession": "Bắt đầu phiên hẹn giờ",
+        "buildDailyHabits": "Xây dựng thói quen hàng ngày",
+        "trackProgress": "Theo dõi tiến độ của bạn",
+        "pomodoroTip": "💡 Thử kỹ thuật Pomodoro: 25 phút tập trung làm việc, 5 phút nghỉ"
+      },
+      "aria": {
+        "activityFor": "Hoạt động cho {date}: {duration}",
+        "previousCards": "Thẻ trước",
+        "nextCards": "Thẻ tiếp theo",
+        "goToPage": "Đi đến trang {page}"
+      }
     }
   },
   "command_palette": {
