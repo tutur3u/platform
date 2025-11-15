@@ -700,16 +700,18 @@ function TaskCardInner({
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex flex-col gap-1">
               {/* Ticket Identifier */}
-              <Badge
-                variant="outline"
-                className="w-fit border-primary/30 bg-primary/5 font-mono text-[10px] text-primary"
-                title={`Ticket ID: ${getTicketIdentifier(boardConfig?.ticket_prefix, task.display_number)}`}
-              >
-                {getTicketIdentifier(
-                  boardConfig?.ticket_prefix,
-                  task.display_number
-                )}
-              </Badge>
+              {taskList?.status !== 'documents' && (
+                <Badge
+                  variant="outline"
+                  className="w-fit border-primary/30 bg-primary/5 font-mono text-[10px] text-primary"
+                  title={`Ticket ID: ${getTicketIdentifier(boardConfig?.ticket_prefix, task.display_number)}`}
+                >
+                  {getTicketIdentifier(
+                    boardConfig?.ticket_prefix,
+                    task.display_number
+                  )}
+                </Badge>
+              )}
               {/* Task Name */}
               <button
                 type="button"
@@ -756,22 +758,27 @@ function TaskCardInner({
                     e.stopPropagation(); // Prevent triggering task card click
                   }}
                 >
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    disabled={isLoading}
-                  >
-                    <Link
-                      href={`/${wsId}/time-tracker/timer?taskSelect=${task?.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2"
+                  {taskList?.status !== 'documents' && (
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      disabled={isLoading}
                     >
-                      <Timer className="h-4 w-4 text-dynamic-blue" />
-                      Start tracking time
-                    </Link>
-                  </DropdownMenuItem>
+                      <Link
+                        href={`/${wsId}/time-tracker/timer?taskSelect=${task?.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2"
+                      >
+                        <Timer className="h-4 w-4 text-dynamic-blue" />
+                        Start tracking time
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {taskList?.status !== 'documents' && (
+                    <DropdownMenuSeparator />
+                  )}
                   {/* Quick Completion Action */}
-                  {canMoveToCompletion && (
+                  {taskList?.status !== 'documents' && canMoveToCompletion && (
                     <DropdownMenuItem
                       onSelect={(e) =>
                         handleMenuItemSelect(
@@ -791,7 +798,8 @@ function TaskCardInner({
                   )}
 
                   {/* Mark as Closed Action - Only show if closed list exists and is different from the generic completion */}
-                  {canMoveToClose &&
+                  {taskList?.status !== 'documents' &&
+                    canMoveToClose &&
                     targetClosedList?.id !== targetCompletionList?.id && (
                       <DropdownMenuItem
                         onSelect={(e) =>
@@ -808,9 +816,10 @@ function TaskCardInner({
                       </DropdownMenuItem>
                     )}
 
-                  {(canMoveToCompletion || canMoveToClose) && (
-                    <DropdownMenuSeparator />
-                  )}
+                  {taskList?.status !== 'documents' &&
+                    (canMoveToCompletion || canMoveToClose) && (
+                      <DropdownMenuSeparator />
+                    )}
 
                   {/* Priority Menu */}
                   <TaskPriorityMenu
