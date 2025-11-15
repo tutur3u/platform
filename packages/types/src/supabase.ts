@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '13.0.5';
-  };
   public: {
     Tables: {
       ai_chat_members: {
@@ -6777,6 +6772,7 @@ export type Database = {
       };
       tasks: {
         Row: {
+          board_id: string;
           calendar_hours: Database['public']['Enums']['calendar_hours'] | null;
           closed_at: string | null;
           completed: boolean | null;
@@ -6786,6 +6782,7 @@ export type Database = {
           deleted_at: string | null;
           description: string | null;
           description_yjs_state: number[] | null;
+          display_number: number;
           embedding: string | null;
           end_date: string | null;
           estimation_points: number | null;
@@ -6802,6 +6799,7 @@ export type Database = {
           total_duration: number | null;
         };
         Insert: {
+          board_id: string;
           calendar_hours?: Database['public']['Enums']['calendar_hours'] | null;
           closed_at?: string | null;
           completed?: boolean | null;
@@ -6811,6 +6809,7 @@ export type Database = {
           deleted_at?: string | null;
           description?: string | null;
           description_yjs_state?: number[] | null;
+          display_number: number;
           embedding?: string | null;
           end_date?: string | null;
           estimation_points?: number | null;
@@ -6827,6 +6826,7 @@ export type Database = {
           total_duration?: number | null;
         };
         Update: {
+          board_id?: string;
           calendar_hours?: Database['public']['Enums']['calendar_hours'] | null;
           closed_at?: string | null;
           completed?: boolean | null;
@@ -6836,6 +6836,7 @@ export type Database = {
           deleted_at?: string | null;
           description?: string | null;
           description_yjs_state?: number[] | null;
+          display_number?: number;
           embedding?: string | null;
           end_date?: string | null;
           estimation_points?: number | null;
@@ -6852,6 +6853,13 @@ export type Database = {
           total_duration?: number | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'fk_tasks_board_id';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'tasks_creator_id_fkey';
             columns: ['creator_id'];
@@ -8566,7 +8574,9 @@ export type Database = {
           extended_estimation: boolean;
           id: string;
           name: string | null;
+          next_task_number: number;
           template_id: string | null;
+          ticket_prefix: string | null;
           ws_id: string;
         };
         Insert: {
@@ -8582,7 +8592,9 @@ export type Database = {
           extended_estimation?: boolean;
           id?: string;
           name?: string | null;
+          next_task_number?: number;
           template_id?: string | null;
+          ticket_prefix?: string | null;
           ws_id: string;
         };
         Update: {
@@ -8598,7 +8610,9 @@ export type Database = {
           extended_estimation?: boolean;
           id?: string;
           name?: string | null;
+          next_task_number?: number;
           template_id?: string | null;
+          ticket_prefix?: string | null;
           ws_id?: string;
         };
         Relationships: [
@@ -11923,7 +11937,36 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       calendar_event_participants: {
         Row: {
@@ -13498,6 +13541,10 @@ export type Database = {
           total_completion_tokens: number;
           total_prompt_tokens: number;
         }[];
+      };
+      get_next_task_display_number: {
+        Args: { p_board_id: string };
+        Returns: number;
       };
       get_operating_systems: {
         Args: { p_limit?: number; p_link_id: string };

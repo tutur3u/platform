@@ -1195,6 +1195,13 @@
     "trends": "Xu hướng Sử dụng"
   },
   "tasks": {
+    "ticket": {
+      "ticket_id": "Mã nhiệm vụ",
+      "ticket_prefix": "Tiền tố mã nhiệm vụ",
+      "ticket_prefix_description": "Tiền tố tùy chỉnh cho mã nhận dạng nhiệm vụ (ví dụ: DEV, BUG, SPRINT)",
+      "ticket_prefix_placeholder": "Nhập tiền tố (ví dụ: DEV)",
+      "ticket_number": "Số nhiệm vụ"
+    },
     "history": {
       "error": "Không thể tải lịch sử nhiệm vụ",
       "empty": "Không có lịch sử cho nhiệm vụ này",

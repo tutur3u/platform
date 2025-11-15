@@ -1103,6 +1103,13 @@
     "trends": "Usage Trends"
   },
   "tasks": {
+    "ticket": {
+      "ticket_id": "Ticket ID",
+      "ticket_prefix": "Ticket Prefix",
+      "ticket_prefix_description": "Custom prefix for task identifiers (e.g., DEV, BUG, SPRINT)",
+      "ticket_prefix_placeholder": "Enter prefix (e.g., DEV)",
+      "ticket_number": "Ticket Number"
+    },
     "history": {
       "error": "Failed to load task history",
       "empty": "No history available for this task",

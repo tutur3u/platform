@@ -22,7 +22,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 
 interface BoardSwitcherProps {
-  board: Pick<WorkspaceTaskBoard, 'id' | 'name' | 'ws_id'>;
+  board: Pick<WorkspaceTaskBoard, 'id' | 'name' | 'ws_id' | 'ticket_prefix'>;
 }
 
 type BoardWithStatus = {

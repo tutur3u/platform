@@ -54,6 +54,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import { cn } from '@tuturuuu/utils/format';
 import {
+  getTicketIdentifier,
   invalidateTaskCaches,
   useBoardConfig,
   useUpdateTask,
@@ -734,6 +735,23 @@ function TaskEditDialogComponent({
       setWorkspaceId(boardConfig.ws_id);
     }
   }, [boardConfig, workspaceId]);
+
+  // Update browser tab title with ticket identifier when dialog is open
+  useEffect(() => {
+    if (!isOpen || isCreateMode || !task) return;
+
+    const originalTitle = document.title;
+    const ticketId = getTicketIdentifier(
+      boardConfig?.ticket_prefix,
+      task.display_number
+    );
+    document.title = `${ticketId} - ${task.name}`;
+
+    // Restore original title when dialog closes
+    return () => {
+      document.title = originalTitle;
+    };
+  }, [isOpen, isCreateMode, task, boardConfig?.ticket_prefix]);
 
   // ============================================================================
   // LABELS MANAGEMENT - Workspace labels, selected labels, and creation
@@ -1956,12 +1974,13 @@ function TaskEditDialogComponent({
         name: string;
         listId: string;
       }) => {
+        // Note: display_number and board_id are auto-assigned by database trigger
         const { data: newTask, error } = await supabase
           .from('tasks')
           .insert({
             name,
             list_id: listId,
-          })
+          } as any) // Using 'as any' because board_id and display_number are auto-assigned by trigger
           .select('id, name')
           .single();
 
@@ -3417,8 +3436,21 @@ function TaskEditDialogComponent({
                   <ListTodo className="h-4 w-4 text-dynamic-orange" />
                 </div>
                 <div className="flex min-w-0 flex-col gap-0.5">
-                  <DialogTitle className="truncate font-semibold text-base text-foreground md:text-lg">
-                    {isCreateMode ? 'Create New Task' : 'Edit Task'}
+                  <DialogTitle className="flex items-center gap-2 truncate font-semibold text-base text-foreground md:text-lg">
+                    <span>
+                      {isCreateMode ? 'Create New Task' : 'Edit Task'}
+                    </span>
+                    {!isCreateMode && task && (
+                      <Badge
+                        variant="outline"
+                        className="border-primary/30 bg-primary/5 font-mono text-[11px] text-primary"
+                      >
+                        {getTicketIdentifier(
+                          boardConfig?.ticket_prefix,
+                          task.display_number
+                        )}
+                      </Badge>
+                    )}
                   </DialogTitle>
                   <DialogDescription className="sr-only">
                     {isCreateMode

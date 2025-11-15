@@ -640,12 +640,14 @@ export function TaskProjectDetail({
           })()
         : '');
 
-  // Create virtual board object for BoardHeader
-  // BoardHeader requires: id, name, and ws_id
-  const virtualBoard: Pick<WorkspaceTaskBoard, 'id' | 'name' | 'ws_id'> = {
+  const virtualBoard: Pick<
+    WorkspaceTaskBoard,
+    'id' | 'name' | 'ws_id' | 'ticket_prefix'
+  > = {
     id: project.id,
     name: project.name,
     ws_id: wsId,
+    ticket_prefix: null,
   };
 
   const renderView = () => {

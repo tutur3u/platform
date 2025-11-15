@@ -51,6 +51,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import {
   createTask,
+  getTicketIdentifier,
   invalidateTaskCaches,
   useBoardConfig,
   useWorkspaceLabels,
@@ -697,7 +698,19 @@ function TaskCardInner({
         {/* Header */}
         <div className="flex items-start gap-1">
           <div className="min-w-0 flex-1">
-            <div className="mb-1 flex items-center gap-2">
+            <div className="mb-1 flex flex-col gap-1">
+              {/* Ticket Identifier */}
+              <Badge
+                variant="outline"
+                className="w-fit border-primary/30 bg-primary/5 font-mono text-[10px] text-primary"
+                title={`Ticket ID: ${getTicketIdentifier(boardConfig?.ticket_prefix, task.display_number)}`}
+              >
+                {getTicketIdentifier(
+                  boardConfig?.ticket_prefix,
+                  task.display_number
+                )}
+              </Badge>
+              {/* Task Name */}
               <button
                 type="button"
                 className={cn(

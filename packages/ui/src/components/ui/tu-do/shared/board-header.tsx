@@ -9,6 +9,7 @@ import {
   Check,
   ChevronDown,
   Clock,
+  Columns3Cog,
   Flag,
   Gauge,
   LayoutGrid,
@@ -153,7 +154,7 @@ function saveBoardConfig(boardId: string, config: BoardViewConfig): void {
 }
 
 interface Props {
-  board: Pick<WorkspaceTaskBoard, 'id' | 'name' | 'ws_id'>;
+  board: Pick<WorkspaceTaskBoard, 'id' | 'name' | 'ws_id' | 'ticket_prefix'>;
   currentUserId?: string;
   currentView: ViewType;
   onViewChange: (view: ViewType) => void;
@@ -192,6 +193,8 @@ export function BoardHeader({
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [layoutSettingsOpen, setLayoutSettingsOpen] = useState(false);
+  const [boardSettingsOpen, setBoardSettingsOpen] = useState(false);
+  const [ticketPrefix, setTicketPrefix] = useState(board.ticket_prefix || '');
   const [localSearchQuery, setLocalSearchQuery] = useState(
     filters.searchQuery || ''
   );
@@ -314,6 +317,36 @@ export function BoardHeader({
       router.push(`/${board.ws_id}/tasks/boards`);
     } catch (error) {
       console.error('Failed to delete board:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleSaveTicketPrefix() {
+    try {
+      setIsLoading(true);
+      const supabase = createClient();
+
+      // Validate and clean the prefix
+      const cleanedPrefix = ticketPrefix.trim().toUpperCase();
+
+      await supabase
+        .from('workspace_boards')
+        .update({ ticket_prefix: cleanedPrefix || null })
+        .eq('id', board.id);
+
+      setBoardSettingsOpen(false);
+
+      // Invalidate relevant caches
+      queryClient.invalidateQueries({ queryKey: ['task-board', board.id] });
+      queryClient.invalidateQueries({ queryKey: ['board-config', board.id] });
+
+      // Trigger parent update
+      if (onUpdate) {
+        onUpdate();
+      }
+    } catch (error) {
+      console.error('Failed to update ticket prefix:', error);
     } finally {
       setIsLoading(false);
     }
@@ -789,8 +822,19 @@ export function BoardHeader({
                   }}
                   className="gap-2"
                 >
-                  <Settings className="h-4 w-4" />
+                  <Columns3Cog className="h-4 w-4" />
                   Board Layout
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setTicketPrefix(board.ticket_prefix || '');
+                    setBoardSettingsOpen(true);
+                    setBoardMenuOpen(false);
+                  }}
+                  className="gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  Board Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <AlertDialog>
@@ -886,6 +930,56 @@ export function BoardHeader({
           onUpdate={onUpdate}
         />
       )}
+
+      {/* Board Settings Dialog */}
+      <Dialog open={boardSettingsOpen} onOpenChange={setBoardSettingsOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Board Settings</DialogTitle>
+            <DialogDescription>
+              Configure board-level settings for task management.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <label htmlFor="ticketPrefix" className="font-medium text-sm">
+                Ticket Prefix
+              </label>
+              <Input
+                id="ticketPrefix"
+                value={ticketPrefix}
+                onChange={(e) => setTicketPrefix(e.target.value.toUpperCase())}
+                placeholder="e.g., DEV, BUG, TASK"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSaveTicketPrefix();
+                  }
+                }}
+                maxLength={10}
+                autoFocus
+              />
+              <p className="text-muted-foreground text-xs">
+                Custom prefix for task identifiers (e.g., DEV-1, BUG-42). Leave
+                empty to use default.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setBoardSettingsOpen(false)}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSaveTicketPrefix} disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
