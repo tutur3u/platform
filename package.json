@@ -77,11 +77,11 @@
   "devDependencies": {
     "@biomejs/biome": "^2.3.5",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@vitest/coverage-v8": "^4.0.8",
+    "@vitest/coverage-v8": "^4.0.9",
     "turbo": "^2.6.1",
     "typescript": "^5.9.3",
     "vite": "^7.2.2",
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.9"
   },
   "engines": {
     "node": ">=22"
