@@ -48,6 +48,7 @@ import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { toast as sonnerToast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -73,6 +74,7 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 import * as Y from 'yjs';
+import { getTicketBadgeColorClasses } from '../utils/taskColorUtils';
 import CursorOverlayWrapper from './cursor-overlay-wrapper';
 import { CustomDatePickerDialog } from './custom-date-picker/custom-date-picker-dialog';
 import {
@@ -3441,15 +3443,43 @@ function TaskEditDialogComponent({
                       {isCreateMode ? 'Create New Task' : 'Edit Task'}
                     </span>
                     {!isCreateMode && task && (
-                      <Badge
-                        variant="outline"
-                        className="border-primary/30 bg-primary/5 font-mono text-[11px] text-primary"
-                      >
-                        {getTicketIdentifier(
-                          boardConfig?.ticket_prefix,
-                          task.display_number
-                        )}
-                      </Badge>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              'group/ticket cursor-pointer font-mono text-xs transition-all',
+                              getTicketBadgeColorClasses(
+                                availableLists.find(
+                                  (list) => list.id === task.list_id
+                                ),
+                                task.priority
+                              )
+                            )}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const ticketId = getTicketIdentifier(
+                                boardConfig?.ticket_prefix,
+                                task.display_number
+                              );
+                              navigator.clipboard.writeText(ticketId);
+                              sonnerToast.success('Ticket ID copied', {
+                                description: ticketId,
+                              });
+                            }}
+                          >
+                            <span className="flex items-center gap-1">
+                              {getTicketIdentifier(
+                                boardConfig?.ticket_prefix,
+                                task.display_number
+                              )}
+                            </span>
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Click to copy ticket ID</p>
+                        </TooltipContent>
+                      </Tooltip>
                     )}
                   </DialogTitle>
                   <DialogDescription className="sr-only">
