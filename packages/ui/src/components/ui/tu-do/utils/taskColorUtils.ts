@@ -35,6 +35,43 @@ export function getCardColorClasses(
 }
 
 /**
+ * Get ticket identifier badge color classes based on task list color or priority
+ */
+export function getTicketBadgeColorClasses(
+  taskList?: TaskList,
+  priority?: Task['priority']
+): string {
+  // Color mapping for ticket badges (lighter than card borders)
+  const ticketColorClasses: Record<SupportedColor, string> = {
+    GRAY: 'border-dynamic-gray/30 bg-dynamic-gray/5 text-foreground',
+    RED: 'border-dynamic-red/30 bg-dynamic-red/5 text-dynamic-red',
+    BLUE: 'border-dynamic-blue/30 bg-dynamic-blue/5 text-dynamic-blue',
+    GREEN: 'border-dynamic-green/30 bg-dynamic-green/5 text-dynamic-green',
+    YELLOW: 'border-dynamic-yellow/30 bg-dynamic-yellow/5 text-dynamic-yellow',
+    ORANGE: 'border-dynamic-orange/30 bg-dynamic-orange/5 text-dynamic-orange',
+    PURPLE: 'border-dynamic-purple/30 bg-dynamic-purple/5 text-dynamic-purple',
+    PINK: 'border-dynamic-pink/30 bg-dynamic-pink/5 text-dynamic-pink',
+    INDIGO: 'border-dynamic-indigo/30 bg-dynamic-indigo/5 text-dynamic-indigo',
+    CYAN: 'border-dynamic-cyan/30 bg-dynamic-cyan/5 text-dynamic-cyan',
+  };
+
+  const priorityTicketColors: Record<NonNullable<Task['priority']>, string> = {
+    critical: 'border-dynamic-red/30 bg-dynamic-red/5 text-dynamic-red',
+    high: 'border-dynamic-orange/30 bg-dynamic-orange/5 text-dynamic-orange',
+    normal: 'border-dynamic-yellow/30 bg-dynamic-yellow/5 text-dynamic-yellow',
+    low: 'border-dynamic-blue/30 bg-dynamic-blue/5 text-dynamic-blue',
+  };
+
+  if (taskList?.color) {
+    return ticketColorClasses[taskList.color] || ticketColorClasses.GRAY;
+  }
+  if (priority) {
+    return priorityTicketColors[priority] || '';
+  }
+  return ticketColorClasses.GRAY;
+}
+
+/**
  * Get initials from name or email for avatar
  */
 export function getAssigneeInitials(

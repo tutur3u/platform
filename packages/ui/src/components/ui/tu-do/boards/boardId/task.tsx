@@ -79,6 +79,7 @@ import { TaskViewerAvatarsComponent } from '../../shared/user-presence-avatars';
 import {
   getCardColorClasses as getCardColorClassesUtil,
   getListColorClasses,
+  getTicketBadgeColorClasses,
 } from '../../utils/taskColorUtils';
 import { formatSmartDate } from '../../utils/taskDateUtils';
 import { getPriorityIndicator } from '../../utils/taskPriorityUtils';
@@ -703,7 +704,10 @@ function TaskCardInner({
               {taskList?.status !== 'documents' && (
                 <Badge
                   variant="outline"
-                  className="w-fit border-primary/30 bg-primary/5 font-mono text-[10px] text-primary"
+                  className={cn(
+                    'w-fit px-1 py-0 font-mono text-[10px]',
+                    getTicketBadgeColorClasses(taskList, task.priority)
+                  )}
                   title={`Ticket ID: ${getTicketIdentifier(boardConfig?.ticket_prefix, task.display_number)}`}
                 >
                   {getTicketIdentifier(
