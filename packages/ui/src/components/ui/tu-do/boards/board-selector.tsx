@@ -15,8 +15,8 @@ import {
 import { Label } from '@tuturuuu/ui/label';
 import { useTranslations } from 'next-intl';
 import { useCallback, useId, useMemo, useState } from 'react';
-import { TaskBoardForm } from './form';
 import { CreateListDialog } from '../shared/create-list-dialog';
+import { TaskBoardForm } from './form';
 
 interface Board {
   id: string;
@@ -261,7 +261,7 @@ export function BoardSelector({
         >
           <TaskBoardForm
             wsId={wsId}
-            data={{ name: newBoardName } as any}
+            data={{ name: newBoardName }}
             onFinish={(formData) => {
               setNewBoardDialogOpen(false);
               setNewBoardName('');

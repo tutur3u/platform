@@ -6772,7 +6772,7 @@ export type Database = {
       };
       tasks: {
         Row: {
-          board_id: string;
+          board_id: string | null;
           calendar_hours: Database['public']['Enums']['calendar_hours'] | null;
           closed_at: string | null;
           completed: boolean | null;
@@ -6782,7 +6782,7 @@ export type Database = {
           deleted_at: string | null;
           description: string | null;
           description_yjs_state: number[] | null;
-          display_number: number;
+          display_number: number | null;
           embedding: string | null;
           end_date: string | null;
           estimation_points: number | null;
@@ -6799,7 +6799,7 @@ export type Database = {
           total_duration: number | null;
         };
         Insert: {
-          board_id: string;
+          board_id?: string | null;
           calendar_hours?: Database['public']['Enums']['calendar_hours'] | null;
           closed_at?: string | null;
           completed?: boolean | null;
@@ -6809,7 +6809,7 @@ export type Database = {
           deleted_at?: string | null;
           description?: string | null;
           description_yjs_state?: number[] | null;
-          display_number: number;
+          display_number?: number | null;
           embedding?: string | null;
           end_date?: string | null;
           estimation_points?: number | null;
@@ -6826,7 +6826,7 @@ export type Database = {
           total_duration?: number | null;
         };
         Update: {
-          board_id?: string;
+          board_id?: string | null;
           calendar_hours?: Database['public']['Enums']['calendar_hours'] | null;
           closed_at?: string | null;
           completed?: boolean | null;
@@ -6836,7 +6836,7 @@ export type Database = {
           deleted_at?: string | null;
           description?: string | null;
           description_yjs_state?: number[] | null;
-          display_number?: number;
+          display_number?: number | null;
           embedding?: string | null;
           end_date?: string | null;
           estimation_points?: number | null;
@@ -14392,7 +14392,12 @@ export type Database = {
       recurring_frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
       subscription_status: 'trialing' | 'active' | 'canceled' | 'past_due';
       support_type: 'bug' | 'feature-request' | 'support' | 'job-application';
-      task_board_status: 'not_started' | 'active' | 'done' | 'closed';
+      task_board_status:
+        | 'not_started'
+        | 'active'
+        | 'done'
+        | 'closed'
+        | 'documents';
       task_priority: 'low' | 'normal' | 'high' | 'critical';
       workspace_api_key_scope:
         | 'gemini-2.0-flash'
@@ -14649,7 +14654,13 @@ export const Constants = {
       recurring_frequency: ['daily', 'weekly', 'monthly', 'yearly'],
       subscription_status: ['trialing', 'active', 'canceled', 'past_due'],
       support_type: ['bug', 'feature-request', 'support', 'job-application'],
-      task_board_status: ['not_started', 'active', 'done', 'closed'],
+      task_board_status: [
+        'not_started',
+        'active',
+        'done',
+        'closed',
+        'documents',
+      ],
       task_priority: ['low', 'normal', 'high', 'critical'],
       workspace_api_key_scope: [
         'gemini-2.0-flash',

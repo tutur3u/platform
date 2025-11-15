@@ -397,10 +397,10 @@ function TaskCardInner({
         name: task.name.trim(),
         description: task.description,
         priority: task.priority,
-        start_date: startDate ? startDate.toISOString() : null,
-        end_date: endDate ? endDate.toISOString() : null,
+        start_date: startDate ? startDate.toISOString() : undefined,
+        end_date: endDate ? endDate.toISOString() : undefined,
         estimation_points: task.estimation_points ?? null,
-      } as any;
+      };
       const newTask = await createTask(supabase, task.list_id, taskData);
 
       // Link existing labels to duplicated task
@@ -1167,22 +1167,24 @@ function TaskCardInner({
                 />
               )}
 
-              {/* Checkbox: always at far right */}
-              <Checkbox
-                checked={!!task.closed_at}
-                className={cn(
-                  'h-4 w-4 flex-none transition-all duration-200',
-                  'data-[state=checked]:border-dynamic-green/70 data-[state=checked]:bg-dynamic-green/70',
-                  'hover:scale-110 hover:border-primary/50',
-                  getListColorClasses(taskList?.color as SupportedColor),
-                  isOverdue &&
-                    !task.closed_at &&
-                    'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
-                )}
-                disabled={isLoading}
-                onCheckedChange={handleArchiveToggle}
-                onClick={(e) => e.stopPropagation()}
-              />
+              {/* Checkbox: hidden for documents lists */}
+              {taskList?.status !== 'documents' && (
+                <Checkbox
+                  checked={!!task.closed_at}
+                  className={cn(
+                    'h-4 w-4 flex-none transition-all duration-200',
+                    'data-[state=checked]:border-dynamic-green/70 data-[state=checked]:bg-dynamic-green/70',
+                    'hover:scale-110 hover:border-primary/50',
+                    getListColorClasses(taskList?.color as SupportedColor),
+                    isOverdue &&
+                      !task.closed_at &&
+                      'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
+                  )}
+                  disabled={isLoading}
+                  onCheckedChange={handleArchiveToggle}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              )}
             </div>
           </div>
         )}

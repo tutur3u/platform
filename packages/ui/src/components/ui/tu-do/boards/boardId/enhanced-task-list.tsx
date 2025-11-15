@@ -77,6 +77,7 @@ const colorOptions: { value: SupportedColor; label: string; class: string }[] =
   ];
 
 const statusIcons = {
+  documents: '📄',
   not_started: '⚪',
   active: '🔵',
   done: '🟢',

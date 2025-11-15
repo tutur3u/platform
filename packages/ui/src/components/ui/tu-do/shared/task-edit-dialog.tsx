@@ -1980,7 +1980,7 @@ function TaskEditDialogComponent({
           .insert({
             name,
             list_id: listId,
-          } as any) // Using 'as any' because board_id and display_number are auto-assigned by trigger
+          })
           .select('id, name')
           .single();
 
@@ -2049,12 +2049,12 @@ function TaskEditDialogComponent({
         const { createTask } = await import('@tuturuuu/utils/task-helper');
         const taskData: Partial<Task> = {
           name: name.trim(),
-          description: descriptionString,
+          description: descriptionString || '',
           priority: priority,
-          start_date: startDate ? startDate.toISOString() : null,
-          end_date: endDate ? endDate.toISOString() : null,
+          start_date: startDate ? startDate.toISOString() : undefined,
+          end_date: endDate ? endDate.toISOString() : undefined,
           estimation_points: estimationPoints ?? null,
-        } as any;
+        };
         const newTask = await createTask(supabase, selectedListId, taskData);
 
         if (selectedLabels.length > 0) {

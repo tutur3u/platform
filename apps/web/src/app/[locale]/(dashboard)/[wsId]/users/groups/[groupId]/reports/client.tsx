@@ -253,7 +253,12 @@ export default function GroupReportsClient({
     else if (selectedManagerName === undefined)
       setSelectedManagerName(names[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupManagersQuery.data, reportDetail?.creator_name, reportId]);
+  }, [
+    groupManagersQuery.data,
+    reportDetail?.creator_name,
+    reportId,
+    selectedManagerName,
+  ]);
 
   const configsQuery = useQuery({
     queryKey: ['ws', wsId, 'report-configs'],
@@ -375,6 +380,7 @@ export default function GroupReportsClient({
       groupNameFallback,
       reportDetailQuery.data,
       healthcareVitalsQuery.data,
+      usersQuery.data?.find,
     ]);
 
   // Compute effective creator (group manager) name for preview/export only

@@ -39,19 +39,26 @@ END;
 $$;
 
 -- 5. Create trigger function to auto-assign display_number and board_id
+-- This ensures board_id stays synchronized with list_id on both INSERT and UPDATE
 CREATE OR REPLACE FUNCTION assign_task_display_number()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
 DECLARE
   v_board_id UUID;
+  v_old_board_id UUID;
 BEGIN
   -- Get the board_id for this task's list
   SELECT tl.board_id INTO v_board_id
   FROM task_lists tl
   WHERE tl.id = NEW.list_id;
 
-  -- Set board_id on the task
+  -- Store old board_id for UPDATE operations
+  IF TG_OP = 'UPDATE' THEN
+    v_old_board_id := OLD.board_id;
+  END IF;
+
+  -- Always set board_id to match the list's board (keeps it synchronized)
   NEW.board_id := v_board_id;
 
   -- Only assign display_number if not already set
@@ -63,9 +70,10 @@ BEGIN
 END;
 $$;
 
--- 6. Create trigger to auto-assign display_number on insert
+-- 6. Create trigger to auto-assign display_number on insert and update
+-- Fires on both operations to keep board_id synchronized with list_id
 CREATE TRIGGER trigger_assign_task_display_number
-  BEFORE INSERT ON tasks
+  BEFORE INSERT OR UPDATE OF list_id ON tasks
   FOR EACH ROW
   EXECUTE FUNCTION assign_task_display_number();
 
@@ -124,14 +132,6 @@ BEGIN
   );
 END;
 $$;
-
--- 8. Make display_number NOT NULL after backfill
-ALTER TABLE tasks
-ALTER COLUMN display_number SET NOT NULL;
-
--- 9. Make board_id NOT NULL and add foreign key
-ALTER TABLE tasks
-ALTER COLUMN board_id SET NOT NULL;
 
 ALTER TABLE tasks
 ADD CONSTRAINT fk_tasks_board_id

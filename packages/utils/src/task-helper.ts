@@ -223,7 +223,7 @@ export async function createTask(
   // Now try the normal insert with the fixed database
   const { data, error } = await supabase
     .from('tasks')
-    .insert(taskData as any) // Using 'as any' because board_id and display_number are auto-assigned by trigger
+    .insert(taskData)
     .select()
     .single();
 
@@ -309,9 +309,9 @@ export async function updateTask(
     typeof window !== 'undefined' &&
     data
   ) {
-    // Get workspace ID from URL (format: /[locale]/[wsId]/...)
+    // Get workspace ID from URL (format: /[wsId]/...)
     const pathParts = window.location.pathname.split('/');
-    const wsId = pathParts[2]; // Assuming format /[locale]/[wsId]/...
+    const wsId = pathParts[1]; // Assuming format /[wsId]/...
 
     if (wsId) {
       // Call the embedding generation endpoint asynchronously (non-blocking)

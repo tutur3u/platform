@@ -1110,6 +1110,18 @@
       "ticket_prefix_placeholder": "Enter prefix (e.g., DEV)",
       "ticket_number": "Ticket Number"
     },
+    "statuses": {
+      "not_started": "Backlog",
+      "active": "Active",
+      "done": "Done",
+      "closed": "Closed",
+      "documents": "Documents",
+      "not_started_description": "Ideas and planned work",
+      "active_description": "Work in progress",
+      "done_description": "Completed work",
+      "closed_description": "Archived or cancelled",
+      "documents_description": "Reference materials and documentation"
+    },
     "history": {
       "error": "Failed to load task history",
       "empty": "No history available for this task",

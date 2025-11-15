@@ -6,6 +6,7 @@ import {
   CircleCheck,
   CircleDashed,
   CircleX,
+  FileText,
   Loader2,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -63,6 +64,11 @@ const statusConfig = {
     label: 'Closed',
     color: 'text-dynamic-purple',
   },
+  documents: {
+    icon: FileText,
+    label: 'Documents',
+    color: 'text-dynamic-cyan',
+  },
 };
 
 const colorOptions: { value: SupportedColor; label: string; class: string }[] =
@@ -79,7 +85,13 @@ const colorOptions: { value: SupportedColor; label: string; class: string }[] =
     { value: 'CYAN', label: 'Cyan', class: 'bg-dynamic-cyan/30' },
   ];
 
-const statuses: TaskBoardStatus[] = ['not_started', 'active', 'done', 'closed'];
+const statuses: TaskBoardStatus[] = [
+  'documents',
+  'not_started',
+  'active',
+  'done',
+  'closed',
+];
 
 export function CreateListDialog({
   open,

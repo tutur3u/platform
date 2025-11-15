@@ -49,8 +49,8 @@ import { useBoardConfig } from '@tuturuuu/utils/task-helper';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CommandBar, type TaskOptions } from './command-bar';
 import { LabelProjectFilter } from './label-project-filter';
@@ -1355,7 +1355,7 @@ export default function MyTasksContent({
         >
           <TaskBoardForm
             wsId={selectedWorkspaceId}
-            data={{ name: newBoardName } as any}
+            data={{ name: newBoardName }}
             onFinish={(formData) => {
               setNewBoardDialogOpen(false);
               setNewBoardName('');

@@ -1202,6 +1202,18 @@
       "ticket_prefix_placeholder": "Nhập tiền tố (ví dụ: DEV)",
       "ticket_number": "Số nhiệm vụ"
     },
+    "statuses": {
+      "not_started": "Danh sách chờ",
+      "active": "Đang thực hiện",
+      "done": "Hoàn thành",
+      "closed": "Đã đóng",
+      "documents": "Tài liệu",
+      "not_started_description": "Ý tưởng và công việc đã lên kế hoạch",
+      "active_description": "Công việc đang được thực hiện",
+      "done_description": "Công việc đã hoàn thành",
+      "closed_description": "Đã lưu trữ hoặc hủy bỏ",
+      "documents_description": "Tài liệu tham khảo và hướng dẫn"
+    },
     "history": {
       "error": "Không thể tải lịch sử nhiệm vụ",
       "empty": "Không có lịch sử cho nhiệm vụ này",

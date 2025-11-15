@@ -666,7 +666,7 @@ export function TimelineBoard({
                         <button
                           type="button"
                           className={cn(
-                            'group relative col-span-[var(--col-span)] col-start-[var(--col-start)] row-start-[var(--row-start)] flex h-full items-start justify-start rounded-md border-2 px-2 py-1 text-left text-[11px] leading-tight shadow-md outline-none ring-offset-background backdrop-blur-sm transition-all duration-150 hover:scale-[1.02] hover:shadow-lg focus-visible:ring-2 focus-visible:ring-dynamic-blue focus-visible:ring-offset-1',
+                            'group relative col-span-(--col-span) col-start-(--col-start) row-start-(--row-start) flex h-full items-start justify-start rounded-md border-2 px-2 py-1 text-left text-[11px] leading-tight shadow-md outline-none ring-offset-background backdrop-blur-sm transition-all duration-150 hover:scale-[1.02] hover:shadow-lg focus-visible:ring-2 focus-visible:ring-dynamic-blue focus-visible:ring-offset-1',
                             statusColor,
                             resizing?.taskId === span.task.id &&
                               'scale-[1.02] border-dynamic-blue shadow-xl ring-2 ring-dynamic-blue/40'

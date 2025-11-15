@@ -910,10 +910,11 @@ export function KanbanBoard({
         // Find the positions in the sorted array
         const sortedColumns = columns.sort((a, b) => {
           const statusOrder = {
-            not_started: 0,
-            active: 1,
-            done: 2,
-            closed: 3,
+            documents: 0,
+            not_started: 1,
+            active: 2,
+            done: 3,
+            closed: 4,
           };
           const statusA =
             statusOrder[a.status as keyof typeof statusOrder] ?? 999;
@@ -2103,10 +2104,11 @@ export function KanbanBoard({
                     .sort((a, b) => {
                       // First sort by status priority, then by position within status
                       const statusOrder = {
-                        not_started: 0,
-                        active: 1,
-                        done: 2,
-                        closed: 3,
+                        documents: 0,
+                        not_started: 1,
+                        active: 2,
+                        done: 3,
+                        closed: 4,
                       };
                       const statusA =
                         statusOrder[a.status as keyof typeof statusOrder] ??

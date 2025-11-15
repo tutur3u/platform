@@ -51,17 +51,13 @@ export function TaskForm({ listId, onSuccess }: TaskFormProps) {
 
   const onSubmit = async (values: z.infer<typeof FormSchema>) => {
     try {
-      const { error } = await supabase
-        .from('tasks') // Use Supabase client to insert
-        .insert({
-          name: values.name,
-          description: values.description,
-          // priority: values.priority,
-          end_date: values.end_date || null, // Handle optional date
-          list_id: listId,
-          // ws_id and board_id might be needed depending on your RLS and table structure
-          // If tasks table doesn't directly link to ws_id, it might be inferred via list_id -> board_id -> ws_id
-        });
+      const { error } = await supabase.from('tasks').insert({
+        name: values.name,
+        description: values.description,
+        // priority: values.priority,
+        end_date: values.end_date || null, // Handle optional date
+        list_id: listId,
+      });
 
       if (error) throw error;
 

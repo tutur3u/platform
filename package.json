@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "clean": "rm bun.lock && bunx npkill --delete-all -y",
-    "setup": "bun upgrade && bun i && bun run build -F @tuturuuu/types -F @tuturuuu/supabase -F @tuturuuu/masonry",
+    "setup": "bun i && bun run build -F @tuturuuu/types -F @tuturuuu/supabase -F @tuturuuu/masonry",
     "build": "turbo run build",
     "build:web": "turbo run build -F @tuturuuu/web",
     "buildx": "turbo test build",

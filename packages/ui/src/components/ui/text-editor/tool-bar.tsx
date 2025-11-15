@@ -457,7 +457,7 @@ export function ToolBar({
           .insert({
             name,
             list_id: listId,
-          } as any)
+          })
           .select('id, name')
           .single();
 

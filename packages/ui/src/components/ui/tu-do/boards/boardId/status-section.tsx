@@ -6,6 +6,7 @@ import {
   CircleCheck,
   CircleDashed,
   CircleSlash,
+  FileText,
   Plus,
 } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -35,6 +36,8 @@ const statusColors: Record<TaskBoardStatus, string> = {
   done: 'border-dynamic-green/40 bg-linear-to-br from-dynamic-green/10 to-dynamic-green/5',
   closed:
     'border-dynamic-purple/40 bg-linear-to-br from-dynamic-purple/10 to-dynamic-purple/5',
+  documents:
+    'border-dynamic-cyan/40 bg-linear-to-br from-dynamic-cyan/10 to-dynamic-cyan/5',
 };
 
 const statusHoverColors: Record<TaskBoardStatus, string> = {
@@ -45,6 +48,8 @@ const statusHoverColors: Record<TaskBoardStatus, string> = {
   done: 'hover:border-dynamic-green/60 hover:shadow-lg hover:shadow-dynamic-green/10',
   closed:
     'hover:border-dynamic-purple/60 hover:shadow-lg hover:shadow-dynamic-purple/10',
+  documents:
+    'hover:border-dynamic-cyan/60 hover:shadow-lg hover:shadow-dynamic-cyan/10',
 };
 
 const statusBadgeColors: Record<TaskBoardStatus, string> = {
@@ -52,6 +57,7 @@ const statusBadgeColors: Record<TaskBoardStatus, string> = {
   active: 'bg-dynamic-blue/20 text-dynamic-blue border-dynamic-blue/30',
   done: 'bg-dynamic-green/20 text-dynamic-green border-dynamic-green/30',
   closed: 'bg-dynamic-purple/20 text-dynamic-purple border-dynamic-purple/30',
+  documents: 'bg-dynamic-cyan/20 text-dynamic-cyan border-dynamic-cyan/30',
 };
 
 const statusLabels: Record<TaskBoardStatus, string> = {
@@ -59,6 +65,7 @@ const statusLabels: Record<TaskBoardStatus, string> = {
   active: 'Active',
   done: 'Done',
   closed: 'Closed',
+  documents: 'Documents',
 };
 
 export const statusIcons = {
@@ -66,6 +73,7 @@ export const statusIcons = {
   active: <Circle className="h-4 w-4" />,
   done: <CircleCheck className="h-4 w-4" />,
   closed: <CircleSlash className="h-4 w-4" />,
+  documents: <FileText className="h-4 w-4" />,
 };
 
 const statusDescriptions: Record<TaskBoardStatus, string> = {
@@ -73,6 +81,7 @@ const statusDescriptions: Record<TaskBoardStatus, string> = {
   active: 'Work in progress',
   done: 'Completed work',
   closed: 'Archived or cancelled',
+  documents: 'Reference materials and documentation',
 };
 
 export function StatusSection({

@@ -44,7 +44,7 @@ import IconPicker from '../../custom/icon-picker';
 
 interface Props {
   wsId: string;
-  data?: WorkspaceTaskBoard;
+  data?: Partial<WorkspaceTaskBoard>;
   children?: React.ReactNode;
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
