@@ -121,11 +121,10 @@ CREATE INDEX IF NOT EXISTS idx_time_tracking_sessions_user_ws_start
     ON time_tracking_sessions(user_id, ws_id, start_time DESC)
     WHERE duration_seconds IS NOT NULL;
 
--- Partial index for recent sessions (last 3 months) - covers most daily report queries
-CREATE INDEX IF NOT EXISTS idx_time_tracking_sessions_recent
+-- Composite index for workspace + user queries (most specific, covers daily report queries)
+CREATE INDEX IF NOT EXISTS idx_time_tracking_sessions_ws_user_start
     ON time_tracking_sessions(ws_id, user_id, start_time DESC)
-    WHERE start_time >= (NOW() - INTERVAL '3 months')
-        AND duration_seconds IS NOT NULL;
+    WHERE duration_seconds IS NOT NULL;
 
 -- Add comments for indexes
 COMMENT ON INDEX idx_time_tracking_sessions_ws_start_time IS
@@ -134,8 +133,8 @@ COMMENT ON INDEX idx_time_tracking_sessions_ws_start_time IS
 COMMENT ON INDEX idx_time_tracking_sessions_user_ws_start IS
 'Optimizes per-user time tracking queries';
 
-COMMENT ON INDEX idx_time_tracking_sessions_recent IS
-'Partial index for recent sessions (last 3 months) to speed up daily reports';
+COMMENT ON INDEX idx_time_tracking_sessions_ws_user_start IS
+'Composite index for workspace + user queries with completed sessions (used by daily reports)';
 
 -- Performance note:
 -- This RPC function should provide 10-100x performance improvement over client-side aggregation
