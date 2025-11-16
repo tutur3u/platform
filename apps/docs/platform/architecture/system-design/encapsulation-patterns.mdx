@@ -1,0 +1,672 @@
+---
+title: "Encapsulation Patterns"
+description: "Strategies for preventing unwanted communication within and between services in Tuturuuu's architecture"
+updatedAt: "2025-11-16"
+---
+
+Encapsulation is a critical architectural quality that prevents unwanted coupling and maintains clear boundaries. This document covers patterns for preventing unwanted communication both **within microservices** (cross-layer) and **between microservices** (cross-service).
+
+## Preventing Cross-Layer Communication (Inside a Microservice)
+
+Within each microservice, we enforce strict boundaries between architectural layers to maintain code quality and prevent tight coupling.
+
+### 1. The Dependency Inversion Principle (via Ports)
+
+Within each service, the **Hexagonal Architecture** is used. High-level business logic defines interfaces ("Ports") it requires, and low-level infrastructure (like database code) implements them.
+
+**Architectural Principle:** High-level modules should not depend on low-level modules. Both should depend on abstractions.
+
+**Example from Tuturuuu:**
+
+```typescript
+// Domain layer defines interface (PORT)
+// packages/types/src/domain/workspace.ts
+export interface WorkspaceRepository {
+  findById(id: string): Promise<Workspace | null>;
+  findByOwnerId(ownerId: string): Promise<Workspace[]>;
+  save(workspace: Workspace): Promise<void>;
+  delete(id: string): Promise<void>;
+}
+
+// Business logic depends on abstraction, NOT concrete implementation
+// apps/web/src/domain/services/workspace-service.ts
+export class WorkspaceService {
+  constructor(
+    private readonly repository: WorkspaceRepository  // Depends on interface
+  ) {}
+
+  async createWorkspace(ownerId: string, name: string): Promise<Workspace> {
+    const workspace = new Workspace(ownerId, name);
+
+    // Domain logic doesn't know about Supabase, PostgreSQL, etc.
+    await this.repository.save(workspace);
+
+    return workspace;
+  }
+}
+
+// Infrastructure layer implements interface (ADAPTER)
+// apps/web/src/infrastructure/repositories/supabase-workspace-repository.ts
+export class SupabaseWorkspaceRepository implements WorkspaceRepository {
+  constructor(private readonly supabase: SupabaseClient) {}
+
+  async findById(id: string): Promise<Workspace | null> {
+    const { data } = await this.supabase
+      .from('workspaces')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    return data ? this.toDomainModel(data) : null;
+  }
+
+  async save(workspace: Workspace): Promise<void> {
+    await this.supabase
+      .from('workspaces')
+      .upsert(this.toDatabaseModel(workspace));
+  }
+
+  // ... other methods
+}
+```
+
+**Benefits:**
+- Domain logic is **pure** and **testable** without infrastructure
+- Can **swap implementations** (Supabase → Drizzle → Prisma) without changing business logic
+- **Inversion of control** - domain doesn't depend on infrastructure
+- **Technology agnostic** core business logic
+
+**Anti-pattern to avoid:**
+
+```typescript
+// BAD: Direct dependency on infrastructure
+export class WorkspaceService {
+  async createWorkspace(ownerId: string, name: string) {
+    const supabase = createClient();  // WRONG: Tight coupling to Supabase
+
+    const { data } = await supabase
+      .from('workspaces')
+      .insert({ owner_id: ownerId, name });
+
+    return data;
+  }
+}
+// This couples business logic to Supabase implementation
+// Hard to test, hard to change technology
+```
+
+---
+
+### 2. Strict Data Transfer Objects (DTOs)
+
+The outer API layer of a service communicates with its inner Application layer using plain DTOs. This creates a strong boundary that prevents internal, behavior-rich Domain Models from being exposed to external layers, ensuring the core logic remains fully encapsulated.
+
+**Architectural Principle:** External layers communicate via simple data structures, not rich domain objects.
+
+**Example from Tuturuuu:**
+
+```typescript
+// API layer DTO (external contract)
+// apps/web/src/app/api/workspaces/create/route.ts
+interface CreateWorkspaceRequest {
+  name: string;
+  description?: string;
+}
+
+interface CreateWorkspaceResponse {
+  id: string;
+  name: string;
+  ownerId: string;
+  createdAt: string;  // Serialized as ISO string
+}
+
+export async function POST(request: Request) {
+  const body: CreateWorkspaceRequest = await request.json();
+
+  // Convert DTO to domain command
+  const command = new CreateWorkspaceCommand(
+    userId,
+    body.name,
+    body.description
+  );
+
+  // Execute in domain
+  const workspace = await workspaceService.execute(command);
+
+  // Convert domain model back to DTO
+  const response: CreateWorkspaceResponse = {
+    id: workspace.id,
+    name: workspace.name,
+    ownerId: workspace.ownerId,
+    createdAt: workspace.createdAt.toISOString()  // Domain Date → DTO string
+  };
+
+  return Response.json(response);
+}
+
+// Domain model (internal, rich behavior)
+// apps/web/src/domain/models/workspace.ts
+export class Workspace {
+  constructor(
+    public readonly id: string,
+    public readonly ownerId: string,
+    private _name: string,
+    private _isActive: boolean,
+    public readonly createdAt: Date
+  ) {}
+
+  // Rich domain behavior
+  rename(newName: string) {
+    if (newName.length < 3) {
+      throw new DomainError('Workspace name must be at least 3 characters');
+    }
+    this._name = newName;
+  }
+
+  activate() {
+    if (this._isActive) {
+      throw new DomainError('Workspace is already active');
+    }
+    this._isActive = true;
+  }
+
+  deactivate() {
+    this._isActive = false;
+  }
+
+  get name() {
+    return this._name;
+  }
+
+  get isActive() {
+    return this._isActive;
+  }
+}
+// Domain model NEVER exposed to API layer
+// API only sees DTOs
+```
+
+**Benefits:**
+- **Encapsulation** of domain behavior
+- **Clear boundaries** between layers
+- **API stability** - internal changes don't break API contract
+- **Serialization control** - DTOs are JSON-friendly
+- **Versioning** - can support multiple DTO versions
+
+**Anti-pattern to avoid:**
+
+```typescript
+// BAD: Exposing domain model directly
+export async function POST(request: Request) {
+  const workspace = await workspaceService.create(data);
+
+  // WRONG: Returning domain model directly
+  return Response.json(workspace);
+}
+// Problems:
+// - Domain behavior exposed (rename, activate methods in JSON)
+// - Date objects don't serialize correctly
+// - Internal structure leaked to external API
+// - Can't evolve domain without breaking API
+```
+
+---
+
+### 3. Explicit Layered Responsibility
+
+The architecture enforces a clear separation of concerns. The **Presentation layer** handles HTTP, the **Application layer** orchestrates workflows, and the **Domain layer** contains pure business logic. This clarity prevents logic from being misplaced and ensures layers only interact through their well-defined public interfaces.
+
+**Architectural Principle:** Each layer has a single, well-defined responsibility and communicates only through defined interfaces.
+
+**Layer Structure in Tuturuuu:**
+
+```
+apps/web/src/
+├── app/                          # Presentation Layer (HTTP)
+│   └── api/workspaces/
+│       └── create/route.ts       # HTTP handling only
+├── application/                  # Application Layer (Orchestration)
+│   └── use-cases/
+│       └── create-workspace.ts   # Workflow orchestration
+├── domain/                       # Domain Layer (Business Logic)
+│   ├── models/
+│   │   └── workspace.ts          # Pure business entities
+│   └── services/
+│       └── workspace-service.ts  # Domain logic
+└── infrastructure/               # Infrastructure Layer (Technical)
+    ├── repositories/
+    │   └── supabase-workspace-repository.ts
+    └── events/
+        └── trigger-event-publisher.ts
+```
+
+**Example with clear layer responsibilities:**
+
+```typescript
+// PRESENTATION LAYER: HTTP concerns only
+// apps/web/src/app/api/workspaces/create/route.ts
+export async function POST(request: Request) {
+  // 1. HTTP handling (validation, auth)
+  const session = await getSession();
+  if (!session) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const body = await request.json();
+
+  // Validate input schema
+  const validation = CreateWorkspaceSchema.safeParse(body);
+  if (!validation.success) {
+    return Response.json({ error: validation.error }, { status: 400 });
+  }
+
+  // 2. Delegate to application layer
+  const useCase = new CreateWorkspaceUseCase(
+    workspaceRepository,
+    eventPublisher
+  );
+
+  try {
+    const workspace = await useCase.execute({
+      ownerId: session.userId,
+      name: validation.data.name,
+      description: validation.data.description
+    });
+
+    // 3. HTTP response
+    return Response.json({ workspace }, { status: 201 });
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+}
+
+// APPLICATION LAYER: Workflow orchestration
+// apps/web/src/application/use-cases/create-workspace.ts
+export class CreateWorkspaceUseCase {
+  constructor(
+    private readonly repository: WorkspaceRepository,
+    private readonly eventPublisher: EventPublisher
+  ) {}
+
+  async execute(command: CreateWorkspaceCommand): Promise<Workspace> {
+    // 1. Create domain entity
+    const workspace = Workspace.create(
+      command.ownerId,
+      command.name,
+      command.description
+    );
+
+    // 2. Persist
+    await this.repository.save(workspace);
+
+    // 3. Publish domain event
+    await this.eventPublisher.publish(
+      new WorkspaceCreatedEvent(workspace.id, workspace.ownerId)
+    );
+
+    return workspace;
+  }
+}
+
+// DOMAIN LAYER: Pure business logic
+// apps/web/src/domain/models/workspace.ts
+export class Workspace {
+  static create(
+    ownerId: string,
+    name: string,
+    description?: string
+  ): Workspace {
+    // Business rules
+    if (name.length < 3 || name.length > 50) {
+      throw new DomainError('Workspace name must be 3-50 characters');
+    }
+
+    return new Workspace(
+      generateId(),
+      ownerId,
+      name,
+      description,
+      true,  // isActive
+      new Date()
+    );
+  }
+
+  // No HTTP, no database, no events - pure domain logic
+}
+```
+
+**Layer Communication Rules:**
+
+| From Layer | Can Call | Cannot Call | Reason |
+|------------|----------|-------------|--------|
+| Presentation | Application | Domain directly | Bypass orchestration |
+| Application | Domain, Infrastructure | Presentation | Circular dependency |
+| Domain | Nothing | Application, Infrastructure, Presentation | Pure logic |
+| Infrastructure | Domain (via interfaces) | Application, Presentation | Implementation details |
+
+**Benefits:**
+- **Clear responsibility** per layer
+- **Easy to reason about** where code belongs
+- **Testability** - each layer tested independently
+- **Maintainability** - changes confined to appropriate layer
+
+**Anti-pattern to avoid:**
+
+```typescript
+// BAD: Mixed responsibilities
+export async function POST(request: Request) {
+  const body = await request.json();
+
+  // WRONG: Business logic in API layer
+  if (body.name.length < 3) {
+    return Response.json({ error: 'Name too short' }, { status: 400 });
+  }
+
+  // WRONG: Direct database access from API layer
+  const { data } = await supabase
+    .from('workspaces')
+    .insert({ name: body.name });
+
+  // WRONG: Event publishing from API layer
+  await trigger.event({ name: 'workspace.created', payload: data });
+
+  return Response.json(data);
+}
+// Problems:
+// - Business rules scattered across codebase
+// - No single source of truth for validation
+// - Hard to test
+// - Difficult to change
+```
+
+---
+
+## Preventing Unwanted Cross-Service Communication (Between Microservices)
+
+### 1. Published Event Contracts as the Sole Interface
+
+The only way services interact is through the events they publish. The internal implementation, database schema, and private functions of each service are **completely hidden**. Services are black boxes that communicate only through public, versioned event schemas, providing the strongest possible form of encapsulation.
+
+**Architectural Principle:** Services communicate only via well-defined event contracts.
+
+**Example from Tuturuuu:**
+
+```typescript
+// Service A (apps/web): Publishes events
+export async function createWorkspace(data: CreateWorkspaceData) {
+  const workspace = await db.workspaces.insert(data);
+
+  // PUBLIC CONTRACT: Event schema
+  await trigger.event({
+    name: "workspace.created",  // Public event name
+    payload: {                   // Public event schema
+      workspaceId: workspace.id,
+      ownerId: workspace.ownerId,
+      name: workspace.name,
+      createdAt: workspace.createdAt.toISOString()
+    }
+  });
+
+  // Internal implementation hidden:
+  // - Database schema
+  // - Business logic
+  // - Internal functions
+  // - Data structures
+}
+
+// Service B (apps/rewise): Consumes events
+client.defineJob({
+  id: "setup-ai-workspace",
+  trigger: eventTrigger({ name: "workspace.created" }),
+  run: async (payload, io) => {
+    // Only knows about event schema
+    // Doesn't know about Service A's internals
+    await io.runTask("create-ai-config", async () => {
+      return await createAIConfig({
+        workspaceId: payload.workspaceId,
+        ownerId: payload.ownerId
+      });
+    });
+  }
+});
+```
+
+**Event Schema Governance:**
+
+```typescript
+// packages/types/src/events/workspace.ts
+import { z } from 'zod';
+
+// Versioned event schemas
+export const WorkspaceCreatedEventV1 = z.object({
+  workspaceId: z.string().uuid(),
+  ownerId: z.string().uuid(),
+  name: z.string().min(1).max(100),
+  createdAt: z.string().datetime()
+});
+
+export const WorkspaceCreatedEventV2 = z.object({
+  workspaceId: z.string().uuid(),
+  ownerId: z.string().uuid(),
+  name: z.string().min(1).max(100),
+  createdAt: z.string().datetime(),
+  // New optional fields (backward compatible)
+  description: z.string().optional(),
+  plan: z.enum(['free', 'pro', 'enterprise']).optional()
+});
+
+export type WorkspaceCreatedEventV1 = z.infer<typeof WorkspaceCreatedEventV1>;
+export type WorkspaceCreatedEventV2 = z.infer<typeof WorkspaceCreatedEventV2>;
+```
+
+**Benefits:**
+- **Complete encapsulation** of service internals
+- **Clear API contract** via event schemas
+- **Versioning support** for evolution
+- **Independent deployment** of services
+- **No direct dependencies** between services
+
+**Anti-pattern to avoid:**
+
+```typescript
+// BAD: Direct service-to-service HTTP calls
+export async function createWorkspace(data: CreateWorkspaceData) {
+  const workspace = await db.workspaces.insert(data);
+
+  // WRONG: Direct HTTP call to another service
+  await fetch('http://rewise-service/api/setup', {
+    method: 'POST',
+    body: JSON.stringify({ workspaceId: workspace.id })
+  });
+
+  // Problems:
+  // - Tight coupling to rewise-service
+  // - Must know its URL and API
+  // - Synchronous dependency (cascading failures)
+  // - Hard to add new services
+}
+```
+
+---
+
+### 2. Broker-Level Access Control (ACLs)
+
+The architecture does not rely on trust. The message broker itself is configured to enforce communication boundaries. Using ACLs, we can define that only the `AccountManagementService` can produce `UserRegistered` events, and only specific downstream services are allowed to consume them.
+
+**Architectural Principle:** Enforce service boundaries at the infrastructure level, not just by convention.
+
+**Example with Trigger.dev:**
+
+```typescript
+// packages/trigger/src/events/acl.ts
+export const EVENT_PRODUCERS = {
+  'user.registered': ['apps/web'],
+  'workspace.created': ['apps/web'],
+  'payment.processed': ['apps/web', 'apps/finance'],
+  'ai.chat.message': ['apps/rewise'],
+  'task.created': ['apps/tudo']
+} as const;
+
+export const EVENT_CONSUMERS = {
+  'user.registered': ['apps/rewise', 'apps/web', 'analytics-service'],
+  'workspace.created': ['apps/rewise', 'apps/nova', 'apps/finance'],
+  'payment.processed': ['apps/web', 'billing-service'],
+  'ai.chat.message': ['apps/web'],
+  'task.created': ['apps/web', 'apps/calendar']
+} as const;
+
+// Validation middleware
+export function validateEventProducer(
+  eventName: string,
+  serviceId: string
+): boolean {
+  const allowedProducers = EVENT_PRODUCERS[eventName];
+  if (!allowedProducers) {
+    throw new Error(`Unknown event: ${eventName}`);
+  }
+  if (!allowedProducers.includes(serviceId)) {
+    throw new Error(
+      `Service ${serviceId} not allowed to produce ${eventName}`
+    );
+  }
+  return true;
+}
+```
+
+**Benefits:**
+- **Enforced boundaries** at infrastructure level
+- **Security** - services can't spoof events from other services
+- **Audit trail** - know exactly which services produce/consume events
+- **Documentation** - ACL config documents allowed communication
+
+---
+
+### 3. Elimination of Synchronous Coupling
+
+By committing to an event-driven design, the architecture inherently avoids direct, synchronous calls between services for core business flows. This prevents the tight coupling that arises when one service needs to know the network location, API signature, and synchronous availability of another, reinforcing service autonomy.
+
+**Architectural Principle:** Services don't make synchronous calls to each other.
+
+**Example - Async event flow:**
+
+```typescript
+// apps/web: User registers
+export async function registerUser(data: UserRegistrationData) {
+  const user = await createUser(data);
+
+  // Publish event (non-blocking)
+  await trigger.event({
+    name: 'user.registered',
+    payload: { userId: user.id, email: user.email }
+  });
+
+  return user;  // Returns immediately
+}
+
+// apps/rewise: Sets up AI chat (asynchronous)
+client.defineJob({
+  id: 'setup-user-ai',
+  trigger: eventTrigger({ name: 'user.registered' }),
+  run: async (payload, io) => {
+    await io.runTask('create-ai-profile', async () => {
+      return await createAIProfile(payload.userId);
+    });
+  }
+});
+
+// apps/web: Sends welcome email (asynchronous)
+client.defineJob({
+  id: 'send-welcome-email',
+  trigger: eventTrigger({ name: 'user.registered' }),
+  run: async (payload, io) => {
+    await io.runTask('send-email', async () => {
+      return await sendEmail(payload.email, 'welcome');
+    });
+  }
+});
+
+// All services work independently, no blocking
+```
+
+**Benefits:**
+- **No cascading failures**
+- **Independent availability** of services
+- **Faster user responses**
+- **Easier to add new services**
+
+**Anti-pattern to avoid:**
+
+```typescript
+// BAD: Synchronous service-to-service calls
+export async function registerUser(data: UserRegistrationData) {
+  const user = await createUser(data);
+
+  // WRONG: Blocking calls to other services
+  await rewiseService.setupAI(user.id);        // 2 seconds
+  await emailService.sendWelcome(user.email);  // 1 second
+  await analyticsService.track(user.id);       // 1 second
+
+  return user;  // User waits 4+ seconds
+}
+// Problems:
+// - User waits for all services
+// - If rewise service is down, registration fails
+// - Tight coupling to multiple services
+```
+
+---
+
+## Encapsulation in Practice
+
+### Workspace Isolation via RLS
+
+```sql
+-- apps/db/supabase/migrations/
+-- Row-Level Security ensures data encapsulation at database level
+CREATE POLICY "Users can only see their workspaces"
+ON workspaces
+FOR SELECT
+USING (
+  id IN (
+    SELECT workspace_id
+    FROM workspace_members
+    WHERE user_id = auth.uid()
+  )
+);
+
+-- Services cannot access data outside their scope
+-- Enforced at database level, not application level
+```
+
+### Package Boundaries
+
+```json
+// apps/web/package.json
+{
+  "dependencies": {
+    "@tuturuuu/ui": "workspace:*",        // ✅ Allowed
+    "@tuturuuu/types": "workspace:*",     // ✅ Allowed
+    "@tuturuuu/supabase": "workspace:*"   // ✅ Allowed
+    // ❌ Cannot import from apps/rewise directly
+    // ❌ Cannot import from apps/finance directly
+  }
+}
+```
+
+## Summary
+
+| Encapsulation Type | Pattern | Enforced By | Benefit |
+|--------------------|---------|-------------|---------|
+| **Cross-Layer (Internal)** | Dependency Inversion | Hexagonal Architecture | Testable, flexible |
+| **Cross-Layer (Internal)** | DTOs | Layer boundaries | Stable APIs |
+| **Cross-Layer (Internal)** | Layered Responsibility | Directory structure | Clear organization |
+| **Cross-Service (External)** | Event Contracts | Event schemas | Service autonomy |
+| **Cross-Service (External)** | Broker ACLs | Infrastructure config | Security, governance |
+| **Cross-Service (External)** | Async-only | Event-driven architecture | No cascading failures |
+
+## Related Documentation
+
+- [Hexagonal Architecture](/platform/architecture/system-design/hexagonal-architecture) - Detailed ports and adapters pattern
+- [Event-Driven Architecture](/platform/architecture/system-design/event-driven-architecture) - Event-based communication
+- [Microservices Patterns](/platform/architecture/system-design/microservices-patterns) - Service boundaries
+- [Authorization](/platform/architecture/authorization) - RLS policies and permissions

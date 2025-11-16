@@ -1,9 +1,8 @@
 ---
-title: "Database Schema Overview"
-description: "Complete reference for the Tuturuuu platform database schema"
+title: 'Database Schema Overview'
+description: 'Complete reference for the Tuturuuu platform database schema'
+updatedAt: '2025-11-16'
 ---
-
-# Database Schema Overview
 
 The Tuturuuu platform uses Supabase (PostgreSQL) with a comprehensive multi-tenant architecture. This document provides an overview of the database schema, organized by domain.
 
@@ -466,7 +465,7 @@ Flashcard study materials.
 - `id` (uuid, PK)
 - `ws_id` (text, FK → workspaces)
 - `title` (text)
-- `cards` (jsonb) - array of {front, back}
+- `cards` (jsonb) - array of `{front, back}`
 
 ### Time Tracking
 
@@ -605,8 +604,6 @@ See [Migration Guide](/reference/database/migrations-guide) for workflow details
 ## Related Documentation
 
 - [RLS Policies](/reference/database/rls-policies) - Security model and policy patterns
-- [Task Hierarchy](/reference/database/task-hierarchy) - Detailed task management data model
-- [Database Functions](/reference/database/functions-triggers) - Stored procedures reference
 - [Migration Guide](/reference/database/migrations-guide) - Migration workflow
 
 ## Type Generation

@@ -1,0 +1,437 @@
+---
+title: "Core Architectural Decisions"
+description: "Deep dive into the four fundamental architectural choices that define Tuturuuu's system design"
+updatedAt: "2025-11-16"
+---
+
+This document explains the four foundational architectural decisions that define Tuturuuu's system design. Each section explores the **rationale**, **detailed justification**, and the **alternatives considered**.
+
+## 1. The Choice of a Microservices Architecture
+
+The system is designed as a collection of distributed microservices rather than a single monolithic application.
+
+### Core Rationale
+
+To support long-term growth by enabling organizational scaling, independent deployment, and technological flexibility.
+
+### Detailed Justification
+
+#### Organizational Scaling and Team Autonomy
+
+A monolithic architecture forces all developers to work on a single, large codebase, leading to high coordination overhead, merge conflicts, and slower development cycles as the team grows.
+
+The microservices approach aligns with **Conway's Law**, allowing us to structure autonomous teams around specific business capabilities (e.g., an "Identity Team," a "Payments Team"). Each team can develop, test, and deploy their services independently, drastically increasing agility.
+
+**In Tuturuuu:**
+- Web team owns `apps/web` (main platform)
+- AI team owns `apps/rewise` (chatbot) and `apps/nova` (prompt engineering)
+- Productivity team owns `apps/calendar`, `apps/tudo` (tasks), `apps/tumeet` (meetings)
+- Finance team owns `apps/finance`
+- Infrastructure team owns `apps/db` and shared `packages/*`
+
+#### Independent Scalability
+
+In a monolith, if one feature (e.g., a real-time data processing endpoint) experiences high load, the entire application must be scaled. This is inefficient and costly.
+
+Microservices allow for **granular scaling**. We can scale the high-load `DataIngestionService` to 50 instances while keeping the low-traffic `AdminDashboardService` at only 2 instances, optimizing resource utilization.
+
+**Example from Tuturuuu:**
+```typescript
+// In Vercel deployment configuration
+// apps/web can scale independently from apps/rewise
+{
+  "web": { "min": 2, "max": 100 }, // Main app needs high availability
+  "rewise": { "min": 1, "max": 20 }, // AI chat less critical
+  "finance": { "min": 1, "max": 10 } // Finance moderate scaling
+}
+```
+
+#### Fault Isolation and Resilience
+
+A critical bug or memory leak in a non-essential module of a monolith can bring down the entire application.
+
+In a microservices architecture, a failure is **contained within the boundary of that service**. A crash in the `ReportingService` will not affect critical user-facing services like `AuthenticationService` or `OrderService`, leading to a much more resilient and available system.
+
+**In Tuturuuu:**
+- If `apps/finance` crashes, users can still access `apps/web`, `apps/calendar`, and `apps/tudo`
+- Supabase Auth isolation means authentication remains available even if application services fail
+- Event-driven background jobs (Trigger.dev) fail independently from user-facing requests
+
+#### Technology Flexibility (Polyglot Architecture)
+
+Microservices communicate over standard protocols (like events or APIs). This allows each service to be built with the technology best suited for its purpose.
+
+While the core services may use **TypeScript and Next.js**, a future machine-learning service could be written in **Python**, and a high-performance edge service could be written in **Go** or **Rust**. This flexibility is impossible in a traditional monolith and future-proofs the system.
+
+**Current polyglot examples in Tuturuuu:**
+- Most apps: TypeScript + Next.js 15 + React
+- `apps/discord`: Python (Discord bot utilities)
+- Database: PostgreSQL (via Supabase)
+- Background jobs: TypeScript (Trigger.dev)
+- Future: Python ML services, Go performance-critical services
+
+### Why Not a Monolith?
+
+While a monolith offers simplicity at the start of a project, it becomes a significant impediment to growth:
+
+| Monolith Limitation | Impact | Microservices Solution |
+|---------------------|--------|------------------------|
+| **Tight Coupling** | Changes ripple across the entire codebase | Service boundaries isolate changes |
+| **Slow Deployment** | All-or-nothing deploys, high-risk releases | Independent, low-risk deployments |
+| **All-or-Nothing Scaling** | Wasteful resource allocation | Granular, cost-effective scaling |
+| **Technological Rigidity** | Locked into initial technology choices | Freedom to choose best-fit technologies |
+| **Team Coordination Overhead** | Merge conflicts, slow code reviews | Autonomous team workflows |
+
+A monolith is unsuitable for a complex, long-lived enterprise system designed for agility.
+
+---
+
+## 2. The Choice of an Event-Driven Architecture (EDA)
+
+The primary communication pattern between core microservices is asynchronous and event-driven, using a message broker like Trigger.dev.
+
+### Core Rationale
+
+To achieve **true service decoupling**, which is the foundation for building a system that is inherently resilient, scalable, and extensible.
+
+### Detailed Justification
+
+#### Ultimate Decoupling
+
+In a synchronous, request-response (REST/gRPC) architecture, the calling service must have direct knowledge of the downstream service's location and API. This creates tight coupling.
+
+In an event-driven model, a service produces an event (e.g., `CustomerRegistered`) and is **completely unaware** of which services, if any, are listening. This allows consumers to be added or removed without ever changing the producer, providing unparalleled flexibility.
+
+**Example from Tuturuuu:**
+```typescript
+// Producer: User registration in apps/web
+await trigger.event({
+  name: "user.registered",
+  payload: { userId, email, workspaceId }
+});
+// Producer doesn't know that NotificationService, AnalyticsService,
+// and OnboardingService are all consuming this event
+```
+
+#### Inherent Resilience and Asynchronicity
+
+Synchronous API calls create "chains of failure." If a downstream service is slow or unavailable, the upstream caller is blocked, and the failure can cascade, bringing down the entire user request.
+
+With EDA, the **message broker acts as a durable buffer**. If a consumer service is down, the events are safely persisted, and the producer remains unaffected. The system "heals" itself once the consumer recovers.
+
+**In Tuturuuu:**
+- User can complete registration even if email service is down
+- Events are retried automatically (Trigger.dev handles retries)
+- Failed events go to dead-letter queue for investigation
+- No cascading failures between apps
+
+#### Natural Scalability and Load Leveling
+
+A synchronous API can be overwhelmed by sudden traffic spikes.
+
+An event-driven architecture naturally handles this by acting as a **shock absorber**. The broker can ingest massive bursts of events, which are then processed by a pool of consumers at a sustainable rate. Scaling is as simple as adding more consumer instances to process the stream in parallel.
+
+**Example from Tuturuuu:**
+```typescript
+// During a viral event, thousands of users register
+// Trigger.dev queues all events and processes them at sustainable rate
+client.defineJob({
+  id: "user-onboarding",
+  name: "Process user onboarding",
+  version: "1.0.0",
+  trigger: eventTrigger({ name: "user.registered" }),
+  run: async (payload, io) => {
+    // This scales horizontally with Trigger.dev infrastructure
+    await io.sendEmail(/* ... */);
+    await io.createResources(/* ... */);
+  }
+});
+```
+
+#### Extensibility and Future-Proofing
+
+This is a **key strategic advantage**. EDA allows for new business capabilities to be added by simply deploying new services that listen to existing event streams.
+
+For example, a new `AuditService` can be deployed to listen to all user-related events to build an audit trail, requiring **zero modifications** to the services that originally produced those events.
+
+**In Tuturuuu:**
+- New analytics features: Just add new Trigger.dev job listening to existing events
+- New compliance requirements: Deploy audit service without touching production apps
+- A/B testing: New experimental service consumes events alongside production service
+- ML models: Train on historical event data, deploy as new event consumer
+
+### Why Not a Purely Synchronous/REST Architecture?
+
+While synchronous APIs are excellent for user-facing queries and commands that require an immediate response (a pattern supported by our API Gateway), using them for core inter-service communication creates a brittle, tightly coupled system.
+
+| Synchronous Pattern Issue | Impact | Event-Driven Solution |
+|---------------------------|--------|----------------------|
+| **Tight Coupling** | Services must know each other's APIs | Services only know event schemas |
+| **Cascading Failures** | One slow service blocks entire chain | Failures are isolated by broker |
+| **Difficult Evolution** | API changes break all consumers | New consumers added without changes |
+| **Poor Load Handling** | Traffic spikes overwhelm services | Broker buffers and load-levels |
+| **Testing Complexity** | Must mock all downstream services | Events can be replayed for testing |
+
+**Our approach is hybrid:** Event-driven for core business workflows and synchronous APIs (tRPC, Next.js API routes) for edge queries and user-facing operations.
+
+---
+
+## 3. The Choice of Hexagonal Architecture (Ports and Adapters)
+
+Within each microservice, the internal structure is organized using the **Hexagonal Architecture** pattern.
+
+### Core Rationale
+
+To **protect the core business logic** from technology dependencies, thereby maximizing maintainability and testability.
+
+### Detailed Justification
+
+#### Protection of the Domain Core
+
+In traditional N-Tier architecture, business logic often becomes dependent on infrastructure concerns (e.g., database annotations within domain models). This couples the business rules to the technology.
+
+The Hexagonal Architecture **inverts this dependency**. The core business logic is pure and has **zero knowledge of any external technology**. It defines "Ports" (interfaces) for the functionality it needs, such as `OrderRepository`.
+
+**Example from Tuturuuu:**
+```typescript
+// Domain layer (packages/types/src/domain/workspace.ts)
+export interface WorkspaceRepository {
+  findById(id: string): Promise<Workspace | null>;
+  save(workspace: Workspace): Promise<void>;
+}
+
+// Business logic doesn't know about Supabase
+export class WorkspaceService {
+  constructor(private repo: WorkspaceRepository) {}
+
+  async activateWorkspace(id: string) {
+    const workspace = await this.repo.findById(id);
+    workspace.activate(); // Pure domain logic
+    await this.repo.save(workspace);
+  }
+}
+```
+
+#### Technology Agnosticism and Interchangeability
+
+External technologies are implemented as "Adapters" that plug into the core's ports. We have a `PostgresOrderRepositoryAdapter` and a `KafkaEventPublisherAdapter`.
+
+If we decide to migrate from PostgreSQL to MongoDB, we only need to write a new `MongoOrderRepositoryAdapter` and plug it in. The core business logic remains **completely unchanged**, making technology migrations low-risk and straightforward.
+
+**Example from Tuturuuu:**
+```typescript
+// Infrastructure layer (apps/web/src/infrastructure/repositories/supabase-workspace-repository.ts)
+export class SupabaseWorkspaceRepository implements WorkspaceRepository {
+  constructor(private client: SupabaseClient) {}
+
+  async findById(id: string): Promise<Workspace | null> {
+    const { data } = await this.client
+      .from('workspaces')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    return data ? this.toDomain(data) : null;
+  }
+
+  async save(workspace: Workspace): Promise<void> {
+    await this.client
+      .from('workspaces')
+      .upsert(this.toDatabase(workspace));
+  }
+}
+
+// Easy to swap: Could create DrizzleWorkspaceRepository or PrismaWorkspaceRepository
+```
+
+#### Superior Testability
+
+Because the domain core is isolated from the outside world, it can be tested **completely without** a running database, web server, or any other infrastructure.
+
+We can use simple, in-memory mock adapters to test complex business rules. This results in tests that are **extremely fast**, **reliable**, and **easy to write**, leading to higher code quality.
+
+**Example from Tuturuuu:**
+```typescript
+// tests/workspace.test.ts
+class InMemoryWorkspaceRepository implements WorkspaceRepository {
+  private workspaces = new Map<string, Workspace>();
+
+  async findById(id: string) {
+    return this.workspaces.get(id) || null;
+  }
+
+  async save(workspace: Workspace) {
+    this.workspaces.set(workspace.id, workspace);
+  }
+}
+
+describe('WorkspaceService', () => {
+  it('activates workspace', async () => {
+    const repo = new InMemoryWorkspaceRepository();
+    const service = new WorkspaceService(repo);
+
+    // No database, no network calls - tests run in milliseconds
+    await service.activateWorkspace('ws-123');
+
+    const workspace = await repo.findById('ws-123');
+    expect(workspace.isActive).toBe(true);
+  });
+});
+```
+
+### Why Not a Traditional Layered/N-Tier Architecture?
+
+The primary weakness of the traditional N-Tier architecture is its tendency to create **leaky abstractions** and **tight coupling** between layers.
+
+| N-Tier Limitation | Impact | Hexagonal Solution |
+|-------------------|--------|-------------------|
+| **Business Logic Leaks** | Domain models have ORM annotations | Pure domain models, infrastructure separate |
+| **Tight Coupling** | Layers depend on concrete implementations | Layers depend on abstractions (ports) |
+| **Hard to Test** | Tests require full infrastructure | Mock adapters, fast unit tests |
+| **Technology Lock-in** | Changing DB means rewriting domain | Swap adapters, domain unchanged |
+| **Unclear Boundaries** | "Service" and "Repository" blur together | Clear separation: domain, application, infrastructure |
+
+Business logic often becomes intertwined with persistence logic, making the system rigid, difficult to test in isolation, and hard to adapt to new technology requirements. The Hexagonal Architecture solves this by enforcing a **strict, clean boundary** around the application's core.
+
+---
+
+## 4. The Choice of a React Modular Monolith & Headless UI
+
+The frontend is architected as a "Modular Monolith" using React, with components designed using a "Headless UI" approach.
+
+### Core Rationale
+
+To balance the **agility of a single codebase** with the **maintainability of a modular design**, while ensuring long-term flexibility in presentation.
+
+### Detailed Justification
+
+#### Maintainability at Scale (Modular Monolith)
+
+A standard Single-Page Application (SPA) can quickly become a "big ball of mud" as it grows.
+
+A **modular monolith** enforces logical boundaries between different features or domains (e.g., `Authentication`, `Dashboard`, `Settings`, `Finance`) within a single codebase. This improves code organization, reduces unintended coupling, and allows teams to work on different features with fewer conflicts.
+
+**In Tuturuuu:**
+```
+apps/web/src/
+├── app/
+│   ├── [locale]/(dashboard)/[wsId]/
+│   │   ├── finance/          # Finance module
+│   │   ├── calendar/         # Calendar module
+│   │   ├── tasks/            # Tasks module
+│   │   └── settings/         # Settings module
+├── components/
+│   ├── finance/              # Finance-specific components
+│   ├── calendar/             # Calendar-specific components
+│   └── shared/               # Shared components
+```
+
+Each module is self-contained with clear boundaries, yet benefits from shared infrastructure.
+
+#### UI and Logic Separation (Headless UI)
+
+In this pattern, React components are split into two parts:
+1. A "headless" hook that manages all **logic, state, and accessibility** (e.g., `useUserDropdown`)
+2. A presentation component that simply **renders the UI** based on the state provided by the hook
+
+This clean separation allows us to **completely change the look and feel** (the "head") of a component by swapping out its presentation layer, without rewriting any of the complex business logic.
+
+**Example from Tuturuuu:**
+```typescript
+// Headless logic hook (packages/ui/src/hooks/useTaskList.ts)
+export function useTaskList(boardId: string) {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const addTask = useCallback((task: Task) => {
+    setTasks(prev => [...prev, task]);
+  }, []);
+
+  const removeTask = useCallback((id: string) => {
+    setTasks(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  // All logic, accessibility, keyboard shortcuts
+  return { tasks, isLoading, addTask, removeTask };
+}
+
+// Presentation component (apps/web/src/components/tasks/TaskList.tsx)
+export function TaskList({ boardId }: Props) {
+  const { tasks, isLoading, addTask, removeTask } = useTaskList(boardId);
+
+  // Only UI rendering, no logic
+  return (
+    <div className="task-list">
+      {tasks.map(task => (
+        <TaskCard key={task.id} task={task} onRemove={removeTask} />
+      ))}
+    </div>
+  );
+}
+```
+
+#### Future-Proofing for Multiple Platforms
+
+The headless hooks are **pure application logic**. This means they can be reused to power completely different UIs.
+
+The same `useUserProfile` hook that powers a web application could later be used to power a **React Native mobile app** or even a command-line interface, providing maximum code reuse and flexibility.
+
+**Future possibilities:**
+```typescript
+// Same hook, different presentations
+import { useTaskList } from '@tuturuuu/hooks';
+
+// Web app (current)
+<WebTaskList boardId={id} />
+
+// Future: Mobile app
+<MobileTaskList boardId={id} />
+
+// Future: Desktop app (Electron/Tauri)
+<DesktopTaskList boardId={id} />
+
+// All use the same useTaskList() logic
+```
+
+### Why Not Other Frontend Architectures?
+
+#### Micro-frontends
+
+While powerful, this architecture introduces significant complexity in:
+- Build tooling and module federation
+- Deployment pipelines and version coordination
+- Routing and state management across boundaries
+- Performance overhead of loading multiple bundles
+
+The modular monolith provides **many of the same organizational benefits** with a fraction of the operational overhead, making it a more pragmatic starting point.
+
+#### Traditional Coupled (Server-Rendered) Frontends
+
+These architectures tightly couple the frontend presentation to the backend logic, making it difficult to create modern, rich user experiences.
+
+| Server-Rendered Limitation | Impact | React Modular Monolith Solution |
+|---------------------------|--------|--------------------------------|
+| **Tight Backend Coupling** | Frontend changes require backend deploys | Clean API separation via tRPC |
+| **Limited Interactivity** | Complex UIs are difficult | Full React capabilities |
+| **Poor Multi-Client Support** | Can't easily support mobile | Headless hooks reusable |
+| **Slow Iteration** | Full page reloads, slower development | Fast HMR, component-level updates |
+
+They do not provide a clean API separation and are not flexible enough to support multiple client types (e.g., web and mobile) from a single backend.
+
+---
+
+## Decision Summary
+
+| Decision | Problem Solved | Key Benefit | Trade-off Accepted |
+|----------|---------------|-------------|-------------------|
+| **Microservices** | Monolith scaling limits | Independent deployment & scaling | Increased operational complexity |
+| **Event-Driven** | Tight synchronous coupling | Ultimate decoupling & resilience | Eventual consistency |
+| **Hexagonal** | Technology lock-in | Testability & flexibility | Additional abstraction layers |
+| **React Modular Monolith** | Frontend chaos at scale | Maintainability & reusability | Discipline required for boundaries |
+
+## Next Steps
+
+- [Event-Driven Architecture](/platform/architecture/system-design/event-driven-architecture) - Advantages and drawbacks in detail
+- [Extensibility, Resilience & Scalability](/platform/architecture/system-design/extensibility-resilience-scalability) - Why these properties matter
+- [Hexagonal Architecture](/platform/architecture/system-design/hexagonal-architecture) - Implementation patterns
+- [Microservices Patterns](/platform/architecture/system-design/microservices-patterns) - Service boundaries in practice

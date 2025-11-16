@@ -1,0 +1,76 @@
+name: Check Documentation Links
+
+on:
+  pull_request:
+    paths:
+      - "apps/docs/**.mdx"
+      - "apps/docs/**.md"
+      - "apps/docs/mint.json"
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/docs/**.mdx"
+      - "apps/docs/**.md"
+      - "apps/docs/mint.json"
+  schedule:
+    # Run weekly on Mondays at 9 AM UTC to catch external link rot
+    - cron: "0 9 * * 1"
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Check links with lychee
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # Check all markdown files in docs directory
+          # Configuration is loaded from .lychee.toml
+          args: >
+            --verbose
+            --no-progress
+            --config .lychee.toml
+            'apps/docs/**/*.md'
+            'apps/docs/**/*.mdx'
+            'apps/docs/mint.json'
+          # Fail on broken links
+          fail: true
+          # Format output as markdown for better PR comments
+          format: markdown
+          # Output file for results
+          output: lychee-report.md
+
+      - name: Comment PR with link check results
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let report = '';
+
+            try {
+              report = fs.readFileSync('lychee-report.md', 'utf8');
+            } catch (error) {
+              report = 'Link check failed but no report was generated.';
+            }
+
+            const comment = `## 🔗 Documentation Link Check Failed\n\n${report}\n\n---\n*This check runs automatically on documentation changes. Fix the broken links above.*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Upload link check report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: link-check-report
+          path: lychee-report.md
+          retention-days: 30

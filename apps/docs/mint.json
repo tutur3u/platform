@@ -1,7 +1,6 @@
 {
   "$schema": "https://mintlify.com/schema.json",
   "name": "Tuturuuu Docs",
-  "description": "Comprehensive documentation for the Tuturuuu intelligent operating system for modern work",
   "logo": {
     "dark": "/logo/dark.svg",
     "light": "/logo/light.svg",
@@ -65,10 +64,31 @@
             "platform/architecture/trpc",
             "platform/architecture/authentication",
             "platform/architecture/authorization",
-            "platform/components/workspace-wrapper",
-            "platform/components/workspace-wrapper-quick-reference",
-            "platform/ai/structured-data"
+            {
+              "group": "System Design",
+              "pages": [
+                "platform/architecture/system-design/overview",
+                "platform/architecture/system-design/architectural-decisions",
+                "platform/architecture/system-design/event-driven-architecture",
+                "platform/architecture/system-design/extensibility-resilience-scalability",
+                "platform/architecture/system-design/encapsulation-patterns",
+                "platform/architecture/system-design/hexagonal-architecture",
+                "platform/architecture/system-design/microservices-patterns"
+              ]
+            },
+            {
+              "group": "Components",
+              "pages": [
+                "platform/components/index",
+                "platform/components/workspace-wrapper",
+                "platform/components/workspace-wrapper-quick-reference"
+              ]
+            }
           ]
+        },
+        {
+          "group": "AI",
+          "pages": ["platform/ai/structured-data"]
         },
         {
           "group": "Personalization",
@@ -93,6 +113,7 @@
         "build/development-tools/git-conventions",
         "build/development-tools/local-supabase-development",
         "build/development-tools/ci-cd-pipelines",
+        "build/development-tools/ci-cd-optimization",
         "build/development-tools/cleaning-clone",
         "build/development-tools/documenting"
       ]

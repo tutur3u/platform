@@ -1,0 +1,521 @@
+---
+title: "Microservices Patterns"
+description: "Service boundaries, communication patterns, and deployment strategies in Tuturuuu's monorepo architecture"
+updatedAt: "2025-11-16"
+---
+
+Tuturuuu uses a **microservices architecture within a monorepo**, combining the organizational benefits of microservices with the developer experience advantages of a monorepo.
+
+## Service Boundaries
+
+### Current Services
+
+| Service | Location | Purpose | Database | Tech Stack |
+|---------|----------|---------|----------|------------|
+| **web** | `apps/web` | Main platform application | Supabase (PostgreSQL) | Next.js 15, React, tRPC |
+| **rewise** | `apps/rewise` | AI-powered chatbot | Supabase (shared) | Next.js 15, AI SDK |
+| **nova** | `apps/nova` | Prompt engineering platform | Supabase (shared) | Next.js 15, AI SDK |
+| **calendar** | `apps/calendar` | Calendar & scheduling | Supabase (shared) | Next.js 15, React |
+| **finance** | `apps/finance` | Finance management | Supabase (shared) | Next.js 15, React |
+| **tudo** | `apps/tudo` | Task management (hierarchical) | Supabase (shared) | Next.js 15, React |
+| **tumeet** | `apps/tumeet` | Meeting management | Supabase (shared) | Next.js 15, React |
+| **shortener** | `apps/shortener` | URL shortener service | Supabase (shared) | Next.js 15 |
+| **db** | `apps/db` | Database migrations & schema | Supabase | SQL, TypeScript |
+| **discord** | `apps/discord` | Discord bot utilities | None (stateless) | Python |
+
+### Shared Packages
+
+All services share common infrastructure via workspace packages:
+
+```
+packages/
+├── ui/           # Shared UI components (Shadcn)
+├── ai/           # AI integration utilities
+├── supabase/     # Supabase client wrappers
+├── types/        # Shared TypeScript types (including generated DB types)
+├── utils/        # Cross-cutting utilities
+├── trigger/      # Background job definitions
+├── payment/      # Payment processing (Polar, Dodo)
+└── ... (15+ shared packages)
+```
+
+## Monorepo Architecture
+
+### Benefits
+
+1. **Shared Code**: Common utilities, UI components, types shared across services
+2. **Atomic Changes**: Change types in one commit, update all services
+3. **Simplified Tooling**: Single build system (Turborepo + Bun)
+4. **Easy Refactoring**: Move code between services, extract packages
+5. **Consistent Standards**: Shared linting, testing, deployment configs
+
+### Structure
+
+```
+platform/
+├── apps/                  # Independent microservices
+│   ├── web/              # Main app (port 7803)
+│   ├── rewise/           # AI chat
+│   ├── nova/             # Prompt engineering
+│   └── ... (other apps)
+├── packages/              # Shared libraries
+│   ├── ui/               # Component library
+│   ├── types/            # Shared types
+│   └── ... (other packages)
+├── turbo.json            # Turborepo configuration
+└── package.json          # Workspace root
+```
+
+### Workspace Dependencies
+
+Services declare dependencies on shared packages:
+
+```json
+// apps/web/package.json
+{
+  "name": "@tuturuuu/web",
+  "dependencies": {
+    "@tuturuuu/ui": "workspace:*",
+    "@tuturuuu/types": "workspace:*",
+    "@tuturuuu/supabase": "workspace:*",
+    "@tuturuuu/ai": "workspace:*",
+    "@tuturuuu/utils": "workspace:*"
+  }
+}
+
+// apps/rewise/package.json
+{
+  "name": "@tuturuuu/rewise",
+  "dependencies": {
+    "@tuturuuu/ui": "workspace:*",
+    "@tuturuuu/types": "workspace:*",
+    "@tuturuuu/ai": "workspace:*"
+    // Note: Different subset of packages
+  }
+}
+```
+
+## Communication Patterns
+
+### 1. Event-Driven (Primary)
+
+**When to use:** Asynchronous workflows, background processing, cross-service coordination
+
+**Implementation:** Trigger.dev
+
+```typescript
+// Producer: apps/web
+await trigger.event({
+  name: "workspace.created",
+  payload: { workspaceId, ownerId }
+});
+
+// Consumer: apps/rewise
+client.defineJob({
+  id: "setup-ai-workspace",
+  trigger: eventTrigger({ name: "workspace.created" }),
+  run: async (payload, io) => {
+    await io.runTask("initialize-ai", async () => {
+      return await initializeAIWorkspace(payload.workspaceId);
+    });
+  }
+});
+```
+
+**Characteristics:**
+- Loose coupling between services
+- Resilient to failures
+- Asynchronous processing
+- Event log for replay/debugging
+
+### 2. Shared Database (Current)
+
+**When to use:** Strong consistency requirements, complex queries across entities
+
+**Implementation:** Supabase PostgreSQL with RLS
+
+```typescript
+// Both apps/web and apps/finance access same database
+const supabase = createClient();
+
+// Row-Level Security ensures data isolation
+const { data } = await supabase
+  .from('workspaces')
+  .select('*')
+  .eq('id', workspaceId);
+// RLS automatically filters by user permissions
+```
+
+**Characteristics:**
+- Strong consistency
+- ACID transactions
+- Complex joins possible
+- Shared schema (requires coordination)
+
+**Trade-offs:**
+- ✅ Simple implementation
+- ✅ Strong consistency
+- ❌ Tight coupling at data layer
+- ❌ Schema changes affect multiple services
+
+### 3. tRPC (Internal API)
+
+**When to use:** Type-safe communication within web application boundaries
+
+**Implementation:** tRPC routers
+
+```typescript
+// apps/web/src/trpc/routers/workspace.ts
+export const workspaceRouter = createTRPCRouter({
+  create: protectedProcedure
+    .input(CreateWorkspaceSchema)
+    .mutation(async ({ input, ctx }) => {
+      // Implementation
+    }),
+
+  list: protectedProcedure
+    .query(async ({ ctx }) => {
+      // Implementation
+    })
+});
+
+// Consumer (same app)
+const workspaces = api.workspace.list.useQuery();
+```
+
+**Characteristics:**
+- End-to-end type safety
+- Auto-completion in IDE
+- Minimal boilerplate
+- Client-side caching with React Query
+
+### 4. REST API (External)
+
+**When to use:** Public APIs, webhook endpoints, third-party integrations
+
+**Implementation:** Next.js API routes
+
+```typescript
+// apps/web/src/app/api/v1/workspaces/route.ts
+export async function POST(request: Request) {
+  const body = await request.json();
+
+  // Validate, authenticate, execute
+  const workspace = await createWorkspace(body);
+
+  return Response.json({ workspace }, { status: 201 });
+}
+```
+
+**Characteristics:**
+- Standard HTTP
+- OpenAPI documentation possible
+- Versioned endpoints (`/api/v1/...`)
+- Rate limiting, authentication
+
+## Service Communication Matrix
+
+| From Service | To Service | Pattern | Protocol | Use Case |
+|--------------|------------|---------|----------|----------|
+| web | rewise | Event-Driven | Trigger.dev | Setup AI for new workspace |
+| web | finance | Shared DB | PostgreSQL | Access financial data |
+| rewise | web | Event-Driven | Trigger.dev | AI chat completion notification |
+| External | web | REST API | HTTP/JSON | Public API access |
+| web (client) | web (server) | tRPC | HTTP/JSON | Internal app communication |
+| discord | web | Webhook | HTTP/JSON | Discord bot commands |
+
+## Deployment Strategies
+
+### Current: Vercel Monorepo Deployment
+
+Each app deploys independently to Vercel:
+
+```yaml
+# apps/web/vercel.json
+{
+  "buildCommand": "bun run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "installCommand": "bun install"
+}
+
+# apps/rewise/vercel.json
+{
+  "buildCommand": "bun run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "installCommand": "bun install"
+}
+```
+
+**CI/CD Pipeline:**
+
+```yaml
+# .github/workflows/deploy-web.yml
+name: Deploy Web
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'packages/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: oven-sh/setup-bun@v1
+      - run: bun install
+      - run: bun --filter @tuturuuu/web run build
+      - uses: amondnet/vercel-action@v20
+```
+
+### Independent Scaling
+
+Each service scales based on its traffic:
+
+```typescript
+// Vercel auto-scaling configuration
+const scalingConfig = {
+  "web": {
+    minInstances: 2,
+    maxInstances: 100,
+    targetCPU: 70
+  },
+  "rewise": {
+    minInstances: 1,
+    maxInstances: 20,
+    targetCPU: 70
+  },
+  "shortener": {
+    minInstances: 1,
+    maxInstances: 5,
+    targetCPU: 70
+  }
+};
+```
+
+## Service Boundary Decisions
+
+### When to Create a New Service
+
+✅ **Extract to new service when:**
+- Feature is logically independent (e.g., URL shortener)
+- Different scaling requirements (high-traffic vs low-traffic)
+- Different technology needs (Python for ML vs TypeScript for web)
+- Team ownership boundary (separate team owns feature)
+- Independent deployment cycle needed
+
+❌ **Keep in existing service when:**
+- Shares most code with existing service
+- Tight coupling to core domain
+- Low complexity (< 1000 LOC)
+- No special scaling or technology needs
+
+### Example: Why `finance` is a separate app
+
+```
+Reasons:
+✅ Logically independent domain (finance vs tasks)
+✅ Can be worked on by dedicated team
+✅ Independent deployment for finance updates
+✅ Future: Could use different database for financial data
+
+Alternatives considered:
+❌ Module in web app - harder to maintain boundaries
+❌ Separate package - loses deployment independence
+```
+
+## Data Ownership
+
+### Current: Shared Database Pattern
+
+**Pros:**
+- Simple joins across entities
+- Strong consistency
+- ACID transactions
+- Single source of truth
+
+**Cons:**
+- Tight coupling at data layer
+- Schema changes affect multiple services
+- Harder to scale independently
+
+### Future: Service-Specific Databases
+
+**When to consider:**
+- Service needs specialized database (e.g., PostGIS for geolocation)
+- Independent scaling requirements for specific data
+- Strong service boundaries needed
+
+**Pattern:**
+
+```typescript
+// apps/finance/ - Own database
+const financeDB = createFinanceClient(); // Separate DB
+
+// apps/web/ - Main database
+const mainDB = createClient(); // Shared DB
+
+// Communication via events
+await trigger.event({
+  name: "transaction.recorded",
+  payload: { /* ... */ }
+});
+```
+
+## Package Extraction Strategy
+
+### When to Extract to Package
+
+From the [Package Extraction Decision Matrix](/AGENTS.md#11-package-extraction-decision-matrix):
+
+**Extract when ≥3 HIGH signals:**
+
+| Signal | Extract Now (HIGH) |
+|--------|-------------------|
+| Reuse Breadth | Actively duplicated in ≥2 apps |
+| Complexity | >150 LOC multi-module |
+| Domain Ownership | Pure cross-domain utility |
+| Testing Needs | Comprehensive tests stable |
+
+**Example extractions in Tuturuuu:**
+
+```
+@tuturuuu/ui → Shared across all apps
+@tuturuuu/types → Used by all services
+@tuturuuu/supabase → Client wrapper used everywhere
+@tuturuuu/ai → Shared AI utilities (rewise, nova, web)
+```
+
+## Testing Strategies
+
+### Unit Tests
+
+Test individual services in isolation:
+
+```typescript
+// apps/web/src/__tests__/workspace.test.ts
+import { createWorkspace } from '../lib/workspace';
+
+describe('Workspace Service', () => {
+  it('creates workspace with valid data', async () => {
+    const workspace = await createWorkspace({
+      ownerId: 'user-1',
+      name: 'Test Workspace'
+    });
+
+    expect(workspace.name).toBe('Test Workspace');
+  });
+});
+```
+
+### Integration Tests
+
+Test service interactions:
+
+```typescript
+// apps/web/src/__tests__/integration/workspace-creation.test.ts
+describe('Workspace Creation Flow', () => {
+  it('creates workspace and triggers AI setup', async () => {
+    // Create workspace
+    const workspace = await POST('/api/workspaces', {
+      name: 'Test Workspace'
+    });
+
+    // Verify event published
+    const events = await getPublishedEvents('workspace.created');
+    expect(events).toHaveLength(1);
+    expect(events[0].payload.workspaceId).toBe(workspace.id);
+  });
+});
+```
+
+### End-to-End Tests
+
+Test full user workflows across services (future):
+
+```typescript
+// e2e/workspace-onboarding.spec.ts
+test('user creates workspace and receives AI setup', async ({ page }) => {
+  await page.goto('/workspaces/create');
+  await page.fill('[name="name"]', 'Test Workspace');
+  await page.click('button[type="submit"]');
+
+  // Wait for AI setup completion
+  await page.waitForSelector('[data-testid="ai-ready"]');
+});
+```
+
+## Monitoring & Observability
+
+### Service Health
+
+```typescript
+// apps/web/src/app/api/health/route.ts
+export async function GET() {
+  const health = {
+    service: 'web',
+    status: 'healthy',
+    uptime: process.uptime(),
+    dependencies: {
+      database: await checkDatabaseConnection(),
+      eventBroker: await checkTriggerConnection()
+    }
+  };
+
+  return Response.json(health);
+}
+```
+
+### Distributed Tracing
+
+```typescript
+// Correlation IDs for request tracing
+export async function POST(request: Request) {
+  const correlationId = request.headers.get('x-correlation-id')
+    || generateId();
+
+  // Pass to event
+  await trigger.event({
+    name: 'workspace.created',
+    payload: { workspaceId, correlationId }
+  });
+
+  // Pass to logs
+  logger.info('Workspace created', { correlationId, workspaceId });
+}
+```
+
+## Migration Paths
+
+### Current State → Future State
+
+**Current:** Monorepo with shared database
+
+**Future options:**
+
+1. **Service-Specific Databases** (when needed)
+   - Extract finance data to dedicated DB
+   - Communicate via events
+   - Maintain consistency with sagas
+
+2. **API Gateway Layer** (if REST APIs grow)
+   - Single entry point for external clients
+   - Route to appropriate services
+   - Handle auth, rate limiting centrally
+
+3. **GraphQL Federation** (if complex queries needed)
+   - Each service exposes GraphQL schema
+   - Gateway federates schemas
+   - Clients query unified graph
+
+**Migration principle:** Evolve gradually based on real needs, not speculation.
+
+## Related Documentation
+
+- [Architectural Decisions](/platform/architecture/system-design/architectural-decisions) - Why microservices
+- [Event-Driven Architecture](/platform/architecture/system-design/event-driven-architecture) - Inter-service communication
+- [Monorepo Architecture](/build/development-tools/monorepo-architecture) - Turborepo setup
+- [Database Schema](/reference/database/schema-overview) - Shared schema details
