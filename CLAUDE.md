@@ -11,7 +11,7 @@ Tuturuuu is a Turborepo monorepo containing multiple Next.js applications and sh
 - **Package Manager**: Bun (v1.3.0+)
 - **Monorepo Tool**: Turborepo
 - **Runtime**: Node.js v22+
-- **Framework**: Next.js 15 with App Router and Turbopack
+- **Framework**: Next.js 16 with App Router and Turbopack
 - **Database**: Supabase (PostgreSQL)
 - **Styling**: Tailwind CSS v4.1+ (dynamic color tokens required)
 - **Type Checking**: TypeScript
@@ -343,12 +343,14 @@ Five seed accounts are available:
 **Core Principle**: Code quality and developer experience (DX) are top priorities. Proactively maintain high standards for ALL code—both new and existing.
 
 **Mandatory Refactoring Thresholds**:
+
 - Files >400 LOC → Extract utilities, sub-modules, or components
 - Components >200 LOC → Break down into focused sub-components
 - Functions >50 LOC → Decompose into smaller functions
 - Duplicated logic (≥2 locations) → Extract to shared utilities/hooks
 
 **Best Practices (Apply to Old AND New Code)**:
+
 - **Single Responsibility**: Each component/function does ONE thing well
 - **Composition**: Build from small, reusable pieces
 - **Extract Logic**: Move complex state management to custom hooks
@@ -356,6 +358,7 @@ Five seed accounts are available:
 - **DRY Principle**: Zero tolerance for copy-paste code
 
 **React Component Guidelines**:
+
 - Keep JSX templates <100 LOC; extract sub-components for complex sections
 - Define explicit TypeScript interfaces for all props (no `any`)
 - Extract complex event handlers to separate functions or hooks
@@ -364,6 +367,7 @@ Five seed accounts are available:
 
 **Opportunistic Improvement**:
 When touching existing code, you MUST:
+
 1. Assess if the file/component meets current standards
 2. Refactor if it exceeds size thresholds (>400 LOC files, >200 LOC components)
 3. Extract utilities if writing similar logic twice
@@ -371,18 +375,21 @@ When touching existing code, you MUST:
 5. Leave code better than you found it (Boy Scout Rule)
 
 **Quality Over Speed**:
+
 - NEVER ship poorly structured code "to move fast"
 - NEVER skip refactoring "because it's old code"
 - ALWAYS consider: "Would a new developer understand this in 6 months?"
 - ALWAYS extract reusable logic immediately when you write it twice
 
 **When to Extract**:
+
 - Function used ≥2 times → Extract to `src/lib/` or `src/utils/`
 - Component used ≥2 times → Extract to shared components
 - Complex state logic → Extract to custom hook in `src/hooks/`
 - Pure computations → Extract and make testable
 
 **DX Considerations**:
+
 - Can new developers find and understand components quickly?
 - Are component boundaries clear for debugging?
 - Can features be modified without touching unrelated code?
@@ -474,6 +481,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 All SDK APIs (routes using `withApiAuth`) have automatic rate limiting:
 
 **Default Limits:**
+
 - General operations: 100 requests/minute
 - Storage uploads: 20 requests/minute
 - Storage downloads: 50 requests/minute
@@ -510,6 +518,7 @@ export const GET = withApiAuth(
 ```
 
 **Rate Limit Infrastructure:**
+
 - Uses Upstash Redis for distributed rate limiting
 - Falls back to in-memory if Redis unavailable
 - Returns standard HTTP 429 with `X-RateLimit-*` headers
