@@ -20,6 +20,9 @@ dist
 .vercel
 .zshrc
 
+# Exception: docs build folder contains documentation, not build artifacts
+!apps/docs/build/
+
 # misc
 .DS_Store
 *.pem
