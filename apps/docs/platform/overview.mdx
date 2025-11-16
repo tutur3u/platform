@@ -18,23 +18,25 @@ The Tuturuuu platform combines proactive AI, unified applications, and automatio
 ## How It All Fits Together
 
 ```mermaid
-flowchart LR
-    subgraph Experience
-    CommandCenter["Command Center Dashboard"]
-    TuPlan["TuPlan Scheduling"]
-    TuDo["TuDo Tasks"]
-    TuMeet["TuMeet Meetings"]
+graph TB
+    subgraph Experience["Experience Layer"]
+        CC["Command Center"]
+        TuPlan["TuPlan"]
+        TuDo["TuDo"]
+        TuMeet["TuMeet"]
     end
-    subgraph AI
-        Mira["Mira (Jarvis)"]
-        Aurora["Aurora Context Graph"]
-        Nova["Nova Alignment"]
-        Rewise["Rewise Knowledge"]
+
+    subgraph AI["AI Layer"]
+        Mira["Mira"]
+        Aurora["Aurora"]
+        Nova["Nova"]
+        Rewise["Rewise"]
     end
-    subgraph Automation
-        Agents["Specialized Agents"]
-        CloudExec["Cloud Code Execution"]
-        Integrations["External Integrations"]
+
+    subgraph Auto["Automation Layer"]
+        Agents["Agents"]
+        Cloud["Cloud Exec"]
+        Int["Integrations"]
     end
 
     Experience --> Mira
@@ -43,9 +45,12 @@ flowchart LR
     Aurora --> Mira
     Nova --> Mira
     Rewise --> Aurora
-    Agents --> CloudExec
-    CloudExec --> Integrations
-    Integrations --> Experience
+    Agents --> Cloud
+    Cloud --> Int
+    Int --> Experience
+
+    style Mira fill:#4f46e5,stroke:#3730a3,color:#fff
+    style Agents fill:#4f46e5,stroke:#3730a3,color:#fff
 ```
 
 ## Next Steps

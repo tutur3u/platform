@@ -15,16 +15,14 @@ Level up your Tuturuuu expertise through curated examples, experiments, and prom
 ## Experimentation Flow
 
 ```mermaid
-sequenceDiagram
-    participant Idea
-    participant Prototype
-    participant Feedback
-    participant Product
+graph LR
+    A[Idea] -->|Rapid build| B[Prototype]
+    B -->|Share| C[Feedback]
+    C -->|Promote| D[Product]
+    D -->|Document| A
 
-    Idea->>Prototype: Rapid build (Examples + Tooling)
-    Prototype->>Feedback: Share with community & team
-    Feedback->>Product: Promote validated ideas
-    Product-->>Examples: Feed learnings back into docs
+    style A fill:#4f46e5,stroke:#3730a3,color:#fff
+    style D fill:#4f46e5,stroke:#3730a3,color:#fff
 ```
 
 Stay curious—share findings, improve docs, and help us expand what the Tuturuuu ecosystem can do. For detailed platform architecture, visit the [Platform section](/platform/overview). Need local tooling help? Return to [Build](/build/overview).
