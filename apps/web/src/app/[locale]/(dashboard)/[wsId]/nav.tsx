@@ -1,9 +1,9 @@
 'use client';
 
+import type { NavLink as NavLinkType } from '@/components/navigation';
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import type { NavLink as NavLinkType } from '@/components/navigation';
 import { NavLink } from './nav-link';
 
 interface NavProps {
@@ -38,9 +38,9 @@ export function Nav({
   return (
     <div
       data-collapsed={isCollapsed}
-      className={cn('group flex flex-col gap-y-1 p-2', className)}
+      className={cn('group flex flex-col gap-y-0.5 p-2', className)}
     >
-      <nav className="grid gap-y-1">
+      <nav className="grid gap-y-0.5">
         {links.map((link, index) => {
           if (!link) {
             return (
