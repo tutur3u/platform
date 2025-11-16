@@ -6,7 +6,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@ai-sdk/amazon-bedrock": "^3.0.54",
+    "@ai-sdk/amazon-bedrock": "^3.0.55",
     "@ai-sdk/anthropic": "^2.0.44",
     "@ai-sdk/azure": "^2.0.69",
     "@ai-sdk/cerebras": "^1.0.31",
@@ -19,8 +19,8 @@
     "@ai-sdk/fireworks": "^1.0.28",
     "@ai-sdk/gateway": "^2.0.9",
     "@ai-sdk/gladia": "^1.0.18",
-    "@ai-sdk/google": "^2.0.31",
-    "@ai-sdk/google-vertex": "^3.0.62",
+    "@ai-sdk/google": "^2.0.32",
+    "@ai-sdk/google-vertex": "^3.0.63",
     "@ai-sdk/groq": "^2.0.29",
     "@ai-sdk/hume": "^1.0.18",
     "@ai-sdk/lmnt": "^1.0.18",
@@ -41,7 +41,7 @@
     "next": "^16.0.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "streamdown": "^1.4.0",
+    "streamdown": "^1.5.0",
     "uuid": "^13.0.0",
     "zod": "^4.1.12"
   },
