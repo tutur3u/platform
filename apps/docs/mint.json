@@ -46,7 +46,7 @@
     {
       "group": "Platform",
       "pages": [
-        "platform/index",
+        "platform/overview",
         {
           "group": "Features",
           "pages": [
@@ -79,7 +79,7 @@
             {
               "group": "Components",
               "pages": [
-                "platform/components/index",
+                "platform/components/overview",
                 "platform/components/workspace-wrapper",
                 "platform/components/workspace-wrapper-quick-reference"
               ]
@@ -106,25 +106,30 @@
     {
       "group": "Build",
       "pages": [
-        "build/index",
-        "build/development-tools/index",
-        "build/development-tools/development",
-        "build/development-tools/monorepo-architecture",
-        "build/development-tools/git-conventions",
-        "build/development-tools/local-supabase-development",
-        "build/development-tools/ci-cd-pipelines",
-        "build/development-tools/ci-cd-optimization",
-        "build/development-tools/cleaning-clone",
-        "build/development-tools/documenting"
+        "build/overview",
+        {
+          "group": "Development Tools",
+          "pages": [
+            "build/development-tools/overview",
+            "build/development-tools/development",
+            "build/development-tools/monorepo-architecture",
+            "build/development-tools/git-conventions",
+            "build/development-tools/local-supabase-development",
+            "build/development-tools/ci-cd-pipelines",
+            "build/development-tools/ci-cd-optimization",
+            "build/development-tools/cleaning-clone",
+            "build/development-tools/documenting"
+          ]
+        }
       ]
     },
     {
       "group": "Learn",
       "pages": [
-        "learn/index",
+        "learn/overview",
         {
           "group": "Examples",
-          "pages": ["learn/examples/index"]
+          "pages": ["learn/examples/overview"]
         },
         {
           "group": "Experiments",
@@ -160,7 +165,7 @@
     {
       "group": "Reference",
       "pages": [
-        "reference/index",
+        "reference/overview",
         {
           "group": "Database",
           "pages": [
