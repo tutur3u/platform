@@ -1,0 +1,31 @@
+# Discord Bot Dependencies
+# Python 3.13+ required
+
+# Core framework and deployment
+modal
+fastapi
+uvicorn[standard]
+
+# Discord API
+aiohttp
+
+# Database
+supabase
+postgrest
+
+# Cryptography and security
+pynacl
+
+# Utilities
+nanoid
+pytz
+python-dotenv
+
+# Testing
+pytest
+pytest-asyncio
+pytest-cov
+
+# Development tools (optional)
+ruff
+mypy
