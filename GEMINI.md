@@ -69,6 +69,7 @@ The frontend is built with React, Next.js, and Tailwind CSS, with a component li
 -   **Commits:** Commits should follow the Conventional Commits specification.
 -   **Environment Variables:** Global environment variables are defined in `turbo.json`. Each application can also have its own `.env.local` file for local development.
 -   **Internationalization:** The project supports multiple languages via `next-intl`. **CRITICAL**: Always provide translations for both English (`en.json`) AND Vietnamese (`vi.json`) when adding user-facing strings to `apps/web/messages/{locale}.json`. Never add translations only for English - Vietnamese translations are mandatory.
+-   **Code Quality & Refactoring:** Files >400 LOC and components >200 LOC should be refactored into smaller, focused units. Apply best practices to ALL code, regardless of age. Follow single responsibility principle, extract utilities/hooks for complex logic, and leave code better than you found it. Code quality and developer experience are top priorities, not optional.
 
 ## Agent Operating Instructions
 
@@ -81,6 +82,7 @@ This section summarizes the key operating procedures for AI agents working in th
 -   **Determinism:** Generated artifacts (like types) must come from scripts, not manual edits.
 -   **Security:** Never output or commit secrets. Reference environment variables by name only.
 -   **User Intent:** Do not run long-running commands (`bun dev`, `bun build`) unless explicitly asked. The user is responsible for running commands like `bun sb:push`, `bun lint`, and `bun format`.
+-   **Code Quality First:** Proactively refactor long files (>400 LOC) and components (>200 LOC); maintain high DX standards for ALL code, both old and new. Code quality is never optional.
 
 ### Prohibited Actions
 
@@ -104,3 +106,4 @@ This section summarizes the key operating procedures for AI agents working in th
 -   **UI Components:**
     -   Use `sonner` for toasts: `import { toast } from '@tuturuuu/ui/sonner';`. Avoid the deprecated `@tuturuuu/ui/toast`.
     -   Use the dialog system for modals: `import { Dialog, ... } from '@tuturuuu/ui/dialog';`. **Never** use native browser dialogs like `alert()` or `confirm()`.
+-   **Refactoring (Proactive):** Break down large files (>400 LOC) and components (>200 LOC) into smaller, focused units. Extract utilities to `src/lib/`, hooks to `src/hooks/`, and sub-components as needed. Apply best practices to BOTH old and new code—when touching existing code, assess and improve it. Follow single responsibility principle, use meaningful names, and eliminate duplication. Code quality is mandatory, not optional.

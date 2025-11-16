@@ -562,6 +562,79 @@ Quality Gate Additions:
 - PRs touching estimation display/selection must show diff of `estimation-mapping.ts` or explain why unchanged.
 - Lint/Review should reject duplicate local maps for estimation types.
 
+#### 5.17 Code Quality & Proactive Refactoring
+Code quality and developer experience (DX) are **top-tier priorities**, not optional niceties. Agents MUST proactively maintain high standards across ALL code—both newly written and existing legacy code encountered during feature work.
+
+Mandatory Refactoring Triggers:
+1. **File Size**: Any file >400 LOC must be evaluated for extraction opportunities (utilities, sub-modules, components).
+2. **Component Size**: React components >200 LOC must be broken down into smaller, focused sub-components.
+3. **Function Complexity**: Functions >50 LOC or with cyclomatic complexity >10 should be decomposed.
+4. **Duplication**: Any duplicated logic across ≥2 locations must be extracted to shared utilities/hooks.
+
+Refactoring Principles:
+| Principle | Rule | Example |
+|-----------|------|---------|
+| Single Responsibility | Each component/function does ONE thing well | Split `UserProfileForm` into `UserBasicInfo`, `UserPreferences`, `UserSecurity` |
+| Composition over Monoliths | Build from small, reusable pieces | Extract `<DataTable>`, `<FilterBar>`, `<Pagination>` from large list view |
+| Proper Hook Usage | Extract stateful logic to custom hooks | Move complex form state to `useUserProfileForm()` |
+| Meaningful Naming | Names reveal intent without needing comments | `calculateTotalWithTax()` not `calc()` |
+| DRY (Don't Repeat Yourself) | Zero tolerance for copy-paste code | Extract repeated validation logic to `validateUserInput()` |
+
+React-Specific Best Practices (Mandatory):
+- **Component Structure**: Keep JSX templates <100 LOC; extract sub-components for complex sections.
+- **State Management**: Co-locate state with usage; lift only when truly shared. Use proper React Query patterns (see 5.12).
+- **Props Interface**: Define explicit TypeScript interfaces for all props; avoid `any` or overly broad types.
+- **Event Handlers**: Extract complex handlers to separate functions or custom hooks.
+- **Conditional Rendering**: For >3 conditions, extract to separate rendering functions or components.
+- **Performance**: Memoize expensive computations with `useMemo`; callbacks with `useCallback` (only when measured benefit).
+
+Opportunistic Improvement Policy:
+When modifying existing code (even small changes), agents MUST:
+1. **Assess Quality**: Does the touched file/component meet current standards?
+2. **Scope Improvement**: If file is >400 LOC or component >200 LOC, refactor it as part of the PR.
+3. **Extract Utilities**: If you write similar logic twice, extract immediately.
+4. **Update Patterns**: Migrate deprecated patterns (e.g., `@tuturuuu/ui/toast` → `@tuturuuu/ui/sonner`) encountered during work.
+5. **Document Rationale**: Add brief `// rationale:` comment for non-obvious refactoring decisions.
+
+Quality Over Speed:
+- **Never** ship poorly structured code "to move fast"—tech debt compounds rapidly.
+- **Never** skip refactoring "because it's old code"—all code is equally subject to quality standards.
+- **Always** leave code better than you found it (Boy Scout Rule).
+- **Always** consider: "Would a new developer understand this in 6 months?"
+
+Extraction Decision Framework:
+| Signal | Keep In-File | Extract Now |
+|--------|--------------|-------------|
+| Function used once | ✓ | Only if >50 LOC |
+| Function used ≥2 times | | ✓ Extract to utils |
+| Component used once | ✓ (as sub-component) | Only if >100 LOC |
+| Component used ≥2 times | | ✓ Extract to shared |
+| Logic with side effects | ✓ (until stable) | After 2nd usage |
+| Pure computation | | ✓ Extract immediately if testable value |
+
+Testing Implications:
+- Smaller components → easier unit tests
+- Extracted utilities → pure function tests (faster, more reliable)
+- Custom hooks → isolated hook testing with `@testing-library/react-hooks`
+
+DX Considerations (Developer Experience):
+- **Onboarding**: Can new developers find and understand components quickly?
+- **Debugging**: Are component boundaries clear for stack traces?
+- **Maintenance**: Can features be modified without touching unrelated code?
+- **Discoverability**: Are utilities/hooks in expected locations (`src/hooks/`, `src/lib/`)?
+
+Escalate When:
+- Refactoring required for file >1000 LOC (coordinate with user for large-scale restructure).
+- Breaking up component impacts >5 other files (may require architectural discussion).
+- Uncertain about appropriate abstraction boundary (ask user for guidance).
+
+Guardrail Enforcement:
+- PRs introducing files >400 LOC without justification should be flagged.
+- PRs touching large legacy files without improvement should include rationale or plan for future refactor.
+- Review checklist must verify: "Code quality maintained; long files/components refactored?"
+
+Cross-Reference: See 5.2 (TypeScript) for type safety, 5.12 (Data Fetching & React Query) for state management patterns, 4.7 (Testing) for verification strategies.
+
 Use the unified dialog system from `@tuturuuu/ui/dialog` for all modal interactions.
 
 Rules:
@@ -700,9 +773,11 @@ Tick ALL before requesting review:
 7. Docs updated for public API / env var / schema deltas ✅
 8. **Navigation updated for all new routes** (main navigation file) ✅
 9. **All user-facing strings have BOTH English and Vietnamese translations** ✅
-10. No secrets, tokens, or API keys committed ✅
-11. Added edge runtime export where required ✅
-12. All new external inputs validated (Zod / guard logic) ✅
+10. **Code quality maintained; files >400 LOC and components >200 LOC refactored** ✅
+11. **Components follow single responsibility principle; complex logic extracted** ✅
+12. No secrets, tokens, or API keys committed ✅
+13. Added edge runtime export where required ✅
+14. All new external inputs validated (Zod / guard logic) ✅
 
 #### 8.2 Quality Gates
 | Gate | Pass Criteria |
