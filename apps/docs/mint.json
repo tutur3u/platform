@@ -69,6 +69,7 @@
               "pages": [
                 "platform/architecture/system-design/overview",
                 "platform/architecture/system-design/architectural-decisions",
+                "platform/architecture/system-design/layering-patterns",
                 "platform/architecture/system-design/event-driven-architecture",
                 "platform/architecture/system-design/extensibility-resilience-scalability",
                 "platform/architecture/system-design/encapsulation-patterns",
