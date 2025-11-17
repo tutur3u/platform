@@ -18,19 +18,21 @@ Understanding how to structure code within services is critical for maintainabil
 
 N-Tier (also called "N-Layer") is a traditional architectural pattern that organizes code into horizontal layers, each responsible for a specific technical concern. The most common form is 3-tier architecture:
 
-```
-┌─────────────────────────────────────┐
-│     Presentation Tier (UI)          │  ← User interaction, rendering
-├─────────────────────────────────────┤
-│     Business Logic Tier (BLL)       │  ← Business rules, validation
-├─────────────────────────────────────┤
-│     Data Access Tier (DAL)          │  ← Database operations, persistence
-└─────────────────────────────────────┘
-          │
-          ▼
-    ┌──────────┐
-    │ Database │
-    └──────────┘
+```mermaid
+graph TD
+    A["Presentation Tier (UI)<br/>User interaction, rendering"]
+    B["Business Logic Tier (BLL)<br/>Business rules, validation"]
+    C["Data Access Tier (DAL)<br/>Database operations, persistence"]
+    D[("Database")]
+
+    A -->|Calls| B
+    B -->|Calls| C
+    C -->|Queries| D
+
+    style A fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style B fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style C fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style D fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
 ```
 
 #### Characteristics of N-Tier
@@ -133,42 +135,76 @@ Layer-based architectures (Hexagonal, Clean, Onion) solve N-Tier's problems by i
 
 #### Hexagonal Architecture (Ports & Adapters)
 
-```
-                    ┌─────────────────────────┐
-                    │   Primary Adapters      │
-                    │  (Inbound/Driving)      │
-    HTTP REST ──────┤ - REST Controllers      │
-    GraphQL ────────┤ - GraphQL Resolvers     │
-    CLI ────────────┤ - CLI Commands          │
-                    │ - Event Consumers       │
-                    └───────────┬─────────────┘
-                                │
-                    ┌───────────▼─────────────┐
-                    │    Primary Ports        │
-                    │    (Interfaces)         │
-                    ├─────────────────────────┤
-                    │                         │
-                    │    DOMAIN CORE          │
-                    │  (Business Logic)       │
-                    │                         │
-                    │  - Entities             │
-                    │  - Value Objects        │
-                    │  - Domain Services      │
-                    │  - Business Rules       │
-                    │                         │
-                    ├─────────────────────────┤
-                    │   Secondary Ports       │
-                    │    (Interfaces)         │
-                    └───────────┬─────────────┘
-                                │
-                    ┌───────────▼─────────────┐
-                    │  Secondary Adapters     │
-                    │  (Outbound/Driven)      │
-    Database ───────┤ - Repository Impl       │
-    Message Bus ────┤ - Event Publisher       │
-    Email Service ──┤ - Email Sender          │
-    External API ───┤ - HTTP Client           │
-                    └─────────────────────────┘
+```mermaid
+graph TB
+    subgraph External["External Systems"]
+        HTTP["HTTP REST"]
+        GQL["GraphQL"]
+        CLI["CLI"]
+        Events["Event Consumers"]
+        DB[("Database")]
+        MsgBus[("Message Bus")]
+        Email["Email Service"]
+        API["External API"]
+    end
+
+    subgraph Hexagon["Hexagonal Architecture"]
+        subgraph Primary["Primary Adapters<br/>(Inbound/Driving)"]
+            RestCtrl["REST Controllers"]
+            GqlResolv["GraphQL Resolvers"]
+            CliCmd["CLI Commands"]
+            EventCons["Event Consumers"]
+        end
+
+        subgraph PrimaryPorts["Primary Ports<br/>(Interfaces)"]
+        end
+
+        subgraph DomainCore["DOMAIN CORE<br/>(Business Logic)"]
+            Entities["Entities"]
+            VOs["Value Objects"]
+            DomainSvc["Domain Services"]
+            BizRules["Business Rules"]
+        end
+
+        subgraph SecondaryPorts["Secondary Ports<br/>(Interfaces)"]
+        end
+
+        subgraph Secondary["Secondary Adapters<br/>(Outbound/Driven)"]
+            RepoImpl["Repository Impl"]
+            EventPub["Event Publisher"]
+            EmailSend["Email Sender"]
+            HttpClient["HTTP Client"]
+        end
+    end
+
+    HTTP --> RestCtrl
+    GQL --> GqlResolv
+    CLI --> CliCmd
+    Events --> EventCons
+
+    RestCtrl --> PrimaryPorts
+    GqlResolv --> PrimaryPorts
+    CliCmd --> PrimaryPorts
+    EventCons --> PrimaryPorts
+
+    PrimaryPorts --> DomainCore
+    DomainCore --> SecondaryPorts
+
+    SecondaryPorts --> RepoImpl
+    SecondaryPorts --> EventPub
+    SecondaryPorts --> EmailSend
+    SecondaryPorts --> HttpClient
+
+    RepoImpl --> DB
+    EventPub --> MsgBus
+    EmailSend --> Email
+    HttpClient --> API
+
+    style DomainCore fill:#ffd54f,stroke:#f57f17,stroke-width:3px
+    style PrimaryPorts fill:#81c784,stroke:#388e3c,stroke-width:2px
+    style SecondaryPorts fill:#81c784,stroke:#388e3c,stroke-width:2px
+    style Primary fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style Secondary fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
 ```
 
 **Key Principles:**
@@ -380,22 +416,32 @@ await service.createWorkspace('Test', 'owner-123');
 
 Clean Architecture (by Robert C. Martin) is similar to Hexagonal but emphasizes concentric circles of dependencies.
 
-```
-┌──────────────────────────────────────────────┐
-│           Frameworks & Drivers               │  ← Outermost
-│  (Database, Web, External APIs, UI)          │
-├──────────────────────────────────────────────┤
-│         Interface Adapters                   │
-│  (Controllers, Presenters, Gateways)         │
-├──────────────────────────────────────────────┤
-│         Application Business Rules           │
-│  (Use Cases, Application Services)           │
-├──────────────────────────────────────────────┤
-│         Enterprise Business Rules            │  ← Innermost
-│  (Entities, Domain Services)                 │
-└──────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Layer4["Frameworks & Drivers<br/>(Outermost)"]
+        FW["Database, Web,<br/>External APIs, UI"]
+    end
 
-Dependencies point INWARD only ──────────────────►
+    subgraph Layer3["Interface Adapters"]
+        IA["Controllers,<br/>Presenters,<br/>Gateways"]
+    end
+
+    subgraph Layer2["Application Business Rules"]
+        ABR["Use Cases,<br/>Application Services"]
+    end
+
+    subgraph Layer1["Enterprise Business Rules<br/>(Innermost)"]
+        EBR["Entities,<br/>Domain Services"]
+    end
+
+    FW -.->|"Dependencies<br/>point INWARD"| IA
+    IA -.->|"Dependencies<br/>point INWARD"| ABR
+    ABR -.->|"Dependencies<br/>point INWARD"| EBR
+
+    style Layer1 fill:#ffd54f,stroke:#f57f17,stroke-width:4px
+    style Layer2 fill:#fff3e0,stroke:#f57c00,stroke-width:3px
+    style Layer3 fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style Layer4 fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
 ```
 
 **Key Rule**: Dependencies can only point inward. Inner circles know nothing about outer circles.
@@ -444,20 +490,32 @@ export async function POST(request: Request) {
 
 Onion Architecture is similar to Clean but visualizes layers as concentric circles with explicit layer names.
 
-```
-        ┌─────────────────────────┐
-        │   Infrastructure        │  ← Outer
-        │  (Database, HTTP, etc)  │
-        ├─────────────────────────┤
-        │   Application Services  │
-        │  (Use Cases, Commands)  │
-        ├─────────────────────────┤
-        │    Domain Services      │
-        │  (Business Operations)  │
-        ├─────────────────────────┤
-        │     Domain Model        │  ← Inner Core
-        │  (Entities, VOs, Rules) │
-        └─────────────────────────┘
+```mermaid
+graph TD
+    subgraph Outer["Infrastructure Layer<br/>(Outer)"]
+        Infra["Database,<br/>HTTP, etc"]
+    end
+
+    subgraph AppSvc["Application Services Layer"]
+        App["Use Cases,<br/>Commands"]
+    end
+
+    subgraph DomSvc["Domain Services Layer"]
+        DS["Business<br/>Operations"]
+    end
+
+    subgraph Core["Domain Model<br/>(Inner Core)"]
+        DM["Entities,<br/>Value Objects,<br/>Rules"]
+    end
+
+    Infra --> AppSvc
+    AppSvc --> DomSvc
+    DomSvc --> Core
+
+    style Core fill:#ffd54f,stroke:#f57f17,stroke-width:4px
+    style DomSvc fill:#fff3e0,stroke:#f57c00,stroke-width:3px
+    style AppSvc fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style Outer fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
 ```
 
 All three patterns (Hexagonal, Clean, Onion) share the same core principle: **Dependency Inversion** to keep business logic pure and independent.
@@ -472,29 +530,45 @@ All three patterns (Hexagonal, Clean, Onion) share the same core principle: **De
 
 **Reality**: Microservices is an **external** architectural pattern (how services are distributed across the network). Layering is an **internal** pattern (how code is organized within each service).
 
-```
-┌────────────────────────────────────────────────────────────┐
-│                     MICROSERVICES                          │
-│                  (External Architecture)                   │
-│                                                            │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
-│  │   Service A   │  │   Service B   │  │   Service C   │   │
-│  │              │  │              │  │              │   │
-│  │  ┌────────┐  │  │  ┌────────┐  │  │  ┌────────┐  │   │
-│  │  │ Domain │  │  │  │ Domain │  │  │  │ Domain │  │   │
-│  │  │  Core  │  │  │  │  Core  │  │  │  │  Core  │  │   │
-│  │  └────────┘  │  │  └────────┘  │  │  └────────┘  │   │
-│  │  ┌────────┐  │  │  ┌────────┐  │  │  ┌────────┐  │   │
-│  │  │Adapters│  │  │  │Adapters│  │  │  │Adapters│  │   │
-│  │  └────────┘  │  │  └────────┘  │  │  └────────┘  │   │
-│  └──────────────┘  └──────────────┘  └──────────────┘   │
-│                                                            │
-│     ▲                   ▲                   ▲             │
-│     │                   │                   │             │
-│     └───────────────────┴───────────────────┘             │
-│            Each service has internal layers               │
-│           (Hexagonal, Clean, or Onion)                    │
-└────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph MS["MICROSERVICES<br/>(External Architecture)"]
+        subgraph ServiceA["Service A"]
+            DomainA["Domain Core"]
+            AdaptersA["Adapters"]
+            DomainA ---|Internal<br/>Layers| AdaptersA
+        end
+
+        subgraph ServiceB["Service B"]
+            DomainB["Domain Core"]
+            AdaptersB["Adapters"]
+            DomainB ---|Internal<br/>Layers| AdaptersB
+        end
+
+        subgraph ServiceC["Service C"]
+            DomainC["Domain Core"]
+            AdaptersC["Adapters"]
+            DomainC ---|Internal<br/>Layers| AdaptersC
+        end
+    end
+
+    Note["Each service has internal layers<br/>(Hexagonal, Clean, or Onion)"]
+
+    ServiceA -.->|Events| ServiceB
+    ServiceB -.->|Events| ServiceC
+    ServiceC -.->|Events| ServiceA
+
+    style DomainA fill:#ffd54f,stroke:#f57f17,stroke-width:2px
+    style DomainB fill:#ffd54f,stroke:#f57f17,stroke-width:2px
+    style DomainC fill:#ffd54f,stroke:#f57f17,stroke-width:2px
+    style AdaptersA fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style AdaptersB fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style AdaptersC fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style ServiceA fill:#f5f5f5,stroke:#616161,stroke-width:2px
+    style ServiceB fill:#f5f5f5,stroke:#616161,stroke-width:2px
+    style ServiceC fill:#f5f5f5,stroke:#616161,stroke-width:2px
+    style MS fill:#fff,stroke:#000,stroke-width:3px
+    style Note fill:#ffeb3b,stroke:#f57f17,stroke-width:2px
 ```
 
 ### Best Practice: Hexagonal Architecture Within Microservices
@@ -571,7 +645,7 @@ apps/finance/src/
 - ✅ Building simple CRUD applications
 - ✅ Team is unfamiliar with DDD/Hexagonal concepts
 - ✅ Rapid prototyping with acceptable technical debt
-- ✅ Application will remain small (<10k LOC)
+- ✅ Application will remain small (&lt;10k LOC)
 
 ### Use Hexagonal/Clean/Onion When:
 - ✅ Complex business logic requires protection
@@ -599,16 +673,18 @@ We combine both patterns to get the best of both worlds:
 
 Many systems evolve through these patterns:
 
-```
-Simple App (N-Tier)
-        │
-        │ Business logic becomes complex
-        ▼
-Modular Monolith (Hexagonal)
-        │
-        │ Team grows, need independent deployment
-        ▼
-Microservices with Hexagonal Architecture
+```mermaid
+graph TD
+    Step1["Simple App<br/>(N-Tier)"]
+    Step2["Modular Monolith<br/>(Hexagonal)"]
+    Step3["Microservices with<br/>Hexagonal Architecture"]
+
+    Step1 -->|"Business logic<br/>becomes complex"| Step2
+    Step2 -->|"Team grows,<br/>need independent<br/>deployment"| Step3
+
+    style Step1 fill:#ffcdd2,stroke:#c62828,stroke-width:2px
+    style Step2 fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style Step3 fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px
 ```
 
 **Tuturuuu started with Step 3** to avoid future rewrites and support rapid, safe evolution.
