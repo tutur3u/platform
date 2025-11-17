@@ -386,9 +386,8 @@ function TaskCardInner({
   // Refs for measuring badge widths
   const containerRef = useRef<HTMLDivElement>(null);
   const badgeRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  const hiddenBadgeNumRef = useRef<HTMLDivElement>(null);
   const descriptionMetaRef = useRef<HTMLDivElement>(null);
-  const [visibleBadgeCount, setVisibleBadgeCount] = useState(2);
+  const [visibleBadgeCount, setVisibleBadgeCount] = useState(0);
 
   const handleDuplicateTask = async () => {
     try {
@@ -574,13 +573,10 @@ function TaskCardInner({
 
   // Calculate visible badges based on available width
   useEffect(() => {
-    if (!containerRef.current) return;
+    const container = containerRef.current;
+    if (!container) return;
 
-    const calculateVisibleBadges = () => {
-      const container = containerRef.current;
-      const hiddenBadgeNum = hiddenBadgeNumRef.current;
-      if (!container || !hiddenBadgeNum) return;
-
+    const calculateVisibleCount = () => {
       const containerWidth = container.clientWidth;
       const gap = 4; // gap-1 = 4px
 
@@ -606,24 +602,25 @@ function TaskCardInner({
 
         if (totalNeeded <= containerWidth) {
           totalWidth += badgeWidth;
-          count = i + 1;
+          count++;
         } else {
           break;
         }
       }
 
-      // Ensure at least 0 badges are visible
-      setVisibleBadgeCount(Math.max(0, count));
+      setVisibleBadgeCount(count);
     };
 
     // Initial calculation
-    calculateVisibleBadges();
+    calculateVisibleCount();
 
-    // Recalculate on resize
-    const resizeObserver = new ResizeObserver(calculateVisibleBadges);
-    resizeObserver.observe(containerRef.current);
+    // Re-calculate on container resize
+    const resizeObserver = new ResizeObserver(calculateVisibleCount);
+    resizeObserver.observe(container);
 
-    return () => resizeObserver.disconnect();
+    return () => {
+      resizeObserver.disconnect();
+    };
   }, [taskBadges]);
 
   const visibleBadges = taskBadges.slice(0, visibleBadgeCount);
@@ -1079,16 +1076,23 @@ function TaskCardInner({
             Hide bottom row entirely when in done/closed list
           */
           <div className="flex items-center gap-2">
+            {/* Hidden measurement container - render all badges to measure their width */}
+            <div
+              className="pointer-events-none absolute top-0 left-[-9999px] flex items-center gap-1 opacity-0"
+              aria-hidden="true"
+            >
+              {taskBadges.map((badge) => badge.element)}
+            </div>
+            {/* Visible container - only show badges that fit */}
             <div
               ref={containerRef}
               className="scrollbar-hide flex w-full items-center gap-1 overflow-auto whitespace-nowrap rounded-lg"
             >
               {visibleBadges.map((badge) => badge.element)}
-              {hiddenBadges.length > 0 && (
+              {visibleBadges.length > 0 && hiddenBadges.length > 0 && (
                 <HoverCard openDelay={200}>
                   <HoverCardTrigger asChild>
                     <Badge
-                      ref={hiddenBadgeNumRef}
                       variant="secondary"
                       className="cursor-pointer border border-border bg-muted/50 font-medium text-[10px] text-muted-foreground hover:bg-muted"
                     >
