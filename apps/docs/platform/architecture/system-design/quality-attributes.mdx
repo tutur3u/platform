@@ -1,0 +1,1265 @@
+---
+title: "Quality Attributes"
+description: "Maintainability, testability, and deployability in Tuturuuu's architecture"
+updatedAt: "2025-11-17"
+---
+
+This document covers three critical quality attributes that are foundational to long-term system success: **Maintainability** (the ease of evolving and fixing the system), **Testability** (the ability to verify system correctness), and **Deployability** (the ease and safety of releasing changes).
+
+<Note>
+These quality attributes are not added after the fact but are designed into the architecture from the beginning, ensuring the system remains healthy and productive as it grows.
+</Note>
+
+## Maintainability
+
+Maintainability determines how easily the system can be modified to fix bugs, add features, or adapt to changing requirements. Poor maintainability leads to increasing development costs and slower delivery over time.
+
+### 1. Clear Domain Boundaries Reduce Cognitive Load
+
+#### Architectural Choice
+
+The microservices architecture and modular frontend design establish clear boundaries between different business domains, each with well-defined responsibilities and interfaces.
+
+#### Impact and Justification
+
+In a monolithic, tightly-coupled system, understanding how to make a change requires comprehending vast swaths of interconnected code. A developer wanting to modify the billing logic might need to understand authentication, user management, and inventory systems simply because they're all tangled together.
+
+**Clear domain boundaries** solve this by ensuring each service or module has a focused responsibility. A developer working on the `FinanceService` only needs to understand finance-related concepts and the clearly-defined interfaces for interacting with other services. This dramatically reduces cognitive load and enables faster, more confident changes.
+
+**In Tuturuuu:**
+```typescript
+// Clear domain boundaries in monorepo
+apps/
+├── web/           // Main platform - workspace management
+├── finance/       // Finance domain - isolated
+├── calendar/      // Calendar domain - isolated
+├── tudo/          // Tasks domain - isolated
+├── nova/          // AI challenges - isolated
+└── rewise/        // AI chat - isolated
+
+// Each app has clear responsibilities
+// Finance developers don't need to understand calendar logic
+// Calendar developers don't need to understand finance logic
+```
+
+**Module boundaries in frontend:**
+```typescript
+// apps/web/src/app/[locale]/(dashboard)/[wsId]/
+finance/
+├── layout.tsx              // Finance-specific layout
+├── transactions/           // Transaction management
+├── reports/                // Financial reports
+└── settings/               // Finance settings
+
+// Finance module is self-contained
+// Changes here don't affect calendar or tasks modules
+```
+
+#### Clarifying Additions
+
+**Engineers focus on one area at a time without understanding the entire system.** New team members can become productive quickly by mastering a single domain rather than the entire codebase.
+
+**This reduces onboarding complexity.** Clear boundaries make it obvious where to find code related to specific features, accelerating the learning curve for new developers.
+
+**Maintenance tasks become easier to isolate and execute.** Bug fixes and feature additions are scoped to specific services or modules, reducing the risk of unintended side effects.
+
+---
+
+### 2. Technology Independence Prevents Legacy Lock-In
+
+#### Architectural Choice
+
+The Hexagonal Architecture and microservices pattern ensure that technology choices (databases, frameworks, external services) are isolated from core business logic through well-defined interfaces.
+
+#### Impact and Justification
+
+Technology evolves rapidly. Frameworks fall out of favor, databases become outdated, and new tools emerge. Systems that tightly couple business logic to specific technologies become **legacy systems**—expensive and risky to modernize.
+
+**Technology independence** protects the valuable business logic (which changes rarely) from technological churn (which happens frequently). Because infrastructure details are isolated in adapter layers, we can upgrade or replace technologies without rewriting business rules.
+
+**In Tuturuuu:**
+```typescript
+// Business logic defined in terms of interfaces, not implementations
+// packages/types/src/domain/workspace.ts
+export interface WorkspaceRepository {
+  findById(id: string): Promise<Workspace | null>;
+  save(workspace: Workspace): Promise<void>;
+  delete(id: string): Promise<void>;
+}
+
+// Core business logic depends on the interface
+export class WorkspaceService {
+  constructor(private repo: WorkspaceRepository) {}
+
+  async archiveWorkspace(id: string) {
+    const workspace = await this.repo.findById(id);
+    if (!workspace) throw new Error('Workspace not found');
+
+    workspace.archive(); // Pure business logic
+    await this.repo.save(workspace);
+  }
+}
+
+// Infrastructure implementation (swappable)
+// apps/web/src/infrastructure/repositories/supabase-workspace-repository.ts
+export class SupabaseWorkspaceRepository implements WorkspaceRepository {
+  constructor(private client: SupabaseClient) {}
+
+  async findById(id: string) {
+    const { data } = await this.client
+      .from('workspaces')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    return data ? this.toDomain(data) : null;
+  }
+
+  async save(workspace: Workspace) {
+    await this.client
+      .from('workspaces')
+      .upsert(this.toDatabase(workspace));
+  }
+
+  async delete(id: string) {
+    await this.client
+      .from('workspaces')
+      .delete()
+      .eq('id', id);
+  }
+}
+
+// Future: Can swap Supabase for Prisma, Drizzle, or any other ORM
+// WITHOUT changing business logic
+```
+
+**Example technology evolution:**
+```typescript
+// Today: Supabase
+const repo = new SupabaseWorkspaceRepository(supabaseClient);
+
+// Tomorrow: Drizzle ORM (business logic unchanged)
+const repo = new DrizzleWorkspaceRepository(drizzleClient);
+
+// Next year: Different database (business logic still unchanged)
+const repo = new MongoWorkspaceRepository(mongoClient);
+
+// Business logic stays the same:
+const service = new WorkspaceService(repo);
+await service.archiveWorkspace('ws-123');
+```
+
+#### Clarifying Additions
+
+**No single technical choice restricts future evolution.** The architecture accommodates technological progress without requiring expensive rewrites of core business logic.
+
+**Components modernize incrementally as needed.** Instead of "big bang" technology migrations that put the entire system at risk, individual components can be upgraded independently.
+
+**This protects the system from long-term stagnation.** The architecture remains flexible enough to adopt new technologies as they mature, preventing technical debt accumulation.
+
+---
+
+### 3. Hexagonal Architecture Minimizes Ripple Effects
+
+#### Architectural Choice
+
+The Hexagonal Architecture's strict separation between core domain logic and external concerns ensures that changes to infrastructure do not ripple into business rules.
+
+#### Impact and Justification
+
+In traditional layered architectures, changes to infrastructure (like upgrading a database library or switching message brokers) often require modifications to business logic because the layers are tightly coupled.
+
+Hexagonal Architecture **inverts the dependency direction**. The core domain is completely isolated and defines interfaces (ports) for what it needs. Infrastructure adapters implement these interfaces but the core remains ignorant of implementation details.
+
+This means infrastructure changes stay contained in the adapter layer. Upgrading from PostgreSQL 14 to PostgreSQL 16, changing from REST to GraphQL, or switching message brokers requires modifying only the relevant adapters—the domain core remains untouched.
+
+**In Tuturuuu - Infrastructure changes isolated:**
+```typescript
+// Domain core (unchanged when infrastructure changes)
+export class TaskService {
+  constructor(
+    private taskRepo: TaskRepository,
+    private eventBus: EventBus,
+    private logger: Logger
+  ) {}
+
+  async createTask(data: CreateTaskData) {
+    const task = Task.create(data);
+
+    await this.taskRepo.save(task);
+    await this.eventBus.publish(new TaskCreated(task));
+    this.logger.info('Task created', { taskId: task.id });
+
+    return task;
+  }
+}
+
+// Infrastructure layer (changeable without affecting domain)
+// Version 1: Supabase + Trigger.dev + Console logging
+const service = new TaskService(
+  new SupabaseTaskRepository(supabase),
+  new TriggerEventBus(trigger),
+  new ConsoleLogger()
+);
+
+// Version 2: Drizzle + NATS + Structured logging
+// Domain core completely unchanged!
+const service = new TaskService(
+  new DrizzleTaskRepository(drizzle),
+  new NatsEventBus(nats),
+  new StructuredLogger(winston)
+);
+```
+
+**Real-world example - Upgrading Next.js:**
+```typescript
+// Business logic and components remain the same
+// Only infrastructure adapters need updates
+
+// Before Next.js 16
+export function getWorkspaceData(id: string) {
+  // Implementation using Next.js 15 patterns
+}
+
+// After Next.js 16
+export function getWorkspaceData(id: string) {
+  // Implementation using Next.js 16 patterns
+  // Component code using this function unchanged
+}
+```
+
+#### Clarifying Additions
+
+**Core logic remains stable even during broad technical changes.** The most valuable part of the codebase (business rules) is shielded from the volatility of technology trends.
+
+**Adaptation happens at edges rather than at the center.** When technology changes, only the outer layers (adapters) need modification, keeping changes localized and predictable.
+
+**This protects business rules against unnecessary modification.** Domain experts can rely on business logic remaining stable, reducing the risk of introducing bugs when upgrading infrastructure.
+
+---
+
+### 4. Modular Frontend Prevents UI-Level Entanglement
+
+#### Architectural Choice
+
+The React Modular Monolith pattern organizes the frontend into self-contained modules with clear boundaries, preventing the "big ball of mud" problem common in large SPAs.
+
+#### Impact and Justification
+
+As frontend applications grow, they often become tangled webs of interdependent components, shared state, and implicit dependencies. Making a change in one area unexpectedly breaks seemingly unrelated features.
+
+The **modular monolith** approach enforces architectural discipline by organizing code into feature-based modules with explicit boundaries. Each module (Finance, Calendar, Tasks, etc.) owns its components, state management, and business logic. Inter-module dependencies are explicit and minimized.
+
+This structure makes maintenance dramatically easier because changes stay localized within module boundaries.
+
+**In Tuturuuu - Frontend modules:**
+```typescript
+// Clear module structure
+apps/web/src/
+├── app/[locale]/(dashboard)/[wsId]/
+│   ├── finance/                    // Finance module
+│   │   ├── layout.tsx
+│   │   ├── transactions/
+│   │   ├── reports/
+│   │   └── _components/           // Finance-specific components
+│   ├── calendar/                   // Calendar module
+│   │   ├── layout.tsx
+│   │   ├── events/
+│   │   └── _components/           // Calendar-specific components
+│   └── tasks/                      // Tasks module
+│       ├── layout.tsx
+│       ├── boards/
+│       └── _components/           // Task-specific components
+├── components/
+│   ├── finance/                   // Shared finance components
+│   ├── calendar/                  // Shared calendar components
+│   ├── tasks/                     // Shared task components
+│   └── common/                    // Truly shared components
+```
+
+**Module independence:**
+```typescript
+// Finance module - self-contained state management
+// apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/state.ts
+import { atom } from 'jotai';
+
+export const financeTransactionsAtom = atom<Transaction[]>([]);
+export const financeFiltersAtom = atom<Filters>({});
+
+// Calendar module - separate state management
+// apps/web/src/app/[locale]/(dashboard)/[wsId]/calendar/state.ts
+import { atom } from 'jotai';
+
+export const calendarEventsAtom = atom<Event[]>([]);
+export const calendarViewAtom = atom<'month' | 'week' | 'day'>('month');
+
+// Modules don't share state - clear boundaries
+```
+
+#### Clarifying Additions
+
+**UI concerns grow independently instead of interfering with each other.** Finance features can evolve without touching calendar code, and vice versa.
+
+**Teams can refactor modules safely.** Because module boundaries are clear, teams can confidently restructure their module knowing they won't break other features.
+
+**Visual and functional changes stay well-scoped.** UI redesigns or feature enhancements affect only the relevant module, reducing regression testing burden.
+
+---
+
+### 5. Operational Independence per Service
+
+#### Architectural Choice
+
+Each microservice can be deployed, scaled, monitored, and maintained independently without coordinating with other services.
+
+#### Impact and Justification
+
+In a monolithic architecture, operational tasks affect the entire system. Deploying a minor bug fix to the reporting module requires rebuilding and redeploying the entire application. Scaling requires scaling everything, even if only one feature is under load.
+
+**Operational independence** means each service is a separate deployable unit with its own lifecycle. Teams can:
+- Deploy updates to their service multiple times per day
+- Scale their service based on its specific load patterns
+- Monitor their service's health independently
+- Apply operational changes (like upgrading Node.js) on their own schedule
+
+This independence accelerates development velocity and reduces the coordination overhead that plagues monolithic systems.
+
+**In Tuturuuu:**
+```typescript
+// Each app is independently deployable
+// package.json scripts
+
+{
+  "scripts": {
+    // Deploy each app independently
+    "deploy:web": "vercel --prod",
+    "deploy:finance": "vercel --prod",
+    "deploy:calendar": "vercel --prod",
+
+    // Each app has independent build configuration
+    "build:web": "next build",
+    "build:finance": "next build",
+
+    // Services scale independently in Vercel
+  }
+}
+```
+
+**Independent monitoring:**
+```typescript
+// Each service has its own dashboards and alerts
+const webMetrics = {
+  service: 'web',
+  errorRate: monitorErrorRate('web'),
+  latency: monitorLatency('web'),
+  activeUsers: monitorActiveUsers('web')
+};
+
+const financeMetrics = {
+  service: 'finance',
+  errorRate: monitorErrorRate('finance'),
+  latency: monitorLatency('finance'),
+  transactionVolume: monitorTransactions('finance')
+};
+
+// Finance issues don't affect web monitoring
+// Teams can focus on their service metrics
+```
+
+#### Clarifying Additions
+
+**Services update without impacting other services.** A finance service deployment doesn't require coordination with the calendar team or risk affecting calendar functionality.
+
+**Maintenance tasks stay focused and manageable.** Security patches, dependency updates, and refactoring efforts are scoped to individual services.
+
+**This encourages timely updates and better long-term health.** Teams aren't hesitant to deploy updates because the blast radius is limited to their service.
+
+---
+
+## Testability
+
+Testability determines how easily we can write and maintain automated tests that verify system correctness. High testability leads to better quality, faster development, and greater confidence in changes.
+
+### 1. Hexagonal Architecture Enables Pure Unit Testing
+
+#### Architectural Choice
+
+The Hexagonal Architecture's isolation of domain logic from infrastructure enables pure, fast unit tests that don't require databases, network calls, or other external dependencies.
+
+#### Impact and Justification
+
+In traditional architectures, business logic is often tightly coupled to infrastructure (database access, API calls, file I/O). This makes testing painful because every test requires:
+- Setting up test databases
+- Mocking network requests
+- Managing test data cleanup
+- Dealing with test environment flakiness
+
+These tests are slow (seconds per test instead of milliseconds), fragile (break when infrastructure changes), and difficult to write (require complex setup).
+
+**Hexagonal Architecture** solves this by making the domain core pure and isolated. Business logic has zero infrastructure dependencies. Tests simply instantiate domain objects and verify business rules using simple, in-memory test doubles. These tests run in milliseconds and never fail due to infrastructure issues.
+
+**In Tuturuuu - Pure unit tests:**
+```typescript
+// Domain logic - pure, testable
+// packages/types/src/domain/workspace.ts
+export class Workspace {
+  private constructor(
+    public readonly id: string,
+    public name: string,
+    public status: 'active' | 'archived',
+    public memberLimit: number
+  ) {}
+
+  static create(data: CreateWorkspaceData): Workspace {
+    if (data.name.length < 3) {
+      throw new Error('Workspace name must be at least 3 characters');
+    }
+
+    return new Workspace(
+      uuid(),
+      data.name,
+      'active',
+      data.memberLimit || 10
+    );
+  }
+
+  archive() {
+    if (this.status === 'archived') {
+      throw new Error('Workspace already archived');
+    }
+    this.status = 'archived';
+  }
+
+  addMember() {
+    // Business rule: enforce member limit
+    if (this.getMemberCount() >= this.memberLimit) {
+      throw new Error('Member limit reached');
+    }
+    // ... add member logic
+  }
+}
+
+// Test - no infrastructure required!
+// packages/types/src/domain/workspace.test.ts
+describe('Workspace', () => {
+  describe('create', () => {
+    it('creates workspace with valid name', () => {
+      const workspace = Workspace.create({
+        name: 'My Workspace',
+        memberLimit: 10
+      });
+
+      expect(workspace.name).toBe('My Workspace');
+      expect(workspace.status).toBe('active');
+      expect(workspace.memberLimit).toBe(10);
+    });
+
+    it('rejects workspace with short name', () => {
+      expect(() => {
+        Workspace.create({ name: 'ab', memberLimit: 10 });
+      }).toThrow('Workspace name must be at least 3 characters');
+    });
+  });
+
+  describe('archive', () => {
+    it('archives active workspace', () => {
+      const workspace = Workspace.create({ name: 'Test', memberLimit: 10 });
+
+      workspace.archive();
+
+      expect(workspace.status).toBe('archived');
+    });
+
+    it('rejects archiving already archived workspace', () => {
+      const workspace = Workspace.create({ name: 'Test', memberLimit: 10 });
+      workspace.archive();
+
+      expect(() => workspace.archive()).toThrow('Workspace already archived');
+    });
+  });
+});
+
+// Tests run in <1ms each, no database required
+```
+
+#### Clarifying Additions
+
+**Domain logic is easy to verify because it avoids external dependencies.** Tests focus purely on business rules without the complexity of infrastructure setup.
+
+**Tests remain fast and reliable.** Unit tests execute in milliseconds, enabling tight feedback loops and encouraging developers to run tests frequently.
+
+**This leads to strong coverage of critical business rules.** Because tests are easy to write, developers write more of them, leading to better quality and fewer bugs.
+
+---
+
+### 2. Adapter Design Enables Test Doubles
+
+#### Architectural Choice
+
+All external dependencies are accessed through interfaces (ports), allowing test implementations (test doubles) to be easily substituted during testing.
+
+#### Impact and Justification
+
+Real external systems (databases, APIs, message brokers) are problematic for testing:
+- **Slow**: Network calls and database queries add latency
+- **Flaky**: External systems can be temporarily unavailable
+- **Stateful**: Tests can interfere with each other through shared state
+- **Complex**: Require extensive setup and teardown
+
+**Test doubles** (in-memory implementations of interfaces) solve all these problems. They're fast, reliable, isolated, and simple. The Hexagonal Architecture makes test doubles trivial because all external dependencies are already behind interfaces.
+
+**In Tuturuuu - Test doubles:**
+```typescript
+// Interface defined by domain
+export interface TaskRepository {
+  findById(id: string): Promise<Task | null>;
+  save(task: Task): Promise<void>;
+  findByWorkspace(workspaceId: string): Promise<Task[]>;
+}
+
+// Production implementation (Supabase)
+export class SupabaseTaskRepository implements TaskRepository {
+  // ... real database implementation
+}
+
+// Test implementation (in-memory)
+export class InMemoryTaskRepository implements TaskRepository {
+  private tasks = new Map<string, Task>();
+
+  async findById(id: string): Promise<Task | null> {
+    return this.tasks.get(id) || null;
+  }
+
+  async save(task: Task): Promise<void> {
+    this.tasks.set(task.id, task);
+  }
+
+  async findByWorkspace(workspaceId: string): Promise<Task[]> {
+    return Array.from(this.tasks.values())
+      .filter(task => task.workspaceId === workspaceId);
+  }
+
+  // Test helpers
+  clear() {
+    this.tasks.clear();
+  }
+
+  count() {
+    return this.tasks.size;
+  }
+}
+
+// Test using in-memory repository
+describe('TaskService', () => {
+  let taskRepo: InMemoryTaskRepository;
+  let service: TaskService;
+
+  beforeEach(() => {
+    taskRepo = new InMemoryTaskRepository();
+    service = new TaskService(taskRepo);
+  });
+
+  it('creates task', async () => {
+    const task = await service.createTask({
+      title: 'Test task',
+      workspaceId: 'ws-123'
+    });
+
+    expect(task.title).toBe('Test task');
+    expect(taskRepo.count()).toBe(1);
+
+    // Verify task was saved
+    const saved = await taskRepo.findById(task.id);
+    expect(saved).toBeDefined();
+  });
+
+  it('finds tasks by workspace', async () => {
+    await service.createTask({ title: 'Task 1', workspaceId: 'ws-1' });
+    await service.createTask({ title: 'Task 2', workspaceId: 'ws-1' });
+    await service.createTask({ title: 'Task 3', workspaceId: 'ws-2' });
+
+    const tasks = await taskRepo.findByWorkspace('ws-1');
+
+    expect(tasks).toHaveLength(2);
+  });
+});
+```
+
+#### Clarifying Additions
+
+**External interactions can be simulated cleanly.** Test doubles provide predictable, controllable implementations of external systems.
+
+**Testing becomes predictable and thorough.** Tests aren't affected by external system availability or performance, leading to consistent, reliable test suites.
+
+**Complex conditions are easier to replicate.** Error scenarios (network failures, database constraints) can be easily simulated with test doubles that would be difficult to reproduce with real systems.
+
+---
+
+### 3. Contract Testing for Microservices
+
+#### Architectural Choice
+
+Service boundaries are verified through contract tests that ensure APIs and event schemas remain compatible as services evolve independently.
+
+#### Impact and Justification
+
+In a microservices architecture, services evolve independently. A breaking change to a service's API can silently break consumers without the producer knowing until runtime. Traditional integration tests that spin up all services are slow, complex, and brittle.
+
+**Contract testing** solves this by verifying that:
+1. **Producer** honors the contract (API/event schema) that consumers expect
+2. **Consumer** can handle the responses/events that producers emit
+
+This catches breaking changes early (at build time) without requiring full integration test environments.
+
+**In Tuturuuu - Contract testing:**
+```typescript
+// Define API contract
+// packages/apis/src/contracts/workspace.contract.ts
+import { z } from 'zod';
+
+export const WorkspaceContract = {
+  getWorkspace: {
+    input: z.object({
+      id: z.string().uuid()
+    }),
+    output: z.object({
+      id: z.string().uuid(),
+      name: z.string(),
+      status: z.enum(['active', 'archived']),
+      memberCount: z.number(),
+      createdAt: z.string().datetime()
+    })
+  },
+
+  createWorkspace: {
+    input: z.object({
+      name: z.string().min(3),
+      memberLimit: z.number().optional()
+    }),
+    output: z.object({
+      id: z.string().uuid(),
+      name: z.string(),
+      status: z.literal('active'),
+      memberLimit: z.number()
+    })
+  }
+};
+
+// Producer test - verify service honors contract
+describe('WorkspaceAPI - Producer Contract', () => {
+  it('getWorkspace returns valid response', async () => {
+    const workspace = await createTestWorkspace();
+
+    const response = await api.getWorkspace({ id: workspace.id });
+
+    // Verify response matches contract
+    expect(() => {
+      WorkspaceContract.getWorkspace.output.parse(response);
+    }).not.toThrow();
+  });
+
+  it('createWorkspace accepts valid input and returns valid output', async () => {
+    const input = { name: 'Test Workspace', memberLimit: 20 };
+
+    // Verify input is valid
+    expect(() => {
+      WorkspaceContract.createWorkspace.input.parse(input);
+    }).not.toThrow();
+
+    const response = await api.createWorkspace(input);
+
+    // Verify output matches contract
+    expect(() => {
+      WorkspaceContract.createWorkspace.output.parse(response);
+    }).not.toThrow();
+  });
+});
+
+// Consumer test - verify consumer can handle producer responses
+describe('WorkspaceAPI - Consumer Contract', () => {
+  it('handles workspace response', () => {
+    // Mock response that matches contract
+    const mockResponse = {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      name: 'My Workspace',
+      status: 'active' as const,
+      memberCount: 5,
+      createdAt: '2024-11-17T00:00:00Z'
+    };
+
+    // Consumer code should handle this
+    expect(() => {
+      const workspace = parseWorkspaceResponse(mockResponse);
+      expect(workspace.name).toBe('My Workspace');
+    }).not.toThrow();
+  });
+});
+```
+
+**Event contract testing:**
+```typescript
+// Event schema contract
+export const WorkspaceEvents = {
+  'workspace.created': z.object({
+    workspaceId: z.string().uuid(),
+    name: z.string(),
+    ownerId: z.string().uuid(),
+    createdAt: z.string().datetime()
+  }),
+
+  'workspace.member.added': z.object({
+    workspaceId: z.string().uuid(),
+    userId: z.string().uuid(),
+    role: z.enum(['owner', 'admin', 'member']),
+    addedAt: z.string().datetime()
+  })
+};
+
+// Producer test
+it('emits valid workspace.created event', async () => {
+  const event = await captureEvent('workspace.created', () => {
+    return createWorkspace({ name: 'Test' });
+  });
+
+  // Verify event matches schema
+  expect(() => {
+    WorkspaceEvents['workspace.created'].parse(event);
+  }).not.toThrow();
+});
+
+// Consumer test
+it('handles workspace.created event', async () => {
+  const mockEvent = {
+    workspaceId: '123e4567-e89b-12d3-a456-426614174000',
+    name: 'Test Workspace',
+    ownerId: '234e5678-e89b-12d3-a456-426614174000',
+    createdAt: '2024-11-17T00:00:00Z'
+  };
+
+  // Consumer should handle valid events
+  expect(async () => {
+    await handleWorkspaceCreated(mockEvent);
+  }).not.toThrow();
+});
+```
+
+#### Clarifying Additions
+
+**Service boundaries remain stable through contract checks.** Breaking changes are caught by failing contract tests before code reaches production.
+
+**Teams catch breaking changes early.** Instead of discovering API incompatibilities in staging or production, contract tests fail during CI/CD.
+
+**Collaboration between services stays reliable.** Contract tests act as executable documentation of service interfaces, ensuring compatibility as teams work independently.
+
+---
+
+### 4. Event-Driven Systems Support Replay Testing
+
+#### Architectural Choice
+
+The event-driven architecture preserves event history, enabling powerful testing techniques like event replay and scenario recreation.
+
+#### Impact and Justification
+
+Traditional request-response systems are ephemeral. Once a request completes, reproducing the exact conditions that led to a bug is difficult or impossible. Debugging production issues often involves guesswork.
+
+**Event replay** provides a time machine for testing. Because all events are preserved, we can:
+1. **Capture** event sequences from production
+2. **Replay** them in test environments to reproduce bugs
+3. **Verify** that fixes resolve the issue
+4. **Test** edge cases by constructing specific event sequences
+
+This makes debugging significantly more reliable and enables regression testing for complex, multi-step workflows.
+
+**In Tuturuuu - Event replay testing:**
+```typescript
+// Capture events from production
+export async function captureEventSequence(
+  workspaceId: string,
+  startTime: Date,
+  endTime: Date
+): Promise<DomainEvent[]> {
+  return await eventStore.query({
+    workspaceId,
+    from: startTime,
+    to: endTime,
+    orderBy: 'timestamp'
+  });
+}
+
+// Replay events in test environment
+export async function replayEvents(events: DomainEvent[]) {
+  // Reset test environment
+  await resetTestDatabase();
+
+  // Replay each event in order
+  for (const event of events) {
+    await eventBus.publish(event);
+    await waitForEventProcessing();
+  }
+}
+
+// Test by replaying production scenario
+describe('Bug: Workspace members not receiving invitations', () => {
+  it('reproduces production bug', async () => {
+    // Capture events from production incident
+    const events = await captureEventSequence(
+      'ws-problematic',
+      new Date('2024-11-15T14:00:00Z'),
+      new Date('2024-11-15T14:05:00Z')
+    );
+
+    // Replay in test environment
+    await replayEvents(events);
+
+    // Verify bug is reproduced
+    const invitations = await getInvitations('ws-problematic');
+    expect(invitations).toHaveLength(0); // Bug: no invitations sent
+  });
+
+  it('verifies fix resolves the issue', async () => {
+    // Apply the fix (code changes)
+
+    // Replay same event sequence
+    const events = await captureEventSequence(
+      'ws-problematic',
+      new Date('2024-11-15T14:00:00Z'),
+      new Date('2024-11-15T14:05:00Z')
+    );
+
+    await replayEvents(events);
+
+    // Verify fix worked
+    const invitations = await getInvitations('ws-problematic');
+    expect(invitations).toHaveLength(3); // Fix: invitations sent correctly
+  });
+});
+
+// Test edge cases by constructing event sequences
+describe('Workspace state transitions', () => {
+  it('handles rapid member additions and removals', async () => {
+    const events = [
+      createEvent('workspace.created', { id: 'ws-1' }),
+      createEvent('member.added', { userId: 'user-1' }),
+      createEvent('member.added', { userId: 'user-2' }),
+      createEvent('member.removed', { userId: 'user-1' }),
+      createEvent('member.added', { userId: 'user-3' }),
+      createEvent('member.removed', { userId: 'user-2' }),
+    ];
+
+    await replayEvents(events);
+
+    const workspace = await getWorkspace('ws-1');
+    expect(workspace.members).toHaveLength(1);
+    expect(workspace.members[0].userId).toBe('user-3');
+  });
+});
+```
+
+#### Clarifying Additions
+
+**Capturing event sequences makes reproducing issues easier.** Production bugs can be reliably recreated in test environments by replaying the exact sequence of events that led to the failure.
+
+**Historical flows can be studied and validated.** Teams can analyze how the system responded to past events and verify that fixes prevent recurrence.
+
+**This strengthens debugging across distributed processes.** Complex, multi-service workflows can be tested end-to-end by replaying events, making it easier to verify system behavior.
+
+---
+
+### 5. Independent CI Pipelines
+
+#### Architectural Choice
+
+Each microservice has its own independent CI/CD pipeline that runs tests, builds, and deploys the service without coordinating with other services.
+
+#### Impact and Justification
+
+In a monolithic architecture, all tests run in a single, long CI pipeline. A failure in any part of the system blocks the entire deployment, and slow tests create bottlenecks.
+
+**Independent CI pipelines** for each service provide:
+- **Parallelism**: All services test simultaneously, dramatically reducing feedback time
+- **Isolation**: Failures in one service don't block others from deploying
+- **Focus**: Teams see only their service's test results, reducing noise
+- **Speed**: Smaller test suites run faster than monolithic suites
+
+**In Tuturuuu - Independent CI:**
+```yaml
+# .github/workflows/web-ci.yml
+name: Web App CI
+
+on:
+  push:
+    paths:
+      - 'apps/web/**'
+      - 'packages/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: oven-sh/setup-bun@v1
+
+      # Only run tests for web app
+      - run: bun install
+      - run: bun --filter @tuturuuu/web test
+      - run: bun --filter @tuturuuu/web run type-check
+      - run: bun --filter @tuturuuu/web run build
+
+# .github/workflows/finance-ci.yml
+name: Finance App CI
+
+on:
+  push:
+    paths:
+      - 'apps/finance/**'
+      - 'packages/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: oven-sh/setup-bun@v1
+
+      # Only run tests for finance app (runs in parallel with web)
+      - run: bun install
+      - run: bun --filter @tuturuuu/finance test
+      - run: bun --filter @tuturuuu/finance run type-check
+      - run: bun --filter @tuturuuu/finance run build
+```
+
+**Turborepo caching for speed:**
+```json
+// turbo.json
+{
+  "pipeline": {
+    "test": {
+      "cache": true,
+      "inputs": ["src/**", "tests/**", "package.json"]
+    },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "dist/**"],
+      "cache": true
+    }
+  }
+}
+```
+
+#### Clarifying Additions
+
+**Tests run in parallel without interfering with each other.** Multiple teams can have their tests running simultaneously, reducing wait times.
+
+**Failures stay localized to the affected service.** A failing test in the finance service doesn't prevent the web app from deploying.
+
+**Delivery becomes smoother and less risky.** Smaller, focused deployments are easier to verify and roll back if needed.
+
+---
+
+## Deployability
+
+Deployability determines how easily and safely we can release changes to production. Good deployability enables frequent, low-risk deployments.
+
+### 1. Independent Deployment Pipelines
+
+#### Architectural Choice
+
+Each microservice is independently deployable with its own release cycle, allowing teams to ship updates without coordinating across the organization.
+
+#### Impact and Justification
+
+Monolithic architectures force **all-or-nothing deployments**. Every change, no matter how small or isolated, requires rebuilding and redeploying the entire application. This creates:
+- **Deployment bottlenecks**: Teams must coordinate release windows
+- **High-risk releases**: Large deployments contain many changes, increasing failure probability
+- **Slow feedback**: Small fixes take days to reach production
+- **Deployment fear**: Teams avoid deploying due to coordination overhead
+
+**Independent deployment** eliminates these problems. Each service ships on its own schedule:
+- **Fast iteration**: Deploy bug fixes minutes after they're written
+- **Low risk**: Small, focused deployments are easier to verify and roll back
+- **Team autonomy**: No cross-team coordination required for deployments
+- **Continuous delivery**: Deploy multiple times per day without fear
+
+**In Tuturuuu:**
+```typescript
+// Independent deployment commands
+// Each team can deploy their service independently
+
+// Web team deploys main platform
+$ bun deploy:web
+✓ Deployed to production (3m 45s)
+✓ Health checks passed
+✓ Rollout complete
+
+// Finance team deploys finance module (doesn't affect web)
+$ bun deploy:finance
+✓ Deployed to production (2m 12s)
+✓ Health checks passed
+✓ Rollout complete
+
+// Calendar team deploys calendar module (doesn't affect web or finance)
+$ bun deploy:calendar
+✓ Deployed to production (1m 58s)
+✓ Health checks passed
+✓ Rollout complete
+
+// All deployments independent - no coordination required
+```
+
+**Vercel deployment configuration:**
+```json
+// vercel.json for each app
+{
+  "name": "tuturuuu-web",
+  "buildCommand": "bun run build",
+  "devCommand": "bun run dev",
+  "installCommand": "bun install",
+  "framework": "nextjs",
+  "outputDirectory": ".next",
+
+  // Each app has independent deployment settings
+  "regions": ["iad1"],
+  "env": {
+    "NEXT_PUBLIC_APP_NAME": "web"
+  }
+}
+```
+
+#### Clarifying Additions
+
+**Teams ship updates without affecting others.** Finance deployments don't trigger web redeployments or risk breaking calendar functionality.
+
+**Releases become smaller and less risky.** Instead of deploying 50 changes from 10 teams, each team deploys 5 changes independently.
+
+**This improves overall delivery speed.** Removing coordination overhead and deployment fear leads to more frequent, confident releases.
+
+---
+
+### 2. Controlled Rollout Strategies Through Architectural Boundaries
+
+#### Architectural Choice
+
+Service boundaries enable granular deployment strategies like canary releases, blue-green deployments, and feature flags, allowing changes to be introduced gradually.
+
+#### Impact and Justification
+
+Even with small deployments, risk remains. A bug can slip through testing and impact production users. **Controlled rollout strategies** mitigate this risk by:
+- **Gradual exposure**: New versions serve only a small percentage of traffic initially
+- **Monitoring**: Observe error rates and performance before full rollout
+- **Quick rollback**: Instantly revert to previous version if issues detected
+- **Confidence**: Deploy with confidence knowing failures impact minimal users
+
+Service boundaries make these strategies practical because each service can have independent routing and versioning.
+
+**In Tuturuuu - Deployment strategies:**
+```typescript
+// Canary deployment (Vercel automatic)
+// New version serves 10% of traffic initially
+
+// vercel.json
+{
+  "name": "tuturuuu-finance",
+
+  // Vercel automatically does canary deployments
+  // 1. Deploy new version
+  // 2. Route 10% traffic to new version
+  // 3. Monitor error rates
+  // 4. Gradually increase to 100% if healthy
+  // 5. Automatic rollback if error rates spike
+}
+
+// Feature flags for gradual feature rollout
+export async function getFinanceFeatures(workspaceId: string) {
+  const flags = await featureFlags.get(workspaceId);
+
+  return {
+    advancedReports: flags.has('finance.advanced-reports'),
+    aiForecasting: flags.has('finance.ai-forecasting'),
+    multiCurrency: flags.has('finance.multi-currency'),
+  };
+}
+
+// Enable feature for specific workspaces first
+await featureFlags.enable('finance.ai-forecasting', {
+  workspaces: ['ws-beta-1', 'ws-beta-2'] // Beta test
+});
+
+// Monitor performance and errors
+const metrics = await monitorFeature('finance.ai-forecasting', '24h');
+
+if (metrics.errorRate < 0.01 && metrics.userSatisfaction > 0.8) {
+  // Gradually roll out to more users
+  await featureFlags.enable('finance.ai-forecasting', {
+    percentage: 50 // 50% of all workspaces
+  });
+}
+
+// Full rollout after validation
+await featureFlags.enable('finance.ai-forecasting', {
+  percentage: 100 // Everyone
+});
+```
+
+**Blue-green deployment (for databases):**
+```typescript
+// Run migrations on "green" environment
+// Switch traffic after validation
+
+// 1. Green environment: Apply migration
+await supabase.rpc('run_migration', {
+  migration: '20241117_add_ai_forecasting'
+});
+
+// 2. Verify green environment health
+const healthy = await verifyGreenEnvironment();
+
+if (healthy) {
+  // 3. Switch traffic from blue to green
+  await switchTraffic('blue' -> 'green');
+
+  // 4. Monitor for issues
+  setTimeout(() => {
+    if (metricsLookGood()) {
+      // 5. Destroy blue environment
+      destroyBlueEnvironment();
+    } else {
+      // Rollback: Switch back to blue
+      switchTraffic('green' -> 'blue');
+    }
+  }, 3600000); // Monitor for 1 hour
+}
+```
+
+#### Clarifying Additions
+
+**New versions introduce changes gradually instead of all at once.** Risk is minimized by limiting exposure to a small percentage of users or specific cohorts.
+
+**Issues surface early in controlled conditions.** Problems are detected when only 10% of users are affected, allowing quick rollback before widespread impact.
+
+**This improves deployment safety.** Teams deploy confidently knowing that issues will be caught early and can be mitigated quickly.
+
+---
+
+### 3. Architecture-Supported Environment Consistency
+
+#### Architectural Choice
+
+Infrastructure as Code (IaC) and containerization ensure that development, staging, and production environments are consistent and reproducible.
+
+#### Impact and Justification
+
+The classic "works on my machine" problem stems from environment inconsistencies. Code behaves differently in production than in development due to different:
+- Dependencies and versions
+- Environment variables and configuration
+- Infrastructure and scaling behavior
+- Operating systems and system libraries
+
+**Architecture-supported environment consistency** eliminates this by:
+- **Defining environments as code** that can be version-controlled
+- **Using containers** to ensure identical runtime across environments
+- **Automating setup** to prevent manual configuration drift
+- **Validating consistency** through automated checks
+
+**In Tuturuuu - Environment consistency:**
+```typescript
+// .env.example - template for all environments
+// Developers, staging, and production use same variables
+
+NEXT_PUBLIC_SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+TRIGGER_API_KEY=
+DATABASE_URL=
+
+// Environment-specific .env files
+// .env.local (development)
+// .env.staging (staging)
+// .env.production (production)
+
+// All have same structure, different values
+```
+
+**Vercel environment configuration:**
+```json
+// vercel.json ensures consistency
+{
+  "env": {
+    // Required in all environments
+    "NEXT_PUBLIC_SUPABASE_URL": "@supabase-url",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase-service-key"
+  },
+
+  "build": {
+    "env": {
+      // Build-time variables
+      "NEXT_PUBLIC_APP_VERSION": "1.0.0"
+    }
+  }
+}
+```
+
+**Docker ensures runtime consistency (if used):**
+```dockerfile
+# Dockerfile
+FROM oven/bun:1.3.0 as base
+
+WORKDIR /app
+
+# Install dependencies (same versions everywhere)
+COPY package.json bun.lockb ./
+RUN bun install --frozen-lockfile
+
+# Copy source
+COPY . .
+
+# Build (same process everywhere)
+RUN bun run build
+
+# Production image (identical across environments)
+FROM oven/bun:1.3.0-slim
+WORKDIR /app
+COPY --from=base /app/.next ./.next
+COPY --from=base /app/node_modules ./node_modules
+COPY --from=base /app/package.json ./
+
+CMD ["bun", "run", "start"]
+```
+
+**Supabase local development matches production:**
+```bash
+# Local Supabase exactly mirrors production schema
+$ bun sb:start
+
+# Migrations applied identically everywhere
+$ bun sb:up  # Local
+$ bun sb:push  # Production
+
+# Type generation ensures consistency
+$ bun sb:typegen  # Same types in all environments
+```
+
+#### Clarifying Additions
+
+**Environments remain aligned through structured definitions.** Configuration as code prevents drift between development, staging, and production.
+
+**Deployment steps become predictable across stages.** The same deployment process works identically in all environments, reducing deployment-specific issues.
+
+**This reduces surprises when promoting changes.** Code that works in staging will work in production because environments are consistent.
+
+---
+
+## Quality Attributes Summary
+
+| Attribute | Key Mechanisms | Primary Benefit | Related Patterns |
+|-----------|---------------|-----------------|------------------|
+| **Maintainability** | Domain boundaries, technology independence, hexagonal architecture, modular frontend, operational independence | Sustainable long-term evolution | Microservices, Hexagonal, Modular Monolith |
+| **Testability** | Pure unit tests, test doubles, contract testing, event replay, independent CI | High confidence in changes | Hexagonal, Event-Driven, Microservices |
+| **Deployability** | Independent pipelines, controlled rollouts, environment consistency | Frequent, low-risk releases | Microservices, IaC, Feature Flags |
+
+## Related Documentation
+
+- [Core Architectural Decisions](/platform/architecture/system-design/architectural-decisions) - Why we chose this architecture
+- [Hexagonal Architecture](/platform/architecture/system-design/hexagonal-architecture) - Ports and adapters in detail
+- [Microservices Patterns](/platform/architecture/system-design/microservices-patterns) - Service boundaries and deployment
+- [Event-Driven Architecture](/platform/architecture/system-design/event-driven-architecture) - Event streaming patterns
+- [Observability & Monitoring](/platform/architecture/system-design/observability-monitoring) - Testing in production

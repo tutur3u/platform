@@ -76,6 +76,8 @@ export class SupabaseWorkspaceRepository implements WorkspaceRepository {
 - **Inversion of control** - domain doesn't depend on infrastructure
 - **Technology agnostic** core business logic
 
+**Clarifying Additions:** This enforces a clean separation that preserves the integrity of business rules. Infrastructure choices become replaceable rather than deeply embedded. The architecture stays flexible as technical needs evolve.
+
 **Anti-pattern to avoid:**
 
 ```typescript
@@ -192,6 +194,8 @@ export class Workspace {
 - **API stability** - internal changes don't break API contract
 - **Serialization control** - DTOs are JSON-friendly
 - **Versioning** - can support multiple DTO versions
+
+**Clarifying Additions:** Interfaces clarify what the domain requires without exposing internal structures. This allows external systems to interact without knowing implementation details. Such boundaries minimize coupling between layers.
 
 **Anti-pattern to avoid:**
 
@@ -350,6 +354,8 @@ export class Workspace {
 - **Testability** - each layer tested independently
 - **Maintainability** - changes confined to appropriate layer
 
+**Clarifying Additions:** This keeps the heart of the system stable despite environmental changes. The domain stays consistent across different execution contexts. This significantly boosts reliability and predictability.
+
 **Anti-pattern to avoid:**
 
 ```typescript
@@ -466,6 +472,8 @@ export type WorkspaceCreatedEventV2 = z.infer<typeof WorkspaceCreatedEventV2>;
 - **Independent deployment** of services
 - **No direct dependencies** between services
 
+**Clarifying Additions:** Clients remain simple and unaffected by internal changes. Service boundaries stay intact because external access is tightly controlled. This enforces a clean separation between client-facing and internal concerns.
+
 **Anti-pattern to avoid:**
 
 ```typescript
@@ -539,6 +547,8 @@ export function validateEventProducer(
 - **Audit trail** - know exactly which services produce/consume events
 - **Documentation** - ACL config documents allowed communication
 
+**Clarifying Additions:** This ensures services evolve internally without breaking others. External dependencies rely on stable contracts rather than hidden details. This strengthens overall modularity across the architecture.
+
 ---
 
 ### 3. Elimination of Synchronous Coupling
@@ -593,6 +603,8 @@ client.defineJob({
 - **Independent availability** of services
 - **Faster user responses**
 - **Easier to add new services**
+
+**Clarifying Additions:** Controlled communication prevents accidental or unauthorized interactions. Service boundaries stay clear as the system grows. This improves safety and consistency in distributed communication.
 
 **Anti-pattern to avoid:**
 

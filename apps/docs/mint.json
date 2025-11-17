@@ -72,6 +72,9 @@
                 "platform/architecture/system-design/event-driven-architecture",
                 "platform/architecture/system-design/extensibility-resilience-scalability",
                 "platform/architecture/system-design/encapsulation-patterns",
+                "platform/architecture/system-design/quality-attributes",
+                "platform/architecture/system-design/security-architecture",
+                "platform/architecture/system-design/observability-monitoring",
                 "platform/architecture/system-design/hexagonal-architecture",
                 "platform/architecture/system-design/microservices-patterns"
               ]
