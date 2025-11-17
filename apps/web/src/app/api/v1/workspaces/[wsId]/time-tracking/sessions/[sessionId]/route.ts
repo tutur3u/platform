@@ -174,16 +174,16 @@ export async function PATCH(
         const isEditingTime = startTime !== undefined || endTime !== undefined;
 
         if (isEditingTime) {
-          // Check if more than one week has passed since the session start time
+          // Check if more than one day has passed since the session start time
           const sessionStartTime = new Date(session.start_time);
-          const oneWeekAgo = new Date();
-          oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+          const oneDayAgo = new Date();
+          oneDayAgo.setDate(oneDayAgo.getDate() - 1);
 
-          if (sessionStartTime < oneWeekAgo) {
+          if (sessionStartTime < oneDayAgo) {
             return NextResponse.json(
               {
                 error:
-                  'Cannot edit start time or end time for sessions older than one week',
+                  'Cannot edit start time or end time for sessions older than one day',
               },
               { status: 400 }
             );

@@ -868,11 +868,11 @@ const StackedSessionItem = ({
   );
 };
 
-// Helper function to check if a session is older than one week
-const isSessionOlderThanOneWeek = (session: SessionWithRelations): boolean => {
+// Helper function to check if a session is older than one day
+const isSessionOlderThanOneDay = (session: SessionWithRelations): boolean => {
   const sessionStartTime = dayjs.utc(session.start_time);
-  const oneWeekAgo = dayjs().utc().subtract(1, 'week');
-  return sessionStartTime.isBefore(oneWeekAgo);
+  const oneDayAgo = dayjs().utc().subtract(1, 'day');
+  return sessionStartTime.isBefore(oneDayAgo);
 };
 
 export function SessionHistory({
@@ -2314,7 +2314,7 @@ export function SessionHistory({
             </div>
             {sessionToEdit &&
               !sessionToEdit.is_running &&
-              (isSessionOlderThanOneWeek(sessionToEdit) ? (
+              (isSessionOlderThanOneDay(sessionToEdit) ? (
                 <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-950/50">
                   <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
                     <AlertTriangle className="h-4 w-4" />
@@ -2324,7 +2324,7 @@ export function SessionHistory({
                   </div>
                   <p className="mt-2 text-orange-600 text-sm dark:text-orange-400">
                     Start time and end time cannot be edited for sessions older
-                    than one week. This session is from{' '}
+                    than one day. This session is from{' '}
                     <span className="font-medium">
                       {dayjs
                         .utc(sessionToEdit.start_time)
