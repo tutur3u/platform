@@ -7091,6 +7091,182 @@ export type Database = {
           },
         ];
       };
+      time_tracking_requests: {
+        Row: {
+          approval_status: Database['public']['Enums']['time_tracking_request_status'];
+          approved_at: string | null;
+          approved_by: string | null;
+          category_id: string | null;
+          created_at: string;
+          description: string | null;
+          end_time: string;
+          id: string;
+          images: string[] | null;
+          rejected_at: string | null;
+          rejected_by: string | null;
+          rejection_reason: string | null;
+          start_time: string;
+          task_id: string | null;
+          title: string;
+          updated_at: string;
+          user_id: string;
+          workspace_id: string;
+        };
+        Insert: {
+          approval_status?: Database['public']['Enums']['time_tracking_request_status'];
+          approved_at?: string | null;
+          approved_by?: string | null;
+          category_id?: string | null;
+          created_at?: string;
+          description?: string | null;
+          end_time: string;
+          id: string;
+          images?: string[] | null;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          start_time: string;
+          task_id?: string | null;
+          title: string;
+          updated_at?: string;
+          user_id: string;
+          workspace_id: string;
+        };
+        Update: {
+          approval_status?: Database['public']['Enums']['time_tracking_request_status'];
+          approved_at?: string | null;
+          approved_by?: string | null;
+          category_id?: string | null;
+          created_at?: string;
+          description?: string | null;
+          end_time?: string;
+          id?: string;
+          images?: string[] | null;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          start_time?: string;
+          task_id?: string | null;
+          title?: string;
+          updated_at?: string;
+          user_id?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'time_tracking_requests_approved_by_fkey';
+            columns: ['approved_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_approved_by_fkey';
+            columns: ['approved_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_approved_by_fkey';
+            columns: ['approved_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_approved_by_fkey';
+            columns: ['approved_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'time_tracking_categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_rejected_by_fkey';
+            columns: ['rejected_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_rejected_by_fkey';
+            columns: ['rejected_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_rejected_by_fkey';
+            columns: ['rejected_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_rejected_by_fkey';
+            columns: ['rejected_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_requests_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       time_tracking_sessions: {
         Row: {
           category_id: string | null;
@@ -14116,12 +14292,12 @@ export type Database = {
       };
       insert_time_tracking_session_bypassed: {
         Args: {
-          p_category_id: string;
+          p_category_id?: string;
           p_description: string;
           p_duration_seconds: number;
           p_end_time: string;
           p_start_time: string;
-          p_task_id: string;
+          p_task_id?: string;
           p_title: string;
           p_user_id: string;
           p_ws_id: string;
@@ -14450,6 +14626,7 @@ export type Database = {
         | 'closed'
         | 'documents';
       task_priority: 'low' | 'normal' | 'high' | 'critical';
+      time_tracking_request_status: 'PENDING' | 'APPROVED' | 'REJECTED';
       workspace_api_key_scope:
         | 'gemini-2.0-flash'
         | 'gemini-2.5-flash'
@@ -14713,6 +14890,7 @@ export const Constants = {
         'documents',
       ],
       task_priority: ['low', 'normal', 'high', 'critical'],
+      time_tracking_request_status: ['PENDING', 'APPROVED', 'REJECTED'],
       workspace_api_key_scope: [
         'gemini-2.0-flash',
         'gemini-2.5-flash',

@@ -1092,7 +1092,8 @@
     "integrations": "Integrations",
     "more_tools": "More tools",
     "realtime_chat": "Realtime Chat",
-    "track": "Track"
+    "track": "Track",
+    "time_tracker_requests": "Requests"
   },
   "usage": {
     "description": "Monitor workspace activity, feature usage, and system metrics across your organization",
@@ -6677,6 +6678,82 @@
     "metadata": {
       "title": "Time Tracker",
       "description": "Manage Time Tracker in your Tuturuuu workspace."
+    },
+    "requests": {
+      "title": "Time Tracking Requests",
+      "description": "Review and approve time tracking requests from team members",
+      "filters": {
+        "title": "Filters",
+        "description": "Filter requests by status and user",
+        "status": "Status",
+        "user": "User",
+        "clearFilters": "Clear Filters",
+        "allUsers": "All Users"
+      },
+      "status": {
+        "all": "All",
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "list": {
+        "title": "Requests",
+        "showing": "Showing {start} to {end} of {total} requests",
+        "itemsPerPage": "Items per page",
+        "noRequestsTitle": "No requests found",
+        "noRequestsMessage": "Try adjusting your filters to see more results.",
+        "noRequestsDefault": "No time tracking requests have been submitted yet.",
+        "duration": "{hours}h {minutes}m",
+        "task": "Task: {name}",
+        "attachments": "{count} image{plural}",
+        "approvedBy": "Approved by {name}",
+        "approvedOn": "on {date}",
+        "rejectedBy": "Rejected by {name}",
+        "rejectedOn": "on {date}",
+        "loading": "Loading requests...",
+        "error": "Failed to load requests"
+      },
+      "detail": {
+        "title": "Request Details",
+        "userInfo": "User Information",
+        "timeInfo": "Time Information",
+        "startTime": "Start Time",
+        "endTime": "End Time",
+        "duration": "Duration",
+        "linkedTask": "Linked Task",
+        "description": "Description",
+        "attachments": "Attachments ({count})",
+        "loadingMedia": "Loading media...",
+        "requestApproved": "Request Approved",
+        "requestRejected": "Request Rejected",
+        "rejectionReason": "Reason:",
+        "approveButton": "Approve Request",
+        "rejectButton": "Reject Request",
+        "confirmRejection": "Confirm Rejection",
+        "rejectionReasonPlaceholder": "Please provide a reason for rejecting this request...",
+        "rejectionReasonRequired": "Please provide a reason for rejection",
+        "rejectionReasonLabel": "Rejection Reason",
+        "imageNavigation": "Image {current} of {total}",
+        "previousImage": "Previous",
+        "nextImage": "Next",
+        "unknownUser": "Unknown User",
+        "approvedDate": "Approved by {name} on {date}",
+        "rejectedDate": "Rejected by {name} on {date}"
+      },
+      "toast": {
+        "approveSuccess": "Time tracking request approved successfully",
+        "approveFailed": "Failed to approve request",
+        "rejectSuccess": "Time tracking request rejected",
+        "rejectFailed": "Failed to reject request",
+        "loadImagesFailed": "Failed to load images"
+      },
+      "time-tracker": {
+        "requests": {
+          "status": {
+            "pending": "Pending"
+          }
+        }
+      }
     },
     "modes": {
       "switchedToAdvanced": "Switched to Advanced Mode",

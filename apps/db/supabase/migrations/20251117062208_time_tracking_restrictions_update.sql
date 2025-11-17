@@ -104,11 +104,11 @@ CREATE OR REPLACE FUNCTION insert_time_tracking_session_bypassed(
     p_user_id UUID,
     p_title TEXT,
     p_description TEXT,
-    p_category_id UUID,
-    p_task_id UUID,
     p_start_time TIMESTAMP WITH TIME ZONE,
     p_end_time TIMESTAMP WITH TIME ZONE,
-    p_duration_seconds INTEGER
+    p_duration_seconds INTEGER,
+    p_category_id UUID DEFAULT NULL,
+    p_task_id UUID DEFAULT NULL
 )
 RETURNS time_tracking_sessions AS $$
 DECLARE

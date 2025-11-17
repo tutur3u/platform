@@ -4,14 +4,16 @@ import { Input } from "@tuturuuu/ui/input";
 import { Textarea } from "@tuturuuu/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@tuturuuu/ui/select";
 import { Button } from "@tuturuuu/ui/button";
-import { RefreshCw, Plus, Clock, AlertCircle } from "@tuturuuu/icons";
+import { RefreshCw, Plus, Clock, AlertCircle, Upload, X } from "@tuturuuu/icons";
 import dayjs from "dayjs";
-import { cn } from "@tuturuuu/utils/format";
+import { cn, isValidBlobUrl } from "@tuturuuu/utils/format";
 import { toast } from "@tuturuuu/ui/sonner";
 import { useRouter } from "next/navigation";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import type { TimeTrackingCategory, WorkspaceTask } from "@tuturuuu/types";
 import { formatDuration, getCategoryColor } from "./session-history";
+import imageCompression from 'browser-image-compression';
+import Image from 'next/image';
 
 interface MissedEntryDialogProps {
   open: boolean;
@@ -25,6 +27,15 @@ interface MissedEntryDialogProps {
   prefillStartTime?: string;
   prefillEndTime?: string;
 }
+
+const MAX_IMAGE_SIZE = 1 * 1024 * 1024; // 1MB
+const MAX_IMAGES = 5;
+const ALLOWED_IMAGE_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif',
+];
 
 export default function MissedEntryDialog({ 
   open,
@@ -45,8 +56,22 @@ export default function MissedEntryDialog({
   const [missedEntryStartTime, setMissedEntryStartTime] = useState('');
   const [missedEntryEndTime, setMissedEntryEndTime] = useState('');
   const [isCreatingMissedEntry, setIsCreatingMissedEntry] = useState(false);
+  
+  // State for image uploads (for entries older than 1 day)
+  const [images, setImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [imageError, setImageError] = useState<string>('');
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imagePreviewsRef = useRef<string[]>([]);
 
   const closeMissedEntryDialog = () => {
+    // Revoke all object URLs to free memory
+    imagePreviews.forEach((url) => {
+      URL.revokeObjectURL(url);
+    });
+    
     onOpenChange(false);
     setMissedEntryTitle('');
     setMissedEntryDescription('');
@@ -54,6 +79,11 @@ export default function MissedEntryDialog({
     setMissedEntryTaskId('none');
     setMissedEntryStartTime('');
     setMissedEntryEndTime('');
+    setImages([]);
+    setImagePreviews([]);
+    imagePreviewsRef.current = [];
+    setImageError('');
+    setIsDragOver(false);
   };
 
   // Initialize with pre-filled times when dialog opens
@@ -63,6 +93,158 @@ export default function MissedEntryDialog({
       setMissedEntryEndTime(prefillEndTime);
     }
   }, [open, prefillStartTime, prefillEndTime]);
+
+  // Clean up object URLs on unmount
+  useEffect(() => {
+    return () => {
+      imagePreviewsRef.current.forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+    };
+  }, []);
+
+  const compressImage = async (file: File): Promise<File> => {
+    try {
+      const options = {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+        initialQuality: 0.8,
+      };
+      const compressedBlob = await imageCompression(file, options);
+
+      const compressedFile = new File([compressedBlob], file.name, {
+        type: compressedBlob.type || file.type,
+        lastModified: Date.now(),
+      });
+
+      return compressedFile;
+    } catch (error) {
+      console.error('Image compression failed:', error);
+      return file;
+    }
+  };
+
+  const processImageFiles = async (files: File[]) => {
+    const validTypeFiles = files.filter((file) =>
+      ALLOWED_IMAGE_TYPES.includes(file.type)
+    );
+
+    const invalidTypeCount = files.length - validTypeFiles.length;
+    if (invalidTypeCount > 0) {
+      setImageError(
+        `${invalidTypeCount} file(s) rejected: only images (PNG, JPEG, WebP, GIF) are allowed.`
+      );
+    }
+
+    const currentImageCount = images.length;
+    const availableSlots = MAX_IMAGES - currentImageCount;
+    const filesToProcess = validTypeFiles.slice(0, availableSlots);
+    const overflow = validTypeFiles.length - filesToProcess.length;
+
+    if (overflow > 0) {
+      setImageError(
+        `You can upload up to ${MAX_IMAGES} images. ${overflow} file(s) were rejected.`
+      );
+    }
+
+    if (filesToProcess.length > 0) {
+      setIsCompressing(true);
+      try {
+        const processedWithSize = await Promise.all(
+          filesToProcess.map(async (file) => {
+            const processedFile = await compressImage(file);
+            return {
+              file: processedFile,
+              isValid: processedFile.size <= MAX_IMAGE_SIZE,
+              originalName: file.name,
+            };
+          })
+        );
+
+        const validFiles = processedWithSize.filter((item) => item.isValid);
+        const rejectedBySize = processedWithSize.filter(
+          (item) => !item.isValid
+        );
+
+        if (rejectedBySize.length > 0) {
+          const rejectedNames = rejectedBySize
+            .map((item) => item.originalName)
+            .join(', ');
+          setImageError(
+            `${rejectedBySize.length} file(s) rejected (exceeded 1MB even after compression): ${rejectedNames}`
+          );
+        } else if (imageError && invalidTypeCount === 0) {
+          setImageError('');
+        }
+
+        if (validFiles.length > 0) {
+          const acceptedFiles = validFiles.map((item) => item.file);
+          const newImages = [...images, ...acceptedFiles];
+          setImages(newImages);
+
+          const newPreviews = acceptedFiles.map((file) =>
+            URL.createObjectURL(file)
+          );
+          setImagePreviews((prev) => {
+            const updated = [...prev, ...newPreviews];
+            imagePreviewsRef.current = updated;
+            return updated;
+          });
+        }
+      } finally {
+        setIsCompressing(false);
+      }
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'copy';
+    }
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragOver(false);
+
+    const files = Array.from(event.dataTransfer.files).filter((file) =>
+      ALLOWED_IMAGE_TYPES.includes(file.type)
+    );
+
+    if (files.length > 0) {
+      processImageFiles(files);
+    }
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    processImageFiles(files);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const removeImage = (index: number) => {
+    if (imagePreviews[index]) {
+      URL.revokeObjectURL(imagePreviews[index]);
+    }
+
+    const newImages = images.filter((_, i) => i !== index);
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+
+    setImages(newImages);
+    setImagePreviews(newPreviews);
+    imagePreviewsRef.current = newPreviews;
+  };
 
   const createMissedEntry = async () => {
     if (!missedEntryTitle.trim()) {
@@ -88,54 +270,100 @@ export default function MissedEntryDialog({
       return;
     }
 
-    // // Check if start time is older than 1 day
-    // const oneDayAgo = dayjs().subtract(1, 'day');
-    // if (startTime.isBefore(oneDayAgo)) {
-    //   toast.error(
-    //     'Cannot add missed entries older than 1 day. Please contact support if you need to add older entries.'
-    //   );
-    //   return;
-    // }
+    // Check if start time is older than 1 day
+    const oneDayAgo = dayjs().subtract(1, 'day');
+    const isOlderThanOneDay = startTime.isBefore(oneDayAgo);
+    
+    if (isOlderThanOneDay && images.length === 0) {
+      toast.error('Please upload at least one image for entries older than 1 day');
+      return;
+    }
 
     setIsCreatingMissedEntry(true);
 
     try {
       const userTz = dayjs.tz.guess();
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            title: missedEntryTitle,
-            description: missedEntryDescription || null,
-            categoryId:
-              missedEntryCategoryId === 'none' ? null : missedEntryCategoryId,
-            taskId: missedEntryTaskId === 'none' ? null : missedEntryTaskId,
-            startTime: dayjs
-              .tz(missedEntryStartTime, userTz)
-              .utc()
-              .toISOString(),
-            endTime: dayjs.tz(missedEntryEndTime, userTz).utc().toISOString(),
-            isManualEntry: true, // Flag to indicate this is a manually created entry
-          }),
+      
+      // If older than 1 day, create a time tracking request instead
+      if (isOlderThanOneDay) {
+        const formData = new FormData();
+        formData.append('title', missedEntryTitle);
+        formData.append('description', missedEntryDescription || '');
+        formData.append(
+          'categoryId',
+          missedEntryCategoryId === 'none' ? '' : missedEntryCategoryId
+        );
+        formData.append(
+          'taskId',
+          missedEntryTaskId === 'none' ? '' : missedEntryTaskId
+        );
+        formData.append(
+          'startTime',
+          dayjs.tz(missedEntryStartTime, userTz).utc().toISOString()
+        );
+        formData.append(
+          'endTime',
+          dayjs.tz(missedEntryEndTime, userTz).utc().toISOString()
+        );
+
+        // Append image files
+        images.forEach((image, index) => {
+          formData.append(`image_${index}`, image);
+        });
+
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/time-tracking/requests`,
+          {
+            method: 'POST',
+            body: formData,
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create time tracking request');
         }
-      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create session');
+        router.refresh();
+        closeMissedEntryDialog();
+        toast.success('Time tracking request submitted for approval');
+      } else {
+        // Regular entry creation for entries within 1 day
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              title: missedEntryTitle,
+              description: missedEntryDescription || null,
+              categoryId:
+                missedEntryCategoryId === 'none' ? null : missedEntryCategoryId,
+              taskId: missedEntryTaskId === 'none' ? null : missedEntryTaskId,
+              startTime: dayjs
+                .tz(missedEntryStartTime, userTz)
+                .utc()
+                .toISOString(),
+              endTime: dayjs.tz(missedEntryEndTime, userTz).utc().toISOString(),
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create session');
+        }
+
+        router.refresh();
+        closeMissedEntryDialog();
+        toast.success('Missed entry added successfully');
       }
-
-      router.refresh();
-      closeMissedEntryDialog();
-      toast.success('Missed entry added successfully');
     } catch (error) {
       console.error('Error creating missed entry:', error);
       const errorMessage =
-        error instanceof Error ? error.message : 'Failed to create session';
+        error instanceof Error ? error.message : 'Failed to create entry';
       toast.error(errorMessage);
     } finally {
       setIsCreatingMissedEntry(false);
@@ -154,11 +382,11 @@ export default function MissedEntryDialog({
         open={open}
         onOpenChange={closeMissedEntryDialog}
       >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
+        <DialogContent className="mx-auto flex max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-3xl flex-col overflow-hidden">
+          <DialogHeader className="border-b pb-4">
             <DialogTitle>Add Missed Time Entry</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="flex-1 space-y-4 overflow-y-auto">
             <div>
               <Label htmlFor="missed-entry-title">Title *</Label>
               <Input
@@ -229,7 +457,7 @@ export default function MissedEntryDialog({
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               <div>
                 <Label htmlFor="missed-entry-start-time">Start Time *</Label>
                 <Input
@@ -250,20 +478,121 @@ export default function MissedEntryDialog({
               </div>
             </div>
 
-            {/* Warning for entries older than 1 day */}
+            {/* Warning and image upload for entries older than 1 day */}
             {isStartTimeOlderThanOneDay && (
-              <div className="rounded-lg border-dynamic-red bg-dynamic-red/10 p-3 border">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-dynamic-red" />
-                  <div className="text-sm">
-                    <p className="font-medium text-dynamic-red">
-                      Entry Too Old
-                    </p>
-                    <p className="text-muted-foreground mt-1">
-                      You cannot add missed entries older than 1 day. Please
-                      contact support if you need to add older entries.
-                    </p>
+              <div className="space-y-4">
+                <div className="rounded-lg border-dynamic-orange bg-dynamic-orange/10 p-3 border">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-dynamic-orange" />
+                    <div className="text-sm">
+                      <p className="font-medium text-dynamic-orange">
+                        Approval Required
+                      </p>
+                      <p className="text-muted-foreground mt-1">
+                        Entries older than 1 day require approval. Please upload at least one image as proof of work.
+                      </p>
+                    </div>
                   </div>
+                </div>
+
+                {/* Image upload section */}
+                <div className="space-y-3">
+                  <Label className="font-medium text-sm">
+                    Proof of Work * ({images.length}/{MAX_IMAGES})
+                  </Label>
+
+                  {images.length < MAX_IMAGES && (
+                    <button
+                      type="button"
+                      className={cn(
+                        'relative w-full rounded-lg border-2 border-dashed transition-all duration-200',
+                        isDragOver
+                          ? 'border-dynamic-orange bg-dynamic-orange/10'
+                          : 'border-border hover:border-border/80',
+                        isCompressing && 'pointer-events-none opacity-50'
+                      )}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      aria-label="Click to upload or drag and drop images"
+                      disabled={isCompressing}
+                    >
+                      <Input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/gif"
+                        multiple
+                        onChange={handleImageUpload}
+                        disabled={isCreatingMissedEntry || isCompressing}
+                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                      />
+                      <div className="flex flex-col items-center justify-center px-4 py-6 text-center">
+                        <div
+                          className={cn(
+                            'mb-2 flex h-10 w-10 items-center justify-center rounded-full transition-colors',
+                            isDragOver
+                              ? 'bg-dynamic-orange/20'
+                              : 'bg-muted'
+                          )}
+                        >
+                          <Upload
+                            className={cn(
+                              'h-5 w-5',
+                              isDragOver ? 'text-dynamic-orange' : 'text-muted-foreground'
+                            )}
+                          />
+                        </div>
+                        <p className="mb-1 font-medium text-sm">
+                          {isCompressing
+                            ? 'Compressing...'
+                            : isDragOver
+                              ? 'Drop images here'
+                              : 'Click to upload or drag and drop'}
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                          PNG, JPG, GIF, or WebP up to 1MB each
+                        </p>
+                      </div>
+                    </button>
+                  )}
+
+                  {imageError && (
+                    <div className="flex items-center gap-1 text-dynamic-red text-sm">
+                      <AlertCircle className="h-3 w-3" />
+                      {imageError}
+                    </div>
+                  )}
+
+                  {imagePreviews.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {imagePreviews.map((preview, index) => (
+                        <div key={preview} className="group relative">
+                          <div className="aspect-square overflow-hidden rounded-lg border-2 border-border bg-muted">
+                            <Image
+                              src={
+                                isValidBlobUrl(preview)
+                                  ? preview
+                                  : '/placeholder.svg'
+                              }
+                              alt={`Proof image ${index + 1}`}
+                              className="h-full w-full object-cover"
+                              width={100}
+                              height={100}
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="-top-2 -right-2 absolute h-6 w-6 rounded-full opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
+                            onClick={() => removeImage(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -381,39 +710,39 @@ export default function MissedEntryDialog({
               </div>
             )}
 
-            <div className="flex gap-2 pt-4">
-              <Button
-                variant="outline"
-                onClick={closeMissedEntryDialog}
-                className="flex-1"
-                disabled={isCreatingMissedEntry}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={createMissedEntry}
-                disabled={
-                  isCreatingMissedEntry ||
-                  !missedEntryTitle.trim() ||
-                  !missedEntryStartTime ||
-                  !missedEntryEndTime ||
-                  isStartTimeOlderThanOneDay
-                }
-                className="flex-1"
-              >
-                {isCreatingMissedEntry ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                    Adding...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4" />
-                    Add Entry
-                  </>
-                )}
-              </Button>
-            </div>
+          </div>
+          <div className="flex w-full flex-col-reverse gap-3 border-t px-6 pt-4 sm:flex-row sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={closeMissedEntryDialog}
+              className="w-full sm:w-auto"
+              disabled={isCreatingMissedEntry}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={createMissedEntry}
+              disabled={
+                isCreatingMissedEntry ||
+                !missedEntryTitle.trim() ||
+                !missedEntryStartTime ||
+                !missedEntryEndTime ||
+                (isStartTimeOlderThanOneDay && images.length === 0)
+              }
+              className="w-full sm:w-auto"
+            >
+              {isCreatingMissedEntry ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  {isStartTimeOlderThanOneDay ? 'Submitting...' : 'Adding...'}
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4" />
+                  {isStartTimeOlderThanOneDay ? 'Submit for Approval' : 'Add Entry'}
+                </>
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
