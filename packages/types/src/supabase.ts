@@ -14114,6 +14114,44 @@ export type Database = {
         };
         Returns: string;
       };
+      insert_time_tracking_session_bypassed: {
+        Args: {
+          p_category_id: string;
+          p_description: string;
+          p_duration_seconds: number;
+          p_end_time: string;
+          p_start_time: string;
+          p_task_id: string;
+          p_title: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          category_id: string | null;
+          created_at: string | null;
+          date: string | null;
+          description: string | null;
+          duration_seconds: number | null;
+          end_time: string | null;
+          id: string;
+          is_running: boolean | null;
+          productivity_score: number | null;
+          start_time: string;
+          tags: string[] | null;
+          task_id: string | null;
+          title: string;
+          updated_at: string | null;
+          user_id: string;
+          was_resumed: boolean;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'time_tracking_sessions';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       is_list_accessible: { Args: { _list_id: string }; Returns: boolean };
       is_member_invited: {
         Args: { _org_id: string; _user_id: string };
@@ -14303,6 +14341,39 @@ export type Database = {
       update_session_total_score: {
         Args: { challenge_id_param: string; user_id_param: string };
         Returns: undefined;
+      };
+      update_time_tracking_session_bypassed: {
+        Args: {
+          new_end_time: string;
+          new_notes: string;
+          new_start_time: string;
+          session_id: string;
+        };
+        Returns: {
+          category_id: string | null;
+          created_at: string | null;
+          date: string | null;
+          description: string | null;
+          duration_seconds: number | null;
+          end_time: string | null;
+          id: string;
+          is_running: boolean | null;
+          productivity_score: number | null;
+          start_time: string;
+          tags: string[] | null;
+          task_id: string | null;
+          title: string;
+          updated_at: string | null;
+          user_id: string;
+          was_resumed: boolean;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'time_tracking_sessions';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       upsert_calendar_events_and_count: {
         Args: { events: Json };

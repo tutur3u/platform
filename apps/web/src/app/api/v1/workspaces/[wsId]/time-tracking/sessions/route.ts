@@ -383,6 +383,20 @@ export async function POST(
         );
       }
 
+      // Check if start time is older than 1 day
+      const oneDayAgo = new Date();
+      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+
+      if (start < oneDayAgo) {
+        return NextResponse.json(
+          {
+            error:
+              'Cannot add missed entries older than 1 day. Please contact support if you need to add older entries.',
+          },
+          { status: 400 }
+        );
+      }
+
       // Calculate duration in seconds
       const durationSeconds = Math.floor(
         (end.getTime() - start.getTime()) / 1000
@@ -419,7 +433,22 @@ export async function POST(
         )
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // Check if error is from the trigger restriction
+        if (
+          error.message?.includes('older than one day is not allowed') ||
+          error.code === '23514'
+        ) {
+          return NextResponse.json(
+            {
+              error:
+                'Cannot add missed entries older than 1 day. Please contact support if you need to add older entries. ',
+            },
+            { status: 400 }
+          );
+        }
+        throw error;
+      }
 
       return NextResponse.json({ session: data }, { status: 201 });
     }

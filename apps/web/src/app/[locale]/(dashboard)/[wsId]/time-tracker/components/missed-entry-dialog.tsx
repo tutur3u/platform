@@ -4,12 +4,12 @@ import { Input } from "@tuturuuu/ui/input";
 import { Textarea } from "@tuturuuu/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@tuturuuu/ui/select";
 import { Button } from "@tuturuuu/ui/button";
-import { RefreshCw, Plus, Clock } from "@tuturuuu/icons";
+import { RefreshCw, Plus, Clock, AlertCircle } from "@tuturuuu/icons";
 import dayjs from "dayjs";
 import { cn } from "@tuturuuu/utils/format";
 import { toast } from "@tuturuuu/ui/sonner";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import type { TimeTrackingCategory, WorkspaceTask } from "@tuturuuu/types";
 import { formatDuration, getCategoryColor } from "./session-history";
 
@@ -22,6 +22,8 @@ interface MissedEntryDialogProps {
     list_name?: string;
   })[] | null;
   wsId: string;
+  prefillStartTime?: string;
+  prefillEndTime?: string;
 }
 
 export default function MissedEntryDialog({ 
@@ -30,6 +32,8 @@ export default function MissedEntryDialog({
   categories, 
   tasks,
   wsId,
+  prefillStartTime = '',
+  prefillEndTime = '',
 }: MissedEntryDialogProps) {
   const router = useRouter();
 
@@ -51,6 +55,14 @@ export default function MissedEntryDialog({
     setMissedEntryStartTime('');
     setMissedEntryEndTime('');
   };
+
+  // Initialize with pre-filled times when dialog opens
+  useEffect(() => {
+    if (open && prefillStartTime && prefillEndTime) {
+      setMissedEntryStartTime(prefillStartTime);
+      setMissedEntryEndTime(prefillEndTime);
+    }
+  }, [open, prefillStartTime, prefillEndTime]);
 
   const createMissedEntry = async () => {
     if (!missedEntryTitle.trim()) {
@@ -75,6 +87,15 @@ export default function MissedEntryDialog({
       toast.error('Session must be at least 1 minute long');
       return;
     }
+
+    // // Check if start time is older than 1 day
+    // const oneDayAgo = dayjs().subtract(1, 'day');
+    // if (startTime.isBefore(oneDayAgo)) {
+    //   toast.error(
+    //     'Cannot add missed entries older than 1 day. Please contact support if you need to add older entries.'
+    //   );
+    //   return;
+    // }
 
     setIsCreatingMissedEntry(true);
 
@@ -120,6 +141,14 @@ export default function MissedEntryDialog({
       setIsCreatingMissedEntry(false);
     }
   };
+
+  // Check if start time is older than 1 day
+  const isStartTimeOlderThanOneDay = useMemo(() => {
+    if (!missedEntryStartTime) return false;
+    const startTime = dayjs(missedEntryStartTime);
+    const oneDayAgo = dayjs().subtract(1, 'day');
+    return startTime.isBefore(oneDayAgo);
+  }, [missedEntryStartTime]);
     return (
         <Dialog
         open={open}
@@ -220,6 +249,24 @@ export default function MissedEntryDialog({
                 />
               </div>
             </div>
+
+            {/* Warning for entries older than 1 day */}
+            {isStartTimeOlderThanOneDay && (
+              <div className="rounded-lg border-dynamic-red bg-dynamic-red/10 p-3 border">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-dynamic-red" />
+                  <div className="text-sm">
+                    <p className="font-medium text-dynamic-red">
+                      Entry Too Old
+                    </p>
+                    <p className="text-muted-foreground mt-1">
+                      You cannot add missed entries older than 1 day. Please
+                      contact support if you need to add older entries.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Quick time presets */}
             <div className="rounded-lg border p-3">
@@ -349,7 +396,8 @@ export default function MissedEntryDialog({
                   isCreatingMissedEntry ||
                   !missedEntryTitle.trim() ||
                   !missedEntryStartTime ||
-                  !missedEntryEndTime
+                  !missedEntryEndTime ||
+                  isStartTimeOlderThanOneDay
                 }
                 className="flex-1"
               >

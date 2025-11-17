@@ -1411,6 +1411,13 @@ export function SessionHistory({
   };
 
   const openMissedEntryDialog = () => {
+    // Pre-fill with current date and time for convenience
+    const now = dayjs();
+    const oneHourAgo = now.subtract(1, 'hour');
+    
+    // Pass pre-filled times to the MissedEntryDialog via state
+    setPrefillStartTime(oneHourAgo.format('YYYY-MM-DDTHH:mm'));
+    setPrefillEndTime(now.format('YYYY-MM-DDTHH:mm'));
     setShowMissedEntryDialog(true);
   };
 
@@ -1421,6 +1428,10 @@ export function SessionHistory({
   const [editTaskId, setEditTaskId] = useState('');
   const [editStartTime, setEditStartTime] = useState('');
   const [editEndTime, setEditEndTime] = useState('');
+
+  // Pre-filled times for missed entry dialog
+  const [prefillStartTime, setPrefillStartTime] = useState('');
+  const [prefillEndTime, setPrefillEndTime] = useState('');
 
   // Original values to track changes
   const [originalValues, setOriginalValues] = useState<{
@@ -2410,6 +2421,8 @@ export function SessionHistory({
         categories={categories}
         tasks={tasks}
         wsId={wsId}
+        prefillStartTime={prefillStartTime}
+        prefillEndTime={prefillEndTime}
       />
 
 
