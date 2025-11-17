@@ -203,11 +203,13 @@ export async function PATCH(
       });
     }
   } catch (error) {
-    console.error('Unexpected error in PATCH /time-tracking/requests/[id]:', error);
+    console.error(
+      'Unexpected error in PATCH /time-tracking/requests/[id]:',
+      error
+    );
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : 'Internal server error',
+        error: error instanceof Error ? error.message : 'Internal server error',
       },
       { status: 500 }
     );

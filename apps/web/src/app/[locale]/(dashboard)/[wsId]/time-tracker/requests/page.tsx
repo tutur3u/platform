@@ -60,19 +60,13 @@ interface PageProps {
   }>;
 }
 
-export default async function TimeTrackerRequestsPage({
-  params,
-}: PageProps) {
+export default async function TimeTrackerRequestsPage({ params }: PageProps) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-
-
         return (
           <div className="container mx-auto px-4 py-6 md:px-8">
-            <RequestsClient
-              wsId={wsId}
-            />
+            <RequestsClient wsId={wsId} />
           </div>
         );
       }}

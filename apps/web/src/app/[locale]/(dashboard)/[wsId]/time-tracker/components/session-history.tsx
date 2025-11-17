@@ -1414,7 +1414,7 @@ export function SessionHistory({
     // Pre-fill with current date and time for convenience
     const now = dayjs();
     const oneHourAgo = now.subtract(1, 'hour');
-    
+
     // Pass pre-filled times to the MissedEntryDialog via state
     setPrefillStartTime(oneHourAgo.format('YYYY-MM-DDTHH:mm'));
     setPrefillEndTime(now.format('YYYY-MM-DDTHH:mm'));
@@ -2424,7 +2424,6 @@ export function SessionHistory({
         prefillStartTime={prefillStartTime}
         prefillEndTime={prefillEndTime}
       />
-
 
       {/* Move Session Dialog */}
       <WorkspaceSelectDialog

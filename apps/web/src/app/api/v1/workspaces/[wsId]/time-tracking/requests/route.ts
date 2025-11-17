@@ -1,6 +1,6 @@
 import {
-    createDynamicClient,
-    createClient,
+  createDynamicClient,
+  createClient,
 } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
@@ -153,8 +153,7 @@ export async function POST(
     console.error('Unexpected error:', error);
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : 'Internal server error',
+        error: error instanceof Error ? error.message : 'Internal server error',
       },
       { status: 500 }
     );
@@ -197,7 +196,10 @@ export async function GET(
     const status = url.searchParams.get('status') || 'pending'; // 'pending', 'approved', 'rejected'
     const userId = url.searchParams.get('userId'); // Optional: filter by user
     const page = Math.max(parseInt(url.searchParams.get('page') || '1'), 1);
-    const limit = Math.min(parseInt(url.searchParams.get('limit') || '10'), 100);
+    const limit = Math.min(
+      parseInt(url.searchParams.get('limit') || '10'),
+      100
+    );
     const offset = (page - 1) * limit;
 
     // Build count query
@@ -289,8 +291,7 @@ export async function GET(
     console.error('Unexpected error:', error);
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : 'Internal server error',
+        error: error instanceof Error ? error.message : 'Internal server error',
       },
       { status: 500 }
     );
