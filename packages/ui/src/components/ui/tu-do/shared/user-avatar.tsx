@@ -31,11 +31,7 @@ const fallbackSizeClasses = {
  * <UserAvatar user={member} size="sm" />
  * ```
  */
-export function UserAvatar({
-  user,
-  size = 'md',
-  className,
-}: UserAvatarProps) {
+export function UserAvatar({ user, size = 'md', className }: UserAvatarProps) {
   const displayName = user.display_name || 'Unknown';
   const initial = displayName[0]?.toUpperCase() || '?';
 

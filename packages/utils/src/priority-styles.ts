@@ -36,5 +36,7 @@ export function getPriorityLabel(
   t?: (key: string) => string
 ): string {
   const labels = ['None', 'Low', 'Medium', 'High'];
-  return t ? t(`priority.${labels[priority]?.toLowerCase() || 'none'}`) : labels[priority] || 'None';
+  return t
+    ? t(`priority.${labels[priority]?.toLowerCase() || 'none'}`)
+    : labels[priority] || 'None';
 }

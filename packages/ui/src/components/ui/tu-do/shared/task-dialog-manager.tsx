@@ -20,8 +20,13 @@ import { TaskEditDialog } from './task-edit-dialog';
  * that benefits from immediate availability over bundle size optimization.
  */
 export function TaskDialogManager() {
-  const { state, isPersonalWorkspace, triggerClose, triggerUpdate, closeDialog } =
-    useTaskDialogContext();
+  const {
+    state,
+    isPersonalWorkspace,
+    triggerClose,
+    triggerUpdate,
+    closeDialog,
+  } = useTaskDialogContext();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

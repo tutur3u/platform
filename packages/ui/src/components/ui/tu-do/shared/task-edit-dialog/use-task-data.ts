@@ -1,7 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { useBoardConfig, useWorkspaceLabels } from '@tuturuuu/utils/task-helper';
+import {
+  useBoardConfig,
+  useWorkspaceLabels,
+} from '@tuturuuu/utils/task-helper';
 
 const supabase = createClient();
 
@@ -14,7 +17,8 @@ interface UseTaskDataProps {
 }
 
 // UUID validation regex
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function isValidUUID(id: string): boolean {
   return UUID_REGEX.test(id);
@@ -135,52 +139,53 @@ export function useTaskData({
   });
 
   // Workspace tasks for mentions
-  const { data: workspaceTasks = [], isLoading: workspaceTasksLoading } = useQuery({
-    queryKey: ['workspace-tasks', realWorkspaceId, taskSearchQuery],
-    queryFn: async () => {
-      if (!realWorkspaceId || !isValidWsId) return [];
+  const { data: workspaceTasks = [], isLoading: workspaceTasksLoading } =
+    useQuery({
+      queryKey: ['workspace-tasks', realWorkspaceId, taskSearchQuery],
+      queryFn: async () => {
+        if (!realWorkspaceId || !isValidWsId) return [];
 
-      const { data: boards, error: boardsError } = await supabase
-        .from('workspace_boards')
-        .select('id')
-        .eq('ws_id', realWorkspaceId);
+        const { data: boards, error: boardsError } = await supabase
+          .from('workspace_boards')
+          .select('id')
+          .eq('ws_id', realWorkspaceId);
 
-      if (boardsError) throw boardsError;
+        if (boardsError) throw boardsError;
 
-      const boardIds = ((boards || []) as { id: string }[]).map((b) => b.id);
+        const boardIds = ((boards || []) as { id: string }[]).map((b) => b.id);
 
-      if (boardIds.length === 0) {
-        return [];
-      }
+        if (boardIds.length === 0) {
+          return [];
+        }
 
-      let query = supabase
-        .from('tasks')
-        .select(
-          `
+        let query = supabase
+          .from('tasks')
+          .select(
+            `
           id,
           name,
           priority,
           created_at,
           list:task_lists!inner(id, name, board_id)
         `
-        )
-        .in('task_lists.board_id', boardIds)
-        .is('deleted_at', null);
+          )
+          .in('task_lists.board_id', boardIds)
+          .is('deleted_at', null);
 
-      if (taskSearchQuery?.trim()) {
-        query = query.ilike('name', `%${taskSearchQuery.trim()}%`);
-      }
+        if (taskSearchQuery?.trim()) {
+          query = query.ilike('name', `%${taskSearchQuery.trim()}%`);
+        }
 
-      const { data, error } = await query
-        .order('created_at', { ascending: false })
-        .limit(taskSearchQuery ? 50 : 25);
+        const { data, error } = await query
+          .order('created_at', { ascending: false })
+          .limit(taskSearchQuery ? 50 : 25);
 
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!realWorkspaceId && isOpen && isValidWsId,
-    staleTime: 2 * 60 * 1000, // 2 minutes
-  });
+        if (error) throw error;
+        return data || [];
+      },
+      enabled: !!realWorkspaceId && isOpen && isValidWsId,
+      staleTime: 2 * 60 * 1000, // 2 minutes
+    });
 
   return {
     boardConfig,
@@ -201,7 +206,10 @@ export async function getCurrentUser(): Promise<{
   display_name: string | null;
   avatar_url: string | null;
 } | null> {
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
   if (error || !user) return null;
 
   const { data: userData } = await supabase

@@ -1,6 +1,13 @@
 'use client';
 
-import { Copy, ExternalLink, ListTodo, MoreVertical, Trash, X } from '@tuturuuu/icons';
+import {
+  Copy,
+  ExternalLink,
+  ListTodo,
+  MoreVertical,
+  Trash,
+  X,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
