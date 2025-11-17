@@ -86,10 +86,9 @@ export function TaskNameInput({
             // Only move if cursor is at the end
             if (cursorPosition === textLength) {
               e.preventDefault();
-              const editorElement =
-                editorRef.current?.querySelector(
-                  '.ProseMirror'
-                ) as HTMLElement;
+              const editorElement = editorRef.current?.querySelector(
+                '.ProseMirror'
+              ) as HTMLElement;
               if (editorElement) {
                 editorElement.focus();
               }

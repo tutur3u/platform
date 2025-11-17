@@ -44,7 +44,9 @@ export interface TaskFormState {
 }
 
 export interface EditorCallbacks {
-  flushEditorPendingRef: React.MutableRefObject<(() => JSONContent | null) | undefined>;
+  flushEditorPendingRef: React.MutableRefObject<
+    (() => JSONContent | null) | undefined
+  >;
   handleImageUpload: (file: File) => Promise<string>;
   handleEditorReady: (editor: Editor) => void;
 }

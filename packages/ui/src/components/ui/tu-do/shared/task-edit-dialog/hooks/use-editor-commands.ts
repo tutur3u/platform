@@ -1,7 +1,10 @@
 import type { Editor } from '@tiptap/react';
 import dayjs from 'dayjs';
 import { useCallback } from 'react';
-import type { MentionOption, SuggestionState } from '../../mention-system/types';
+import type {
+  MentionOption,
+  SuggestionState,
+} from '../../mention-system/types';
 import type { SlashCommandDefinition } from '../../slash-commands/definitions';
 
 export interface UseEditorCommandsProps {
