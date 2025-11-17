@@ -4,6 +4,7 @@ import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { SessionHistory } from '../components/session-history';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'History',
@@ -16,12 +17,12 @@ export default async function TimeTrackerHistoryPage({
 }: {
   params: Promise<{ wsId: string }>;
 }) {
+
+  return (
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
   const user = await getCurrentSupabaseUser();
   const supabase = await createClient();
-  const { wsId: id } = await params;
-
-  const workspace = await getWorkspace(id);
-  const wsId = workspace.id;
 
   if (!user) return notFound();
 
@@ -79,4 +80,8 @@ export default async function TimeTrackerHistoryPage({
       tasks={tasks}
     />
   );
+      }}
+    </WorkspaceWrapper>
+  );
+
 }
