@@ -17,6 +17,9 @@ interface UseTaskLabelManagementProps {
   boardId: string;
   workspaceLabels: WorkspaceTaskLabel[];
   workspaceId?: string;
+  selectedTasks?: Set<string>; // For bulk operations
+  isMultiSelectMode?: boolean;
+  onClearSelection?: () => void;
 }
 
 export function useTaskLabelManagement({
@@ -24,6 +27,9 @@ export function useTaskLabelManagement({
   boardId,
   workspaceLabels,
   workspaceId,
+  selectedTasks,
+  isMultiSelectMode,
+  onClearSelection,
 }: UseTaskLabelManagementProps) {
   const queryClient = useQueryClient();
   const [labelsSaving, setLabelsSaving] = useState<string | null>(null);
@@ -35,38 +41,74 @@ export function useTaskLabelManagement({
   async function toggleTaskLabel(labelId: string) {
     setLabelsSaving(labelId);
     const supabase = createClient();
-    const active = task.labels?.some((l) => l.id === labelId);
+
+    // Check if we're in multi-select mode with multiple tasks selected
+    const shouldBulkUpdate =
+      isMultiSelectMode &&
+      selectedTasks &&
+      selectedTasks.size > 1 &&
+      selectedTasks.has(task.id);
+
+    const tasksToUpdate = shouldBulkUpdate
+      ? Array.from(selectedTasks)
+      : [task.id];
 
     // Cancel any outgoing refetches
     await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
 
-    // Snapshot the previous value
-    const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+    // Snapshot the previous value BEFORE optimistic update
+    const previousTasks = queryClient.getQueryData(['tasks', boardId]) as Task[] | undefined;
+
+    // Determine action: remove if ALL selected tasks have the label, add otherwise
+    let active = task.labels?.some((l) => l.id === labelId);
+
+    if (shouldBulkUpdate && previousTasks) {
+      const selectedTasksData = previousTasks.filter((t) =>
+        selectedTasks?.has(t.id)
+      );
+      // Only mark as active (to remove) if ALL selected tasks have the label
+      active = selectedTasksData.every((t) =>
+        t.labels?.some((l) => l.id === labelId)
+      );
+    }
 
     // Find the label details from workspace labels
     const label = workspaceLabels.find((l) => l.id === labelId);
 
-    // Optimistically update the cache
+    // Pre-calculate which tasks actually need to change
+    const tasksNeedingLabel = !active
+      ? tasksToUpdate.filter((taskId) => {
+          const t = previousTasks?.find((ct) => ct.id === taskId);
+          return !t?.labels?.some((l) => l.id === labelId);
+        })
+      : [];
+
+    const tasksToRemoveFrom = active
+      ? tasksToUpdate.filter((taskId) => {
+          const t = previousTasks?.find((ct) => ct.id === taskId);
+          return t?.labels?.some((l) => l.id === labelId);
+        })
+      : [];
+
+    // Optimistically update the cache - only update tasks that actually change
     queryClient.setQueryData(['tasks', boardId], (old: any[] | undefined) => {
       if (!old) return old;
       return old.map((t) => {
-        if (t.id === task.id) {
-          if (active) {
-            // Remove the label
-            return {
-              ...t,
-              labels: t.labels?.filter((l: any) => l.id !== labelId) || [],
-            };
-          } else {
-            // Add the label
-            return {
-              ...t,
-              labels: [
-                ...(t.labels || []),
-                label || { id: labelId, name: 'Unknown', color: '#3b82f6' },
-              ],
-            };
-          }
+        if (active && tasksToRemoveFrom.includes(t.id)) {
+          // Remove the label
+          return {
+            ...t,
+            labels: t.labels?.filter((l: any) => l.id !== labelId) || [],
+          };
+        } else if (!active && tasksNeedingLabel.includes(t.id)) {
+          // Add the label
+          return {
+            ...t,
+            labels: [
+              ...(t.labels || []),
+              label || { id: labelId, name: 'Unknown', color: '#3b82f6' },
+            ],
+          };
         }
         return t;
       });
@@ -74,22 +116,51 @@ export function useTaskLabelManagement({
 
     try {
       if (active) {
-        const { error } = await supabase
-          .from('task_labels')
-          .delete()
-          .eq('task_id', task.id)
-          .eq('label_id', labelId);
-        if (error) throw error;
+        // Remove label only from tasks that have it
+        if (tasksToRemoveFrom.length > 0) {
+          const { error } = await supabase
+            .from('task_labels')
+            .delete()
+            .in('task_id', tasksToRemoveFrom)
+            .eq('label_id', labelId);
+          if (error) throw error;
+        }
       } else {
-        const { error } = await supabase
-          .from('task_labels')
-          .insert({ task_id: task.id, label_id: labelId });
-        if (error) throw error;
+        // Add label to selected tasks that don't already have it
+        if (tasksNeedingLabel.length > 0) {
+          const rows = tasksNeedingLabel.map((taskId) => ({
+            task_id: taskId,
+            label_id: labelId,
+          }));
+          const { error } = await supabase
+            .from('task_labels')
+            .insert(rows);
+
+          // Ignore duplicate key errors
+          if (error && !String(error.message).toLowerCase().includes('duplicate')) {
+            throw error;
+          }
+        }
       }
-      // Success - mark query as needing refetch but don't force it immediately
-      queryClient.setQueryData(['tasks', boardId], (old: any[] | undefined) => {
-        return old; // Return unchanged to signal success without triggering render
-      });
+
+      // Invalidate queries to ensure fresh data
+      await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+
+      const taskCount = active ? tasksToRemoveFrom.length : tasksNeedingLabel.length;
+      toast.success(
+        active ? 'Label removed' : 'Label added',
+        {
+          description:
+            taskCount > 1
+              ? `${taskCount} tasks updated`
+              : undefined,
+        }
+      );
+
+      // Clear selection after bulk update
+      if (shouldBulkUpdate && onClearSelection) {
+        onClearSelection();
+      }
     } catch (e: any) {
       // Rollback on error
       queryClient.setQueryData(['tasks', boardId], previousTasks);

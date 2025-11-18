@@ -93,11 +93,13 @@ export function createBulkOperations(config: BulkOperationsConfig): BulkOps {
 
     try {
       applyOptimistic((t) => ({ ...t, priority }));
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('tasks')
-        .update({ priority })
-        .in('id', ids);
+        .update({ priority }, { count: 'exact' })
+        .in('id', ids)
+        .select('id'); // Only select id to avoid embedding column
       if (error) throw error;
+      console.log(`✅ Updated ${count} tasks with priority: ${priority}`);
       await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
     } catch (e) {
       console.error('Bulk priority update failed', e);
@@ -121,11 +123,13 @@ export function createBulkOperations(config: BulkOperationsConfig): BulkOps {
 
     try {
       applyOptimistic((t) => ({ ...t, estimation_points: points }));
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('tasks')
-        .update({ estimation_points: points })
-        .in('id', ids);
+        .update({ estimation_points: points }, { count: 'exact' })
+        .in('id', ids)
+        .select('id'); // Only select id to avoid embedding column
       if (error) throw error;
+      console.log(`✅ Updated ${count} tasks with estimation: ${points}`);
       await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
     } catch (e) {
       console.error('Bulk estimation update failed', e);
@@ -160,11 +164,13 @@ export function createBulkOperations(config: BulkOperationsConfig): BulkOps {
       }
       const end_date = newDate;
       applyOptimistic((t) => ({ ...t, end_date }));
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('tasks')
-        .update({ end_date })
-        .in('id', ids);
+        .update({ end_date }, { count: 'exact' })
+        .in('id', ids)
+        .select('id'); // Only select id to avoid embedding column
       if (error) throw error;
+      console.log(`✅ Updated ${count} tasks with due date: ${end_date}`);
       await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
     } catch (e) {
       console.error('Bulk due date update failed', e);
@@ -198,11 +204,13 @@ export function createBulkOperations(config: BulkOperationsConfig): BulkOps {
 
     try {
       applyOptimistic((t) => ({ ...t, list_id: targetListId }));
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('tasks')
-        .update({ list_id: targetListId })
-        .in('id', ids);
+        .update({ list_id: targetListId }, { count: 'exact' })
+        .in('id', ids)
+        .select('id'); // Only select id to avoid embedding column
       if (error) throw error;
+      console.log(`✅ Moved ${count} tasks to ${status} list`);
       await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
     } catch (e) {
       console.error('Bulk status move failed', e);
@@ -419,11 +427,13 @@ export function createBulkOperations(config: BulkOperationsConfig): BulkOps {
           prev.filter((t) => !ids.includes(t.id))
         );
       }
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('tasks')
-        .update({ deleted: true })
-        .in('id', ids);
+        .update({ deleted: true }, { count: 'exact' })
+        .in('id', ids)
+        .select('id'); // Only select id to avoid embedding column
       if (error) throw error;
+      console.log(`✅ Deleted ${count} tasks`);
       await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
       clearSelection();
       setBulkDeleteOpen(false);

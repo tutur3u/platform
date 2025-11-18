@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useParams } from 'next/navigation';
-import { useState } from 'react';
+import { forwardRef, useImperativeHandle, useState } from 'react';
 
 interface Member {
   id: string;
@@ -30,8 +30,20 @@ interface Props {
   onUpdate?: () => void;
 }
 
-export function AssigneeSelect({ taskId, assignees = [] }: Props) {
-  const [open, setOpen] = useState(false);
+export interface AssigneeSelectHandle {
+  open: () => void;
+  close: () => void;
+}
+
+export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
+  ({ taskId, assignees = [] }, ref) => {
+    const [open, setOpen] = useState(false);
+
+    // Expose open/close methods via ref
+    useImperativeHandle(ref, () => ({
+      open: () => setOpen(true),
+      close: () => setOpen(false),
+    }));
   const [searchQuery, setSearchQuery] = useState('');
   const params = useParams();
   const wsId = params.wsId as string;
@@ -424,4 +436,6 @@ export function AssigneeSelect({ taskId, assignees = [] }: Props) {
       </PopoverContent>
     </Popover>
   );
-}
+});
+
+AssigneeSelect.displayName = 'AssigneeSelect';

@@ -326,60 +326,288 @@ export function useTaskActions({
         target.setHours(23, 59, 59, 999);
         newDate = target.toISOString();
       }
+
+      // Check if we're in multi-select mode and have multiple tasks selected
+      const shouldBulkUpdate =
+        isMultiSelectMode &&
+        selectedTasks &&
+        selectedTasks.size > 1 &&
+        selectedTasks.has(task.id);
+      const tasksToUpdate = shouldBulkUpdate
+        ? Array.from(selectedTasks)
+        : [task.id];
+
       setIsLoading(true);
-      updateTaskMutation.mutate(
-        { taskId: task.id, updates: { end_date: newDate } },
-        {
-          onSuccess: () => {
-            toast.success('Due date updated', {
-              description: newDate
+
+      // Store previous state for rollback
+      const previousTasks = queryClient.getQueryData<Task[]>([
+        'tasks',
+        boardId,
+      ]);
+
+      try {
+        // Optimistic update
+        queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((t) =>
+            tasksToUpdate.includes(t.id) ? { ...t, end_date: newDate } : t
+          );
+        });
+
+        // Use direct Supabase update for bulk operations
+        if (shouldBulkUpdate) {
+          const supabase = createClient();
+          const { error, count } = await supabase
+            .from('tasks')
+            .update({ end_date: newDate }, { count: 'exact' })
+            .in('id', tasksToUpdate)
+            .select('id, name, end_date, list_id'); // Explicitly select only needed columns to avoid embedding
+
+          if (error) throw error;
+          console.log(`✅ Bulk updated ${count} tasks with due date`);
+
+        } else {
+          // Use mutation for single task
+          await updateTaskMutation.mutateAsync({
+            taskId: task.id,
+            updates: { end_date: newDate },
+          });
+        }
+
+        const taskCount = tasksToUpdate.length;
+        toast.success('Due date updated', {
+          description:
+            taskCount > 1
+              ? `${taskCount} tasks updated`
+              : newDate
                 ? 'Due date set successfully'
                 : 'Due date removed',
-            });
-          },
-          onSettled: () => {
-            setIsLoading(false);
-          },
+        });
+
+        // Invalidate queries to ensure fresh data
+        await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+
+        // Clear selection after bulk update
+        if (shouldBulkUpdate && onClearSelection) {
+          onClearSelection();
         }
-      );
+      } catch (error) {
+        console.error('Failed to update due date:', error);
+        // Rollback on error
+        if (previousTasks) {
+          queryClient.setQueryData(['tasks', boardId], previousTasks);
+        }
+        toast.error('Error', {
+          description: 'Failed to update due date. Please try again.',
+        });
+      } finally {
+        setIsLoading(false);
+      }
     },
-    [task.id, updateTaskMutation, setIsLoading]
+    [
+      task.id,
+      updateTaskMutation,
+      setIsLoading,
+      isMultiSelectMode,
+      selectedTasks,
+      onClearSelection,
+      queryClient,
+      boardId,
+    ]
   );
 
   const handlePriorityChange = useCallback(
-    (newPriority: TaskPriority | null) => {
-      if (newPriority === task.priority) return;
+    async (newPriority: TaskPriority | null) => {
+      if (newPriority === task.priority && !isMultiSelectMode) return;
+
+      // Check if we're in multi-select mode and have multiple tasks selected
+      const shouldBulkUpdate =
+        isMultiSelectMode &&
+        selectedTasks &&
+        selectedTasks.size > 1 &&
+        selectedTasks.has(task.id);
+      const tasksToUpdate = shouldBulkUpdate
+        ? Array.from(selectedTasks)
+        : [task.id];
+
+      console.log('🎯 handlePriorityChange called:', {
+        taskId: task.id,
+        newPriority,
+        isMultiSelectMode,
+        selectedTasksSize: selectedTasks?.size,
+        selectedTasksArray: Array.from(selectedTasks || []),
+        shouldBulkUpdate,
+        tasksToUpdate,
+        tasksToUpdateCount: tasksToUpdate.length,
+      });
+
       setIsLoading(true);
-      updateTaskMutation.mutate(
-        { taskId: task.id, updates: { priority: newPriority } },
-        {
-          onSuccess: () => {
-            toast.success('Priority updated', {
-              description: newPriority
+
+      // Store previous state for rollback
+      const previousTasks = queryClient.getQueryData<Task[]>([
+        'tasks',
+        boardId,
+      ]);
+
+      try {
+        // Optimistic update
+        queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((t) =>
+            tasksToUpdate.includes(t.id) ? { ...t, priority: newPriority } : t
+          );
+        });
+
+        // Use direct Supabase update for bulk operations
+        if (shouldBulkUpdate) {
+          const supabase = createClient();
+          console.log('🔄 Executing bulk Supabase update:', {
+            tasksToUpdate,
+            count: tasksToUpdate.length,
+            priority: newPriority,
+          });
+
+          const result = await supabase
+            .from('tasks')
+            .update({ priority: newPriority }, { count: 'exact' })
+            .in('id', tasksToUpdate)
+            .select('id, name, priority, list_id'); // Explicitly select only needed columns to avoid embedding
+
+          console.log('✅ Supabase update result:', {
+            error: result.error,
+            status: result.status,
+            statusText: result.statusText,
+            count: result.count,
+          });
+
+          if (result.error) throw result.error;
+        } else {
+          // Use mutation for single task
+          await updateTaskMutation.mutateAsync({
+            taskId: task.id,
+            updates: { priority: newPriority },
+          });
+        }
+
+        const taskCount = tasksToUpdate.length;
+        toast.success('Priority updated', {
+          description:
+            taskCount > 1
+              ? `${taskCount} tasks updated`
+              : newPriority
                 ? 'Priority changed'
                 : 'Priority cleared',
-            });
-          },
-          onSettled: () => {
-            setIsLoading(false);
-          },
+        });
+
+        // Invalidate queries to ensure fresh data
+        await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+
+        console.log('✅ Priority update completed successfully');
+
+        // Clear selection after bulk update
+        if (shouldBulkUpdate && onClearSelection) {
+          onClearSelection();
         }
-      );
+      } catch (error) {
+        console.error('❌ Failed to update priority:', error);
+        // Rollback on error
+        if (previousTasks) {
+          queryClient.setQueryData(['tasks', boardId], previousTasks);
+        }
+        toast.error('Error', {
+          description: 'Failed to update priority. Please try again.',
+        });
+      } finally {
+        setIsLoading(false);
+      }
     },
-    [task.id, task.priority, updateTaskMutation, setIsLoading]
+    [
+      task.id,
+      task.priority,
+      updateTaskMutation,
+      setIsLoading,
+      isMultiSelectMode,
+      selectedTasks,
+      onClearSelection,
+      queryClient,
+      boardId,
+    ]
   );
 
   const updateEstimationPoints = useCallback(
     async (points: number | null) => {
-      if (points === task.estimation_points) return;
+      if (points === task.estimation_points && !isMultiSelectMode) return;
+
+      // Check if we're in multi-select mode and have multiple tasks selected
+      const shouldBulkUpdate =
+        isMultiSelectMode &&
+        selectedTasks &&
+        selectedTasks.size > 1 &&
+        selectedTasks.has(task.id);
+      const tasksToUpdate = shouldBulkUpdate
+        ? Array.from(selectedTasks)
+        : [task.id];
+
       setEstimationSaving?.(true);
+
+      // Store previous state for rollback
+      const previousTasks = queryClient.getQueryData<Task[]>([
+        'tasks',
+        boardId,
+      ]);
+
       try {
-        await updateTaskMutation.mutateAsync({
-          taskId: task.id,
-          updates: { estimation_points: points },
+        // Optimistic update
+        queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((t) =>
+            tasksToUpdate.includes(t.id)
+              ? { ...t, estimation_points: points }
+              : t
+          );
         });
+
+        // Use direct Supabase update for bulk operations
+        if (shouldBulkUpdate) {
+          const supabase = createClient();
+          const { error, count } = await supabase
+            .from('tasks')
+            .update({ estimation_points: points }, { count: 'exact' })
+            .in('id', tasksToUpdate)
+            .select('id, name, estimation_points, list_id'); // Explicitly select only needed columns to avoid embedding
+
+          if (error) throw error;
+          console.log(`✅ Bulk updated ${count} tasks with estimation points`);
+
+        } else {
+          // Use mutation for single task
+          await updateTaskMutation.mutateAsync({
+            taskId: task.id,
+            updates: { estimation_points: points },
+          });
+        }
+
+        const taskCount = tasksToUpdate.length;
+        toast.success('Estimation updated', {
+          description:
+            taskCount > 1
+              ? `${taskCount} tasks updated`
+              : 'Estimation points updated successfully',
+        });
+
+        // Invalidate queries to ensure fresh data
+        await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+
+        // Clear selection after bulk update
+        if (shouldBulkUpdate && onClearSelection) {
+          onClearSelection();
+        }
       } catch (e: any) {
         console.error('Failed to update estimation', e);
+        // Rollback on error
+        if (previousTasks) {
+          queryClient.setQueryData(['tasks', boardId], previousTasks);
+        }
         toast.error('Failed to update estimation', {
           description: e.message || 'Please try again',
         });
@@ -387,7 +615,17 @@ export function useTaskActions({
         setEstimationSaving?.(false);
       }
     },
-    [task.id, task.estimation_points, updateTaskMutation, setEstimationSaving]
+    [
+      task.id,
+      task.estimation_points,
+      updateTaskMutation,
+      setEstimationSaving,
+      isMultiSelectMode,
+      selectedTasks,
+      onClearSelection,
+      queryClient,
+      boardId,
+    ]
   );
 
   const handleCustomDateChange = useCallback(
@@ -431,6 +669,163 @@ export function useTaskActions({
     [task.id, updateTaskMutation, setIsLoading, setCustomDateDialogOpen]
   );
 
+  const handleToggleAssignee = useCallback(
+    async (assigneeId: string) => {
+      // Check if we're in multi-select mode with multiple tasks selected
+      const shouldBulkUpdate =
+        isMultiSelectMode &&
+        selectedTasks &&
+        selectedTasks.size > 1 &&
+        selectedTasks.has(task.id);
+
+      const tasksToUpdate = shouldBulkUpdate
+        ? Array.from(selectedTasks)
+        : [task.id];
+
+      setIsLoading(true);
+
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+
+      // Snapshot the previous value BEFORE optimistic update
+      const previousTasks = queryClient.getQueryData(['tasks', boardId]) as Task[] | undefined;
+
+      // Determine action: remove if ALL selected tasks have the assignee, add otherwise
+      let active = task.assignees?.some((a) => a.id === assigneeId);
+
+      if (shouldBulkUpdate && previousTasks) {
+        const selectedTasksData = previousTasks.filter((t) =>
+          selectedTasks?.has(t.id)
+        );
+        // Only mark as active (to remove) if ALL selected tasks have the assignee
+        active = selectedTasksData.every((t) =>
+          t.assignees?.some((a) => a.id === assigneeId)
+        );
+      }
+
+      // Pre-calculate which tasks actually need to change
+      const tasksNeedingAssignee = !active
+        ? tasksToUpdate.filter((taskId) => {
+            const t = previousTasks?.find((ct) => ct.id === taskId);
+            return !t?.assignees?.some((a) => a.id === assigneeId);
+          })
+        : [];
+
+      const tasksToRemoveFrom = active
+        ? tasksToUpdate.filter((taskId) => {
+            const t = previousTasks?.find((ct) => ct.id === taskId);
+            return t?.assignees?.some((a) => a.id === assigneeId);
+          })
+        : [];
+
+      // Get assignee details from previous tasks for optimistic update
+      let assigneeDetails = null;
+      if (!active && previousTasks) {
+        for (const t of previousTasks) {
+          const found = t.assignees?.find((a) => a.id === assigneeId);
+          if (found) {
+            assigneeDetails = found;
+            break;
+          }
+        }
+      }
+
+      // Optimistically update the cache - only update tasks that actually change
+      queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
+        if (!old) return old;
+        return old.map((t) => {
+          if (active && tasksToRemoveFrom.includes(t.id)) {
+            // Remove the assignee
+            return {
+              ...t,
+              assignees: t.assignees?.filter((a) => a.id !== assigneeId) || [],
+            };
+          } else if (!active && tasksNeedingAssignee.includes(t.id)) {
+            // Add the assignee
+            return {
+              ...t,
+              assignees: [
+                ...(t.assignees || []),
+                assigneeDetails || { id: assigneeId, display_name: 'User', email: '' },
+              ],
+            };
+          }
+          return t;
+        });
+      });
+
+      try {
+        const supabase = createClient();
+        if (active) {
+          // Remove assignee only from tasks that have them
+          if (tasksToRemoveFrom.length > 0) {
+            const { error } = await supabase
+              .from('task_assignees')
+              .delete()
+              .in('task_id', tasksToRemoveFrom)
+              .eq('user_id', assigneeId);
+            if (error) throw error;
+          }
+        } else {
+          // Add assignee to selected tasks that don't already have them
+          if (tasksNeedingAssignee.length > 0) {
+            const rows = tasksNeedingAssignee.map((taskId) => ({
+              task_id: taskId,
+              user_id: assigneeId,
+            }));
+            const { error } = await supabase
+              .from('task_assignees')
+              .insert(rows);
+
+            // Ignore duplicate key errors
+            if (error && !String(error.message).toLowerCase().includes('duplicate')) {
+              throw error;
+            }
+          }
+        }
+
+        // Invalidate queries to ensure fresh data
+        await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+
+        const taskCount = active ? tasksToRemoveFrom.length : tasksNeedingAssignee.length;
+        toast.success(
+          active ? 'Assignee removed' : 'Assignee added',
+          {
+            description:
+              taskCount > 1
+                ? `${taskCount} tasks updated`
+                : undefined,
+          }
+        );
+
+        // Clear selection after bulk update
+        if (shouldBulkUpdate && onClearSelection) {
+          onClearSelection();
+        }
+      } catch (e: any) {
+        // Rollback on error
+        if (previousTasks) {
+          queryClient.setQueryData(['tasks', boardId], previousTasks);
+        }
+        console.error('Failed to toggle assignee:', e);
+        toast.error('Error', {
+          description: 'Failed to update assignee. Please try again.',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [
+      task,
+      boardId,
+      queryClient,
+      setIsLoading,
+      isMultiSelectMode,
+      selectedTasks,
+      onClearSelection,
+    ]
+  );
+
   return {
     handleArchiveToggle,
     handleMoveToCompletion,
@@ -443,5 +838,6 @@ export function useTaskActions({
     handlePriorityChange,
     updateEstimationPoints,
     handleCustomDateChange,
+    handleToggleAssignee,
   };
 }
