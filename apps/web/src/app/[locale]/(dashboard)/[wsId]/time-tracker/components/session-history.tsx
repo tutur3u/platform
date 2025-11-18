@@ -875,6 +875,17 @@ const isSessionOlderThanOneDay = (session: SessionWithRelations): boolean => {
   return sessionStartTime.isBefore(oneDayAgo);
 };
 
+// Helper function to check if a datetime string is more than one day ago
+const isDatetimeMoreThanOneDayAgo = (
+  datetimeString: string,
+  timezone: string
+): boolean => {
+  if (!datetimeString) return false;
+  const datetime = dayjs.tz(datetimeString, timezone).utc();
+  const oneDayAgo = dayjs().utc().subtract(1, 'day');
+  return datetime.isBefore(oneDayAgo);
+};
+
 export function SessionHistory({
   wsId,
   sessions,
@@ -2346,26 +2357,44 @@ export function SessionHistory({
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label htmlFor="edit-start-time">Start Time</Label>
-                    <Input
-                      id="edit-start-time"
-                      type="datetime-local"
-                      value={editStartTime}
-                      onChange={(e) => setEditStartTime(e.target.value)}
-                    />
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="edit-start-time">Start Time</Label>
+                      <Input
+                        id="edit-start-time"
+                        type="datetime-local"
+                        value={editStartTime}
+                        onChange={(e) => setEditStartTime(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-end-time">End Time</Label>
+                      <Input
+                        id="edit-end-time"
+                        type="datetime-local"
+                        value={editEndTime}
+                        onChange={(e) => setEditEndTime(e.target.value)}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="edit-end-time">End Time</Label>
-                    <Input
-                      id="edit-end-time"
-                      type="datetime-local"
-                      value={editEndTime}
-                      onChange={(e) => setEditEndTime(e.target.value)}
-                    />
+                  {/* Warning about the one day limit */}
+                  {editStartTime && isDatetimeMoreThanOneDayAgo(editStartTime, dayjs.tz.guess()) && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/50">
+                    <div className="flex items-start gap-2 text-amber-700 dark:text-amber-300">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <div className="text-xs">
+                        <p className="font-medium">
+                          Cannot backdate more than one day
+                        </p>
+                        <p className="mt-1 text-amber-600 dark:text-amber-400">
+                          Start times must be within the last 24 hours. Attempting to set a time older than one day ago will be rejected.
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                  )}
+                </>
               ))}
             <div className="flex gap-2 pt-4">
               <Button
@@ -2377,7 +2406,18 @@ export function SessionHistory({
               </Button>
               <Button
                 onClick={saveEdit}
-                disabled={isEditing || !editTitle.trim()}
+                disabled={
+                  isEditing ||
+                  !editTitle.trim() 
+                  ||
+                  Boolean(
+                    editStartTime &&
+                      isDatetimeMoreThanOneDayAgo(
+                        editStartTime,
+                        dayjs.tz.guess()
+                      )
+                  )
+                }
                 className="flex-1"
               >
                 {isEditing ? 'Saving...' : 'Save Changes'}

@@ -360,7 +360,6 @@ export async function POST(
       taskId,
       startTime,
       endTime,
-      isManualEntry,
     } = body;
 
     if (!title?.trim()) {
@@ -371,7 +370,7 @@ export async function POST(
     const sbAdmin = await createAdminClient(); // This should use service role
 
     // If this is a manual entry (missed entry), handle differently
-    if (isManualEntry && startTime && endTime) {
+    if (startTime && endTime) {
       // Validate time range
       const start = new Date(startTime);
       const end = new Date(endTime);

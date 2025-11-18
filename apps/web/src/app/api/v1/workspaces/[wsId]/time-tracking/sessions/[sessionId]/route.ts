@@ -188,6 +188,21 @@ export async function PATCH(
               { status: 400 }
             );
           }
+
+          // NEW CHECK: Prevent backdating sessions to more than one day ago
+          // This prevents the vulnerability of creating a session for today and moving it back to a month ago
+          if (startTime) {
+            const newStartTime = new Date(startTime);
+            if (newStartTime < oneDayAgo) {
+              return NextResponse.json(
+                {
+                  error:
+                    'Cannot update session to a start time more than one day ago',
+                },
+                { status: 400 }
+              );
+            }
+          }
         }
 
         if (startTime)
