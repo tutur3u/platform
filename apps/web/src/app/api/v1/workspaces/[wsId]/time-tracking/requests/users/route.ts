@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import {getPermissions} from "@tuturuuu/utils/workspace-helper";
 
 export async function GET(
   request: NextRequest,
@@ -29,6 +30,15 @@ export async function GET(
     if (!memberCheck) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
+        { status: 403 }
+      );
+    }
+
+    const { withoutPermission } = await getPermissions({ wsId });
+
+    if (withoutPermission('manage_time_tracking_requests')) {
+      return NextResponse.json(
+        { error: 'You do not have permission to view time tracking request users.' },
         { status: 403 }
       );
     }

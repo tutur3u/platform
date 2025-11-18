@@ -40,9 +40,12 @@ import { useState, useMemo } from 'react';
 import { RequestDetailModal } from './request-detail-modal';
 import { useRequests, useAvailableUsers } from './hooks/use-requests';
 import type { ExtendedTimeTrackingRequest } from './page';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 
 interface RequestsClientProps {
   wsId: string;
+  bypassRulesPermission: boolean;
+  currentUser: WorkspaceUser | null;
 }
 
 const STATUS_LABELS: Record<
@@ -62,8 +65,9 @@ const STATUS_COLORS: Record<'PENDING' | 'APPROVED' | 'REJECTED', string> = {
 };
 
 export function RequestsClient({
-  wsId
-
+  wsId,
+  bypassRulesPermission,
+  currentUser
 }: RequestsClientProps) {
   const t = useTranslations('time-tracker.requests');
   const router = useRouter();
@@ -606,6 +610,8 @@ export function RequestsClient({
             setSelectedRequest(null);
           }}
           wsId={wsId}
+          bypassRulesPermission={bypassRulesPermission}
+          currentUser={currentUser}
         />
       )}
     </>

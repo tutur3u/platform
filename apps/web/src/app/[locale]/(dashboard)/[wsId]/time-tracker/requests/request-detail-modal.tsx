@@ -28,6 +28,7 @@ import { useCallback, useState } from 'react';
 import { useApproveRequest, useRejectRequest } from './hooks/use-request-mutations';
 import { useRequestImages } from './hooks/use-request-images';
 import type { ExtendedTimeTrackingRequest } from './page';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 
 interface RequestDetailModalProps {
   request: ExtendedTimeTrackingRequest;
@@ -35,6 +36,8 @@ interface RequestDetailModalProps {
   onClose: () => void;
   onUpdate?: () => void;
   wsId: string;
+  bypassRulesPermission: boolean;
+  currentUser: WorkspaceUser | null;
 }
 
 export function RequestDetailModal({
@@ -43,6 +46,8 @@ export function RequestDetailModal({
   onClose,
   onUpdate,
   wsId,
+  bypassRulesPermission,
+  currentUser,
 }: RequestDetailModalProps) {
   const t = useTranslations('time-tracker.requests');
   const [rejectionReason, setRejectionReason] = useState('');
@@ -319,7 +324,7 @@ export function RequestDetailModal({
             )}
 
           {/* Action Buttons */}
-          {request.approval_status === 'PENDING' && (
+          {request.approval_status === 'PENDING' && (bypassRulesPermission || request.user_id !== currentUser?.id) && (
             <>
               {!showRejectionForm ? (
                 <div className="flex gap-3">

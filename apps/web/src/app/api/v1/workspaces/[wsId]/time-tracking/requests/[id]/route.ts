@@ -1,7 +1,5 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -34,7 +32,6 @@ export async function PATCH(
     }
 
     const supabase = await createClient();
-    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -61,147 +58,41 @@ export async function PATCH(
       );
     }
 
-    // // Check if user has manage_time_tracking permission
-    // const { data: permissions } = await supabase.rpc(
-    //   'get_user_permissions_v2',
-    //   {
-    //     target_ws_id: wsId,
-    //     target_user_id: user.id,
-    //   }
-    // );
+    const { withoutPermission, containsPermission } = await getPermissions({ wsId });
 
-    // const hasPermission = permissions?.some(
-    //   (p: { id: string; enabled: boolean }) =>
-    //     p.id === 'manage_time_tracking' && p.enabled
-    // );
-
-    // if (!hasPermission) {
-    //   return NextResponse.json(
-    //     { error: 'Insufficient permissions to manage time tracking requests' },
-    //     { status: 403 }
-    //   );
-    // }
-
-    // Get the current request
-    const { data: currentRequest, error: fetchError } = await supabase
-      .from('time_tracking_requests')
-      .select('*')
-      .eq('id', id)
-      .eq('workspace_id', wsId)
-      .single();
-
-    if (fetchError || !currentRequest) {
+    if (withoutPermission('manage_time_tracking_requests')) {
       return NextResponse.json(
-        { error: `Time tracking request not found - ${fetchError?.message}` },
-        { status: 404 }
+        { error: 'You do not have permission to manage time tracking requests.' },
+        { status: 403 }
       );
     }
-
-    // Check if already processed
-    if (currentRequest.approval_status !== 'PENDING') {
-      return NextResponse.json(
-        {
-          error: `Request has already been ${currentRequest.approval_status.toLowerCase()}`,
-        },
-        { status: 400 }
-      );
-    }
+    const canBypass = containsPermission('bypass_time_tracking_request_approval');
 
     const actionData = validation.data;
 
-    if (actionData.action === 'approve') {
-      // Approve the request and create the time tracking session
-      const { error: approveError } = await supabase
-        .from('time_tracking_requests')
-        .update({
-          approval_status: 'APPROVED',
-          approved_by: user.id,
-          approved_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id);
-
-      if (approveError) {
-        console.error('Error approving request:', approveError);
-        return NextResponse.json(
-          { error: `Failed to approve request - ${approveError.message}` },
-          { status: 500 }
-        );
+    // Use the centralized RPC function to handle the update
+    const { data, error: rpcError } = await supabase.rpc(
+      'update_time_tracking_request',
+      {
+        p_request_id: id,
+        p_action: actionData.action,
+        p_bypass_rules: canBypass,
+        p_rejection_reason:
+          actionData.action === 'reject'
+            ? actionData.rejection_reason
+            : undefined,
       }
+    );
 
-      // Calculate duration
-      const startTime = new Date(currentRequest.start_time);
-      const endTime = new Date(currentRequest.end_time);
-      const durationSeconds = Math.floor(
-        (endTime.getTime() - startTime.getTime()) / 1000
+    if (rpcError) {
+      console.error('Error updating time tracking request:', rpcError);
+      return NextResponse.json(
+        { error: rpcError.message || 'Failed to update request' },
+        { status: 500 }
       );
-
-      // Use the bypassed insert function to create the session
-      const { data: session, error: sessionError } = await sbAdmin.rpc(
-        'insert_time_tracking_session_bypassed',
-        {
-          p_ws_id: wsId,
-          p_user_id: currentRequest.user_id,
-          p_title: currentRequest.title,
-          p_description: currentRequest.description || '',
-          p_category_id: currentRequest.category_id || undefined,
-          p_task_id: currentRequest.task_id || undefined,
-          p_start_time: currentRequest.start_time,
-          p_end_time: currentRequest.end_time,
-          p_duration_seconds: durationSeconds,
-        }
-      );
-
-      if (sessionError) {
-        console.error('Error creating time tracking session:', sessionError);
-        // Rollback approval
-        await sbAdmin
-          .from('time_tracking_requests')
-          .update({
-            approval_status: 'PENDING',
-            approved_by: null,
-            approved_at: null,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', id);
-
-        return NextResponse.json(
-          { error: 'Failed to create time tracking session' },
-          { status: 500 }
-        );
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: 'Request approved and time tracking session created',
-        session,
-      });
-    } else {
-      // Reject the request
-      const { error: rejectError } = await supabase
-        .from('time_tracking_requests')
-        .update({
-          approval_status: 'REJECTED',
-          rejected_by: user.id,
-          rejected_at: new Date().toISOString(),
-          rejection_reason: actionData.rejection_reason,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id);
-
-      if (rejectError) {
-        console.error('Error rejecting request:', rejectError);
-        return NextResponse.json(
-          { error: `Failed to reject request - ${rejectError.message}` },
-          { status: 500 }
-        );
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: 'Request rejected',
-      });
     }
+
+    return NextResponse.json(data);
   } catch (error) {
     console.error('Unexpected error in PATCH /time-tracking/requests/[id]:', error);
     return NextResponse.json(

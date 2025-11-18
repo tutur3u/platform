@@ -14518,6 +14518,15 @@ export type Database = {
         Args: { challenge_id_param: string; user_id_param: string };
         Returns: undefined;
       };
+      update_time_tracking_request: {
+        Args: {
+          p_action: string;
+          p_bypass_rules?: boolean;
+          p_rejection_reason?: string;
+          p_request_id: string;
+        };
+        Returns: Json;
+      };
       update_time_tracking_session_bypassed: {
         Args: {
           new_end_time: string;
@@ -14696,7 +14705,9 @@ export type Database = {
         | 'view_confidential_category'
         | 'create_confidential_transactions'
         | 'update_confidential_transactions'
-        | 'delete_confidential_transactions';
+        | 'delete_confidential_transactions'
+        | 'manage_time_tracking_requests'
+        | 'bypass_time_tracking_request_approval';
     };
     CompositeTypes: {
       email_block_status: {
@@ -14962,6 +14973,8 @@ export const Constants = {
         'create_confidential_transactions',
         'update_confidential_transactions',
         'delete_confidential_transactions',
+        'manage_time_tracking_requests',
+        'bypass_time_tracking_request_approval',
       ],
     },
   },

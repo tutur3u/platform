@@ -297,8 +297,7 @@ export async function WorkspaceNavigationLinks({
           title: t('sidebar_tabs.time_tracker_requests'),
           href: `/${personalOrWsId}/time-tracker/requests`,
           icon: <MessageCircleIcon className="h-5 w-5" />,
-          requireRootWorkspace: true,
-          requireRootMember: true,
+          disabled: withoutPermission('manage_time_tracking_requests'),
         },
         {
           title: t('sidebar_tabs.settings'),
@@ -307,7 +306,7 @@ export async function WorkspaceNavigationLinks({
         },
       ],
       icon: <ClockFading className="h-5 w-5" />,
-      disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
+      // disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
       experimental: 'beta',
     },
     null,

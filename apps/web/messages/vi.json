@@ -1185,7 +1185,8 @@
     "more_tools": "Nhiều công cụ hơn",
     "realtime_chat": "Trò chuyện thời gian thực",
     "track": "Theo dõi",
-    "time_tracker_requests": "Yêu cầu"
+    "time_tracker_requests": "Yêu cầu",
+    "time-tracker": "Theo dõi thời gian"
   },
   "usage": {
     "description": "Theo dõi hoạt động workspace, sử dụng tính năng và các số liệu hệ thống trong tổ chức của bạn",
@@ -3239,7 +3240,11 @@
     "leads": "Khách hàng tiềm năng",
     "create_lead_generations": "Tạo khách hàng tiềm năng",
     "create_lead_generations_description": "Cho phép thành viên tạo khách hàng tiềm năng mới trong không gian làm việc.",
-    "transactions": "Giao dịch tài chính"
+    "transactions": "Giao dịch tài chính",
+    "manage_time_tracking_requests": "Quản lý các yêu cầu theo dõi thời gian",
+    "manage_time_tracking_requests_description": "Cho phép người dùng xem và duyệt/từ chối các yêu cầu thêm theo dõi thời gian thiếu",
+    "bypass_time_tracking_request_approval": "Bỏ qua phê duyệt yêu cầu theo dõi thời gian",
+    "bypass_time_tracking_request_approval_description": "Cho phép bỏ qua các hạn chế khi phê duyệt/từ chối yêu cầu theo dõi thời gian"
   },
   "platform-roles": {
     "plural": "Vai trò nền tảng",

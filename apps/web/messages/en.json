@@ -1093,7 +1093,8 @@
     "more_tools": "More tools",
     "realtime_chat": "Realtime Chat",
     "track": "Track",
-    "time_tracker_requests": "Requests"
+    "time_tracker_requests": "Requests",
+    "time-tracker": "Time Tracker"
   },
   "usage": {
     "description": "Monitor workspace activity, feature usage, and system metrics across your organization",
@@ -3125,7 +3126,11 @@
     "leads": "Leads",
     "create_lead_generations": "Create Lead Generations",
     "create_lead_generations_description": "Allows members to create new lead generations in the workspace.",
-    "transactions": "Transactions"
+    "transactions": "Transactions",
+    "manage_time_tracking_requests": "Manage Time Tracking Requests",
+    "manage_time_tracking_requests_description": "Allows the user to view & approve/reject time tracking missed entries",
+    "bypass_time_tracking_request_approval": "Bypass Time Tracking Request Approval",
+    "bypass_time_tracking_request_approval_description": "Allows bypassing of restrictions when approving/denying time-tracking requests"
   },
   "platform-roles": {
     "plural": "Platform Roles",

@@ -1,6 +1,9 @@
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import type { Metadata } from 'next';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { RequestsClient } from './requests-client';
+import { XIcon } from '@tuturuuu/icons';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 
 export const metadata: Metadata = {
   title: 'Time Tracking Requests',
@@ -67,11 +70,39 @@ export default async function TimeTrackerRequestsPage({
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
 
+        const {containsPermission} = await getPermissions({wsId});
+
+        const bypassRulesPermission = containsPermission('bypass_time_tracking_request_approval');
+
+        const currentUser = await getCurrentUser();
+
+
+        if (!containsPermission('manage_time_tracking_requests')) {
+          return (
+            <div className="container mx-auto px-4 py-6 md:px-8">
+              <div className="rounded-md bg-yellow-50 p-4">
+                <div className="flex">
+                  <div className="shrink-0">
+                    <XIcon className="h-5 w-5 text-yellow-400" aria-hidden="true" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-yellow-800">
+                      You do not have permission to manage time tracking
+                      requests.
+                    </h3>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }
 
         return (
           <div className="container mx-auto px-4 py-6 md:px-8">
             <RequestsClient
               wsId={wsId}
+              bypassRulesPermission={bypassRulesPermission}
+              currentUser={currentUser}
             />
           </div>
         );

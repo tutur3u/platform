@@ -14,6 +14,7 @@ import type { TimeTrackingCategory, WorkspaceTask } from "@tuturuuu/types";
 import { formatDuration, getCategoryColor } from "./session-history";
 import imageCompression from 'browser-image-compression';
 import Image from 'next/image';
+import { useQueryClient } from "@tanstack/react-query";
 
 interface MissedEntryDialogProps {
   open: boolean;
@@ -47,6 +48,7 @@ export default function MissedEntryDialog({
   prefillEndTime = '',
 }: MissedEntryDialogProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   // State for missed entry form
   const [missedEntryTitle, setMissedEntryTitle] = useState('');
@@ -324,6 +326,7 @@ export default function MissedEntryDialog({
           throw new Error(errorData.error || 'Failed to create time tracking request');
         }
 
+        queryClient.invalidateQueries({ queryKey: ['time-tracking-requests', wsId, 'pending'] });
         router.refresh();
         closeMissedEntryDialog();
         toast.success('Time tracking request submitted for approval');
