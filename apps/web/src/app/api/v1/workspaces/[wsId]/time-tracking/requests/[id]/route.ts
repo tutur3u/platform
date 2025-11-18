@@ -58,15 +58,21 @@ export async function PATCH(
       );
     }
 
-    const { withoutPermission, containsPermission } = await getPermissions({ wsId });
+    const { withoutPermission, containsPermission } = await getPermissions({
+      wsId,
+    });
 
     if (withoutPermission('manage_time_tracking_requests')) {
       return NextResponse.json(
-        { error: 'You do not have permission to manage time tracking requests.' },
+        {
+          error: 'You do not have permission to manage time tracking requests.',
+        },
         { status: 403 }
       );
     }
-    const canBypass = containsPermission('bypass_time_tracking_request_approval');
+    const canBypass = containsPermission(
+      'bypass_time_tracking_request_approval'
+    );
 
     const actionData = validation.data;
 
@@ -95,11 +101,13 @@ export async function PATCH(
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Unexpected error in PATCH /time-tracking/requests/[id]:', error);
+    console.error(
+      'Unexpected error in PATCH /time-tracking/requests/[id]:',
+      error
+    );
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : 'Internal server error',
+        error: error instanceof Error ? error.message : 'Internal server error',
       },
       { status: 500 }
     );

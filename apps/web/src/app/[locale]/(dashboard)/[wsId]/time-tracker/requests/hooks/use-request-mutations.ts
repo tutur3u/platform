@@ -8,7 +8,7 @@ interface ApproveRequestParams {
 }
 
 export function useApproveRequest() {
-    const t = useTranslations('time-tracker.requests');
+  const t = useTranslations('time-tracker.requests');
   const queryClient = useQueryClient();
 
   return useMutation({

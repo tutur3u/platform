@@ -353,14 +353,7 @@ export async function POST(
     }
 
     const body = await request.json();
-    const {
-      title,
-      description,
-      categoryId,
-      taskId,
-      startTime,
-      endTime,
-    } = body;
+    const { title, description, categoryId, taskId, startTime, endTime } = body;
 
     if (!title?.trim()) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
