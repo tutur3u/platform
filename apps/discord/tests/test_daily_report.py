@@ -1,16 +1,16 @@
 """Comprehensive tests for daily report functionality."""
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import pytest
 
 from daily_report import (
     DailyReportConfigurationError,
-    DailyReportDataError,
     ReportConfig,
     ReportFormat,
     ReportMode,
+    UserStats,
     _get_weekend_dates,
     _is_monday,
     _is_weekend,
@@ -67,13 +67,13 @@ class TestHelperFunctions:
 
     def test_merge_weekend_stats_both_days(self):
         """Test merging weekend stats when user worked both days."""
-        saturday_stats = [
+        saturday_stats: list[UserStats] = [
             {
                 "user": {"platform_user_id": "user-1", "display_name": "Ada"},
                 "stats": {"todayTime": 3600, "yesterdayTime": 0, "weekTime": 0, "monthTime": 0},
             }
         ]
-        sunday_stats = [
+        sunday_stats: list[UserStats] = [
             {
                 "user": {"platform_user_id": "user-1", "display_name": "Ada"},
                 "stats": {"todayTime": 7200, "yesterdayTime": 0, "weekTime": 0, "monthTime": 0},
@@ -89,13 +89,13 @@ class TestHelperFunctions:
 
     def test_merge_weekend_stats_saturday_only(self):
         """Test merging weekend stats when user worked Saturday only."""
-        saturday_stats = [
+        saturday_stats: list[UserStats] = [
             {
                 "user": {"platform_user_id": "user-1", "display_name": "Ada"},
                 "stats": {"todayTime": 3600, "yesterdayTime": 0, "weekTime": 0, "monthTime": 0},
             }
         ]
-        sunday_stats = []
+        sunday_stats: list[UserStats] = []
 
         result = _merge_weekend_stats(saturday_stats, sunday_stats)
 
@@ -106,8 +106,8 @@ class TestHelperFunctions:
 
     def test_merge_weekend_stats_sunday_only(self):
         """Test merging weekend stats when user worked Sunday only."""
-        saturday_stats = []
-        sunday_stats = [
+        saturday_stats: list[UserStats] = []
+        sunday_stats: list[UserStats] = [
             {
                 "user": {"platform_user_id": "user-1", "display_name": "Ada"},
                 "stats": {"todayTime": 7200, "yesterdayTime": 0, "weekTime": 0, "monthTime": 0},
@@ -123,7 +123,7 @@ class TestHelperFunctions:
 
     def test_merge_weekend_stats_multiple_users(self):
         """Test merging weekend stats for multiple users."""
-        saturday_stats = [
+        saturday_stats: list[UserStats] = [
             {
                 "user": {"platform_user_id": "user-1", "display_name": "Ada"},
                 "stats": {"todayTime": 3600, "yesterdayTime": 0, "weekTime": 0, "monthTime": 0},
@@ -133,7 +133,7 @@ class TestHelperFunctions:
                 "stats": {"todayTime": 1800, "yesterdayTime": 0, "weekTime": 0, "monthTime": 0},
             },
         ]
-        sunday_stats = [
+        sunday_stats: list[UserStats] = [
             {
                 "user": {"platform_user_id": "user-1", "display_name": "Ada"},
                 "stats": {"todayTime": 7200, "yesterdayTime": 0, "weekTime": 0, "monthTime": 0},
@@ -240,7 +240,7 @@ class TestStandardReport:
         sent = []
 
         class FakeCommandHandler:
-            def _fetch_workspace_time_tracking_stats(self, workspace_id, target_date):  # noqa: SLF001
+            def _fetch_workspace_time_tracking_stats(self, _workspace_id, _target_date):
                 return (
                     [
                         {
@@ -264,8 +264,8 @@ class TestStandardReport:
                     ],
                 )
 
-            def _render_workspace_report(  # noqa: SLF001
-                self, aggregated, members_meta, workspace_id, target_date
+            def _render_workspace_report(
+                self, _aggregated, _members_meta, _workspace_id, _target_date
             ):
                 return "# Report\nAda logged 1h today."
 
@@ -291,10 +291,10 @@ class TestStandardReport:
         sent = []
 
         class FakeCommandHandler:
-            def _fetch_workspace_time_tracking_stats(self, workspace_id, target_date):  # noqa: SLF001
+            def _fetch_workspace_time_tracking_stats(self, _workspace_id, _target_date):
                 return ([], [])
 
-            def _render_workspace_report(self, *args, **kwargs):  # noqa: SLF001
+            def _render_workspace_report(self, *_args, **_kwargs):
                 raise AssertionError("Should not render when no data")
 
         async def fake_send(channel_id, content, allowed_mentions):
@@ -358,7 +358,7 @@ class TestWeekendSkipping:
         sent = []
 
         class FakeCommandHandler:
-            def _fetch_workspace_time_tracking_stats(self, workspace_id, target_date):  # noqa: SLF001
+            def _fetch_workspace_time_tracking_stats(self, _workspace_id, _target_date):
                 return (
                     [
                         {
@@ -374,7 +374,7 @@ class TestWeekendSkipping:
                     [{"platform_user_id": "user-1", "display_name": "Ada"}],
                 )
 
-            def _render_workspace_report(self, *args, **kwargs):  # noqa: SLF001
+            def _render_workspace_report(self, *_args, **_kwargs):
                 return "# Weekend Report\nAda worked on Saturday."
 
         async def fake_send(channel_id, content, allowed_mentions):
@@ -403,7 +403,7 @@ class TestMondaySummary:
         fetch_calls = []
 
         class FakeCommandHandler:
-            def _fetch_workspace_time_tracking_stats(self, workspace_id, target_date):  # noqa: SLF001
+            def _fetch_workspace_time_tracking_stats(self, _workspace_id, target_date):
                 fetch_calls.append(target_date.strftime("%A"))
                 # Return different data based on day
                 if target_date.weekday() == 5:  # Saturday
@@ -421,7 +421,7 @@ class TestMondaySummary:
                         ],
                         [{"platform_user_id": "user-1", "display_name": "Ada"}],
                     )
-                elif target_date.weekday() == 6:  # Sunday
+                if target_date.weekday() == 6:  # Sunday
                     return (
                         [
                             {
@@ -436,23 +436,23 @@ class TestMondaySummary:
                         ],
                         [{"platform_user_id": "user-1", "display_name": "Ada"}],
                     )
-                else:  # Monday
-                    return (
-                        [
-                            {
-                                "user": {"platform_user_id": "user-1", "display_name": "Ada"},
-                                "stats": {
-                                    "todayTime": 5400,
-                                    "yesterdayTime": 0,
-                                    "weekTime": 16200,
-                                    "monthTime": 16200,
-                                },
-                            }
-                        ],
-                        [{"platform_user_id": "user-1", "display_name": "Ada"}],
-                    )
+                # Monday
+                return (
+                    [
+                        {
+                            "user": {"platform_user_id": "user-1", "display_name": "Ada"},
+                            "stats": {
+                                "todayTime": 5400,
+                                "yesterdayTime": 0,
+                                "weekTime": 16200,
+                                "monthTime": 16200,
+                            },
+                        }
+                    ],
+                    [{"platform_user_id": "user-1", "display_name": "Ada"}],
+                )
 
-            def _get_discord_user_map(self, workspace_id):  # noqa: SLF001
+            def _get_discord_user_map(self, _workspace_id):
                 return {}
 
         async def fake_send(channel_id, content, allowed_mentions):
@@ -482,11 +482,11 @@ class TestMondaySummary:
         sent = []
 
         class FakeCommandHandler:
-            def _fetch_workspace_time_tracking_stats(self, workspace_id, target_date):  # noqa: SLF001
+            def _fetch_workspace_time_tracking_stats(self, _workspace_id, _target_date):
                 # No data for any day
                 return ([], [{"platform_user_id": "user-1", "display_name": "Ada"}])
 
-            def _get_discord_user_map(self, workspace_id):  # noqa: SLF001
+            def _get_discord_user_map(self, _workspace_id):
                 return {}
 
         async def fake_send(channel_id, content, allowed_mentions):
@@ -509,7 +509,7 @@ class TestMondaySummary:
         sent = []
 
         class FakeCommandHandler:
-            def _fetch_workspace_time_tracking_stats(self, workspace_id, target_date):  # noqa: SLF001
+            def _fetch_workspace_time_tracking_stats(self, _workspace_id, target_date):
                 # Fail for Saturday/Sunday, succeed for Monday
                 if target_date.weekday() in (5, 6):
                     return (None, [])  # Trigger error
@@ -528,7 +528,7 @@ class TestMondaySummary:
                     [{"platform_user_id": "user-1", "display_name": "Ada"}],
                 )
 
-            def _render_workspace_report(self, *args, **kwargs):  # noqa: SLF001
+            def _render_workspace_report(self, *_args, **_kwargs):
                 return "# Standard Monday Report"
 
         async def fake_send(channel_id, content, allowed_mentions):

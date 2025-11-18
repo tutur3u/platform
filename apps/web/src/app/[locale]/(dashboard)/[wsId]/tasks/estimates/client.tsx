@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import {
   BarChart3,
   Calculator,
@@ -77,6 +78,7 @@ const estimationTypes = [
 
 export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [boards, setBoards] =
     useState<Partial<WorkspaceTaskBoard>[]>(initialBoards);
   const [editingBoard, setEditingBoard] =
@@ -230,6 +232,10 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
       if (!response.ok) {
         throw new Error('Failed to update estimation type');
       }
+
+      await queryClient.invalidateQueries({
+        queryKey: ['board-config', editingBoard.id],
+      });
 
       // Update local state
       setBoards((prev) =>
@@ -523,7 +529,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                   </SelectTrigger>
                   <SelectContent
                     align="end"
-                    className="w-[var(--radix-select-trigger-width)]"
+                    className="w-(--radix-select-trigger-width)"
                   >
                     {estimationTypes.map((type) => (
                       <SelectItem

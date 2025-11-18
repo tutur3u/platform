@@ -6,6 +6,10 @@ updatedAt: "2025-11-16"
 
 The event-driven architecture is fundamentally designed for evolution, stability, and growth. This document explores **15 key reasons** (5 for each property) why these qualities are prioritized in Tuturuuu's architecture.
 
+<Info>
+To understand how different architectural patterns compare in terms of these quality attributes, see [Architectural Patterns Comparison](/platform/architecture/system-design/architectural-patterns-comparison).
+</Info>
+
 ## Extensibility (5 Reasons)
 
 The event-driven architecture is fundamentally designed for evolution and the seamless addition of new functionality.
@@ -45,6 +49,8 @@ client.defineJob({
 - **Independent deployment** of fraud detection
 - **No regression risk** to existing functionality
 - **Team autonomy** - fraud team works independently
+
+**Clarifying Additions:** This ensures growth does not disrupt existing areas. New capabilities arrive as new components rather than modifications to old ones. This avoids large, risky refactors as the system expands.
 
 ---
 
@@ -87,6 +93,8 @@ client.defineJob({
 - **Backward compatibility** maintained
 - **Experimentation** with low risk
 
+**Clarifying Additions:** Teams are not forced into a single technology path. Different services evolve using the most suitable tools for their domain. This architectural freedom supports innovation over time.
+
 ---
 
 ### 3. Compatible Schema Evolution
@@ -121,6 +129,8 @@ const WorkspaceCreatedV2 = z.object({
 - **No breaking changes** for existing services
 - **Type safety** with Zod validation
 - **Clear documentation** of event structure
+
+**Clarifying Additions:** Infrastructure changes stay isolated from business logic. Adapters act as interchangeable layers without affecting the core. This keeps the system adaptable to new technical requirements.
 
 ---
 
@@ -159,6 +169,8 @@ client.defineJob({
 - **Independent evolution** of data models
 - **No monolithic database** bottleneck
 - **Service isolation** - database failures contained
+
+**Clarifying Additions:** Each module grows independently while remaining part of a cohesive whole. UI changes become safer because the blast radius stays limited. This supports consistent long-term UI development.
 
 ---
 
@@ -216,6 +228,8 @@ export async function POST(request: Request) {
 - **Backend extensibility** without tight coupling
 - **Feature experimentation** with low risk
 
+**Clarifying Additions:** Frontends stay insulated from backend restructuring. The gateway becomes the stable interface even as internal services change. This continuity simplifies client-side development.
+
 ---
 
 ## Resilience (5 Reasons)
@@ -254,6 +268,8 @@ client.defineJob({
 - **Automatic recovery** when service restarts
 - **Producer isolation** from consumer failures
 - **System resilience** to partial failures
+
+**Clarifying Additions:** Failures stay local rather than affecting the entire system. The architecture encourages designing for graceful degradation. This improves overall system continuity.
 
 ---
 
@@ -296,6 +312,8 @@ async function createWorkspace(data) {
 - **Isolation from slow consumers**
 - **Better resource utilization**
 - **Improved user experience**
+
+**Clarifying Additions:** Resilience logic becomes consistent for all services. The system handles temporary failures automatically without client-side complexity. This stabilizes user experience during partial outages.
 
 ---
 
@@ -347,6 +365,8 @@ client.defineJob({
 - **Data consistency** even with failures
 - **Simple error recovery** - just retry
 - **Reliable processing** guarantees
+
+**Clarifying Additions:** Availability remains high because traffic avoids unhealthy components. Failover happens without requiring operator involvement. This supports seamless recovery.
 
 ---
 
@@ -404,6 +424,8 @@ client.defineJob({
 - **Manual review** for persistent errors
 - **Pattern detection** for systemic issues
 
+**Clarifying Additions:** Workloads continue flowing even when some services are unavailable. Components operate at different speeds without blocking each other. This improves stability in distributed workflows.
+
 ---
 
 ### 5. Replayability for Disaster Recovery
@@ -453,6 +475,8 @@ client.defineJob({
 - **Bug fix validation** by replaying
 - **Audit trail** for compliance
 
+**Clarifying Additions:** The architecture expects components to fail and designs for automatic recovery. Redundant instances reduce the risk of total service loss. The system maintains health without manual intervention.
+
 ---
 
 ## Scalability (5 Reasons)
@@ -490,6 +514,8 @@ client.defineJob({
 - **No code changes** required
 - **Cost-effective** - scale up/down as needed
 
+**Clarifying Additions:** Each service grows according to its actual demand rather than the needs of the system as a whole. This leads to better resource distribution. It prevents unnecessary scaling of unrelated components.
+
 ---
 
 ### 2. Data Partitioning for Parallelism
@@ -520,6 +546,8 @@ await trigger.event({
 - **Optimal throughput** with consistency
 - **Scalable architecture**
 
+**Clarifying Additions:** Stateless components are easy to duplicate and coordinate. Scaling becomes predictable and controllable. Traffic fluctuations can be handled efficiently.
+
 ---
 
 ### 3. Independent Service Scaling
@@ -547,6 +575,8 @@ const scalingConfig = {
 - **Resource efficiency**
 - **Performance optimization** per workload
 
+**Clarifying Additions:** Uniform request handling promotes system stability. Load is shared automatically without service-specific logic. This ensures consistent performance at scale.
+
 ---
 
 ### 4. The Broker as a Load Absorber
@@ -568,6 +598,8 @@ graph LR
 - **Sustainable processing** rates
 - **No service overload**
 - **Improved reliability**
+
+**Clarifying Additions:** Separating reads from writes avoids resource contention. High-traffic paths get dedicated scaling strategies. This improves responsiveness and throughput.
 
 ---
 
@@ -616,6 +648,8 @@ client.defineJob({
 - **Low-latency reads** from cache
 - **Consistent writes** to database
 - **Independent scaling** of read vs write paths
+
+**Clarifying Additions:** The system adapts naturally to changes in workload. Instances come and go without manual reconfiguration. This makes scaling continuous and flexible.
 
 ---
 

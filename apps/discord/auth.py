@@ -1,7 +1,6 @@
 """Authentication and request verification for Discord interactions."""
 
 import os
-from typing import Dict
 
 from fastapi.exceptions import HTTPException
 from nacl.exceptions import BadSignatureError
@@ -12,7 +11,7 @@ class DiscordAuth:
     """Handles Discord request authentication."""
 
     @staticmethod
-    def verify_request(headers: Dict, body: bytes) -> None:
+    def verify_request(headers: dict, body: bytes) -> None:
         """Verify that the request is from Discord using their public key."""
         print("🤖: authenticating request")
 
@@ -37,6 +36,6 @@ class DiscordAuth:
 
         try:
             verify_key.verify(message, bytes.fromhex(signature))
-        except BadSignatureError:
+        except BadSignatureError as error:
             # Either an unauthorized request or Discord's "negative control" check
-            raise HTTPException(status_code=401, detail="Invalid request")
+            raise HTTPException(status_code=401, detail="Invalid request") from error
