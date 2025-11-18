@@ -197,11 +197,13 @@ def _get_weekend_dates(
         timezone: Timezone for date calculation
 
     Returns:
-        Tuple of (saturday, sunday) datetime objects
+        Tuple of (saturday, sunday) datetime objects at midnight
     """
     local_monday = monday.astimezone(timezone) if monday.tzinfo else monday.replace(tzinfo=timezone)
-    saturday = local_monday - timedelta(days=2)
-    sunday = local_monday - timedelta(days=1)
+    # Normalize to midnight to avoid time component issues
+    monday_midnight = local_monday.replace(hour=0, minute=0, second=0, microsecond=0)
+    saturday = monday_midnight - timedelta(days=2)
+    sunday = monday_midnight - timedelta(days=1)
     return saturday, sunday
 
 
@@ -223,6 +225,10 @@ def _fetch_day_stats(
     Raises:
         DailyReportDataError: If data fetching fails
     """
+    # Log the target date for debugging
+    date_str = target_date.strftime("%Y-%m-%d %H:%M:%S %Z") if target_date else "None"
+    print(f"📊 Fetching stats for workspace {workspace_id} on {date_str}")
+
     aggregated, members_meta = handler._fetch_workspace_time_tracking_stats(  # noqa: SLF001
         workspace_id, target_date
     )
@@ -231,6 +237,11 @@ def _fetch_day_stats(
         raise DailyReportDataError(
             f"Failed to fetch time tracking stats for workspace {workspace_id}"
         )
+
+    # Log summary of fetched data
+    total_today = sum(item["stats"].get("todayTime", 0) for item in aggregated)
+    active_count = sum(1 for item in aggregated if item["stats"].get("todayTime", 0) > 0)
+    print(f"   ✓ Found {active_count} active users with {total_today}s total time")
 
     return aggregated, members_meta
 
@@ -254,26 +265,37 @@ def _merge_weekend_stats(
     for item in saturday_stats:
         user_id = item["user"].get("platform_user_id")
         if user_id:
+            sat_time = item["stats"].get("todayTime", 0)
             weekend_map[user_id] = {
-                "saturdayTime": item["stats"].get("todayTime", 0),
+                "saturdayTime": sat_time,
                 "sundayTime": 0,
-                "weekendTotal": item["stats"].get("todayTime", 0),
+                "weekendTotal": sat_time,
             }
+            if sat_time > 0:
+                user_name = item["user"].get("display_name") or item["user"].get("handle") or "Unknown"
+                print(f"   📅 Saturday: {user_name} = {sat_time}s")
 
     # Add Sunday
     for item in sunday_stats:
         user_id = item["user"].get("platform_user_id")
         if user_id:
+            sun_time = item["stats"].get("todayTime", 0)
             if user_id in weekend_map:
-                sunday_time = item["stats"].get("todayTime", 0)
-                weekend_map[user_id]["sundayTime"] = sunday_time
-                weekend_map[user_id]["weekendTotal"] += sunday_time
+                weekend_map[user_id]["sundayTime"] = sun_time
+                weekend_map[user_id]["weekendTotal"] += sun_time
             else:
                 weekend_map[user_id] = {
                     "saturdayTime": 0,
-                    "sundayTime": item["stats"].get("todayTime", 0),
-                    "weekendTotal": item["stats"].get("todayTime", 0),
+                    "sundayTime": sun_time,
+                    "weekendTotal": sun_time,
                 }
+            if sun_time > 0:
+                user_name = item["user"].get("display_name") or item["user"].get("handle") or "Unknown"
+                print(f"   📅 Sunday: {user_name} = {sun_time}s")
+
+    # Log weekend totals
+    total_weekend = sum(stats["weekendTotal"] for stats in weekend_map.values())
+    print(f"   🏖️ Weekend total across all users: {total_weekend}s")
 
     return weekend_map
 
