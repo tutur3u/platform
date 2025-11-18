@@ -125,7 +125,7 @@ export default async function Layout({ children, params }: LayoutProps) {
               title={t('common.personal_account')}
               description={t('common.set_up_personal_workspace')}
               nameRule={t('common.personal_workspace_naming_rule')}
-              createLabel={t('common.create_workspace')} 
+              createLabel={t('common.create_workspace')}
               markLabel={t('common.mark_as_personal')}
               selectPlaceholder={t('common.select_workspace')}
             />
