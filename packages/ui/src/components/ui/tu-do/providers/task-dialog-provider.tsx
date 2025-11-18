@@ -60,6 +60,9 @@ interface TaskDialogContextValue {
   // Current dialog state
   state: TaskDialogState;
 
+  // Whether the current workspace is personal
+  isPersonalWorkspace: boolean;
+
   // Open dialog for editing existing task
   openTask: (
     task: Task,
@@ -294,6 +297,7 @@ export function TaskDialogProvider({
   const contextValue = useMemo<TaskDialogContextValue>(
     () => ({
       state,
+      isPersonalWorkspace,
       openTask,
       openTaskById,
       createTask,
@@ -305,6 +309,7 @@ export function TaskDialogProvider({
     }),
     [
       state,
+      isPersonalWorkspace,
       openTask,
       openTaskById,
       createTask,

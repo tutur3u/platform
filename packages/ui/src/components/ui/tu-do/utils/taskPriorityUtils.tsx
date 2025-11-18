@@ -2,7 +2,27 @@ import { horseHead, Icon, Rabbit, Turtle, unicornHead } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
+import React from 'react';
 import { PRIORITY_BADGE_COLORS, PRIORITY_LABELS } from './taskConstants';
+
+export const PRIORITY_ICONS: Record<
+  NonNullable<Task['priority']>,
+  React.ReactElement
+> = {
+  critical: <Icon iconNode={unicornHead} />,
+  high: <Icon iconNode={horseHead} />,
+  normal: <Rabbit />,
+  low: <Turtle />,
+};
+
+export function getPriorityIcon(
+  priority: Task['priority'],
+  className?: string
+): React.ReactNode {
+  if (!priority) return null;
+  const icon = PRIORITY_ICONS[priority];
+  return icon ? React.cloneElement(icon, { className } as any) : null;
+}
 
 /**
  * Get priority label for display
@@ -20,19 +40,14 @@ export function getPriorityIndicator(
 ): React.ReactNode {
   if (!priority) return null;
 
-  const labels = {
-    critical: <Icon iconNode={unicornHead} className="size-3" />,
-    high: <Icon iconNode={horseHead} className="size-3" />,
-    normal: <Rabbit className="size-3" />,
-    low: <Turtle className="size-3" />,
-  };
+  const icon = getPriorityIcon(priority, 'size-3');
 
   return (
     <Badge
       variant="secondary"
-      className={cn('p-[0.1875rem] text-xs', PRIORITY_BADGE_COLORS[priority])}
+      className={cn('p-0.75 text-xs', PRIORITY_BADGE_COLORS[priority])}
     >
-      {labels[priority as keyof typeof labels]}
+      {icon}
     </Badge>
   );
 }

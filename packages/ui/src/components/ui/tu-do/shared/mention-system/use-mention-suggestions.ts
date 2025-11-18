@@ -5,7 +5,12 @@ import { normalizeForSearch } from './types';
 
 interface UseMentionSuggestionsProps {
   workspaceMembers: any[];
-  allWorkspaces: any[];
+  currentWorkspace: {
+    id: string;
+    name: string;
+    handle: string | null;
+    personal: boolean;
+  } | null;
   taskProjects: any[];
   workspaceTasks: any[];
   currentTaskId?: string;
@@ -24,7 +29,7 @@ export interface UseMentionSuggestionsResult {
 
 export function useMentionSuggestions({
   workspaceMembers,
-  allWorkspaces,
+  currentWorkspace,
   taskProjects,
   workspaceTasks,
   currentTaskId,
@@ -48,17 +53,24 @@ export function useMentionSuggestions({
   );
 
   const mentionWorkspaceOptions = useMemo<MentionOption[]>(() => {
-    return allWorkspaces
-      .filter((ws) => !ws.personal)
-      .map((ws) => ({
-        id: ws.id,
-        label: ws.name || 'Workspace',
-        subtitle: ws.handle ? `@${ws.handle}` : ws.id.slice(0, 8),
+    // Only include the current workspace if it's not personal
+    if (!currentWorkspace || currentWorkspace.personal) {
+      return [];
+    }
+
+    return [
+      {
+        id: currentWorkspace.id,
+        label: currentWorkspace.name || 'Workspace',
+        subtitle: currentWorkspace.handle
+          ? `@${currentWorkspace.handle}`
+          : currentWorkspace.id.slice(0, 8),
         avatarUrl: null,
         type: 'workspace' as const,
-        payload: ws,
-      }));
-  }, [allWorkspaces]);
+        payload: currentWorkspace,
+      },
+    ];
+  }, [currentWorkspace]);
 
   const mentionProjectOptions = useMemo<MentionOption[]>(
     () =>
