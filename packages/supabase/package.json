@@ -49,6 +49,10 @@
       "types": "./dist/next/realtime.d.ts",
       "default": "./dist/next/realtime.js"
     },
+    "./next/realtime-log-provider": {
+      "types": "./dist/next/realtime-log-provider.d.ts",
+      "default": "./dist/next/realtime-log-provider.js"
+    },
     "./next/server": {
       "types": "./dist/next/server.d.ts",
       "default": "./dist/next/server.js"

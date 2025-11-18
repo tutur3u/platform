@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
   getWorkspace,
@@ -116,57 +117,59 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   return (
     <SidebarProvider initialBehavior={sidebarBehavior}>
-      {SHOW_PERSONAL_WORKSPACE_PROMPT && (
-        <div className="px-2 pt-2 md:px-4 md:pt-3">
-          <PersonalWorkspacePrompt
-            eligibleWorkspaces={eligibleWorkspaces || []}
-            title={t('common.personal_account')}
-            description={t('common.set_up_personal_workspace')}
-            nameRule={t('common.personal_workspace_naming_rule')}
-            createLabel={t('common.create_workspace')}
-            markLabel={t('common.mark_as_personal')}
-            selectPlaceholder={t('common.select_workspace')}
-          />
-        </div>
-      )}
-      <Structure
-        wsId={wsId}
-        user={user}
-        workspace={workspace}
-        defaultCollapsed={defaultCollapsed}
-        links={
-          await WorkspaceNavigationLinks({
-            wsId,
-            personalOrWsId: workspaceSlug,
-            isPersonal: !!workspace.personal,
-            isTuturuuuUser: !!user.email?.endsWith('@tuturuuu.com'),
-          })
-        }
-        actions={
-          <Suspense
-            key={user.id}
-            fallback={
-              <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <NavbarActions />
-          </Suspense>
-        }
-        userPopover={
-          <Suspense
-            key={user.id}
-            fallback={
-              <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <UserNav hideMetadata />
-          </Suspense>
-        }
-      >
-        <TaskDialogWrapper isPersonalWorkspace={!!workspace.personal}>
-          {children}
-        </TaskDialogWrapper>
-      </Structure>
+      <RealtimeLogProvider wsId={wsId}>
+        {SHOW_PERSONAL_WORKSPACE_PROMPT && (
+          <div className="px-2 pt-2 md:px-4 md:pt-3">
+            <PersonalWorkspacePrompt
+              eligibleWorkspaces={eligibleWorkspaces || []}
+              title={t('common.personal_account')}
+              description={t('common.set_up_personal_workspace')}
+              nameRule={t('common.personal_workspace_naming_rule')}
+              createLabel={t('common.create_workspace')} 
+              markLabel={t('common.mark_as_personal')}
+              selectPlaceholder={t('common.select_workspace')}
+            />
+          </div>
+        )}
+        <Structure
+          wsId={wsId}
+          user={user}
+          workspace={workspace}
+          defaultCollapsed={defaultCollapsed}
+          links={
+            await WorkspaceNavigationLinks({
+              wsId,
+              personalOrWsId: workspaceSlug,
+              isPersonal: !!workspace.personal,
+              isTuturuuuUser: !!user.email?.endsWith('@tuturuuu.com'),
+            })
+          }
+          actions={
+            <Suspense
+              key={user.id}
+              fallback={
+                <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
+              }
+            >
+              <NavbarActions />
+            </Suspense>
+          }
+          userPopover={
+            <Suspense
+              key={user.id}
+              fallback={
+                <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+              }
+            >
+              <UserNav hideMetadata />
+            </Suspense>
+          }
+        >
+          <TaskDialogWrapper isPersonalWorkspace={!!workspace.personal}>
+            {children}
+          </TaskDialogWrapper>
+        </Structure>
+      </RealtimeLogProvider>
     </SidebarProvider>
   );
 }

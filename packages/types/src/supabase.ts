@@ -5410,6 +5410,79 @@ export type Database = {
           },
         ];
       };
+      realtime_logs: {
+        Row: {
+          created_at: string;
+          data: string | null;
+          id: string;
+          kind: string;
+          message: string;
+          user_id: string | null;
+          ws_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          data?: string | null;
+          id?: string;
+          kind: string;
+          message: string;
+          user_id?: string | null;
+          ws_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          data?: string | null;
+          id?: string;
+          kind?: string;
+          message?: string;
+          user_id?: string | null;
+          ws_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'realtime_logs_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'realtime_logs_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'realtime_logs_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'realtime_logs_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'realtime_logs_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'realtime_logs_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       recording_sessions: {
         Row: {
           created_at: string;
