@@ -9,6 +9,7 @@ import isBetween from 'dayjs/plugin/isBetween';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
+import Image from 'next/image';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { MIN_COLUMN_WIDTH } from './config';
 import { useCalendarSettings } from './settings/settings-context';
@@ -64,7 +65,7 @@ const EventContent = ({ event }: { event: CalendarEvent }) => (
   <>
     {typeof event.google_event_id === 'string' &&
       event.google_event_id.trim() !== '' && (
-        <img
+        <Image
           src="/media/google-calendar-icon.png"
           alt="Google Calendar"
           className="mr-1 inline-block h-[1.25em] w-[1.25em] align-middle opacity-80 dark:opacity-90"

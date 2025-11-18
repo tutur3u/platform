@@ -1,5 +1,6 @@
+import type { NavLink } from '@/components/navigation';
+import { DEV_MODE } from '@/constants/common';
 import {
-  Activity,
   Archive,
   Banknote,
   Bell,
@@ -83,8 +84,8 @@ import {
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
-  ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
+  ROOT_WORKSPACE_ID,
 } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
@@ -92,14 +93,11 @@ import {
   getSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
-import type { NavLink } from '@/components/navigation';
-import { DEV_MODE } from '@/constants/common';
 
 export async function WorkspaceNavigationLinks({
   wsId,
   personalOrWsId,
   isPersonal,
-  isTuturuuuUser,
 }: {
   wsId: string;
   personalOrWsId: string;
@@ -225,19 +223,6 @@ export async function WorkspaceNavigationLinks({
           icon: <Icon iconNode={hexagons3} className="h-4 w-4" />,
           href: `/${personalOrWsId}/tasks/estimates`,
         },
-        // null,
-        // {
-        //   title: t('sidebar_tabs.teams'),
-        //   icon: <SquareUserRound className="h-4 w-4" />,
-        //   tempDisabled: true,
-        //   matchExact: true,
-        // },
-        // {
-        //   title: t('sidebar_tabs.members'),
-        //   icon: <Users className="h-4 w-4" />,
-        //   tempDisabled: true,
-        //   matchExact: true,
-        // },
       ],
     },
     {
@@ -245,26 +230,6 @@ export async function WorkspaceNavigationLinks({
       icon: <Calendar className="h-5 w-5" />,
       href: `/${personalOrWsId}/calendar`,
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
-      experimental: 'alpha',
-      requireRootMember: true,
-      children: isTuturuuuUser
-        ? [
-            {
-              title: t('calendar-tabs.calendar'),
-              href: `/${personalOrWsId}/calendar`,
-              icon: <Calendar className="h-4 w-4" />,
-              requireRootMember: true,
-              matchExact: true,
-            },
-            {
-              title: t('calendar-tabs.sync-history'),
-              href: `/${personalOrWsId}/calendar/history/sync`,
-              icon: <Activity className="h-4 w-4" />,
-              requireRootWorkspace: true,
-              requireRootMember: true,
-            },
-          ]
-        : undefined,
     },
     {
       title: t('sidebar_tabs.documents'),
@@ -879,6 +844,7 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/api-keys`,
         `/${personalOrWsId}/secrets`,
         `/${personalOrWsId}/infrastructure`,
+        `/${personalOrWsId}/infrastructure/calendar-sync`,
         `/${personalOrWsId}/migrations`,
         `/${personalOrWsId}/integrations`,
         `/${personalOrWsId}/integrations/discord`,
@@ -1016,6 +982,11 @@ export async function WorkspaceNavigationLinks({
               title: t('infrastructure-tabs.translations'),
               href: `/${personalOrWsId}/infrastructure/translations`,
               icon: <Languages className="h-5 w-5" />,
+            },
+            {
+              title: 'Calendar Sync',
+              href: `/${personalOrWsId}/infrastructure/calendar-sync`,
+              icon: <FolderSync className="h-5 w-5" />,
             },
           ],
         },

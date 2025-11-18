@@ -23,7 +23,6 @@ import {
   TEST_CASE_EVALUATION_PROMPT,
 } from './prompts';
 
-export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 

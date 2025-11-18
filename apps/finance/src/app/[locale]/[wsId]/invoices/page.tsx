@@ -1,4 +1,5 @@
 import InvoicesPage from '@tuturuuu/ui/finance/invoices/invoice-page';
+import { Suspense } from 'react';
 
 interface Props {
   params: Promise<{
@@ -15,8 +16,9 @@ export default async function WorkspaceInvoicesPage({
   params,
   searchParams,
 }: Props) {
-  const { wsId } = await params;
-  const sp = await searchParams;
-
-  return <InvoicesPage wsId={wsId} searchParams={sp} />;
+  return (
+    <Suspense>
+      <InvoicesPage params={params} searchParams={searchParams} />
+    </Suspense>
+  );
 }

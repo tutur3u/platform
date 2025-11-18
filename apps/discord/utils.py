@@ -244,7 +244,7 @@ def get_user_workspace_info(discord_user_id: str, guild_id: str = None) -> dict:
         # Get workspace member info
         workspace_member_result = (
             supabase.table("workspace_members")
-            .select("role, role_title, users!inner(display_name, handle)")
+            .select("users!inner(display_name, handle)")
             .eq("ws_id", workspace_id)
             .eq("user_id", platform_user_id)
             .execute()
@@ -258,8 +258,6 @@ def get_user_workspace_info(discord_user_id: str, guild_id: str = None) -> dict:
         result = {
             "workspace_id": workspace_id,
             "platform_user_id": platform_user_id,
-            "role": member_info["role"],
-            "role_title": member_info["role_title"],
             "display_name": member_info["users"]["display_name"],
             "handle": member_info["users"]["handle"],
         }

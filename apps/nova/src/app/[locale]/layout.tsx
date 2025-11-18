@@ -5,11 +5,11 @@ import { Toaster } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
-import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
-import type { ReactNode } from 'react';
+import { Inter } from 'next/font/google';
+import { notFound } from 'next/navigation';
+import { type ReactNode, Suspense } from 'react';
 import { Providers } from './providers';
 
 const font = Inter({ subsets: ['latin', 'vietnamese'], display: 'block' });
@@ -127,9 +127,11 @@ export default async function RootLayout({ children, params }: Props) {
       >
         <VercelAnalytics />
         <VercelInsights />
-        <Providers>
-          <NextIntlClientProvider>{children}</NextIntlClientProvider>
-        </Providers>
+        <Suspense>
+          <Providers>
+            <NextIntlClientProvider>{children}</NextIntlClientProvider>
+          </Providers>
+        </Suspense>
         <Toaster />
       </body>
     </html>

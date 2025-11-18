@@ -1,11 +1,12 @@
 'use client';
 
+import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
-import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { DEV_MODE } from '@/constants/common';
+import Link from 'next/link';
+import { Suspense } from 'react';
 
 export default function Home() {
   const t = useTranslations('calendar');
@@ -18,14 +19,16 @@ export default function Home() {
           <Button>Scheduler</Button>
         </Link>
       )}
-      <SmartCalendar
-        t={t}
-        locale={locale}
-        useQuery={useQuery}
-        useQueryClient={useQueryClient}
-        enableHeader={false}
-        disabled
-      />
+      <Suspense>
+        <SmartCalendar
+          t={t}
+          locale={locale}
+          useQuery={useQuery}
+          useQueryClient={useQueryClient}
+          enableHeader={false}
+          disabled
+        />
+      </Suspense>
     </div>
   );
 }

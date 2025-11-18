@@ -17,6 +17,20 @@ import type {
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { User } from '@tuturuuu/types/primitives/User';
 
+/**
+ * Generate a human-readable ticket identifier from prefix and display number
+ * @param prefix - Board's ticket prefix (e.g., "DEV", "BUG")
+ * @param displayNumber - Task's sequential display number
+ * @returns Formatted ticket identifier (e.g., "DEV-42", "TASK-1")
+ */
+export function getTicketIdentifier(
+  prefix: string | null | undefined,
+  displayNumber: number
+): string {
+  const effectivePrefix = prefix?.trim() || 'TASK';
+  return `${effectivePrefix}-${displayNumber}`.toUpperCase();
+}
+
 export async function getTaskBoard(
   supabase: TypedSupabaseClient,
   boardId: string
@@ -193,17 +207,8 @@ export async function createTask(
   const newSortKey = calculateSortKey(highestSortKey, null);
 
   // Prepare task data with only the fields that exist in the database
-  const taskData: {
-    name: string;
-    description: string | null;
-    list_id: string;
-    priority: TaskPriority | null;
-    start_date: string | null;
-    end_date: string | null;
-    estimation_points: number | null;
-    sort_key: number;
-    created_at: string;
-  } = {
+  // Note: display_number and board_id are auto-assigned by database trigger
+  const taskData = {
     name: task.name.trim(),
     description: task.description || null,
     list_id: listId,
@@ -304,9 +309,9 @@ export async function updateTask(
     typeof window !== 'undefined' &&
     data
   ) {
-    // Get workspace ID from URL (format: /[locale]/[wsId]/...)
+    // Get workspace ID from URL (format: /[wsId]/...)
     const pathParts = window.location.pathname.split('/');
-    const wsId = pathParts[2]; // Assuming format /[locale]/[wsId]/...
+    const wsId = pathParts[1]; // Assuming format /[wsId]/...
 
     if (wsId) {
       // Call the embedding generation endpoint asynchronously (non-blocking)
@@ -1751,6 +1756,7 @@ export interface BoardConfig {
   extended_estimation: boolean;
   allow_zero_estimates: boolean;
   ws_id: string;
+  ticket_prefix: string | null;
 }
 
 export function useBoardConfig(boardId: string | null | undefined) {
@@ -1763,7 +1769,7 @@ export function useBoardConfig(boardId: string | null | undefined) {
       const { data: board, error } = await supabase
         .from('workspace_boards')
         .select(
-          'id, estimation_type, extended_estimation, allow_zero_estimates, ws_id'
+          'id, estimation_type, extended_estimation, allow_zero_estimates, ws_id, ticket_prefix'
         )
         .eq('id', boardId)
         .single();

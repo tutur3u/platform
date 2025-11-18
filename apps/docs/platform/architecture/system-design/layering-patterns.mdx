@@ -1,0 +1,1537 @@
+---
+title: "Layering Patterns in Architecture"
+description: "Comprehensive comparison of N-tier, layer-based, and microservices architectural patterns in Tuturuuu"
+updatedAt: "2025-11-17"
+---
+
+Understanding how to structure code within services is critical for maintainability and testability. This document compares traditional N-Tier architecture with modern layer-based patterns, and explains how layering works within microservices.
+
+<Note>
+**Key Insight**: Layering is an **internal** concern (how code is organized within a service), while microservices is an **external** concern (how services are distributed). These patterns are complementary, not mutually exclusive.
+</Note>
+
+<Info>
+For a comprehensive comparison of all architectural patterns with detailed pros and cons, see [Architectural Patterns Comparison](/platform/architecture/system-design/architectural-patterns-comparison).
+</Info>
+
+## Architectural Layering Patterns Compared
+
+### 1. Traditional N-Tier Architecture
+
+#### What Is N-Tier Architecture?
+
+N-Tier (also called "N-Layer") is a traditional architectural pattern that organizes code into horizontal layers, each responsible for a specific technical concern. The most common form is 3-tier architecture:
+
+```mermaid
+graph TD
+    A["Presentation Tier (UI)<br/>User interaction, rendering"]
+    B["Business Logic Tier (BLL)<br/>Business rules, validation"]
+    C["Data Access Tier (DAL)<br/>Database operations, persistence"]
+    D[("Database")]
+
+    A -->|Calls| B
+    B -->|Calls| C
+    C -->|Queries| D
+
+    style A fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style B fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style C fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style D fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+```
+
+#### Characteristics of N-Tier
+
+**Dependencies Flow Downward:**
+- Presentation → Business Logic → Data Access → Database
+- Each layer can only call the layer directly below it
+- Upper layers depend on concrete implementations in lower layers
+
+**Example (Traditional N-Tier):**
+
+```typescript
+// Presentation Layer
+export async function GET(request: Request) {
+  const workspaceService = new WorkspaceService();
+  const workspaces = await workspaceService.getWorkspaces();
+
+  return Response.json(workspaces);
+}
+
+// Business Logic Layer
+export class WorkspaceService {
+  async getWorkspaces() {
+    // Business logic mixed with data access
+    const dal = new WorkspaceDAL();
+    const workspaces = await dal.findAll();
+
+    // Validation happens here
+    return workspaces.filter(w => w.isActive);
+  }
+}
+
+// Data Access Layer
+export class WorkspaceDAL {
+  async findAll() {
+    // Direct database coupling
+    const { data } = await supabase
+      .from('workspaces')
+      .select('*');
+
+    return data;
+  }
+}
+```
+
+#### Problems with Traditional N-Tier
+
+1. **Tight Coupling to Infrastructure**
+   - Business logic depends directly on data access layer
+   - Changing databases requires modifying business logic
+   - Hard to test business rules without a database
+
+2. **Leaky Abstractions**
+   - Database concerns leak into business logic (SQL, ORM entities)
+   - Business logic becomes aware of persistence details
+   - Domain models often have database annotations
+
+3. **Circular Dependencies**
+   - Business layer creates data access objects
+   - Data access returns domain models
+   - Creates tight coupling between layers
+
+4. **Technology Lock-In**
+   - Business logic married to specific ORM or database
+   - Difficult to swap technologies
+   - Framework dependencies throughout codebase
+
+**Example of the Problem:**
+
+```typescript
+// Business logic layer - TIGHTLY COUPLED to database
+export class WorkspaceService {
+  async createWorkspace(name: string, ownerId: string) {
+    // PROBLEM: Business logic knows about Supabase
+    const { data, error } = await supabase
+      .from('workspaces')
+      .insert({ name, owner_id: ownerId })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // PROBLEM: Business validation after database insert
+    if (data.name.length < 3) {
+      // Too late - already in database!
+      await supabase.from('workspaces').delete().eq('id', data.id);
+      throw new Error('Name too short');
+    }
+
+    return data;
+  }
+}
+```
+
+---
+
+### 2. Modern Layer-Based Architectures
+
+Layer-based architectures (Hexagonal, Clean, Onion) solve N-Tier's problems by inverting dependencies and organizing around business domains rather than technical layers.
+
+#### Hexagonal Architecture (Ports & Adapters)
+
+```mermaid
+graph TB
+    subgraph External["External Systems"]
+        HTTP["HTTP REST"]
+        GQL["GraphQL"]
+        CLI["CLI"]
+        Events["Event Consumers"]
+        DB[("Database")]
+        MsgBus[("Message Bus")]
+        Email["Email Service"]
+        API["External API"]
+    end
+
+    subgraph Hexagon["Hexagonal Architecture"]
+        subgraph Primary["Primary Adapters<br/>(Inbound/Driving)"]
+            RestCtrl["REST Controllers"]
+            GqlResolv["GraphQL Resolvers"]
+            CliCmd["CLI Commands"]
+            EventCons["Event Consumers"]
+        end
+
+        subgraph PrimaryPorts["Primary Ports<br/>(Interfaces)"]
+        end
+
+        subgraph DomainCore["DOMAIN CORE<br/>(Business Logic)"]
+            Entities["Entities"]
+            VOs["Value Objects"]
+            DomainSvc["Domain Services"]
+            BizRules["Business Rules"]
+        end
+
+        subgraph SecondaryPorts["Secondary Ports<br/>(Interfaces)"]
+        end
+
+        subgraph Secondary["Secondary Adapters<br/>(Outbound/Driven)"]
+            RepoImpl["Repository Impl"]
+            EventPub["Event Publisher"]
+            EmailSend["Email Sender"]
+            HttpClient["HTTP Client"]
+        end
+    end
+
+    HTTP --> RestCtrl
+    GQL --> GqlResolv
+    CLI --> CliCmd
+    Events --> EventCons
+
+    RestCtrl --> PrimaryPorts
+    GqlResolv --> PrimaryPorts
+    CliCmd --> PrimaryPorts
+    EventCons --> PrimaryPorts
+
+    PrimaryPorts --> DomainCore
+    DomainCore --> SecondaryPorts
+
+    SecondaryPorts --> RepoImpl
+    SecondaryPorts --> EventPub
+    SecondaryPorts --> EmailSend
+    SecondaryPorts --> HttpClient
+
+    RepoImpl --> DB
+    EventPub --> MsgBus
+    EmailSend --> Email
+    HttpClient --> API
+
+    style DomainCore fill:#ffd54f,stroke:#f57f17,stroke-width:3px
+    style PrimaryPorts fill:#81c784,stroke:#388e3c,stroke-width:2px
+    style SecondaryPorts fill:#81c784,stroke:#388e3c,stroke-width:2px
+    style Primary fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style Secondary fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+```
+
+**Key Principles:**
+
+1. **Dependency Inversion**: Domain defines interfaces (ports), infrastructure implements them (adapters)
+2. **Domain Core is Pure**: No infrastructure dependencies, no framework code
+3. **Testability**: Domain can be tested in isolation with test doubles
+4. **Technology Agnostic**: Infrastructure can be swapped without changing business logic
+
+**Example (Hexagonal Architecture):**
+
+```typescript
+// ===== DOMAIN CORE (Pure Business Logic) =====
+
+// Domain Entity - No infrastructure dependencies
+export class Workspace {
+  private constructor(
+    public readonly id: string,
+    private _name: string,
+    private _ownerId: string,
+    private _isActive: boolean,
+    public readonly createdAt: Date
+  ) {}
+
+  static create(name: string, ownerId: string): Workspace {
+    // Business rule: Name must be 3-50 characters
+    if (name.length < 3 || name.length > 50) {
+      throw new DomainError('Workspace name must be 3-50 characters');
+    }
+
+    return new Workspace(
+      generateId(),
+      name,
+      ownerId,
+      true,
+      new Date()
+    );
+  }
+
+  rename(newName: string): void {
+    if (newName.length < 3 || newName.length > 50) {
+      throw new DomainError('Workspace name must be 3-50 characters');
+    }
+    this._name = newName;
+  }
+
+  archive(): void {
+    if (!this._isActive) {
+      throw new DomainError('Workspace is already archived');
+    }
+    this._isActive = false;
+  }
+
+  get name(): string { return this._name; }
+  get ownerId(): string { return this._ownerId; }
+  get isActive(): boolean { return this._isActive; }
+}
+
+// Secondary Port - Interface defined by domain
+export interface WorkspaceRepository {
+  findById(id: string): Promise<Workspace | null>;
+  findByOwnerId(ownerId: string): Promise<Workspace[]>;
+  save(workspace: Workspace): Promise<void>;
+  delete(id: string): Promise<void>;
+}
+
+// Domain Service - Pure business logic
+export class WorkspaceService {
+  constructor(
+    private readonly repository: WorkspaceRepository  // Depends on interface
+  ) {}
+
+  async createWorkspace(name: string, ownerId: string): Promise<Workspace> {
+    // Business validation happens BEFORE persistence
+    const workspace = Workspace.create(name, ownerId);
+
+    await this.repository.save(workspace);
+
+    return workspace;
+  }
+
+  async archiveWorkspace(id: string): Promise<void> {
+    const workspace = await this.repository.findById(id);
+    if (!workspace) {
+      throw new DomainError('Workspace not found');
+    }
+
+    // Domain method encapsulates business rule
+    workspace.archive();
+
+    await this.repository.save(workspace);
+  }
+}
+
+// ===== INFRASTRUCTURE (Adapters) =====
+
+// Secondary Adapter - Implements domain interface
+export class SupabaseWorkspaceRepository implements WorkspaceRepository {
+  constructor(private readonly supabase: SupabaseClient) {}
+
+  async findById(id: string): Promise<Workspace | null> {
+    const { data } = await this.supabase
+      .from('workspaces')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    return data ? this.toDomain(data) : null;
+  }
+
+  async save(workspace: Workspace): Promise<void> {
+    await this.supabase
+      .from('workspaces')
+      .upsert(this.toDatabase(workspace));
+  }
+
+  // Mapping between database schema and domain model
+  private toDomain(row: any): Workspace {
+    return new Workspace(
+      row.id,
+      row.name,
+      row.owner_id,
+      row.is_active,
+      new Date(row.created_at)
+    );
+  }
+
+  private toDatabase(workspace: Workspace): any {
+    return {
+      id: workspace.id,
+      name: workspace.name,
+      owner_id: workspace.ownerId,
+      is_active: workspace.isActive,
+      created_at: workspace.createdAt.toISOString()
+    };
+  }
+}
+
+// Primary Adapter - API endpoint
+export async function POST(request: Request) {
+  const body = await request.json();
+
+  // Dependency injection - provide implementation
+  const repository = new SupabaseWorkspaceRepository(createClient());
+  const service = new WorkspaceService(repository);
+
+  const workspace = await service.createWorkspace(
+    body.name,
+    body.ownerId
+  );
+
+  return Response.json({ workspace });
+}
+```
+
+#### Benefits of Hexagonal Architecture
+
+✅ **Domain Logic is Pure and Testable**
+```typescript
+// Test without any infrastructure
+describe('Workspace', () => {
+  it('enforces name length business rule', () => {
+    expect(() => {
+      Workspace.create('ab', 'owner-123');  // Too short
+    }).toThrow('Workspace name must be 3-50 characters');
+  });
+
+  it('prevents archiving already archived workspace', () => {
+    const workspace = Workspace.create('Test', 'owner-123');
+    workspace.archive();
+
+    expect(() => workspace.archive()).toThrow('Workspace is already archived');
+  });
+});
+```
+
+✅ **Technology Can Be Swapped Easily**
+```typescript
+// Switch from Supabase to Drizzle - domain unchanged
+const repository = new DrizzleWorkspaceRepository(db);
+const service = new WorkspaceService(repository);
+// All business logic works identically
+```
+
+✅ **Fast, Reliable Tests**
+```typescript
+// In-memory test double - runs in milliseconds
+class InMemoryWorkspaceRepository implements WorkspaceRepository {
+  private workspaces = new Map<string, Workspace>();
+
+  async findById(id: string) {
+    return this.workspaces.get(id) || null;
+  }
+
+  async save(workspace: Workspace) {
+    this.workspaces.set(workspace.id, workspace);
+  }
+}
+
+// Test runs instantly, no database needed
+const repo = new InMemoryWorkspaceRepository();
+const service = new WorkspaceService(repo);
+await service.createWorkspace('Test', 'owner-123');
+```
+
+---
+
+### 3. Clean Architecture
+
+Clean Architecture (by Robert C. Martin) is similar to Hexagonal but emphasizes concentric circles of dependencies.
+
+```mermaid
+graph TD
+    subgraph Layer4["Frameworks & Drivers<br/>(Outermost)"]
+        FW["Database, Web,<br/>External APIs, UI"]
+    end
+
+    subgraph Layer3["Interface Adapters"]
+        IA["Controllers,<br/>Presenters,<br/>Gateways"]
+    end
+
+    subgraph Layer2["Application Business Rules"]
+        ABR["Use Cases,<br/>Application Services"]
+    end
+
+    subgraph Layer1["Enterprise Business Rules<br/>(Innermost)"]
+        EBR["Entities,<br/>Domain Services"]
+    end
+
+    FW -.->|"Dependencies<br/>point INWARD"| IA
+    IA -.->|"Dependencies<br/>point INWARD"| ABR
+    ABR -.->|"Dependencies<br/>point INWARD"| EBR
+
+    style Layer1 fill:#ffd54f,stroke:#f57f17,stroke-width:4px
+    style Layer2 fill:#fff3e0,stroke:#f57c00,stroke-width:3px
+    style Layer3 fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style Layer4 fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+```
+
+**Key Rule**: Dependencies can only point inward. Inner circles know nothing about outer circles.
+
+**Example Structure:**
+
+```typescript
+// ===== INNERMOST: Enterprise Business Rules =====
+// packages/types/src/domain/workspace.ts
+export class Workspace {
+  // Pure domain entity - no dependencies
+}
+
+// ===== APPLICATION LAYER: Use Cases =====
+// apps/web/src/application/use-cases/create-workspace.ts
+export class CreateWorkspaceUseCase {
+  constructor(
+    private readonly repository: WorkspaceRepository,
+    private readonly eventPublisher: EventPublisher
+  ) {}
+
+  async execute(command: CreateWorkspaceCommand): Promise<Workspace> {
+    // Orchestrates domain entities and infrastructure
+    const workspace = Workspace.create(command.name, command.ownerId);
+    await this.repository.save(workspace);
+    await this.eventPublisher.publish(new WorkspaceCreatedEvent(workspace));
+    return workspace;
+  }
+}
+
+// ===== INTERFACE ADAPTERS: Controllers =====
+// apps/web/src/app/api/workspaces/create/route.ts
+export async function POST(request: Request) {
+  const useCase = new CreateWorkspaceUseCase(repository, eventPublisher);
+  const workspace = await useCase.execute(command);
+  return Response.json(toDTO(workspace));
+}
+
+// ===== OUTERMOST: Frameworks & Drivers =====
+// Infrastructure implementations (Supabase, Trigger.dev, etc.)
+```
+
+---
+
+### 4. Onion Architecture
+
+Onion Architecture is similar to Clean but visualizes layers as concentric circles with explicit layer names.
+
+```mermaid
+graph TD
+    subgraph Outer["Infrastructure Layer<br/>(Outer)"]
+        Infra["Database,<br/>HTTP, etc"]
+    end
+
+    subgraph AppSvc["Application Services Layer"]
+        App["Use Cases,<br/>Commands"]
+    end
+
+    subgraph DomSvc["Domain Services Layer"]
+        DS["Business<br/>Operations"]
+    end
+
+    subgraph Core["Domain Model<br/>(Inner Core)"]
+        DM["Entities,<br/>Value Objects,<br/>Rules"]
+    end
+
+    Infra --> AppSvc
+    AppSvc --> DomSvc
+    DomSvc --> Core
+
+    style Core fill:#ffd54f,stroke:#f57f17,stroke-width:4px
+    style DomSvc fill:#fff3e0,stroke:#f57c00,stroke-width:3px
+    style AppSvc fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style Outer fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+```
+
+All three patterns (Hexagonal, Clean, Onion) share the same core principle: **Dependency Inversion** to keep business logic pure and independent.
+
+---
+
+## Layering Within Microservices
+
+### Microservices ≠ No Layering
+
+**Common Misconception**: "Microservices replace layering."
+
+**Reality**: Microservices is an **external** architectural pattern (how services are distributed across the network). Layering is an **internal** pattern (how code is organized within each service).
+
+```mermaid
+graph TB
+    subgraph MS["MICROSERVICES<br/>(External Architecture)"]
+        subgraph ServiceA["Service A"]
+            DomainA["Domain Core"]
+            AdaptersA["Adapters"]
+            DomainA ---|Internal<br/>Layers| AdaptersA
+        end
+
+        subgraph ServiceB["Service B"]
+            DomainB["Domain Core"]
+            AdaptersB["Adapters"]
+            DomainB ---|Internal<br/>Layers| AdaptersB
+        end
+
+        subgraph ServiceC["Service C"]
+            DomainC["Domain Core"]
+            AdaptersC["Adapters"]
+            DomainC ---|Internal<br/>Layers| AdaptersC
+        end
+    end
+
+    Note["Each service has internal layers<br/>(Hexagonal, Clean, or Onion)"]
+
+    ServiceA -.->|Events| ServiceB
+    ServiceB -.->|Events| ServiceC
+    ServiceC -.->|Events| ServiceA
+
+    style DomainA fill:#ffd54f,stroke:#f57f17,stroke-width:2px
+    style DomainB fill:#ffd54f,stroke:#f57f17,stroke-width:2px
+    style DomainC fill:#ffd54f,stroke:#f57f17,stroke-width:2px
+    style AdaptersA fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style AdaptersB fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style AdaptersC fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style ServiceA fill:#f5f5f5,stroke:#616161,stroke-width:2px
+    style ServiceB fill:#f5f5f5,stroke:#616161,stroke-width:2px
+    style ServiceC fill:#f5f5f5,stroke:#616161,stroke-width:2px
+    style MS fill:#fff,stroke:#000,stroke-width:3px
+    style Note fill:#ffeb3b,stroke:#f57f17,stroke-width:2px
+```
+
+### Best Practice: Hexagonal Architecture Within Microservices
+
+In Tuturuuu, each microservice (app) uses **Hexagonal Architecture internally**:
+
+```typescript
+// apps/web/ (Microservice for main platform)
+apps/web/src/
+├── domain/                    # Domain Core (Pure business logic)
+│   ├── models/
+│   │   └── workspace.ts       # Entities, Value Objects
+│   └── services/
+│       └── workspace-service.ts
+├── application/               # Application Layer (Use Cases)
+│   └── use-cases/
+│       └── create-workspace.ts
+├── infrastructure/            # Infrastructure (Adapters)
+│   ├── repositories/
+│   │   └── supabase-workspace-repository.ts
+│   └── events/
+│       └── trigger-event-publisher.ts
+└── app/                       # Presentation (API Endpoints)
+    └── api/workspaces/create/route.ts
+
+// apps/finance/ (Separate microservice for finance domain)
+apps/finance/src/
+├── domain/                    # Finance-specific domain
+│   ├── models/
+│   │   └── transaction.ts
+│   └── services/
+│       └── transaction-service.ts
+├── application/
+│   └── use-cases/
+│       └── process-payment.ts
+├── infrastructure/
+│   ├── repositories/
+│   │   └── supabase-transaction-repository.ts
+│   └── gateways/
+│       └── payment-gateway.ts
+└── app/
+    └── api/transactions/route.ts
+```
+
+**Benefits of This Approach:**
+
+1. **Service Isolation**: Each microservice is independently deployable
+2. **Internal Quality**: Each service maintains clean internal architecture
+3. **Technology Freedom**: Each service can use different infrastructure
+4. **Testability**: Domain logic in each service is pure and testable
+5. **Maintainability**: Clear structure within each service
+
+---
+
+## Layer-Based Architecture Inside Microservices (Deep Dive)
+
+While microservices define how services communicate externally, the internal structure of each service is equally important. This section provides a comprehensive guide to implementing layer-based architecture within microservices.
+
+### Why Layering Matters in Microservices
+
+Many teams make the mistake of thinking: "We have microservices, so we don't need internal structure." This leads to:
+- Business logic mixed with HTTP handling
+- Database queries scattered throughout the codebase
+- Difficult-to-test services
+- Technology coupling within services
+
+**The reality**: Each microservice should have clean internal architecture to maintain quality as services grow.
+
+### Complete Layer-by-Layer Breakdown
+
+#### Layer 1: Domain Core (Innermost)
+
+**Purpose**: Contains pure business logic with zero external dependencies.
+
+**Contents**:
+- Entities (business objects with identity)
+- Value Objects (immutable business concepts)
+- Domain Services (complex business operations)
+- Business Rules (validation, constraints)
+- Domain Events (things that happened)
+
+**Example - Complete Domain Layer:**
+
+```typescript
+// apps/web/src/domain/models/workspace.ts
+// Pure business entity - no infrastructure dependencies
+
+export class Workspace {
+  private constructor(
+    public readonly id: string,
+    private _name: string,
+    private _ownerId: string,
+    private _isActive: boolean,
+    private _memberLimit: number,
+    public readonly createdAt: Date
+  ) {}
+
+  // Factory method - enforces business rules
+  static create(name: string, ownerId: string, memberLimit: number = 10): Workspace {
+    // Business Rule: Name length
+    if (name.length < 3 || name.length > 50) {
+      throw new DomainError('Workspace name must be 3-50 characters');
+    }
+
+    // Business Rule: Member limit
+    if (memberLimit < 1 || memberLimit > 1000) {
+      throw new DomainError('Member limit must be 1-1000');
+    }
+
+    return new Workspace(
+      generateId(),
+      name,
+      ownerId,
+      true,
+      memberLimit,
+      new Date()
+    );
+  }
+
+  // Domain behavior - business operations
+  rename(newName: string): void {
+    if (newName.length < 3 || newName.length > 50) {
+      throw new DomainError('Workspace name must be 3-50 characters');
+    }
+
+    if (newName === this._name) {
+      throw new DomainError('New name must be different');
+    }
+
+    this._name = newName;
+  }
+
+  archive(): void {
+    if (!this._isActive) {
+      throw new DomainError('Workspace is already archived');
+    }
+    this._isActive = false;
+  }
+
+  reactivate(): void {
+    if (this._isActive) {
+      throw new DomainError('Workspace is already active');
+    }
+    this._isActive = true;
+  }
+
+  // Business rule encapsulated in method
+  canAddMember(currentMemberCount: number): boolean {
+    return currentMemberCount < this._memberLimit;
+  }
+
+  // Getters
+  get name(): string { return this._name; }
+  get ownerId(): string { return this._ownerId; }
+  get isActive(): boolean { return this._isActive; }
+  get memberLimit(): number { return this._memberLimit; }
+}
+
+// apps/web/src/domain/value-objects/email.ts
+// Value Object - immutable, validated business concept
+export class Email {
+  private constructor(private readonly value: string) {}
+
+  static create(email: string): Email {
+    // Business rule: Valid email format
+    if (!this.isValidEmail(email)) {
+      throw new DomainError('Invalid email format');
+    }
+    return new Email(email.toLowerCase());
+  }
+
+  private static isValidEmail(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  toString(): string {
+    return this.value;
+  }
+
+  equals(other: Email): boolean {
+    return this.value === other.value;
+  }
+}
+```
+
+**Testing Domain Layer:**
+
+```typescript
+// Domain tests - no infrastructure needed
+describe('Workspace Domain', () => {
+  describe('create', () => {
+    it('creates valid workspace', () => {
+      const workspace = Workspace.create('My Workspace', 'owner-123', 50);
+
+      expect(workspace.name).toBe('My Workspace');
+      expect(workspace.ownerId).toBe('owner-123');
+      expect(workspace.memberLimit).toBe(50);
+      expect(workspace.isActive).toBe(true);
+    });
+
+    it('rejects short names', () => {
+      expect(() => Workspace.create('ab', 'owner-123'))
+        .toThrow('Workspace name must be 3-50 characters');
+    });
+
+    it('rejects invalid member limits', () => {
+      expect(() => Workspace.create('Test', 'owner-123', 0))
+        .toThrow('Member limit must be 1-1000');
+    });
+  });
+
+  describe('rename', () => {
+    it('allows renaming', () => {
+      const workspace = Workspace.create('Test', 'owner-123');
+      workspace.rename('New Name');
+      expect(workspace.name).toBe('New Name');
+    });
+
+    it('rejects renaming to same name', () => {
+      const workspace = Workspace.create('Test', 'owner-123');
+      expect(() => workspace.rename('Test'))
+        .toThrow('New name must be different');
+    });
+  });
+
+  describe('canAddMember', () => {
+    it('allows adding when under limit', () => {
+      const workspace = Workspace.create('Test', 'owner-123', 10);
+      expect(workspace.canAddMember(5)).toBe(true);
+    });
+
+    it('prevents adding when at limit', () => {
+      const workspace = Workspace.create('Test', 'owner-123', 10);
+      expect(workspace.canAddMember(10)).toBe(false);
+    });
+  });
+});
+
+// Tests run in milliseconds - no database, no network
+```
+
+#### Layer 2: Application Layer (Use Cases)
+
+**Purpose**: Orchestrates domain entities and infrastructure to fulfill application workflows.
+
+**Contents**:
+- Use Cases (application workflows)
+- Commands (input data structures)
+- Application Services (workflow orchestration)
+- DTOs (data transfer objects)
+
+**Example - Complete Application Layer:**
+
+```typescript
+// apps/web/src/application/commands/create-workspace.command.ts
+export interface CreateWorkspaceCommand {
+  name: string;
+  ownerId: string;
+  memberLimit?: number;
+}
+
+// apps/web/src/application/use-cases/create-workspace.usecase.ts
+import { Workspace } from '@/domain/models/workspace';
+import { WorkspaceRepository } from '@/domain/interfaces/workspace-repository';
+import { EventPublisher } from '@/domain/interfaces/event-publisher';
+import { WorkspaceCreatedEvent } from '@/domain/events/workspace-created.event';
+
+export class CreateWorkspaceUseCase {
+  constructor(
+    private readonly repository: WorkspaceRepository,
+    private readonly eventPublisher: EventPublisher,
+    private readonly logger: Logger
+  ) {}
+
+  async execute(command: CreateWorkspaceCommand): Promise<Workspace> {
+    this.logger.info('Creating workspace', { command });
+
+    // 1. Create domain entity (business logic)
+    const workspace = Workspace.create(
+      command.name,
+      command.ownerId,
+      command.memberLimit || 10
+    );
+
+    // 2. Persist (infrastructure)
+    await this.repository.save(workspace);
+    this.logger.info('Workspace persisted', { workspaceId: workspace.id });
+
+    // 3. Publish domain event (infrastructure)
+    await this.eventPublisher.publish(
+      new WorkspaceCreatedEvent(
+        workspace.id,
+        workspace.ownerId,
+        workspace.name,
+        new Date()
+      )
+    );
+    this.logger.info('Workspace created event published', { workspaceId: workspace.id });
+
+    return workspace;
+  }
+}
+
+// apps/web/src/application/use-cases/archive-workspace.usecase.ts
+export class ArchiveWorkspaceUseCase {
+  constructor(
+    private readonly repository: WorkspaceRepository,
+    private readonly eventPublisher: EventPublisher
+  ) {}
+
+  async execute(workspaceId: string, userId: string): Promise<void> {
+    // 1. Load entity
+    const workspace = await this.repository.findById(workspaceId);
+    if (!workspace) {
+      throw new ApplicationError('Workspace not found');
+    }
+
+    // 2. Check authorization (application-level concern)
+    if (workspace.ownerId !== userId) {
+      throw new UnauthorizedError('Only owner can archive workspace');
+    }
+
+    // 3. Execute domain operation
+    workspace.archive();
+
+    // 4. Persist changes
+    await this.repository.save(workspace);
+
+    // 5. Publish event
+    await this.eventPublisher.publish(
+      new WorkspaceArchivedEvent(workspace.id, userId, new Date())
+    );
+  }
+}
+```
+
+**Testing Application Layer:**
+
+```typescript
+// Use case tests - with test doubles
+describe('CreateWorkspaceUseCase', () => {
+  let useCase: CreateWorkspaceUseCase;
+  let mockRepository: MockWorkspaceRepository;
+  let mockEventPublisher: MockEventPublisher;
+  let mockLogger: MockLogger;
+
+  beforeEach(() => {
+    mockRepository = new MockWorkspaceRepository();
+    mockEventPublisher = new MockEventPublisher();
+    mockLogger = new MockLogger();
+    useCase = new CreateWorkspaceUseCase(
+      mockRepository,
+      mockEventPublisher,
+      mockLogger
+    );
+  });
+
+  it('creates and persists workspace', async () => {
+    const command = {
+      name: 'Test Workspace',
+      ownerId: 'owner-123',
+      memberLimit: 50
+    };
+
+    const workspace = await useCase.execute(command);
+
+    // Verify workspace created correctly
+    expect(workspace.name).toBe('Test Workspace');
+    expect(workspace.ownerId).toBe('owner-123');
+
+    // Verify repository called
+    expect(mockRepository.saved).toHaveLength(1);
+    expect(mockRepository.saved[0]).toBe(workspace);
+
+    // Verify event published
+    expect(mockEventPublisher.published).toHaveLength(1);
+    expect(mockEventPublisher.published[0]).toBeInstanceOf(WorkspaceCreatedEvent);
+  });
+
+  it('propagates domain errors', async () => {
+    const command = {
+      name: 'ab', // Too short
+      ownerId: 'owner-123'
+    };
+
+    await expect(useCase.execute(command))
+      .rejects
+      .toThrow('Workspace name must be 3-50 characters');
+  });
+});
+```
+
+#### Layer 3: Infrastructure Layer (Adapters)
+
+**Purpose**: Implements infrastructure concerns and connects to external systems.
+
+**Contents**:
+- Repository Implementations (database access)
+- Event Publishers (message brokers)
+- External Service Clients (HTTP, gRPC)
+- Caching Implementations
+- File Storage Implementations
+
+**Example - Complete Infrastructure Layer:**
+
+```typescript
+// apps/web/src/infrastructure/repositories/supabase-workspace.repository.ts
+import { Workspace } from '@/domain/models/workspace';
+import { WorkspaceRepository } from '@/domain/interfaces/workspace-repository';
+import { SupabaseClient } from '@supabase/supabase-js';
+
+export class SupabaseWorkspaceRepository implements WorkspaceRepository {
+  constructor(private readonly supabase: SupabaseClient) {}
+
+  async findById(id: string): Promise<Workspace | null> {
+    const { data, error } = await this.supabase
+      .from('workspaces')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !data) return null;
+
+    return this.toDomain(data);
+  }
+
+  async findByOwnerId(ownerId: string): Promise<Workspace[]> {
+    const { data, error } = await this.supabase
+      .from('workspaces')
+      .select('*')
+      .eq('owner_id', ownerId)
+      .order('created_at', { ascending: false });
+
+    if (error || !data) return [];
+
+    return data.map(row => this.toDomain(row));
+  }
+
+  async save(workspace: Workspace): Promise<void> {
+    const dbModel = this.toDatabase(workspace);
+
+    const { error } = await this.supabase
+      .from('workspaces')
+      .upsert(dbModel);
+
+    if (error) {
+      throw new InfrastructureError(`Failed to save workspace: ${error.message}`);
+    }
+  }
+
+  async delete(id: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('workspaces')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new InfrastructureError(`Failed to delete workspace: ${error.message}`);
+    }
+  }
+
+  // Mapping: Database schema → Domain model
+  private toDomain(row: any): Workspace {
+    // Use a reflection or factory method to create Workspace
+    // bypassing constructor if needed for reconstruction
+    return Object.assign(
+      Object.create(Workspace.prototype),
+      {
+        id: row.id,
+        _name: row.name,
+        _ownerId: row.owner_id,
+        _isActive: row.is_active,
+        _memberLimit: row.member_limit,
+        createdAt: new Date(row.created_at)
+      }
+    );
+  }
+
+  // Mapping: Domain model → Database schema
+  private toDatabase(workspace: Workspace): any {
+    return {
+      id: workspace.id,
+      name: workspace.name,
+      owner_id: workspace.ownerId,
+      is_active: workspace.isActive,
+      member_limit: workspace.memberLimit,
+      created_at: workspace.createdAt.toISOString()
+    };
+  }
+}
+
+// apps/web/src/infrastructure/events/trigger-event-publisher.ts
+import { EventPublisher } from '@/domain/interfaces/event-publisher';
+import { DomainEvent } from '@/domain/events/domain-event';
+
+export class TriggerEventPublisher implements EventPublisher {
+  constructor(private readonly trigger: typeof import('@/lib/trigger')) {}
+
+  async publish(event: DomainEvent): Promise<void> {
+    await this.trigger.event({
+      name: event.eventName,
+      payload: {
+        ...event.payload,
+        eventId: event.eventId,
+        occurredAt: event.occurredAt.toISOString()
+      }
+    });
+  }
+
+  async publishMany(events: DomainEvent[]): Promise<void> {
+    await Promise.all(events.map(event => this.publish(event)));
+  }
+}
+```
+
+#### Layer 4: Presentation Layer (API/UI)
+
+**Purpose**: Handles HTTP requests, validates input, and returns responses.
+
+**Contents**:
+- API Route Handlers
+- Request/Response DTOs
+- Input Validation
+- Authentication/Authorization
+- HTTP Status Codes
+
+**Example - Complete Presentation Layer:**
+
+```typescript
+// apps/web/src/app/api/workspaces/create/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { CreateWorkspaceUseCase } from '@/application/use-cases/create-workspace.usecase';
+import { SupabaseWorkspaceRepository } from '@/infrastructure/repositories/supabase-workspace.repository';
+import { TriggerEventPublisher } from '@/infrastructure/events/trigger-event-publisher';
+import { createClient } from '@/lib/supabase/server';
+import { trigger } from '@/lib/trigger';
+
+// Request validation schema
+const CreateWorkspaceSchema = z.object({
+  name: z.string().min(3).max(50),
+  memberLimit: z.number().min(1).max(1000).optional()
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    // 1. Authentication
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // 2. Parse and validate request body
+    const body = await request.json();
+    const validation = CreateWorkspaceSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Invalid request', details: validation.error.errors },
+        { status: 400 }
+      );
+    }
+
+    // 3. Dependency injection - wire up layers
+    const repository = new SupabaseWorkspaceRepository(supabase);
+    const eventPublisher = new TriggerEventPublisher(trigger);
+    const logger = console; // Or proper logger
+
+    const useCase = new CreateWorkspaceUseCase(
+      repository,
+      eventPublisher,
+      logger
+    );
+
+    // 4. Execute use case
+    const workspace = await useCase.execute({
+      name: validation.data.name,
+      ownerId: session.user.id,
+      memberLimit: validation.data.memberLimit
+    });
+
+    // 5. Return response
+    return NextResponse.json(
+      {
+        workspace: {
+          id: workspace.id,
+          name: workspace.name,
+          ownerId: workspace.ownerId,
+          isActive: workspace.isActive,
+          memberLimit: workspace.memberLimit,
+          createdAt: workspace.createdAt.toISOString()
+        }
+      },
+      { status: 201 }
+    );
+
+  } catch (error) {
+    // Error handling
+    if (error instanceof DomainError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 403 }
+      );
+    }
+
+    console.error('Unexpected error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+### Layer Communication Patterns
+
+```mermaid
+graph TD
+    User["User/Client"]
+
+    subgraph Service["Microservice"]
+        Presentation["Presentation Layer<br/>(API Route)"]
+        Application["Application Layer<br/>(Use Case)"]
+        Domain["Domain Layer<br/>(Entity)"]
+        Infrastructure["Infrastructure Layer<br/>(Repository)"]
+    end
+
+    DB[("Database")]
+
+    User -->|HTTP Request| Presentation
+    Presentation -->|Execute| Application
+    Application -->|Create/Load| Domain
+    Domain -->|Business Rules| Domain
+    Application -->|Save| Infrastructure
+    Infrastructure -->|SQL| DB
+
+    Presentation -.->|Response| User
+
+    style Domain fill:#ffd54f,stroke:#f57f17,stroke-width:3px
+    style Application fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style Presentation fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style Infrastructure fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+```
+
+### Testing Strategy Per Layer
+
+| Layer | Test Type | Speed | Infrastructure Needed | Coverage Target |
+|-------|-----------|-------|----------------------|-----------------|
+| **Domain** | Unit Tests | Milliseconds | None | 100% |
+| **Application** | Unit Tests with Mocks | Milliseconds | None | 90%+ |
+| **Infrastructure** | Integration Tests | Seconds | Database, Services | 70%+ |
+| **Presentation** | Integration Tests | Seconds | Full stack | 60%+ |
+
+### Comparison: N-Tier vs Hexagonal in Microservices
+
+```mermaid
+graph TB
+    subgraph NTier["Microservice with N-Tier"]
+        NT_API["API Layer"]
+        NT_BLL["Business Logic Layer"]
+        NT_DAL["Data Access Layer"]
+
+        NT_API --> NT_BLL
+        NT_BLL --> NT_DAL
+        NT_DAL -.->|Tight Coupling| NT_BLL
+    end
+
+    subgraph Hex["Microservice with Hexagonal"]
+        H_API["API Adapter"]
+        H_UseCase["Use Case"]
+        H_Domain["Domain Core"]
+        H_Repo["Repository Adapter"]
+
+        H_API --> H_UseCase
+        H_UseCase --> H_Domain
+        H_Domain --> H_Repo
+    end
+
+    style NT_BLL fill:#ffcdd2,stroke:#c62828,stroke-width:2px
+    style H_Domain fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px
+```
+
+**N-Tier within Microservice:**
+- ❌ Business logic coupled to database
+- ❌ Hard to test without infrastructure
+- ❌ Technology lock-in within service
+- ✅ Simpler for trivial services
+
+**Hexagonal within Microservice:**
+- ✅ Business logic is pure and testable
+- ✅ Technology can be swapped per service
+- ✅ High test coverage achievable
+- ❌ More code and structure needed
+
+### Deployment Considerations
+
+Each microservice deploys independently, but maintains consistent internal structure:
+
+```bash
+# Microservice deployment
+$ bun deploy:web        # Deploy web service
+$ bun deploy:finance    # Deploy finance service
+$ bun deploy:calendar   # Deploy calendar service
+
+# Each service has:
+# - Same layer structure (domain, application, infrastructure, presentation)
+# - Different business logic (workspace vs transaction vs event)
+# - Potentially different technologies (Supabase vs Drizzle vs Prisma)
+```
+
+### Key Takeaways
+
+1. **Microservices ≠ No Internal Structure**: Each service needs clean internal architecture
+2. **Hexagonal Within Services**: Provides testability and maintainability per service
+3. **Layer Discipline**: Strict layer boundaries prevent architectural decay
+4. **Independent Evolution**: Each service can evolve its internals independently
+5. **Consistent Patterns**: Same layering approach across services aids understanding
+
+---
+
+## Comparison Matrix
+
+| Aspect | N-Tier | Hexagonal/Clean/Onion | Microservices |
+|--------|--------|----------------------|---------------|
+| **Scope** | Internal organization | Internal organization | External distribution |
+| **Dependencies** | Downward (UI→BLL→DAL) | Inward (Infrastructure→Domain) | Service-to-service via events |
+| **Coupling** | Tight (layers depend on concrete implementations) | Loose (depends on interfaces) | Very loose (event-driven) |
+| **Testability** | Hard (requires database) | Easy (pure domain logic) | Moderate (contract testing) |
+| **Technology Flexibility** | Low (framework lock-in) | High (swappable adapters) | Very high (per-service choice) |
+| **Deployment Unit** | Entire application | Entire application | Individual service |
+| **Scalability** | All-or-nothing | All-or-nothing | Granular per service |
+| **Complexity** | Low | Moderate | High |
+| **Best For** | Simple CRUD apps | Complex business logic | Distributed systems, large teams |
+
+---
+
+## When to Use Each Pattern
+
+### Use N-Tier When:
+- ✅ Building simple CRUD applications
+- ✅ Team is unfamiliar with DDD/Hexagonal concepts
+- ✅ Rapid prototyping with acceptable technical debt
+- ✅ Application will remain small (&lt;10k LOC)
+
+### Use Hexagonal/Clean/Onion When:
+- ✅ Complex business logic requires protection
+- ✅ Long-term maintainability is critical
+- ✅ Need to swap infrastructure components
+- ✅ High test coverage is required
+- ✅ Domain experts are involved in development
+
+### Use Microservices When:
+- ✅ Multiple teams working on different domains
+- ✅ Need independent deployment and scaling
+- ✅ Different parts of system have different technology needs
+- ✅ Can handle distributed system complexity
+- ✅ Have DevOps maturity for service orchestration
+
+### Tuturuuu's Choice: Hexagonal Within Microservices
+
+We combine both patterns to get the best of both worlds:
+- **Microservices** for organizational agility and independent deployment
+- **Hexagonal Architecture** within services for clean, testable code
+
+---
+
+## Evolution Path
+
+Many systems evolve through these patterns:
+
+```mermaid
+graph TD
+    Step1["Simple App<br/>(N-Tier)"]
+    Step2["Modular Monolith<br/>(Hexagonal)"]
+    Step3["Microservices with<br/>Hexagonal Architecture"]
+
+    Step1 -->|"Business logic<br/>becomes complex"| Step2
+    Step2 -->|"Team grows,<br/>need independent<br/>deployment"| Step3
+
+    style Step1 fill:#ffcdd2,stroke:#c62828,stroke-width:2px
+    style Step2 fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style Step3 fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px
+```
+
+**Tuturuuu started with Step 3** to avoid future rewrites and support rapid, safe evolution.
+
+---
+
+## Anti-Patterns to Avoid
+
+### ❌ Hexagonal Architecture Without Discipline
+
+```typescript
+// BAD: "Hexagonal" in name only
+export class WorkspaceService {
+  constructor(private readonly repository: WorkspaceRepository) {}
+
+  async createWorkspace(name: string, ownerId: string) {
+    // WRONG: Direct Supabase usage bypasses repository
+    const { data } = await supabase.from('workspaces').insert({ name, owner_id: ownerId });
+    return data;
+  }
+}
+// This defeats the purpose of Hexagonal Architecture
+```
+
+### ❌ Distributed Monolith
+
+```typescript
+// BAD: Microservices with tight coupling
+// Service A
+export async function createWorkspace(data: CreateWorkspaceData) {
+  const workspace = await db.insert(data);
+
+  // WRONG: Synchronous HTTP call to Service B
+  await fetch('http://service-b/setup', {
+    method: 'POST',
+    body: JSON.stringify({ workspaceId: workspace.id })
+  });
+
+  return workspace;
+}
+// This is a distributed monolith, not microservices
+```
+
+### ❌ No Layering in Microservices
+
+```typescript
+// BAD: API route with all logic mixed together
+export async function POST(request: Request) {
+  const body = await request.json();
+
+  // Validation
+  if (body.name.length < 3) return Response.json({ error: 'Too short' }, { status: 400 });
+
+  // Database
+  const { data } = await supabase.from('workspaces').insert(body);
+
+  // Events
+  await trigger.event({ name: 'workspace.created', payload: data });
+
+  return Response.json(data);
+}
+// No separation of concerns, hard to test, hard to maintain
+```
+
+---
+
+## Tuturuuu's Implementation
+
+### Project Structure Reflects Layering + Microservices
+
+```
+platform/
+├── apps/                          # Microservices (External)
+│   ├── web/                       # Main platform service
+│   │   └── src/
+│   │       ├── domain/           # Hexagonal layers (Internal)
+│   │       ├── application/
+│   │       ├── infrastructure/
+│   │       └── app/
+│   ├── finance/                   # Finance service
+│   │   └── src/
+│   │       ├── domain/           # Hexagonal layers (Internal)
+│   │       ├── application/
+│   │       ├── infrastructure/
+│   │       └── app/
+│   └── calendar/                  # Calendar service
+│       └── src/
+│           ├── domain/           # Hexagonal layers (Internal)
+│           ├── application/
+│           ├── infrastructure/
+│           └── app/
+└── packages/                      # Shared libraries
+    ├── types/                     # Shared domain types
+    ├── ui/                        # Shared UI components
+    └── supabase/                  # Shared database client
+```
+
+### Code Example: Complete Flow
+
+```typescript
+// ===== DOMAIN LAYER (Pure Business Logic) =====
+// apps/web/src/domain/models/workspace.ts
+export class Workspace {
+  static create(name: string, ownerId: string): Workspace {
+    if (name.length < 3) throw new DomainError('Name too short');
+    return new Workspace(generateId(), name, ownerId, true, new Date());
+  }
+}
+
+// apps/web/src/domain/interfaces/workspace-repository.ts
+export interface WorkspaceRepository {
+  save(workspace: Workspace): Promise<void>;
+}
+
+// ===== APPLICATION LAYER (Use Cases) =====
+// apps/web/src/application/use-cases/create-workspace.ts
+export class CreateWorkspaceUseCase {
+  constructor(
+    private readonly repository: WorkspaceRepository,
+    private readonly eventPublisher: EventPublisher
+  ) {}
+
+  async execute(command: CreateWorkspaceCommand): Promise<Workspace> {
+    const workspace = Workspace.create(command.name, command.ownerId);
+    await this.repository.save(workspace);
+    await this.eventPublisher.publish(new WorkspaceCreatedEvent(workspace));
+    return workspace;
+  }
+}
+
+// ===== INFRASTRUCTURE LAYER (Adapters) =====
+// apps/web/src/infrastructure/repositories/supabase-workspace-repository.ts
+export class SupabaseWorkspaceRepository implements WorkspaceRepository {
+  async save(workspace: Workspace): Promise<void> {
+    await this.supabase.from('workspaces').upsert(this.toDatabase(workspace));
+  }
+}
+
+// ===== PRESENTATION LAYER (API) =====
+// apps/web/src/app/api/workspaces/create/route.ts
+export async function POST(request: Request) {
+  const body = await request.json();
+
+  const useCase = new CreateWorkspaceUseCase(
+    new SupabaseWorkspaceRepository(createClient()),
+    new TriggerEventPublisher(trigger)
+  );
+
+  const workspace = await useCase.execute({
+    name: body.name,
+    ownerId: session.userId
+  });
+
+  return Response.json({ workspace });
+}
+```
+
+Each layer has a clear responsibility, dependencies point inward, and the system is both testable and maintainable.
+
+---
+
+## Related Documentation
+
+- [Hexagonal Architecture](/platform/architecture/system-design/hexagonal-architecture) - Detailed ports and adapters implementation
+- [Microservices Patterns](/platform/architecture/system-design/microservices-patterns) - Service boundaries and communication
+- [Architectural Decisions](/platform/architecture/system-design/architectural-decisions) - Why we chose this architecture
+- [Quality Attributes](/platform/architecture/system-design/quality-attributes) - Maintainability and testability benefits
+- [Encapsulation Patterns](/platform/architecture/system-design/encapsulation-patterns) - Preventing unwanted coupling

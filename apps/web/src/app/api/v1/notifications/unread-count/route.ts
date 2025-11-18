@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const querySchema = z.object({
-  wsId: z.string().uuid(),
+  wsId: z.uuid(),
 });
 
 /**

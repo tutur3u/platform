@@ -21,6 +21,10 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import {
+  EMAIL_BLACKLIST_REGEX,
+  DOMAIN_BLACKLIST_REGEX,
+} from '@tuturuuu/utils/email/validation';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -84,14 +88,19 @@ export default function EmailBlacklistForm({
     value: string,
     type: 'email' | 'domain'
   ): string | null => {
+    // Check for empty or whitespace-only values
+    if (value.trim() === '') {
+      return t('email-blacklist.value-empty');
+    }
+
     if (type === 'email') {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(value)) {
+      // Email validation pattern shared with server/API logic
+      if (!EMAIL_BLACKLIST_REGEX.test(value)) {
         return t('email-blacklist.invalid-email');
       }
     } else if (type === 'domain') {
-      const domainRegex = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/i;
-      if (!domainRegex.test(value)) {
+      // Domain validation pattern shared with server/API logic
+      if (!DOMAIN_BLACKLIST_REGEX.test(value)) {
         return t('email-blacklist.invalid-domain');
       }
     }

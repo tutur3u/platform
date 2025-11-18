@@ -45,8 +45,8 @@ import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { getTasks, priorityCompare } from '@tuturuuu/utils/task-helper';
 import { format, isPast, isToday, isTomorrow } from 'date-fns';
-import Image from 'next/image';
 import { useTheme } from 'next-themes';
+import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { useTaskDialog } from '../hooks/useTaskDialog';
 import { computeAccessibleLabelStyles } from '../utils/label-colors';
@@ -327,6 +327,21 @@ export function ListView({
   }
 
   function renderTaskStatus(task: Task) {
+    // Documents lists don't support completion status
+    const isInDocumentsList =
+      task.list_id &&
+      lists?.some(
+        (list) => list.id === task.list_id && list.status === 'documents'
+      );
+
+    if (isInDocumentsList) {
+      return (
+        <div className="flex items-center justify-center">
+          <span className="text-muted-foreground text-xs">—</span>
+        </div>
+      );
+    }
+
     if (task.closed_at) {
       return (
         <div className="flex items-center justify-center">
@@ -400,7 +415,7 @@ export function ListView({
                     />
                   </TableHead>
                   {columnVisibility.status && (
-                    <TableHead className="h-9 w-[40px] px-2 text-center">
+                    <TableHead className="h-9 w-10 px-2 text-center">
                       <span className="flex items-center justify-center font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
                         Status
                       </span>
@@ -458,7 +473,7 @@ export function ListView({
                     </TableHead>
                   )}
                   {columnVisibility.assignees && (
-                    <TableHead className="h-9 w-[80px] px-2">
+                    <TableHead className="h-9 w-20 px-2">
                       <Button
                         variant="ghost"
                         className={cn(

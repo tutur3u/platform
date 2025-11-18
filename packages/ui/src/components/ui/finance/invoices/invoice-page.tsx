@@ -6,31 +6,37 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { invoiceColumns } from './columns';
 import { PendingInvoicesTable } from './pending-invoices-table';
 
 interface Props {
-  wsId: string;
-  searchParams: {
+  params: Promise<{
+    wsId: string;
+  }>;
+  searchParams: Promise<{
     q: string;
     page: string;
     pageSize: string;
-  };
+  }>;
   canCreateInvoices?: boolean;
   canDeleteInvoices?: boolean;
 }
 
 export default async function InvoicesPage({
-  wsId,
+  params,
   searchParams,
   canCreateInvoices = false,
   canDeleteInvoices = false,
 }: Props) {
   const t = await getTranslations();
+  const { wsId: id } = await params;
 
-  const { data: rawData, count } = await getData(wsId, searchParams);
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
+  const { data: rawData, count } = await getData(wsId, await searchParams);
 
   const data = rawData.map((d) => ({
     ...d,

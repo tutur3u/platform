@@ -63,14 +63,17 @@ export function NavLink({
         </span>
       </div>
       {hasChildren && !isCollapsed && (
-        <ChevronRight key="nav-chevron" className="ml-auto h-4 w-4" />
+        <ChevronRight
+          key="nav-chevron"
+          className="ml-auto h-4 w-4 opacity-0 group-hover/navlink:opacity-100"
+        />
       )}
     </>
   );
 
   const commonProps = {
     className: cn(
-      'flex cursor-pointer items-center justify-between rounded-md p-2 font-medium text-sm',
+      'group/navlink flex cursor-pointer items-center justify-between rounded-md p-2 font-medium text-sm',
       isCollapsed && 'justify-center',
       isActive && 'bg-accent text-accent-foreground',
       link.isBack && 'mb-2 cursor-pointer',

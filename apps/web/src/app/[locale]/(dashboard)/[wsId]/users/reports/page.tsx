@@ -1,4 +1,5 @@
 import { CustomDataTable } from '@/components/custom-data-table';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { Plus, PlusCircle, User } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
@@ -36,95 +37,99 @@ export default async function WorkspaceUserReportsPage({
   params,
   searchParams,
 }: Props) {
-  const t = await getTranslations();
-  const { wsId } = await params;
-  const { page, pageSize, groupId, userId } = await searchParams;
-
-  const { data, count } = await getData(wsId, {
-    page,
-    pageSize,
-    groupId,
-    userId,
-  });
-  const { data: userGroups } = await getUserGroups(wsId);
-  const { data: users } = groupId
-    ? await getUsers(wsId, groupId)
-    : { data: [] };
-
-  const reports =
-    data?.map((rp) => ({
-      ...rp,
-      href: `/${wsId}/users/reports/${rp.id}`,
-    })) ?? [];
-
   return (
-    <>
-      <FeatureSummary
-        pluralTitle={t('ws-user-reports.plural')}
-        singularTitle={t('ws-user-reports.singular')}
-        description={t('ws-user-reports.description')}
-        action={
-          <Link href={`/${wsId}/users/reports/new`}>
-            <Button className="w-full md:w-fit">
-              <Plus className="mr-2 h-5 w-5" />
-              {t('ws-user-reports.create')}
-            </Button>
-          </Link>
-        }
-      />
-      <Separator className="my-4" />
-      <CustomDataTable
-        data={reports}
-        columnGenerator={getUserReportColumns}
-        namespace="user-report-data-table"
-        count={count ?? undefined}
-        defaultVisibility={{
-          id: false,
-          user_id: false,
-          created_at: false,
-        }}
-        filters={[
-          <Filter
-            key="group-filter"
-            tag="groupId"
-            title={t('user-data-table.group')}
-            icon={<PlusCircle className="mr-2 h-4 w-4" />}
-            defaultValues={groupId ? [groupId] : []}
-            extraQueryOnSet={{ userId: undefined }}
-            options={userGroups.map((group) => ({
-              label: group.name || 'No name',
-              value: group.id,
-              count: group.amount,
-            }))}
-            multiple={false}
-          />,
-          <Filter
-            key="user-filter"
-            tag="userId"
-            title={t('user-data-table.user')}
-            icon={<User className="mr-2 h-4 w-4" />}
-            defaultValues={
-              groupId
-                ? userId && users.map((user) => user.id).includes(userId)
-                  ? [userId]
-                  : []
-                : userId
-                  ? [userId]
-                  : []
-            }
-            options={users.map((user) => ({
-              label: user.full_name || 'No name',
-              value: user.id,
-            }))}
-            disabled={!groupId}
-            resetSignals={['groupId']}
-            sortCheckedFirst={false}
-            multiple={false}
-          />,
-        ]}
-        disableSearch
-      />
-    </>
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+        const t = await getTranslations();
+        const { page, pageSize, groupId, userId } = await searchParams;
+
+        const { data, count } = await getData(wsId, {
+          page,
+          pageSize,
+          groupId,
+          userId,
+        });
+        const { data: userGroups } = await getUserGroups(wsId);
+        const { data: users } = groupId
+          ? await getUsers(wsId, groupId)
+          : { data: [] };
+
+        const reports =
+          data?.map((rp) => ({
+            ...rp,
+            href: `/${wsId}/users/reports/${rp.id}`,
+          })) ?? [];
+        return (
+          <>
+            <FeatureSummary
+              pluralTitle={t('ws-user-reports.plural')}
+              singularTitle={t('ws-user-reports.singular')}
+              description={t('ws-user-reports.description')}
+              action={
+                <Link href={`/${wsId}/users/reports/new`}>
+                  <Button className="w-full md:w-fit">
+                    <Plus className="mr-2 h-5 w-5" />
+                    {t('ws-user-reports.create')}
+                  </Button>
+                </Link>
+              }
+            />
+            <Separator className="my-4" />
+            <CustomDataTable
+              data={reports}
+              columnGenerator={getUserReportColumns}
+              namespace="user-report-data-table"
+              count={count ?? undefined}
+              defaultVisibility={{
+                id: false,
+                user_id: false,
+                created_at: false,
+              }}
+              filters={[
+                <Filter
+                  key="group-filter"
+                  tag="groupId"
+                  title={t('user-data-table.group')}
+                  icon={<PlusCircle className="mr-2 h-4 w-4" />}
+                  defaultValues={groupId ? [groupId] : []}
+                  extraQueryOnSet={{ userId: undefined }}
+                  options={userGroups.map((group) => ({
+                    label: group.name || 'No name',
+                    value: group.id,
+                    count: group.amount,
+                  }))}
+                  multiple={false}
+                />,
+                <Filter
+                  key="user-filter"
+                  tag="userId"
+                  title={t('user-data-table.user')}
+                  icon={<User className="mr-2 h-4 w-4" />}
+                  defaultValues={
+                    groupId
+                      ? userId && users.map((user) => user.id).includes(userId)
+                        ? [userId]
+                        : []
+                      : userId
+                        ? [userId]
+                        : []
+                  }
+                  options={users.map((user) => ({
+                    label: user.full_name || 'No name',
+                    value: user.id,
+                  }))}
+                  disabled={!groupId}
+                  resetSignals={['groupId']}
+                  sortCheckedFirst={false}
+                  multiple={false}
+                />,
+              ]}
+              disableSearch
+            />
+          </>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
 

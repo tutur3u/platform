@@ -5,6 +5,7 @@ export interface Task {
   name: string;
   description?: string;
   list_id: string;
+  display_number: number;
   priority?: TaskPriority | null;
   start_date?: string;
   end_date?: string | null;

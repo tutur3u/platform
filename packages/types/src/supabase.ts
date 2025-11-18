@@ -7,6 +7,11 @@ export type Json =
   | Json[];
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: '13.0.5';
+  };
   public: {
     Tables: {
       ai_chat_members: {
@@ -874,45 +879,120 @@ export type Database = {
       };
       calendar_sync_dashboard: {
         Row: {
+          batch_count: number | null;
+          calendar_connection_count: number | null;
+          calendar_ids_synced: string[] | null;
+          cooldown_remaining_seconds: number | null;
+          date_range_end: string | null;
+          date_range_start: string | null;
           deleted_events: number | null;
           end_time: string | null;
+          error_message: string | null;
+          error_stack_trace: string | null;
+          error_type: string | null;
+          events_fetched_total: number | null;
+          events_filtered_out: number | null;
+          failed_event_ids: Json | null;
+          google_api_calls_count: number | null;
+          google_api_error_code: string | null;
+          google_api_pages_fetched: number | null;
+          google_api_retry_count: number | null;
           id: string;
           inserted_events: number | null;
+          payload_size_bytes: number | null;
           source: string | null;
           start_time: string | null;
           status: string | null;
+          sync_token_used: boolean | null;
+          timing_database_writes_ms: number | null;
+          timing_event_processing_ms: number | null;
+          timing_google_api_fetch_ms: number | null;
+          timing_token_operations_ms: number | null;
+          timing_total_ms: number | null;
           triggered_by: string;
+          triggered_from: string | null;
           type: string | null;
           updated_at: string;
           updated_events: number | null;
+          was_blocked_by_cooldown: boolean | null;
           ws_id: string;
         };
         Insert: {
+          batch_count?: number | null;
+          calendar_connection_count?: number | null;
+          calendar_ids_synced?: string[] | null;
+          cooldown_remaining_seconds?: number | null;
+          date_range_end?: string | null;
+          date_range_start?: string | null;
           deleted_events?: number | null;
           end_time?: string | null;
+          error_message?: string | null;
+          error_stack_trace?: string | null;
+          error_type?: string | null;
+          events_fetched_total?: number | null;
+          events_filtered_out?: number | null;
+          failed_event_ids?: Json | null;
+          google_api_calls_count?: number | null;
+          google_api_error_code?: string | null;
+          google_api_pages_fetched?: number | null;
+          google_api_retry_count?: number | null;
           id?: string;
           inserted_events?: number | null;
+          payload_size_bytes?: number | null;
           source?: string | null;
           start_time?: string | null;
           status?: string | null;
+          sync_token_used?: boolean | null;
+          timing_database_writes_ms?: number | null;
+          timing_event_processing_ms?: number | null;
+          timing_google_api_fetch_ms?: number | null;
+          timing_token_operations_ms?: number | null;
+          timing_total_ms?: number | null;
           triggered_by: string;
+          triggered_from?: string | null;
           type?: string | null;
           updated_at?: string;
           updated_events?: number | null;
+          was_blocked_by_cooldown?: boolean | null;
           ws_id: string;
         };
         Update: {
+          batch_count?: number | null;
+          calendar_connection_count?: number | null;
+          calendar_ids_synced?: string[] | null;
+          cooldown_remaining_seconds?: number | null;
+          date_range_end?: string | null;
+          date_range_start?: string | null;
           deleted_events?: number | null;
           end_time?: string | null;
+          error_message?: string | null;
+          error_stack_trace?: string | null;
+          error_type?: string | null;
+          events_fetched_total?: number | null;
+          events_filtered_out?: number | null;
+          failed_event_ids?: Json | null;
+          google_api_calls_count?: number | null;
+          google_api_error_code?: string | null;
+          google_api_pages_fetched?: number | null;
+          google_api_retry_count?: number | null;
           id?: string;
           inserted_events?: number | null;
+          payload_size_bytes?: number | null;
           source?: string | null;
           start_time?: string | null;
           status?: string | null;
+          sync_token_used?: boolean | null;
+          timing_database_writes_ms?: number | null;
+          timing_event_processing_ms?: number | null;
+          timing_google_api_fetch_ms?: number | null;
+          timing_token_operations_ms?: number | null;
+          timing_total_ms?: number | null;
           triggered_by?: string;
+          triggered_from?: string | null;
           type?: string | null;
           updated_at?: string;
           updated_events?: number | null;
+          was_blocked_by_cooldown?: boolean | null;
           ws_id?: string;
         };
         Relationships: [
@@ -6697,6 +6777,7 @@ export type Database = {
       };
       tasks: {
         Row: {
+          board_id: string | null;
           calendar_hours: Database['public']['Enums']['calendar_hours'] | null;
           closed_at: string | null;
           completed: boolean | null;
@@ -6706,6 +6787,7 @@ export type Database = {
           deleted_at: string | null;
           description: string | null;
           description_yjs_state: number[] | null;
+          display_number: number | null;
           embedding: string | null;
           end_date: string | null;
           estimation_points: number | null;
@@ -6722,6 +6804,7 @@ export type Database = {
           total_duration: number | null;
         };
         Insert: {
+          board_id?: string | null;
           calendar_hours?: Database['public']['Enums']['calendar_hours'] | null;
           closed_at?: string | null;
           completed?: boolean | null;
@@ -6731,6 +6814,7 @@ export type Database = {
           deleted_at?: string | null;
           description?: string | null;
           description_yjs_state?: number[] | null;
+          display_number?: number | null;
           embedding?: string | null;
           end_date?: string | null;
           estimation_points?: number | null;
@@ -6747,6 +6831,7 @@ export type Database = {
           total_duration?: number | null;
         };
         Update: {
+          board_id?: string | null;
           calendar_hours?: Database['public']['Enums']['calendar_hours'] | null;
           closed_at?: string | null;
           completed?: boolean | null;
@@ -6756,6 +6841,7 @@ export type Database = {
           deleted_at?: string | null;
           description?: string | null;
           description_yjs_state?: number[] | null;
+          display_number?: number | null;
           embedding?: string | null;
           end_date?: string | null;
           estimation_points?: number | null;
@@ -6772,6 +6858,13 @@ export type Database = {
           total_duration?: number | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'fk_tasks_board_id';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'tasks_creator_id_fkey';
             columns: ['creator_id'];
@@ -8486,7 +8579,9 @@ export type Database = {
           extended_estimation: boolean;
           id: string;
           name: string | null;
+          next_task_number: number;
           template_id: string | null;
+          ticket_prefix: string | null;
           ws_id: string;
         };
         Insert: {
@@ -8502,7 +8597,9 @@ export type Database = {
           extended_estimation?: boolean;
           id?: string;
           name?: string | null;
+          next_task_number?: number;
           template_id?: string | null;
+          ticket_prefix?: string | null;
           ws_id: string;
         };
         Update: {
@@ -8518,7 +8615,9 @@ export type Database = {
           extended_estimation?: boolean;
           id?: string;
           name?: string | null;
+          next_task_number?: number;
           template_id?: string | null;
+          ticket_prefix?: string | null;
           ws_id?: string;
         };
         Relationships: [
@@ -11843,36 +11942,7 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       calendar_event_participants: {
         Row: {
@@ -13448,6 +13518,10 @@ export type Database = {
           total_prompt_tokens: number;
         }[];
       };
+      get_next_task_display_number: {
+        Args: { p_board_id: string };
+        Returns: number;
+      };
       get_operating_systems: {
         Args: { p_limit?: number; p_link_id: string };
         Returns: {
@@ -13917,6 +13991,10 @@ export type Database = {
         }[];
       };
       get_workspace_storage_limit: { Args: { ws_id: string }; Returns: number };
+      get_workspace_time_tracking_stats: {
+        Args: { p_target_date?: string; p_workspace_id: string };
+        Returns: Json;
+      };
       get_workspace_transaction_categories_count: {
         Args: { ws_id: string };
         Returns: number;
@@ -14294,7 +14372,12 @@ export type Database = {
       recurring_frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
       subscription_status: 'trialing' | 'active' | 'canceled' | 'past_due';
       support_type: 'bug' | 'feature-request' | 'support' | 'job-application';
-      task_board_status: 'not_started' | 'active' | 'done' | 'closed';
+      task_board_status:
+        | 'not_started'
+        | 'active'
+        | 'done'
+        | 'closed'
+        | 'documents';
       task_priority: 'low' | 'normal' | 'high' | 'critical';
       workspace_api_key_scope:
         | 'gemini-2.0-flash'
@@ -14551,7 +14634,13 @@ export const Constants = {
       recurring_frequency: ['daily', 'weekly', 'monthly', 'yearly'],
       subscription_status: ['trialing', 'active', 'canceled', 'past_due'],
       support_type: ['bug', 'feature-request', 'support', 'job-application'],
-      task_board_status: ['not_started', 'active', 'done', 'closed'],
+      task_board_status: [
+        'not_started',
+        'active',
+        'done',
+        'closed',
+        'documents',
+      ],
       task_priority: ['low', 'normal', 'high', 'critical'],
       workspace_api_key_scope: [
         'gemini-2.0-flash',

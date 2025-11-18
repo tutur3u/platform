@@ -1,15 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const wsId = searchParams.get('wsId');
     const discordGuildId = searchParams.get('discordGuildId');
@@ -23,6 +17,15 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = await createClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
 
     // Check if user has Discord integration permission
     const { data: platformUserRole } = await supabase

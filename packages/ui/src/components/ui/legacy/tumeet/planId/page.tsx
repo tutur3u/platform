@@ -8,10 +8,10 @@ import type {
 import { TimeBlockingProvider } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { getPlan } from '@tuturuuu/utils/plan-helpers';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import PlanDetailsClient from './plan-details-client';
 import 'dayjs/locale/vi';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
+import PlanDetailsClient from './plan-details-client';
 
 interface Props {
   params: Promise<{
@@ -31,9 +31,6 @@ export default async function MeetTogetherPlanDetailsPage({
   const users: PlanUser[] = await getUsers(planId);
   const polls = await getPollsForPlan(planId);
   const timeblocks = await getTimeBlocks(planId);
-  // const isCreator = Boolean(
-  //   platformUser?.id && plan?.creator_id && platformUser.id === plan.creator_id
-  // );
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center">
@@ -70,7 +67,7 @@ async function getUsers(planId: string) {
     .eq('plan_id', planId);
 
   if (error) {
-    console.log(error);
+    console.error(error);
     return notFound();
   }
 

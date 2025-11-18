@@ -1,3 +1,5 @@
+import { supportedLocales } from '@/i18n/routing';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type React from 'react';
 
 interface LayoutProps {
@@ -5,6 +7,13 @@ interface LayoutProps {
     wsId: string;
   }>;
   children: React.ReactNode;
+}
+
+export function generateStaticParams() {
+  return supportedLocales.map((locale) => ({
+    locale,
+    wsId: ROOT_WORKSPACE_ID,
+  }));
 }
 
 export default async function Layout({ children }: LayoutProps) {

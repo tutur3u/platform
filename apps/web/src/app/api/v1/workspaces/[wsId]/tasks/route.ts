@@ -1,6 +1,6 @@
-import { generateTaskEmbedding } from '@/lib/embeddings/generate-task-embedding';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { generateTaskEmbedding } from '@/lib/embeddings/generate-task-embedding';
 
 // Type interfaces for better type safety
 interface ProcessedAssignee {

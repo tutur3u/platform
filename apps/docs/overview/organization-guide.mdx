@@ -1,7 +1,7 @@
 ---
 title: 'Documentation Organization Guide'
 description: 'Understand the Tuturuuu documentation structure and how to extend it.'
-updated: '2025-09-26'
+updatedAt: '2025-09-26'
 ---
 
 # Documentation Organization Guide
@@ -13,10 +13,10 @@ Welcome to the reorganized Tuturuuu documentation space. This guide explains the
 | Section | Purpose | Key Entry Points |
 |---------|---------|------------------|
 | **Overview** | Vision, mission, and company playbooks | [Vision & Mission](/overview/vision), [Agent Operating Manual](/overview/agent-operating-manual) |
-| **Platform** | Product experience, AI systems, shared components, personalization | [Platform Overview](/platform/index) |
-| **Build** | Local setup, monorepo workflows, CI/CD | [Build & Ship](/build/index) |
-| **Learn** | Examples, experiments, prompt engineering | [Learn & Experiment](/learn/index) |
-| **Reference** | Stable APIs and integration contracts | [Reference Home](/reference/index) |
+| **Platform** | Product experience, AI systems, shared components, personalization | [Platform Overview](/platform/overview) |
+| **Build** | Local setup, monorepo workflows, CI/CD | [Build & Ship](/build/overview) |
+| **Learn** | Examples, experiments, prompt engineering | [Learn & Experiment](/learn/overview) |
+| **Reference** | Stable APIs and integration contracts | [Reference Home](/reference/overview) |
 
 Each section contains focused subpages that keep related content together. Navigation in the sidebar follows this same hierarchy.
 
@@ -55,6 +55,6 @@ Assets such as images remain in `apps/docs/images/`. Shared assets for navigatio
 - **Images** belong in `apps/docs/images/` and are referenced with absolute paths (`/images/...`).
 - **Docs Linting** relies on Biome; run formatting and lint checks before submitting changes.
 
-Need inspiration for structuring a new guide? Browse the [Platform Overview](/platform/index) and [Build & Ship](/build/index) pages—they demonstrate the preferred narrative pattern (context → diagrams → next steps).
+Need inspiration for structuring a new guide? Browse the [Platform Overview](/platform/overview) and [Build & Ship](/build/overview) pages—they demonstrate the preferred narrative pattern (context → diagrams → next steps).
 
 If anything feels missing or confusing, open an issue with the `docs` label so we can continue improving the experience together.

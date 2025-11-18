@@ -1,0 +1,521 @@
+---
+title: "Security Architecture"
+description: "Comprehensive security justification and architectural security patterns in Tuturuuu"
+updatedAt: "2025-11-17"
+---
+
+Security is a foundational architectural concern in Tuturuuu, embedded at every level of the system design. This document explains the five core architectural decisions that provide comprehensive security coverage.
+
+<Note>
+This document focuses on **architecture-level security patterns**. For implementation details, see:
+- [Authentication](/platform/architecture/authentication) - User authentication flows
+- [Authorization](/platform/architecture/authorization) - Permission system
+- [RLS Policies](/reference/database/rls-policies) - Row-level security implementation
+</Note>
+
+## 1. API Gateway as a Central Security Enforcement Point
+
+### Architectural Choice
+
+The API Gateway serves as the single, unified entry point for all external client traffic into the system, acting as a security facade that sits in front of all backend microservices.
+
+### Impact and Justification
+
+By funneling all incoming requests through a single gateway, we create a **centralized security control plane** where critical security policies can be consistently enforced before any request reaches the backend services. This includes authentication verification, authorization checks, rate limiting, request validation, and protection against common attacks (SQL injection, XSS, CSRF).
+
+Without this centralized approach, each microservice would need to independently implement these security controls, leading to inconsistent security postures, duplicated effort, and increased risk of vulnerabilities due to implementation variations.
+
+**In Tuturuuu:**
+```typescript
+// API Gateway security middleware (conceptual)
+export async function securityMiddleware(request: Request) {
+  // 1. Authentication - Verify JWT token
+  const token = extractToken(request);
+  const user = await verifyToken(token);
+  if (!user) return new Response('Unauthorized', { status: 401 });
+
+  // 2. Authorization - Check permissions
+  const hasPermission = await checkPermissions(user, request);
+  if (!hasPermission) return new Response('Forbidden', { status: 403 });
+
+  // 3. Rate limiting - Prevent abuse
+  const rateLimitOk = await checkRateLimit(user.id, request);
+  if (!rateLimitOk) return new Response('Too Many Requests', { status: 429 });
+
+  // 4. Input validation - Prevent injection attacks
+  const isValid = await validateRequest(request);
+  if (!isValid) return new Response('Bad Request', { status: 400 });
+
+  // Forward to backend service
+  return forwardToBackend(request, user);
+}
+```
+
+**Example from Tuturuuu's SDK API:**
+```typescript
+// apps/web/src/app/api/v1/storage/upload/route.ts
+export const POST = withApiAuth(
+  async (request, { context }) => {
+    // Security already enforced by withApiAuth wrapper
+    // - Authentication verified
+    // - API key validated
+    // - Rate limiting applied
+    // - Workspace permissions checked
+
+    const { workspaceId, userId } = context;
+
+    // Business logic can safely assume security is enforced
+    return uploadFile(workspaceId, userId, request);
+  },
+  {
+    permissions: ['manage_drive'], // Declarative authorization
+    rateLimit: { windowMs: 60000, maxRequests: 20 } // Custom rate limit
+  }
+);
+```
+
+### Clarifying Additions
+
+**Centralized enforcement ensures uniform security behavior across the system.** Instead of each microservice implementing authentication differently, the gateway provides a single, tested implementation that all services benefit from.
+
+**Policies update consistently without touching each service.** When a new security requirement emerges (e.g., enforcing MFA for sensitive operations), it can be implemented once at the gateway and immediately applies to all backend services.
+
+**This strengthens protection by eliminating inconsistent security implementations.** Human error in implementing security controls is reduced because developers don't repeatedly implement the same security logic across multiple services.
+
+---
+
+## 2. Zero Trust Principles Applied at the Architectural Level
+
+### Architectural Choice
+
+The architecture implements Zero Trust security principles, where no service or request is inherently trusted based on its network location or source. Every interaction, whether from external clients or between internal services, must be explicitly authenticated and authorized.
+
+### Impact and Justification
+
+Traditional "castle-and-moat" security assumes that anything inside the network perimeter is trusted. This is a dangerous assumption because once an attacker breaches the perimeter, they have unrestricted access to internal systems.
+
+Zero Trust architecture **eliminates implicit trust**. Every microservice validates the identity and permissions of every request it receives, even from other internal services. This dramatically reduces the blast radius of a security breach because a compromised service cannot freely access other services without proper credentials and authorization.
+
+**In Tuturuuu:**
+```typescript
+// Service-to-service authentication
+// Even internal services must authenticate
+
+// Finance service calling workspace service
+async function getWorkspaceDetails(workspaceId: string) {
+  const serviceToken = await generateServiceToken({
+    service: 'finance',
+    permissions: ['read_workspace']
+  });
+
+  const response = await fetch(`/api/workspaces/${workspaceId}`, {
+    headers: {
+      'Authorization': `Bearer ${serviceToken}`,
+      'X-Service-Id': 'finance'
+    }
+  });
+
+  return response.json();
+}
+
+// Workspace service validates even internal requests
+export async function validateServiceRequest(request: Request) {
+  const serviceId = request.headers.get('X-Service-Id');
+  const token = extractToken(request);
+
+  // Verify service identity and permissions
+  const service = await verifyServiceToken(token);
+  if (service.id !== serviceId) {
+    throw new Error('Service identity mismatch');
+  }
+
+  // Check if this service has permission for this operation
+  if (!service.permissions.includes('read_workspace')) {
+    throw new Error('Insufficient service permissions');
+  }
+
+  return service;
+}
+```
+
+**Database-level Zero Trust (Row-Level Security):**
+```sql
+-- RLS policy ensures data access is validated at database level
+-- Even if application code is compromised, database enforces security
+
+CREATE POLICY "workspace_members_select_policy"
+ON workspace_members FOR SELECT
+TO authenticated
+USING (
+  -- User can only see members of workspaces they belong to
+  EXISTS (
+    SELECT 1 FROM workspace_members wm
+    WHERE wm.ws_id = workspace_members.ws_id
+    AND wm.user_id = auth.uid()
+  )
+);
+```
+
+### Clarifying Additions
+
+**Services authenticate each other based on explicit rules rather than assumed trust.** No service can simply call another service's API without proper credentials, even if both services are running in the same data center.
+
+**Every interaction is governed by intentional access design.** Security is not an afterthought but is designed into the architecture from the beginning, with explicit decisions about who can access what.
+
+**This reduces risks associated with implicit trust inside the system.** Lateral movement attacks (where an attacker compromises one service and uses it to attack others) are significantly harder because each service independently enforces security.
+
+---
+
+## 3. Decentralized Security Boundaries Per Service
+
+### Architectural Choice
+
+Each microservice acts as an independent security domain with its own authentication, authorization, and data protection mechanisms. Services do not share security contexts or trust boundaries.
+
+### Impact and Justification
+
+In a monolithic application, a security vulnerability in one module can expose the entire application's data and functionality. By establishing **independent security boundaries** at the service level, we contain security failures within a single service.
+
+If the `ReportingService` is compromised, the attacker gains access only to the reporting data and functionality. They cannot use this foothold to access the `PaymentService` or `IdentityService` because each service maintains its own security perimeter and validates all requests independently.
+
+**In Tuturuuu:**
+```typescript
+// Each app has independent security configuration
+
+// apps/web - Main platform
+const webAuth = createServerClient({
+  supabase: SUPABASE_URL,
+  anonKey: WEB_ANON_KEY, // Specific to web app
+  // RLS policies restrict data access
+});
+
+// apps/finance - Finance module
+const financeAuth = createServerClient({
+  supabase: SUPABASE_URL,
+  anonKey: FINANCE_ANON_KEY, // Different key, different policies
+  // Separate RLS policies for finance data
+});
+
+// apps/rewise - AI chatbot
+const rewiseAuth = createServerClient({
+  supabase: SUPABASE_URL,
+  anonKey: REWISE_ANON_KEY, // AI service has limited permissions
+  // Can only access AI chat history, not financial data
+});
+```
+
+**Data isolation through schema design:**
+```sql
+-- Finance-specific tables with dedicated RLS policies
+CREATE TABLE finance_transactions (
+  id UUID PRIMARY KEY,
+  workspace_id UUID NOT NULL,
+  amount DECIMAL NOT NULL,
+  -- ... other fields
+);
+
+-- RLS policy specific to finance module
+CREATE POLICY "finance_transactions_policy"
+ON finance_transactions
+TO authenticated
+USING (
+  -- Only users with finance permissions in workspace
+  EXISTS (
+    SELECT 1 FROM workspace_members wm
+    WHERE wm.ws_id = finance_transactions.workspace_id
+    AND wm.user_id = auth.uid()
+    AND wm.role IN ('owner', 'admin', 'finance_manager')
+  )
+);
+
+-- AI chat tables completely separate
+CREATE TABLE ai_chat_messages (
+  id UUID PRIMARY KEY,
+  workspace_id UUID NOT NULL,
+  message TEXT NOT NULL,
+  -- ... other fields
+);
+
+-- Different RLS policy for AI data
+CREATE POLICY "ai_chat_messages_policy"
+ON ai_chat_messages
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM workspace_members wm
+    WHERE wm.ws_id = ai_chat_messages.workspace_id
+    AND wm.user_id = auth.uid()
+  )
+);
+```
+
+### Clarifying Additions
+
+**A compromise in one service does not expose others.** Security failures are contained within service boundaries, preventing attackers from pivoting to other parts of the system.
+
+**Each service acts as an independent barrier.** Defense in depth is achieved naturally through the microservices architecture, with multiple independent security checks instead of a single point of failure.
+
+**This segmentation limits the damage scope in security incidents.** Incident response becomes more manageable because the affected area is clearly bounded, and other services continue operating securely.
+
+---
+
+## 4. Defense-in-Depth via Layered Architecture
+
+### Architectural Choice
+
+The architecture implements multiple layers of security controls, from the network edge through the API Gateway, into the application services, down to the database layer. Each layer provides independent security validation.
+
+### Impact and Justification
+
+Relying on a single security layer is fragile. If that layer is bypassed or fails, the entire system is exposed. The **defense-in-depth** approach ensures that even if an attacker successfully bypasses one security control, they encounter additional independent security barriers at deeper layers.
+
+For example, even if an attacker somehow bypasses the API Gateway's authentication (highly unlikely but theoretically possible), they would still encounter:
+1. **Service-level authorization** checks in the application code
+2. **Database Row-Level Security** policies that enforce data access rules
+3. **Network segmentation** that limits service-to-service communication
+
+**In Tuturuuu - Multiple Security Layers:**
+
+**Layer 1: API Gateway / Edge Security**
+```typescript
+// First line of defense - Gateway level
+export async function gatewaySecurityCheck(request: Request) {
+  // JWT validation
+  // Rate limiting
+  // DDoS protection
+  // Request sanitization
+}
+```
+
+**Layer 2: Application-Level Security**
+```typescript
+// Second line of defense - Application logic
+export async function handleFinanceRequest(request: Request) {
+  const user = await getCurrentUser(); // Verify user session
+
+  // Application-level authorization
+  const hasPermission = await userHasFinanceAccess(user.id, workspaceId);
+  if (!hasPermission) {
+    throw new ForbiddenError('No finance access');
+  }
+
+  // Business logic with additional checks
+  return processFinanceOperation();
+}
+```
+
+**Layer 3: Database-Level Security**
+```sql
+-- Third line of defense - Database RLS
+CREATE POLICY "finance_access_policy"
+ON finance_transactions
+TO authenticated
+USING (
+  -- Even if application is compromised,
+  -- database enforces access control
+  workspace_id IN (
+    SELECT ws_id FROM workspace_members
+    WHERE user_id = auth.uid()
+    AND role IN ('owner', 'admin', 'finance_manager')
+  )
+);
+```
+
+**Layer 4: Data Encryption**
+```typescript
+// Fourth line of defense - Encryption at rest
+// Supabase automatically encrypts data at rest
+// Sensitive fields additionally encrypted in application
+
+async function storeSensitiveData(data: SensitiveData) {
+  const encrypted = await encrypt(data, ENCRYPTION_KEY);
+  await database.insert({
+    data: encrypted,
+    // Even with database access, data is encrypted
+  });
+}
+```
+
+### Clarifying Additions
+
+**Multiple layers ensure no single point of failure exposes sensitive logic.** An attacker must defeat multiple independent security controls to compromise the system, making successful attacks exponentially harder.
+
+**Higher layers validate and protect the domain before requests reach it.** The most critical business logic (the domain core) is protected by multiple security barriers, ensuring it only processes validated, authorized requests.
+
+**The system becomes safer by distributing security responsibility across layers.** Security is not the responsibility of a single component but is woven throughout the architecture, creating a more resilient security posture.
+
+---
+
+## 5. Auditability Through Event-Driven Design
+
+### Architectural Choice
+
+The event-driven architecture produces a comprehensive, immutable audit trail of all significant system actions. Every important state change is captured as an event in the event stream.
+
+### Impact and Justification
+
+Security is not just about prevention; it's also about **detection and accountability**. An immutable event log provides crucial capabilities:
+
+1. **Forensic Analysis**: After a security incident, the complete event history allows investigators to reconstruct exactly what happened, when, and by whom
+2. **Compliance**: Many regulations (GDPR, SOX, HIPAA) require detailed audit trails of data access and modifications
+3. **Anomaly Detection**: Event patterns can be analyzed to detect suspicious behavior (e.g., unusual data access patterns, privilege escalation attempts)
+4. **Non-Repudiation**: Events are cryptographically signed and immutable, providing legal proof of actions
+
+**In Tuturuuu - Comprehensive Audit Trail:**
+
+```typescript
+// All critical operations emit audit events
+export async function updateWorkspaceSettings(
+  workspaceId: string,
+  settings: WorkspaceSettings,
+  userId: string
+) {
+  // Emit event BEFORE making changes
+  await trigger.event({
+    name: 'workspace.settings.updated',
+    payload: {
+      workspaceId,
+      userId,
+      timestamp: new Date().toISOString(),
+      previousSettings: await getSettings(workspaceId),
+      newSettings: settings,
+      ipAddress: request.ip,
+      userAgent: request.userAgent,
+    }
+  });
+
+  // Make the change
+  await database.update(settings);
+
+  // Event is permanently recorded for audit
+}
+
+// Security-sensitive events
+export const AUDIT_EVENTS = {
+  'user.login': 'User authentication',
+  'user.logout': 'User session end',
+  'user.password.changed': 'Password modification',
+  'user.mfa.enabled': 'MFA enabled',
+  'user.mfa.disabled': 'MFA disabled',
+  'workspace.member.added': 'Member added to workspace',
+  'workspace.member.removed': 'Member removed from workspace',
+  'workspace.role.changed': 'Member role modified',
+  'finance.transaction.created': 'Financial transaction',
+  'data.export.requested': 'Data export initiated',
+  'api.key.created': 'API key generated',
+  'api.key.revoked': 'API key revoked',
+} as const;
+```
+
+**Audit Log Query Interface:**
+```typescript
+// Security team can query audit trail
+export async function getAuditLog(filters: AuditFilters) {
+  return await database.query(`
+    SELECT
+      event_type,
+      user_id,
+      workspace_id,
+      timestamp,
+      payload,
+      ip_address
+    FROM audit_events
+    WHERE workspace_id = $1
+      AND timestamp BETWEEN $2 AND $3
+      AND event_type IN ($4)
+    ORDER BY timestamp DESC
+  `, [filters.workspaceId, filters.startDate, filters.endDate, filters.events]);
+}
+
+// Example: Find all permission changes in last 24 hours
+const permissionChanges = await getAuditLog({
+  workspaceId: 'ws-123',
+  startDate: Date.now() - 86400000,
+  endDate: Date.now(),
+  events: ['workspace.member.added', 'workspace.member.removed', 'workspace.role.changed']
+});
+```
+
+**Real-time Security Monitoring:**
+```typescript
+// Monitor for suspicious patterns
+client.defineJob({
+  id: 'security-monitor',
+  name: 'Real-time security monitoring',
+  version: '1.0.0',
+  trigger: eventTrigger({
+    name: ['user.login.failed', 'api.key.invalid', 'permission.denied']
+  }),
+  run: async (payload, io) => {
+    // Detect brute force attempts
+    const recentFailures = await countRecentEvents(
+      'user.login.failed',
+      payload.userId,
+      300 // 5 minutes
+    );
+
+    if (recentFailures > 5) {
+      await io.sendAlert({
+        severity: 'high',
+        message: `Possible brute force attack on user ${payload.userId}`,
+        action: 'account.lock.temporary'
+      });
+    }
+  }
+});
+```
+
+### Clarifying Additions
+
+**Architectural event flows produce detailed records without extra instrumentation.** The event-driven architecture naturally captures a complete audit trail as a byproduct of normal system operation, without requiring separate auditing code.
+
+**These records help trace issues and support accountability.** When security incidents occur, the event log provides a complete, tamper-proof record of what happened, enabling effective incident response.
+
+**They also help maintain compliance through transparent visibility.** Regulatory requirements for audit trails are satisfied architecturally, ensuring the system can always demonstrate compliance with data protection and access control regulations.
+
+---
+
+## Security Architecture Summary
+
+| Security Layer | Mechanism | Protection Provided | Implementation in Tuturuuu |
+|---------------|-----------|---------------------|---------------------------|
+| **Edge Security** | API Gateway | Centralized authentication, rate limiting, input validation | `withApiAuth` middleware, Vercel edge functions |
+| **Zero Trust** | Service-to-service auth | No implicit trust between services | Service tokens, mutual TLS (future) |
+| **Service Isolation** | Decentralized boundaries | Blast radius containment | Independent Supabase clients, separate RLS policies |
+| **Defense-in-Depth** | Layered controls | Multiple independent security checks | Gateway + App + Database + Encryption |
+| **Auditability** | Event-driven logging | Forensics, compliance, anomaly detection | Trigger.dev events, immutable audit log |
+
+## Security Best Practices in Tuturuuu
+
+### 1. Never Trust, Always Verify
+- Every request validated at multiple layers
+- No assumptions about request origin or authenticity
+- All user input sanitized and validated
+
+### 2. Principle of Least Privilege
+- Services granted minimum permissions needed
+- Users granted minimum roles required
+- API keys scoped to specific operations
+
+### 3. Fail Securely
+- Default deny for authorization decisions
+- Explicit permission grants required
+- Errors don't leak sensitive information
+
+### 4. Defense in Depth
+- Multiple layers of security controls
+- Redundant security checks
+- No single point of failure
+
+### 5. Audit Everything
+- All security-relevant events logged
+- Immutable audit trail
+- Regular security audits and reviews
+
+## Related Documentation
+
+- [Authentication](/platform/architecture/authentication) - User authentication implementation
+- [Authorization](/platform/architecture/authorization) - Permission system and role-based access
+- [RLS Policies](/reference/database/rls-policies) - Database-level security
+- [Encapsulation Patterns](/platform/architecture/system-design/encapsulation-patterns) - Service boundary enforcement
+- [Event-Driven Architecture](/platform/architecture/system-design/event-driven-architecture) - Event streaming and audit trails

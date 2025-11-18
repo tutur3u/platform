@@ -1,5 +1,5 @@
 import WorkspaceProjectsPage from '@tuturuuu/ui/tu-do/boards/workspace-projects-page';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { Suspense } from 'react';
 
 interface Props {
   params: Promise<{
@@ -13,10 +13,9 @@ interface Props {
 }
 
 export default async function ProjectsPage({ params, searchParams }: Props) {
-  const { wsId: id } = await params;
-  const sp = await searchParams;
-  const workspace = await getWorkspace(id);
-  const wsId = workspace?.id;
-
-  return <WorkspaceProjectsPage wsId={wsId} searchParams={sp} />;
+  return (
+    <Suspense>
+      <WorkspaceProjectsPage params={params} searchParams={searchParams} />
+    </Suspense>
+  );
 }

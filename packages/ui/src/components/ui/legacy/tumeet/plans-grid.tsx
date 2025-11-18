@@ -15,12 +15,13 @@ export function PlansGrid({
   locale,
   t,
   user,
+  path = '/meet-together/plans',
 }: {
   plans: MeetTogetherPlanWithParticipants[];
   locale: string;
-  // biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
   t: any;
   user?: { id: string } | null;
+  path?: string;
 }) {
   if (plans.length === 0) {
     return (
@@ -65,7 +66,7 @@ export function PlansGrid({
           {/* Make the rest of the card clickable */}
           <Link
             target="_blank"
-            href={`/meet-together/plans/${plan.id?.replace(/-/g, '')}`}
+            href={`${path}/${plan.id?.replace(/-/g, '')}`}
             className="block"
             rel="noopener"
           >

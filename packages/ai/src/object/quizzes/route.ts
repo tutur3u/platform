@@ -7,7 +7,6 @@ import { streamObject } from 'ai';
 import { NextResponse } from 'next/server';
 import { quizSchema } from '../types';
 
-export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 

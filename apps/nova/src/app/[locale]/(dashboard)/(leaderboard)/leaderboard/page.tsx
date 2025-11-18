@@ -4,18 +4,19 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
 import { redirect } from 'next/navigation';
-import { getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 import LeaderboardClient from './client';
 import type { BasicInformation } from './components/basic-information-component';
 import type { LeaderboardEntry } from './components/leaderboard';
 import LeaderboardFallback from './fallback';
 
-export const revalidate = 60;
-
 export default async function Page({
+  params,
   searchParams,
 }: {
+  params: Promise<{
+    locale: string;
+  }>;
   searchParams: Promise<{
     page?: string;
     locale?: string;
@@ -25,22 +26,26 @@ export default async function Page({
   return (
     <div className="container mx-auto px-4 py-8">
       <Suspense fallback={<LeaderboardFallback />}>
-        <LeaderboardContent searchParams={searchParams} />
+        <LeaderboardContent params={params} searchParams={searchParams} />
       </Suspense>
     </div>
   );
 }
 
 async function LeaderboardContent({
+  params,
   searchParams,
 }: {
+  params: Promise<{
+    locale: string;
+  }>;
   searchParams: Promise<{
     page?: string;
     locale?: string;
     challenge?: string;
   }>;
 }) {
-  const locale = await getLocale();
+  const { locale } = await params;
   const { page = '1', challenge = 'all' } = await searchParams;
   const pageNumber = parseInt(page, 10);
 

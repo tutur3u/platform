@@ -8,15 +8,16 @@ import { notFound } from 'next/navigation';
 import { TransactionDetailsClientPage } from './transaction-details-client-page';
 
 interface Props {
-  wsId: string;
-  transactionId: string;
-  locale: string;
+  params: Promise<{
+    wsId: string;
+    transactionId: string;
+    locale: string;
+  }>;
 }
 
-export default async function TransactionDetailsPage({
-  wsId,
-  transactionId,
-}: Props) {
+export default async function TransactionDetailsPage({ params }: Props) {
+  const { wsId, transactionId } = await params;
+
   const t = await getTranslations();
   const { objects, transaction, tags } = await getData(wsId, transactionId);
 

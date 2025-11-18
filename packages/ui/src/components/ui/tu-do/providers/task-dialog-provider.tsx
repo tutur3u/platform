@@ -234,6 +234,7 @@ export function TaskDialogProvider({
           id: 'new',
           name: '',
           list_id: listId,
+          display_number: 1,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           deleted: false,

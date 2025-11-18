@@ -12,8 +12,6 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-const domainBlacklist = ['@easy.com'];
-
 // Define Zod schema for request body validation
 const followUpEmailSchema = z.object({
   subject: z.string().min(1, 'Subject is required'),
@@ -119,11 +117,24 @@ export async function POST(
     );
   }
 
-  // Check if email is blacklisted
-  if (domainBlacklist.some((domain) => toEmail.includes(domain))) {
-    console.log('Email domain is blacklisted:', toEmail);
+  // Check if email is blacklisted using RPC function
+  const { data: isBlocked, error: checkError } = await supabase.rpc(
+    'check_email_blocked',
+    { p_email: toEmail }
+  );
+
+  if (checkError) {
+    console.error('Error checking email blacklist:', checkError);
     return NextResponse.json(
-      { message: 'Email domain is blacklisted' },
+      { message: 'Error checking email blacklist' },
+      { status: 500 }
+    );
+  }
+
+  if (isBlocked) {
+    console.log('Email is blacklisted:', toEmail);
+    return NextResponse.json(
+      { message: 'Email is blacklisted' },
       { status: 400 }
     );
   }

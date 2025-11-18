@@ -109,6 +109,6 @@ All sidebar navigation lives in `apps/docs/mint.json`. When adding a page:
 
 - [Mintlify Documentation](https://mintlify.com/docs)
 - [MDX Guide](https://mdxjs.com/)
-- [Mermaid 10.8.0 Syntax](https://mermaid.js.org/syntax/)
+- [Mermaid Syntax Reference](https://mermaid.js.org/intro/syntax-reference.html)
 
 Thanks for helping us keep the Tuturuuu knowledge base world-class.

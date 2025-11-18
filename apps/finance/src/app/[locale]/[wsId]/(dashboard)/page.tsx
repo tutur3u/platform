@@ -14,6 +14,5 @@ export default async function WorkspaceFinancePage({
 }: Props) {
   const { wsId } = await params;
   const sp = await searchParams;
-
   return <FinancePage wsId={wsId} searchParams={sp} />;
 }

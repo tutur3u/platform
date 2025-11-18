@@ -1,6 +1,8 @@
 import { Timer } from '@tuturuuu/icons';
+import { useTranslations } from 'next-intl';
 
 export default function TimeTrackerHeader() {
+  const t = useTranslations('time-tracker');
   return (
     <div className="space-y-4">
       {/* Main Header Section */}
@@ -12,10 +14,10 @@ export default function TimeTrackerHeader() {
             </div>
             <div>
               <h1 className="font-bold text-2xl tracking-tight sm:text-3xl">
-                Time Tracker
+                {t('metadata.title')}
               </h1>
               <p className="text-muted-foreground text-sm sm:text-base">
-                Track and manage your time across projects
+                {t('metadata.description')}
               </p>
             </div>
           </div>

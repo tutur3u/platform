@@ -49,6 +49,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import type { ComponentProps, ElementType } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
@@ -102,7 +103,7 @@ interface TimerControlsProps {
   formatDuration: (seconds: number) => string;
   apiCall: (url: string, options?: RequestInit) => Promise<any>;
   isDraggingTask?: boolean;
-  currentUserId?: string;
+  currentUserId?: string | null;
 }
 
 // Pomodoro timer types and interfaces
@@ -213,26 +214,6 @@ type TimerModeTab = {
   icon: ElementType<{ className?: string }>;
 };
 
-const TIMER_MODE_TABS: readonly TimerModeTab[] = [
-  {
-    value: TimerMode.stopwatch,
-    label: 'Stopwatch',
-    icon: Timer,
-  },
-  {
-    value: TimerMode.pomodoro,
-    label: 'Pomodoro',
-    icon: (props: ComponentProps<'svg'>) => (
-      <Icon iconNode={fruit} {...props} />
-    ),
-  },
-  {
-    value: TimerMode.custom,
-    label: 'Custom',
-    icon: Settings2,
-  },
-] as const;
-
 // Default Pomodoro settings
 const DEFAULT_POMODORO_SETTINGS: PomodoroSettings = {
   focusTime: 25,
@@ -274,8 +255,31 @@ export function TimerControls({
   isDraggingTask = false,
   currentUserId,
 }: TimerControlsProps) {
+  const t = useTranslations('time-tracker.controls');
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
+
+  // Define timer mode tabs inside component to access t function
+  const TIMER_MODE_TABS: readonly TimerModeTab[] = [
+    {
+      value: TimerMode.stopwatch,
+      label: t('stopwatch_mode'),
+      icon: Timer,
+    },
+    {
+      value: TimerMode.pomodoro,
+      label: t('pomodoro_mode'),
+      icon: (props: ComponentProps<'svg'>) => (
+        <Icon iconNode={fruit} {...props} />
+      ),
+    },
+    {
+      value: TimerMode.custom,
+      label: t('custom_mode'),
+      icon: Settings2,
+    },
+  ] as const;
+
   const [isLoading, setIsLoading] = useState(false);
   const [newSessionTitle, setNewSessionTitle] = useState('');
   const [newSessionDescription, setNewSessionDescription] = useState('');
@@ -528,8 +532,8 @@ export function TimerControls({
       const newMode: TimerMode = TimerMode[modeValue as keyof typeof TimerMode];
       // Prevent mode switching if session is active
       if (sessionProtection.isActive) {
-        toast.error('Cannot switch timer modes during an active session', {
-          description: 'Please stop or pause your current timer first.',
+        toast.error(t('cannot_switch_modes'), {
+          description: t('stop_or_pause_first'),
           duration: 4000,
         });
         return;
@@ -595,13 +599,15 @@ export function TimerControls({
             break;
         }
 
-        toast.success(`Switched to ${newMode} mode`, {
-          description: `Restored previous session with ${formatDuration(previousSession.elapsedTime)} tracked`,
+        toast.success(t('switched_to_mode', { mode: newMode }), {
+          description: t('restored_session', {
+            duration: formatDuration(previousSession.elapsedTime),
+          }),
           duration: 3000,
         });
       } else {
-        toast.success(`Switched to ${newMode} mode`, {
-          description: 'Ready to start a new session',
+        toast.success(t('switched_to_mode', { mode: newMode }), {
+          description: t('ready_to_start'),
           duration: 2000,
         });
       }
@@ -668,7 +674,7 @@ export function TimerControls({
         );
 
         // Show a toast to let user know their paused session was restored
-        toast.success('Paused session restored!', {
+        toast.success(t('paused_session_restored'), {
           description: `${pausedData.session.title} - ${formatDuration(pausedData.elapsed)} tracked`,
           duration: 5000,
         });
@@ -696,7 +702,7 @@ export function TimerControls({
         setSessionMode('task');
 
         // Show notification about pre-selected task
-        toast.info(`Task selected: ${selectedTask.name}`, {
+        toast.info(t('task_selected', { name: selectedTask.name }), {
           description:
             'This task has been selected for tracking. Click Start to begin.',
           duration: 5000,
@@ -1140,14 +1146,14 @@ export function TimerControls({
             ) {
               // Handle traditional countdown completion
               showNotification(
-                'Countdown Complete! ⏰',
+                t('countdown_complete_notification'),
                 customTimerSettings.enableMotivationalMessages
-                  ? "Great work! You've completed your custom countdown timer."
-                  : 'Your countdown has finished.',
+                  ? t('countdown_complete_motivational')
+                  : t('countdown_complete_basic'),
                 customTimerSettings.autoRestart
                   ? [
                       {
-                        title: 'Auto-restart in 3s...',
+                        title: t('auto_restart_countdown'),
                         action: () => {},
                       },
                     ]
@@ -1299,7 +1305,7 @@ export function TimerControls({
       setBoards(response.boards || []);
     } catch (error) {
       console.error('Error fetching boards:', error);
-      toast.error('Failed to load boards');
+      toast.error(t('failed_to_load_boards'));
     }
   }, [wsId, apiCall]);
 
@@ -1332,9 +1338,8 @@ export function TimerControls({
         setNewSessionDescription(selectedTask.description || '');
 
         // Show success feedback (same as drag & drop)
-        toast.success(`Task "${selectedTask.name}" ready to track!`, {
-          description:
-            'Click Start Timer to begin tracking time for this task.',
+        toast.success(t('task_ready_to_track', { name: selectedTask.name }), {
+          description: t('task_ready_description'),
           duration: 3000,
         });
 
@@ -1371,16 +1376,13 @@ export function TimerControls({
     // Provide helpful feedback
     if (previousMode !== mode) {
       if (mode === 'manual') {
-        toast.success('Switched to manual mode - start typing freely!', {
+        toast.success(t('switched_to_manual'), {
           duration: 2000,
         });
       } else {
-        toast.success(
-          'Switched to task-based mode - select or create a task!',
-          {
-            duration: 2000,
-          }
-        );
+        toast.success(t('switched_to_task_mode'), {
+          duration: 2000,
+        });
       }
     }
   };
@@ -1420,12 +1422,12 @@ export function TimerControls({
   // Create new task
   const createTask = async () => {
     if (!newTaskName.trim()) {
-      toast.error('Please enter a task name');
+      toast.error(t('enter_task_name'));
       return;
     }
 
     if (!selectedListId) {
-      toast.error('Please select a list');
+      toast.error(t('select_list'));
       return;
     }
 
@@ -1457,7 +1459,7 @@ export function TimerControls({
       setSelectedListId('');
       setShowTaskSuggestion(false);
 
-      toast.success(`Task "${newTask.name}" created successfully!`);
+      toast.success(t('task_created', { name: newTask.name }));
 
       // In task mode, start timer automatically
       // In manual mode, just link the task and let user start manually
@@ -1466,7 +1468,7 @@ export function TimerControls({
       }
     } catch (error) {
       console.error('Error creating task:', error);
-      toast.error('Failed to create task');
+      toast.error(t('failed_to_create_task'));
     } finally {
       setIsCreatingTask(false);
     }
@@ -1505,10 +1507,10 @@ export function TimerControls({
       });
 
       onSessionUpdate();
-      toast.success('Timer started!');
+      toast.success(t('timer_started'));
     } catch (error) {
       console.error('Error starting timer:', error);
-      toast.error('Failed to start timer');
+      toast.error(t('failed_to_start_timer'));
     } finally {
       setIsLoading(false);
     }
@@ -1533,7 +1535,7 @@ export function TimerControls({
     }
 
     if (!newSessionTitle.trim()) {
-      toast.error('Please enter a title for your time session');
+      toast.error(t('enter_session_title'));
       return;
     }
 
@@ -1606,11 +1608,11 @@ export function TimerControls({
 
       onSessionUpdate();
       toast.success(
-        `Timer started${timerMode === 'pomodoro' ? ' - Focus time!' : ''}`
+        timerMode === 'pomodoro' ? t('timer_started_focus') : t('timer_started')
       );
     } catch (error) {
       console.error('Error starting timer:', error);
-      toast.error('Failed to start timer');
+      toast.error(t('failed_to_start_timer'));
     } finally {
       setIsLoading(false);
     }
@@ -1659,14 +1661,16 @@ export function TimerControls({
 
       onSessionUpdate();
       toast.success(
-        `Session completed! Tracked ${formatDuration(completedSession.duration_seconds || 0)}`,
+        t('session_completed', {
+          duration: formatDuration(completedSession.duration_seconds || 0),
+        }),
         {
           duration: 4000,
         }
       );
     } catch (error) {
       console.error('Error stopping timer:', error);
-      toast.error('Failed to stop timer');
+      toast.error(t('failed_to_stop_timer'));
     } finally {
       setIsLoading(false);
     }
@@ -1703,13 +1707,13 @@ export function TimerControls({
       setElapsedTime(0);
 
       onSessionUpdate();
-      toast.success('Timer paused - Click Resume to continue', {
-        description: `Session: ${currentSession.title}`,
+      toast.success(t('timer_paused'), {
+        description: t('session_title', { title: currentSession.title }),
         duration: 4000,
       });
     } catch (error) {
       console.error('Error pausing timer:', error);
-      toast.error('Failed to pause timer');
+      toast.error(t('failed_to_pause_timer'));
     } finally {
       setIsLoading(false);
     }
@@ -1756,16 +1760,16 @@ export function TimerControls({
       });
 
       onSessionUpdate();
-      toast.success('Timer resumed!', {
+      toast.success(t('timer_resumed'), {
         description:
           pauseDuration > 0
-            ? `Paused for ${formatDuration(pauseDuration)}`
-            : 'Welcome back to your session',
+            ? t('paused_duration', { duration: formatDuration(pauseDuration) })
+            : t('welcome_back'),
         duration: 3000,
       });
     } catch (error) {
       console.error('Error resuming timer:', error);
-      toast.error('Failed to resume timer');
+      toast.error(t('failed_to_resume_timer'));
     } finally {
       setIsLoading(false);
     }
@@ -2131,22 +2135,20 @@ export function TimerControls({
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Settings2 className="h-5 w-5" /> Advanced Custom Timer Settings
+              <Settings2 className="h-5 w-5" /> {t('advanced_settings_title')}
             </DialogTitle>
-            <DialogDescription>
-              Fine-tune your custom timer experience with advanced options
-            </DialogDescription>
+            <DialogDescription>{t('advanced_settings_desc')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {/* Timer Type Specific Settings */}
             {customTimerSettings.type === 'enhanced-stopwatch' && (
               <div className="space-y-3">
                 <h4 className="font-medium text-sm">
-                  Enhanced Stopwatch Settings
+                  {t('enhanced_stopwatch_settings')}
                 </h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label>Target Duration (min)</Label>
+                    <Label>{t('target_duration')}</Label>
                     <Input
                       type="number"
                       min="10"
@@ -2161,7 +2163,7 @@ export function TimerControls({
                     />
                   </div>
                   <div>
-                    <Label>Break Frequency (min)</Label>
+                    <Label>{t('break_frequency')}</Label>
                     <Input
                       type="number"
                       min="5"
@@ -2177,7 +2179,7 @@ export function TimerControls({
                   </div>
                 </div>
                 <div>
-                  <Label>Break Duration (min)</Label>
+                  <Label>{t('break_duration')}</Label>
                   <Input
                     type="number"
                     min="1"
@@ -2193,7 +2195,9 @@ export function TimerControls({
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="auto-stop-target">Auto-stop at target</Label>
+                  <Label htmlFor="auto-stop-target">
+                    {t('auto_stop_target')}
+                  </Label>
                   <Switch
                     id="auto-stop-target"
                     checked={customTimerSettings.autoStopAtTarget}
@@ -2209,7 +2213,7 @@ export function TimerControls({
                 </div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="target-notifications">
-                    Target notifications
+                    {t('enable_target_notifications')}
                   </Label>
                   <Switch
                     id="target-notifications"
@@ -2230,10 +2234,10 @@ export function TimerControls({
             {customTimerSettings.type === 'traditional-countdown' && (
               <div className="space-y-3">
                 <h4 className="font-medium text-sm">
-                  Traditional Countdown Settings
+                  {t('traditional_countdown_settings')}
                 </h4>
                 <div>
-                  <Label>Countdown Duration (min)</Label>
+                  <Label>{t('countdown_duration')}</Label>
                   <Input
                     type="number"
                     min="1"
@@ -2248,7 +2252,7 @@ export function TimerControls({
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="auto-restart">Auto-restart</Label>
+                  <Label htmlFor="auto-restart">{t('auto_restart')}</Label>
                   <Switch
                     id="auto-restart"
                     checked={customTimerSettings.autoRestart}
@@ -2264,7 +2268,7 @@ export function TimerControls({
                 </div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="show-time-remaining">
-                    Show time remaining
+                    {t('show_time_remaining')}
                   </Label>
                   <Switch
                     id="show-time-remaining"
@@ -2283,10 +2287,10 @@ export function TimerControls({
             )}
 
             <div className="space-y-3">
-              <h4 className="font-medium text-sm">Break Reminders</h4>
+              <h4 className="font-medium text-sm">{t('break_reminders')}</h4>
               <div className="flex items-center justify-between">
                 <Label htmlFor="enable-break-reminders">
-                  Enable break reminders
+                  {t('enable_break_reminders')}
                 </Label>
                 <Switch
                   id="enable-break-reminders"
@@ -2302,16 +2306,17 @@ export function TimerControls({
                 />
               </div>
               <p className="text-muted-foreground text-xs">
-                Get reminded to take eye breaks (20-20-20 rule) and movement
-                breaks during long sessions
+                {t('break_reminders_desc')}
               </p>
             </div>
 
             <div className="space-y-3">
-              <h4 className="font-medium text-sm">Audio & Notifications</h4>
+              <h4 className="font-medium text-sm">
+                {t('audio_notifications')}
+              </h4>
               <div className="flex items-center justify-between">
                 <Label htmlFor="play-completion-sound">
-                  Play completion sound
+                  {t('play_completion_sound')}
                 </Label>
                 <Switch
                   id="play-completion-sound"
@@ -2328,7 +2333,7 @@ export function TimerControls({
               </div>
               <div className="flex items-center justify-between">
                 <Label htmlFor="browser-notifications">
-                  Browser notifications
+                  {t('browser_notifications')}
                 </Label>
                 <Switch
                   id="browser-notifications"
@@ -2346,10 +2351,12 @@ export function TimerControls({
             </div>
 
             <div className="space-y-3">
-              <h4 className="font-medium text-sm">Motivation & Feedback</h4>
+              <h4 className="font-medium text-sm">
+                {t('motivation_feedback')}
+              </h4>
               <div className="flex items-center justify-between">
                 <Label htmlFor="motivational-messages">
-                  Motivational messages
+                  {t('motivational_messages')}
                 </Label>
                 <Switch
                   id="motivational-messages"
@@ -2365,8 +2372,7 @@ export function TimerControls({
                 />
               </div>
               <p className="text-muted-foreground text-xs">
-                Receive encouraging messages and productivity tips during your
-                sessions
+                {t('motivational_messages_desc')}
               </p>
             </div>
 
@@ -2421,16 +2427,15 @@ export function TimerControls({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Icon iconNode={fruit} className="h-5 w-5" /> Pomodoro Settings
+              <Icon iconNode={fruit} className="h-5 w-5" />{' '}
+              {t('pomodoro_settings_title')}
             </DialogTitle>
-            <DialogDescription>
-              Customize your focus and break durations
-            </DialogDescription>
+            <DialogDescription>{t('pomodoro_settings_desc')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <Label>Focus (min)</Label>
+                <Label>{t('focus_time')}</Label>
                 <Input
                   type="number"
                   min="1"
@@ -2445,7 +2450,7 @@ export function TimerControls({
                 />
               </div>
               <div>
-                <Label>Short Break</Label>
+                <Label>{t('short_break')}</Label>
                 <Input
                   type="number"
                   min="1"
@@ -2460,7 +2465,7 @@ export function TimerControls({
                 />
               </div>
               <div>
-                <Label>Long Break</Label>
+                <Label>{t('long_break')}</Label>
                 <Input
                   type="number"
                   min="1"
@@ -2477,7 +2482,7 @@ export function TimerControls({
             </div>
 
             <div>
-              <Label>Sessions until long break</Label>
+              <Label>{t('sessions_until_long_break')}</Label>
               <Input
                 type="number"
                 min="2"
@@ -2494,7 +2499,9 @@ export function TimerControls({
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label htmlFor="auto-start-breaks">Auto-start breaks</Label>
+                <Label htmlFor="auto-start-breaks">
+                  {t('auto_start_breaks')}
+                </Label>
                 <Switch
                   id="auto-start-breaks"
                   checked={pomodoroSettings.autoStartBreaks}
@@ -2510,7 +2517,9 @@ export function TimerControls({
               </div>
 
               <div className="flex items-center justify-between">
-                <Label htmlFor="auto-start-focus">Auto-start focus</Label>
+                <Label htmlFor="auto-start-focus">
+                  {t('auto_start_focus')}
+                </Label>
                 <Switch
                   id="auto-start-focus"
                   checked={pomodoroSettings.autoStartFocus}
@@ -2527,7 +2536,7 @@ export function TimerControls({
 
               <div className="flex items-center justify-between">
                 <Label htmlFor="enable-notifications">
-                  Enable notifications
+                  {t('enable_notifications')}
                 </Label>
                 <Switch
                   id="enable-notifications"
@@ -2544,7 +2553,7 @@ export function TimerControls({
               </div>
 
               <div className="flex items-center justify-between">
-                <Label htmlFor="enable-2020-rule">20-20-20 eye breaks</Label>
+                <Label htmlFor="enable-2020-rule">{t('eye_breaks_2020')}</Label>
                 <Switch
                   id="enable-2020-rule"
                   checked={pomodoroSettings.enable2020Rule}
@@ -2561,7 +2570,7 @@ export function TimerControls({
 
               <div className="flex items-center justify-between">
                 <Label htmlFor="enable-movement-reminder">
-                  Movement reminders
+                  {t('movement_reminders')}
                 </Label>
                 <Switch
                   id="enable-movement-reminder"
@@ -2584,13 +2593,13 @@ export function TimerControls({
                 onClick={() => setPomodoroSettings(DEFAULT_POMODORO_SETTINGS)}
                 className="flex-1"
               >
-                Reset Defaults
+                {t('reset_defaults')}
               </Button>
               <Button
                 onClick={() => setShowPomodoroSettings(false)}
                 className="flex-1"
               >
-                Save Settings
+                {t('save_settings')}
               </Button>
             </div>
           </div>
@@ -2605,17 +2614,17 @@ export function TimerControls({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Timer className="h-5 w-5" /> Stopwatch Settings
+              <Timer className="h-5 w-5" /> {t('stopwatch_settings')}
             </DialogTitle>
             <DialogDescription>
-              Customize your stopwatch experience and productivity features
+              {t('stopwatch_settings_desc')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label htmlFor="break-reminders-stopwatch">
-                  Break reminders
+                  {t('break_reminders')}
                 </Label>
                 <Switch
                   id="break-reminders-stopwatch"
@@ -2633,7 +2642,7 @@ export function TimerControls({
 
               <div className="flex items-center justify-between">
                 <Label htmlFor="eye-breaks-stopwatch">
-                  20-20-20 eye breaks
+                  {t('eye_breaks_2020')}
                 </Label>
                 <Switch
                   id="eye-breaks-stopwatch"
@@ -2651,7 +2660,7 @@ export function TimerControls({
 
               <div className="flex items-center justify-between">
                 <Label htmlFor="movement-reminders-stopwatch">
-                  Movement reminders
+                  {t('movement_reminders')}
                 </Label>
                 <Switch
                   id="movement-reminders-stopwatch"
@@ -2669,7 +2678,7 @@ export function TimerControls({
 
               <div className="flex items-center justify-between">
                 <Label htmlFor="productivity-insights">
-                  Productivity insights
+                  {t('productivity_insights')}
                 </Label>
                 <Switch
                   id="productivity-insights"
@@ -2687,7 +2696,7 @@ export function TimerControls({
 
               <div className="flex items-center justify-between">
                 <Label htmlFor="enable-notifications-stopwatch">
-                  Enable notifications
+                  {t('enable_notifications')}
                 </Label>
                 <Switch
                   id="enable-notifications-stopwatch"
@@ -2704,7 +2713,9 @@ export function TimerControls({
               </div>
 
               <div className="flex items-center justify-between">
-                <Label htmlFor="session-milestones">Session milestones</Label>
+                <Label htmlFor="session-milestones">
+                  {t('session_milestones')}
+                </Label>
                 <Switch
                   id="session-milestones"
                   checked={stopwatchSettings.enableSessionMilestones}
@@ -2721,7 +2732,7 @@ export function TimerControls({
 
               <div className="flex items-center justify-between">
                 <Label htmlFor="completion-sound-stopwatch">
-                  Completion sound
+                  {t('completion_sound')}
                 </Label>
                 <Switch
                   id="completion-sound-stopwatch"
@@ -2744,13 +2755,13 @@ export function TimerControls({
                 onClick={() => setStopwatchSettings(DEFAULT_STOPWATCH_SETTINGS)}
                 className="flex-1"
               >
-                Reset Defaults
+                {t('reset_defaults')}
               </Button>
               <Button
                 onClick={() => setShowStopwatchSettings(false)}
                 className="flex-1"
               >
-                Save Settings
+                {t('save_settings')}
               </Button>
             </div>
           </div>
@@ -2767,7 +2778,7 @@ export function TimerControls({
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
-              Time Tracker
+              {t('time_tracker')}
             </div>
             {/* Timer Mode Selector */}
             <div className="flex items-center gap-2">
@@ -2794,7 +2805,7 @@ export function TimerControls({
                         )}
                         title={
                           sessionProtection.isActive
-                            ? 'Settings locked during active session'
+                            ? t('settings_locked_active_session')
                             : tab.label
                         }
                       >
@@ -2811,13 +2822,10 @@ export function TimerControls({
                   size="sm"
                   onClick={() => {
                     if (sessionProtection.isActive) {
-                      toast.error(
-                        'Cannot modify settings during active session',
-                        {
-                          description: 'Please stop or pause your timer first.',
-                          duration: 3000,
-                        }
-                      );
+                      toast.error(t('cannot_modify_settings_active_session'), {
+                        description: t('stop_or_pause_first'),
+                        duration: 3000,
+                      });
                       return;
                     }
                     setShowStopwatchSettings(true);
@@ -2829,8 +2837,8 @@ export function TimerControls({
                   )}
                   title={
                     sessionProtection.isActive
-                      ? 'Settings locked during active session'
-                      : 'Stopwatch Settings'
+                      ? t('settings_locked_active_session')
+                      : t('stopwatch_settings')
                   }
                   disabled={sessionProtection.isActive}
                 >
@@ -2843,13 +2851,10 @@ export function TimerControls({
                   size="sm"
                   onClick={() => {
                     if (sessionProtection.isActive) {
-                      toast.error(
-                        'Cannot modify settings during active session',
-                        {
-                          description: 'Please stop or pause your timer first.',
-                          duration: 3000,
-                        }
-                      );
+                      toast.error(t('cannot_modify_settings_active_session'), {
+                        description: t('stop_or_pause_first'),
+                        duration: 3000,
+                      });
                       return;
                     }
                     setShowPomodoroSettings(true);
@@ -2861,8 +2866,8 @@ export function TimerControls({
                   )}
                   title={
                     sessionProtection.isActive
-                      ? 'Settings locked during active session'
-                      : 'Pomodoro Settings'
+                      ? t('settings_locked_active_session')
+                      : t('pomodoro_settings')
                   }
                   disabled={sessionProtection.isActive}
                 >
@@ -2875,13 +2880,10 @@ export function TimerControls({
                   size="sm"
                   onClick={() => {
                     if (sessionProtection.isActive) {
-                      toast.error(
-                        'Cannot modify settings during active session',
-                        {
-                          description: 'Please stop or pause your timer first.',
-                          duration: 3000,
-                        }
-                      );
+                      toast.error(t('cannot_modify_settings_active_session'), {
+                        description: t('stop_or_pause_first'),
+                        duration: 3000,
+                      });
                       return;
                     }
                     setShowCustomSettings(true);
@@ -2893,8 +2895,8 @@ export function TimerControls({
                   )}
                   title={
                     sessionProtection.isActive
-                      ? 'Settings locked during active session'
-                      : 'Custom Timer Settings'
+                      ? t('settings_locked_active_session')
+                      : t('custom_timer_settings')
                   }
                   disabled={sessionProtection.isActive}
                 >
@@ -2905,32 +2907,42 @@ export function TimerControls({
           </CardTitle>
           <div className="space-y-1 text-muted-foreground text-sm">
             <span>
-              {timerMode === TimerMode.stopwatch &&
-                'Track your time with detailed analytics'}
+              {timerMode === TimerMode.stopwatch && t('stopwatch_description')}
               {timerMode === TimerMode.pomodoro &&
-                `Focus for ${pomodoroSettings.focusTime}min, break for ${pomodoroSettings.shortBreakTime}min`}
+                t('pomodoro_description', {
+                  focusTime: pomodoroSettings.focusTime,
+                  shortBreakTime: pomodoroSettings.shortBreakTime,
+                })}
               {timerMode === TimerMode.custom &&
                 customTimerSettings.type === 'enhanced-stopwatch' &&
-                `Enhanced stopwatch with ${customTimerSettings.targetDuration}min target${customTimerSettings.enableIntervalBreaks ? `, breaks every ${customTimerSettings.intervalFrequency}min` : ''}`}
+                t('enhanced_stopwatch_description', {
+                  targetDuration: (customTimerSettings.targetDuration ||
+                    60) as number,
+                  intervalFrequency: (customTimerSettings.intervalFrequency ||
+                    25) as number,
+                })}
               {timerMode === TimerMode.custom &&
                 customTimerSettings.type === 'traditional-countdown' &&
-                `Traditional countdown for ${customTimerSettings.countdownDuration}min${customTimerSettings.autoRestart ? ' (auto-restart)' : ''}`}
+                t('traditional_countdown_description', {
+                  countdownDuration: (customTimerSettings.countdownDuration ||
+                    25) as number,
+                })}
             </span>
             <div className="mt-2 flex flex-wrap gap-2 text-xs">
               <span className="rounded bg-muted px-1.5 py-0.5">
                 ⌘/Ctrl + Enter
               </span>
-              to start/stop
+              to {t('start_stop')}
               <span className="rounded bg-muted px-1.5 py-0.5">⌘/Ctrl + P</span>
-              to pause/resume
+              to {t('pause_resume')}
               <span className="rounded bg-muted px-1.5 py-0.5">⌘/Ctrl + T</span>
-              for tasks
+              {t('for_tasks')}
               <span className="rounded bg-muted px-1.5 py-0.5">⌘/Ctrl + M</span>
-              to switch mode
+              {t('to_switch_mode')}
               <span className="rounded bg-muted px-1.5 py-0.5">Space</span>
-              to start
+              {t('to_start')}
               <span className="rounded bg-muted px-1.5 py-0.5">↑↓</span>
-              to navigate
+              {t('to_navigate')}
             </div>
           </div>
         </CardHeader>
@@ -2950,13 +2962,13 @@ export function TimerControls({
                 <div>
                   <h3 className="font-medium text-sm">
                     {customTimerSettings.type === 'enhanced-stopwatch'
-                      ? 'Enhanced Stopwatch'
-                      : 'Traditional Countdown'}
+                      ? t('enhanced_stopwatch')
+                      : t('traditional_countdown')}
                   </h3>
                   <p className="text-muted-foreground text-xs">
                     {customTimerSettings.type === 'enhanced-stopwatch'
-                      ? 'Target-based with interval breaks'
-                      : 'Simple countdown timer'}
+                      ? t('enhanced_stopwatch_desc')
+                      : t('traditional_countdown_desc')}
                   </p>
                 </div>
               </div>
@@ -2973,13 +2985,10 @@ export function TimerControls({
                 size="sm"
                 onClick={() => {
                   if (sessionProtection.isActive) {
-                    toast.error(
-                      'Cannot switch timer types during active session',
-                      {
-                        description: 'Please stop or pause your timer first.',
-                        duration: 3000,
-                      }
-                    );
+                    toast.error(t('cannot_switch_timer_types_active_session'), {
+                      description: t('stop_or_pause_first'),
+                      duration: 3000,
+                    });
                     return;
                   }
                   setCustomTimerSettings((prev) => ({
@@ -2994,11 +3003,11 @@ export function TimerControls({
                 disabled={sessionProtection.isActive}
                 title={
                   sessionProtection.isActive
-                    ? 'Type switching locked during active session'
-                    : 'Enhanced Stopwatch'
+                    ? t('type_switching_locked_active_session')
+                    : t('enhanced_stopwatch')
                 }
               >
-                <Timer className="h-5 w-5" /> Stopwatch
+                <Timer className="h-5 w-5" /> {t('stopwatch')}
               </Button>
               <Button
                 variant={
@@ -3009,13 +3018,10 @@ export function TimerControls({
                 size="sm"
                 onClick={() => {
                   if (sessionProtection.isActive) {
-                    toast.error(
-                      'Cannot switch timer types during active session',
-                      {
-                        description: 'Please stop or pause your timer first.',
-                        duration: 3000,
-                      }
-                    );
+                    toast.error(t('cannot_switch_timer_types_active_session'), {
+                      description: t('stop_or_pause_first'),
+                      duration: 3000,
+                    });
                     return;
                   }
                   setCustomTimerSettings((prev) => ({
@@ -3030,11 +3036,11 @@ export function TimerControls({
                 disabled={sessionProtection.isActive}
                 title={
                   sessionProtection.isActive
-                    ? 'Type switching locked during active session'
-                    : 'Traditional Countdown'
+                    ? t('type_switching_locked_active_session')
+                    : t('traditional_countdown')
                 }
               >
-                <ClockFading className="h-5 w-5" /> Countdown
+                <ClockFading className="h-5 w-5" /> {t('countdown')}
               </Button>
             </div>
 
@@ -3046,12 +3052,12 @@ export function TimerControls({
                     htmlFor="enable-interval-breaks"
                     className="text-muted-foreground text-xs"
                   >
-                    Interval Breaks:
+                    Interval {t('breaks')}:
                   </Label>
                   <div className="flex items-center gap-2">
                     {customTimerSettings.enableIntervalBreaks && (
                       <span className="text-muted-foreground text-xs">
-                        every {customTimerSettings.intervalFrequency}min
+                        {t('every')} {customTimerSettings.intervalFrequency}min
                       </span>
                     )}
                     <Switch
@@ -3060,10 +3066,9 @@ export function TimerControls({
                       onCheckedChange={(checked) => {
                         if (sessionProtection.isActive) {
                           toast.error(
-                            'Cannot modify break settings during active session',
+                            t('cannot_modify_break_settings_active_session'),
                             {
-                              description:
-                                'Please stop or pause your timer first.',
+                              description: t('stop_or_pause_first'),
                               duration: 3000,
                             }
                           );
@@ -3079,8 +3084,8 @@ export function TimerControls({
                       aria-checked={customTimerSettings.enableIntervalBreaks}
                       title={
                         sessionProtection.isActive
-                          ? 'Settings locked during active session'
-                          : 'Enable interval breaks'
+                          ? t('settings_locked_active_session')
+                          : t('enable_interval_breaks')
                       }
                     />
                   </div>
@@ -3227,30 +3232,32 @@ export function TimerControls({
                     {timerMode === TimerMode.pomodoro ? (
                       <span>
                         {countdownState.remainingTime > 0
-                          ? `${Math.floor(countdownState.remainingTime / 60)}:${(countdownState.remainingTime % 60).toString().padStart(2, '0')} remaining`
-                          : 'Session complete!'}
+                          ? `${Math.floor(countdownState.remainingTime / 60)}:${(countdownState.remainingTime % 60).toString().padStart(2, '0')} ${t('remaining')}`
+                          : t('session_complete')}
                       </span>
                     ) : timerMode === TimerMode.custom ? (
                       <span>
                         {customTimerSettings.type === 'traditional-countdown'
                           ? countdownState.remainingTime > 0
-                            ? `⏲️ ${Math.floor(countdownState.remainingTime / 60)}:${(countdownState.remainingTime % 60).toString().padStart(2, '0')} remaining`
-                            : 'Countdown complete!'
+                            ? `⏲️ ${Math.floor(countdownState.remainingTime / 60)}:${(countdownState.remainingTime % 60).toString().padStart(2, '0')} ${t('remaining')}`
+                            : t('countdown_complete')
                           : customTimerSettings.type === 'enhanced-stopwatch'
                             ? hasReachedTarget
-                              ? `🎯 Target achieved! (${customTimerSettings.targetDuration || 60}min)`
-                              : `⏱️ Enhanced Stopwatch ${customTimerSettings.targetDuration ? `(target: ${customTimerSettings.targetDuration}min)` : ''}`
-                            : '⏱️ Custom Timer'}
+                              ? `🎯 ${t('target_achieved')} (${customTimerSettings.targetDuration || 60}min)`
+                              : `⏱️ ${t('enhanced_stopwatch')} ${customTimerSettings.targetDuration ? `(target: ${customTimerSettings.targetDuration}min)` : ''}`
+                            : `⏱️ ${t('custom_timer')}`}
                       </span>
                     ) : (
                       <>
-                        Started at{' '}
+                        {t('started_at')}{' '}
                         {new Date(
                           currentSession.start_time
                         ).toLocaleTimeString()}
                         {elapsedTime > 1800 && (
                           <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 font-medium text-red-700 text-xs dark:bg-red-900/30 dark:text-red-300">
-                            {elapsedTime > 3600 ? 'Long session!' : 'Deep work'}
+                            {elapsedTime > 3600
+                              ? t('long_session')
+                              : t('deep_work')}
                           </span>
                         )}
                       </>
@@ -3327,28 +3334,30 @@ export function TimerControls({
                     <div className="mb-2 flex items-center gap-2">
                       <Sparkles className="h-4 w-4 text-green-600 dark:text-green-400" />
                       <span className="font-medium text-green-800 text-sm dark:text-green-200">
-                        Session Insights
+                        {t('session_insights')}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-3 text-green-700 text-xs dark:text-green-300">
                       <div>
-                        <span className="font-medium">Duration:</span>
+                        <span className="font-medium">{t('duration')}:</span>
                         <span className="ml-1">
                           {elapsedTime < 1500
-                            ? 'Warming up'
+                            ? t('warming_up')
                             : elapsedTime < 3600
-                              ? 'Focused session'
-                              : 'Deep work zone!'}
+                              ? t('focused_session')
+                              : t('deep_work_zone')}
                         </span>
                       </div>
                       <div>
-                        <span className="font-medium">Productivity:</span>
+                        <span className="font-medium">
+                          {t('productivity')}:
+                        </span>
                         <span className="ml-1">
                           {elapsedTime < 900
-                            ? 'Getting started'
+                            ? t('getting_started')
                             : elapsedTime < 2700
-                              ? 'In the flow'
-                              : 'Exceptional focus'}
+                              ? t('in_the_flow')
+                              : t('exceptional_focus')}
                         </span>
                       </div>
                     </div>
@@ -3364,7 +3373,7 @@ export function TimerControls({
                     className="flex-1 border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-300 dark:hover:bg-amber-950/40"
                   >
                     <Pause className="mr-2 h-4 w-4" />
-                    Take Break
+                    {t('take_break')}
                   </Button>
                   <Button
                     onClick={stopTimer}
@@ -3373,18 +3382,18 @@ export function TimerControls({
                     className="flex-1"
                   >
                     <Square className="mr-2 h-4 w-4" />
-                    Complete
+                    {t('complete')}
                   </Button>
                 </div>
 
                 {/* Quick Actions during session */}
                 <div className="flex justify-center gap-2 text-muted-foreground text-xs">
                   <span className="rounded bg-muted px-2 py-1">⌘/Ctrl + P</span>
-                  <span>for break</span>
+                  <span>{t('for_break')}</span>
                   <span className="rounded bg-muted px-2 py-1">
                     ⌘/Ctrl + Enter
                   </span>
-                  <span>to complete</span>
+                  <span>{t('to_complete')}</span>
                 </div>
               </div>
             </div>
@@ -3397,7 +3406,7 @@ export function TimerControls({
                   <div className="mb-3 flex items-center justify-center gap-2">
                     <Pause className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                     <span className="font-semibold text-amber-700 text-lg dark:text-amber-300">
-                      Session Paused
+                      {t('session_paused')}
                     </span>
                   </div>
                   <div className="font-bold font-mono text-3xl text-amber-600 dark:text-amber-400">
@@ -3405,10 +3414,10 @@ export function TimerControls({
                   </div>
                   <div className="mt-2 space-y-1 text-amber-600/80 text-sm dark:text-amber-400/80">
                     <div>
-                      Paused at {pauseStartTime?.toLocaleTimeString()}
+                      {t('paused_at')} {pauseStartTime?.toLocaleTimeString()}
                       {pauseStartTime && (
                         <span className="ml-2">
-                          • Break:{' '}
+                          • {t('break_duration')}:{' '}
                           {formatDuration(
                             Math.floor(
                               (Date.now() - pauseStartTime.getTime()) / 1000
@@ -3418,8 +3427,8 @@ export function TimerControls({
                       )}
                     </div>
                     <div className="text-xs">
-                      Session was running for{' '}
-                      {formatDuration(pausedElapsedTime)} before pause
+                      {t('session_was_running_for')}{' '}
+                      {formatDuration(pausedElapsedTime)} {t('before_pause')}
                     </div>
                   </div>
                 </div>
@@ -3457,7 +3466,7 @@ export function TimerControls({
                     variant="outline"
                     className="border-amber-300 bg-amber-100 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300"
                   >
-                    On break
+                    {t('on_break')}
                   </Badge>
                 </div>
               </div>
@@ -3470,7 +3479,7 @@ export function TimerControls({
                   className="flex-1 bg-green-600 text-white hover:bg-green-700"
                 >
                   <Play className="mr-2 h-4 w-4" />
-                  Resume Session
+                  {t('resume_session')}
                 </Button>
                 <Button
                   onClick={stopTimer}
@@ -3479,14 +3488,14 @@ export function TimerControls({
                   className="flex-1"
                 >
                   <Square className="mr-2 h-4 w-4" />
-                  End Session
+                  {t('end_session')}
                 </Button>
               </div>
 
               {/* Quick Break Suggestions */}
               <div className="rounded-lg border border-amber-200/60 bg-amber-50/30 p-4 dark:border-amber-800/60 dark:bg-amber-950/10">
                 <p className="mb-2 font-medium text-amber-800 text-sm dark:text-amber-200">
-                  💡 Break suggestions:
+                  💡 {t('break_suggestions')}:
                 </p>
                 <div className="flex flex-wrap gap-2 text-amber-700 text-xs dark:text-amber-300">
                   <span>🚶 Short walk</span>
@@ -3511,9 +3520,11 @@ export function TimerControls({
                   >
                     <CheckCircle className="h-4 w-4" />
                     <div className="flex flex-col items-start">
-                      <span className="font-medium text-sm">Task-based</span>
+                      <span className="font-medium text-sm">
+                        {t('task_based')}
+                      </span>
                       <span className="text-muted-foreground text-xs">
-                        Select or create task
+                        {t('select_or_create_task')}
                       </span>
                     </div>
                   </TabsTrigger>
@@ -3523,9 +3534,9 @@ export function TimerControls({
                   >
                     <TableOfContents className="h-4 w-4" />
                     <div className="flex flex-col items-start">
-                      <span className="font-medium text-sm">Manual</span>
+                      <span className="font-medium text-sm">{t('manual')}</span>
                       <span className="text-muted-foreground text-xs">
-                        Free-form entry
+                        {t('free_form_entry')}
                       </span>
                     </div>
                   </TabsTrigger>
@@ -3537,18 +3548,17 @@ export function TimerControls({
                 >
                   <div className="space-y-3">
                     <Label className="font-medium text-sm">
-                      Select a task to track time for:
+                      {t('select_task_to_track')}
                     </Label>
 
                     {tasks.length === 0 ? (
                       <div className="mt-2 rounded-lg border-2 border-muted-foreground/25 border-dashed p-4 text-center">
                         <CheckCircle className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
                         <p className="mb-2 font-medium text-muted-foreground text-sm">
-                          No tasks available
+                          {t('no_tasks_available')}
                         </p>
                         <p className="mb-3 text-muted-foreground text-xs">
-                          Create tasks in your project boards to start tracking
-                          time
+                          {t('create_tasks_instruction')}
                         </p>
                         <Link href={`/${wsId}/tasks/boards`}>
                           <Button
@@ -3556,7 +3566,7 @@ export function TimerControls({
                             size="sm"
                             className="text-xs"
                           >
-                            Go to Tasks Tab
+                            {t('go_to_tasks_tab')}
                           </Button>
                         </Link>
                       </div>
@@ -3627,10 +3637,12 @@ export function TimerControls({
                                         setSelectedTaskId('none');
                                         setIsSearchMode(true);
                                         setTaskSearchQuery('');
-                                        toast.success('Task selection cleared');
+                                        toast.success(
+                                          t('task_selection_cleared')
+                                        );
                                       }}
                                       className="rounded p-1 transition-colors hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-                                      title="Remove selected task"
+                                      title={t('remove_selected_task')}
                                     >
                                       <svg
                                         className="h-4 w-4"
@@ -3693,10 +3705,10 @@ export function TimerControls({
                               <Input
                                 placeholder={
                                   isDragOver
-                                    ? 'Drop task here to select'
+                                    ? t('drop_task_here_to_select')
                                     : isDraggingTask
-                                      ? 'Drop here or press ESC to cancel'
-                                      : 'Search tasks or create new...'
+                                      ? t('drop_here_or_press_esc')
+                                      : t('search_tasks_or_create_new')
                                 }
                                 value={taskSearchQuery}
                                 onChange={(e) =>
@@ -3770,7 +3782,7 @@ export function TimerControls({
                               {/* Filter Buttons */}
                               <div className="space-y-2 border-b p-3">
                                 <div className="font-medium text-muted-foreground text-xs">
-                                  Quick Filters
+                                  {t('quick_filters')}
                                 </div>
 
                                 {/* Assignee Filters */}
@@ -3796,7 +3808,7 @@ export function TimerControls({
                                     )}
                                   >
                                     <CheckCircle className="h-3 w-3" />
-                                    My Tasks
+                                    My {t('tasks')}
                                     {myTasksCount > 0 && (
                                       <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
                                         {myTasksCount}
@@ -3836,7 +3848,7 @@ export function TimerControls({
                                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                                       />
                                     </svg>
-                                    Unassigned
+                                    {t('unassigned')}
                                     {unassignedCount > 0 && (
                                       <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
                                         {unassignedCount}
@@ -3864,7 +3876,7 @@ export function TimerControls({
                                         : 'border-border bg-background hover:bg-muted'
                                     )}
                                   >
-                                    All Boards
+                                    {t('all_boards')}
                                   </button>
                                   {uniqueBoards.map((board) => (
                                     <button
@@ -3908,7 +3920,7 @@ export function TimerControls({
                                         : 'border-border bg-background hover:bg-muted'
                                     )}
                                   >
-                                    All Lists
+                                    {t('all_lists')}
                                   </button>
                                   {uniqueLists.map((list) => (
                                     <button
@@ -3940,8 +3952,10 @@ export function TimerControls({
                                   taskFilters.assignee !== 'all') && (
                                   <div className="flex items-center justify-between text-xs">
                                     <span className="text-muted-foreground">
-                                      {filteredTasks.length} of {tasks.length}{' '}
-                                      tasks
+                                      {t('tasks_count', {
+                                        count: filteredTasks.length,
+                                        total: tasks.length,
+                                      })}
                                     </span>
                                     <button
                                       type="button"
@@ -3959,7 +3973,7 @@ export function TimerControls({
                                       }}
                                       className="text-muted-foreground hover:text-foreground"
                                     >
-                                      Clear filters
+                                      {t('clear_filters')}
                                     </button>
                                   </div>
                                 )}
@@ -3975,7 +3989,7 @@ export function TimerControls({
                                     taskFilters.assignee !== 'all' ? (
                                       <>
                                         <div className="mb-2">
-                                          No tasks found matching your criteria
+                                          {t('no_tasks_found')}
                                         </div>
                                         <button
                                           type="button"
@@ -3993,11 +4007,11 @@ export function TimerControls({
                                           }}
                                           className="text-primary text-xs hover:underline"
                                         >
-                                          Clear filters to see all tasks
+                                          {t('clear_filters_to_see_all')}
                                         </button>
                                       </>
                                     ) : (
-                                      'No tasks available'
+                                      t('no_tasks_available')
                                     )}
                                   </div>
                                 ) : (
@@ -4050,7 +4064,7 @@ export function TimerControls({
                                               {task.name}
                                               {task.is_assigned_to_current_user && (
                                                 <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 font-medium text-blue-800 text-xs dark:bg-blue-900/50 dark:text-blue-200">
-                                                  Assigned to you
+                                                  {t('assigned_to_you')}
                                                 </span>
                                               )}
                                             </span>
@@ -4112,7 +4126,7 @@ export function TimerControls({
                                                 </div>
                                                 <span className="text-muted-foreground text-xs">
                                                   {task.assignees.length}{' '}
-                                                  assigned
+                                                  {t('assigned')}
                                                 </span>
                                               </div>
                                             )}
@@ -4147,7 +4161,7 @@ export function TimerControls({
                         {(selectedTaskId === 'none' || !selectedTaskId) && (
                           <div className="text-center">
                             <p className="text-muted-foreground text-sm">
-                              No task selected? We'll help you create one!
+                              {t('no_task_selected_help')}
                             </p>
                           </div>
                         )}
@@ -4157,11 +4171,11 @@ export function TimerControls({
 
                   <div>
                     <Label htmlFor="session-description">
-                      Session notes (optional)
+                      {t('session_notes_optional')}
                     </Label>
                     <Textarea
                       id="session-description"
-                      placeholder="Add session notes..."
+                      placeholder={t('add_session_notes')}
                       value={newSessionDescription}
                       onChange={(e) => setNewSessionDescription(e.target.value)}
                       rows={2}
@@ -4170,16 +4184,18 @@ export function TimerControls({
                   </div>
 
                   <div>
-                    <Label htmlFor="category-select">Category (optional)</Label>
+                    <Label htmlFor="category-select">
+                      {t('category_optional')}
+                    </Label>
                     <Select
                       value={selectedCategoryId}
                       onValueChange={setSelectedCategoryId}
                     >
                       <SelectTrigger id="category-select" className="mt-1">
-                        <SelectValue placeholder="Select category" />
+                        <SelectValue placeholder={t('select_category')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">No category</SelectItem>
+                        <SelectItem value="none">{t('no_category')}</SelectItem>
                         {categories.map((category) => (
                           <SelectItem key={category.id} value={category.id}>
                             <div className="flex items-center gap-2">
@@ -4205,8 +4221,8 @@ export function TimerControls({
                   >
                     <Play className="mr-2 h-4 w-4" />
                     {selectedTaskId && selectedTaskId !== 'none'
-                      ? 'Start Timer'
-                      : 'Create Task & Start Timer'}
+                      ? t('start_timer')
+                      : t('create_task_and_start')}
                   </Button>
                 </TabsContent>
 
@@ -4216,12 +4232,12 @@ export function TimerControls({
                 >
                   <div className="space-y-2">
                     <Label htmlFor="session-title">
-                      What are you working on?
+                      {t('what_are_you_working_on')}
                     </Label>
                     <Input
                       id="session-title"
                       data-title-input
-                      placeholder="Enter session title..."
+                      placeholder={t('enter_session_title_placeholder')}
                       value={newSessionTitle}
                       onChange={(e) => handleManualTitleChange(e.target.value)}
                       className="mt-1"
@@ -4238,11 +4254,12 @@ export function TimerControls({
                             </div>
                             <div className="flex-1">
                               <span className="font-medium text-dynamic-blue text-sm">
-                                Convert to task?
+                                {t('convert_to_task')}
                               </span>
                               <p className="mt-0.5 text-muted-foreground text-xs">
-                                Create "{newSessionTitle}" as a new task for
-                                better organization and tracking.
+                                {t('create_task_description', {
+                                  title: newSessionTitle,
+                                })}
                               </p>
                             </div>
                           </div>
@@ -4252,7 +4269,7 @@ export function TimerControls({
                             onClick={createTaskFromManualSession}
                             className="h-8 border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue text-xs hover:bg-dynamic-blue/20"
                           >
-                            Create Task
+                            {t('create_task')}
                           </Button>
                         </div>
                       </div>
@@ -4271,7 +4288,7 @@ export function TimerControls({
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
                                   <span className="font-semibold text-dynamic-green text-sm">
-                                    Task Linked Successfully
+                                    {t('task_linked_successfully')}
                                   </span>
                                   <Button
                                     variant="ghost"
@@ -4292,7 +4309,7 @@ export function TimerControls({
                                   }}
                                   className="h-7 px-2 text-muted-foreground text-xs hover:text-foreground"
                                 >
-                                  Unlink
+                                  {t('unlink')}
                                 </Button>
                               </div>
                               {(() => {
@@ -4327,8 +4344,7 @@ export function TimerControls({
                                         </div>
                                       )}
                                     <p className="text-dynamic-green/80 text-xs">
-                                      Time will be automatically tracked for
-                                      this task
+                                      {t('time_auto_tracked')}
                                     </p>
                                   </div>
                                 ) : null;
@@ -4341,11 +4357,11 @@ export function TimerControls({
 
                   <div>
                     <Label htmlFor="session-description">
-                      Description (optional)
+                      {t('description_optional')}
                     </Label>
                     <Textarea
                       id="session-description"
-                      placeholder="Add description..."
+                      placeholder={t('add_description')}
                       value={newSessionDescription}
                       onChange={(e) => setNewSessionDescription(e.target.value)}
                       rows={3}
@@ -4354,16 +4370,18 @@ export function TimerControls({
                   </div>
 
                   <div>
-                    <Label htmlFor="category-select">Category (optional)</Label>
+                    <Label htmlFor="category-select">
+                      {t('category_optional')}
+                    </Label>
                     <Select
                       value={selectedCategoryId}
                       onValueChange={setSelectedCategoryId}
                     >
                       <SelectTrigger id="category-select" className="mt-1">
-                        <SelectValue placeholder="Select category" />
+                        <SelectValue placeholder={t('select_category')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">No category</SelectItem>
+                        <SelectItem value="none">{t('no_category')}</SelectItem>
                         {categories.map((category) => (
                           <SelectItem key={category.id} value={category.id}>
                             <div className="flex items-center gap-2">
@@ -4388,7 +4406,7 @@ export function TimerControls({
                     size="lg"
                   >
                     <Play className="mr-2 h-5 w-5" />
-                    Start Timer
+                    {t('start_timer')}
                   </Button>
                 </TabsContent>
               </Tabs>
@@ -4397,7 +4415,7 @@ export function TimerControls({
               {templates.length > 0 && (
                 <div className="space-y-3">
                   <Label className="text-muted-foreground text-sm">
-                    Quick Start:
+                    {t('quick_start')}:
                   </Label>
                   <div className="mt-1 space-y-2">
                     {templates.slice(0, 3).map((template) => (
@@ -4436,13 +4454,17 @@ export function TimerControls({
               <div className="text-center">
                 <CheckCircle className="mx-auto mb-4 h-12 w-12 animate-pulse text-green-500" />
                 <h3 className="mb-2 font-semibold text-lg">
-                  Session Completed!
+                  {t('session_completed')}
                 </h3>
                 <p className="mb-1 text-muted-foreground">
                   {justCompleted.title}
                 </p>
                 <p className="font-medium text-green-600 text-sm">
-                  {formatDuration(justCompleted.duration_seconds || 0)} tracked
+                  {t('duration_tracked', {
+                    duration: formatDuration(
+                      justCompleted.duration_seconds || 0
+                    ),
+                  })}
                 </p>
               </div>
             </div>

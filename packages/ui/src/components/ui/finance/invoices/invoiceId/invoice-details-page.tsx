@@ -21,19 +21,20 @@ import InvoiceCard from './invoice-card';
 import InvoiceEditForm from './invoice-edit-form';
 
 interface Props {
-  wsId: string;
-  invoiceId: string;
-  locale: string;
+  params: Promise<{
+    wsId: string;
+    locale: string;
+    invoiceId: string;
+  }>;
   canUpdateInvoices?: boolean;
 }
 
 export default async function InvoiceDetailsPage({
-  wsId,
-  invoiceId,
-  locale,
+  params,
   canUpdateInvoices = false,
 }: Props) {
   const t = await getTranslations();
+  const { locale, wsId, invoiceId } = await params;
 
   const invoice = await getInvoiceDetails(invoiceId);
   const products = await getProducts(invoiceId);
@@ -265,7 +266,7 @@ async function getConfigs(wsId: string) {
   ];
 
   // If rawData is not empty, merge it with availableConfigs
-  if (rawData && rawData.length) {
+  if (rawData?.length) {
     rawData.forEach((config) => {
       const index = configs.findIndex((c) => c.id === config.id);
       if (index !== -1) {

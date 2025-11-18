@@ -1,9 +1,3 @@
-import type { Payment as BasePayment } from 'dodopayments/resources/payments.mjs';
-import type { Subscription as BaseSubscription } from 'dodopayments/resources/subscriptions.mjs';
-
-export type Payment = BasePayment & { payload_type: string };
-export type Subscription = BaseSubscription & { payload_type: string };
-
 export type OneTimeProduct = {
   product_id: string;
   quantity: number;
@@ -18,7 +12,6 @@ export type SubscriptionDetails = {
 
 export type WebhookPayload = {
   type: string;
-  data: Payment | Subscription;
 };
 
 export interface UpdateSubscriptionResult {

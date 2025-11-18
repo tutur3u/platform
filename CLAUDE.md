@@ -11,7 +11,7 @@ Tuturuuu is a Turborepo monorepo containing multiple Next.js applications and sh
 - **Package Manager**: Bun (v1.3.0+)
 - **Monorepo Tool**: Turborepo
 - **Runtime**: Node.js v22+
-- **Framework**: Next.js 15 with App Router and Turbopack
+- **Framework**: Next.js 16 with App Router and Turbopack
 - **Database**: Supabase (PostgreSQL)
 - **Styling**: Tailwind CSS v4.1+ (dynamic color tokens required)
 - **Type Checking**: TypeScript
@@ -191,6 +191,9 @@ bun trigger:deploy
 8. **Always** add new documentation pages to `apps/docs/mint.json` navigation
 9. **Always** update main navigation (`apps/web/src/app/[locale]/(dashboard)/[wsId]/navigation.tsx`) when adding new routes - add to both `aliases` array and `children` navigation items with proper icons and permissions
 10. **Always** provide translations for both English AND Vietnamese when adding user-facing strings to `apps/web/messages/{locale}.json`
+11. **Always** refactor files >400 LOC and components >200 LOC into smaller, focused units
+12. **Always** apply best practices to both old and new code - code quality is never optional
+13. **Always** break down components following single responsibility principle and extract complex logic to utilities/hooks
 
 ### Escalate When
 
@@ -335,6 +338,63 @@ Five seed accounts are available:
 - Avoid deep relative imports; expose via package `index.ts`
 - Use Zod for runtime validation of external inputs
 
+#### Code Quality & Refactoring Policy
+
+**Core Principle**: Code quality and developer experience (DX) are top priorities. Proactively maintain high standards for ALL code—both new and existing.
+
+**Mandatory Refactoring Thresholds**:
+
+- Files >400 LOC → Extract utilities, sub-modules, or components
+- Components >200 LOC → Break down into focused sub-components
+- Functions >50 LOC → Decompose into smaller functions
+- Duplicated logic (≥2 locations) → Extract to shared utilities/hooks
+
+**Best Practices (Apply to Old AND New Code)**:
+
+- **Single Responsibility**: Each component/function does ONE thing well
+- **Composition**: Build from small, reusable pieces
+- **Extract Logic**: Move complex state management to custom hooks
+- **Meaningful Names**: Names should reveal intent without comments
+- **DRY Principle**: Zero tolerance for copy-paste code
+
+**React Component Guidelines**:
+
+- Keep JSX templates <100 LOC; extract sub-components for complex sections
+- Define explicit TypeScript interfaces for all props (no `any`)
+- Extract complex event handlers to separate functions or hooks
+- For >3 conditional branches, extract to separate rendering functions
+- Co-locate state with usage; lift only when truly shared
+
+**Opportunistic Improvement**:
+When touching existing code, you MUST:
+
+1. Assess if the file/component meets current standards
+2. Refactor if it exceeds size thresholds (>400 LOC files, >200 LOC components)
+3. Extract utilities if writing similar logic twice
+4. Migrate deprecated patterns encountered during work
+5. Leave code better than you found it (Boy Scout Rule)
+
+**Quality Over Speed**:
+
+- NEVER ship poorly structured code "to move fast"
+- NEVER skip refactoring "because it's old code"
+- ALWAYS consider: "Would a new developer understand this in 6 months?"
+- ALWAYS extract reusable logic immediately when you write it twice
+
+**When to Extract**:
+
+- Function used ≥2 times → Extract to `src/lib/` or `src/utils/`
+- Component used ≥2 times → Extract to shared components
+- Complex state logic → Extract to custom hook in `src/hooks/`
+- Pure computations → Extract and make testable
+
+**DX Considerations**:
+
+- Can new developers find and understand components quickly?
+- Are component boundaries clear for debugging?
+- Can features be modified without touching unrelated code?
+- Are utilities/hooks in expected, discoverable locations?
+
 #### Tailwind Dynamic Color Policy
 
 **FORBIDDEN**: Hard-coded palette classes like `text-blue-500`, `bg-purple-300/10`, `border-green-600/20`
@@ -421,6 +481,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 All SDK APIs (routes using `withApiAuth`) have automatic rate limiting:
 
 **Default Limits:**
+
 - General operations: 100 requests/minute
 - Storage uploads: 20 requests/minute
 - Storage downloads: 50 requests/minute
@@ -457,6 +518,7 @@ export const GET = withApiAuth(
 ```
 
 **Rate Limit Infrastructure:**
+
 - Uses Upstash Redis for distributed rate limiting
 - Falls back to in-memory if Redis unavailable
 - Returns standard HTTP 429 with `X-RateLimit-*` headers
@@ -536,10 +598,13 @@ Before requesting review:
 5. ✅ For DB changes: migration added; user ran `bun sb:push`
 6. ✅ Types regenerated if schema changed
 7. ✅ Docs updated for public API/env var changes
-8. ✅ No secrets, tokens, or API keys committed
-9. ✅ Edge runtime export added where required
-10. ✅ All external inputs validated with Zod
-11. ✅ All user-facing strings have both English and Vietnamese translations
+8. ✅ **Long files (>400 LOC) and components (>200 LOC) refactored into focused units**
+9. ✅ **Code follows best practices (both old and new code touched)**
+10. ✅ **Components follow single responsibility; complex logic extracted to utilities/hooks**
+11. ✅ No secrets, tokens, or API keys committed
+12. ✅ Edge runtime export added where required
+13. ✅ All external inputs validated with Zod
+14. ✅ All user-facing strings have both English and Vietnamese translations
 
 ## Reference
 

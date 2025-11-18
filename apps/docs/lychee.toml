@@ -1,0 +1,30 @@
+# Lychee link checker configuration for Mintlify docs
+# https://lychee.cli.rs/#/usage/config
+
+# Exclude patterns - regex patterns to exclude from checking
+exclude = [
+    # Exclude all paths starting with / (Mintlify internal routes)
+    '^/',
+    # Exclude relative paths without extensions (Mintlify resolves these to .mdx)
+    '^\\./',
+    # Exclude file:// URLs (these are Mintlify internal links)
+    '^file://',
+]
+
+# Exclude all private/local networks and file system links
+exclude_all_private = true
+
+# Include localhost links (for local testing)
+include_localhost = false
+
+# Timeout for requests (in seconds)
+timeout = 30
+
+# Maximum number of redirects to follow
+max_redirects = 5
+
+# Accept status codes as valid
+accept = [200, 201, 204, 301, 302, 307, 308, 429]
+
+# Ignore certificate errors for local development
+insecure = true

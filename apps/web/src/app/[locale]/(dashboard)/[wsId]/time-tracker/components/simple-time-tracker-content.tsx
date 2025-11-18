@@ -2,11 +2,11 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Clock, Timer, TrendingUp } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import type {
   ExtendedWorkspaceTask,
@@ -14,6 +14,7 @@ import type {
   TimeTrackerData,
 } from '../types';
 import { SimpleTimerControls } from './simple-timer-controls';
+import type { User } from '@tuturuuu/types/primitives/User';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -21,31 +22,17 @@ dayjs.extend(timezone);
 interface SimpleTimeTrackerContentProps {
   wsId: string;
   initialData: TimeTrackerData;
+  currentUser: User | null;
+  isUserLoading: boolean;
 }
 
 export default function SimpleTimeTrackerContent({
   wsId,
   initialData,
+  currentUser,
+  isUserLoading,
 }: SimpleTimeTrackerContentProps) {
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const getUser = async () => {
-      try {
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        setCurrentUserId(user?.id || null);
-      } catch (error) {
-        console.error('Error getting current user:', error);
-        setCurrentUserId(null);
-      }
-    };
-
-    getUser();
-  }, []);
-
+  const t = useTranslations('time-tracker');
   // Use React Query for running session to sync with command palette
   const { data: runningSessionFromQuery } = useQuery({
     queryKey: ['running-time-session', wsId],
@@ -59,7 +46,7 @@ export default function SimpleTimeTrackerContent({
     },
     refetchInterval: 30000, // 30 seconds
     initialData: initialData.runningSession,
-    enabled: !!currentUserId,
+    enabled: !!currentUser,
   });
 
   const [currentSession, setCurrentSession] =
@@ -80,7 +67,7 @@ export default function SimpleTimeTrackerContent({
 
   // Sync React Query data with local state
   useEffect(() => {
-    if (currentUserId && runningSessionFromQuery !== undefined) {
+    if (currentUser && runningSessionFromQuery !== undefined) {
       setCurrentSession(runningSessionFromQuery);
       setIsRunning(!!runningSessionFromQuery);
       if (runningSessionFromQuery) {
@@ -97,7 +84,7 @@ export default function SimpleTimeTrackerContent({
         setElapsedTime(0);
       }
     }
-  }, [runningSessionFromQuery, currentUserId]);
+  }, [runningSessionFromQuery, currentUser]);
 
   // API call helper
   const apiCall = useCallback(
@@ -130,7 +117,7 @@ export default function SimpleTimeTrackerContent({
 
   // Fetch session data
   const fetchData = useCallback(async () => {
-    if (!currentUserId) return;
+    if (!currentUser) return;
 
     try {
       const response = await apiCall(
@@ -156,7 +143,7 @@ export default function SimpleTimeTrackerContent({
     } catch (error) {
       console.error('Error fetching session data:', error);
     }
-  }, [wsId, apiCall, currentUserId]);
+  }, [wsId, apiCall, currentUser]);
 
   // Format time helpers
   const formatTime = useCallback((seconds: number): string => {
@@ -207,13 +194,13 @@ export default function SimpleTimeTrackerContent({
     streak: 0,
   };
 
-  if (!currentUserId) {
+  if (isUserLoading) {
     return (
       <div className="flex items-center justify-center py-24">
         <div className="space-y-4 text-center">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
           <p className="animate-pulse text-muted-foreground text-sm">
-            Loading time tracker...
+            {t('loading')}
           </p>
         </div>
       </div>
@@ -243,49 +230,57 @@ export default function SimpleTimeTrackerContent({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Today</CardTitle>
+            <CardTitle className="font-medium text-sm">
+              {t('stats.today.title')}
+            </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="gap-2 flex flex-col">
             <div className="font-bold text-2xl">
               {formatDuration(todayStats.todayTime)}
             </div>
             <p className="text-muted-foreground text-xs">
               {todayStats.todayTime > 0
-                ? 'Great progress!'
-                : 'Start your first session'}
+                ? t('stats.today.messageActive')
+                : t('stats.today.messageEmpty')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">This Week</CardTitle>
+            <CardTitle className="font-medium text-sm">
+              {t('stats.week.title')}
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="gap-2 flex flex-col">
             <div className="font-bold text-2xl">
               {formatDuration(todayStats.weekTime)}
             </div>
             <p className="text-muted-foreground text-xs">
               {todayStats.weekTime > 14400
-                ? 'Excellent week!'
-                : 'Keep going strong'}
+                ? t('stats.week.messageActive')
+                : t('stats.week.messageEmpty')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Streak</CardTitle>
+            <CardTitle className="font-medium text-sm">
+              {t('stats.streak.title')}
+            </CardTitle>
             <Timer className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="font-bold text-2xl">{todayStats.streak} days</div>
+          <CardContent className="gap-2 flex flex-col">
+            <div className="font-bold text-2xl">
+              {t('stats.streak.count', { count: todayStats.streak })}
+            </div>
             <p className="text-muted-foreground text-xs">
               {todayStats.streak > 0
-                ? 'Keep the momentum!'
-                : 'Start your streak today'}
+                ? t('stats.streak.messageActive')
+                : t('stats.streak.messageEmpty')}
             </p>
           </CardContent>
         </Card>

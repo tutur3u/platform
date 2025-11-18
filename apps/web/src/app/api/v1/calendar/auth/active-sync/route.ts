@@ -1,15 +1,22 @@
+import { performIncrementalActiveSync } from '@/lib/calendar/incremental-active-sync';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { updateLastUpsert } from '@tuturuuu/trigger/calendar-sync-coordination';
-import { performIncrementalActiveSync } from '@/lib/calendar/incremental-active-sync';
-import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   const routeStartTime = Date.now();
   console.log('🔍 [DEBUG] POST /api/v1/calendar/auth/active-sync called');
+
+  const timings = {
+    authComplete: 0,
+    dashboardInsert: 0,
+    connectionsQuery: 0,
+    syncComplete: 0,
+    dashboardUpdate: 0,
+  };
 
   try {
     // 1. Get the wsId and start/end dates from the request
@@ -60,6 +67,8 @@ export async function POST(request: Request) {
       );
     }
 
+    timings.authComplete = Date.now() - routeStartTime;
+
     console.log('🔍 [DEBUG] Creating admin client...');
     const sbAdmin = await createAdminClient();
     console.log('✅ [DEBUG] Admin client created');
@@ -97,6 +106,9 @@ export async function POST(request: Request) {
       );
     }
 
+    timings.dashboardInsert =
+      Date.now() - routeStartTime - timings.authComplete;
+
     // 4. Get calendar connections to determine which calendars to sync
     console.log('🔍 [DEBUG] Fetching calendar connections...');
     const { data: calendarConnections, error: connectionsError } = await sbAdmin
@@ -112,6 +124,12 @@ export async function POST(request: Request) {
       );
       // Fall back to primary calendar if no connections found
     }
+
+    timings.connectionsQuery =
+      Date.now() -
+      routeStartTime -
+      timings.authComplete -
+      timings.dashboardInsert;
 
     // Determine which calendar IDs to sync from
     const calendarIds =
@@ -146,7 +164,24 @@ export async function POST(request: Request) {
           console.log(
             `❌ [DEBUG] performIncrementalActiveSync returned error response for calendar ${calendarId}`
           );
-          return { eventsInserted: 0, eventsUpdated: 0, eventsDeleted: 0 };
+          return {
+            eventsInserted: 0,
+            eventsUpdated: 0,
+            eventsDeleted: 0,
+            metrics: {
+              tokenOperationsMs: 0,
+              googleApiFetchMs: 0,
+              eventProcessingMs: 0,
+              databaseWritesMs: 0,
+              apiCallsCount: 0,
+              pagesFetched: 0,
+              retryCount: 0,
+              eventsFetchedTotal: 0,
+              eventsFilteredOut: 0,
+              batchCount: 0,
+              syncTokenUsed: false,
+            },
+          };
         }
 
         // Check if the result has an error property (another error case)
@@ -159,7 +194,24 @@ export async function POST(request: Request) {
             `❌ [DEBUG] performIncrementalActiveSync error for calendar ${calendarId}:`,
             incrementalActiveSyncResult.error
           );
-          return { eventsInserted: 0, eventsUpdated: 0, eventsDeleted: 0 };
+          return {
+            eventsInserted: 0,
+            eventsUpdated: 0,
+            eventsDeleted: 0,
+            metrics: {
+              tokenOperationsMs: 0,
+              googleApiFetchMs: 0,
+              eventProcessingMs: 0,
+              databaseWritesMs: 0,
+              apiCallsCount: 0,
+              pagesFetched: 0,
+              retryCount: 0,
+              eventsFetchedTotal: 0,
+              eventsFilteredOut: 0,
+              batchCount: 0,
+              syncTokenUsed: false,
+            },
+          };
         }
 
         // Type assertion for the success case
@@ -167,6 +219,19 @@ export async function POST(request: Request) {
           eventsInserted: number;
           eventsUpdated: number;
           eventsDeleted: number;
+          metrics: {
+            tokenOperationsMs: number;
+            googleApiFetchMs: number;
+            eventProcessingMs: number;
+            databaseWritesMs: number;
+            apiCallsCount: number;
+            pagesFetched: number;
+            retryCount: number;
+            eventsFetchedTotal: number;
+            eventsFilteredOut: number;
+            batchCount: number;
+            syncTokenUsed: boolean;
+          };
         };
 
         console.log(
@@ -184,7 +249,24 @@ export async function POST(request: Request) {
           `❌ [DEBUG] Error syncing calendar ${calendarId}:`,
           error
         );
-        return { eventsInserted: 0, eventsUpdated: 0, eventsDeleted: 0 };
+        return {
+          eventsInserted: 0,
+          eventsUpdated: 0,
+          eventsDeleted: 0,
+          metrics: {
+            tokenOperationsMs: 0,
+            googleApiFetchMs: 0,
+            eventProcessingMs: 0,
+            databaseWritesMs: 0,
+            apiCallsCount: 0,
+            pagesFetched: 0,
+            retryCount: 0,
+            eventsFetchedTotal: 0,
+            eventsFilteredOut: 0,
+            batchCount: 0,
+            syncTokenUsed: false,
+          },
+        };
       }
     });
 
@@ -201,17 +283,58 @@ export async function POST(request: Request) {
       { eventsInserted: 0, eventsUpdated: 0, eventsDeleted: 0 }
     );
 
+    // Aggregate metrics from all calendars
+    const aggregatedMetrics = syncResults.reduce(
+      (totals, result) => {
+        const m = result.metrics;
+        return {
+          googleApiCalls: totals.googleApiCalls + (m?.apiCallsCount || 0),
+          pagesFetched: totals.pagesFetched + (m?.pagesFetched || 0),
+          retryCount: totals.retryCount + (m?.retryCount || 0),
+          eventsFetched: totals.eventsFetched + (m?.eventsFetchedTotal || 0),
+          eventsFiltered: totals.eventsFiltered + (m?.eventsFilteredOut || 0),
+          batchCount: totals.batchCount + (m?.batchCount || 0),
+          tokenOperationsMs:
+            totals.tokenOperationsMs + (m?.tokenOperationsMs || 0),
+          googleApiFetchMs:
+            totals.googleApiFetchMs + (m?.googleApiFetchMs || 0),
+          eventProcessingMs:
+            totals.eventProcessingMs + (m?.eventProcessingMs || 0),
+          databaseWritesMs:
+            totals.databaseWritesMs + (m?.databaseWritesMs || 0),
+          syncTokenUsed: totals.syncTokenUsed || m?.syncTokenUsed || false,
+        };
+      },
+      {
+        googleApiCalls: 0,
+        pagesFetched: 0,
+        retryCount: 0,
+        eventsFetched: 0,
+        eventsFiltered: 0,
+        batchCount: 0,
+        tokenOperationsMs: 0,
+        googleApiFetchMs: 0,
+        eventProcessingMs: 0,
+        databaseWritesMs: 0,
+        syncTokenUsed: false,
+      }
+    );
+
     console.log(
       '✅ [DEBUG] All calendars synced in parallel, totals:',
       syncResult
     );
 
+    timings.syncComplete = Date.now() - routeStartTime;
+
     console.log('🔍 [DEBUG] Updating last upsert...');
     await updateLastUpsert(wsId, supabase);
     console.log('✅ [DEBUG] Last upsert updated');
 
-    if (DEV_MODE && insertDashboardData) {
+    // Update dashboard with sync results (in both dev and production)
+    if (insertDashboardData) {
       console.log('🔍 [DEBUG] Updating dashboard record...');
+      const totalDuration = Date.now() - routeStartTime;
       const { error: updateDashboardError } = await sbAdmin
         .from('calendar_sync_dashboard')
         .update({
@@ -220,6 +343,28 @@ export async function POST(request: Request) {
           deleted_events: syncResult.eventsDeleted,
           status: 'completed',
           end_time: new Date().toISOString(),
+          // Timing breakdowns
+          timing_total_ms: totalDuration,
+          timing_google_api_fetch_ms: aggregatedMetrics.googleApiFetchMs,
+          timing_token_operations_ms: aggregatedMetrics.tokenOperationsMs,
+          timing_event_processing_ms: aggregatedMetrics.eventProcessingMs,
+          timing_database_writes_ms: aggregatedMetrics.databaseWritesMs,
+          // API performance metrics
+          google_api_calls_count: aggregatedMetrics.googleApiCalls,
+          google_api_pages_fetched: aggregatedMetrics.pagesFetched,
+          google_api_retry_count: aggregatedMetrics.retryCount,
+          // Data volume metrics
+          events_fetched_total: aggregatedMetrics.eventsFetched,
+          events_filtered_out: aggregatedMetrics.eventsFiltered,
+          batch_count: aggregatedMetrics.batchCount,
+          // Calendar-specific metrics
+          calendar_ids_synced: calendarIds,
+          calendar_connection_count: calendarIds.length,
+          // Context
+          triggered_from: 'ui_button',
+          date_range_start: startDate,
+          date_range_end: endDate,
+          sync_token_used: aggregatedMetrics.syncTokenUsed,
         })
         .eq('id', insertDashboardData.id);
 
@@ -255,6 +400,39 @@ export async function POST(request: Request) {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
     });
+
+    // Try to update dashboard with error details if we have a dashboard record
+    try {
+      const sbAdmin = await createAdminClient();
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
+      // Find most recent running sync for this workspace to update with error
+      const { data: runningSyncs } = await sbAdmin
+        .from('calendar_sync_dashboard')
+        .select('id')
+        .eq('status', 'running')
+        .order('start_time', { ascending: false })
+        .limit(1);
+
+      if (runningSyncs && runningSyncs.length > 0) {
+        await sbAdmin
+          .from('calendar_sync_dashboard')
+          .update({
+            status: 'failed',
+            end_time: new Date().toISOString(),
+            error_message: errorMessage,
+            error_type: 'unknown',
+            error_stack_trace: errorStack,
+            timing_total_ms: Date.now() - routeStartTime,
+          })
+          .eq('id', runningSyncs[0]!.id);
+      }
+    } catch (updateError) {
+      console.error('Failed to update dashboard with error:', updateError);
+    }
+
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

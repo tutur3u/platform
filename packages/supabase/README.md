@@ -7,7 +7,7 @@
 
 ## Features
 
-- 🚀 **Next.js Optimized**: Built specifically for Next.js 15+ with App Router support
+- 🚀 **Next.js Optimized**: Built specifically for Next.js 16+ with App Router support
 - 🔒 **SSR-Safe**: Proper server-side rendering with cookie-based authentication
 - 🎯 **Type-Safe**: Full TypeScript support with generated database types
 - 🔄 **Realtime**: Built-in realtime subscription utilities
@@ -192,6 +192,7 @@ Creates a Supabase client for server-side operations with cookie handling.
 Creates a Supabase admin client with service role privileges.
 
 **Options:**
+
 - `noCookie?: boolean` - Disable cookie handling (default: false)
 
 **Returns:** `Promise<SupabaseClient<Database>>`
@@ -215,6 +216,7 @@ Gets the currently authenticated user, throws error if not authenticated.
 Creates a Supabase client from an incoming request for API proxying.
 
 **Parameters:**
+
 - `request: Request` - The incoming request object
 
 **Returns:** `Promise<SupabaseClient<Database>>`
@@ -247,6 +249,7 @@ const supabase = createClient<Database>();
 2. **Security**: Never expose the service role key in client-side code. Use `createAdminClient()` only in server-side contexts.
 
 3. **Error Handling**: Always check for errors when making Supabase queries:
+
    ```typescript
    const { data, error } = await supabase.from('table').select('*');
    if (error) {
@@ -256,6 +259,7 @@ const supabase = createClient<Database>();
    ```
 
 4. **Realtime Cleanup**: Always unsubscribe from realtime channels to prevent memory leaks:
+
    ```typescript
    useEffect(() => {
      const channel = supabase.channel('my-channel');

@@ -29,7 +29,6 @@ export function TaskListForm({
 
     const supabase = createClient();
 
-    // Create list with enhanced API that supports status and color
     const { error } = await supabase
       .from('task_lists')
       .insert({
@@ -61,6 +60,8 @@ export function TaskListForm({
         return 'GREEN';
       case 'closed':
         return 'PURPLE';
+      case 'documents':
+        return 'CYAN';
       default:
         return 'GRAY';
     }

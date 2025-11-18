@@ -14,6 +14,7 @@ import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import { cn } from '@tuturuuu/utils/format';
 import {
+  getTicketIdentifier,
   invalidateTaskCaches,
   useUpdateTask,
 } from '@tuturuuu/utils/task-helper';
@@ -279,6 +280,23 @@ function TaskEditDialogComponent({
     propAvailableLists,
     taskSearchQuery,
   });
+
+  // Update browser tab title with ticket identifier when dialog is open
+  useEffect(() => {
+    if (!isOpen || isCreateMode || !task) return;
+
+    const originalTitle = document.title;
+    const ticketId = getTicketIdentifier(
+      boardConfig?.ticket_prefix,
+      task.display_number
+    );
+    document.title = `${ticketId} - ${task.name}`;
+
+    // Restore original title when dialog closes
+    return () => {
+      document.title = originalTitle;
+    };
+  }, [isOpen, isCreateMode, task, boardConfig?.ticket_prefix]);
 
   // ============================================================================
   // LABELS MANAGEMENT - Workspace labels, selected labels, and creation
@@ -780,6 +798,7 @@ function TaskEditDialogComponent({
         name: string;
         listId: string;
       }) => {
+        // Note: display_number and board_id are auto-assigned by database trigger
         const { data: newTask, error } = await supabase
           .from('tasks')
           .insert({
@@ -849,12 +868,12 @@ function TaskEditDialogComponent({
         const { createTask } = await import('@tuturuuu/utils/task-helper');
         const taskData: Partial<Task> = {
           name: name.trim(),
-          description: descriptionString,
+          description: descriptionString || '',
           priority: priority,
-          start_date: startDate ? startDate.toISOString() : null,
-          end_date: endDate ? endDate.toISOString() : null,
+          start_date: startDate ? startDate.toISOString() : undefined,
+          end_date: endDate ? endDate.toISOString() : undefined,
           estimation_points: estimationPoints ?? null,
-        } as any;
+        };
         const newTask = await createTask(supabase, selectedListId, taskData);
 
         if (selectedLabels.length > 0) {

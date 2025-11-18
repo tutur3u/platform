@@ -1,0 +1,90 @@
+# Lychee link checker configuration
+# Documentation: https://lychee.cli.rs/#/usage/config
+
+# Maximum number of concurrent network requests
+max_concurrency = 10
+
+# Accept these HTTP status codes as valid
+accept = [200, 204, 206, 301, 302, 307, 308, 429]
+
+# Timeout per request in seconds (increased for slow sites)
+timeout = 60
+
+# Maximum number of retries per failed request
+max_retries = 3
+
+# Retry wait time in seconds
+retry_wait_time = 2
+
+# Exclude these URL patterns from checking
+exclude = [
+  # Protocol exclusions
+  '^mailto:',
+  '^javascript:',
+  '^data:',
+
+  # Local development URLs
+  'localhost',
+  '127.0.0.1',
+
+  # Example/placeholder domains
+  'example\\.com',
+  'your-domain\\.com',
+  'your-.*\\.com',
+
+  # Mintlify-style relative paths (handled by Mintlify, not file system)
+  # These are false positives as they're resolved by Mintlify at runtime
+  '^/platform/',
+  '^/build/',
+  '^/learn/',
+  '^/reference/',
+  '^/overview/',
+  '^/images/',
+
+  # Exclude file:// URLs without extensions (Mintlify relative links)
+  'file://.*[^.mdx]$',
+  '\\./[a-z-]+$',
+
+  # Private/internal links that may not be accessible in CI
+  # Add any internal URLs here if needed
+
+  # Rate-limited or slow sites that may timeout
+  'tanstack\\.com',
+  'nextjs\\.org',
+  'trpc\\.io',
+  'zod\\.dev',
+  'mdxjs\\.com',
+  'mermaid\\.js\\.org',
+  'postgresql\\.org',
+  'trigger\\.dev',
+  'developers\\.google\\.com',
+  'osohq\\.com',
+  'sdk\\.vercel\\.ai',
+]
+
+# Exclude these file paths from checking
+exclude_path = [
+  'node_modules',
+  '.next',
+  'dist',
+  'build',
+  '.turbo',
+]
+
+# Include these file extensions
+include = ['.md', '.mdx', '.json']
+
+# Set user agent
+user_agent = "Mozilla/5.0 (compatible; Lychee/1.0; +https://github.com/tutur3u/platform)"
+
+# Follow redirects
+max_redirects = 5
+
+# Check for insecure HTTPS certificates
+insecure = false
+
+# Remap URLs (useful for local development or staging environments)
+# Example: Remap staging URLs to production for link checking
+# remap = [
+#   "https://staging.tuturuuu.com https://tuturuuu.com",
+# ]

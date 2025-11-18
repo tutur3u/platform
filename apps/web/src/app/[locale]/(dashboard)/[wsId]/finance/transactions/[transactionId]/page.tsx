@@ -21,13 +21,7 @@ export default async function WorkspaceTransactionDetailsPage({
 }: Props) {
   return (
     <WorkspaceWrapper params={params}>
-      {({ wsId, transactionId, locale }) => (
-        <TransactionDetailsPage
-          wsId={wsId}
-          transactionId={transactionId}
-          locale={locale}
-        />
-      )}
+      {() => <TransactionDetailsPage params={params} />}
     </WorkspaceWrapper>
   );
 }

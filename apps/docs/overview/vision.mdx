@@ -1,7 +1,7 @@
 ---
 title: 'Vision & Mission'
 description: 'The north star for Tuturuuu—why we exist and the future we are building.'
-updated: '2025-09-26'
+updatedAt: '2025-09-26'
 ---
 
 <img src="/images/hero.png" alt="Hero" />
@@ -113,100 +113,79 @@ Our roadmap stretches far beyond productivity checklists. We are assembling an e
 #### End-to-End Interaction Lifecycle
 
 ```mermaid
-sequenceDiagram
-    participant Visionary
-    participant Mira as Mira (Jarvis)
-    participant AgentHub as Agent Mesh
-    participant Aurora as Aurora Context Graph
-    participant Nova as Nova Alignment
-    participant Rewise as Rewise Knowledge
-    participant Apps as Tuturuuu Apps
-    participant Feedback as Feedback Loop
+graph LR
+    A[Visionary] -->|State goal| B[Mira]
+    B -->|Plan & delegate| C[Agent Mesh]
+    C -->|Fetch context| D[Aurora]
+    D -->|Get knowledge| E[Rewise]
+    C -->|Validate| F[Nova]
+    C -->|Execute| G[Apps]
+    G -->|Updates| A
+    C -->|Log outcomes| H[Feedback Loop]
+    H -->|Improve| B
 
-    Visionary->>Mira: State goal or constraint
-    Mira->>AgentHub: Compose plan + delegate tasks
-    AgentHub->>Aurora: Fetch context snapshot
-    Aurora->>Rewise: Request external knowledge
-    Rewise-->>Aurora: Return enriched data
-    Aurora-->>AgentHub: Provide connected insights
-    AgentHub->>Nova: Validate safety & ethics
-    Nova-->>AgentHub: Deliver aligned strategy
-    AgentHub->>Apps: Execute actions (TuPlan/TuDo/etc.)
-    Apps-->>Visionary: Surface updates & nudges
-    AgentHub->>Feedback: Log outcomes + metrics
-    Feedback->>Aurora: Update context graph
-    Feedback->>Nova: Improve prompts & policies
-    Feedback->>Mira: Personalize guidance
-    Mira-->>Visionary: Report progress & next steps
+    style B fill:#4f46e5,stroke:#3730a3,color:#fff
+    style C fill:#4f46e5,stroke:#3730a3,color:#fff
 ```
 
 #### Continuous Learning Loop
 
 ```mermaid
-stateDiagram-v2
-    [*] --> Capture
-    Capture --> Contextualize
-    Contextualize --> Plan
-    Plan --> Execute
-    Execute --> Reflect
-    Reflect --> Improve
+graph TD
+    Start([Start]) --> Capture[Capture Intent]
+    Capture --> Contextualize[Contextualize]
+    Contextualize --> Plan[Plan Strategy]
+    Plan --> Execute[Execute Actions]
+    Execute --> Reflect[Reflect on Results]
+    Reflect --> Improve[Improve Models]
     Improve --> Capture
-    Reflect --> [*]: Goal satisfied
+    Reflect --> End([Goal Satisfied])
 
-    note right of Capture
-        Mira listens, records intents,
-        and anchors goals.
-    end note
-    note right of Plan
-        Agent mesh designs
-        multi-step strategies.
-    end note
-    note right of Improve
-        Nova and Aurora update
-        models, memories, and policies.
-    end note
+    style Capture fill:#4f46e5,stroke:#3730a3,color:#fff
+    style Plan fill:#4f46e5,stroke:#3730a3,color:#fff
+    style Improve fill:#4f46e5,stroke:#3730a3,color:#fff
 ```
 
 #### Layered Architecture Overview
 
 ```mermaid
-flowchart LR
-    subgraph "Experience Layer"
-        MiraXP["Mira & Crystal Interfaces"]
-        AppsXP["TuPlan / TuDo / TuMeet / TuMail / TuChat / TuDrive / TuTrack"]
-    end
-    subgraph "Intelligence Layer"
-        AgentsInt["Agent Mesh"]
-        AuroraInt["Aurora Context Graph"]
-        NovaInt["Nova Alignment"]
-        RewiseInt["Rewise Knowledge Federation"]
-    end
-    subgraph "Data & Learning Layer"
-        Memories["AI Memories"]
-        Knowledge["Internal Knowledge Base"]
-        Crawler["Data Crawler"]
-        Metrics["Metrics & Observability"]
-    end
-    subgraph "Infrastructure Layer"
-        CloudExec["Cloud Code Execution"]
-        Integrations["External Integrations"]
-        Security["Security & Governance"]
+graph TB
+    subgraph Experience["Experience Layer"]
+        Mira["Mira & Crystal"]
+        Apps["Tuturuuu Apps"]
     end
 
-    MiraXP --> AgentsInt
-    AppsXP --> AgentsInt
-    AgentsInt --> AuroraInt
-    AuroraInt --> RewiseInt
-    AuroraInt --> NovaInt
-    NovaInt --> AgentsInt
-    AuroraInt --> Memories
-    Memories --> Knowledge
-    Crawler --> Knowledge
-    Knowledge --> AgentsInt
-    Metrics --> NovaInt
-    CloudExec --> AgentsInt
-    Integrations --> CloudExec
-    Security --> CloudExec
+    subgraph Intelligence["Intelligence Layer"]
+        Agents["Agent Mesh"]
+        Aurora["Aurora Context"]
+        Nova["Nova Alignment"]
+        Rewise["Rewise Knowledge"]
+    end
+
+    subgraph Data["Data Layer"]
+        Memory["AI Memories"]
+        KB["Knowledge Base"]
+    end
+
+    subgraph Infra["Infrastructure"]
+        Cloud["Cloud Execution"]
+        Integrations["Integrations"]
+    end
+
+    Mira --> Agents
+    Apps --> Agents
+    Agents --> Aurora
+    Aurora --> Rewise
+    Aurora --> Nova
+    Nova --> Agents
+    Aurora --> Memory
+    Memory --> KB
+    KB --> Agents
+    Cloud --> Agents
+    Integrations --> Cloud
+
+    style Agents fill:#4f46e5,stroke:#3730a3,color:#fff
+    style Aurora fill:#4f46e5,stroke:#3730a3,color:#fff
 ```
 
 ### Technology Stack & Architecture

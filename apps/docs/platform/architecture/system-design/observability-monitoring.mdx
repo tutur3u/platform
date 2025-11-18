@@ -1,0 +1,761 @@
+---
+title: "Observability & Monitoring"
+description: "Comprehensive observability architecture and monitoring strategies in Tuturuuu"
+updatedAt: "2025-11-17"
+---
+
+Observability is a first-class architectural concern in distributed systems. Unlike traditional monitoring which focuses on predefined metrics, observability provides the ability to understand system behavior by examining its outputs—logs, metrics, and traces. This document explains the five core architectural patterns that make Tuturuuu deeply observable.
+
+<Note>
+**Observability vs Monitoring**: Monitoring tells you when something is wrong. Observability tells you why it's wrong and how to fix it. Our architecture provides both.
+</Note>
+
+## 1. Distributed Tracing Provides Full Request Visibility
+
+### Architectural Choice
+
+The architecture implements distributed tracing across all microservices, allowing a single user request to be tracked as it flows through multiple services, providing complete end-to-end visibility of request execution.
+
+### Impact and Justification
+
+In a microservices architecture, a single user action (like "Create Order") can trigger a cascade of operations across dozens of services. Without distributed tracing, understanding the complete execution path is nearly impossible. Each service's logs exist in isolation, making it extremely difficult to correlate related operations.
+
+Distributed tracing solves this by assigning each request a unique **trace ID** that flows through all services involved in handling that request. Each service records **spans** (units of work) that are linked together by the trace ID, creating a complete map of the request's journey through the system.
+
+This enables powerful debugging capabilities: When a user reports a slow checkout, we can search for their trace ID and see exactly which service or database query caused the delay, how long each step took, and where failures occurred.
+
+**In Tuturuuu - Distributed Tracing Architecture:**
+
+```typescript
+// Next.js instrumentation for OpenTelemetry
+// apps/web/instrumentation.ts
+import { registerOTel } from '@vercel/otel';
+
+export function register() {
+  registerOTel({
+    serviceName: 'tuturuuu-web',
+    // Traces automatically propagate across services
+  });
+}
+
+// Automatic trace propagation in API calls
+export async function createWorkspace(data: WorkspaceData) {
+  // Trace context automatically included in headers
+  const trace = getActiveTrace();
+
+  // Start a new span for this operation
+  return await trace.span('workspace.create', async (span) => {
+    span.setAttribute('workspace.name', data.name);
+    span.setAttribute('user.id', data.ownerId);
+
+    // 1. Create workspace in database
+    const workspace = await createWorkspaceInDb(data);
+    span.addEvent('workspace.created', { id: workspace.id });
+
+    // 2. Trigger background jobs
+    await trigger.event({
+      name: 'workspace.created',
+      payload: { workspaceId: workspace.id },
+      // Trace ID automatically propagated to background job
+    });
+
+    span.addEvent('events.triggered');
+
+    return workspace;
+  });
+}
+
+// Background job continues the trace
+client.defineJob({
+  id: 'workspace-setup',
+  name: 'Setup new workspace',
+  version: '1.0.0',
+  trigger: eventTrigger({ name: 'workspace.created' }),
+  run: async (payload, io) => {
+    // Trace context automatically available
+    const span = io.getSpan();
+    span.addEvent('workspace.setup.started');
+
+    // All operations recorded in the same trace
+    await io.sendEmail({ ... });
+    await io.createDefaultResources({ ... });
+
+    span.addEvent('workspace.setup.completed');
+  }
+});
+```
+
+**Querying traces for debugging:**
+```typescript
+// Find slow requests
+const slowTraces = await tracing.query({
+  service: 'tuturuuu-web',
+  operation: 'workspace.create',
+  minDuration: 5000, // Slower than 5 seconds
+  timeRange: 'last-24h'
+});
+
+// Analyze a specific failed request
+const trace = await tracing.getTrace('trace-abc-123');
+console.log(trace.spans.map(span => ({
+  service: span.serviceName,
+  operation: span.name,
+  duration: span.duration,
+  error: span.error,
+  // See complete execution path
+})));
+```
+
+### Clarifying Additions
+
+**Architects gain insight across the entire flow of a request.** Instead of examining logs from individual services in isolation, distributed tracing provides a unified view of how a request moves through the system.
+
+**Bottlenecks become easy to identify.** When performance degrades, trace visualization immediately reveals which service, function, or database query is responsible for the slowdown.
+
+**This supports informed performance decisions.** With complete visibility into request execution, performance optimization efforts can be precisely targeted at the actual bottlenecks rather than guessed at.
+
+---
+
+## 2. Centralized Logging Increases Diagnosability
+
+### Architectural Choice
+
+All services emit structured logs to a centralized logging system where they can be aggregated, searched, and correlated across service boundaries.
+
+### Impact and Justification
+
+In a distributed system with dozens of services, each potentially running multiple instances, managing logs becomes a critical challenge. If each service writes logs to its local filesystem, diagnosing issues requires:
+1. Knowing which service(s) to examine
+2. Finding the specific instance that handled the request
+3. SSH-ing into individual servers
+4. Manually correlating timestamps across different log files
+
+This is completely impractical at scale. **Centralized logging** solves this by streaming all logs to a unified platform (like Vercel Logs, Datadog, or ELK stack) where they can be:
+- **Searched** across all services simultaneously
+- **Filtered** by trace ID, user ID, workspace ID, error type, etc.
+- **Correlated** with metrics and traces
+- **Alerted** on specific patterns
+
+**In Tuturuuu - Structured Logging:**
+
+```typescript
+// Structured logging with context
+import { logger } from '@tuturuuu/logging';
+
+export async function processPayment(
+  workspaceId: string,
+  amount: number,
+  userId: string
+) {
+  // Create contextual logger
+  const log = logger.child({
+    workspaceId,
+    userId,
+    operation: 'payment.process',
+    // Context automatically included in all log entries
+  });
+
+  log.info('Payment processing started', { amount });
+
+  try {
+    const result = await chargeCustomer(amount);
+
+    log.info('Payment successful', {
+      transactionId: result.id,
+      amount: result.amount,
+      status: result.status
+    });
+
+    return result;
+  } catch (error) {
+    log.error('Payment failed', {
+      error: error.message,
+      errorCode: error.code,
+      amount,
+      // Structured data for easy querying
+    });
+
+    throw error;
+  }
+}
+```
+
+**Log query examples:**
+```typescript
+// Find all errors for a specific user
+logs.query({
+  level: 'error',
+  userId: 'user-123',
+  timeRange: 'last-24h'
+});
+
+// Find all failed payments in a workspace
+logs.query({
+  operation: 'payment.process',
+  level: 'error',
+  workspaceId: 'ws-456',
+  timeRange: 'last-7d'
+});
+
+// Correlate logs with trace
+logs.query({
+  traceId: 'trace-abc-123',
+  // See all log entries from all services involved in this request
+});
+```
+
+**Log aggregation architecture:**
+```typescript
+// All services use consistent log format
+export interface LogEntry {
+  timestamp: string;
+  level: 'debug' | 'info' | 'warn' | 'error';
+  service: string;
+  traceId?: string;
+  spanId?: string;
+  userId?: string;
+  workspaceId?: string;
+  operation: string;
+  message: string;
+  metadata: Record<string, unknown>;
+}
+
+// Logs automatically shipped to centralized platform
+// Vercel automatically collects Next.js logs
+// Custom services can use winston/pino with transport
+```
+
+### Clarifying Additions
+
+**Logs from all services become searchable in one place.** Engineers can investigate issues without needing to know which specific service or instance to examine—they can search globally across the entire system.
+
+**Patterns emerge clearly across system boundaries.** Centralized logging makes it easy to spot trends like "error rates spiking across multiple services" or "all finance-related operations failing," which would be invisible when examining services in isolation.
+
+**This simplifies incident analysis.** During outages, teams can quickly query logs to understand what went wrong, which users were affected, and how to remediate the issue.
+
+---
+
+## 3. Per-Service Metrics Enable Fine-Grained Monitoring
+
+### Architectural Choice
+
+Each microservice exposes its own health metrics (request rates, error rates, latency percentiles, resource utilization) that can be collected, visualized, and alerted on independently.
+
+### Impact and Justification
+
+Coarse-grained, application-level metrics (like "total requests per second") provide limited value in a microservices architecture. When an alert fires for "high error rate," we need to immediately know **which service** is failing, **which specific operations** are affected, and **which resources** are saturated.
+
+Per-service metrics provide this granularity. Each service exposes detailed metrics about its own health and performance, allowing us to:
+- **Detect failures quickly** at the service level
+- **Scale specific services** based on their individual load
+- **Set targeted alerts** for critical operations
+- **Understand resource utilization** per service for cost optimization
+
+**In Tuturuuu - Service Metrics:**
+
+```typescript
+// Each service exposes Prometheus-style metrics
+import { metrics } from '@tuturuuu/observability';
+
+// Counter: Incrementing values (requests, errors)
+const requestCounter = metrics.counter({
+  name: 'http_requests_total',
+  description: 'Total HTTP requests',
+  labels: ['service', 'method', 'route', 'status']
+});
+
+// Histogram: Distribution of values (latency, response size)
+const latencyHistogram = metrics.histogram({
+  name: 'http_request_duration_seconds',
+  description: 'HTTP request latency',
+  labels: ['service', 'method', 'route'],
+  buckets: [0.01, 0.05, 0.1, 0.5, 1, 2, 5] // Percentile buckets
+});
+
+// Gauge: Current value (active connections, queue depth)
+const activeConnectionsGauge = metrics.gauge({
+  name: 'active_connections',
+  description: 'Currently active connections',
+  labels: ['service']
+});
+
+// Instrument application code
+export async function handleRequest(
+  request: Request,
+  service: string
+) {
+  const start = Date.now();
+
+  try {
+    // Record request
+    requestCounter.inc({ service, method: request.method, route: request.url });
+
+    // Track active connections
+    activeConnectionsGauge.inc({ service });
+
+    const response = await processRequest(request);
+
+    // Record success
+    requestCounter.inc({
+      service,
+      method: request.method,
+      route: request.url,
+      status: response.status
+    });
+
+    return response;
+  } catch (error) {
+    // Record error
+    requestCounter.inc({
+      service,
+      method: request.method,
+      route: request.url,
+      status: 500
+    });
+
+    throw error;
+  } finally {
+    // Record latency
+    const duration = (Date.now() - start) / 1000;
+    latencyHistogram.observe({
+      service,
+      method: request.method,
+      route: request.url
+    }, duration);
+
+    // Decrease active connections
+    activeConnectionsGauge.dec({ service });
+  }
+}
+```
+
+**Metric visualization and alerting:**
+```typescript
+// Query metrics for monitoring dashboard
+const metrics = {
+  // Request rate per service
+  requestRate: query('rate(http_requests_total[5m]) by (service)'),
+
+  // Error rate per service
+  errorRate: query('rate(http_requests_total{status=~"5.."}[5m]) by (service)'),
+
+  // P95 latency per service
+  p95Latency: query('histogram_quantile(0.95, http_request_duration_seconds) by (service)'),
+
+  // Resource utilization
+  cpuUsage: query('container_cpu_usage_seconds_total by (service)'),
+  memoryUsage: query('container_memory_usage_bytes by (service)'),
+};
+
+// Alert on anomalies
+const alerts = [
+  {
+    name: 'HighErrorRate',
+    condition: 'error_rate > 0.05', // 5% error rate
+    for: '5m',
+    severity: 'critical',
+    notify: ['oncall-team']
+  },
+  {
+    name: 'HighLatency',
+    condition: 'p95_latency > 2', // 2 seconds
+    for: '10m',
+    severity: 'warning',
+    notify: ['engineering-team']
+  }
+];
+```
+
+**Business metrics:**
+```typescript
+// Custom business metrics for product insights
+const workspaceCreations = metrics.counter({
+  name: 'workspaces_created_total',
+  description: 'Total workspaces created',
+  labels: ['plan']
+});
+
+const activeUsers = metrics.gauge({
+  name: 'active_users',
+  description: 'Currently active users',
+  labels: ['workspaceId']
+});
+
+const aiTokensUsed = metrics.counter({
+  name: 'ai_tokens_used_total',
+  description: 'AI tokens consumed',
+  labels: ['model', 'workspace_id']
+});
+```
+
+### Clarifying Additions
+
+**Each service exposes its own health signals.** Instead of relying on external monitoring that only observes symptoms, services self-report their internal state, providing deep insight into their operation.
+
+**Issues are detected quickly and precisely.** Alerts can be configured for specific services and operations, ensuring the right team is notified immediately when their service degrades.
+
+**This helps maintain consistent performance.** Continuous monitoring of per-service metrics allows teams to proactively identify and resolve performance issues before they impact users.
+
+---
+
+## 4. Health Checks Enable Automated Healing
+
+### Architectural Choice
+
+Every service exposes standardized health check endpoints that report the service's current state. Orchestration platforms continuously probe these endpoints and automatically restart or replace unhealthy instances.
+
+### Impact and Justification
+
+In traditional monolithic deployments, when a service becomes unhealthy (due to memory leaks, deadlocks, or resource exhaustion), manual intervention is often required to restart the application. This leads to extended downtime and requires on-call engineers to be available 24/7.
+
+**Automated health checks** combined with orchestration platforms (like Kubernetes, Vercel, or AWS ECS) create a **self-healing system**. When a service instance fails its health check, the orchestrator automatically:
+1. Stops routing new requests to the unhealthy instance
+2. Starts a replacement instance
+3. Terminates the unhealthy instance once the replacement is ready
+
+This automation dramatically improves system availability and reduces operational burden.
+
+**In Tuturuuu - Health Check Implementation:**
+
+```typescript
+// Standardized health check endpoint
+// apps/web/src/app/api/health/route.ts
+export async function GET() {
+  const checks = await Promise.allSettled([
+    checkDatabaseConnection(),
+    checkSupabaseConnection(),
+    checkTriggerConnection(),
+    checkMemoryUsage(),
+    checkDiskSpace(),
+  ]);
+
+  const isHealthy = checks.every(check => check.status === 'fulfilled');
+  const status = isHealthy ? 200 : 503;
+
+  return new Response(JSON.stringify({
+    status: isHealthy ? 'healthy' : 'unhealthy',
+    timestamp: new Date().toISOString(),
+    checks: {
+      database: checks[0].status === 'fulfilled' ? 'ok' : 'failed',
+      supabase: checks[1].status === 'fulfilled' ? 'ok' : 'failed',
+      trigger: checks[2].status === 'fulfilled' ? 'ok' : 'failed',
+      memory: checks[3].status === 'fulfilled' ? 'ok' : 'failed',
+      disk: checks[4].status === 'fulfilled' ? 'ok' : 'failed',
+    }
+  }), {
+    status,
+    headers: { 'Content-Type': 'application/json' }
+  });
+}
+
+// Detailed dependency checks
+async function checkDatabaseConnection() {
+  try {
+    await database.query('SELECT 1');
+    return { status: 'ok' };
+  } catch (error) {
+    return { status: 'failed', error: error.message };
+  }
+}
+
+async function checkMemoryUsage() {
+  const used = process.memoryUsage();
+  const heapUsedPercent = (used.heapUsed / used.heapTotal) * 100;
+
+  if (heapUsedPercent > 90) {
+    return { status: 'degraded', heapUsedPercent };
+  }
+
+  return { status: 'ok', heapUsedPercent };
+}
+```
+
+**Liveness vs Readiness Checks:**
+```typescript
+// Liveness: Is the service running?
+// If this fails, restart the container
+export async function GET(_req: Request, { params }: { params: { type: string } }) {
+  if (params.type === 'liveness') {
+    // Simple check: can we respond?
+    return new Response(JSON.stringify({ alive: true }), { status: 200 });
+  }
+
+  // Readiness: Is the service ready to handle traffic?
+  // If this fails, remove from load balancer
+  if (params.type === 'readiness') {
+    const canHandleTraffic = await checkAllDependencies();
+
+    return new Response(
+      JSON.stringify({ ready: canHandleTraffic }),
+      { status: canHandleTraffic ? 200 : 503 }
+    );
+  }
+}
+```
+
+**Orchestrator configuration (conceptual):**
+```yaml
+# Vercel automatically handles health checks
+# For custom deployments (Kubernetes):
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: tuturuuu-web
+    image: tuturuuu/web:latest
+    livenessProbe:
+      httpGet:
+        path: /api/health/liveness
+        port: 3000
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      failureThreshold: 3
+    readinessProbe:
+      httpGet:
+        path: /api/health/readiness
+        port: 3000
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      failureThreshold: 2
+```
+
+### Clarifying Additions
+
+**Unhealthy components recover automatically.** Instead of requiring manual intervention, the system detects and replaces failing instances without human involvement.
+
+**The system maintains functionality without manual effort.** Self-healing capabilities ensure that transient failures (like temporary resource exhaustion) are resolved automatically, minimizing downtime.
+
+**This reduces operational load significantly.** On-call engineers are freed from responding to routine failures that the system can handle itself, allowing them to focus on more complex issues.
+
+---
+
+## 5. Event Streams Provide Historical Insights
+
+### Architectural Choice
+
+The event-driven architecture preserves a complete, immutable history of all significant system events, enabling powerful historical analysis, debugging, and system recovery capabilities.
+
+### Impact and Justification
+
+Traditional request-response architectures are ephemeral—once a request completes, the only record is what was explicitly written to logs. This makes it extremely difficult to:
+- Understand how the system arrived at its current state
+- Reproduce bugs that occurred in production
+- Analyze trends and patterns over time
+- Recover from data corruption by replaying events
+
+The **event sourcing** pattern, enabled by our event-driven architecture, preserves the complete history of state changes. Instead of storing only the current state, we store every event that led to that state. This provides:
+- **Perfect auditability**: Complete record of what happened and when
+- **Time travel debugging**: Reconstruct system state at any point in history
+- **Event replay**: Reproduce production bugs by replaying event sequences
+- **Trend analysis**: Analyze patterns over weeks or months
+
+**In Tuturuuu - Event Stream Architecture:**
+
+```typescript
+// All events persisted in ordered stream
+export async function publishEvent(event: DomainEvent) {
+  await eventStore.append({
+    id: uuid(),
+    type: event.type,
+    aggregate: event.aggregateId, // e.g., workspace-123
+    version: event.version,
+    timestamp: new Date(),
+    payload: event.payload,
+    metadata: {
+      userId: event.userId,
+      traceId: getCurrentTraceId(),
+      causationId: event.causationId, // What caused this event
+      correlationId: event.correlationId, // Related events
+    }
+  });
+}
+
+// Query event history
+export async function getWorkspaceHistory(workspaceId: string) {
+  return await eventStore.query({
+    aggregate: workspaceId,
+    orderBy: 'timestamp',
+    // Returns complete history of workspace changes
+  });
+}
+
+// Example output:
+const history = [
+  { type: 'workspace.created', timestamp: '2024-01-01T00:00:00Z', data: {...} },
+  { type: 'member.added', timestamp: '2024-01-01T00:05:00Z', data: {...} },
+  { type: 'member.role.changed', timestamp: '2024-01-01T00:10:00Z', data: {...} },
+  { type: 'settings.updated', timestamp: '2024-01-01T00:15:00Z', data: {...} },
+  // Complete, ordered history of all changes
+];
+```
+
+**Event replay for debugging:**
+```typescript
+// Reproduce a production bug locally
+export async function replayEvents(aggregateId: string, untilTimestamp?: Date) {
+  const events = await eventStore.query({
+    aggregate: aggregateId,
+    until: untilTimestamp
+  });
+
+  // Start with empty state
+  let state = createEmptyState();
+
+  // Replay each event to reconstruct state
+  for (const event of events) {
+    state = applyEvent(state, event);
+  }
+
+  // Now we have exact state at that point in time
+  return state;
+}
+
+// Example: Reproduce the state of workspace when bug occurred
+const bugState = await replayEvents('workspace-123', new Date('2024-11-15T14:30:00Z'));
+// Can now debug why the bug happened
+```
+
+**Historical trend analysis:**
+```typescript
+// Analyze patterns over time
+export async function analyzeUserBehavior(userId: string, days: number) {
+  const events = await eventStore.query({
+    userId,
+    from: Date.now() - (days * 86400000),
+  });
+
+  // Analyze patterns
+  const patterns = {
+    mostActiveHours: calculateActiveHours(events),
+    commonWorkflows: identifyWorkflows(events),
+    errorPatterns: findErrorSequences(events),
+    featureUsage: countFeatureUsage(events),
+  };
+
+  return patterns;
+}
+```
+
+**System recovery through event replay:**
+```typescript
+// Recover from data corruption
+export async function rebuildProjection(projectionName: string) {
+  // Projections are derived from events
+  // If projection is corrupted, rebuild from event stream
+
+  await clearProjection(projectionName);
+
+  const events = await eventStore.query({ all: true });
+
+  for (const event of events) {
+    await updateProjection(projectionName, event);
+  }
+
+  // Projection fully rebuilt from source of truth (events)
+}
+```
+
+### Clarifying Additions
+
+**Long-term patterns reveal recurring issues.** By analyzing months or years of events, teams can identify systemic problems that aren't visible in short-term logs or metrics.
+
+**Debugging becomes easier through historical replay.** Instead of trying to guess what state the system was in when a bug occurred, engineers can precisely reconstruct that state by replaying the event stream.
+
+**This strengthens reliability over time.** The ability to analyze historical patterns and replay events enables continuous improvement, as teams can identify and fix the root causes of recurring issues.
+
+---
+
+## Observability Architecture Summary
+
+| Capability | Technology | What It Provides | Use Case Example |
+|-----------|------------|------------------|------------------|
+| **Distributed Tracing** | OpenTelemetry, Vercel | End-to-end request visibility | "Why is checkout slow for this user?" |
+| **Centralized Logging** | Vercel Logs, Datadog | Unified log search and correlation | "Find all errors in last 24h across all services" |
+| **Service Metrics** | Prometheus, Vercel Analytics | Granular health and performance data | "Which service is causing high error rate?" |
+| **Health Checks** | HTTP endpoints + orchestration | Self-healing and automated recovery | "Replace unhealthy instances automatically" |
+| **Event Streams** | Trigger.dev, Event Store | Historical analysis and replay | "Reconstruct workspace state from 2 weeks ago" |
+
+## Observability Best Practices in Tuturuuu
+
+### 1. Instrument Everything
+- Add trace spans to all critical operations
+- Log structured data, not strings
+- Expose metrics for all business operations
+- Capture events for all state changes
+
+### 2. Standardize Observability Data
+- Consistent log format across services
+- Standard metric naming conventions
+- Trace context propagation everywhere
+- Unified event schema
+
+### 3. Make Observability Queryable
+- Centralize all observability data
+- Index logs by key dimensions (userId, workspaceId, traceId)
+- Build dashboards for common queries
+- Enable ad-hoc exploration
+
+### 4. Alert on Symptoms, Not Causes
+- Alert when users are impacted (high error rate, high latency)
+- Use observability data to diagnose root causes
+- Avoid alert fatigue with proper thresholds
+
+### 5. Use Observability for Business Insights
+- Track feature adoption through events
+- Monitor business KPIs through metrics
+- Analyze user behavior through event streams
+- Measure product performance, not just system performance
+
+## Observability Stack in Tuturuuu
+
+```typescript
+// Complete observability configuration
+export const observability = {
+  // Distributed tracing
+  tracing: {
+    provider: 'OpenTelemetry',
+    backend: 'Vercel',
+    sampleRate: 1.0, // 100% sampling initially
+    exporters: ['vercel', 'console']
+  },
+
+  // Centralized logging
+  logging: {
+    provider: 'Vercel Logs',
+    level: 'info',
+    format: 'json',
+    includeContext: true, // traceId, userId, workspaceId
+  },
+
+  // Metrics collection
+  metrics: {
+    provider: 'Vercel Analytics',
+    exportInterval: 60000, // 1 minute
+    defaultLabels: {
+      service: process.env.SERVICE_NAME,
+      environment: process.env.NODE_ENV,
+    }
+  },
+
+  // Health checks
+  healthChecks: {
+    liveness: '/api/health/liveness',
+    readiness: '/api/health/readiness',
+    interval: 10000, // 10 seconds
+  },
+
+  // Event streaming
+  events: {
+    provider: 'Trigger.dev',
+    retention: '90d',
+    enableReplay: true,
+  }
+};
+```
+
+## Related Documentation
+
+- [Microservices Patterns](/platform/architecture/system-design/microservices-patterns) - Service design and deployment
+- [Event-Driven Architecture](/platform/architecture/system-design/event-driven-architecture) - Event streaming patterns
+- [Extensibility, Resilience & Scalability](/platform/architecture/system-design/extensibility-resilience-scalability) - System quality attributes
+- [Security Architecture](/platform/architecture/system-design/security-architecture) - Security observability and audit trails

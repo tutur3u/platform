@@ -1,16 +1,16 @@
-import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import { Providers } from '@/components/providers';
 import { siteConfig } from '@/constants/configs';
 import { supportedLocales } from '@/i18n/routing';
+import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import '@tuturuuu/ui/globals.css';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
-import type { ReactNode } from 'react';
+import { Inter } from 'next/font/google';
+import { type ReactNode, Suspense } from 'react';
 
 const font = Inter({ subsets: ['latin', 'vietnamese'], display: 'block' });
 
@@ -112,9 +112,11 @@ export default async function RootLayout({ children, params }: Props) {
       >
         <VercelAnalytics />
         <VercelInsights />
-        <Providers>
-          <NextIntlClientProvider>{children}</NextIntlClientProvider>
-        </Providers>
+        <Suspense>
+          <Providers>
+            <NextIntlClientProvider>{children}</NextIntlClientProvider>
+          </Providers>
+        </Suspense>
         <TailwindIndicator />
         <Toaster />
       </body>

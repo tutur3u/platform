@@ -23,6 +23,7 @@ import {
   CircleCheck,
   CircleDashed,
   CircleX,
+  FileText,
   GripVertical,
   MoreVertical,
   Pencil,
@@ -30,9 +31,9 @@ import {
   Trash2,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { WorkspaceTaskList } from '@tuturuuu/types';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
-import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -79,7 +80,7 @@ interface BoardLayoutSettingsProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   boardId: string;
-  lists: TaskList[];
+  lists: WorkspaceTaskList[];
   onUpdate: () => void;
 }
 
@@ -112,6 +113,13 @@ const statusConfig = {
     bgColor: 'bg-dynamic-purple/10',
     borderColor: 'border-dynamic-purple/30',
   },
+  documents: {
+    icon: FileText,
+    label: 'Documents',
+    color: 'text-dynamic-cyan',
+    bgColor: 'bg-dynamic-cyan/10',
+    borderColor: 'border-dynamic-cyan/30',
+  },
 };
 
 const colorClasses: Record<SupportedColor, string> = {
@@ -142,10 +150,10 @@ const colorOptions: { value: SupportedColor; label: string; class: string }[] =
   ];
 
 interface SortableListItemProps {
-  list: TaskList;
+  list: WorkspaceTaskList;
   taskCount: number;
-  onEdit: (list: TaskList) => void;
-  onDelete: (list: TaskList) => void;
+  onEdit: (list: WorkspaceTaskList) => void;
+  onDelete: (list: WorkspaceTaskList) => void;
   onColorChange: (listId: string, color: SupportedColor) => void;
   isDragging?: boolean;
 }
@@ -172,7 +180,7 @@ function SortableListItem({
     transition,
   };
 
-  const StatusIcon = statusConfig[list.status].icon;
+  const StatusIcon = list.status && statusConfig[list.status].icon;
   const listColor = (list.color as SupportedColor) || 'GRAY';
   const colorClass = colorClasses[listColor] || colorClasses.GRAY;
 
@@ -197,16 +205,18 @@ function SortableListItem({
       </button>
 
       <div className="flex min-w-0 flex-1 items-center gap-3">
-        <div
-          className={cn(
-            'flex h-8 w-8 items-center justify-center rounded-md',
-            statusConfig[list.status].bgColor
-          )}
-        >
-          <StatusIcon
-            className={cn('h-4 w-4', statusConfig[list.status].color)}
-          />
-        </div>
+        {list.status && StatusIcon && (
+          <div
+            className={cn(
+              'flex h-8 w-8 items-center justify-center rounded-md',
+              statusConfig[list.status].bgColor
+            )}
+          >
+            <StatusIcon
+              className={cn('h-4 w-4', statusConfig[list.status].color)}
+            />
+          </div>
+        )}
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -216,7 +226,7 @@ function SortableListItem({
             </Badge>
           </div>
           <p className="truncate text-muted-foreground text-xs">
-            {statusConfig[list.status].label}
+            {list.status && statusConfig[list.status].label}
           </p>
         </div>
       </div>
@@ -279,20 +289,25 @@ export function BoardLayoutSettings({
   const queryClient = useQueryClient();
   const supabase = createClient();
 
-  const [editingList, setEditingList] = useState<TaskList | null>(null);
-  const [deletingList, setDeletingList] = useState<TaskList | null>(null);
+  const [editingList, setEditingList] = useState<WorkspaceTaskList | null>(
+    null
+  );
+  const [deletingList, setDeletingList] = useState<WorkspaceTaskList | null>(
+    null
+  );
   const [creatingList, setCreatingList] = useState(false);
 
   // Group lists by status
   const groupedLists = lists.reduce(
     (acc, list) => {
+      if (!list.status) return acc;
       if (!acc[list.status]) {
         acc[list.status] = [];
       }
       acc[list.status].push(list);
       return acc;
     },
-    {} as Record<TaskBoardStatus, TaskList[]>
+    {} as Record<TaskBoardStatus, WorkspaceTaskList[]>
   );
 
   const sensors = useSensors(
@@ -308,7 +323,7 @@ export function BoardLayoutSettings({
       updates,
     }: {
       listId: string;
-      updates: Partial<TaskList>;
+      updates: Partial<WorkspaceTaskList>;
     }) => {
       const { error } = await supabase
         .from('task_lists')
@@ -404,7 +419,7 @@ export function BoardLayoutSettings({
       }
 
       // Store snapshot for rollback
-      const previousLists = queryClient.getQueryData<TaskList[]>([
+      const previousLists = queryClient.getQueryData<WorkspaceTaskList[]>([
         'task_lists',
         boardId,
       ]);
@@ -423,7 +438,7 @@ export function BoardLayoutSettings({
         // Optimistically update
         queryClient.setQueryData(
           ['task_lists', boardId],
-          (oldData: TaskList[] | undefined) => {
+          (oldData: WorkspaceTaskList[] | undefined) => {
             if (!oldData) return oldData;
             return oldData.map((list) => {
               const newPos = newOrder.findIndex((l) => l.id === list.id);
@@ -457,7 +472,7 @@ export function BoardLayoutSettings({
       } else {
         // Cross-status move
         const targetStatusLists = (groupedLists[targetStatus] || []).sort(
-          (a, b) => a.position - b.position
+          (a, b) => (a?.position || 0) - (b?.position || 0)
         );
 
         // Find insertion position
@@ -483,7 +498,7 @@ export function BoardLayoutSettings({
         // Optimistically update
         queryClient.setQueryData(
           ['task_lists', boardId],
-          (oldData: TaskList[] | undefined) => {
+          (oldData: WorkspaceTaskList[] | undefined) => {
             if (!oldData) return oldData;
             return oldData.map((list) =>
               list.id === draggedList.id
@@ -498,7 +513,7 @@ export function BoardLayoutSettings({
           const { error } = await supabase
             .from('task_lists')
             .update({
-              status: targetStatus,
+              status: targetStatus || null,
               position: newPosition,
             })
             .eq('id', draggedList.id);
@@ -526,6 +541,7 @@ export function BoardLayoutSettings({
   };
 
   const statuses: TaskBoardStatus[] = [
+    'documents',
     'not_started',
     'active',
     'done',
@@ -566,7 +582,7 @@ export function BoardLayoutSettings({
                   {statuses.map((status) => {
                     const StatusIcon = statusConfig[status].icon;
                     const statusLists = (groupedLists[status] || []).sort(
-                      (a, b) => a.position - b.position
+                      (a, b) => (a?.position || 0) - (b?.position || 0)
                     );
 
                     return (
@@ -658,7 +674,7 @@ export function BoardLayoutSettings({
               <div className="space-y-2">
                 <Label htmlFor="edit-name">List Name</Label>
                 <Input
-                  defaultValue={editingList.name}
+                  defaultValue={editingList?.name || ''}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
@@ -675,7 +691,7 @@ export function BoardLayoutSettings({
               <div className="space-y-2">
                 <Label htmlFor="edit-status">Status Category</Label>
                 <Select
-                  defaultValue={editingList.status}
+                  defaultValue={editingList?.status || ''}
                   onValueChange={(value) => {
                     updateListMutation.mutate({
                       listId: editingList.id,
