@@ -83,7 +83,7 @@ export async function PATCH(
     // }
 
     // Get the current request
-    const { data: currentRequest, error: fetchError } = await sbAdmin
+    const { data: currentRequest, error: fetchError } = await supabase
       .from('time_tracking_requests')
       .select('*')
       .eq('id', id)
@@ -92,7 +92,7 @@ export async function PATCH(
 
     if (fetchError || !currentRequest) {
       return NextResponse.json(
-        { error: 'Time tracking request not found' },
+        { error: `Time tracking request not found - ${fetchError?.message}` },
         { status: 404 }
       );
     }
@@ -111,7 +111,7 @@ export async function PATCH(
 
     if (actionData.action === 'approve') {
       // Approve the request and create the time tracking session
-      const { error: approveError } = await sbAdmin
+      const { error: approveError } = await supabase
         .from('time_tracking_requests')
         .update({
           approval_status: 'APPROVED',
@@ -124,7 +124,7 @@ export async function PATCH(
       if (approveError) {
         console.error('Error approving request:', approveError);
         return NextResponse.json(
-          { error: 'Failed to approve request' },
+          { error: `Failed to approve request - ${approveError.message}` },
           { status: 500 }
         );
       }
@@ -178,7 +178,7 @@ export async function PATCH(
       });
     } else {
       // Reject the request
-      const { error: rejectError } = await sbAdmin
+      const { error: rejectError } = await supabase
         .from('time_tracking_requests')
         .update({
           approval_status: 'REJECTED',
@@ -192,7 +192,7 @@ export async function PATCH(
       if (rejectError) {
         console.error('Error rejecting request:', rejectError);
         return NextResponse.json(
-          { error: 'Failed to reject request' },
+          { error: `Failed to reject request - ${rejectError.message}` },
           { status: 500 }
         );
       }
