@@ -1,29 +1,49 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@tuturuuu/ui/dialog";
-import { Label } from "@tuturuuu/ui/label";
-import { Input } from "@tuturuuu/ui/input";
-import { Textarea } from "@tuturuuu/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@tuturuuu/ui/select";
-import { Button } from "@tuturuuu/ui/button";
-import { RefreshCw, Plus, Clock, AlertCircle, Upload, X } from "@tuturuuu/icons";
-import dayjs from "dayjs";
-import { cn, isValidBlobUrl } from "@tuturuuu/utils/format";
-import { toast } from "@tuturuuu/ui/sonner";
-import { useRouter } from "next/navigation";
-import { useState, useMemo, useEffect, useRef } from "react";
-import type { TimeTrackingCategory, WorkspaceTask } from "@tuturuuu/types";
-import { formatDuration, getCategoryColor } from "./session-history";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
+import { Label } from '@tuturuuu/ui/label';
+import { Input } from '@tuturuuu/ui/input';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
+import { Button } from '@tuturuuu/ui/button';
+import {
+  RefreshCw,
+  Plus,
+  Clock,
+  AlertCircle,
+  Upload,
+  X,
+} from '@tuturuuu/icons';
+import dayjs from 'dayjs';
+import { cn, isValidBlobUrl } from '@tuturuuu/utils/format';
+import { toast } from '@tuturuuu/ui/sonner';
+import { useRouter } from 'next/navigation';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types';
+import { formatDuration, getCategoryColor } from './session-history';
 import imageCompression from 'browser-image-compression';
 import Image from 'next/image';
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from '@tanstack/react-query';
 
 interface MissedEntryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   categories: TimeTrackingCategory[] | null;
-  tasks: (Partial<WorkspaceTask> & {
-    board_name?: string;
-    list_name?: string;
-  })[] | null;
+  tasks:
+    | (Partial<WorkspaceTask> & {
+        board_name?: string;
+        list_name?: string;
+      })[]
+    | null;
   wsId: string;
   prefillStartTime?: string;
   prefillEndTime?: string;
@@ -38,10 +58,10 @@ const ALLOWED_IMAGE_TYPES = [
   'image/gif',
 ];
 
-export default function MissedEntryDialog({ 
+export default function MissedEntryDialog({
   open,
   onOpenChange,
-  categories, 
+  categories,
   tasks,
   wsId,
   prefillStartTime = '',
@@ -58,7 +78,7 @@ export default function MissedEntryDialog({
   const [missedEntryStartTime, setMissedEntryStartTime] = useState('');
   const [missedEntryEndTime, setMissedEntryEndTime] = useState('');
   const [isCreatingMissedEntry, setIsCreatingMissedEntry] = useState(false);
-  
+
   // State for image uploads (for entries older than 1 day)
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -73,7 +93,7 @@ export default function MissedEntryDialog({
     imagePreviews.forEach((url) => {
       URL.revokeObjectURL(url);
     });
-    
+
     onOpenChange(false);
     setMissedEntryTitle('');
     setMissedEntryDescription('');
@@ -275,9 +295,11 @@ export default function MissedEntryDialog({
     // Check if start time is older than 1 day
     const oneDayAgo = dayjs().subtract(1, 'day');
     const isOlderThanOneDay = startTime.isBefore(oneDayAgo);
-    
+
     if (isOlderThanOneDay && images.length === 0) {
-      toast.error('Please upload at least one image for entries older than 1 day');
+      toast.error(
+        'Please upload at least one image for entries older than 1 day'
+      );
       return;
     }
 
@@ -285,7 +307,7 @@ export default function MissedEntryDialog({
 
     try {
       const userTz = dayjs.tz.guess();
-      
+
       // If older than 1 day, create a time tracking request instead
       if (isOlderThanOneDay) {
         const formData = new FormData();
@@ -323,10 +345,14 @@ export default function MissedEntryDialog({
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to create time tracking request');
+          throw new Error(
+            errorData.error || 'Failed to create time tracking request'
+          );
         }
 
-        queryClient.invalidateQueries({ queryKey: ['time-tracking-requests', wsId, 'pending'] });
+        queryClient.invalidateQueries({
+          queryKey: ['time-tracking-requests', wsId, 'pending'],
+        });
         router.refresh();
         closeMissedEntryDialog();
         toast.success('Time tracking request submitted for approval');
@@ -380,378 +406,375 @@ export default function MissedEntryDialog({
     const oneDayAgo = dayjs().subtract(1, 'day');
     return startTime.isBefore(oneDayAgo);
   }, [missedEntryStartTime]);
-    return (
-        <Dialog
-        open={open}
-        onOpenChange={(nextOpen) => {
-          if (!nextOpen) {
-            closeMissedEntryDialog();
-          }
-        }}
-      >
-        <DialogContent className="mx-auto flex max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-3xl flex-col overflow-hidden">
-          <DialogHeader className="border-b pb-4">
-            <DialogTitle>Add Missed Time Entry</DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 space-y-4 overflow-y-auto">
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          closeMissedEntryDialog();
+        }
+      }}
+    >
+      <DialogContent className="mx-auto flex max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-3xl flex-col overflow-hidden">
+        <DialogHeader className="border-b pb-4">
+          <DialogTitle>Add Missed Time Entry</DialogTitle>
+        </DialogHeader>
+        <div className="flex-1 space-y-4 overflow-y-auto">
+          <div>
+            <Label htmlFor="missed-entry-title">Title *</Label>
+            <Input
+              id="missed-entry-title"
+              value={missedEntryTitle}
+              onChange={(e) => setMissedEntryTitle(e.target.value)}
+              placeholder="What were you working on?"
+            />
+          </div>
+          <div>
+            <Label htmlFor="missed-entry-description">Description</Label>
+            <Textarea
+              id="missed-entry-description"
+              value={missedEntryDescription}
+              onChange={(e) => setMissedEntryDescription(e.target.value)}
+              placeholder="Optional details about the work"
+              rows={2}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label htmlFor="missed-entry-title">Title *</Label>
-              <Input
-                id="missed-entry-title"
-                value={missedEntryTitle}
-                onChange={(e) => setMissedEntryTitle(e.target.value)}
-                placeholder="What were you working on?"
-              />
-            </div>
-            <div>
-              <Label htmlFor="missed-entry-description">Description</Label>
-              <Textarea
-                id="missed-entry-description"
-                value={missedEntryDescription}
-                onChange={(e) => setMissedEntryDescription(e.target.value)}
-                placeholder="Optional details about the work"
-                rows={2}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label htmlFor="missed-entry-category">Category</Label>
-                <Select
-                  value={missedEntryCategoryId}
-                  onValueChange={setMissedEntryCategoryId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No category</SelectItem>
-                    {categories?.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={cn(
-                              'h-3 w-3 rounded-full',
-                              getCategoryColor(category.color || 'BLUE')
-                            )}
-                          />
-                          {category.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="missed-entry-task">Task</Label>
-                <Select
-                  value={missedEntryTaskId}
-                  onValueChange={setMissedEntryTaskId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select task" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No task</SelectItem>
-                    {tasks?.map(
-                      (task) =>
-                        task.id && (
-                          <SelectItem key={task.id} value={task.id}>
-                            {task.name}
-                          </SelectItem>
-                        )
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              <div>
-                <Label htmlFor="missed-entry-start-time">Start Time *</Label>
-                <Input
-                  id="missed-entry-start-time"
-                  type="datetime-local"
-                  value={missedEntryStartTime}
-                  onChange={(e) => setMissedEntryStartTime(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="missed-entry-end-time">End Time *</Label>
-                <Input
-                  id="missed-entry-end-time"
-                  type="datetime-local"
-                  value={missedEntryEndTime}
-                  onChange={(e) => setMissedEntryEndTime(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Warning and image upload for entries older than 1 day */}
-            {isStartTimeOlderThanOneDay && (
-              <div className="space-y-4">
-                <div className="rounded-lg border-dynamic-orange bg-dynamic-orange/10 p-3 border">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-dynamic-orange" />
-                    <div className="text-sm">
-                      <p className="font-medium text-dynamic-orange">
-                        Approval Required
-                      </p>
-                      <p className="text-muted-foreground mt-1">
-                        Entries older than 1 day require approval. Please upload at least one image as proof of work.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Image upload section */}
-                <div className="space-y-3">
-                  <Label className="font-medium text-sm">
-                    Proof of Work * ({images.length}/{MAX_IMAGES})
-                  </Label>
-
-                  {images.length < MAX_IMAGES && (
-                    <button
-                      type="button"
-                      className={cn(
-                        'relative w-full rounded-lg border-2 border-dashed transition-all duration-200',
-                        isDragOver
-                          ? 'border-dynamic-orange bg-dynamic-orange/10'
-                          : 'border-border hover:border-border/80',
-                        isCompressing && 'pointer-events-none opacity-50'
-                      )}
-                      onDragOver={handleDragOver}
-                      onDragLeave={handleDragLeave}
-                      onDrop={handleDrop}
-                      aria-label="Click to upload or drag and drop images"
-                      disabled={isCompressing}
-                    >
-                      <Input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp,image/gif"
-                        multiple
-                        onChange={handleImageUpload}
-                        disabled={isCreatingMissedEntry || isCompressing}
-                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                      />
-                      <div className="flex flex-col items-center justify-center px-4 py-6 text-center">
+              <Label htmlFor="missed-entry-category">Category</Label>
+              <Select
+                value={missedEntryCategoryId}
+                onValueChange={setMissedEntryCategoryId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No category</SelectItem>
+                  {categories?.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      <div className="flex items-center gap-2">
                         <div
                           className={cn(
-                            'mb-2 flex h-10 w-10 items-center justify-center rounded-full transition-colors',
-                            isDragOver
-                              ? 'bg-dynamic-orange/20'
-                              : 'bg-muted'
+                            'h-3 w-3 rounded-full',
+                            getCategoryColor(category.color || 'BLUE')
                           )}
-                        >
-                          <Upload
-                            className={cn(
-                              'h-5 w-5',
-                              isDragOver ? 'text-dynamic-orange' : 'text-muted-foreground'
-                            )}
+                        />
+                        {category.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="missed-entry-task">Task</Label>
+              <Select
+                value={missedEntryTaskId}
+                onValueChange={setMissedEntryTaskId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select task" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No task</SelectItem>
+                  {tasks?.map(
+                    (task) =>
+                      task.id && (
+                        <SelectItem key={task.id} value={task.id}>
+                          {task.name}
+                        </SelectItem>
+                      )
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div>
+              <Label htmlFor="missed-entry-start-time">Start Time *</Label>
+              <Input
+                id="missed-entry-start-time"
+                type="datetime-local"
+                value={missedEntryStartTime}
+                onChange={(e) => setMissedEntryStartTime(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="missed-entry-end-time">End Time *</Label>
+              <Input
+                id="missed-entry-end-time"
+                type="datetime-local"
+                value={missedEntryEndTime}
+                onChange={(e) => setMissedEntryEndTime(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Warning and image upload for entries older than 1 day */}
+          {isStartTimeOlderThanOneDay && (
+            <div className="space-y-4">
+              <div className="rounded-lg border-dynamic-orange bg-dynamic-orange/10 p-3 border">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-dynamic-orange" />
+                  <div className="text-sm">
+                    <p className="font-medium text-dynamic-orange">
+                      Approval Required
+                    </p>
+                    <p className="text-muted-foreground mt-1">
+                      Entries older than 1 day require approval. Please upload
+                      at least one image as proof of work.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Image upload section */}
+              <div className="space-y-3">
+                <Label className="font-medium text-sm">
+                  Proof of Work * ({images.length}/{MAX_IMAGES})
+                </Label>
+
+                {images.length < MAX_IMAGES && (
+                  <button
+                    type="button"
+                    className={cn(
+                      'relative w-full rounded-lg border-2 border-dashed transition-all duration-200',
+                      isDragOver
+                        ? 'border-dynamic-orange bg-dynamic-orange/10'
+                        : 'border-border hover:border-border/80',
+                      isCompressing && 'pointer-events-none opacity-50'
+                    )}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    aria-label="Click to upload or drag and drop images"
+                    disabled={isCompressing}
+                  >
+                    <Input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      multiple
+                      onChange={handleImageUpload}
+                      disabled={isCreatingMissedEntry || isCompressing}
+                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                    />
+                    <div className="flex flex-col items-center justify-center px-4 py-6 text-center">
+                      <div
+                        className={cn(
+                          'mb-2 flex h-10 w-10 items-center justify-center rounded-full transition-colors',
+                          isDragOver ? 'bg-dynamic-orange/20' : 'bg-muted'
+                        )}
+                      >
+                        <Upload
+                          className={cn(
+                            'h-5 w-5',
+                            isDragOver
+                              ? 'text-dynamic-orange'
+                              : 'text-muted-foreground'
+                          )}
+                        />
+                      </div>
+                      <p className="mb-1 font-medium text-sm">
+                        {isCompressing
+                          ? 'Compressing...'
+                          : isDragOver
+                            ? 'Drop images here'
+                            : 'Click to upload or drag and drop'}
+                      </p>
+                      <p className="text-muted-foreground text-xs">
+                        PNG, JPG, GIF, or WebP up to 1MB each
+                      </p>
+                    </div>
+                  </button>
+                )}
+
+                {imageError && (
+                  <div className="flex items-center gap-1 text-dynamic-red text-sm">
+                    <AlertCircle className="h-3 w-3" />
+                    {imageError}
+                  </div>
+                )}
+
+                {imagePreviews.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {imagePreviews.map((preview, index) => (
+                      <div key={preview} className="group relative">
+                        <div className="aspect-square overflow-hidden rounded-lg border-2 border-border bg-muted">
+                          <Image
+                            src={
+                              isValidBlobUrl(preview)
+                                ? preview
+                                : '/placeholder.svg'
+                            }
+                            alt={`Proof image ${index + 1}`}
+                            className="h-full w-full object-cover"
+                            width={100}
+                            height={100}
                           />
                         </div>
-                        <p className="mb-1 font-medium text-sm">
-                          {isCompressing
-                            ? 'Compressing...'
-                            : isDragOver
-                              ? 'Drop images here'
-                              : 'Click to upload or drag and drop'}
-                        </p>
-                        <p className="text-muted-foreground text-xs">
-                          PNG, JPG, GIF, or WebP up to 1MB each
-                        </p>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="-top-2 -right-2 absolute h-6 w-6 rounded-full opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
+                          onClick={() => removeImage(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
                       </div>
-                    </button>
-                  )}
-
-                  {imageError && (
-                    <div className="flex items-center gap-1 text-dynamic-red text-sm">
-                      <AlertCircle className="h-3 w-3" />
-                      {imageError}
-                    </div>
-                  )}
-
-                  {imagePreviews.length > 0 && (
-                    <div className="grid grid-cols-3 gap-2">
-                      {imagePreviews.map((preview, index) => (
-                        <div key={preview} className="group relative">
-                          <div className="aspect-square overflow-hidden rounded-lg border-2 border-border bg-muted">
-                            <Image
-                              src={
-                                isValidBlobUrl(preview)
-                                  ? preview
-                                  : '/placeholder.svg'
-                              }
-                              alt={`Proof image ${index + 1}`}
-                              className="h-full w-full object-cover"
-                              width={100}
-                              height={100}
-                            />
-                          </div>
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            className="-top-2 -right-2 absolute h-6 w-6 rounded-full opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
-                            onClick={() => removeImage(index)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Quick time presets */}
-            <div className="rounded-lg border p-3">
-              <Label className="text-muted-foreground text-xs">
-                Quick Presets
-              </Label>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {[
-                  { label: 'Last hour', minutes: 60 },
-                  { label: 'Last 2 hours', minutes: 120 },
-                  {
-                    label: 'Morning (9-12)',
-                    isCustom: true,
-                    start: '09:00',
-                    end: '12:00',
-                  },
-                  {
-                    label: 'Afternoon (13-17)',
-                    isCustom: true,
-                    start: '13:00',
-                    end: '17:00',
-                  },
-                  {
-                    label: 'Yesterday',
-                    isCustom: true,
-                    start: 'yesterday-9',
-                    end: 'yesterday-17',
-                  },
-                ].map((preset) => (
-                  <Button
-                    key={preset.label}
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs"
-                    type="button"
-                    onClick={() => {
-                      const now = dayjs();
-                      if (preset.isCustom) {
-                        if (preset.start === 'yesterday-9') {
-                          const yesterday = now.subtract(1, 'day');
-                          setMissedEntryStartTime(
-                            yesterday
-                              .hour(9)
-                              .minute(0)
-                              .format('YYYY-MM-DDTHH:mm')
-                          );
-                          setMissedEntryEndTime(
-                            yesterday
-                              .hour(17)
-                              .minute(0)
-                              .format('YYYY-MM-DDTHH:mm')
-                          );
-                        } else if (preset.start && preset.end) {
-                          const today = now.startOf('day');
-                          const startParts = preset.start.split(':');
-                          const endParts = preset.end.split(':');
-                          const startHour = parseInt(startParts[0] || '9', 10);
-                          const startMin = parseInt(startParts[1] || '0', 10);
-                          const endHour = parseInt(endParts[0] || '17', 10);
-                          const endMin = parseInt(endParts[1] || '0', 10);
-                          setMissedEntryStartTime(
-                            today
-                              .hour(startHour)
-                              .minute(startMin)
-                              .format('YYYY-MM-DDTHH:mm')
-                          );
-                          setMissedEntryEndTime(
-                            today
-                              .hour(endHour)
-                              .minute(endMin)
-                              .format('YYYY-MM-DDTHH:mm')
-                          );
-                        }
-                      } else if (preset.minutes) {
-                        const endTime = now;
-                        const startTime = endTime.subtract(
-                          preset.minutes,
-                          'minutes'
-                        );
-                        setMissedEntryStartTime(
-                          startTime.format('YYYY-MM-DDTHH:mm')
-                        );
-                        setMissedEntryEndTime(
-                          endTime.format('YYYY-MM-DDTHH:mm')
-                        );
-                      }
-                    }}
-                  >
-                    {preset.label}
-                  </Button>
-                ))}
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
+          )}
 
-            {/* Show calculated duration */}
-            {missedEntryStartTime && missedEntryEndTime && (
-              <div className="rounded-lg bg-muted/30 p-3">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <Clock className="h-4 w-4" />
-                  <span>Duration: </span>
-                  <span className="font-medium text-foreground">
-                    {(() => {
-                      const start = dayjs(missedEntryStartTime);
-                      const end = dayjs(missedEntryEndTime);
-                      if (end.isBefore(start)) return 'Invalid time range';
-                      const durationMs = end.diff(start);
-                      const duration = Math.floor(durationMs / 1000);
-                      return formatDuration(duration);
-                    })()}
-                  </span>
-                </div>
+          {/* Quick time presets */}
+          <div className="rounded-lg border p-3">
+            <Label className="text-muted-foreground text-xs">
+              Quick Presets
+            </Label>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {[
+                { label: 'Last hour', minutes: 60 },
+                { label: 'Last 2 hours', minutes: 120 },
+                {
+                  label: 'Morning (9-12)',
+                  isCustom: true,
+                  start: '09:00',
+                  end: '12:00',
+                },
+                {
+                  label: 'Afternoon (13-17)',
+                  isCustom: true,
+                  start: '13:00',
+                  end: '17:00',
+                },
+                {
+                  label: 'Yesterday',
+                  isCustom: true,
+                  start: 'yesterday-9',
+                  end: 'yesterday-17',
+                },
+              ].map((preset) => (
+                <Button
+                  key={preset.label}
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  type="button"
+                  onClick={() => {
+                    const now = dayjs();
+                    if (preset.isCustom) {
+                      if (preset.start === 'yesterday-9') {
+                        const yesterday = now.subtract(1, 'day');
+                        setMissedEntryStartTime(
+                          yesterday.hour(9).minute(0).format('YYYY-MM-DDTHH:mm')
+                        );
+                        setMissedEntryEndTime(
+                          yesterday
+                            .hour(17)
+                            .minute(0)
+                            .format('YYYY-MM-DDTHH:mm')
+                        );
+                      } else if (preset.start && preset.end) {
+                        const today = now.startOf('day');
+                        const startParts = preset.start.split(':');
+                        const endParts = preset.end.split(':');
+                        const startHour = parseInt(startParts[0] || '9', 10);
+                        const startMin = parseInt(startParts[1] || '0', 10);
+                        const endHour = parseInt(endParts[0] || '17', 10);
+                        const endMin = parseInt(endParts[1] || '0', 10);
+                        setMissedEntryStartTime(
+                          today
+                            .hour(startHour)
+                            .minute(startMin)
+                            .format('YYYY-MM-DDTHH:mm')
+                        );
+                        setMissedEntryEndTime(
+                          today
+                            .hour(endHour)
+                            .minute(endMin)
+                            .format('YYYY-MM-DDTHH:mm')
+                        );
+                      }
+                    } else if (preset.minutes) {
+                      const endTime = now;
+                      const startTime = endTime.subtract(
+                        preset.minutes,
+                        'minutes'
+                      );
+                      setMissedEntryStartTime(
+                        startTime.format('YYYY-MM-DDTHH:mm')
+                      );
+                      setMissedEntryEndTime(endTime.format('YYYY-MM-DDTHH:mm'));
+                    }
+                  }}
+                >
+                  {preset.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Show calculated duration */}
+          {missedEntryStartTime && missedEntryEndTime && (
+            <div className="rounded-lg bg-muted/30 p-3">
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <Clock className="h-4 w-4" />
+                <span>Duration: </span>
+                <span className="font-medium text-foreground">
+                  {(() => {
+                    const start = dayjs(missedEntryStartTime);
+                    const end = dayjs(missedEntryEndTime);
+                    if (end.isBefore(start)) return 'Invalid time range';
+                    const durationMs = end.diff(start);
+                    const duration = Math.floor(durationMs / 1000);
+                    return formatDuration(duration);
+                  })()}
+                </span>
               </div>
+            </div>
+          )}
+        </div>
+        <div className="flex w-full flex-col-reverse gap-3 border-t px-6 pt-4 sm:flex-row sm:justify-end">
+          <Button
+            variant="outline"
+            onClick={closeMissedEntryDialog}
+            className="w-full sm:w-auto"
+            disabled={isCreatingMissedEntry}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={createMissedEntry}
+            disabled={
+              isCreatingMissedEntry ||
+              !missedEntryTitle.trim() ||
+              !missedEntryStartTime ||
+              !missedEntryEndTime ||
+              (isStartTimeOlderThanOneDay && images.length === 0)
+            }
+            className="w-full sm:w-auto"
+          >
+            {isCreatingMissedEntry ? (
+              <>
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                {isStartTimeOlderThanOneDay ? 'Submitting...' : 'Adding...'}
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4" />
+                {isStartTimeOlderThanOneDay
+                  ? 'Submit for Approval'
+                  : 'Add Entry'}
+              </>
             )}
-
-          </div>
-          <div className="flex w-full flex-col-reverse gap-3 border-t px-6 pt-4 sm:flex-row sm:justify-end">
-            <Button
-              variant="outline"
-              onClick={closeMissedEntryDialog}
-              className="w-full sm:w-auto"
-              disabled={isCreatingMissedEntry}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={createMissedEntry}
-              disabled={
-                isCreatingMissedEntry ||
-                !missedEntryTitle.trim() ||
-                !missedEntryStartTime ||
-                !missedEntryEndTime ||
-                (isStartTimeOlderThanOneDay && images.length === 0)
-              }
-              className="w-full sm:w-auto"
-            >
-              {isCreatingMissedEntry ? (
-                <>
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  {isStartTimeOlderThanOneDay ? 'Submitting...' : 'Adding...'}
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4" />
-                  {isStartTimeOlderThanOneDay ? 'Submit for Approval' : 'Add Entry'}
-                </>
-              )}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }

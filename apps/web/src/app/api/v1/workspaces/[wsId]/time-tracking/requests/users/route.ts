@@ -1,6 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
-import {getPermissions} from "@tuturuuu/utils/workspace-helper";
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 
 export async function GET(
   request: NextRequest,
@@ -38,7 +38,10 @@ export async function GET(
 
     if (withoutPermission('manage_time_tracking_requests')) {
       return NextResponse.json(
-        { error: 'You do not have permission to view time tracking request users.' },
+        {
+          error:
+            'You do not have permission to view time tracking request users.',
+        },
         { status: 403 }
       );
     }
@@ -79,8 +82,7 @@ export async function GET(
     console.error('Unexpected error:', error);
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : 'Internal server error',
+        error: error instanceof Error ? error.message : 'Internal server error',
       },
       { status: 500 }
     );

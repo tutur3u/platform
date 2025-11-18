@@ -39,7 +39,7 @@ import {
   Users,
   UserX,
   Clock,
-  MessageCircleIcon
+  MessageCircleIcon,
 } from '@tuturuuu/icons';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { PermissionId } from '@tuturuuu/types';
@@ -277,7 +277,7 @@ export const permissionGroups = ({
             ),
             disableOnProduction: false,
             disabled: false,
-          }
+          },
         ],
       },
       {

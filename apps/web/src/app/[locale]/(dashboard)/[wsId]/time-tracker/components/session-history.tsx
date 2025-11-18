@@ -882,7 +882,7 @@ const isDatetimeMoreThanOneDayAgo = (
 ): boolean => {
   if (!datetimeString) return false;
   const datetime = dayjs.tz(datetimeString, timezone).utc();
-  if(!datetime.isValid()) return false;
+  if (!datetime.isValid()) return false;
   const oneDayAgo = dayjs().utc().subtract(1, 'day');
   return datetime.isBefore(oneDayAgo);
 };
@@ -1426,7 +1426,7 @@ export function SessionHistory({
     // Pre-fill with current date and time for convenience
     const now = dayjs();
     const oneHourAgo = now.subtract(1, 'hour');
-    
+
     // Pass pre-filled times to the MissedEntryDialog via state
     setPrefillStartTime(oneHourAgo.format('YYYY-MM-DDTHH:mm'));
     setPrefillEndTime(now.format('YYYY-MM-DDTHH:mm'));
@@ -2380,21 +2380,27 @@ export function SessionHistory({
                     </div>
                   </div>
                   {/* Warning about the one day limit */}
-                  {editStartTime && isDatetimeMoreThanOneDayAgo(editStartTime, dayjs.tz.guess()) && (
-                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/50">
-                    <div className="flex items-start gap-2 text-amber-700 dark:text-amber-300">
-                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                      <div className="text-xs">
-                        <p className="font-medium">
-                          Cannot backdate more than one day
-                        </p>
-                        <p className="mt-1 text-amber-600 dark:text-amber-400">
-                          Start times must be within the last 24 hours. Attempting to set a time older than one day ago will be rejected.
-                        </p>
+                  {editStartTime &&
+                    isDatetimeMoreThanOneDayAgo(
+                      editStartTime,
+                      dayjs.tz.guess()
+                    ) && (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/50">
+                        <div className="flex items-start gap-2 text-amber-700 dark:text-amber-300">
+                          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                          <div className="text-xs">
+                            <p className="font-medium">
+                              Cannot backdate more than one day
+                            </p>
+                            <p className="mt-1 text-amber-600 dark:text-amber-400">
+                              Start times must be within the last 24 hours.
+                              Attempting to set a time older than one day ago
+                              will be rejected.
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  )}
+                    )}
                 </>
               ))}
             <div className="flex gap-2 pt-4">
@@ -2409,8 +2415,7 @@ export function SessionHistory({
                 onClick={saveEdit}
                 disabled={
                   isEditing ||
-                  !editTitle.trim() 
-                  ||
+                  !editTitle.trim() ||
                   Boolean(
                     editStartTime &&
                       isDatetimeMoreThanOneDayAgo(
@@ -2465,7 +2470,6 @@ export function SessionHistory({
         prefillStartTime={prefillStartTime}
         prefillEndTime={prefillEndTime}
       />
-
 
       {/* Move Session Dialog */}
       <WorkspaceSelectDialog
