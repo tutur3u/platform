@@ -347,12 +347,15 @@ export function useTaskActions({
 
       try {
         // Optimistic update
-        queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            tasksToUpdate.includes(t.id) ? { ...t, end_date: newDate } : t
-          );
-        });
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((t) =>
+              tasksToUpdate.includes(t.id) ? { ...t, end_date: newDate } : t
+            );
+          }
+        );
 
         // Use direct Supabase update for bulk operations
         if (shouldBulkUpdate) {
@@ -365,7 +368,6 @@ export function useTaskActions({
 
           if (error) throw error;
           console.log(`✅ Bulk updated ${count} tasks with due date`);
-
         } else {
           // Use mutation for single task
           await updateTaskMutation.mutateAsync({
@@ -451,12 +453,15 @@ export function useTaskActions({
 
       try {
         // Optimistic update
-        queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            tasksToUpdate.includes(t.id) ? { ...t, priority: newPriority } : t
-          );
-        });
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((t) =>
+              tasksToUpdate.includes(t.id) ? { ...t, priority: newPriority } : t
+            );
+          }
+        );
 
         // Use direct Supabase update for bulk operations
         if (shouldBulkUpdate) {
@@ -558,14 +563,17 @@ export function useTaskActions({
 
       try {
         // Optimistic update
-        queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            tasksToUpdate.includes(t.id)
-              ? { ...t, estimation_points: points }
-              : t
-          );
-        });
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((t) =>
+              tasksToUpdate.includes(t.id)
+                ? { ...t, estimation_points: points }
+                : t
+            );
+          }
+        );
 
         // Use direct Supabase update for bulk operations
         if (shouldBulkUpdate) {
@@ -578,7 +586,6 @@ export function useTaskActions({
 
           if (error) throw error;
           console.log(`✅ Bulk updated ${count} tasks with estimation points`);
-
         } else {
           // Use mutation for single task
           await updateTaskMutation.mutateAsync({
@@ -688,7 +695,9 @@ export function useTaskActions({
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
 
       // Snapshot the previous value BEFORE optimistic update
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]) as Task[] | undefined;
+      const previousTasks = queryClient.getQueryData(['tasks', boardId]) as
+        | Task[]
+        | undefined;
 
       // Determine action: remove if ALL selected tasks have the assignee, add otherwise
       let active = task.assignees?.some((a) => a.id === assigneeId);
@@ -731,28 +740,36 @@ export function useTaskActions({
       }
 
       // Optimistically update the cache - only update tasks that actually change
-      queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
-        if (!old) return old;
-        return old.map((t) => {
-          if (active && tasksToRemoveFrom.includes(t.id)) {
-            // Remove the assignee
-            return {
-              ...t,
-              assignees: t.assignees?.filter((a) => a.id !== assigneeId) || [],
-            };
-          } else if (!active && tasksNeedingAssignee.includes(t.id)) {
-            // Add the assignee
-            return {
-              ...t,
-              assignees: [
-                ...(t.assignees || []),
-                assigneeDetails || { id: assigneeId, display_name: 'User', email: '' },
-              ],
-            };
-          }
-          return t;
-        });
-      });
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((t) => {
+            if (active && tasksToRemoveFrom.includes(t.id)) {
+              // Remove the assignee
+              return {
+                ...t,
+                assignees:
+                  t.assignees?.filter((a) => a.id !== assigneeId) || [],
+              };
+            } else if (!active && tasksNeedingAssignee.includes(t.id)) {
+              // Add the assignee
+              return {
+                ...t,
+                assignees: [
+                  ...(t.assignees || []),
+                  assigneeDetails || {
+                    id: assigneeId,
+                    display_name: 'User',
+                    email: '',
+                  },
+                ],
+              };
+            }
+            return t;
+          });
+        }
+      );
 
       try {
         const supabase = createClient();
@@ -778,7 +795,10 @@ export function useTaskActions({
               .insert(rows);
 
             // Ignore duplicate key errors
-            if (error && !String(error.message).toLowerCase().includes('duplicate')) {
+            if (
+              error &&
+              !String(error.message).toLowerCase().includes('duplicate')
+            ) {
               throw error;
             }
           }
@@ -787,16 +807,12 @@ export function useTaskActions({
         // Invalidate queries to ensure fresh data
         await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
 
-        const taskCount = active ? tasksToRemoveFrom.length : tasksNeedingAssignee.length;
-        toast.success(
-          active ? 'Assignee removed' : 'Assignee added',
-          {
-            description:
-              taskCount > 1
-                ? `${taskCount} tasks updated`
-                : undefined,
-          }
-        );
+        const taskCount = active
+          ? tasksToRemoveFrom.length
+          : tasksNeedingAssignee.length;
+        toast.success(active ? 'Assignee removed' : 'Assignee added', {
+          description: taskCount > 1 ? `${taskCount} tasks updated` : undefined,
+        });
 
         // Clear selection after bulk update
         if (shouldBulkUpdate && onClearSelection) {
