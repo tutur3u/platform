@@ -383,7 +383,11 @@ export default function MissedEntryDialog({
     return (
         <Dialog
         open={open}
-        onOpenChange={closeMissedEntryDialog}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            closeMissedEntryDialog();
+          }
+        }}
       >
         <DialogContent className="mx-auto flex max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-3xl flex-col overflow-hidden">
           <DialogHeader className="border-b pb-4">

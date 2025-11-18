@@ -60,6 +60,7 @@ $$ language plpgsql security invoker;
 create or replace function update_time_tracking_request(
     p_request_id uuid,
     p_action text,
+    p_workspace_id uuid,
     p_bypass_rules boolean default false,
     p_rejection_reason text default null
 )
@@ -69,10 +70,11 @@ declare
     v_session_id uuid;
     v_duration_seconds integer;
 begin
-    -- Get the current request
+    -- Get the current request and validate workspace
     select * into v_request
     from time_tracking_requests
     where id = p_request_id
+    and workspace_id = p_workspace_id
     and workspace_id in (
         select ws_id from workspace_members where user_id = auth.uid()
     );

@@ -14524,6 +14524,7 @@ export type Database = {
           p_bypass_rules?: boolean;
           p_rejection_reason?: string;
           p_request_id: string;
+          p_workspace_id: string;
         };
         Returns: Json;
       };

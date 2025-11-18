@@ -76,6 +76,7 @@ export async function PATCH(
       {
         p_request_id: id,
         p_action: actionData.action,
+        p_workspace_id: wsId,
         p_bypass_rules: canBypass,
         p_rejection_reason:
           actionData.action === 'reject'

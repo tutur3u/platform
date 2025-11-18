@@ -24,7 +24,7 @@ import {
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
-import { useCallback, useState } from 'react';
+import { useCallback, useState , useEffect} from 'react';
 import { useApproveRequest, useRejectRequest } from './hooks/use-request-mutations';
 import { useRequestImages } from './hooks/use-request-images';
 import type { ExtendedTimeTrackingRequest } from './page';
@@ -108,6 +108,14 @@ export function RequestDetailModal({
     const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
     return `${hours}h ${minutes}m`;
   };
+
+  useEffect(() => {
+    if (!isOpen) {
+      setShowRejectionForm(false);
+      setRejectionReason('');
+      setSelectedImageIndex(null);
+    }
+  }, [isOpen]);
 
   return (
     <>
@@ -264,6 +272,7 @@ export function RequestDetailModal({
                       <img
                         src={url}
                         alt={`Attachment ${index + 1}`}
+                        loading="lazy"
                         className="h-full w-full object-cover transition-transform group-hover:scale-105"
                       />
                     </button>
@@ -324,7 +333,7 @@ export function RequestDetailModal({
             )}
 
           {/* Action Buttons */}
-          {request.approval_status === 'PENDING' && (bypassRulesPermission || request.user_id !== currentUser?.id) && (
+          {request.approval_status === 'PENDING' && (bypassRulesPermission || (currentUser && request.user_id !== currentUser?.id)) && (
             <>
               {!showRejectionForm ? (
                 <div className="flex gap-3">

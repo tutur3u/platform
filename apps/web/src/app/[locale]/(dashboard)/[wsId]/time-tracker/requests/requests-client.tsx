@@ -76,12 +76,22 @@ export function RequestsClient({
     useState<ExtendedTimeTrackingRequest | null>(null);
 
   // Memoize URL params to prevent unnecessary re-renders
-  const { currentStatus, currentUserId, currentPage, currentLimit } = useMemo(() => ({
-    currentStatus: (searchParams.get('status') as 'all' | 'pending' | 'approved' | 'rejected') || 'pending',
-    currentUserId: searchParams.get('userId') || undefined,
-    currentPage: Number.parseInt(searchParams.get('page') || '1', 10),
-    currentLimit: Number.parseInt(searchParams.get('limit') || '10', 10),
-  }), [searchParams]);
+  // Memoize URL params to prevent unnecessary re-renders
+  const { currentStatus, currentUserId, currentPage, currentLimit } = useMemo(() => {
+    const rawStatus =
+      (searchParams.get('status') as 'all' | 'pending' | 'approved' | 'rejected') ||
+      'pending';
+    const rawPage = Number.parseInt(searchParams.get('page') || '1', 10);
+    const safePage = Number.isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
+    const rawLimit = Number.parseInt(searchParams.get('limit') || '10', 10);
+    const safeLimit = Number.isNaN(rawLimit) || rawLimit < 1 ? 10 : rawLimit;
+    return {
+      currentStatus: rawStatus,
+      currentUserId: searchParams.get('userId') || undefined,
+      currentPage: safePage,
+      currentLimit: safeLimit,
+    };
+  }, [searchParams]);
 
 
   // Fetch data using React Query with server-provided initialData

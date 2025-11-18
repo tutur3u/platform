@@ -196,8 +196,17 @@ export async function GET(
     const url = new URL(request.url);
     const status = url.searchParams.get('status') || 'pending'; // 'pending', 'approved', 'rejected'
     const userId = url.searchParams.get('userId'); // Optional: filter by user
-    const page = Math.max(parseInt(url.searchParams.get('page') || '1'), 1);
-    const limit = Math.min(parseInt(url.searchParams.get('limit') || '10'), 100);
+
+    // Safe pagination parsing with bounds checking
+    const pageParam = Number(url.searchParams.get('page') || '1');
+    const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
+
+    const limitParam = Number(url.searchParams.get('limit') || '10');
+    const limit =
+      Number.isFinite(limitParam) && limitParam > 0
+        ? Math.min(Math.max(limitParam, 1), 100)
+        : 10;
+
     const offset = (page - 1) * limit;
 
     // Build count query
@@ -220,7 +229,16 @@ export async function GET(
       countQuery = countQuery.eq('user_id', userId);
     }
 
-    const { count: totalCount } = await countQuery;
+    // Execute count query with explicit error handling
+    const { count, error: countError } = await countQuery;
+    if (countError) {
+      return NextResponse.json(
+        { error: 'Failed to retrieve record count' },
+        { status: 500 }
+      );
+    }
+
+    const totalCount = Number.isFinite(count) ? count : 0;
 
     // Build data query with explicit relationship hints
     let query = supabase

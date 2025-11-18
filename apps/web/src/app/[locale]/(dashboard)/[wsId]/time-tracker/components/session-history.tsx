@@ -882,6 +882,7 @@ const isDatetimeMoreThanOneDayAgo = (
 ): boolean => {
   if (!datetimeString) return false;
   const datetime = dayjs.tz(datetimeString, timezone).utc();
+  if(!datetime.isValid()) return false;
   const oneDayAgo = dayjs().utc().subtract(1, 'day');
   return datetime.isBefore(oneDayAgo);
 };
