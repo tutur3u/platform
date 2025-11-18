@@ -26,7 +26,7 @@ def test_build_wol_reminder_message_includes_tomorrow_date_and_cutoff():
 async def test_trigger_wol_reminder_falls_back_without_everyone(monkeypatch):
     calls = []
 
-    async def fake_send(channel_id, content, allowed_mentions):
+    async def fake_send(_channel_id, _content, allowed_mentions):
         calls.append(allowed_mentions)
         if len(calls) == 1:
             raise DiscordMissingPermissionsError(

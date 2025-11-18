@@ -21,7 +21,7 @@ import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, TypedDict
+from typing import Any, TypedDict, cast
 from zoneinfo import ZoneInfo
 
 from commands import CommandHandler
@@ -125,9 +125,7 @@ class ReportConfig:
 
         workspace_id = os.getenv("DISCORD_DAILY_REPORT_WORKSPACE_ID")
         if not workspace_id:
-            raise DailyReportConfigurationError(
-                "DISCORD_DAILY_REPORT_WORKSPACE_ID is not set"
-            )
+            raise DailyReportConfigurationError("DISCORD_DAILY_REPORT_WORKSPACE_ID is not set")
 
         # Parse optional configuration
         skip_weekends_str = os.getenv(
@@ -135,9 +133,7 @@ class ReportConfig:
         ).lower()
         skip_weekends = skip_weekends_str in ("true", "1", "yes")
 
-        report_format_str = os.getenv(
-            "DISCORD_DAILY_REPORT_FORMAT", DEFAULT_REPORT_FORMAT
-        ).lower()
+        report_format_str = os.getenv("DISCORD_DAILY_REPORT_FORMAT", DEFAULT_REPORT_FORMAT).lower()
         try:
             report_format = ReportFormat(report_format_str)
         except ValueError:
@@ -272,7 +268,9 @@ def _merge_weekend_stats(
                 "weekendTotal": sat_time,
             }
             if sat_time > 0:
-                user_name = item["user"].get("display_name") or item["user"].get("handle") or "Unknown"
+                user_name = (
+                    item["user"].get("display_name") or item["user"].get("handle") or "Unknown"
+                )
                 print(f"   📅 Saturday: {user_name} = {sat_time}s")
 
     # Add Sunday
@@ -290,7 +288,9 @@ def _merge_weekend_stats(
                     "weekendTotal": sun_time,
                 }
             if sun_time > 0:
-                user_name = item["user"].get("display_name") or item["user"].get("handle") or "Unknown"
+                user_name = (
+                    item["user"].get("display_name") or item["user"].get("handle") or "Unknown"
+                )
                 print(f"   📅 Sunday: {user_name} = {sun_time}s")
 
     # Log weekend totals
@@ -321,6 +321,7 @@ def _render_weekend_summary_report(
     Returns:
         Formatted report string
     """
+
     def fmt_dur(sec: int) -> str:
         """Format duration in seconds to human-readable string."""
         if sec < 60:
@@ -346,10 +347,12 @@ def _render_weekend_summary_report(
     header = f"""# 📊 **Weekend + Monday Report** - {date_str}
 
 **🏖️ Weekend Summary (Sat-Sun)**
-Total: **{fmt_dur(weekend_total)}** | 👥 Active: **{weekend_active_users}** of **{len(members_meta)}**
+Total: **{fmt_dur(weekend_total)}** | 👥 Active: **{weekend_active_users}** of \
+**{len(members_meta)}**
 
 **📈 Today (Monday)**
-🌅 Today: **{fmt_dur(monday_total)}** | 👥 Active: **{monday_active_users}** of **{len(members_meta)}**
+🌅 Today: **{fmt_dur(monday_total)}** | 👥 Active: **{monday_active_users}** of \
+**{len(members_meta)}**
 
 **📊 Cumulative Totals**
 📅 Weekly: **{fmt_dur(total_week)}** | 📆 Monthly: **{fmt_dur(total_month)}**
@@ -362,7 +365,8 @@ Total: **{fmt_dur(weekend_total)}** | 👥 Active: **{weekend_active_users}** of
     for item in monday_stats:
         user_id = item["user"].get("platform_user_id")
         if user_id:
-            weekend_time = weekend_map.get(user_id, {}).get("weekendTotal", 0)
+            user_weekend_data: WeekendStats | dict[str, Any] = weekend_map.get(user_id, {})
+            weekend_time = user_weekend_data.get("weekendTotal", 0) if isinstance(user_weekend_data, dict) else 0
             monday_time = item["stats"].get("todayTime", 0)
             combined_stats[user_id] = {
                 "user": item["user"],
@@ -374,11 +378,7 @@ Total: **{fmt_dur(weekend_total)}** | 👥 Active: **{weekend_active_users}** of
             }
 
     # Sort by 3-day total
-    ranked_users = sorted(
-        combined_stats.values(),
-        key=lambda x: x["total_time"],
-        reverse=True
-    )
+    ranked_users = sorted(combined_stats.values(), key=lambda x: x["total_time"], reverse=True)
 
     def get_medal(rank: int) -> str:
         medals = {1: "🥇", 2: "🥈", 3: "🥉"}
@@ -445,9 +445,7 @@ async def trigger_daily_report(now: datetime | None = None) -> dict[str, str]:
     config = ReportConfig.from_environment()
 
     handler = CommandHandler()
-    target_time = (
-        now.astimezone(config.timezone) if now else datetime.now(config.timezone)
-    )
+    target_time = now.astimezone(config.timezone) if now else datetime.now(config.timezone)
 
     # Check if weekend and skip if configured
     if config.skip_weekends and _is_weekend(target_time, config.timezone):
@@ -468,9 +466,7 @@ async def trigger_daily_report(now: datetime | None = None) -> dict[str, str]:
 
             saturday_stats, _ = _fetch_day_stats(handler, config.workspace_id, saturday)
             sunday_stats, _ = _fetch_day_stats(handler, config.workspace_id, sunday)
-            monday_stats, members_meta = _fetch_day_stats(
-                handler, config.workspace_id, target_time
-            )
+            monday_stats, members_meta = _fetch_day_stats(handler, config.workspace_id, target_time)
 
             # Check if we have any data across all 3 days
             has_data = (
@@ -484,7 +480,7 @@ async def trigger_daily_report(now: datetime | None = None) -> dict[str, str]:
                     "📭 No tracked time recorded this weekend or today. "
                     "Keep logging those sessions!"
                 )
-                await DiscordClient.send_channel_message(  # type: ignore[arg-type]
+                await DiscordClient.send_channel_message(
                     config.channel_id,
                     no_data_message,
                     allowed_mentions={"parse": []},
@@ -510,7 +506,7 @@ async def trigger_daily_report(now: datetime | None = None) -> dict[str, str]:
             )
             trimmed_report = report[:1800]
 
-            await DiscordClient.send_channel_message(  # type: ignore[arg-type]
+            await DiscordClient.send_channel_message(
                 config.channel_id,
                 trimmed_report,
                 allowed_mentions={"parse": []},
@@ -528,15 +524,11 @@ async def trigger_daily_report(now: datetime | None = None) -> dict[str, str]:
             # Continue to standard report generation below
 
     # Standard daily report (Tue-Fri or Monday fallback)
-    aggregated, members_meta = _fetch_day_stats(
-        handler, config.workspace_id, target_time
-    )
+    aggregated, members_meta = _fetch_day_stats(handler, config.workspace_id, target_time)
 
     if not aggregated or not any(item["stats"].get("todayTime", 0) > 0 for item in aggregated):
-        no_data_message = (
-            "📭 No tracked time recorded today yet. Keep logging those sessions!"
-        )
-        await DiscordClient.send_channel_message(  # type: ignore[arg-type]
+        no_data_message = "📭 No tracked time recorded today yet. Keep logging those sessions!"
+        await DiscordClient.send_channel_message(
             config.channel_id,
             no_data_message,
             allowed_mentions={"parse": []},
@@ -549,14 +541,14 @@ async def trigger_daily_report(now: datetime | None = None) -> dict[str, str]:
         }
 
     report = handler._render_workspace_report(  # noqa: SLF001
-        aggregated,
+        cast(list[dict[Any, Any]], aggregated),
         members_meta,
         config.workspace_id,
         target_time,
     )
     trimmed_report = report[:1800]
 
-    await DiscordClient.send_channel_message(  # type: ignore[arg-type]
+    await DiscordClient.send_channel_message(
         config.channel_id,
         trimmed_report,
         allowed_mentions={"parse": []},

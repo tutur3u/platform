@@ -1,12 +1,17 @@
 """Main Discord bot application."""
 
 import json
-from typing import Optional, cast
+import os
+import traceback
+from typing import cast
 
 import modal
+import requests
+
 from auth import DiscordAuth
 from commands import CommandHandler
 from config import DiscordInteractionType, DiscordResponseType
+from utils import get_supabase_client
 
 image = (
     modal.Image.debian_slim(python_version="3.13")
@@ -60,9 +65,9 @@ async def reply_shorten_link(
     app_id: str,
     interaction_token: str,
     url: str,
-    custom_slug: Optional[str] = None,
-    user_id: Optional[str] = None,
-    guild_id: Optional[str] = None,
+    custom_slug: str | None = None,
+    user_id: str | None = None,
+    guild_id: str | None = None,
 ):
     """Handle link shortening with authorization."""
     handler = CommandHandler()
@@ -73,24 +78,19 @@ async def reply_shorten_link(
             if not handler.is_user_authorized(user_id, guild_id):
                 print(f"🤖: unauthorized user {user_id} in guild {guild_id}")
                 await handler.discord_client.send_response(
-                    {
-                        "content": handler.discord_client.format_unauthorized_user_message()
-                    },
+                    {"content": handler.discord_client.format_unauthorized_user_message()},
                     app_id,
                     interaction_token,
                 )
                 return
-        else:
-            if not handler.is_user_authorized_for_dm(user_id):
-                print(f"🤖: unauthorized user {user_id} in DM")
-                await handler.discord_client.send_response(
-                    {
-                        "content": handler.discord_client.format_unauthorized_user_message()
-                    },
-                    app_id,
-                    interaction_token,
-                )
-                return
+        elif not handler.is_user_authorized_for_dm(user_id):
+            print(f"🤖: unauthorized user {user_id} in DM")
+            await handler.discord_client.send_response(
+                {"content": handler.discord_client.format_unauthorized_user_message()},
+                app_id,
+                interaction_token,
+            )
+            return
 
     # Get user info for context
     user_info = None
@@ -98,7 +98,9 @@ async def reply_shorten_link(
         user_info = handler.get_user_workspace_info(user_id, guild_id or "")
         if user_info:
             print(
-                f"🤖: authorized user {user_id} ({user_info.get('display_name', 'Unknown')}) from workspace {user_info.get('workspace_id')}"
+                f"🤖: authorized user {user_id} "
+                f"({user_info.get('display_name', 'Unknown')}) "
+                f"from workspace {user_info.get('workspace_id')}"
             )
 
     options = [{"name": "url", "value": url}]
@@ -108,27 +110,23 @@ async def reply_shorten_link(
     try:
         print(f"🤖: Calling handle_shorten_command for user {user_id}")
         if user_info:
-            await handler.handle_shorten_command(
-                app_id, interaction_token, options, user_info
-            )
+            await handler.handle_shorten_command(app_id, interaction_token, options, user_info)
         else:
             await handler.handle_shorten_command(
                 app_id,
                 interaction_token,
                 options,
-                None,  # type: ignore[arg-type]
+                None,
             )
         print("🤖: handle_shorten_command completed successfully")
     except Exception as e:
         print(f"🤖: Error in handle_shorten_command: {e}")
-        import traceback
-
         traceback.print_exc()
 
         # Send error response to Discord
         try:
             await handler.discord_client.send_response(
-                {"content": f"❌ **Error:** {str(e)}"}, app_id, interaction_token
+                {"content": f"❌ **Error:** {e!s}"}, app_id, interaction_token
             )
         except Exception as response_error:
             print(f"🤖: Failed to send error response: {response_error}")
@@ -140,8 +138,8 @@ async def reply_daily_report(
     app_id: str,
     interaction_token: str,
     options: list,
-    user_id: Optional[str] = None,
-    guild_id: Optional[str] = None,
+    user_id: str | None = None,
+    guild_id: str | None = None,
 ):
     """Handle /daily-report command with authorization."""
     handler = CommandHandler()
@@ -152,24 +150,19 @@ async def reply_daily_report(
             if not handler.is_user_authorized(user_id, guild_id):
                 print(f"🤖: unauthorized user {user_id} in guild {guild_id}")
                 await handler.discord_client.send_response(
-                    {
-                        "content": handler.discord_client.format_unauthorized_user_message()
-                    },
+                    {"content": handler.discord_client.format_unauthorized_user_message()},
                     app_id,
                     interaction_token,
                 )
                 return
-        else:
-            if not handler.is_user_authorized_for_dm(user_id):
-                print(f"🤖: unauthorized user {user_id} in DM")
-                await handler.discord_client.send_response(
-                    {
-                        "content": handler.discord_client.format_unauthorized_user_message()
-                    },
-                    app_id,
-                    interaction_token,
-                )
-                return
+        elif not handler.is_user_authorized_for_dm(user_id):
+            print(f"🤖: unauthorized user {user_id} in DM")
+            await handler.discord_client.send_response(
+                {"content": handler.discord_client.format_unauthorized_user_message()},
+                app_id,
+                interaction_token,
+            )
+            return
 
     # Get user info for context
     user_info = None
@@ -177,25 +170,23 @@ async def reply_daily_report(
         user_info = handler.get_user_workspace_info(user_id, guild_id or "")
         if user_info:
             print(
-                f"🤖: authorized user {user_id} ({user_info.get('display_name', 'Unknown')}) from workspace {user_info.get('workspace_id')}"
+                f"🤖: authorized user {user_id} "
+                f"({user_info.get('display_name', 'Unknown')}) "
+                f"from workspace {user_info.get('workspace_id')}"
             )
 
     try:
         print(f"🤖: Calling handle_daily_report_command for user {user_id}")
-        await handler.handle_daily_report_command(
-            app_id, interaction_token, options, user_info
-        )
+        await handler.handle_daily_report_command(app_id, interaction_token, options, user_info)
         print("🤖: handle_daily_report_command completed successfully")
     except Exception as e:
         print(f"🤖: Error in handle_daily_report_command: {e}")
-        import traceback
-
         traceback.print_exc()
 
         # Send error response to Discord
         try:
             await handler.discord_client.send_response(
-                {"content": f"❌ **Error:** {str(e)}"}, app_id, interaction_token
+                {"content": f"❌ **Error:** {e!s}"}, app_id, interaction_token
             )
         except Exception as response_error:
             print(f"🤖: Failed to send error response: {response_error}")
@@ -207,8 +198,8 @@ async def reply_tumeet_plan(
     app_id: str,
     interaction_token: str,
     options: list,
-    user_id: Optional[str] = None,
-    guild_id: Optional[str] = None,
+    user_id: str | None = None,
+    guild_id: str | None = None,
 ):
     """Handle /tumeet command with authorization and option parsing."""
     handler = CommandHandler()
@@ -218,23 +209,18 @@ async def reply_tumeet_plan(
         if guild_id:
             if not handler.is_user_authorized(user_id, guild_id):
                 await handler.discord_client.send_response(
-                    {
-                        "content": handler.discord_client.format_unauthorized_user_message()
-                    },
+                    {"content": handler.discord_client.format_unauthorized_user_message()},
                     app_id,
                     interaction_token,
                 )
                 return
-        else:
-            if not handler.is_user_authorized_for_dm(user_id):
-                await handler.discord_client.send_response(
-                    {
-                        "content": handler.discord_client.format_unauthorized_user_message()
-                    },
-                    app_id,
-                    interaction_token,
-                )
-                return
+        elif not handler.is_user_authorized_for_dm(user_id):
+            await handler.discord_client.send_response(
+                {"content": handler.discord_client.format_unauthorized_user_message()},
+                app_id,
+                interaction_token,
+            )
+            return
 
     user_info = None
     if user_id:
@@ -245,8 +231,6 @@ async def reply_tumeet_plan(
             app_id, interaction_token, options or [], user_info
         )
     except Exception as e:
-        import traceback
-
         traceback.print_exc()
         await handler.discord_client.send_response(
             {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
@@ -258,8 +242,8 @@ async def reply_tumeet_plan(
 async def reply_wol_reminder(
     app_id: str,
     interaction_token: str,
-    user_id: Optional[str] = None,
-    guild_id: Optional[str] = None,
+    user_id: str | None = None,
+    guild_id: str | None = None,
 ):
     """Handle /wol-reminder command with authorization checks."""
     handler = CommandHandler()
@@ -268,23 +252,18 @@ async def reply_wol_reminder(
         if guild_id:
             if not handler.is_user_authorized(user_id, guild_id):
                 await handler.discord_client.send_response(
-                    {
-                        "content": handler.discord_client.format_unauthorized_user_message()
-                    },
+                    {"content": handler.discord_client.format_unauthorized_user_message()},
                     app_id,
                     interaction_token,
                 )
                 return
-        else:
-            if not handler.is_user_authorized_for_dm(user_id):
-                await handler.discord_client.send_response(
-                    {
-                        "content": handler.discord_client.format_unauthorized_user_message()
-                    },
-                    app_id,
-                    interaction_token,
-                )
-                return
+        elif not handler.is_user_authorized_for_dm(user_id):
+            await handler.discord_client.send_response(
+                {"content": handler.discord_client.format_unauthorized_user_message()},
+                app_id,
+                interaction_token,
+            )
+            return
 
     user_info = None
     if user_id:
@@ -297,8 +276,6 @@ async def reply_wol_reminder(
             user_info,
         )
     except Exception as error:
-        import traceback
-
         traceback.print_exc()
         await handler.discord_client.send_response(
             {"content": f"❌ **Error:** {error}"}, app_id, interaction_token
@@ -310,8 +287,8 @@ async def reply_wol_reminder(
 async def reply_ticket(
     app_id: str,
     interaction_token: str,
-    user_id: Optional[str] = None,
-    guild_id: Optional[str] = None,
+    user_id: str | None = None,
+    guild_id: str | None = None,
 ):
     """Handle boards list command with authorization."""
     handler = CommandHandler()
@@ -321,23 +298,18 @@ async def reply_ticket(
         if guild_id:
             if not handler.is_user_authorized(user_id, guild_id):
                 await handler.discord_client.send_response(
-                    {
-                        "content": handler.discord_client.format_unauthorized_user_message()
-                    },
+                    {"content": handler.discord_client.format_unauthorized_user_message()},
                     app_id,
                     interaction_token,
                 )
                 return
-        else:
-            if not handler.is_user_authorized_for_dm(user_id):
-                await handler.discord_client.send_response(
-                    {
-                        "content": handler.discord_client.format_unauthorized_user_message()
-                    },
-                    app_id,
-                    interaction_token,
-                )
-                return
+        elif not handler.is_user_authorized_for_dm(user_id):
+            await handler.discord_client.send_response(
+                {"content": handler.discord_client.format_unauthorized_user_message()},
+                app_id,
+                interaction_token,
+            )
+            return
 
     user_info = None
     if user_id:
@@ -346,8 +318,6 @@ async def reply_ticket(
     try:
         await handler.handle_boards_command(app_id, interaction_token, user_info)
     except Exception as e:
-        import traceback
-
         traceback.print_exc()
         await handler.discord_client.send_response(
             {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
@@ -360,8 +330,8 @@ async def reply_assign(
     app_id: str,
     interaction_token: str,
     options: list,
-    user_id: Optional[str] = None,
-    guild_id: Optional[str] = None,
+    user_id: str | None = None,
+    guild_id: str | None = None,
 ):
     """Handle /assign command with authorization."""
     handler = CommandHandler()
@@ -375,14 +345,13 @@ async def reply_assign(
                     interaction_token,
                 )
                 return
-        else:
-            if not handler.is_user_authorized_for_dm(user_id):
-                await handler.discord_client.send_response(
-                    {"content": handler.discord_client.format_unauthorized_user_message()},
-                    app_id,
-                    interaction_token,
-                )
-                return
+        elif not handler.is_user_authorized_for_dm(user_id):
+            await handler.discord_client.send_response(
+                {"content": handler.discord_client.format_unauthorized_user_message()},
+                app_id,
+                interaction_token,
+            )
+            return
 
     user_info = None
     if user_id:
@@ -391,7 +360,6 @@ async def reply_assign(
     try:
         await handler.handle_assign_command(app_id, interaction_token, options or [], user_info)
     except Exception as e:
-        import traceback
         traceback.print_exc()
         await handler.discord_client.send_response(
             {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
@@ -404,8 +372,8 @@ async def reply_unassign(
     app_id: str,
     interaction_token: str,
     options: list,
-    user_id: Optional[str] = None,
-    guild_id: Optional[str] = None,
+    user_id: str | None = None,
+    guild_id: str | None = None,
 ):
     """Handle /unassign command with authorization."""
     handler = CommandHandler()
@@ -419,14 +387,13 @@ async def reply_unassign(
                     interaction_token,
                 )
                 return
-        else:
-            if not handler.is_user_authorized_for_dm(user_id):
-                await handler.discord_client.send_response(
-                    {"content": handler.discord_client.format_unauthorized_user_message()},
-                    app_id,
-                    interaction_token,
-                )
-                return
+        elif not handler.is_user_authorized_for_dm(user_id):
+            await handler.discord_client.send_response(
+                {"content": handler.discord_client.format_unauthorized_user_message()},
+                app_id,
+                interaction_token,
+            )
+            return
 
     user_info = None
     if user_id:
@@ -435,7 +402,6 @@ async def reply_unassign(
     try:
         await handler.handle_unassign_command(app_id, interaction_token, options or [], user_info)
     except Exception as e:
-        import traceback
         traceback.print_exc()
         await handler.discord_client.send_response(
             {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
@@ -448,8 +414,8 @@ async def reply_assignees(
     app_id: str,
     interaction_token: str,
     options: list,
-    user_id: Optional[str] = None,
-    guild_id: Optional[str] = None,
+    user_id: str | None = None,
+    guild_id: str | None = None,
 ):
     """Handle /assignees command with authorization."""
     handler = CommandHandler()
@@ -463,14 +429,13 @@ async def reply_assignees(
                     interaction_token,
                 )
                 return
-        else:
-            if not handler.is_user_authorized_for_dm(user_id):
-                await handler.discord_client.send_response(
-                    {"content": handler.discord_client.format_unauthorized_user_message()},
-                    app_id,
-                    interaction_token,
-                )
-                return
+        elif not handler.is_user_authorized_for_dm(user_id):
+            await handler.discord_client.send_response(
+                {"content": handler.discord_client.format_unauthorized_user_message()},
+                app_id,
+                interaction_token,
+            )
+            return
 
     user_info = None
     if user_id:
@@ -479,7 +444,6 @@ async def reply_assignees(
     try:
         await handler.handle_assignees_command(app_id, interaction_token, options or [], user_info)
     except Exception as e:
-        import traceback
         traceback.print_exc()
         await handler.discord_client.send_response(
             {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
@@ -491,9 +455,9 @@ async def reply_assignees(
 async def handle_board_selection_interaction(
     app_id: str,
     interaction_token: str,
-    user_id: Optional[str] = None,
-    guild_id: Optional[str] = None,
-    selected_board_id: Optional[str] = None,
+    user_id: str | None = None,
+    guild_id: str | None = None,
+    selected_board_id: str | None = None,
 ):
     """Handle board selection interaction with authorization."""
     handler = CommandHandler()
@@ -503,23 +467,18 @@ async def handle_board_selection_interaction(
         if guild_id:
             if not handler.is_user_authorized(user_id, guild_id):
                 await handler.discord_client.send_response(
-                    {
-                        "content": handler.discord_client.format_unauthorized_user_message()
-                    },
+                    {"content": handler.discord_client.format_unauthorized_user_message()},
                     app_id,
                     interaction_token,
                 )
                 return
-        else:
-            if not handler.is_user_authorized_for_dm(user_id):
-                await handler.discord_client.send_response(
-                    {
-                        "content": handler.discord_client.format_unauthorized_user_message()
-                    },
-                    app_id,
-                    interaction_token,
-                )
-                return
+        elif not handler.is_user_authorized_for_dm(user_id):
+            await handler.discord_client.send_response(
+                {"content": handler.discord_client.format_unauthorized_user_message()},
+                app_id,
+                interaction_token,
+            )
+            return
 
     user_info = None
     if user_id:
@@ -538,8 +497,6 @@ async def handle_board_selection_interaction(
             app_id, interaction_token, selected_board_id, user_info
         )
     except Exception as e:
-        import traceback
-
         traceback.print_exc()
         await handler.discord_client.send_response(
             {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
@@ -551,9 +508,9 @@ async def handle_board_selection_interaction(
 async def handle_list_selection_interaction(
     app_id: str,
     interaction_token: str,
-    user_id: Optional[str] = None,
-    guild_id: Optional[str] = None,
-    selected_list_id: Optional[str] = None,
+    user_id: str | None = None,
+    guild_id: str | None = None,
+    selected_list_id: str | None = None,
 ):
     """Handle list selection interaction with authorization."""
     handler = CommandHandler()
@@ -563,23 +520,18 @@ async def handle_list_selection_interaction(
         if guild_id:
             if not handler.is_user_authorized(user_id, guild_id):
                 await handler.discord_client.send_response(
-                    {
-                        "content": handler.discord_client.format_unauthorized_user_message()
-                    },
+                    {"content": handler.discord_client.format_unauthorized_user_message()},
                     app_id,
                     interaction_token,
                 )
                 return
-        else:
-            if not handler.is_user_authorized_for_dm(user_id):
-                await handler.discord_client.send_response(
-                    {
-                        "content": handler.discord_client.format_unauthorized_user_message()
-                    },
-                    app_id,
-                    interaction_token,
-                )
-                return
+        elif not handler.is_user_authorized_for_dm(user_id):
+            await handler.discord_client.send_response(
+                {"content": handler.discord_client.format_unauthorized_user_message()},
+                app_id,
+                interaction_token,
+            )
+            return
 
     user_info = None
     if user_id:
@@ -600,8 +552,6 @@ async def handle_list_selection_interaction(
             app_id, interaction_token, "", selected_list_id, user_info
         )
     except Exception as e:
-        import traceback
-
         traceback.print_exc()
         await handler.discord_client.send_response(
             {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
@@ -613,10 +563,10 @@ async def handle_list_selection_interaction(
 async def handle_ticket_modal_submission(
     app_id: str,
     interaction_token: str,
-    user_id: Optional[str] = None,
-    guild_id: Optional[str] = None,
-    list_id: Optional[str] = None,
-    components: Optional[list] = None,
+    user_id: str | None = None,
+    guild_id: str | None = None,
+    list_id: str | None = None,
+    components: list | None = None,
 ):
     """Handle ticket modal submission with authorization."""
     handler = CommandHandler()
@@ -640,15 +590,14 @@ async def handle_ticket_modal_submission(
                 interaction_token,
             )
             return
-    else:
-        # DM context
-        if not handler.is_user_authorized_for_dm(user_id):
-            await handler.discord_client.send_response(
-                {"content": handler.discord_client.format_unauthorized_user_message()},
-                app_id,
-                interaction_token,
-            )
-            return
+    # DM context
+    elif not handler.is_user_authorized_for_dm(user_id):
+        await handler.discord_client.send_response(
+            {"content": handler.discord_client.format_unauthorized_user_message()},
+            app_id,
+            interaction_token,
+        )
+        return
 
     # Retrieve workspace/user context AFTER auth check to reduce DB lookups for rejected users
     user_info = handler.get_user_workspace_info(user_id, guild_id or "")
@@ -675,21 +624,17 @@ async def handle_ticket_modal_submission(
         form_data = {}
 
     # Extract board_id from the custom_id of the modal
-    # The interaction data should contain the custom_id in the format: ticket_form|{board_id}|{list_id}
+    # The interaction data should contain the custom_id in the format:
+    # "ticket_form" pipe-separated with board_id and list_id
     board_id = ""
     try:
         # Get the modal's custom_id from the interaction metadata
         # This is a bit tricky since we're in the Modal function context
         # We'll extract the board_id from the list relationship instead
-        from utils import get_supabase_client
-
         if list_id:
             supabase = get_supabase_client()
             list_result = (
-                supabase.table("task_lists")
-                .select("board_id")
-                .eq("id", list_id)
-                .execute()
+                supabase.table("task_lists").select("board_id").eq("id", list_id).execute()
             )
             if list_result.data:
                 board_id = list_result.data[0].get("board_id", "")
@@ -702,8 +647,6 @@ async def handle_ticket_modal_submission(
             app_id, interaction_token, board_id, list_id, form_data, user_info
         )
     except Exception as e:
-        import traceback
-
         traceback.print_exc()
         await handler.discord_client.send_response(
             {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
@@ -713,29 +656,25 @@ async def handle_ticket_modal_submission(
 @app.function(secrets=[discord_secret], image=image)
 def test_bot_token():
     """Test the bot token and check bot permissions."""
-    import os
+    bot_token = os.getenv("DISCORD_BOT_TOKEN")
+    client_id = os.getenv("DISCORD_CLIENT_ID")
 
-    import requests
-
-    BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-    CLIENT_ID = os.getenv("DISCORD_CLIENT_ID")
-
-    if not BOT_TOKEN:
+    if not bot_token:
         raise Exception("DISCORD_BOT_TOKEN environment variable is not set")
-    if not CLIENT_ID:
+    if not client_id:
         raise Exception("DISCORD_CLIENT_ID environment variable is not set")
 
-    print(f"🤖: Testing bot token for CLIENT_ID: {CLIENT_ID}")
-    print(f"🤖: BOT_TOKEN starts with: {BOT_TOKEN[:10]}...")
+    print(f"🤖: Testing bot token for CLIENT_ID: {client_id}")
+    print(f"🤖: BOT_TOKEN starts with: {bot_token[:10]}...")
 
     headers = {
-        "Authorization": f"Bot {BOT_TOKEN}",
+        "Authorization": f"Bot {bot_token}",
     }
 
     # Test 1: Get bot information
     print("🤖: Testing bot information...")
     bot_url = "https://discord.com/api/v10/users/@me"
-    response = requests.get(bot_url, headers=headers)
+    response = requests.get(bot_url, headers=headers, timeout=30)
 
     if response.status_code == 401:
         print(f"🤖: ❌ Bot token is invalid - Response: {response.text}")
@@ -755,17 +694,13 @@ def test_bot_token():
 
     # Test 2: Check if bot has applications.commands scope
     print("🤖: Testing applications.commands scope...")
-    commands_url = f"https://discord.com/api/v10/applications/{CLIENT_ID}/commands"
-    response = requests.get(commands_url, headers=headers)
+    commands_url = f"https://discord.com/api/v10/applications/{client_id}/commands"
+    response = requests.get(commands_url, headers=headers, timeout=30)
 
     if response.status_code == 401:
-        print(
-            f"🤖: ❌ Bot doesn't have applications.commands scope - Response: {response.text}"
-        )
+        print(f"🤖: ❌ Bot doesn't have applications.commands scope - Response: {response.text}")
         print("🤖: Make sure to:")
-        print(
-            "   1. Add the 'applications.commands' scope when creating the bot invite"
-        )
+        print("   1. Add the 'applications.commands' scope when creating the bot invite")
         print("   2. Use the correct CLIENT_ID (not the bot's user ID)")
         print("   3. Ensure the bot has been added to at least one server")
         return False
@@ -795,38 +730,33 @@ def create_slash_command(force: bool = False):
           * Skip existing commands.
       - Force (force = True):
           * Delete any existing global commands whose names are NOT in our current definitions.
-          * PATCH (update) existing commands whose names match (ensures description/options drift is fixed).
+          * PATCH (update) existing commands whose names match (ensures
+            description/options drift is fixed).
           * Create new commands that are missing.
 
     This ensures that running with --force leaves Discord's global command set in exact
     correspondence with our `CommandHandler.get_command_definitions()` output (a light
     reconciliation strategy without using the bulk overwrite endpoint, providing clearer logs).
     """
-    import os
-
-    import requests
-
-    BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-    CLIENT_ID = os.getenv("DISCORD_CLIENT_ID")
+    bot_token = os.getenv("DISCORD_BOT_TOKEN")
+    client_id = os.getenv("DISCORD_CLIENT_ID")
 
     # Validate environment variables
-    if not BOT_TOKEN:
+    if not bot_token:
         raise Exception("DISCORD_BOT_TOKEN environment variable is not set")
-    if not CLIENT_ID:
+    if not client_id:
         raise Exception("DISCORD_CLIENT_ID environment variable is not set")
 
-    print(f"🤖: Using CLIENT_ID: {CLIENT_ID}")
+    print(f"🤖: Using CLIENT_ID: {client_id}")
     print(
-        f"🤖: BOT_TOKEN starts with: {BOT_TOKEN[:10]}..."
-        if BOT_TOKEN
-        else "🤖: BOT_TOKEN is empty"
+        f"🤖: BOT_TOKEN starts with: {bot_token[:10]}..." if bot_token else "🤖: BOT_TOKEN is empty"
     )
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bot {BOT_TOKEN}",
+        "Authorization": f"Bot {bot_token}",
     }
-    url = f"https://discord.com/api/v10/applications/{CLIENT_ID}/commands"
+    url = f"https://discord.com/api/v10/applications/{client_id}/commands"
 
     # Get command definitions from the handler
     handler = CommandHandler()
@@ -834,7 +764,7 @@ def create_slash_command(force: bool = False):
 
     # first, check if the commands already exist
     print(f"🤖: Checking existing commands at {url}")
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, timeout=30)
 
     if response.status_code == 401:
         print(f"🤖: 401 Unauthorized - Response: {response.text}")
@@ -855,30 +785,22 @@ def create_slash_command(force: bool = False):
     print(f"🤖: Found {len(existing_commands)} existing commands")
 
     # Map existing commands by name for quick lookup
-    existing_by_name = {
-        cmd.get("name"): cmd for cmd in existing_commands if cmd.get("name")
-    }
+    existing_by_name = {cmd.get("name"): cmd for cmd in existing_commands if cmd.get("name")}
 
     desired_names = {c["name"] for c in commands}
 
     if force:
         # Delete stale commands (those that exist remotely but no longer defined locally)
-        stale = [
-            cmd for name, cmd in existing_by_name.items() if name not in desired_names
-        ]
+        stale = [cmd for name, cmd in existing_by_name.items() if name not in desired_names]
         if stale:
-            print(
-                f"🤖: Deleting {len(stale)} stale command(s): {[c.get('name') for c in stale]}"
-            )
+            print(f"🤖: Deleting {len(stale)} stale command(s): {[c.get('name') for c in stale]}")
         for cmd in stale:
             cmd_id = cmd.get("id")
             name = cmd.get("name")
             del_url = f"{url}/{cmd_id}"
-            r = requests.delete(del_url, headers=headers)
+            r = requests.delete(del_url, headers=headers, timeout=30)
             if r.status_code not in (200, 204):
-                print(
-                    f"🤖: ⚠️ Failed to delete stale command {name}: {r.status_code} - {r.text}"
-                )
+                print(f"🤖: ⚠️ Failed to delete stale command {name}: {r.status_code} - {r.text}")
             else:
                 print(f"🤖: 🗑️ Deleted stale command {name}")
 
@@ -889,20 +811,16 @@ def create_slash_command(force: bool = False):
 
         if existing:
             if not force:
-                print(
-                    f"🤖: ✅ Command '{name}' already exists (skip; use --force to update)"
-                )
+                print(f"🤖: ✅ Command '{name}' already exists (skip; use --force to update)")
                 continue
 
             # PATCH existing command
             cmd_id = existing.get("id")
             patch_url = f"{url}/{cmd_id}"
             print(f"🤖: 🔄 Updating command '{name}' (id={cmd_id})")
-            r = requests.patch(patch_url, headers=headers, json=command)
+            r = requests.patch(patch_url, headers=headers, json=command, timeout=30)
             if r.status_code == 401:
-                raise Exception(
-                    f"401 Unauthorized when updating command '{name}': {r.text}"
-                )
+                raise Exception(f"401 Unauthorized when updating command '{name}': {r.text}")
             try:
                 r.raise_for_status()
             except Exception as e:
@@ -911,12 +829,10 @@ def create_slash_command(force: bool = False):
             print(f"🤖: ✅ Updated command '{name}'")
         else:
             # Create new command
-            print(f"🤖: ➕ Creating new command '{name}'")
-            r = requests.post(url, headers=headers, json=command)
+            print(f"🤖: + Creating new command '{name}'")
+            r = requests.post(url, headers=headers, json=command, timeout=30)
             if r.status_code == 401:
-                raise Exception(
-                    f"401 Unauthorized when creating command '{name}': {r.text}"
-                )
+                raise Exception(f"401 Unauthorized when creating command '{name}': {r.text}")
             try:
                 r.raise_for_status()
             except Exception as e:
@@ -925,9 +841,7 @@ def create_slash_command(force: bool = False):
             print(f"🤖: ✅ Created command '{name}'")
 
     if force:
-        print(
-            "🤖: Force sync complete — remote command set now matches local definitions."
-        )
+        print("🤖: Force sync complete — remote command set now matches local definitions.")
     else:
         print("🤖: Non-force registration complete — new commands (if any) created.")
 
@@ -937,7 +851,6 @@ def create_slash_command(force: bool = False):
 @modal.asgi_app()
 def web_app():
     """Main web application for handling Discord interactions."""
-    import os
     from fastapi import FastAPI, HTTPException, Request
     from fastapi.middleware.cors import CORSMiddleware
 
@@ -972,10 +885,7 @@ def web_app():
             return True
 
         query_secret = request.query_params.get("secret")
-        if query_secret and query_secret.strip() == secret:
-            return True
-
-        return False
+        return bool(query_secret and query_secret.strip() == secret)
 
     @web_app.post("/api")
     async def get_api(request: Request):
@@ -1009,9 +919,7 @@ def web_app():
                     app_id,
                     interaction_token,
                 )
-                return {
-                    "type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
-                }
+                return {"type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE}
 
             # Always defer the response first to avoid timeout issues
             # Authorization checks will be done in the async functions
@@ -1033,15 +941,11 @@ def web_app():
                 if not url:
                     handler = CommandHandler()
                     await handler.discord_client.send_response(
-                        {
-                            "content": handler.discord_client.format_missing_url_message()
-                        },
+                        {"content": handler.discord_client.format_missing_url_message()},
                         app_id,
                         interaction_token,
                     )
-                    return {
-                        "type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
-                    }
+                    return {"type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE}
 
                 # kick off link shortening asynchronously, will handle authorization
                 reply_shorten_link.spawn(
@@ -1051,14 +955,10 @@ def web_app():
                 # Extract options for daily-report command
                 options = data["data"].get("options", [])
                 # kick off daily report asynchronously, will handle authorization
-                reply_daily_report.spawn(
-                    app_id, interaction_token, options, user_id, guild_id
-                )
+                reply_daily_report.spawn(app_id, interaction_token, options, user_id, guild_id)
             elif command_name == "tumeet":
                 options = data["data"].get("options", [])
-                reply_tumeet_plan.spawn(
-                    app_id, interaction_token, options, user_id, guild_id
-                )
+                reply_tumeet_plan.spawn(app_id, interaction_token, options, user_id, guild_id)
             elif command_name == "ticket":
                 reply_ticket.spawn(app_id, interaction_token, user_id, guild_id)
             elif command_name == "assign":
@@ -1107,12 +1007,11 @@ def web_app():
                     app_id,
                     interaction_token,
                 )
-                return {
-                    "type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
-                }
+                return {"type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE}
 
             print(
-                f"🤖: deferring component interaction response from user {user_id} in guild {guild_id}"
+                f"🤖: deferring component interaction response "
+                f"from user {user_id} in guild {guild_id}"
             )
 
             # Handle different component interactions asynchronously
@@ -1130,7 +1029,7 @@ def web_app():
 
                 try:
                     if "|" in selected_value:
-                        board_id, list_id = selected_value.split("|", 1)
+                        _board_id, list_id = selected_value.split("|", 1)
                     else:
                         # Fallback if format is unexpected
                         return {
@@ -1143,18 +1042,15 @@ def web_app():
                     # Show modal immediately WITHOUT pre-checking user permissions/workspace.
                     # Authorization & workspace validation will be enforced on modal submission.
                     handler = CommandHandler()
-                    modal_data = handler.create_ticket_form_modal(list_id, None)
-                    return modal_data
+                    return handler.create_ticket_form_modal(list_id, None)
 
                 except Exception as e:
                     print(f"🤖: Error creating modal: {e}")
-                    import traceback
-
                     traceback.print_exc()
                     return {
                         "type": DiscordResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
                         "data": {
-                            "content": f"❌ **Error:** Failed to create ticket form: {str(e)}",
+                            "content": f"❌ **Error:** Failed to create ticket form: {e!s}",
                             "flags": 64,  # EPHEMERAL flag
                         },
                     }
@@ -1186,20 +1082,20 @@ def web_app():
                     app_id,
                     interaction_token,
                 )
-                return {
-                    "type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
-                }
+                return {"type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE}
 
             print(
-                f"🤖: deferring response for modal submission from user {user_id} in guild {guild_id}"
+                f"🤖: deferring response for modal submission "
+                f"from user {user_id} in guild {guild_id}"
             )
 
             # Handle modal submissions asynchronously
             if custom_id.startswith("ticket_form|"):
-                # Extract the board_id and list_id from the custom_id format: ticket_form|{board_id}|{list_id}
+                # Extract the board_id and list_id from the custom_id
+                # Format: "ticket_form" pipe-separated with board_id and list_id
                 parts = custom_id.split("|")
                 if len(parts) >= 3:
-                    # board_id = parts[1]
+                    # Skip parts[1] (board_id) since we'll get it from list relationship
                     list_id = parts[2]
                     handle_ticket_modal_submission.spawn(
                         app_id,
@@ -1237,8 +1133,8 @@ def web_app():
         if not _is_cron_request_authorized(request):
             raise HTTPException(status_code=401, detail="Unauthorized")
 
-        from wol_reminder import trigger_wol_reminder
         from discord_client import DiscordAPIError, DiscordMissingAccessError
+        from wol_reminder import trigger_wol_reminder
 
         try:
             result = await trigger_wol_reminder()
@@ -1247,12 +1143,13 @@ def web_app():
             raise HTTPException(
                 status_code=403,
                 detail=(
-                    "Bot lacks access to the configured channel. Verify the channel ID and bot permissions."
+                    "Bot lacks access to the configured channel. "
+                    "Verify the channel ID and bot permissions."
                 ),
-            )
+            ) from error
         except DiscordAPIError as error:
             print(f"🤖: Error executing WOL reminder: {error}")
-            raise HTTPException(status_code=500, detail="Failed to send reminder")
+            raise HTTPException(status_code=500, detail="Failed to send reminder") from error
 
         return {
             "status": "ok",
@@ -1277,29 +1174,33 @@ def web_app():
         try:
             result = await trigger_daily_report()
         except DailyReportConfigurationError as error:
-            raise HTTPException(status_code=500, detail=str(error))
+            raise HTTPException(status_code=500, detail=str(error)) from error
         except DiscordMissingAccessError as error:
             print(f"🤖: Cron daily report missing access: {error}")
             raise HTTPException(
                 status_code=403,
                 detail=(
-                    "Bot lacks access to the configured channel. Verify the channel ID and bot permissions."
+                    "Bot lacks access to the configured channel. "
+                    "Verify the channel ID and bot permissions."
                 ),
-            )
+            ) from error
         except DiscordMissingPermissionsError as error:
             print(f"🤖: Cron daily report missing permissions: {error}")
             raise HTTPException(
                 status_code=403,
                 detail=(
-                    "Bot lacks permission to post in the configured channel (Send Messages or Mention Everyone)."
+                    "Bot lacks permission to post in the configured channel "
+                    "(Send Messages or Mention Everyone)."
                 ),
-            )
+            ) from error
         except DiscordAPIError as error:
             print(f"🤖: Error executing daily report: {error}")
-            raise HTTPException(status_code=500, detail="Failed to send daily report")
+            raise HTTPException(status_code=500, detail="Failed to send daily report") from error
         except Exception as error:
             print(f"🤖: Unexpected error executing daily report: {error}")
-            raise HTTPException(status_code=500, detail="Unexpected error during daily report")
+            raise HTTPException(
+                status_code=500, detail="Unexpected error during daily report"
+            ) from error
 
         return {"status": "ok", **result}
 
