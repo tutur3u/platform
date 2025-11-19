@@ -67,7 +67,7 @@
   },
   "scripts": {
     "build": "tsc --build",
-    "build:watch": "tsc --build --watch",
+    "dev": "tsc --build --watch",
     "clean": "rm -rf dist .turbo",
     "prepublishOnly": "bun run clean && bun run build",
     "test": "vitest run",

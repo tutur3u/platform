@@ -5410,72 +5410,78 @@ export type Database = {
           },
         ];
       };
-      realtime_logs: {
+      realtime_log_aggregations: {
         Row: {
           created_at: string;
-          data: string | null;
+          error_count: number;
           id: string;
           kind: string;
-          message: string;
+          sample_messages: string[] | null;
+          time_bucket: string;
+          total_count: number;
           user_id: string | null;
-          ws_id: string | null;
+          ws_id: string;
         };
         Insert: {
           created_at?: string;
-          data?: string | null;
+          error_count?: number;
           id?: string;
           kind: string;
-          message: string;
+          sample_messages?: string[] | null;
+          time_bucket: string;
+          total_count?: number;
           user_id?: string | null;
-          ws_id?: string | null;
+          ws_id: string;
         };
         Update: {
           created_at?: string;
-          data?: string | null;
+          error_count?: number;
           id?: string;
           kind?: string;
-          message?: string;
+          sample_messages?: string[] | null;
+          time_bucket?: string;
+          total_count?: number;
           user_id?: string | null;
-          ws_id?: string | null;
+          ws_id?: string;
         };
         Relationships: [
           {
-            foreignKeyName: 'realtime_logs_user_id_fkey';
+            foreignKeyName: 'realtime_log_aggregations_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'nova_user_challenge_leaderboard';
             referencedColumns: ['user_id'];
           },
           {
-            foreignKeyName: 'realtime_logs_user_id_fkey';
+            foreignKeyName: 'realtime_log_aggregations_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'nova_user_leaderboard';
             referencedColumns: ['user_id'];
           },
           {
-            foreignKeyName: 'realtime_logs_user_id_fkey';
+            foreignKeyName: 'realtime_log_aggregations_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'shortened_links_creator_stats';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'realtime_logs_user_id_fkey';
+            foreignKeyName: 'realtime_log_aggregations_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'realtime_logs_ws_id_fkey';
+            foreignKeyName: 'realtime_log_aggregations_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_link_counts';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'realtime_logs_ws_id_fkey';
+            foreignKeyName: 'realtime_log_aggregations_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -13126,6 +13132,7 @@ export type Database = {
       cleanup_expired_cross_app_tokens: { Args: never; Returns: undefined };
       cleanup_expired_notifications: { Args: never; Returns: number };
       cleanup_old_api_key_usage_logs: { Args: never; Returns: undefined };
+      cleanup_old_log_aggregations: { Args: never; Returns: undefined };
       cleanup_old_typing_indicators: { Args: never; Returns: undefined };
       cleanup_role_inconsistencies: { Args: never; Returns: undefined };
       compute_ai_cost_usd: {
@@ -14380,6 +14387,10 @@ export type Database = {
       upsert_calendar_events_and_count: {
         Args: { events: Json };
         Returns: Json;
+      };
+      upsert_realtime_log_aggregations: {
+        Args: { p_logs: Json };
+        Returns: undefined;
       };
       user_is_in_channel: {
         Args: { p_channel_id: string; p_user_id: string };

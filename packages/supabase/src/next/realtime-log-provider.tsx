@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { createClient } from './client';
-import saveRealtimeLogs from './realtime-log-store-actions';
+import { addRealtimeLog } from './realtime-log-actions';
 
 interface RealtimeContextValue {
   wsId: string;
@@ -69,6 +69,7 @@ export function RealtimeLogProvider({ wsId, children }: RealtimeProviderProps) {
 
 // Realtime logger for debugging
 // Reads wsId and userId from the module-level context
+// Logs are buffered in memory and aggregated every 15 minutes
 export const realtimeLogger = (kind: string, msg: string, data?: any) => {
   // Only log in development or if explicitly enabled
   if (process.env.NODE_ENV === 'development') {
@@ -79,13 +80,13 @@ export const realtimeLogger = (kind: string, msg: string, data?: any) => {
       data,
     });
 
-    // Save log to the database
+    // Add log to aggregation buffer (replaces direct database writes)
     if (currentRealtimeContext) {
       try {
         const { wsId, userId } = currentRealtimeContext;
-        saveRealtimeLogs(wsId, userId, kind, msg, data);
+        addRealtimeLog(wsId, userId, kind, msg, data);
       } catch (error) {
-        console.error('Failed to save realtime log:', error);
+        console.error('Failed to add realtime log to aggregator:', error);
       }
     }
   }
