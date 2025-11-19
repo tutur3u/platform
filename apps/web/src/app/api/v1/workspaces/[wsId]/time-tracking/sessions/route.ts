@@ -353,15 +353,7 @@ export async function POST(
     }
 
     const body = await request.json();
-    const {
-      title,
-      description,
-      categoryId,
-      taskId,
-      startTime,
-      endTime,
-      isManualEntry,
-    } = body;
+    const { title, description, categoryId, taskId, startTime, endTime } = body;
 
     if (!title?.trim()) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
@@ -371,7 +363,7 @@ export async function POST(
     const sbAdmin = await createAdminClient(); // This should use service role
 
     // If this is a manual entry (missed entry), handle differently
-    if (isManualEntry && startTime && endTime) {
+    if (startTime && endTime) {
       // Validate time range
       const start = new Date(startTime);
       const end = new Date(endTime);
@@ -379,6 +371,20 @@ export async function POST(
       if (end <= start) {
         return NextResponse.json(
           { error: 'End time must be after start time' },
+          { status: 400 }
+        );
+      }
+
+      // Check if start time is older than 1 day
+      const oneDayAgo = new Date();
+      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+
+      if (start < oneDayAgo) {
+        return NextResponse.json(
+          {
+            error:
+              'Cannot add missed entries older than 1 day. Please contact support if you need to add older entries.',
+          },
           { status: 400 }
         );
       }
@@ -419,7 +425,22 @@ export async function POST(
         )
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // Check if error is from the trigger restriction
+        if (
+          error.message?.includes('older than one day is not allowed') ||
+          error.code === '23514'
+        ) {
+          return NextResponse.json(
+            {
+              error:
+                'Cannot add missed entries older than 1 day. Please contact support if you need to add older entries. ',
+            },
+            { status: 400 }
+          );
+        }
+        throw error;
+      }
 
       return NextResponse.json({ session: data }, { status: 201 });
     }

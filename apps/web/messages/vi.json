@@ -1184,7 +1184,9 @@
     "integrations": "Tích hợp",
     "more_tools": "Nhiều công cụ hơn",
     "realtime_chat": "Trò chuyện thời gian thực",
-    "track": "Theo dõi"
+    "track": "Theo dõi",
+    "time_tracker_requests": "Yêu cầu",
+    "time-tracker": "Theo dõi thời gian"
   },
   "usage": {
     "description": "Theo dõi hoạt động workspace, sử dụng tính năng và các số liệu hệ thống trong tổ chức của bạn",
@@ -3238,7 +3240,11 @@
     "leads": "Khách hàng tiềm năng",
     "create_lead_generations": "Tạo khách hàng tiềm năng",
     "create_lead_generations_description": "Cho phép thành viên tạo khách hàng tiềm năng mới trong không gian làm việc.",
-    "transactions": "Giao dịch tài chính"
+    "transactions": "Giao dịch tài chính",
+    "manage_time_tracking_requests": "Quản lý các yêu cầu theo dõi thời gian",
+    "manage_time_tracking_requests_description": "Cho phép người dùng xem và duyệt/từ chối các yêu cầu thêm theo dõi thời gian thiếu",
+    "bypass_time_tracking_request_approval": "Bỏ qua phê duyệt yêu cầu theo dõi thời gian",
+    "bypass_time_tracking_request_approval_description": "Cho phép bỏ qua các hạn chế khi phê duyệt/từ chối yêu cầu theo dõi thời gian"
   },
   "platform-roles": {
     "plural": "Vai trò nền tảng",
@@ -6475,6 +6481,75 @@
     "metadata": {
       "title": "Theo dõi thời gian",
       "description": "Quản lý trình theo dõi thời gian trong không gian làm việc của bạn."
+    },
+    "requests": {
+      "title": "Yêu Cầu Theo Dõi Thời Gian",
+      "description": "Xem xét và phê duyệt yêu cầu theo dõi thời gian từ các thành viên trong nhóm",
+      "filters": {
+        "title": "Bộ Lọc",
+        "description": "Lọc yêu cầu theo trạng thái và người dùng",
+        "status": "Trạng Thái",
+        "user": "Người Dùng",
+        "clearFilters": "Xóa Bộ Lọc",
+        "allUsers": "Tất Cả Người Dùng"
+      },
+      "status": {
+        "all": "Tất Cả",
+        "pending": "Đang Chờ",
+        "approved": "Đã Duyệt",
+        "rejected": "Đã Từ Chối"
+      },
+      "list": {
+        "title": "Yêu Cầu",
+        "showing": "Hiển thị {start} đến {end} trong tổng số {total} yêu cầu",
+        "itemsPerPage": "Số mục mỗi trang",
+        "noRequestsTitle": "Không tìm thấy yêu cầu nào",
+        "noRequestsMessage": "Thử điều chỉnh bộ lọc để xem thêm kết quả.",
+        "noRequestsDefault": "Chưa có yêu cầu theo dõi thời gian nào được gửi.",
+        "duration": "{hours}h {minutes}m",
+        "task": "Nhiệm vụ: {name}",
+        "attachments": "{count} hình ảnh{plural}",
+        "approvedBy": "Được phê duyệt bởi {name}",
+        "approvedOn": "vào {date}",
+        "rejectedBy": "Bị từ chối bởi {name}",
+        "rejectedOn": "vào {date}",
+        "loading": "Đang tải yêu cầu...",
+        "error": "Không thể tải yêu cầu"
+      },
+      "detail": {
+        "title": "Chi Tiết Yêu Cầu",
+        "userInfo": "Thông Tin Người Dùng",
+        "timeInfo": "Thông Tin Thời Gian",
+        "startTime": "Thời Gian Bắt Đầu",
+        "endTime": "Thời Gian Kết Thúc",
+        "duration": "Thời Lượng",
+        "linkedTask": "Nhiệm Vụ Liên Kết",
+        "description": "Mô Tả",
+        "attachments": "Tệp Đính Kèm ({count})",
+        "loadingMedia": "Đang tải phương tiện...",
+        "requestApproved": "Yêu Cầu Đã Được Phê Duyệt",
+        "requestRejected": "Yêu Cầu Đã Bị Từ Chối",
+        "rejectionReason": "Lý do:",
+        "approveButton": "Phê Duyệt Yêu Cầu",
+        "rejectButton": "Từ Chối Yêu Cầu",
+        "confirmRejection": "Xác Nhận Từ Chối",
+        "rejectionReasonPlaceholder": "Vui lòng cung cấp lý do từ chối yêu cầu này...",
+        "rejectionReasonRequired": "Vui lòng cung cấp lý do từ chối",
+        "rejectionReasonLabel": "Lý Do Từ Chối",
+        "imageNavigation": "Hình ảnh {current} trong số {total}",
+        "previousImage": "Trước",
+        "nextImage": "Tiếp theo",
+        "unknownUser": "Người Dùng Không Xác Định",
+        "approvedDate": "Được phê duyệt bởi {name} vào {date}",
+        "rejectedDate": "Bị từ chối bởi {name} vào {date}"
+      },
+      "toast": {
+        "approveSuccess": "Yêu cầu theo dõi thời gian đã được phê duyệt thành công",
+        "approveFailed": "Không thể phê duyệt yêu cầu",
+        "rejectSuccess": "Yêu cầu theo dõi thời gian đã bị từ chối",
+        "rejectFailed": "Không thể từ chối yêu cầu",
+        "loadImagesFailed": "Không thể tải hình ảnh"
+      }
     },
     "modes": {
       "switchedToAdvanced": "Đã chuyển sang Chế độ Nâng cao",
