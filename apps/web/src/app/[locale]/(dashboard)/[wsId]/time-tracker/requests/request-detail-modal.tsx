@@ -11,6 +11,7 @@ import {
   XCircleIcon,
   XIcon,
 } from '@tuturuuu/icons';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -22,16 +23,15 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
-import { useCallback, useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useState } from 'react';
+import { useRequestImages } from './hooks/use-request-images';
 import {
   useApproveRequest,
   useRejectRequest,
 } from './hooks/use-request-mutations';
-import { useRequestImages } from './hooks/use-request-images';
 import type { ExtendedTimeTrackingRequest } from './page';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 
 interface RequestDetailModalProps {
   request: ExtendedTimeTrackingRequest;
@@ -135,10 +135,10 @@ export function RequestDetailModal({
                     variant="outline"
                     className={
                       request.approval_status === 'PENDING'
-                        ? 'bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/20'
+                        ? 'border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange'
                         : request.approval_status === 'APPROVED'
-                          ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20'
-                          : 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20'
+                          ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green'
+                          : 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red'
                     }
                   >
                     {request.approval_status}
@@ -357,8 +357,7 @@ export function RequestDetailModal({
             {/* Action Buttons */}
             {request.approval_status === 'PENDING' &&
               (bypassRulesPermission ||
-                (currentUser && request.user_id !== currentUser?.id)) && (
-                <>
+                (currentUser && request.user_id !== currentUser.id)) && (
                   {!showRejectionForm ? (
                     <div className="flex gap-3">
                       <Button
@@ -420,7 +419,6 @@ export function RequestDetailModal({
                       </Button>
                     </div>
                   )}
-                </>
               )}
           </div>
         </DialogContent>
@@ -473,7 +471,7 @@ export function RequestDetailModal({
                       {t('detail.previousImage')}
                     </Button>
 
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
                       {Array.from({ length: imageUrls.length }).map(
                         (_, idx) => (
                           <button
@@ -482,7 +480,7 @@ export function RequestDetailModal({
                             onClick={() => setSelectedImageIndex(idx)}
                             className={`h-2 w-2 rounded-full transition-all ${
                               idx === selectedImageIndex
-                                ? 'bg-dynamic-blue w-4'
+                                ? 'w-4 bg-dynamic-blue'
                                 : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
                             }`}
                           />

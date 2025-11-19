@@ -2416,13 +2416,13 @@ export function SessionHistory({
                 disabled={
                   isEditing ||
                   !editTitle.trim() ||
-                  Boolean(
-                    editStartTime &&
-                      isDatetimeMoreThanOneDayAgo(
-                        editStartTime,
-                        dayjs.tz.guess()
-                      )
-                  )
+                  (!!sessionToEdit &&
+                    !isSessionOlderThanOneDay(sessionToEdit) &&
+                    !!editStartTime &&
+                    isDatetimeMoreThanOneDayAgo(
+                      editStartTime,
+                      dayjs.tz.guess()
+                    ))
                 }
                 className="flex-1"
               >

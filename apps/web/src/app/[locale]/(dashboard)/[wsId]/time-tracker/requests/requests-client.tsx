@@ -15,6 +15,7 @@ import {
   XCircleIcon,
   XIcon,
 } from '@tuturuuu/icons';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -33,14 +34,13 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useMemo } from 'react';
-import { RequestDetailModal } from './request-detail-modal';
-import { useRequests, useAvailableUsers } from './hooks/use-requests';
+import { useTranslations } from 'next-intl';
+import { useMemo, useState } from 'react';
+import { useAvailableUsers, useRequests } from './hooks/use-requests';
 import type { ExtendedTimeTrackingRequest } from './page';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { RequestDetailModal } from './request-detail-modal';
 
 interface RequestsClientProps {
   wsId: string;
@@ -75,7 +75,6 @@ export function RequestsClient({
   const [selectedRequest, setSelectedRequest] =
     useState<ExtendedTimeTrackingRequest | null>(null);
 
-  // Memoize URL params to prevent unnecessary re-renders
   // Memoize URL params to prevent unnecessary re-renders
   const { currentStatus, currentUserId, currentPage, currentLimit } =
     useMemo(() => {
@@ -275,7 +274,7 @@ export function RequestsClient({
                           {t('filters.allUsers')}
                         </SelectItem>
                         {usersLoading ? (
-                          <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                          <div className="px-2 py-1.5 text-muted-foreground text-sm">
                             Loading users...
                           </div>
                         ) : (
@@ -404,7 +403,7 @@ export function RequestsClient({
                             {request.category && (
                               <Badge
                                 variant="outline"
-                                className="bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/20"
+                                className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple"
                               >
                                 {request.category.name}
                               </Badge>
