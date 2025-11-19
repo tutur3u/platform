@@ -358,6 +358,7 @@ export function RequestDetailModal({
             {request.approval_status === 'PENDING' &&
               (bypassRulesPermission ||
                 (currentUser && request.user_id !== currentUser.id)) && (
+                <>
                   {!showRejectionForm ? (
                     <div className="flex gap-3">
                       <Button
@@ -419,6 +420,7 @@ export function RequestDetailModal({
                       </Button>
                     </div>
                   )}
+                </>
               )}
           </div>
         </DialogContent>
