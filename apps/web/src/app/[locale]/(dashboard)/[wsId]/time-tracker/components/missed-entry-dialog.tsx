@@ -158,9 +158,7 @@ export default function MissedEntryDialog({
 
     const invalidTypeCount = files.length - validTypeFiles.length;
     if (invalidTypeCount > 0) {
-      setImageError(
-        t('errors.invalidFileType', { count: invalidTypeCount })
-      );
+      setImageError(t('errors.invalidFileType', { count: invalidTypeCount }));
     }
 
     const currentImageCount = images.length;
@@ -356,9 +354,7 @@ export default function MissedEntryDialog({
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(
-            errorData.error || t('errors.createRequestFailed')
-          );
+          throw new Error(errorData.error || t('errors.createRequestFailed'));
         }
 
         queryClient.invalidateQueries({
@@ -443,7 +439,9 @@ export default function MissedEntryDialog({
             />
           </div>
           <div>
-            <Label htmlFor="missed-entry-description">{t('form.description')}</Label>
+            <Label htmlFor="missed-entry-description">
+              {t('form.description')}
+            </Label>
             <Textarea
               id="missed-entry-description"
               value={missedEntryDescription}
@@ -454,7 +452,9 @@ export default function MissedEntryDialog({
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label htmlFor="missed-entry-category">{t('form.category')}</Label>
+              <Label htmlFor="missed-entry-category">
+                {t('form.category')}
+              </Label>
               <Select
                 value={missedEntryCategoryId}
                 onValueChange={setMissedEntryCategoryId}
@@ -505,7 +505,9 @@ export default function MissedEntryDialog({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
-              <Label htmlFor="missed-entry-start-time">{t('form.startTime')}</Label>
+              <Label htmlFor="missed-entry-start-time">
+                {t('form.startTime')}
+              </Label>
               <Input
                 id="missed-entry-start-time"
                 type="datetime-local"
@@ -537,7 +539,9 @@ export default function MissedEntryDialog({
                     <p className="text-muted-foreground mt-1">
                       {thresholdDays === 0
                         ? t('approval.allEntries')
-                        : t('approval.entriesOlderThan', { days: thresholdDays })}
+                        : t('approval.entriesOlderThan', {
+                            days: thresholdDays,
+                          })}
                     </p>
                   </div>
                 </div>
@@ -625,7 +629,9 @@ export default function MissedEntryDialog({
                                 ? preview
                                 : '/placeholder.svg'
                             }
-                            alt={t('approval.proofImageAlt', { number: index + 1 })}
+                            alt={t('approval.proofImageAlt', {
+                              number: index + 1,
+                            })}
                             className="h-full w-full object-cover"
                             width={100}
                             height={100}

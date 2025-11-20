@@ -1402,13 +1402,13 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
             getTooltipLabel={({ date, value }) => {
               const activity = activityMap.get(date);
               const dateObj = dayjs(date);
-              
+
               let tooltip = `${dateObj.format('ddd, DD/MM/YYYY')}`;
-              
+
               if (settings.timeReference === 'smart') {
                 tooltip += `\n${dateObj.fromNow()}`;
               }
-              
+
               if (activity) {
                 tooltip += `\n${formatDuration(activity.duration)} ${t('tracked')}`;
                 if (activity.sessions > 0) {
@@ -1417,11 +1417,11 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
               } else {
                 tooltip += `\n${t('noActivityRecorded')}`;
               }
-              
+
               if (dateObj.isSame(today, 'day')) {
                 tooltip += `\n${t('today')}`;
               }
-              
+
               return tooltip;
             }}
             colors={[

@@ -3,7 +3,7 @@ import { ThemeProvider } from 'next-themes';
 import type { ReactNode } from 'react';
 import { TRPCProvider } from '@/trpc/client';
 import { ClientProviders } from './client-providers';
-import {MantineProvider} from '@mantine/core';
+import { MantineProvider } from '@mantine/core';
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
@@ -24,7 +24,7 @@ export function Providers({ children }: { children: ReactNode }) {
           // for more details
         >
           <MantineProvider>
-          <ClientProviders>{children}</ClientProviders>
+            <ClientProviders>{children}</ClientProviders>
           </MantineProvider>
         </ThemeProvider>
       </NextIntlClientProvider>

@@ -24,4 +24,3 @@ export function useThreshold({ wsId }: { wsId: string }) {
     refetchOnWindowFocus: false, // Don't refetch when window regains focus
   });
 }
-

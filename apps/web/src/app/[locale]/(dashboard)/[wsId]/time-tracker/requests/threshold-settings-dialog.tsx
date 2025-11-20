@@ -59,9 +59,7 @@ export function ThresholdSettingsDialog({
       onUpdate();
     } catch (error) {
       console.error('Error updating threshold:', error);
-      toast.error(
-        error instanceof Error ? error.message : t('error')
-      );
+      toast.error(error instanceof Error ? error.message : t('error'));
     } finally {
       setIsLoading(false);
     }
@@ -97,26 +95,28 @@ export function ThresholdSettingsDialog({
                 type="number"
                 min={0}
                 value={threshold}
-                onChange={(e) => setThreshold(Number.parseInt(e.target.value, 10))}
+                onChange={(e) =>
+                  setThreshold(Number.parseInt(e.target.value, 10))
+                }
                 required
                 className="w-full"
               />
-              <p className="text-muted-foreground text-sm">
-                {t('help')}
-              </p>
+              <p className="text-muted-foreground text-sm">{t('help')}</p>
               <div className="rounded-md bg-dynamic-blue/5 p-3 text-sm">
                 <p className="font-medium text-dynamic-blue">
                   {t('examples.title')}
                 </p>
                 <ul className="mt-2 space-y-1 text-muted-foreground">
                   <li>
-                    <strong>0 {t('examples.days')}:</strong> {t('examples.zero')}
+                    <strong>0 {t('examples.days')}:</strong>{' '}
+                    {t('examples.zero')}
                   </li>
                   <li>
                     <strong>1 {t('examples.day')}:</strong> {t('examples.one')}
                   </li>
                   <li>
-                    <strong>7 {t('examples.days')}:</strong> {t('examples.seven')}
+                    <strong>7 {t('examples.days')}:</strong>{' '}
+                    {t('examples.seven')}
                   </li>
                 </ul>
               </div>
@@ -140,4 +140,3 @@ export function ThresholdSettingsDialog({
     </Dialog>
   );
 }
-

@@ -37,16 +37,17 @@ export async function PUT(req: NextRequest, { params }: Params) {
       );
     }
 
-    const { withoutPermission } = await getPermissions({ wsId });  
+    const { withoutPermission } = await getPermissions({ wsId });
 
-    if (withoutPermission('manage_workspace_settings') || withoutPermission('manage_time_tracking_requests')) {
+    if (
+      withoutPermission('manage_workspace_settings') ||
+      withoutPermission('manage_time_tracking_requests')
+    ) {
       return NextResponse.json(
         { error: 'Insufficient permissions to modify time tracking settings' },
         { status: 403 }
       );
     }
-
-
 
     // Parse and validate the threshold value
     const body = await req.json();
@@ -81,7 +82,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       );
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       threshold,
     });
@@ -149,4 +150,3 @@ export async function GET(_: NextRequest, { params }: Params) {
     );
   }
 }
-
