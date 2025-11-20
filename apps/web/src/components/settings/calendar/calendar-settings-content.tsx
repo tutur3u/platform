@@ -1,6 +1,10 @@
 'use client';
 
-import type { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types';
+import type {
+  CalendarConnection,
+  Workspace,
+  WorkspaceCalendarGoogleToken,
+} from '@tuturuuu/types';
 import { CalendarSettingsLayout } from './calendar-settings-layout';
 import { CategoryColorsSettings } from './category-color-settings';
 import { GoogleCalendarSettings } from './google-calendar-settings';
@@ -16,6 +20,7 @@ interface CalendarSettingsContentProps {
   wsId: string;
   workspace?: Workspace | null;
   calendarToken?: WorkspaceCalendarGoogleToken | null;
+  calendarConnections?: CalendarConnection[];
 }
 
 export function CalendarSettingsContent({
@@ -23,6 +28,7 @@ export function CalendarSettingsContent({
   wsId,
   workspace,
   calendarToken,
+  calendarConnections = [],
 }: CalendarSettingsContentProps) {
   const { settings, updateSettings } = useCalendarSettings();
 
@@ -71,6 +77,7 @@ export function CalendarSettingsContent({
             wsId={wsId}
             workspace={workspace}
             experimentalGoogleToken={calendarToken}
+            calendarConnections={calendarConnections}
           />
         </CalendarSettingsLayout>
       );

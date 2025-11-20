@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import {
   Bell,
   Building,
@@ -15,7 +16,9 @@ import {
   Users,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types';
+import type {
+  Workspace,
+} from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import {
@@ -38,7 +41,7 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import WorkspaceAvatarSettings from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/avatar';
 import BasicInfo from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/basic-info';
 import UserAvatar from '../../app/[locale]/settings-avatar';
@@ -69,148 +72,118 @@ export function SettingsDialog({
   const params = useParams();
   const wsId = params?.wsId as string | undefined;
   const [activeTab, setActiveTab] = useState(defaultTab);
-  const [workspace, setWorkspace] = useState<Workspace | null>(
-    workspaceProp || null
-  );
-  const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false);
-  const [workspaceError, setWorkspaceError] = useState<string | null>(null);
-  const [calendarToken, setCalendarToken] =
-    useState<WorkspaceCalendarGoogleToken | null>(null);
 
-  // Sync with workspace prop if provided
-  useEffect(() => {
-    if (workspaceProp) {
-      setWorkspace(workspaceProp);
-    }
-  }, [workspaceProp]);
+  // Fetch workspace data if not provided (using TanStack Query)
+  const {
+    data: fetchedWorkspace,
+    isLoading: isLoadingWorkspace,
+    error: workspaceError,
+  } = useQuery({
+    queryKey: ['workspace', wsId],
+    queryFn: async () => {
+      if (!wsId) throw new Error('No workspace ID provided');
 
-  // Fetch workspace data if not provided
-  useEffect(() => {
-    if (workspaceProp || !wsId) return;
-
-    console.log('Attempting to fetch workspace for wsId:', wsId);
-
-    let cancelled = false;
-
-    const fetchWorkspace = async () => {
-      setIsLoadingWorkspace(true);
-      setWorkspaceError(null);
       const supabase = createClient();
 
-      try {
-        // Get current user
-        const {
-          data: { user: currentUser },
-        } = await supabase.auth.getUser();
+      // Get current user
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
 
-        if (!currentUser) {
-          if (!cancelled) {
-            setWorkspaceError('Not authenticated');
-            setIsLoadingWorkspace(false);
-          }
-          return;
+      if (!currentUser) {
+        throw new Error('Not authenticated');
+      }
+
+      // Resolve workspace ID (handles "personal", "internal", etc.)
+      const resolveResponse = await fetch(
+        '/api/v1/infrastructure/resolve-workspace-id',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ wsId }),
         }
+      );
 
-        // Resolve workspace ID (handles "personal", "internal", etc.)
-        const resolveResponse = await fetch(
-          '/api/v1/infrastructure/resolve-workspace-id',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ wsId }),
-          }
+      if (!resolveResponse.ok) {
+        throw new Error('Failed to resolve workspace ID');
+      }
+
+      const { workspaceId: resolvedWsId } = await resolveResponse.json();
+
+      // Fetch workspace with resolved ID
+      const { data, error } = await supabase
+        .from('workspaces')
+        .select('*, workspace_members!inner(user_id)')
+        .eq('id', resolvedWsId)
+        .eq('workspace_members.user_id', currentUser.id)
+        .single();
+
+      if (error) {
+        throw new Error(
+          error.code === 'PGRST116'
+            ? 'Workspace not found or you do not have access'
+            : error.message || 'Failed to load workspace'
         );
-
-        if (!resolveResponse.ok) {
-          if (!cancelled) {
-            setWorkspaceError('Failed to resolve workspace ID');
-            setIsLoadingWorkspace(false);
-          }
-          return;
-        }
-
-        const { workspaceId: resolvedWsId } = await resolveResponse.json();
-        console.log('Resolved workspace ID:', {
-          original: wsId,
-          resolved: resolvedWsId,
-        });
-
-        // Fetch workspace with resolved ID
-        const { data, error } = await supabase
-          .from('workspaces')
-          .select('*, workspace_members!inner(user_id)')
-          .eq('id', resolvedWsId)
-          .eq('workspace_members.user_id', currentUser.id)
-          .single();
-
-        console.log('Workspace fetch result:', {
-          wsId,
-          resolvedWsId,
-          data,
-          error,
-        });
-
-        if (error && !cancelled) {
-          console.error('Error fetching workspace:', error);
-          setWorkspaceError(
-            error.code === 'PGRST116'
-              ? 'Workspace not found or you do not have access'
-              : error.message || 'Failed to load workspace'
-          );
-        } else if (data && !cancelled) {
-          // Remove the joined data before setting
-          const { workspace_members: _, ...workspaceData } = data as any;
-          setWorkspace(workspaceData as Workspace);
-        }
-      } catch (error) {
-        console.error('Unexpected error fetching workspace:', error);
-        if (!cancelled) {
-          setWorkspaceError('An unexpected error occurred');
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoadingWorkspace(false);
-        }
       }
-    };
 
-    fetchWorkspace();
+      // Remove the joined data before returning
+      const { workspace_members: _, ...workspaceData } = data as any;
+      return workspaceData as Workspace;
+    },
+    enabled: !workspaceProp && !!wsId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
-    return () => {
-      cancelled = true;
-    };
-  }, [wsId, workspaceProp]);
+  // Use provided workspace or fetched workspace
+  const workspace = workspaceProp || fetchedWorkspace || null;
 
-  // Fetch calendar token when workspace is available
-  useEffect(() => {
-    if (!workspace?.id) return;
+  // Fetch calendar token when workspace is available (using TanStack Query)
+  const { data: calendarToken } = useQuery({
+    queryKey: ['calendar-token', workspace?.id],
+    queryFn: async () => {
+      if (!workspace?.id) return null;
 
-    let cancelled = false;
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('calendar_auth_tokens')
+        .select('*')
+        .eq('ws_id', workspace.id)
+        .maybeSingle();
 
-    const fetchCalendarToken = async () => {
+      return data;
+    },
+    enabled: !!workspace?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Fetch calendar connections when workspace is available (using TanStack Query)
+  const {
+    data: calendarConnections,
+  } = useQuery({
+    queryKey: ['calendar-connections', workspace?.id],
+    queryFn: async () => {
+      if (!workspace?.id) return [];
+
       const supabase = createClient();
 
-      try {
-        const { data } = await supabase
-          .from('calendar_auth_tokens')
-          .select('*')
-          .eq('ws_id', workspace.id)
-          .maybeSingle();
+      const { data, error } = await supabase
+        .from('calendar_connections')
+        .select('*')
+        .eq('ws_id', workspace.id)
+        .order('created_at', { ascending: true });
 
-        if (data && !cancelled) {
-          setCalendarToken(data);
-        }
-      } catch (error) {
-        console.error('Error fetching calendar token:', error);
+      if (error) {
+        console.error('Error fetching calendar connections:', error);
+        throw error;
       }
-    };
 
-    fetchCalendarToken();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [workspace?.id]);
+      return data || [];
+    },
+    enabled: !!workspace?.id,
+    staleTime: 30 * 1000, // 30 seconds for fresh data
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+  });
 
   const navItems = [
     {
@@ -270,62 +243,62 @@ export function SettingsDialog({
         },
         ...(wsId
           ? [
-              {
-                name: 'workspace_general',
-                label: 'General',
-                icon: Building,
-                description: t('ws-settings.general-description'),
-              },
-              {
-                name: 'workspace_members',
-                label: 'Members',
-                icon: Users,
-                description: t('ws-settings.members-description'),
-              },
-              {
-                name: 'billing',
-                label: t('billing.billing'),
-                icon: CreditCard,
-                description: t('settings-account.billing-description'),
-              },
-            ]
+            {
+              name: 'workspace_general',
+              label: 'General',
+              icon: Building,
+              description: t('ws-settings.general-description'),
+            },
+            {
+              name: 'workspace_members',
+              label: 'Members',
+              icon: Users,
+              description: t('ws-settings.members-description'),
+            },
+            {
+              name: 'billing',
+              label: t('billing.billing'),
+              icon: CreditCard,
+              description: t('settings-account.billing-description'),
+            },
+          ]
           : []),
       ],
     },
     ...(wsId
       ? [
-          {
-            label: 'Calendar',
-            items: [
-              {
-                name: 'calendar_hours',
-                label: 'Hours & Timezone',
-                icon: Clock,
-                description:
-                  'Configure your work hours, meeting hours, and timezone',
-              },
-              {
-                name: 'calendar_colors',
-                label: 'Category Colors',
-                icon: Palette,
-                description: 'Customize colors for different event categories',
-              },
-              {
-                name: 'calendar_google',
-                label: 'Integrations',
-                icon: CalendarDays,
-                description: 'Connect your Google Calendar and other services',
-              },
-              {
-                name: 'calendar_smart',
-                label: 'Smart Features',
-                icon: Sparkles,
-                description:
-                  'Configure AI-powered scheduling and task management',
-              },
-            ],
-          },
-        ]
+        {
+          label: 'Calendar',
+          items: [
+            {
+              name: 'calendar_hours',
+              label: 'Hours & Timezone',
+              icon: Clock,
+              description:
+                'Configure your work hours, meeting hours, and timezone',
+            },
+            {
+              name: 'calendar_colors',
+              label: 'Category Colors',
+              icon: Palette,
+              description: 'Customize colors for different event categories',
+            },
+            {
+              name: 'calendar_google',
+              label: 'Integrations',
+              icon: CalendarDays,
+              description: 'Connect your Google Calendar and other services',
+            },
+            {
+              name: 'calendar_smart',
+              label: 'Smart Features',
+              icon: Sparkles,
+              description:
+                'Configure AI-powered scheduling and task management',
+            },
+          ],
+        },
+      ]
       : []),
   ];
 
@@ -467,7 +440,8 @@ export function SettingsDialog({
                           Failed to load workspace
                         </p>
                         <p className="mt-1 text-muted-foreground text-sm">
-                          {workspaceError}
+                          {workspaceError.message ||
+                            'An error occurred while loading the workspace'}
                         </p>
                       </div>
                     ) : workspace ? (
@@ -509,7 +483,8 @@ export function SettingsDialog({
                           Failed to load workspace
                         </p>
                         <p className="mt-1 text-muted-foreground text-sm">
-                          {workspaceError}
+                          {workspaceError.message ||
+                            'An error occurred while loading the workspace'}
                         </p>
                       </div>
                     ) : workspace ? (
@@ -536,6 +511,7 @@ export function SettingsDialog({
                     wsId={wsId}
                     workspace={workspace}
                     calendarToken={calendarToken}
+                    calendarConnections={calendarConnections || []}
                   />
                 )}
               </CalendarSettingsWrapper>
