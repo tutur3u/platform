@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Any, Dict, Optional
+from typing import Any
 
 import aiohttp
 
@@ -28,26 +28,28 @@ class DiscordClient:
     """Handles Discord API interactions."""
 
     @staticmethod
-    async def send_response(payload: Dict, app_id: str, interaction_token: str) -> None:
+    async def send_response(payload: dict, app_id: str, interaction_token: str) -> None:
         """Send a response to Discord."""
-        interaction_url = f"https://discord.com/api/v10/webhooks/{app_id}/{interaction_token}/messages/@original"
+        interaction_url = (
+            f"https://discord.com/api/v10/webhooks/{app_id}/{interaction_token}/messages/@original"
+        )
 
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.patch(interaction_url, json=payload) as resp:
-                    response_text = await resp.text()
-                    print(f"🤖 Discord response: {response_text}")
+            async with (
+                aiohttp.ClientSession() as session,
+                session.patch(interaction_url, json=payload) as resp,
+            ):
+                response_text = await resp.text()
+                print(f"🤖 Discord response: {response_text}")
 
-                    if resp.status != 200:
-                        print(
-                            f"🤖 Discord error: Status {resp.status}, Response: {response_text}"
-                        )
+                if resp.status != 200:
+                    print(f"🤖 Discord error: Status {resp.status}, Response: {response_text}")
         except Exception as e:
             print(f"🤖 Error sending Discord response: {e}")
             raise
 
     @staticmethod
-    def format_success_message(result: Dict) -> str:
+    def format_success_message(result: dict) -> str:
         """Format a success message for link shortening."""
         return (
             f"🔗 **Link Shortened Successfully!**\n\n"
@@ -90,21 +92,23 @@ class DiscordClient:
 
     @staticmethod
     async def send_response_with_components(
-        payload: Dict, app_id: str, interaction_token: str
+        payload: dict, app_id: str, interaction_token: str
     ) -> None:
         """Send a response with interactive components to Discord."""
-        interaction_url = f"https://discord.com/api/v10/webhooks/{app_id}/{interaction_token}/messages/@original"
+        interaction_url = (
+            f"https://discord.com/api/v10/webhooks/{app_id}/{interaction_token}/messages/@original"
+        )
 
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.patch(interaction_url, json=payload) as resp:
-                    response_text = await resp.text()
-                    print(f"🤖 Discord response with components: {response_text}")
+            async with (
+                aiohttp.ClientSession() as session,
+                session.patch(interaction_url, json=payload) as resp,
+            ):
+                response_text = await resp.text()
+                print(f"🤖 Discord response with components: {response_text}")
 
-                    if resp.status != 200:
-                        print(
-                            f"🤖 Discord error: Status {resp.status}, Response: {response_text}"
-                        )
+                if resp.status != 200:
+                    print(f"🤖 Discord error: Status {resp.status}, Response: {response_text}")
         except Exception as e:
             print(f"🤖 Error sending Discord response with components: {e}")
             raise
@@ -117,37 +121,41 @@ class DiscordClient:
 
         # Limit to 25 boards (Discord select menu limit)
         limited_boards = boards[:25]
-        
+
         options = []
         for board in limited_boards:
             board_id = board.get("id")
             board_name = board.get("name", "Unnamed Board")
             # Truncate name if too long (Discord limit is 100 chars for option labels)
             display_name = board_name[:97] + "..." if len(board_name) > 100 else board_name
-            
-            options.append({
-                "label": display_name,
-                "value": board_id,
-                "description": f"Board ID: {board_id[:20]}..."
-            })
+
+            options.append(
+                {
+                    "label": display_name,
+                    "value": board_id,
+                    "description": f"Board ID: {board_id[:20]}...",
+                }
+            )
 
         select_menu = {
             "type": 3,  # SELECT_MENU
             "custom_id": "select_board_for_lists",
             "placeholder": "Choose a board to see its lists...",
-            "options": options
+            "options": options,
         }
 
-        return [{
-            "type": 1,  # ACTION_ROW
-            "components": [select_menu]
-        }]
+        return [
+            {
+                "type": 1,  # ACTION_ROW
+                "components": [select_menu],
+            }
+        ]
 
     @staticmethod
     async def send_channel_message(
         channel_id: str,
         content: str,
-        allowed_mentions: Optional[Dict[str, Any]] = None,
+        allowed_mentions: dict[str, Any] | None = None,
     ) -> None:
         """Send a message to a Discord channel."""
         bot_token = os.getenv("DISCORD_BOT_TOKEN")
@@ -159,41 +167,43 @@ class DiscordClient:
             "Authorization": f"Bot {bot_token}",
             "Content-Type": "application/json",
         }
-        payload: Dict[str, Any] = {"content": content}
+        payload: dict[str, Any] = {"content": content}
         if allowed_mentions is not None:
             payload["allowed_mentions"] = allowed_mentions
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, headers=headers, json=payload) as resp:
-                if resp.status >= 400:
-                    raw = await resp.text()
-                    parsed: Dict[str, Any] = {}
-                    try:
-                        parsed = json.loads(raw)
-                    except json.JSONDecodeError:
-                        parsed = {"message": raw}
+        async with (
+            aiohttp.ClientSession() as session,
+            session.post(url, headers=headers, json=payload) as resp,
+        ):
+            if resp.status >= 400:
+                raw = await resp.text()
+                parsed: dict[str, Any] = {}
+                try:
+                    parsed = json.loads(raw)
+                except json.JSONDecodeError:
+                    parsed = {"message": raw}
 
-                    error_message = parsed.get("message", "Unknown Discord error")
-                    error_code = parsed.get("code")
+                error_message = parsed.get("message", "Unknown Discord error")
+                error_code = parsed.get("code")
 
-                    if resp.status == 403 and error_code == 50001:
-                        raise DiscordMissingAccessError(
-                            f"Missing access to channel {channel_id}: {error_message}",
-                            status=resp.status,
-                            code=error_code,
-                        ) from None
-                    if resp.status == 403 and error_code == 50013:
-                        raise DiscordMissingPermissionsError(
-                            f"Missing permissions to post in channel {channel_id}: {error_message}",
-                            status=resp.status,
-                            code=error_code,
-                        ) from None
-
-                    raise DiscordAPIError(
-                        f"Failed to send channel message ({resp.status}): {error_message}",
+                if resp.status == 403 and error_code == 50001:
+                    raise DiscordMissingAccessError(
+                        f"Missing access to channel {channel_id}: {error_message}",
                         status=resp.status,
                         code=error_code,
-                    )
+                    ) from None
+                if resp.status == 403 and error_code == 50013:
+                    raise DiscordMissingPermissionsError(
+                        f"Missing permissions to post in channel {channel_id}: {error_message}",
+                        status=resp.status,
+                        code=error_code,
+                    ) from None
+
+                raise DiscordAPIError(
+                    f"Failed to send channel message ({resp.status}): {error_message}",
+                    status=resp.status,
+                    code=error_code,
+                )
 
     @staticmethod
     def create_list_selection_components(lists: list, board_id: str) -> list:
@@ -203,46 +213,52 @@ class DiscordClient:
 
         # Limit to 25 lists (Discord select menu limit)
         limited_lists = lists[:25]
-        
+
         options = []
         status_emojis = {
             "not_started": "⚪",
-            "active": "🟢", 
+            "active": "🟢",
             "done": "✅",
             "closed": "🔴",
         }
-        
+
         for task_list in limited_lists:
             list_id = task_list.get("id")
             list_name = task_list.get("name", "Unnamed List")
             status = task_list.get("status", "not_started")
             emoji = status_emojis.get(status, "⚪")
-            
+
             # Truncate name if too long
             display_name = f"{emoji} {list_name}"
             if len(display_name) > 100:
                 display_name = display_name[:97] + "..."
-            
-            options.append({
-                "label": display_name,
-                "value": f"{board_id}|{list_id}",  # Encode both IDs
-                "description": f"Status: {status.replace('_', ' ').title()}"
-            })
+
+            options.append(
+                {
+                    "label": display_name,
+                    "value": f"{board_id}|{list_id}",  # Encode both IDs
+                    "description": f"Status: {status.replace('_', ' ').title()}",
+                }
+            )
 
         select_menu = {
             "type": 3,  # SELECT_MENU
             "custom_id": "select_list_for_ticket",
             "placeholder": "Choose a list to create a ticket...",
-            "options": options
+            "options": options,
         }
 
-        return [{
-            "type": 1,  # ACTION_ROW
-            "components": [select_menu]
-        }]
+        return [
+            {
+                "type": 1,  # ACTION_ROW
+                "components": [select_menu],
+            }
+        ]
 
     @staticmethod
-    def create_ticket_form_modal(board_id: str, list_id: str, board_name: str, list_name: str) -> Dict:
+    def create_ticket_form_modal(
+        board_id: str, list_id: str, _board_name: str, list_name: str
+    ) -> dict:
         """Create a modal form for ticket creation."""
         return {
             "type": 9,  # MODAL
@@ -252,41 +268,47 @@ class DiscordClient:
                 "components": [
                     {
                         "type": 1,  # ACTION_ROW
-                        "components": [{
-                            "type": 4,  # TEXT_INPUT
-                            "custom_id": "ticket_title",
-                            "label": "Task Title",
-                            "style": 1,  # SHORT
-                            "placeholder": "e.g. Fix login bug",
-                            "required": True,
-                            "max_length": 100
-                        }]
+                        "components": [
+                            {
+                                "type": 4,  # TEXT_INPUT
+                                "custom_id": "ticket_title",
+                                "label": "Task Title",
+                                "style": 1,  # SHORT
+                                "placeholder": "e.g. Fix login bug",
+                                "required": True,
+                                "max_length": 100,
+                            }
+                        ],
                     },
                     {
                         "type": 1,  # ACTION_ROW
-                        "components": [{
-                            "type": 4,  # TEXT_INPUT
-                            "custom_id": "ticket_description",
-                            "label": "Description (Optional)",
-                            "style": 2,  # PARAGRAPH
-                            "placeholder": "Detailed description of the task...",
-                            "required": False,
-                            "max_length": 500
-                        }]
+                        "components": [
+                            {
+                                "type": 4,  # TEXT_INPUT
+                                "custom_id": "ticket_description",
+                                "label": "Description (Optional)",
+                                "style": 2,  # PARAGRAPH
+                                "placeholder": "Detailed description of the task...",
+                                "required": False,
+                                "max_length": 500,
+                            }
+                        ],
                     },
                     {
                         "type": 1,  # ACTION_ROW
-                        "components": [{
-                            "type": 4,  # TEXT_INPUT
-                            "custom_id": "ticket_priority",
-                            "label": "Priority (1=Low, 2=Medium, 3=High, 4=Urgent)",
-                            "style": 1,  # SHORT
-                            "placeholder": "2",
-                            "required": False,
-                            "min_length": 1,
-                            "max_length": 1
-                        }]
-                    }
-                ]
-            }
+                        "components": [
+                            {
+                                "type": 4,  # TEXT_INPUT
+                                "custom_id": "ticket_priority",
+                                "label": "Priority (1=Low, 2=Medium, 3=High, 4=Urgent)",
+                                "style": 1,  # SHORT
+                                "placeholder": "2",
+                                "required": False,
+                                "min_length": 1,
+                                "max_length": 1,
+                            }
+                        ],
+                    },
+                ],
+            },
         }

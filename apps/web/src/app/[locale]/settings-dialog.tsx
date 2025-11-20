@@ -19,7 +19,7 @@ export default function UserSettingsDialog({ user }: UserSettingsDialogProps) {
   const t = useTranslations();
 
   return (
-    <DialogContent>
+    <DialogContent className="max-h-[85vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>{t('settings-account.account')}</DialogTitle>
       </DialogHeader>

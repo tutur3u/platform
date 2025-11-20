@@ -260,25 +260,29 @@ export function TimerControls({
   const searchParams = useSearchParams();
 
   // Define timer mode tabs inside component to access t function
-  const TIMER_MODE_TABS: readonly TimerModeTab[] = [
-    {
-      value: TimerMode.stopwatch,
-      label: t('stopwatch_mode'),
-      icon: Timer,
-    },
-    {
-      value: TimerMode.pomodoro,
-      label: t('pomodoro_mode'),
-      icon: (props: ComponentProps<'svg'>) => (
-        <Icon iconNode={fruit} {...props} />
-      ),
-    },
-    {
-      value: TimerMode.custom,
-      label: t('custom_mode'),
-      icon: Settings2,
-    },
-  ] as const;
+  const TIMER_MODE_TABS: readonly TimerModeTab[] = useMemo(
+    () =>
+      [
+        {
+          value: TimerMode.stopwatch,
+          label: t('stopwatch_mode'),
+          icon: Timer,
+        },
+        {
+          value: TimerMode.pomodoro,
+          label: t('pomodoro_mode'),
+          icon: (props: ComponentProps<'svg'>) => (
+            <Icon iconNode={fruit} {...props} />
+          ),
+        },
+        {
+          value: TimerMode.custom,
+          label: t('custom_mode'),
+          icon: Settings2,
+        },
+      ] as const,
+    [t]
+  );
 
   const [isLoading, setIsLoading] = useState(false);
   const [newSessionTitle, setNewSessionTitle] = useState('');
@@ -299,6 +303,42 @@ export function TimerControls({
 
   // Pomodoro and timer mode state
   const [timerMode, setTimerMode] = useState<TimerMode>(TimerMode.stopwatch);
+
+  // Local elapsed time state to ensure smooth updates even if parent prop lags
+  const [localElapsedTime, setLocalElapsedTime] = useState(elapsedTime);
+
+  // Sync local elapsed time with prop when not running
+  useEffect(() => {
+    if (!isRunning) {
+      setLocalElapsedTime(elapsedTime);
+    }
+  }, [elapsedTime, isRunning]);
+
+  // Local stopwatch interval
+  useEffect(() => {
+    if (
+      timerMode === TimerMode.stopwatch &&
+      isRunning &&
+      currentSession?.start_time
+    ) {
+      const startTime = new Date(currentSession.start_time).getTime();
+
+      // Initial update
+      setLocalElapsedTime(
+        Math.max(0, Math.floor((Date.now() - startTime) / 1000))
+      );
+
+      const interval = setInterval(() => {
+        const elapsed = Math.max(
+          0,
+          Math.floor((Date.now() - startTime) / 1000)
+        );
+        setLocalElapsedTime(elapsed);
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [timerMode, isRunning, currentSession]);
   const [pomodoroSettings, setPomodoroSettings] = useState<PomodoroSettings>(
     DEFAULT_POMODORO_SETTINGS
   );
@@ -548,7 +588,7 @@ export function TimerControls({
           startTime: currentSession.start_time
             ? new Date(currentSession.start_time)
             : null,
-          elapsedTime: elapsedTime,
+          elapsedTime: localElapsedTime,
           breakTimeState: currentBreakState,
           pomodoroState:
             timerMode === TimerMode.pomodoro ? countdownState : undefined,
@@ -557,7 +597,7 @@ export function TimerControls({
               ? {
                   hasReachedTarget,
                   targetProgress:
-                    elapsedTime /
+                    localElapsedTime /
                     ((customTimerSettings.targetDuration || 60) * 60),
                 }
               : undefined,
@@ -616,7 +656,7 @@ export function TimerControls({
       sessionProtection.isActive,
       currentSession,
       timerMode,
-      elapsedTime,
+      localElapsedTime,
       getCurrentBreakState,
       countdownState,
       hasReachedTarget,
@@ -789,7 +829,7 @@ export function TimerControls({
   const dropdownContentRef = useRef<HTMLDivElement>(null);
 
   // Refs for timer state to avoid interval recreation
-  const elapsedTimeRef = useRef(elapsedTime);
+  const elapsedTimeRef = useRef(localElapsedTime);
   const hasReachedTargetRef = useRef(hasReachedTarget);
   const getCurrentBreakStateRef = useRef(getCurrentBreakState);
   const updateCurrentBreakStateRef = useRef(updateCurrentBreakState);
@@ -799,8 +839,8 @@ export function TimerControls({
 
   // Update refs when values change
   useEffect(() => {
-    elapsedTimeRef.current = elapsedTime;
-  }, [elapsedTime]);
+    elapsedTimeRef.current = localElapsedTime;
+  }, [localElapsedTime]);
 
   useEffect(() => {
     hasReachedTargetRef.current = hasReachedTarget;
@@ -1125,77 +1165,86 @@ export function TimerControls({
   ]);
 
   // Update countdown timer (for pomodoro and traditional countdown modes)
+  // Update countdown timer (for pomodoro and traditional countdown modes)
+  useEffect(() => {
+    if (
+      (timerMode === 'pomodoro' ||
+        (timerMode === 'custom' &&
+          customTimerSettings.type === 'traditional-countdown')) &&
+      isRunning
+    ) {
+      const interval = setInterval(() => {
+        setCountdownState((prev) => {
+          if (prev.remainingTime <= 0) return prev;
+          return { ...prev, remainingTime: prev.remainingTime - 1 };
+        });
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [timerMode, isRunning, customTimerSettings.type]);
+
+  // Handle countdown completion
   useEffect(() => {
     if (
       (timerMode === 'pomodoro' ||
         (timerMode === 'custom' &&
           customTimerSettings.type === 'traditional-countdown')) &&
       isRunning &&
-      countdownState.remainingTime > 0
+      countdownState.remainingTime === 0
     ) {
-      const interval = setInterval(() => {
-        setCountdownState((prev) => {
-          const newRemainingTime = prev.remainingTime - 1;
+      if (timerMode === 'pomodoro') {
+        handlePomodoroComplete();
+      } else if (
+        timerMode === 'custom' &&
+        customTimerSettings.type === 'traditional-countdown'
+      ) {
+        // Handle traditional countdown completion
+        showNotification(
+          t('countdown_complete_notification'),
+          customTimerSettings.enableMotivationalMessages
+            ? t('countdown_complete_motivational')
+            : t('countdown_complete_basic'),
+          customTimerSettings.autoRestart
+            ? [
+                {
+                  title: t('auto_restart_countdown'),
+                  action: () => {},
+                },
+              ]
+            : undefined
+        );
 
-          if (newRemainingTime <= 0) {
-            if (timerMode === 'pomodoro') {
-              handlePomodoroComplete();
-            } else if (
-              timerMode === 'custom' &&
-              customTimerSettings.type === 'traditional-countdown'
-            ) {
-              // Handle traditional countdown completion
-              showNotification(
-                t('countdown_complete_notification'),
-                customTimerSettings.enableMotivationalMessages
-                  ? t('countdown_complete_motivational')
-                  : t('countdown_complete_basic'),
-                customTimerSettings.autoRestart
-                  ? [
-                      {
-                        title: t('auto_restart_countdown'),
-                        action: () => {},
-                      },
-                    ]
-                  : undefined
-              );
+        if (customTimerSettings.playCompletionSound) {
+          playNotificationSound();
+        }
 
-              if (customTimerSettings.playCompletionSound) {
-                playNotificationSound();
-              }
-
-              if (customTimerSettings.autoRestart) {
-                // Auto-restart after 3 seconds
-                setTimeout(() => {
-                  const restartDuration =
-                    (customTimerSettings.countdownDuration || 25) * 60;
-                  setCountdownState((prev) => ({
-                    ...prev,
-                    targetTime: restartDuration,
-                    remainingTime: restartDuration,
-                  }));
-                }, 3000);
-              } else {
-                setIsRunning(false);
-              }
-            }
-            return { ...prev, remainingTime: 0 };
-          }
-
-          return { ...prev, remainingTime: newRemainingTime };
-        });
-      }, 1000);
-
-      return () => clearInterval(interval);
+        if (customTimerSettings.autoRestart) {
+          // Auto-restart after 3 seconds
+          setTimeout(() => {
+            const restartDuration =
+              (customTimerSettings.countdownDuration || 25) * 60;
+            setCountdownState((prev) => ({
+              ...prev,
+              targetTime: restartDuration,
+              remainingTime: restartDuration,
+            }));
+          }, 3000);
+        } else {
+          setIsRunning(false);
+        }
+      }
     }
   }, [
+    countdownState.remainingTime,
     timerMode,
     isRunning,
-    countdownState.remainingTime,
     customTimerSettings,
     handlePomodoroComplete,
     showNotification,
     playNotificationSound,
+    t,
+    setIsRunning,
   ]);
 
   // Enhanced stopwatch interval breaks and target monitoring
@@ -1695,11 +1744,11 @@ export function TimerControls({
 
       // Store paused session data instead of clearing it
       setPausedSession(currentSession);
-      setPausedElapsedTime(elapsedTime);
+      setPausedElapsedTime(localElapsedTime);
       setPauseStartTime(pauseTime);
 
       // Save to localStorage for persistence across sessions
-      savePausedSessionToStorage(currentSession, elapsedTime, pauseTime);
+      savePausedSessionToStorage(currentSession, localElapsedTime, pauseTime);
 
       // Clear active session but keep paused state
       setCurrentSession(null);
@@ -3146,7 +3195,7 @@ export function TimerControls({
                     (timerMode === TimerMode.custom &&
                       customTimerSettings.type === 'traditional-countdown')
                       ? formatTime(countdownState.remainingTime)
-                      : formatTime(elapsedTime)}
+                      : formatTime(localElapsedTime)}
                   </div>
 
                   {/* Pomodoro Progress Indicator */}
@@ -4454,7 +4503,11 @@ export function TimerControls({
               <div className="text-center">
                 <CheckCircle className="mx-auto mb-4 h-12 w-12 animate-pulse text-green-500" />
                 <h3 className="mb-2 font-semibold text-lg">
-                  {t('session_completed')}
+                  {t('session_completed', {
+                    duration: formatDuration(
+                      justCompleted.duration_seconds || 0
+                    ),
+                  })}
                 </h3>
                 <p className="mb-1 text-muted-foreground">
                   {justCompleted.title}

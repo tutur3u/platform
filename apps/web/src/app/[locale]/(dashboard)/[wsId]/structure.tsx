@@ -1,5 +1,10 @@
 'use client';
 
+import { ActiveTimerIndicator } from '@/components/active-timer-indicator';
+import type { NavLink } from '@/components/navigation';
+import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import { useSidebar } from '@/context/sidebar-context';
+import { useActiveTimerSession } from '@/hooks/use-active-timer-session';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from '@tuturuuu/icons';
 import type { Workspace } from '@tuturuuu/types';
@@ -11,10 +16,10 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import {
   type ReactNode,
   Suspense,
@@ -22,11 +27,6 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { ActiveTimerIndicator } from '@/components/active-timer-indicator';
-import type { NavLink } from '@/components/navigation';
-import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
-import { useSidebar } from '@/context/sidebar-context';
-import { useActiveTimerSession } from '@/hooks/use-active-timer-session';
 import { FeedbackButton } from './feedback-button';
 import { Nav } from './nav';
 
@@ -426,7 +426,7 @@ export function Structure({
 
   const sidebarHeader = (
     <>
-      {isCollapsed || (
+      {isCollapsed || wsId === ROOT_WORKSPACE_ID || (
         <Link href="/home" className="flex flex-none items-center gap-2">
           <div className="flex-none">
             <Image
@@ -448,7 +448,8 @@ export function Structure({
         }
       >
         <WorkspaceSelect
-          t={t as (key: string) => string}
+          t={t}
+          wsId={wsId}
           hideLeading={isCollapsed}
           localUseQuery={useQuery}
           disableCreateNewWorkspace={disableCreateNewWorkspace}
@@ -473,7 +474,7 @@ export function Structure({
       <div
         key={navState.history.length}
         className={cn(
-          'absolute flex h-full w-full flex-col transition-transform duration-300 ease-in-out min-h-0',
+          'absolute flex h-full min-h-0 w-full flex-col transition-transform duration-300 ease-in-out',
           navState.direction === 'forward'
             ? 'slide-in-from-right animate-in'
             : 'slide-in-from-left animate-in',
@@ -482,7 +483,7 @@ export function Structure({
         )}
       >
         {navState.history.length === 0 ? (
-          <div className="scrollbar-none flex-1 overflow-y-auto min-h-0">
+          <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto">
             <Nav
               key={`${user?.id}-root`}
               wsId={wsId}

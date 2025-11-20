@@ -1,0 +1,109 @@
+# Ruff configuration for Discord Python bot
+# Ruff is an extremely fast Python linter and formatter written in Rust
+# Docs: https://docs.astral.sh/ruff/
+
+# Target Python 3.13+
+target-version = "py313"
+
+# Line length (consistent with formatter)
+line-length = 100
+
+[lint]
+# Enable linting rules
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort (import sorting)
+    "N",      # pep8-naming
+    "UP",     # pyupgrade (modern Python syntax)
+    "YTT",    # flake8-2020
+    "ASYNC",  # flake8-async
+    "S",      # flake8-bandit (security)
+    "B",      # flake8-bugbear
+    "A",      # flake8-builtins
+    "C4",     # flake8-comprehensions
+    "T10",    # flake8-debugger
+    "ISC",    # flake8-implicit-str-concat
+    "ICN",    # flake8-import-conventions
+    "PIE",    # flake8-pie
+    "T20",    # flake8-print
+    "PT",     # flake8-pytest-style
+    "Q",      # flake8-quotes
+    "RSE",    # flake8-raise
+    "RET",    # flake8-return
+    "SLF",    # flake8-self (private member access)
+    "SIM",    # flake8-simplify
+    "ARG",    # flake8-unused-arguments
+    "PTH",    # flake8-use-pathlib
+    "ERA",    # eradicate (commented-out code)
+    "PL",     # pylint
+    "PERF",   # perflint (performance anti-patterns)
+    "RUF",    # ruff-specific rules
+]
+
+# Disable specific rules
+ignore = [
+    "S101",    # Use of assert (common in tests)
+    "T201",    # Allow print statements (used for logging in bot)
+    "PLR0913", # Too many arguments (sometimes unavoidable)
+    "PLR2004", # Magic value comparisons (HTTP status codes, etc.)
+    "ISC001",  # Conflicts with formatter
+    "COM812",  # Conflicts with formatter
+]
+
+# Allow autofix for all enabled rules
+fixable = ["ALL"]
+unfixable = []
+
+# Exclude patterns
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    "dist",
+    "build",
+]
+
+# Per-file ignores
+[lint.per-file-ignores]
+"tests/*" = [
+    "S101",    # Allow assert in tests
+    "SLF001",  # Allow private member access in tests
+    "PLR2004", # Allow magic values in tests
+]
+"app.py" = [
+    "PLC0415",  # Allow imports inside functions (Modal lazy-loading requirement)
+    "PLR0911",  # Allow many returns in main handler (Discord interaction router)
+    "PLR0912",  # Allow many branches in main handler (Discord interaction types)
+    "PLR0915",  # Allow many statements in main handler (comprehensive routing logic)
+]
+
+[lint.isort]
+# Import sorting configuration
+combine-as-imports = true
+force-wrap-aliases = true
+split-on-trailing-comma = true
+
+[lint.pydocstyle]
+# Docstring style (Google style)
+convention = "google"
+
+[lint.pylint]
+# Pylint-specific settings
+max-args = 8
+max-branches = 15
+max-returns = 6
+max-statements = 60
+
+[format]
+# Formatter configuration
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+skip-magic-trailing-comma = false
+docstring-code-format = true
+docstring-code-line-length = 80

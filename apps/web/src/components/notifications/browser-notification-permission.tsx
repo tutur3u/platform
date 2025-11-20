@@ -1,17 +1,10 @@
 'use client';
 
-import { Bell, AlertCircle, CheckCircle2, XCircle } from '@tuturuuu/icons';
+import { AlertCircle, Bell, CheckCircle2, XCircle } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 type PermissionState = 'granted' | 'denied' | 'default' | 'unsupported';
 
@@ -125,44 +118,33 @@ export default function BrowserNotificationPermission() {
 
   if (permissionState === 'unsupported') {
     return (
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className={`rounded-full ${getStatusColor()} p-2`}>
-              {getStatusIcon()}
-            </div>
-            <div>
-              <CardTitle className="text-lg">
-                {t('browser-notifications')}
-              </CardTitle>
-              <CardDescription>{getStatusText()}</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-sm">{getHelpText()}</p>
-        </CardContent>
-      </Card>
+      <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-4">
+        <div className={`rounded-full ${getStatusColor()} p-2`}>
+          {getStatusIcon()}
+        </div>
+        <div>
+          <h3 className="font-medium text-sm">{t('browser-notifications')}</h3>
+          <p className="text-muted-foreground text-xs">{getStatusText()}</p>
+          <p className="mt-1 text-muted-foreground text-xs">{getHelpText()}</p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className={`rounded-full ${getStatusColor()} p-2`}>
-            {getStatusIcon()}
-          </div>
-          <div className="flex-1">
-            <CardTitle className="text-lg">
-              {t('browser-notifications')}
-            </CardTitle>
-            <CardDescription>{getStatusText()}</CardDescription>
-          </div>
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className={`rounded-full ${getStatusColor()} p-2`}>
+          {getStatusIcon()}
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-muted-foreground text-sm">{getHelpText()}</p>
+        <div className="flex-1">
+          <h3 className="font-medium text-sm">{t('browser-notifications')}</h3>
+          <p className="text-muted-foreground text-xs">{getStatusText()}</p>
+        </div>
+      </div>
+
+      <div className="pl-11">
+        <p className="mb-4 text-muted-foreground text-sm">{getHelpText()}</p>
 
         {permissionState === 'default' && (
           <Button
@@ -187,7 +169,7 @@ export default function BrowserNotificationPermission() {
             <p className="text-dynamic-green text-sm">{t('granted-info')}</p>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

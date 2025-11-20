@@ -46,7 +46,7 @@ jobs:
 
       - name: Comment PR with link check results
         if: failure() && github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
@@ -69,7 +69,7 @@ jobs:
 
       - name: Upload link check report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: link-check-report
           path: lychee-report.md

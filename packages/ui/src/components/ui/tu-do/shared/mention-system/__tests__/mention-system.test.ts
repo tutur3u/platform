@@ -40,7 +40,7 @@ describe('useMentionSuggestions', () => {
     const { result } = renderHook(() =>
       useMentionSuggestions({
         workspaceMembers: mockMembers,
-        allWorkspaces: [],
+        currentWorkspace: null,
         taskProjects: [],
         workspaceTasks: [],
         query: '',
@@ -56,7 +56,7 @@ describe('useMentionSuggestions', () => {
     const { result } = renderHook(() =>
       useMentionSuggestions({
         workspaceMembers: [],
-        allWorkspaces: mockWorkspaces,
+        currentWorkspace: mockWorkspaces[0], // Non-personal workspace
         taskProjects: [],
         workspaceTasks: [],
         query: '',
@@ -71,7 +71,7 @@ describe('useMentionSuggestions', () => {
     const { result } = renderHook(() =>
       useMentionSuggestions({
         workspaceMembers: [],
-        allWorkspaces: [],
+        currentWorkspace: null,
         taskProjects: mockProjects,
         workspaceTasks: [],
         query: '',
@@ -86,7 +86,7 @@ describe('useMentionSuggestions', () => {
     const { result } = renderHook(() =>
       useMentionSuggestions({
         workspaceMembers: [],
-        allWorkspaces: [],
+        currentWorkspace: null,
         taskProjects: [],
         workspaceTasks: mockTasks,
         currentTaskId: 'task-1',
@@ -102,7 +102,7 @@ describe('useMentionSuggestions', () => {
     const { result } = renderHook(() =>
       useMentionSuggestions({
         workspaceMembers: [],
-        allWorkspaces: [],
+        currentWorkspace: null,
         taskProjects: [],
         workspaceTasks: [],
         query: '',
@@ -118,7 +118,7 @@ describe('useMentionSuggestions', () => {
     const { result } = renderHook(() =>
       useMentionSuggestions({
         workspaceMembers: mockMembers,
-        allWorkspaces: [],
+        currentWorkspace: null,
         taskProjects: [],
         workspaceTasks: [],
         query: 'john',
@@ -142,7 +142,7 @@ describe('useMentionSuggestions', () => {
     const { result } = renderHook(() =>
       useMentionSuggestions({
         workspaceMembers: [],
-        allWorkspaces: [],
+        currentWorkspace: null,
         taskProjects: [],
         workspaceTasks: manyTasks,
         query: '',
@@ -158,7 +158,7 @@ describe('useMentionSuggestions', () => {
     const { result } = renderHook(() =>
       useMentionSuggestions({
         workspaceMembers: [],
-        allWorkspaces: [],
+        currentWorkspace: null,
         taskProjects: [],
         workspaceTasks: [],
         query: 'NonExistentUser',

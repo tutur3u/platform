@@ -1,10 +1,10 @@
 """Link shortener functionality for the Discord bot."""
 
 import os
-from typing import Dict, Optional
+
+from supabase import Client, create_client
 
 from config import DEFAULT_WORKSPACE_ID, DISCORD_BOT_USER_ID, MAX_SLUG_ATTEMPTS
-from supabase import Client, create_client
 from utils import (
     extract_domain,
     generate_slug,
@@ -18,7 +18,7 @@ class LinkShortener:
     """Handles link shortening operations."""
 
     def __init__(self):
-        self.supabase: Optional[Client] = None
+        self.supabase: Client | None = None
         self._initialize_supabase()
 
     def _initialize_supabase(self):
@@ -34,10 +34,10 @@ class LinkShortener:
     def shorten_link(
         self,
         url: str,
-        custom_slug: Optional[str] = None,
+        custom_slug: str | None = None,
         ws_id: str = DEFAULT_WORKSPACE_ID,
-        creator_id: Optional[str] = None,
-    ) -> Dict:
+        creator_id: str | None = None,
+    ) -> dict:
         """Shorten a URL using the Supabase database."""
         try:
             # Validate URL
@@ -47,14 +47,17 @@ class LinkShortener:
             # Validate custom slug if provided
             if custom_slug and not is_valid_slug(custom_slug):
                 return {
-                    "error": "Custom slug can only contain letters, numbers, hyphens, and underscores (max 50 characters)"
+                    "error": (
+                        "Custom slug can only contain letters, numbers, hyphens, "
+                        "and underscores (max 50 characters)"
+                    )
                 }
 
             # Determine slug to use
-            slug = custom_slug if custom_slug else generate_slug()
+            initial_slug = custom_slug if custom_slug else generate_slug()
 
             # Check if slug already exists and generate a new one if needed
-            slug = self._get_available_slug(slug, custom_slug)
+            slug = self._get_available_slug(initial_slug, bool(custom_slug))
             if not slug:
                 return {"error": "Failed to generate unique slug. Please try again."}
 
@@ -82,19 +85,15 @@ class LinkShortener:
             print(f"Error shortening link: {e}")
             return {"error": "Internal server error"}
 
-    def _get_available_slug(self, initial_slug: str, is_custom: bool) -> Optional[str]:
+    def _get_available_slug(self, initial_slug: str, is_custom: bool) -> str | None:
         """Get an available slug, retrying if necessary."""
+        assert self.supabase is not None, "Supabase client not initialized"
         slug = initial_slug
         attempts = 0
 
         while attempts < MAX_SLUG_ATTEMPTS:
             # Check if slug exists
-            result = (
-                self.supabase.table("shortened_links")
-                .select("id")
-                .eq("slug", slug)
-                .execute()
-            )
+            result = self.supabase.table("shortened_links").select("id").eq("slug", slug).execute()
 
             if not result.data:
                 # Slug is available
@@ -116,9 +115,10 @@ class LinkShortener:
         slug: str,
         ws_id: str,
         domain: str,
-        creator_id: Optional[str] = None,
-    ) -> Optional[Dict]:
+        creator_id: str | None = None,
+    ) -> dict | None:
         """Insert a new shortened link into the database."""
+        assert self.supabase is not None, "Supabase client not initialized"
         insert_data = {
             "link": url,
             "slug": slug,

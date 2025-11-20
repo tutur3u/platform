@@ -50,7 +50,7 @@ export function MentionMenu({
   return createPortal(
     <div
       role="dialog"
-      className="pointer-events-auto fixed z-[200] flex w-[360px] flex-col overflow-hidden rounded-lg border border-dynamic-border bg-popover/95 shadow-xl backdrop-blur"
+      className="pointer-events-auto fixed z-200 flex w-[360px] flex-col overflow-hidden rounded-lg border border-dynamic-border bg-popover/95 shadow-xl backdrop-blur"
       style={{
         top: position.top,
         left: position.left,
@@ -98,7 +98,7 @@ export function MentionMenu({
                 <div className="px-3 pb-1 font-semibold text-[11px] text-muted-foreground uppercase tracking-wide">
                   {group.title}
                 </div>
-                {group.options.map((option) => {
+                {group.options.map((option, optionIndex) => {
                   optionCursor += 1;
                   const currentIndex = optionCursor;
                   const isActive = currentIndex === highlightIndex;
@@ -127,7 +127,7 @@ export function MentionMenu({
                   return (
                     <button
                       data-mention-item={currentIndex}
-                      key={`${option.type}-${option.id}`}
+                      key={`${option.type}-${option.id || optionIndex}`}
                       type="button"
                       className={cn(
                         'flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors',

@@ -20,6 +20,7 @@ import TaskListWithCompletion from './task-list-with-completion';
 interface TaskListProps {
   isPersonal: boolean;
   commandBarLoading: boolean;
+  isAiGenerating?: boolean;
   overdueTasks: TaskWithRelations[] | undefined;
   todayTasks: TaskWithRelations[] | undefined;
   upcomingTasks: TaskWithRelations[] | undefined;
@@ -75,6 +76,7 @@ const groupTasksByPriority = (tasks: TaskWithRelations[] | undefined) => {
 export default function TaskList({
   isPersonal,
   commandBarLoading,
+  isAiGenerating = false,
   overdueTasks,
   todayTasks,
   upcomingTasks,
@@ -88,11 +90,15 @@ export default function TaskList({
 
   return (
     <>
-      {/* Success message when tasks are created */}
+      {/* Loading message when tasks are being created */}
       {commandBarLoading && (
         <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-linear-to-br from-primary/5 to-primary/10 p-4 shadow-sm">
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="font-medium text-sm">Creating your task...</p>
+          <p className="font-medium text-sm">
+            {isAiGenerating
+              ? 'Generating tasks with AI...'
+              : 'Creating your task...'}
+          </p>
         </div>
       )}
 
