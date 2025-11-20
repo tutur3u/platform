@@ -16,9 +16,7 @@ import {
   Users,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type {
-  Workspace,
-} from '@tuturuuu/types';
+import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import {
@@ -157,9 +155,7 @@ export function SettingsDialog({
   });
 
   // Fetch calendar connections when workspace is available (using TanStack Query)
-  const {
-    data: calendarConnections,
-  } = useQuery({
+  const { data: calendarConnections } = useQuery({
     queryKey: ['calendar-connections', workspace?.id],
     queryFn: async () => {
       if (!workspace?.id) return [];
@@ -243,62 +239,62 @@ export function SettingsDialog({
         },
         ...(wsId
           ? [
-            {
-              name: 'workspace_general',
-              label: 'General',
-              icon: Building,
-              description: t('ws-settings.general-description'),
-            },
-            {
-              name: 'workspace_members',
-              label: 'Members',
-              icon: Users,
-              description: t('ws-settings.members-description'),
-            },
-            {
-              name: 'billing',
-              label: t('billing.billing'),
-              icon: CreditCard,
-              description: t('settings-account.billing-description'),
-            },
-          ]
+              {
+                name: 'workspace_general',
+                label: 'General',
+                icon: Building,
+                description: t('ws-settings.general-description'),
+              },
+              {
+                name: 'workspace_members',
+                label: 'Members',
+                icon: Users,
+                description: t('ws-settings.members-description'),
+              },
+              {
+                name: 'billing',
+                label: t('billing.billing'),
+                icon: CreditCard,
+                description: t('settings-account.billing-description'),
+              },
+            ]
           : []),
       ],
     },
     ...(wsId
       ? [
-        {
-          label: 'Calendar',
-          items: [
-            {
-              name: 'calendar_hours',
-              label: 'Hours & Timezone',
-              icon: Clock,
-              description:
-                'Configure your work hours, meeting hours, and timezone',
-            },
-            {
-              name: 'calendar_colors',
-              label: 'Category Colors',
-              icon: Palette,
-              description: 'Customize colors for different event categories',
-            },
-            {
-              name: 'calendar_google',
-              label: 'Integrations',
-              icon: CalendarDays,
-              description: 'Connect your Google Calendar and other services',
-            },
-            {
-              name: 'calendar_smart',
-              label: 'Smart Features',
-              icon: Sparkles,
-              description:
-                'Configure AI-powered scheduling and task management',
-            },
-          ],
-        },
-      ]
+          {
+            label: 'Calendar',
+            items: [
+              {
+                name: 'calendar_hours',
+                label: 'Hours & Timezone',
+                icon: Clock,
+                description:
+                  'Configure your work hours, meeting hours, and timezone',
+              },
+              {
+                name: 'calendar_colors',
+                label: 'Category Colors',
+                icon: Palette,
+                description: 'Customize colors for different event categories',
+              },
+              {
+                name: 'calendar_google',
+                label: 'Integrations',
+                icon: CalendarDays,
+                description: 'Connect your Google Calendar and other services',
+              },
+              {
+                name: 'calendar_smart',
+                label: 'Smart Features',
+                icon: Sparkles,
+                description:
+                  'Configure AI-powered scheduling and task management',
+              },
+            ],
+          },
+        ]
       : []),
   ];
 
