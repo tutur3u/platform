@@ -24,7 +24,7 @@ Approved capability surface (default-allowed unless explicitly restricted):
 
 | Domain | Allowed Actions | Must Also Do | Never Do |
 |--------|-----------------|--------------|----------|
-| Code (TS/JS) | Create/modify Next.js App Router routes, React Server/Client Components, shared package code | Add/update minimal tests & types, update relevant docs | Introduce breaking public API changes without `BREAKING` note |
+| Code (TS/JS) | Create/modify Next.js App Router routes, React Server/Client Components, shared package code | Add/update minimal tests & types, update relevant docs, use TanStack Query for ALL client-side data fetching | Introduce breaking public API changes without `BREAKING` note; **NEVER use `useEffect` for data fetching**; use raw fetch without React Query |
 | Code (Python) | Modify scripts/services in `apps/*` (python) respecting virtual env & dependency isolation | Keep requirements pinned / update lock if exists | Mix unrelated refactors with feature PR |
 | Database (Supabase) | Create migration SQL in `apps/db/supabase/migrations`, run typegen | Bump generated types in `@tuturuuu/types` | Directly edit generated type files manually |
 | AI Endpoints | Add routes under `app/api/...` using Vercel AI SDK & schemas in `packages/ai` | Enforce auth & feature flag checks | Expose raw provider keys or skip validation |
@@ -49,8 +49,9 @@ Prohibited actions (HARD STOP):
 
 - Committing secrets, API keys, tokens, URLs containing credentials.
 - Writing binary blobs not required (e.g., screenshots) outside designated `public/` folders.
-- Removing or disabling linting, formatting, type checking to “make it pass”.
+- Removing or disabling linting, formatting, type checking to "make it pass".
 - Executing destructive DB commands in migrations without `-- reversible` strategy or clear comment.
+- **USING `useEffect` FOR DATA FETCHING - THIS IS ABSOLUTELY FORBIDDEN. Use TanStack Query instead.**
 
 Escalate (ask for human input) when:
 
@@ -379,14 +380,14 @@ Add a comment `// rationale: dynamic token mapping` only when mapping is non-obv
 
 ### 5.12 Data Fetching & React Query
 
-Goal: Minimize client complexity and network chatter while keeping UX responsive.
+Goal: Minimize client complexity and network chatter while keeping UX responsive. **For ALL client-side data fetching needs, TanStack Query (React Query) is the mandatory standard.**
 
 Decision Order (Prefer Earlier):
 
 1. Pure Server Component (RSC) fetch – for read-only, cacheable, SEO / first paint critical data.
 2. Server Action (mutation or non-idempotent op) returning updated canonical state to RSC.
 3. RSC initial fetch + Client hydration (dehydrate React Query cache) if post-load background refresh needed.
-4. Client-only React Query (`useQuery`/`useMutation`) for interactive, rapidly changing, or session-local state.
+4. **Client-side TanStack Query (`useQuery`/`useMutation`) – REQUIRED for ALL client-side data fetching:** interactive state, rapidly changing data, session-local state, dependent queries, optimistic updates, background refetching.
 5. Realtime subscription (Supabase channel) + targeted query invalidation / cache updates (avoid polling) – only if live updates materially improve UX.
 
 When NOT to use React Query:
@@ -395,13 +396,34 @@ When NOT to use React Query:
 - Simple form POST where immediate redirect or RSC re-render suffices (use server action / route handler returning redirect or new data).
 - Data already fully present via parent RSC props.
 
-When TO use React Query:
+When TO use React Query (MANDATORY for client-side fetching):
 
-- User-triggered mutations needing optimistic UI or undo.
-- Background refetch for freshness after initial SSR/RSC render.
-- Paginated / infinite lists with incremental loading.
-- Dependent queries (one key depends on another's resolved data) requiring client sequencing.
-- Shared client state consumed in multiple sibling Client Components without prop drilling.
+**TanStack Query is the ONLY approved method for client-side data fetching.**
+
+**ABSOLUTELY FORBIDDEN PATTERNS:**
+- ❌ **NEVER use `useEffect` for data fetching** - This is the #1 most common violation
+- ❌ Raw `fetch()` in client components
+- ❌ Manual state management (`useState` + `useEffect`) for API calls
+- ❌ Custom data fetching hooks without React Query
+
+**The pattern `useEffect(() => { fetch(...).then(setData) }, [])` is BANNED.**
+
+Use React Query for:
+
+- **User-triggered mutations** needing optimistic UI or undo.
+- **Background refetch** for freshness after initial SSR/RSC render.
+- **Paginated / infinite lists** with incremental loading.
+- **Dependent queries** (one key depends on another's resolved data) requiring client sequencing.
+- **Shared client state** consumed in multiple sibling Client Components without prop drilling.
+- **Any client-side API call** that needs caching, refetching, or state management.
+- **Interactive data** that changes based on user actions.
+- **Polling or periodic refetch** scenarios.
+
+**CRITICAL RULES:**
+1. **NEVER use `useEffect` for data fetching** - No exceptions, no special cases
+2. If you see `useEffect` + `fetch`/API calls in existing code, refactor it to React Query
+3. If you write client-side data fetching without React Query, the code WILL BE REJECTED
+4. The only acceptable client-side data fetching pattern is TanStack Query hooks
 
 Query Keys:
 
@@ -569,7 +591,101 @@ Guardrail Enforcement:
 - PRs adding new translation keys to only one language file should be flagged as incomplete
 - Review checklist must verify bilingual parity before merge
 
-### 5.16 Task Management Hierarchy Context
+### 5.16 Workspace ID Resolution Pattern
+
+**CRITICAL**: Database `ws_id` columns store UUIDs exclusively. Route parameters (`wsId` from `params`) may contain special identifiers like `"personal"` or `"internal"` that require resolution before database operations.
+
+**Resolution Mapping:**
+
+- `"personal"` → User's personal workspace UUID (requires DB lookup via `getWorkspace()`)
+- `"internal"` → `ROOT_WORKSPACE_ID` constant (00000000-0000-0000-0000-000000000000)
+- Valid UUID → Pass through unchanged
+- Other special IDs → Handled by `resolveWorkspaceId()` from `@tuturuuu/utils/constants`
+
+**Client Component Pattern (Preferred):**
+
+Components should receive the `workspace` object as a prop and use `workspace.id` directly:
+
+```typescript
+type MyComponentProps = {
+  wsId: string;
+  workspace?: Workspace | null;
+};
+
+export function MyComponent({ workspace }: MyComponentProps) {
+  useEffect(() => {
+    if (!workspace?.id) return;
+
+    // Directly use workspace.id - already resolved by parent
+    const { data } = await supabase
+      .from('some_table')
+      .select('*')
+      .eq('ws_id', workspace.id);
+  }, [workspace?.id]);
+}
+```
+
+**Why This Pattern:**
+
+1. Parent components (like SettingsDialog) fetch workspace data already
+2. Avoids redundant resolution calls in child components
+3. Single source of truth for workspace data
+4. Cleaner, more efficient code
+
+**API Route Pattern:**
+
+For server-side code, use the `normalizeWorkspaceId` helper:
+
+```typescript
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { resolveWorkspaceId, PERSONAL_WORKSPACE_SLUG } from '@tuturuuu/utils/constants';
+
+const normalizeWorkspaceId = async (wsId: string) => {
+  if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
+    const workspace = await getWorkspace(wsId);
+    return workspace.id;
+  }
+  return resolveWorkspaceId(wsId);
+};
+
+export async function GET(req: Request) {
+  const { wsId } = await req.json();
+  const resolvedWsId = await normalizeWorkspaceId(wsId);
+
+  const { data } = await supabase
+    .from('table')
+    .eq('ws_id', resolvedWsId);
+}
+```
+
+**Common Mistakes to Avoid:**
+
+- ❌ `supabase.from('table').eq('ws_id', wsId)` — fails with "invalid uuid" for special IDs
+- ❌ Making HTTP calls to resolve endpoint from client components — inefficient
+- ✅ `supabase.from('table').eq('ws_id', workspace.id)` — correct, uses parent-resolved data
+- ✅ `await normalizeWorkspaceId(wsId)` in API routes — correct
+
+**Affected Components:**
+
+- Calendar settings (hours, Google integration, etc.) — accept `workspace` prop
+- Workspace member lists — accept `workspace` prop
+- Any component querying workspace-scoped tables — should receive `workspace` from parent
+- API routes receiving `wsId` in query/body — use `normalizeWorkspaceId()`
+
+**Rationale:**
+
+- Provides user-friendly workspace identifiers in URLs (`/personal/finance` vs `/uuid/finance`)
+- Centralizes resolution logic in parent components
+- Prevents "invalid uuid" database errors
+- Avoids redundant resolution API calls
+- Better performance and cleaner code
+
+**Quality Gate:**
+
+- PRs adding workspace-scoped components should accept `workspace` prop
+- Review checklist: "Does this component use workspace.id instead of raw wsId?"
+
+### 5.17 Task Management Hierarchy Context
 
 The platform implements a hierarchical task management system with the following structure:
 
@@ -609,7 +725,7 @@ The platform implements a hierarchical task management system with the following
 - `task_lists` - Board columns
 - `tasks` - Individual work items
 
-### 5.16 Estimation Points Mapping (Boards)
+### 5.18 Estimation Points Mapping (Boards)
 
 To ensure consistent display of task estimation points across all views (task cards, bulk actions, timelines) a single shared mapping utility must be used.
 
@@ -649,7 +765,7 @@ Quality Gate Additions:
 - PRs touching estimation display/selection must show diff of `estimation-mapping.ts` or explain why unchanged.
 - Lint/Review should reject duplicate local maps for estimation types.
 
-### 5.17 Code Quality & Proactive Refactoring
+### 5.19 Code Quality & Proactive Refactoring
 
 Code quality and developer experience (DX) are **top-tier priorities**, not optional niceties. Agents MUST proactively maintain high standards across ALL code—both newly written and existing legacy code encountered during feature work.
 
@@ -895,9 +1011,10 @@ Tick ALL before requesting review:
 9. **All user-facing strings have BOTH English and Vietnamese translations** ✅
 10. **Code quality maintained; files >400 LOC and components >200 LOC refactored** ✅
 11. **Components follow single responsibility principle; complex logic extracted** ✅
-12. No secrets, tokens, or API keys committed ✅
-13. Added edge runtime export where required ✅
-14. All new external inputs validated (Zod / guard logic) ✅
+12. **ALL client-side data fetching uses TanStack Query (ZERO `useEffect` for data fetching; no raw fetch)** ✅
+13. No secrets, tokens, or API keys committed ✅
+14. Added edge runtime export where required ✅
+15. All new external inputs validated (Zod / guard logic) ✅
 
 ### 8.2 Quality Gates
 
@@ -919,6 +1036,8 @@ Tick ALL before requesting review:
 - Silent catch of broad exceptions (`catch (e) {}` without handling/log rationale).
 - Editing generated types manually.
 - Large refactor PR mixing feature + infra (split required).
+- **Using `useEffect` for data fetching instead of TanStack Query.**
+- Using raw `fetch()` or manual state management for client-side API calls.
 
 ### 8.4 Minimal PR Description Template
 

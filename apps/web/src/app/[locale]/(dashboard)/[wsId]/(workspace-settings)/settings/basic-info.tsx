@@ -17,13 +17,15 @@ export default function BasicInfo({ workspace, allowEdit, isPersonal }: Props) {
   if (!workspace) return null;
 
   return (
-    <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
-      <div className="mb-1 font-bold text-2xl">{t('basic_info')}</div>
-      <div className="mb-4 font-semibold text-foreground/80">
-        {t('basic_info_description')}
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h3 className="font-semibold text-lg">{t('basic_info')}</h3>
+        <p className="text-muted-foreground text-sm">
+          {t('basic_info_description')}
+        </p>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-6">
         {isPersonal || (
           <NameInput
             wsId={workspace.id}

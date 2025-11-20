@@ -1,71 +1,55 @@
+'use client';
+
 import { CreditCard } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
-import { getTranslations } from 'next-intl/server';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { useTranslations } from 'next-intl';
 
-export default async function PaymentBillingCard() {
-  const t = await getTranslations('settings-account');
+export default function PaymentBillingCard() {
+  const t = useTranslations('settings-account');
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className="rounded-full bg-blue-100 p-2 dark:bg-blue-900/30">
-            <CreditCard className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div>
-            <CardTitle>{t('payment-billing')}</CardTitle>
-            <CardDescription>
-              {t('payment-billing-description')}
-            </CardDescription>
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="rounded-full bg-blue-100 p-2.5 dark:bg-blue-900/30">
+          <CreditCard className="h-5 w-5 text-blue-600 dark:text-blue-400" />
         </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div>
-              <p className="font-medium text-sm">{t('payment-method')}</p>
-              <p className="text-muted-foreground text-xs">
-                {t('no-payment-method')}
-              </p>
-            </div>
-            <Button variant="outline" size="sm" disabled>
-              {t('add-payment-method')}
-            </Button>
-          </div>
-
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div>
-              <p className="font-medium text-sm">{t('billing-address')}</p>
-              <p className="text-muted-foreground text-xs">
-                {t('not-configured')}
-              </p>
-            </div>
-            <Button variant="outline" size="sm" disabled>
-              {t('update-address')}
-            </Button>
-          </div>
-
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div>
-              <p className="font-medium text-sm">{t('billing-history')}</p>
-              <p className="text-muted-foreground text-xs">
-                {t('billing-history-description')}
-              </p>
-            </div>
-            <Button variant="outline" size="sm" disabled>
-              {t('view-history')}
-            </Button>
-          </div>
+        <div className="space-y-1">
+          <h3 className="font-semibold text-lg">{t('payment-billing')}</h3>
+          <p className="text-muted-foreground text-sm">
+            {t('payment-billing-description')}
+          </p>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      <div className="space-y-6">
+        <SettingItemTab
+          title={t('payment-method')}
+          description={t('no-payment-method')}
+        >
+          <Button variant="outline" size="sm" disabled>
+            {t('add-payment-method')}
+          </Button>
+        </SettingItemTab>
+
+        <SettingItemTab
+          title={t('billing-address')}
+          description={t('not-configured')}
+        >
+          <Button variant="outline" size="sm" disabled>
+            {t('update-address')}
+          </Button>
+        </SettingItemTab>
+
+        <SettingItemTab
+          title={t('billing-history')}
+          description={t('billing-history-description')}
+        >
+          <Button variant="outline" size="sm" disabled>
+            {t('view-history')}
+          </Button>
+        </SettingItemTab>
+      </div>
+    </div>
   );
 }

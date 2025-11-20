@@ -1,9 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { SessionHistory } from '../components/session-history';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'History',
@@ -16,32 +16,31 @@ export default async function TimeTrackerHistoryPage({
 }: {
   params: Promise<{ wsId: string }>;
 }) {
-  const user = await getCurrentSupabaseUser();
-  const supabase = await createClient();
-  const { wsId: id } = await params;
+  return (
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+        const user = await getCurrentSupabaseUser();
+        const supabase = await createClient();
 
-  const workspace = await getWorkspace(id);
-  const wsId = workspace.id;
+        if (!user) return notFound();
 
-  if (!user) return notFound();
+        const { data: categories } = await supabase
+          .from('time_tracking_categories')
+          .select('*')
+          .eq('ws_id', wsId);
 
-  const { data: categories } = await supabase
-    .from('time_tracking_categories')
-    .select('*')
-    .eq('ws_id', wsId);
+        const { data: sessions } = await supabase
+          .from('time_tracking_sessions')
+          .select('*, category:time_tracking_categories(*), task:tasks(*)')
+          .eq('ws_id', wsId)
+          .eq('user_id', user.id)
+          .order('start_time', { ascending: false })
+          .limit(100);
 
-  const { data: sessions } = await supabase
-    .from('time_tracking_sessions')
-    .select('*, category:time_tracking_categories(*), task:tasks(*)')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .order('start_time', { ascending: false })
-    .limit(100);
-
-  const { data: tasks } = await supabase
-    .from('tasks')
-    .select(
-      `
+        const { data: tasks } = await supabase
+          .from('tasks')
+          .select(
+            `
       *,
       list:task_lists!inner(
         id,
@@ -62,21 +61,24 @@ export default async function TimeTrackerHistoryPage({
         )
       )
     `
-    )
-    .eq('list.board.ws_id', wsId)
-    .is('deleted_at', null)
-    .is('closed_at', null)
-    .in('list.status', ['not_started', 'active']) // Only include tasks from not_started and active lists
-    .is('list.deleted_at', null)
-    .order('created_at', { ascending: false })
-    .limit(100);
+          )
+          .eq('list.board.ws_id', wsId)
+          .is('deleted_at', null)
+          .is('closed_at', null)
+          .in('list.status', ['not_started', 'active']) // Only include tasks from not_started and active lists
+          .is('list.deleted_at', null)
+          .order('created_at', { ascending: false })
+          .limit(100);
 
-  return (
-    <SessionHistory
-      wsId={wsId}
-      sessions={sessions}
-      categories={categories}
-      tasks={tasks}
-    />
+        return (
+          <SessionHistory
+            wsId={wsId}
+            sessions={sessions}
+            categories={categories}
+            tasks={tasks}
+          />
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
