@@ -728,7 +728,15 @@ function TaskCardInner({
       displayProjects: commonProjects,
       displayAssignees: commonAssignees,
     };
-  }, [isMultiSelectMode, selectedTasks, task.id, task.labels, task.projects, task.assignees, allTasksFromQuery]);
+  }, [
+    isMultiSelectMode,
+    selectedTasks,
+    task.id,
+    task.labels,
+    task.projects,
+    task.assignees,
+    allTasksFromQuery,
+  ]);
 
   return (
     <Card
