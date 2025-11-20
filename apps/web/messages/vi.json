@@ -7227,6 +7227,39 @@
       "end_time_before_start": "Thời gian kết thúc không thể trước thời gian bắt đầu",
       "no_changes_detected": "Không phát hiện thay đổi",
       "failed_to_move_session": "Không thể di chuyển phiên"
+    },
+    "page_settings": {
+      "metadata": {
+        "title": "Cài Đặt",
+        "description": "Quản lý Cài Đặt trong khu vực Theo dõi Thời gian của không gian làm việc Tuturuuu của bạn."
+      },
+      "timer_settings": "Cài Đặt Bộ Hẹn Giờ",
+      "customize_experience": "Tùy chỉnh trải nghiệm theo dõi của bạn ",
+      "more_settings_coming_soon": "Sắp Có Thêm Cài Đặt",
+      "more_settings_description": "Thông báo, danh mục mặc định, mục tiêu năng suất và nhiều tùy chọn tùy chỉnh khác."
+    },
+    "heatmap_settings": {
+      "activity_heatmap_display": "Hiển Thị Bản Đồ Nhiệt Hoạt Động",
+      "heatmap_view_style": "Kiểu Hiển Thị Bản Đồ Nhiệt",
+      "view_modes": {
+        "original_grid": "Lưới Gốc",
+        "hybrid": "Kết Hợp (Năm + Lịch)",
+        "calendar_only": "Chỉ Lịch",
+        "compact_cards": "Thẻ Nhỏ Gọn"
+      },
+      "view_descriptions": {
+        "original_grid": "Chế độ xem lưới kiểu GitHub với nhãn ngày",
+        "hybrid": "Tổng quan năm cộng với chi tiết lịch hàng tháng",
+        "calendar_only": "Giao diện lịch truyền thống",
+        "compact_cards": "Thẻ tóm tắt hàng tháng với các chỉ số chính và xem trước nhỏ"
+      },
+      "time_reference": "Tham Chiếu Thời Gian",
+      "time_reference_modes": {
+        "relative": "Tương Đối (\"2 tuần trước\")",
+        "absolute": "Tuyệt Đối (\"15 Tháng 1, 2024\")",
+        "smart": "Thông Minh (Kết hợp cả hai)"
+      },
+      "show_onboarding_tips": "Hiển thị mẹo hướng dẫn"
     }
   },
   "command_palette": {

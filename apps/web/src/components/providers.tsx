@@ -3,6 +3,7 @@ import { ThemeProvider } from 'next-themes';
 import type { ReactNode } from 'react';
 import { TRPCProvider } from '@/trpc/client';
 import { ClientProviders } from './client-providers';
+import {MantineProvider} from '@mantine/core';
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
@@ -22,7 +23,9 @@ export function Providers({ children }: { children: ReactNode }) {
           // see https://github.com/pacocoursey/next-themes?tab=readme-ov-file#using-with-cloudflare-rocket-loader
           // for more details
         >
+          <MantineProvider>
           <ClientProviders>{children}</ClientProviders>
+          </MantineProvider>
         </ThemeProvider>
       </NextIntlClientProvider>
     </TRPCProvider>

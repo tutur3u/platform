@@ -7436,6 +7436,39 @@
       "end_time_before_start": "End time cannot be before start time",
       "no_changes_detected": "No changes detected",
       "failed_to_move_session": "Failed to move session"
+    },
+    "page_settings": {
+      "metadata": {
+        "title": "Settings",
+        "description": "Manage Settings in the Time Tracker area of your Tuturuuu workspace."
+      },
+      "timer_settings": "Timer Settings",
+      "customize_experience": "Customize your tracking experience ",
+      "more_settings_coming_soon": "More Settings Coming Soon",
+      "more_settings_description": "Notifications, default categories, productivity goals, and more customization options."
+    },
+    "heatmap_settings": {
+      "activity_heatmap_display": "Activity Heatmap Display",
+      "heatmap_view_style": "Heatmap View Style",
+      "view_modes": {
+        "original_grid": "Original Grid",
+        "hybrid": "Hybrid (Year + Calendar)",
+        "calendar_only": "Calendar Only",
+        "compact_cards": "Compact Cards"
+      },
+      "view_descriptions": {
+        "original_grid": "GitHub-style grid view with day labels",
+        "hybrid": "Year overview plus monthly calendar details",
+        "calendar_only": "Traditional calendar interface",
+        "compact_cards": "Monthly summary cards with key metrics and mini previews"
+      },
+      "time_reference": "Time Reference",
+      "time_reference_modes": {
+        "relative": "Relative (\"2 weeks ago\")",
+        "absolute": "Absolute (\"Jan 15, 2024\")",
+        "smart": "Smart (Both combined)"
+      },
+      "show_onboarding_tips": "Show onboarding tips"
     }
   },
   "command_palette": {
