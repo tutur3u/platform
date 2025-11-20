@@ -260,13 +260,17 @@ export default function AvatarInput({ workspace, disabled }: Props) {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
           <div className="flex flex-col items-center gap-4">
-            <Avatar className="h-32 w-32 overflow-visible font-semibold text-3xl">
+            <Avatar
+              className={cn(
+                'h-32 w-32 overflow-hidden rounded-md font-semibold text-3xl'
+              )}
+            >
               <AvatarImage
                 src={previewSrc || undefined}
                 alt="Avatar"
-                className="rounded-full object-cover"
+                className={cn('rounded-md object-cover')}
               />
-              <AvatarFallback className="font-semibold">
+              <AvatarFallback className={cn('rounded-md font-semibold')}>
                 {getInitials(workspace?.name) || (
                   <UserIcon className="h-12 w-12" />
                 )}

@@ -2,6 +2,7 @@
 
 import { AccountSwitcherModal } from '@/components/account-switcher';
 import { CommandPalette } from '@/components/command';
+import { SettingsDialog } from '@/components/settings/settings-dialog';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { SidebarContext } from '@/context/sidebar-context';
 import {
@@ -17,6 +18,7 @@ import {
   User,
   Users,
 } from '@tuturuuu/icons';
+import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -49,17 +51,18 @@ import InviteMembersMenuItem from './invite-members-menu-item';
 import MeetTogetherMenuItem from './meet-together-menu-item';
 import ReportProblemMenuItem from './report-problem-menu-item';
 import RewiseMenuItem from './rewise-menu-item';
-import UserSettingsDialog from './settings-dialog';
 import UserPresenceIndicator from './user-presence-indicator';
 
 export default function UserNavClient({
   user,
   locale,
   hideMetadata = false,
+  workspace,
 }: {
   user: WorkspaceUser | null;
   locale: string | undefined;
   hideMetadata?: boolean;
+  workspace?: Workspace | null;
 }) {
   const t = useTranslations();
 
@@ -80,7 +83,7 @@ export default function UserNavClient({
       )}
       {user && (
         <Dialog open={open} onOpenChange={setOpen}>
-          <UserSettingsDialog user={user} />
+          <SettingsDialog user={user} workspace={workspace} />
         </Dialog>
       )}
       <AccountSwitcherModal

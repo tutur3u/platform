@@ -191,6 +191,7 @@
       "types": "./src/components/ui/legacy/calendar/settings/types.ts",
       "import": "./src/components/ui/legacy/calendar/settings/types.ts"
     },
+    "./legacy/calendar/settings/*": "./src/components/ui/legacy/calendar/settings/*.tsx",
     "./*": "./src/components/ui/*.tsx"
   },
   "packageManager": "bun@1.3.2"

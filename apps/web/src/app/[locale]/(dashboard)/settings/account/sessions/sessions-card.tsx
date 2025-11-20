@@ -22,13 +22,6 @@ import {
 } from '@tuturuuu/ui/alert-dialog';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -244,91 +237,95 @@ export default function SessionsCard() {
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('title')}</CardTitle>
-          <CardDescription>{t('loading_description')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse">
-                <div className="mb-2 h-4 w-3/4 rounded bg-foreground/20"></div>
-                <div className="h-3 w-1/2 rounded bg-foreground/20"></div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <h3 className="font-semibold text-lg">{t('title')}</h3>
+          <p className="text-muted-foreground text-sm">
+            {t('loading_description')}
+          </p>
+        </div>
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="animate-pulse">
+              <div className="mb-2 h-4 w-3/4 rounded bg-foreground/20"></div>
+              <div className="h-3 w-1/2 rounded bg-foreground/20"></div>
+            </div>
+          ))}
+        </div>
+      </div>
     );
   }
 
   if (!sessionsData) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('title')}</CardTitle>
-          <CardDescription>{t('failed_description')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <Button onClick={fetchSessions} variant="outline">
-              {t('try_again')}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <h3 className="font-semibold text-lg">{t('title')}</h3>
+          <p className="text-muted-foreground text-sm">
+            {t('failed_description')}
+          </p>
+        </div>
+        <div className="flex items-center justify-center py-8">
+          <Button onClick={fetchSessions} variant="outline">
+            {t('try_again')}
+          </Button>
+        </div>
+      </div>
     );
   }
 
   const { sessions, stats } = sessionsData;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Session Statistics */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('overview_title')}</CardTitle>
-          <CardDescription>{t('overview_description')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 gap-4 text-center md:grid-cols-3">
-            <div className="space-y-2">
-              <div className="font-bold text-2xl text-dynamic-blue">
-                {stats.total_sessions}
-              </div>
-              <div className="text-foreground text-sm">
-                {t('total_sessions')}
-              </div>
+      <div className="space-y-6">
+        <div className="space-y-1">
+          <h3 className="font-semibold text-lg">{t('overview_title')}</h3>
+          <p className="text-muted-foreground text-sm">
+            {t('overview_description')}
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 text-center md:grid-cols-3">
+          <div className="space-y-2 rounded-lg border bg-background p-4">
+            <div className="font-bold text-2xl text-dynamic-blue">
+              {stats.total_sessions}
             </div>
-            <div className="space-y-2">
-              <div className="font-bold text-2xl text-dynamic-green">
-                {stats.active_sessions}
-              </div>
-              <div className="text-foreground text-sm">
-                {t('active_sessions')}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="font-bold text-2xl text-dynamic-orange">
-                {stats.current_session_age
-                  ? `${Math.floor(parseInt(stats.current_session_age.split(':')[0] || '0') / 24)}d`
-                  : 'N/A'}
-              </div>
-              <div className="text-foreground text-sm">
-                {t('current_session_age')}
-              </div>
+            <div className="text-muted-foreground text-sm">
+              {t('total_sessions')}
             </div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="space-y-2 rounded-lg border bg-background p-4">
+            <div className="font-bold text-2xl text-dynamic-green">
+              {stats.active_sessions}
+            </div>
+            <div className="text-muted-foreground text-sm">
+              {t('active_sessions')}
+            </div>
+          </div>
+          <div className="space-y-2 rounded-lg border bg-background p-4">
+            <div className="font-bold text-2xl text-dynamic-orange">
+              {stats.current_session_age
+                ? `${Math.floor(parseInt(stats.current_session_age.split(':')[0] || '0') / 24)}d`
+                : 'N/A'}
+            </div>
+            <div className="text-muted-foreground text-sm">
+              {t('current_session_age')}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Separator />
 
       {/* Active Sessions */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div className="grid gap-2">
-            <CardTitle>{t('title')}</CardTitle>
-            <CardDescription>{t('manage_description')}</CardDescription>
+      <div className="space-y-6">
+        <div className="flex flex-row items-center justify-between">
+          <div className="grid gap-1">
+            <h3 className="font-semibold text-lg">{t('title')}</h3>
+            <p className="text-muted-foreground text-sm">
+              {t('manage_description')}
+            </p>
           </div>
           {sessions.length > 1 && (
             <AlertDialog>
@@ -356,8 +353,9 @@ export default function SessionsCard() {
               </AlertDialogContent>
             </AlertDialog>
           )}
-        </CardHeader>
-        <CardContent>
+        </div>
+
+        <div>
           {revokingAll && bulkProgress.total > 0 && (
             <div className="mb-6 space-y-2">
               <Progress
@@ -370,92 +368,99 @@ export default function SessionsCard() {
           )}
           <div className="space-y-4">
             {sessions.length === 0 ? (
-              <div className="py-8 text-center text-foreground">
+              <div className="py-8 text-center text-muted-foreground">
                 {t('no_active_sessions')}
               </div>
             ) : (
-              sessions.map((session, index) => (
-                <div key={session.session_id}>
-                  <div className="flex items-center justify-between rounded-lg border border-foreground/20 p-4">
-                    <div className="flex flex-1 items-center space-x-4">
-                      <div className="text-dynamic-blue">
-                        {getDeviceIcon(session.user_agent)}
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex flex-col items-start gap-1 md:flex-row md:items-center md:justify-start md:gap-2">
-                          <div className="font-medium">
-                            {formatUserAgent(session.user_agent)}
+              <div className="rounded-lg border">
+                {sessions.map((session, index) => (
+                  <div key={session.session_id}>
+                    <div className="flex items-center justify-between p-4">
+                      <div className="flex flex-1 items-center space-x-4">
+                        <div className="text-muted-foreground">
+                          {getDeviceIcon(session.user_agent)}
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <div className="flex flex-col items-start gap-1 md:flex-row md:items-center md:justify-start md:gap-2">
+                            <div className="font-medium text-sm">
+                              {formatUserAgent(session.user_agent)}
+                            </div>
+                            {session.is_current && (
+                              <Badge
+                                variant="secondary"
+                                className="border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green text-xs"
+                              >
+                                {t('current_session')}
+                              </Badge>
+                            )}
                           </div>
-                          {session.is_current && (
-                            <Badge
-                              variant="secondary"
-                              className="border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green"
+                          <div className="flex flex-col items-start gap-1 text-muted-foreground text-xs md:flex-row md:items-center md:justify-start md:gap-2">
+                            <div className="flex items-center space-x-1">
+                              <MapPin className="h-3 w-3" />
+                              <span>{session.ip}</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <Clock className="h-3 w-3" />
+                              <span>
+                                {t('last_active')}{' '}
+                                {formatTimeAgo(session.updated_at)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      {!session.is_current && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                              disabled={revokingIds.includes(
+                                session.session_id
+                              )}
                             >
-                              {t('current_session')}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex flex-col items-start gap-1 text-foreground text-sm md:flex-row md:items-center md:justify-start md:gap-2">
-                          <div className="flex items-center space-x-1">
-                            <MapPin className="h-3 w-3" />
-                            <span>{session.ip}</span>
-                          </div>
-                          <div className="flex items-center space-x-1 text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            <span>
-                              {t('last_active')}{' '}
-                              {formatTimeAgo(session.updated_at)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">
+                                {revokingIds.includes(session.session_id)
+                                  ? 'Revoking...'
+                                  : 'Revoke'}
+                              </span>
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                {t('revoke_session_question')}
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {t('revoke_session_description')}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>
+                                {tCommon('cancel')}
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() =>
+                                  revokeSession(session.session_id)
+                                }
+                              >
+                                {t('revoke_session')}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                     </div>
-                    {!session.is_current && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            disabled={revokingIds.includes(session.session_id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            {revokingIds.includes(session.session_id)
-                              ? 'Revoking...'
-                              : 'Revoke'}
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              {t('revoke_session_question')}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                              {t('revoke_session_description')}
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>
-                              {tCommon('cancel')}
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => revokeSession(session.session_id)}
-                            >
-                              {t('revoke_session')}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
+                    {index < sessions.length - 1 && <Separator />}
                   </div>
-                  {index < sessions.length - 1 && (
-                    <Separator className="my-4" />
-                  )}
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

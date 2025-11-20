@@ -2475,6 +2475,8 @@
   },
   "ws-settings": {
     "description": "Quản lý các thiết lập không gian làm việc.",
+    "general-description": "Quản lý thông tin và cài đặt cơ bản của không gian làm việc",
+    "members-description": "Xem và quản lý thành viên cùng quyền hạn của họ",
     "basic_info": "Thông tin cơ bản",
     "basic_info_description": "Quản lý các thông tin cơ bản của không gian làm việc.",
     "workspace_logo": "Logo",
@@ -3664,8 +3666,12 @@
   },
   "settings-account": {
     "account": "Tài khoản",
+    "account-description": "Quản lý cài đặt và tùy chọn tài khoản cá nhân của bạn",
     "avatar": "Ảnh đại diện",
     "avatar-description": "Cá nhân hoá hồ sơ của bạn với ảnh đại diện tùy chỉnh.",
+    "appearance-description": "Tùy chỉnh giao diện và trải nghiệm sử dụng",
+    "security-description": "Quản lý cài đặt bảo mật và tài khoản liên kết",
+    "billing-description": "Xem và quản lý thông tin thanh toán và đăng ký",
     "revert_changes": "Hoàn tác thay đổi",
     "preview": "Xem trước",
     "display-name": "Tên hiển thị",
