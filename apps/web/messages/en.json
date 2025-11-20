@@ -1445,7 +1445,8 @@
     "integrations": "Integrations",
     "ai_whitelisted_emails": "AI Whitelisted Emails",
     "translations": "Translations",
-    "email_blacklist": "Email Blacklist"
+    "email_blacklist": "Email Blacklist",
+    "realtime": "Realtime"
   },
   "infrastructure-analytics": {
     "page-description": "Monitor and manage your platform infrastructure, users, and resources with comprehensive analytics.",
@@ -1563,6 +1564,37 @@
       "time": "Time",
       "unknown": "Unknown",
       "actions": "Actions"
+    }
+  },
+  "realtime-analytics": {
+    "title": "Realtime Analytics",
+    "description": "Monitor realtime connections and activity across workspaces and channels",
+    "metric": {
+      "requests": "Requests",
+      "users": "Users"
+    },
+    "filters": {
+      "workspace": "Workspace",
+      "workspace_placeholder": "Select workspace",
+      "all_workspaces": "All Workspaces",
+      "channel": "Channel",
+      "channel_placeholder": "Enter channel ID",
+      "date_range": "Date Range",
+      "metric_toggle": "Metric Type"
+    },
+    "chart": {
+      "hourly_activity": "Hourly Activity",
+      "hour_label": "Hour",
+      "requests_label": "Requests",
+      "users_label": "Unique Users",
+      "no_data": "No Data Available",
+      "no_data_description": "No realtime activity found for the selected filters and time range",
+      "loading": "Loading analytics..."
+    },
+    "stats": {
+      "total": "Total",
+      "peak_hour": "Peak Hour",
+      "avg_per_hour": "Avg per Hour"
     }
   },
   "basic-data-table": {

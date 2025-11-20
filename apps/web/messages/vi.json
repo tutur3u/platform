@@ -1535,7 +1535,8 @@
     "integrations": "Dịch vụ tích hợp",
     "ai_whitelisted_emails": "Email nằm trong danh sách trắng của AI",
     "email_blacklist": "Danh sách đen email",
-    "translations": "Bản dịch"
+    "translations": "Bản dịch",
+    "realtime": "Thời gian thực"
   },
   "infrastructure-analytics": {
     "page-description": "Giám sát và quản lý cơ sở hạ tầng, người dùng và tài nguyên nền tảng với phân tích toàn diện.",
@@ -1653,6 +1654,37 @@
       "time": "Thời Gian",
       "unknown": "Không xác định",
       "actions": "Hành Động"
+    }
+  },
+  "realtime-analytics": {
+    "title": "Phân Tích Thời Gian Thực",
+    "description": "Giám sát kết nối và hoạt động thời gian thực trên các không gian làm việc và kênh",
+    "metric": {
+      "requests": "Yêu cầu",
+      "users": "Người dùng"
+    },
+    "filters": {
+      "workspace": "Không gian làm việc",
+      "workspace_placeholder": "Chọn không gian làm việc",
+      "all_workspaces": "Tất cả không gian làm việc",
+      "channel": "Kênh",
+      "channel_placeholder": "Nhập ID kênh",
+      "date_range": "Khoảng thời gian",
+      "metric_toggle": "Loại chỉ số"
+    },
+    "chart": {
+      "hourly_activity": "Hoạt động theo giờ",
+      "hour_label": "Giờ",
+      "requests_label": "Yêu cầu",
+      "users_label": "Người dùng duy nhất",
+      "no_data": "Không có dữ liệu",
+      "no_data_description": "Không tìm thấy hoạt động thời gian thực nào cho bộ lọc và khoảng thời gian đã chọn",
+      "loading": "Đang tải phân tích..."
+    },
+    "stats": {
+      "total": "Tổng cộng",
+      "peak_hour": "Giờ cao điểm",
+      "avg_per_hour": "TB mỗi giờ"
     }
   },
   "basic-data-table": {
