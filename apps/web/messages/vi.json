@@ -6549,6 +6549,26 @@
         "rejectSuccess": "Yêu cầu theo dõi thời gian đã bị từ chối",
         "rejectFailed": "Không thể từ chối yêu cầu",
         "loadImagesFailed": "Không thể tải hình ảnh"
+      },
+      "settings": {
+        "button": "Cài Đặt",
+        "title": "Cài Đặt Ngưỡng Nhập Thiếu",
+        "description": "Cấu hình khoảng thời gian người dùng có thể thêm mục thời gian bị thiếu mà không cần phê duyệt.",
+        "label": "Ngưỡng (ngày)",
+        "help": "Đặt số ngày người dùng có thể quay lại để thêm mục thời gian. Đặt về 0 để yêu cầu phê duyệt cho tất cả các mục bị thiếu.",
+        "examples": {
+          "title": "Ví dụ:",
+          "days": "ngày",
+          "day": "ngày",
+          "zero": "Tất cả các mục bị thiếu đều yêu cầu phê duyệt",
+          "one": "Người dùng có thể thêm mục từ hôm qua mà không cần phê duyệt",
+          "seven": "Người dùng có thể thêm mục từ tuần trước mà không cần phê duyệt"
+        },
+        "cancel": "Hủy",
+        "save": "Lưu Thay Đổi",
+        "saving": "Đang lưu...",
+        "success": "Ngưỡng đã được cập nhật thành công",
+        "error": "Không thể cập nhật ngưỡng"
       }
     },
     "modes": {

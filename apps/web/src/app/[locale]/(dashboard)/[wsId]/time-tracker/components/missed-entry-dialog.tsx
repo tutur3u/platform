@@ -28,6 +28,7 @@ import { cn, isValidBlobUrl } from '@tuturuuu/utils/format';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types';
 import { formatDuration, getCategoryColor } from './session-history';
 import imageCompression from 'browser-image-compression';
@@ -69,6 +70,7 @@ export default function MissedEntryDialog({
 }: MissedEntryDialogProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { data: thresholdDays = 1 } = useWorkspaceTimeThreshold(wsId);
 
   // State for missed entry form
   const [missedEntryTitle, setMissedEntryTitle] = useState('');
@@ -79,7 +81,7 @@ export default function MissedEntryDialog({
   const [missedEntryEndTime, setMissedEntryEndTime] = useState('');
   const [isCreatingMissedEntry, setIsCreatingMissedEntry] = useState(false);
 
-  // State for image uploads (for entries older than 1 day)
+  // State for image uploads (for entries older than threshold)
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isCompressing, setIsCompressing] = useState(false);
@@ -292,13 +294,17 @@ export default function MissedEntryDialog({
       return;
     }
 
-    // Check if start time is older than 1 day
-    const oneDayAgo = dayjs().subtract(1, 'day');
-    const isOlderThanOneDay = startTime.isBefore(oneDayAgo);
+    // Check if start time is older than threshold days
+    // When threshold is 0, all entries must go through request flow
+    const isOlderThanThreshold =
+      thresholdDays === 0 ||
+      startTime.isBefore(dayjs().subtract(thresholdDays, 'day'));
 
-    if (isOlderThanOneDay && images.length === 0) {
+    if (isOlderThanThreshold && images.length === 0) {
       toast.error(
-        'Please upload at least one image for entries older than 1 day'
+        thresholdDays === 0
+          ? 'Please upload at least one image for all missed entries'
+          : `Please upload at least one image for entries older than ${thresholdDays} day${thresholdDays !== 1 ? 's' : ''}`
       );
       return;
     }
@@ -308,8 +314,8 @@ export default function MissedEntryDialog({
     try {
       const userTz = dayjs.tz.guess();
 
-      // If older than 1 day, create a time tracking request instead
-      if (isOlderThanOneDay) {
+      // If older than threshold (or threshold is 0), create a time tracking request instead
+      if (isOlderThanThreshold) {
         const formData = new FormData();
         formData.append('title', missedEntryTitle);
         formData.append('description', missedEntryDescription || '');
@@ -357,7 +363,7 @@ export default function MissedEntryDialog({
         closeMissedEntryDialog();
         toast.success('Time tracking request submitted for approval');
       } else {
-        // Regular entry creation for entries within 1 day
+        // Regular entry creation for entries within threshold days
         const response = await fetch(
           `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
           {
@@ -399,13 +405,15 @@ export default function MissedEntryDialog({
     }
   };
 
-  // Check if start time is older than 1 day
-  const isStartTimeOlderThanOneDay = useMemo(() => {
+  // Check if start time is older than threshold days
+  // When threshold is 0, all entries require approval
+  const isStartTimeOlderThanThreshold = useMemo(() => {
     if (!missedEntryStartTime) return false;
+    if (thresholdDays === 0) return true; // All entries require approval when threshold is 0
     const startTime = dayjs(missedEntryStartTime);
-    const oneDayAgo = dayjs().subtract(1, 'day');
-    return startTime.isBefore(oneDayAgo);
-  }, [missedEntryStartTime]);
+    const thresholdAgo = dayjs().subtract(thresholdDays, 'day');
+    return startTime.isBefore(thresholdAgo);
+  }, [missedEntryStartTime, thresholdDays]);
   return (
     <Dialog
       open={open}
@@ -511,8 +519,8 @@ export default function MissedEntryDialog({
             </div>
           </div>
 
-          {/* Warning and image upload for entries older than 1 day */}
-          {isStartTimeOlderThanOneDay && (
+          {/* Warning and image upload for entries older than threshold */}
+          {isStartTimeOlderThanThreshold && (
             <div className="space-y-4">
               <div className="rounded-lg border-dynamic-orange bg-dynamic-orange/10 p-3 border">
                 <div className="flex items-start gap-2">
@@ -522,8 +530,9 @@ export default function MissedEntryDialog({
                       Approval Required
                     </p>
                     <p className="text-muted-foreground mt-1">
-                      Entries older than 1 day require approval. Please upload
-                      at least one image as proof of work.
+                      {thresholdDays === 0
+                        ? 'All missed entries require approval. Please upload at least one image as proof of work.'
+                        : `Entries older than ${thresholdDays} day${thresholdDays !== 1 ? 's' : ''} require approval. Please upload at least one image as proof of work.`}
                     </p>
                   </div>
                 </div>
@@ -755,19 +764,19 @@ export default function MissedEntryDialog({
               !missedEntryTitle.trim() ||
               !missedEntryStartTime ||
               !missedEntryEndTime ||
-              (isStartTimeOlderThanOneDay && images.length === 0)
+              (isStartTimeOlderThanThreshold && images.length === 0)
             }
             className="w-full sm:w-auto"
           >
             {isCreatingMissedEntry ? (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin" />
-                {isStartTimeOlderThanOneDay ? 'Submitting...' : 'Adding...'}
+                {isStartTimeOlderThanThreshold ? 'Submitting...' : 'Adding...'}
               </>
             ) : (
               <>
                 <Plus className="h-4 w-4" />
-                {isStartTimeOlderThanOneDay
+                {isStartTimeOlderThanThreshold
                   ? 'Submit for Approval'
                   : 'Add Entry'}
               </>

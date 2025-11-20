@@ -79,6 +79,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
+import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import type { SessionWithRelations } from '../types';
 import MissedEntryDialog from './missed-entry-dialog';
 import { WorkspaceSelectDialog } from './workspace-select-dialog';
@@ -868,23 +869,32 @@ const StackedSessionItem = ({
   );
 };
 
-// Helper function to check if a session is older than one day
-const isSessionOlderThanOneDay = (session: SessionWithRelations): boolean => {
+// Helper function to check if a session is older than the workspace threshold
+const isSessionOlderThanThreshold = (
+  session: SessionWithRelations,
+  thresholdDays: number
+): boolean => {
+  if (thresholdDays === 0) {
+    // When threshold is 0, all entries require approval
+    return true;
+  }
   const sessionStartTime = dayjs.utc(session.start_time);
-  const oneDayAgo = dayjs().utc().subtract(1, 'day');
-  return sessionStartTime.isBefore(oneDayAgo);
+  const thresholdAgo = dayjs().utc().subtract(thresholdDays, 'day');
+  return sessionStartTime.isBefore(thresholdAgo);
 };
 
-// Helper function to check if a datetime string is more than one day ago
-const isDatetimeMoreThanOneDayAgo = (
+// Helper function to check if a datetime string is more than threshold days ago
+const isDatetimeMoreThanThresholdAgo = (
   datetimeString: string,
-  timezone: string
+  timezone: string,
+  thresholdDays: number
 ): boolean => {
   if (!datetimeString) return false;
+  if (thresholdDays === 0) return true; // All entries require approval when threshold is 0
   const datetime = dayjs.tz(datetimeString, timezone).utc();
   if (!datetime.isValid()) return false;
-  const oneDayAgo = dayjs().utc().subtract(1, 'day');
-  return datetime.isBefore(oneDayAgo);
+  const thresholdAgo = dayjs().utc().subtract(thresholdDays, 'day');
+  return datetime.isBefore(thresholdAgo);
 };
 
 export function SessionHistory({
@@ -895,6 +905,7 @@ export function SessionHistory({
 }: SessionHistoryProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { data: thresholdDays = 1 } = useWorkspaceTimeThreshold(wsId);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategoryId, setFilterCategoryId] = useState<string>('all');
@@ -2337,7 +2348,7 @@ export function SessionHistory({
             </div>
             {sessionToEdit &&
               !sessionToEdit.is_running &&
-              (isSessionOlderThanOneDay(sessionToEdit) ? (
+              (isSessionOlderThanThreshold(sessionToEdit, thresholdDays) ? (
                 <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-950/50">
                   <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
                     <AlertTriangle className="h-4 w-4" />
@@ -2346,15 +2357,32 @@ export function SessionHistory({
                     </span>
                   </div>
                   <p className="mt-2 text-orange-600 text-sm dark:text-orange-400">
-                    Start time and end time cannot be edited for sessions older
-                    than one day. This session is from{' '}
-                    <span className="font-medium">
-                      {dayjs
-                        .utc(sessionToEdit.start_time)
-                        .tz(dayjs.tz.guess())
-                        .format('MMM D, YYYY')}
-                    </span>
-                    .
+                    {thresholdDays === 0 ? (
+                      <>
+                        All time edits must be submitted as requests for
+                        approval. This session is from{' '}
+                        <span className="font-medium">
+                          {dayjs
+                            .utc(sessionToEdit.start_time)
+                            .tz(dayjs.tz.guess())
+                            .format('MMM D, YYYY')}
+                        </span>
+                        .
+                      </>
+                    ) : (
+                      <>
+                        Start time and end time cannot be edited for sessions
+                        older than {thresholdDays} day
+                        {thresholdDays !== 1 ? 's' : ''}. This session is from{' '}
+                        <span className="font-medium">
+                          {dayjs
+                            .utc(sessionToEdit.start_time)
+                            .tz(dayjs.tz.guess())
+                            .format('MMM D, YYYY')}
+                        </span>
+                        .
+                      </>
+                    )}
                   </p>
                 </div>
               ) : (
@@ -2417,11 +2445,12 @@ export function SessionHistory({
                   isEditing ||
                   !editTitle.trim() ||
                   (!!sessionToEdit &&
-                    !isSessionOlderThanOneDay(sessionToEdit) &&
+                    !isSessionOlderThanThreshold(sessionToEdit, thresholdDays) &&
                     !!editStartTime &&
-                    isDatetimeMoreThanOneDayAgo(
+                    isDatetimeMoreThanThresholdAgo(
                       editStartTime,
-                      dayjs.tz.guess()
+                      dayjs.tz.guess(),
+                      thresholdDays
                     ))
                 }
                 className="flex-1"

@@ -37,10 +37,13 @@ import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useAvailableUsers, useRequests } from './hooks/use-requests';
 import type { ExtendedTimeTrackingRequest } from './page';
 import { RequestDetailModal } from './request-detail-modal';
+import { ThresholdSettingsDialog } from './threshold-settings-dialog';
+import { useThreshold } from './hooks/use-threshold';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface RequestsClientProps {
   wsId: string;
@@ -72,6 +75,7 @@ export function RequestsClient({
   const t = useTranslations('time-tracker.requests');
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const [selectedRequest, setSelectedRequest] =
     useState<ExtendedTimeTrackingRequest | null>(null);
 
@@ -116,6 +120,8 @@ export function RequestsClient({
       wsId,
       // initialData: initialAvailableUsers,
     });
+
+  const { data: thresholdData } = useThreshold({ wsId });
 
   const requests = requestsData?.requests || [];
   const totalCount = requestsData?.totalCount || 0;
@@ -173,6 +179,12 @@ export function RequestsClient({
     const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
     return `${hours}h ${minutes}m`;
   };
+
+  const handleThresholdUpdate = useCallback(() => {
+    queryClient.invalidateQueries({
+      queryKey: ['workspace-time-threshold', wsId],
+    });
+  }, [queryClient, wsId]);
 
   return (
     <>
@@ -325,6 +337,11 @@ export function RequestsClient({
               </div>
 
               <div className="flex items-center gap-2">
+                <ThresholdSettingsDialog
+                  wsId={wsId}
+                  currentThreshold={thresholdData?.threshold}
+                  onUpdate={handleThresholdUpdate}
+                />
                 <span className="text-muted-foreground text-sm">
                   {t('list.itemsPerPage')}:
                 </span>

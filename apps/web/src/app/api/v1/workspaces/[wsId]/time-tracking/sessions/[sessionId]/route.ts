@@ -174,30 +174,49 @@ export async function PATCH(
         const isEditingTime = startTime !== undefined || endTime !== undefined;
 
         if (isEditingTime) {
-          // Check if more than one day has passed since the session start time
-          const sessionStartTime = new Date(session.start_time);
-          const oneDayAgo = new Date();
-          oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+          // Fetch workspace threshold setting
+          const { data: workspaceSettings } = await sbAdmin
+            .from('workspace_settings')
+            .select('missed_entry_date_threshold')
+            .eq('ws_id', wsId)
+            .single();
 
-          if (sessionStartTime < oneDayAgo) {
+          const thresholdDays =
+            workspaceSettings?.missed_entry_date_threshold ?? 1;
+
+          // Check if threshold is 0 (all edits require approval)
+          if (thresholdDays === 0) {
             return NextResponse.json(
               {
                 error:
-                  'Cannot edit start time or end time for sessions older than one day',
+                  'All time edits must be submitted as requests for approval',
               },
               { status: 400 }
             );
           }
 
-          // NEW CHECK: Prevent backdating sessions to more than one day ago
+          // Check if more than threshold days have passed since the session start time
+          const sessionStartTime = new Date(session.start_time);
+          const thresholdAgo = new Date();
+          thresholdAgo.setDate(thresholdAgo.getDate() - thresholdDays);
+
+          if (sessionStartTime < thresholdAgo) {
+            return NextResponse.json(
+              {
+                error: `Cannot edit start time or end time for sessions older than ${thresholdDays} day${thresholdDays !== 1 ? 's' : ''}`,
+              },
+              { status: 400 }
+            );
+          }
+
+          // NEW CHECK: Prevent backdating sessions to more than threshold days ago
           // This prevents the vulnerability of creating a session for today and moving it back to a month ago
           if (startTime) {
             const newStartTime = new Date(startTime);
-            if (newStartTime < oneDayAgo) {
+            if (newStartTime < thresholdAgo) {
               return NextResponse.json(
                 {
-                  error:
-                    'Cannot update session to a start time more than one day ago',
+                  error: `Cannot update session to a start time more than ${thresholdDays} day${thresholdDays !== 1 ? 's' : ''} ago`,
                 },
                 { status: 400 }
               );

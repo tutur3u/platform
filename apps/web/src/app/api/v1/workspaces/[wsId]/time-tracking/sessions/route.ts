@@ -375,15 +375,35 @@ export async function POST(
         );
       }
 
-      // Check if start time is older than 1 day
-      const oneDayAgo = new Date();
-      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+      // Fetch workspace threshold setting
+      const { data: workspaceSettings } = await sbAdmin
+        .from('workspace_settings')
+        .select('missed_entry_date_threshold')
+        .eq('ws_id', wsId)
+        .maybeSingle();
 
-      if (start < oneDayAgo) {
+      const thresholdDays =
+        workspaceSettings?.missed_entry_date_threshold ?? 1;
+
+      // If threshold is 0, all missed entries must go through request flow
+      if (thresholdDays === 0) {
         return NextResponse.json(
           {
             error:
-              'Cannot add missed entries older than 1 day. Please contact support if you need to add older entries.',
+              'All missed entries must be submitted as requests for approval',
+          },
+          { status: 400 }
+        );
+      }
+
+      // Check if start time is older than threshold days
+      const thresholdAgo = new Date();
+      thresholdAgo.setDate(thresholdAgo.getDate() - thresholdDays);
+
+      if (start < thresholdAgo) {
+        return NextResponse.json(
+          {
+            error: `Cannot add missed entries older than ${thresholdDays} day${thresholdDays !== 1 ? 's' : ''}. Please submit a request for approval if you need to add older entries.`,
           },
           { status: 400 }
         );

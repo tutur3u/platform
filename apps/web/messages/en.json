@@ -6752,6 +6752,26 @@
         "rejectFailed": "Failed to reject request",
         "loadImagesFailed": "Failed to load images"
       },
+      "settings": {
+        "button": "Settings",
+        "title": "Missed Entry Threshold Settings",
+        "description": "Configure how far back users can add missed time entries without requiring approval.",
+        "label": "Threshold (days)",
+        "help": "Set the number of days users can go back to add time entries. Set to 0 to require approval for all missed entries.",
+        "examples": {
+          "title": "Examples:",
+          "days": "days",
+          "day": "day",
+          "zero": "All missed entries require approval",
+          "one": "Users can add entries from yesterday without approval",
+          "seven": "Users can add entries from the past week without approval"
+        },
+        "cancel": "Cancel",
+        "save": "Save Changes",
+        "saving": "Saving...",
+        "success": "Threshold updated successfully",
+        "error": "Failed to update threshold"
+      },
       "time-tracker": {
         "requests": {
           "status": {
