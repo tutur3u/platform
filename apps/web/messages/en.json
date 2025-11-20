@@ -1706,6 +1706,7 @@
     "reason": "Reason",
     "reason-placeholder": "Why is this being blacklisted? (optional)",
     "reason-description": "Optional explanation for why this entry is being blocked.",
+    "quick-reasons": "Quick Reasons",
     "email-description": "Block a specific email address",
     "domain-description": "Block all email addresses from a domain",
     "value-email-hint": "Enter the complete email address to block (e.g., user@example.com)",
@@ -1726,7 +1727,13 @@
     "operation-failed": "Operation failed",
     "network-error": "Network error occurred. Please try again.",
     "error": "Error",
-    "value-empty": "Value cannot be empty"
+    "value-empty": "Value cannot be empty",
+    "quick-reason-spam": "Spam/Phishing",
+    "quick-reason-policy-violation": "Policy Violation",
+    "quick-reason-fraud": "Fraud/Abuse",
+    "quick-reason-inactive": "Inactive/Abandoned",
+    "quick-reason-verification-failed": "Verification Failed",
+    "quick-reason-competitor": "Competitor Domain"
   },
   "email-blacklist-data-table": {
     "id": "ID",
