@@ -276,11 +276,9 @@ export default function EmailBlacklistForm({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  form.setValue(
-                    'reason',
-                    t(`email-blacklist.${reason}`),
-                    { shouldDirty: true }
-                  );
+                  form.setValue('reason', t(`email-blacklist.${reason}`), {
+                    shouldDirty: true,
+                  });
                 }}
                 disabled={isLoading}
                 className="text-xs"
