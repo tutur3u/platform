@@ -11,9 +11,8 @@ interface Params {
 const QueryParamsSchema = z.object({
   workspaceId: z.uuid().optional(),
   channelId: z.string().optional(),
-  // Accept ISO 8601 UTC timestamps from client
-  startDate: z.string().datetime(),
-  endDate: z.string().datetime(),
+  startDate: z.iso.datetime(),
+  endDate: z.iso.datetime(),
   metric: z.enum(['requests', 'users']).default('requests'),
   viewMode: z.enum(['daily', 'hourly']).default('hourly'),
 });

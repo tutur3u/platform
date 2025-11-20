@@ -222,7 +222,7 @@ export function RealtimeAnalyticsFilters({
           <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-muted-foreground text-xs">
             {filters.viewMode === 'hourly'
-              ? `${format(filters.startDate, 'PPP')} (0:00 - 23:00)`
+              ? `${format(filters.startDate, 'PPP')}`
               : `${format(filters.startDate, 'PPP')} - ${format(filters.endDate, 'PPP')}`}
           </span>
         </div>
