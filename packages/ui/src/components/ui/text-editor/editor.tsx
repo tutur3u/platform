@@ -92,7 +92,6 @@ export function RichTextEditor({
   allowCollaboration = false,
   editable = true,
 }: RichTextEditorProps) {
-
   // Use refs to ensure we have stable references for handlers
   const onImageUploadRef = useRef(onImageUpload);
   const workspaceIdRef = useRef(workspaceId);
