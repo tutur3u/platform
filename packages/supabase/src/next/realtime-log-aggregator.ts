@@ -13,6 +13,7 @@ interface LogEntry {
 interface AggregatedLog {
   ws_id: string;
   user_id: string | null;
+  channel_id: string | null;
   time_bucket: string;
   kind: string;
   total_count: number;
@@ -38,13 +39,24 @@ class RealtimeLogAggregator {
   private flushInterval: NodeJS.Timeout | null = null;
 
   // Configuration
-  private readonly FLUSH_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
+  private readonly BUCKET_SIZE_MINUTES = 1; // Time bucket size
+  private readonly FLUSH_INTERVAL_MS = this.BUCKET_SIZE_MINUTES * 60 * 1000;
   private readonly MAX_BUFFER_SIZE = 1000; // Prevent memory overflow
   private readonly SAMPLE_SIZE = 10; // Keep 10 sample messages per bucket
-  private readonly BUCKET_SIZE_MINUTES = 15; // Time bucket size
 
   constructor() {
     this.startFlushTimer();
+  }
+
+  /**
+   * Extract channel ID from realtime messages
+   * Supports formats:
+   * - "realtime:board-cursor-xxx ..."
+   * - "ok realtime:board-cursor-xxx ..."
+   */
+  private getChannelID(message: string): string | null {
+    const match = message.match(/(?:ok )?realtime:([^\s]+)/);
+    return match?.[1] ?? null;
   }
 
   /**
@@ -55,10 +67,12 @@ class RealtimeLogAggregator {
     wsId: string,
     userId: string | null,
     kind: string,
+    message: string,
     timestamp: Date
   ): string {
+    const channelId = this.getChannelID(message);
     const bucketTime = this.roundToTimeBucket(timestamp);
-    return `${wsId}_${userId ?? 'null'}_${kind}_${bucketTime.toISOString()}`;
+    return `${wsId}_${userId ?? 'null'}_${channelId ?? 'null'}_${kind}_${bucketTime.toISOString()}`;
   }
 
   /**
@@ -86,6 +100,7 @@ class RealtimeLogAggregator {
       entry.wsId,
       entry.userId,
       entry.kind,
+      entry.message,
       entry.timestamp
     );
 
@@ -170,7 +185,7 @@ class RealtimeLogAggregator {
     const aggregated: AggregatedLog[] = [];
 
     for (const [bucketKey, logs] of this.buffer.entries()) {
-      const [wsId, userId, kind, timeBucket] = bucketKey.split('_');
+      const [wsId, userId, channelId, kind, timeBucket] = bucketKey.split('_');
 
       if (!wsId || !kind || !timeBucket) {
         console.warn(
@@ -197,6 +212,7 @@ class RealtimeLogAggregator {
       aggregated.push({
         ws_id: wsId,
         user_id: userId === 'null' ? null : (userId ?? null),
+        channel_id: channelId === 'null' ? null : (channelId ?? null),
         time_bucket: timeBucket,
         kind: kind,
         total_count: logs.length,

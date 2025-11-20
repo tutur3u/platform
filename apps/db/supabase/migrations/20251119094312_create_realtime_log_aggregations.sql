@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS "public"."realtime_log_aggregations" (
     "id" uuid NOT NULL DEFAULT gen_random_uuid(),
     "ws_id" uuid NOT NULL,
     "user_id" uuid,
+    "channel_id" text,
     "time_bucket" timestamptz NOT NULL,
     "kind" text NOT NULL,
     "total_count" integer NOT NULL DEFAULT 0,
@@ -25,11 +26,7 @@ CREATE INDEX realtime_log_aggregations_time_bucket_idx
 
 -- Create unique constraint to prevent duplicate time buckets per user
 CREATE UNIQUE INDEX realtime_log_aggregations_unique_bucket_idx
-    ON public.realtime_log_aggregations (ws_id, user_id, time_bucket, kind);
-
-ALTER TABLE "public"."realtime_log_aggregations"
-    ADD CONSTRAINT "realtime_log_aggregations_unique_bucket"
-    UNIQUE USING INDEX "realtime_log_aggregations_unique_bucket_idx";
+    ON public.realtime_log_aggregations (ws_id, user_id, channel_id, time_bucket, kind);
 
 -- Primary key
 ALTER TABLE "public"."realtime_log_aggregations"
@@ -51,6 +48,10 @@ ALTER TABLE "public"."realtime_log_aggregations"
     ON UPDATE CASCADE ON DELETE SET NULL not valid;
 
 ALTER TABLE "public"."realtime_log_aggregations" validate CONSTRAINT "realtime_log_aggregations_user_id_fkey";
+
+ALTER TABLE "public"."realtime_log_aggregations"
+    ADD CONSTRAINT "realtime_log_aggregations_unique_bucket"
+    UNIQUE USING INDEX "realtime_log_aggregations_unique_bucket_idx";
 
 -- RLS Policy: Users can view aggregated logs for their workspaces
 CREATE POLICY "Users can view aggregated logs for their workspaces"
@@ -74,12 +75,3 @@ USING (
         AND wr.name IN ('OWNER', 'ADMIN')
     ))
 );
-
--- Function to cleanup old aggregated logs (keep last 90 days)
-CREATE OR REPLACE FUNCTION cleanup_old_log_aggregations()
-RETURNS void AS $$
-BEGIN
-    DELETE FROM public.realtime_log_aggregations
-    WHERE time_bucket < NOW() - INTERVAL '90 days';
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;

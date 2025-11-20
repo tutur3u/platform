@@ -66,7 +66,7 @@ export function TaskViewerProvider({
     if (!enabled) return;
 
     const supabase = createClient();
-    const channelName = `task-viewer:${boardId}`;
+    const channelName = `task-viewer-${boardId}`;
 
     const initializeChannel = async () => {
       try {

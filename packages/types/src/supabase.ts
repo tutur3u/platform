@@ -5412,6 +5412,7 @@ export type Database = {
       };
       realtime_log_aggregations: {
         Row: {
+          channel_id: string | null;
           created_at: string;
           error_count: number;
           id: string;
@@ -5423,6 +5424,7 @@ export type Database = {
           ws_id: string;
         };
         Insert: {
+          channel_id?: string | null;
           created_at?: string;
           error_count?: number;
           id?: string;
@@ -5434,6 +5436,7 @@ export type Database = {
           ws_id: string;
         };
         Update: {
+          channel_id?: string | null;
           created_at?: string;
           error_count?: number;
           id?: string;
