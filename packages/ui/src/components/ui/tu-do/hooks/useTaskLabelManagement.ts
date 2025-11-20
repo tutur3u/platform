@@ -108,7 +108,12 @@ export function useTaskLabelManagement({
             ...t,
             labels: [
               ...(t.labels || []),
-              label || { id: labelId, name: 'Unknown', color: '#3b82f6' },
+              label || {
+                id: labelId,
+                name: 'Unknown',
+                color: '#3b82f6',
+                created_at: new Date().toISOString(),
+              },
             ],
           };
         }
