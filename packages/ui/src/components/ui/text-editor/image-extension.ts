@@ -38,6 +38,35 @@ function snapToNearestSize(
   return (SIZE_PERCENTAGES[closestSize] / 100) * containerWidth;
 }
 
+/**
+ * Calculate the best preset width for an image based on its natural dimensions
+ * This ensures pasted/dropped images don't get snapped on first click
+ */
+function calculatePresetWidth(
+  naturalWidth: number,
+  containerWidth: number
+): number {
+  // If image is smaller than the smallest preset (25%), use its natural width
+  const smallestPreset = (SIZE_PERCENTAGES.xs / 100) * containerWidth;
+  if (naturalWidth <= smallestPreset) {
+    return naturalWidth;
+  }
+
+  // Find the best preset that fits the image without upscaling
+  const presetSizes: ImageSize[] = ['xs', 'sm', 'md', 'lg', 'xl'];
+
+  for (const size of presetSizes) {
+    const presetWidth = (SIZE_PERCENTAGES[size] / 100) * containerWidth;
+    if (naturalWidth <= presetWidth) {
+      // Use this preset as it fits the image
+      return presetWidth;
+    }
+  }
+
+  // Image is larger than all presets, use the largest (xl = 100%)
+  return containerWidth;
+}
+
 interface ImageOptions {
   onImageUpload?: (file: File) => Promise<string>;
 }
@@ -166,14 +195,37 @@ export const CustomImage = (options: ImageOptions = {}) => {
                 const { state } = view;
                 const { from, to } = state.selection;
 
-                // Get container width for default size (60%)
+                // Get container width for sizing calculations
                 const editorElement = view.dom as HTMLElement;
                 const containerWidth =
                   editorElement.querySelector('.ProseMirror')?.clientWidth ||
                   editorElement.clientWidth ||
                   800;
-                const defaultWidth =
-                  (SIZE_PERCENTAGES.md / 100) * containerWidth; // md = 60%
+
+                // Helper to load image and get natural dimensions
+                const getImageDimensions = (
+                  file: File
+                ): Promise<{ width: number; height: number }> => {
+                  return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    const url = URL.createObjectURL(file);
+
+                    img.onload = () => {
+                      URL.revokeObjectURL(url);
+                      resolve({
+                        width: img.naturalWidth,
+                        height: img.naturalHeight,
+                      });
+                    };
+
+                    img.onerror = () => {
+                      URL.revokeObjectURL(url);
+                      reject(new Error('Failed to load image'));
+                    };
+
+                    img.src = url;
+                  });
+                };
 
                 // Process images asynchronously
                 (async () => {
@@ -204,6 +256,9 @@ export const CustomImage = (options: ImageOptions = {}) => {
                         continue;
                       }
 
+                      // Get image natural dimensions before upload
+                      const dimensions = await getImageDimensions(image);
+
                       // Upload the image
                       const url = await onImageUpload(image);
 
@@ -219,10 +274,17 @@ export const CustomImage = (options: ImageOptions = {}) => {
                         continue;
                       }
 
+                      // Calculate width using preset-aligned sizing
+                      // This prevents the image from snapping when first clicked
+                      const width = calculatePresetWidth(
+                        dimensions.width,
+                        containerWidth
+                      );
+
                       // Create and insert the image node
                       const node = imageNode.create({
                         src: url,
-                        width: defaultWidth,
+                        width: width,
                       });
 
                       const tr = view.state.tr.insert(currentPos, node);
@@ -279,14 +341,37 @@ export const CustomImage = (options: ImageOptions = {}) => {
 
                 const initialPos = coordinates.pos;
 
-                // Get container width for default size
+                // Get container width for sizing calculations
                 const editorElement = view.dom as HTMLElement;
                 const containerWidth =
                   editorElement.querySelector('.ProseMirror')?.clientWidth ||
                   editorElement.clientWidth ||
                   800;
-                const defaultWidth =
-                  (SIZE_PERCENTAGES.md / 100) * containerWidth;
+
+                // Helper to load image and get natural dimensions
+                const getImageDimensions = (
+                  file: File
+                ): Promise<{ width: number; height: number }> => {
+                  return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    const url = URL.createObjectURL(file);
+
+                    img.onload = () => {
+                      URL.revokeObjectURL(url);
+                      resolve({
+                        width: img.naturalWidth,
+                        height: img.naturalHeight,
+                      });
+                    };
+
+                    img.onerror = () => {
+                      URL.revokeObjectURL(url);
+                      reject(new Error('Failed to load image'));
+                    };
+
+                    img.src = url;
+                  });
+                };
 
                 // Process files sequentially to avoid transaction conflicts
                 (async () => {
@@ -300,6 +385,9 @@ export const CustomImage = (options: ImageOptions = {}) => {
                         continue;
                       }
 
+                      // Get image natural dimensions before upload
+                      const dimensions = await getImageDimensions(image);
+
                       // Upload the image
                       const url = await onImageUpload(image);
 
@@ -311,9 +399,16 @@ export const CustomImage = (options: ImageOptions = {}) => {
                         continue;
                       }
 
+                      // Calculate width using preset-aligned sizing
+                      // This prevents the image from snapping when first clicked
+                      const width = calculatePresetWidth(
+                        dimensions.width,
+                        containerWidth
+                      );
+
                       const node = nodeType.create({
                         src: url,
-                        width: defaultWidth,
+                        width: width,
                       });
 
                       // Create fresh transaction from current view state
