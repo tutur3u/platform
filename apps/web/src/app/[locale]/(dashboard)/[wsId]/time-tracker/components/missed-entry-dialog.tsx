@@ -34,6 +34,7 @@ import { formatDuration, getCategoryColor } from './session-history';
 import imageCompression from 'browser-image-compression';
 import Image from 'next/image';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 
 interface MissedEntryDialogProps {
   open: boolean;
@@ -71,6 +72,7 @@ export default function MissedEntryDialog({
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: thresholdDays = 1 } = useWorkspaceTimeThreshold(wsId);
+  const t = useTranslations('time-tracker.missed_entry_dialog');
 
   // State for missed entry form
   const [missedEntryTitle, setMissedEntryTitle] = useState('');
@@ -157,7 +159,7 @@ export default function MissedEntryDialog({
     const invalidTypeCount = files.length - validTypeFiles.length;
     if (invalidTypeCount > 0) {
       setImageError(
-        `${invalidTypeCount} file(s) rejected: only images (PNG, JPEG, WebP, GIF) are allowed.`
+        t('errors.invalidFileType', { count: invalidTypeCount })
       );
     }
 
@@ -168,7 +170,7 @@ export default function MissedEntryDialog({
 
     if (overflow > 0) {
       setImageError(
-        `You can upload up to ${MAX_IMAGES} images. ${overflow} file(s) were rejected.`
+        t('errors.maxImagesExceeded', { max: MAX_IMAGES, overflow })
       );
     }
 
@@ -196,7 +198,10 @@ export default function MissedEntryDialog({
             .map((item) => item.originalName)
             .join(', ');
           setImageError(
-            `${rejectedBySize.length} file(s) rejected (exceeded 1MB even after compression): ${rejectedNames}`
+            t('errors.fileTooLarge', {
+              count: rejectedBySize.length,
+              names: rejectedNames,
+            })
           );
         } else if (imageError && invalidTypeCount === 0) {
           setImageError('');
@@ -272,12 +277,12 @@ export default function MissedEntryDialog({
 
   const createMissedEntry = async () => {
     if (!missedEntryTitle.trim()) {
-      toast.error('Please enter a title for the session');
+      toast.error(t('errors.titleRequired'));
       return;
     }
 
     if (!missedEntryStartTime || !missedEntryEndTime) {
-      toast.error('Please enter both start and end times');
+      toast.error(t('errors.timesRequired'));
       return;
     }
 
@@ -285,12 +290,12 @@ export default function MissedEntryDialog({
     const endTime = dayjs(missedEntryEndTime);
 
     if (endTime.isBefore(startTime)) {
-      toast.error('End time cannot be before start time');
+      toast.error(t('errors.endBeforeStart'));
       return;
     }
 
     if (endTime.diff(startTime, 'minutes') < 1) {
-      toast.error('Session must be at least 1 minute long');
+      toast.error(t('errors.minDuration'));
       return;
     }
 
@@ -303,8 +308,8 @@ export default function MissedEntryDialog({
     if (isOlderThanThreshold && images.length === 0) {
       toast.error(
         thresholdDays === 0
-          ? 'Please upload at least one image for all missed entries'
-          : `Please upload at least one image for entries older than ${thresholdDays} day${thresholdDays !== 1 ? 's' : ''}`
+          ? t('errors.imageRequiredAll')
+          : t('errors.imageRequiredOlder', { days: thresholdDays })
       );
       return;
     }
@@ -352,7 +357,7 @@ export default function MissedEntryDialog({
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(
-            errorData.error || 'Failed to create time tracking request'
+            errorData.error || t('errors.createRequestFailed')
           );
         }
 
@@ -361,7 +366,7 @@ export default function MissedEntryDialog({
         });
         router.refresh();
         closeMissedEntryDialog();
-        toast.success('Time tracking request submitted for approval');
+        toast.success(t('success.requestSubmitted'));
       } else {
         // Regular entry creation for entries within threshold days
         const response = await fetch(
@@ -388,17 +393,17 @@ export default function MissedEntryDialog({
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to create session');
+          throw new Error(errorData.error || t('errors.createSessionFailed'));
         }
 
         router.refresh();
         closeMissedEntryDialog();
-        toast.success('Missed entry added successfully');
+        toast.success(t('success.entryAdded'));
       }
     } catch (error) {
       console.error('Error creating missed entry:', error);
       const errorMessage =
-        error instanceof Error ? error.message : 'Failed to create entry';
+        error instanceof Error ? error.message : t('errors.createEntryFailed');
       toast.error(errorMessage);
     } finally {
       setIsCreatingMissedEntry(false);
@@ -425,40 +430,40 @@ export default function MissedEntryDialog({
     >
       <DialogContent className="mx-auto flex max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-3xl flex-col overflow-hidden">
         <DialogHeader className="border-b pb-4">
-          <DialogTitle>Add Missed Time Entry</DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
         <div className="flex-1 space-y-4 overflow-y-auto">
           <div>
-            <Label htmlFor="missed-entry-title">Title *</Label>
+            <Label htmlFor="missed-entry-title">{t('form.title')}</Label>
             <Input
               id="missed-entry-title"
               value={missedEntryTitle}
               onChange={(e) => setMissedEntryTitle(e.target.value)}
-              placeholder="What were you working on?"
+              placeholder={t('form.titlePlaceholder')}
             />
           </div>
           <div>
-            <Label htmlFor="missed-entry-description">Description</Label>
+            <Label htmlFor="missed-entry-description">{t('form.description')}</Label>
             <Textarea
               id="missed-entry-description"
               value={missedEntryDescription}
               onChange={(e) => setMissedEntryDescription(e.target.value)}
-              placeholder="Optional details about the work"
+              placeholder={t('form.descriptionPlaceholder')}
               rows={2}
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label htmlFor="missed-entry-category">Category</Label>
+              <Label htmlFor="missed-entry-category">{t('form.category')}</Label>
               <Select
                 value={missedEntryCategoryId}
                 onValueChange={setMissedEntryCategoryId}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder={t('form.selectCategory')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No category</SelectItem>
+                  <SelectItem value="none">{t('form.noCategory')}</SelectItem>
                   {categories?.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       <div className="flex items-center gap-2">
@@ -476,16 +481,16 @@ export default function MissedEntryDialog({
               </Select>
             </div>
             <div>
-              <Label htmlFor="missed-entry-task">Task</Label>
+              <Label htmlFor="missed-entry-task">{t('form.task')}</Label>
               <Select
                 value={missedEntryTaskId}
                 onValueChange={setMissedEntryTaskId}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select task" />
+                  <SelectValue placeholder={t('form.selectTask')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No task</SelectItem>
+                  <SelectItem value="none">{t('form.noTask')}</SelectItem>
                   {tasks?.map(
                     (task) =>
                       task.id && (
@@ -500,7 +505,7 @@ export default function MissedEntryDialog({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
-              <Label htmlFor="missed-entry-start-time">Start Time *</Label>
+              <Label htmlFor="missed-entry-start-time">{t('form.startTime')}</Label>
               <Input
                 id="missed-entry-start-time"
                 type="datetime-local"
@@ -509,7 +514,7 @@ export default function MissedEntryDialog({
               />
             </div>
             <div>
-              <Label htmlFor="missed-entry-end-time">End Time *</Label>
+              <Label htmlFor="missed-entry-end-time">{t('form.endTime')}</Label>
               <Input
                 id="missed-entry-end-time"
                 type="datetime-local"
@@ -527,12 +532,12 @@ export default function MissedEntryDialog({
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-dynamic-orange" />
                   <div className="text-sm">
                     <p className="font-medium text-dynamic-orange">
-                      Approval Required
+                      {t('approval.title')}
                     </p>
                     <p className="text-muted-foreground mt-1">
                       {thresholdDays === 0
-                        ? 'All missed entries require approval. Please upload at least one image as proof of work.'
-                        : `Entries older than ${thresholdDays} day${thresholdDays !== 1 ? 's' : ''} require approval. Please upload at least one image as proof of work.`}
+                        ? t('approval.allEntries')
+                        : t('approval.entriesOlderThan', { days: thresholdDays })}
                     </p>
                   </div>
                 </div>
@@ -541,7 +546,10 @@ export default function MissedEntryDialog({
               {/* Image upload section */}
               <div className="space-y-3">
                 <Label className="font-medium text-sm">
-                  Proof of Work * ({images.length}/{MAX_IMAGES})
+                  {t('approval.proofOfWork', {
+                    current: images.length,
+                    max: MAX_IMAGES,
+                  })}
                 </Label>
 
                 {images.length < MAX_IMAGES && (
@@ -587,13 +595,13 @@ export default function MissedEntryDialog({
                       </div>
                       <p className="mb-1 font-medium text-sm">
                         {isCompressing
-                          ? 'Compressing...'
+                          ? t('approval.compressing')
                           : isDragOver
-                            ? 'Drop images here'
-                            : 'Click to upload or drag and drop'}
+                            ? t('approval.dropImages')
+                            : t('approval.clickToUpload')}
                       </p>
                       <p className="text-muted-foreground text-xs">
-                        PNG, JPG, GIF, or WebP up to 1MB each
+                        {t('approval.imageFormats')}
                       </p>
                     </div>
                   </button>
@@ -617,7 +625,7 @@ export default function MissedEntryDialog({
                                 ? preview
                                 : '/placeholder.svg'
                             }
-                            alt={`Proof image ${index + 1}`}
+                            alt={t('approval.proofImageAlt', { number: index + 1 })}
                             className="h-full w-full object-cover"
                             width={100}
                             height={100}
@@ -643,26 +651,26 @@ export default function MissedEntryDialog({
           {/* Quick time presets */}
           <div className="rounded-lg border p-3">
             <Label className="text-muted-foreground text-xs">
-              Quick Presets
+              {t('presets.title')}
             </Label>
             <div className="mt-2 flex flex-wrap gap-2">
               {[
-                { label: 'Last hour', minutes: 60 },
-                { label: 'Last 2 hours', minutes: 120 },
+                { label: t('presets.lastHour'), minutes: 60 },
+                { label: t('presets.last2Hours'), minutes: 120 },
                 {
-                  label: 'Morning (9-12)',
+                  label: t('presets.morning'),
                   isCustom: true,
                   start: '09:00',
                   end: '12:00',
                 },
                 {
-                  label: 'Afternoon (13-17)',
+                  label: t('presets.afternoon'),
                   isCustom: true,
                   start: '13:00',
                   end: '17:00',
                 },
                 {
-                  label: 'Yesterday',
+                  label: t('presets.yesterday'),
                   isCustom: true,
                   start: 'yesterday-9',
                   end: 'yesterday-17',
@@ -733,12 +741,12 @@ export default function MissedEntryDialog({
             <div className="rounded-lg bg-muted/30 p-3">
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <Clock className="h-4 w-4" />
-                <span>Duration: </span>
+                <span>{t('duration.label')}</span>
                 <span className="font-medium text-foreground">
                   {(() => {
                     const start = dayjs(missedEntryStartTime);
                     const end = dayjs(missedEntryEndTime);
-                    if (end.isBefore(start)) return 'Invalid time range';
+                    if (end.isBefore(start)) return t('duration.invalidRange');
                     const durationMs = end.diff(start);
                     const duration = Math.floor(durationMs / 1000);
                     return formatDuration(duration);
@@ -755,7 +763,7 @@ export default function MissedEntryDialog({
             className="w-full sm:w-auto"
             disabled={isCreatingMissedEntry}
           >
-            Cancel
+            {t('actions.cancel')}
           </Button>
           <Button
             onClick={createMissedEntry}
@@ -771,14 +779,16 @@ export default function MissedEntryDialog({
             {isCreatingMissedEntry ? (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin" />
-                {isStartTimeOlderThanThreshold ? 'Submitting...' : 'Adding...'}
+                {isStartTimeOlderThanThreshold
+                  ? t('actions.submitting')
+                  : t('actions.adding')}
               </>
             ) : (
               <>
                 <Plus className="h-4 w-4" />
                 {isStartTimeOlderThanThreshold
-                  ? 'Submit for Approval'
-                  : 'Add Entry'}
+                  ? t('actions.submitForApproval')
+                  : t('actions.addEntry')}
               </>
             )}
           </Button>

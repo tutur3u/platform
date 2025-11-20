@@ -77,6 +77,7 @@ import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
@@ -247,6 +248,7 @@ const StackedSessionItem = ({
       })[]
     | null;
 }) => {
+  const t = useTranslations('time-tracker.session_history');
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAllSessions, setShowAllSessions] = useState(false);
   const userTimezone = dayjs.tz.guess();
@@ -328,7 +330,7 @@ const StackedSessionItem = ({
                     className="border-dynamic-orange/20 bg-dynamic-orange/10 font-medium text-dynamic-orange text-xs"
                   >
                     <Edit className="mr-1 h-3 w-3" />
-                    Manual
+                    {t('manual')}
                   </Badge>
                 )}
             </div>
@@ -384,7 +386,7 @@ const StackedSessionItem = ({
                       {stackedSession?.sessions.some((s) => s.is_running) && (
                         <span className="font-medium text-green-600">
                           {' '}
-                          • ongoing
+                          • {t('ongoing')}
                         </span>
                       )}
                     </>
@@ -397,7 +399,7 @@ const StackedSessionItem = ({
                       ) : stackedSession?.sessions.some((s) => s.is_running) ? (
                         <span className="font-medium text-green-600">
                           {' '}
-                          - ongoing
+                          - {t('ongoing')}
                         </span>
                       ) : null}
                     </>
@@ -433,7 +435,7 @@ const StackedSessionItem = ({
                     className="ml-1 inline-flex text-xs"
                   >
                     <div className="mr-1 h-2 w-2 animate-pulse rounded-full bg-green-500" />
-                    Active
+                    {t('active')}
                   </Badge>
                 )}
               </span>
@@ -474,8 +476,8 @@ const StackedSessionItem = ({
                   onClick={() => setIsExpanded(!isExpanded)}
                   title={
                     isExpanded
-                      ? 'Hide individual sessions'
-                      : 'Show individual sessions'
+                      ? t('hide_individual_sessions')
+                      : t('show_individual_sessions')
                   }
                 >
                   {isExpanded ? (
@@ -492,7 +494,7 @@ const StackedSessionItem = ({
                     variant="ghost"
                     size="sm"
                     className="h-9 w-9 p-0 opacity-100 transition-opacity md:h-10 md:w-10 md:opacity-0 md:group-hover:opacity-100"
-                    title="More options"
+                    title={t('more_options')}
                   >
                     <MoreHorizontal className="h-4 w-4 md:h-5 md:w-5" />
                   </Button>
@@ -507,22 +509,22 @@ const StackedSessionItem = ({
                     ) : (
                       <RotateCcw className="h-4 w-4" />
                     )}
-                    Start New Session
+                    {t('start_new_session')}
                   </DropdownMenuItem>
                   {stackedSession?.sessions.length <= 1 && (
                     <>
                       <DropdownMenuItem onClick={() => onEdit(latestSession)}>
                         <Edit className="h-4 w-4" />
-                        Edit Session
+                        {t('edit_session')}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onMove(latestSession)}>
                         <Move className="h-4 w-4" />
-                        Move to Another Workspace
+                        {t('move_to_workspace')}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => onDelete(latestSession)}>
                         <Trash2 className="h-4 w-4" />
-                        Delete Session
+                        {t('delete_session')}
                       </DropdownMenuItem>
                     </>
                   )}
@@ -545,12 +547,12 @@ const StackedSessionItem = ({
                 {isExpanded ? (
                   <>
                     <ChevronUp className="mr-1.5 h-4 w-4" />
-                    Hide Details
+                    {t('hide_details')}
                   </>
                 ) : (
                   <>
                     <ChevronDown className="mr-1.5 h-4 w-4" />
-                    Show {stackedSession?.sessions.length} Sessions
+                    {t('show_sessions', { count: stackedSession?.sessions.length })}
                   </>
                 )}
               </Button>
@@ -572,22 +574,22 @@ const StackedSessionItem = ({
                 ) : (
                   <RotateCcw className="h-4 w-4" />
                 )}
-                Start New Session
+                {t('start_new_session')}
               </DropdownMenuItem>
               {stackedSession?.sessions.length <= 1 && (
                 <>
                   <DropdownMenuItem onClick={() => onEdit(latestSession)}>
                     <Edit className="h-4 w-4" />
-                    Edit Session
+                    {t('edit_session')}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onMove(latestSession)}>
                     <Move className="h-4 w-4" />
-                    Move to Another Workspace
+                    {t('move_to_workspace')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => onDelete(latestSession)}>
                     <Trash2 className="h-4 w-4" />
-                    Delete Session
+                    {t('delete_session')}
                   </DropdownMenuItem>
                 </>
               )}
@@ -603,29 +605,31 @@ const StackedSessionItem = ({
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                   <Layers className="h-4 w-4" />
-                  Individual Sessions ({stackedSession?.sessions.length})
+                  {t('individual_sessions', { count: stackedSession?.sessions.length })}
                   {stackedSession?.sessions.length > 1 && (
                     <span className="ml-1 text-xs">
                       •{' '}
-                      {
-                        new Set(
+                      {t('days_count', {
+                        count: new Set(
                           stackedSession?.sessions.map((s) =>
                             dayjs
                               .utc(s.start_time)
                               .tz(userTimezone)
                               .format('MMM D')
                           )
-                        ).size
-                      }{' '}
-                      days
+                        ).size,
+                      })}
                     </span>
                   )}
                 </div>
                 <div className="text-muted-foreground text-xs">
-                  {stackedSession?.sessions.filter((s) => s.end_time).length}{' '}
-                  completed •{' '}
-                  {stackedSession?.sessions.filter((s) => s.is_running).length}{' '}
-                  running
+                  {t('completed_count', {
+                    completed: stackedSession?.sessions.filter((s) => s.end_time).length,
+                  })}{' '}
+                  •{' '}
+                  {t('running_count', {
+                    running: stackedSession?.sessions.filter((s) => s.is_running).length,
+                  })}
                 </div>
               </div>
               <div className="space-y-3">
@@ -695,7 +699,7 @@ const StackedSessionItem = ({
                             <div className="flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-amber-700 text-xs ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-800">
                               <div className="h-1 w-1 rounded-full bg-amber-500" />
                               <span className="font-medium">
-                                Overlapping session
+                                {t('overlapping_session')}
                               </span>
                               <div className="h-1 w-1 rounded-full bg-amber-500" />
                             </div>
@@ -726,7 +730,7 @@ const StackedSessionItem = ({
                               <div className="flex items-center gap-2 rounded-full bg-muted px-3 py-1.5 text-muted-foreground text-xs shadow-sm">
                                 <div className="h-1 w-8 bg-foreground/10" />
                                 <span className="font-medium">
-                                  {formatGap(gapInSeconds)} break
+                                  {formatGap(gapInSeconds)} {t('break')}
                                 </span>
                                 <div className="h-1 w-8 bg-foreground/10" />
                               </div>
@@ -759,7 +763,7 @@ const StackedSessionItem = ({
                                   {session.is_running && (
                                     <span className="text-green-600">
                                       {' '}
-                                      - ongoing
+                                      - {t('ongoing')}
                                     </span>
                                   )}
                                 </span>
@@ -784,12 +788,12 @@ const StackedSessionItem = ({
                               </span>
                               {session.is_running && (
                                 <div>
-                                  <Badge
+                                    <Badge
                                     variant="secondary"
                                     className="text-xs"
                                   >
                                     <div className="mr-1 h-2 w-2 animate-pulse rounded-full bg-green-500" />
-                                    Running
+                                    {t('running')}
                                   </Badge>
                                 </div>
                               )}
@@ -809,20 +813,20 @@ const StackedSessionItem = ({
                                   onClick={() => onEdit(session)}
                                 >
                                   <Edit className="h-3 w-3" />
-                                  Edit
+                                  {t('edit')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => onMove(session)}
                                 >
                                   <Move className="h-3 w-3" />
-                                  Move
+                                  {t('move')}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => onDelete(session)}
                                 >
                                   <Trash2 className="h-3 w-3" />
-                                  Delete
+                                  {t('delete')}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -845,16 +849,19 @@ const StackedSessionItem = ({
                       {showAllSessions ? (
                         <>
                           <ChevronUp className="mr-1 h-3 w-3" />
-                          Show less ({INITIAL_SESSION_LIMIT} of{' '}
-                          {stackedSession?.sessions.length})
+                          {t('show_less', {
+                            shown: INITIAL_SESSION_LIMIT,
+                            total: stackedSession?.sessions.length,
+                          })}
                         </>
                       ) : (
                         <>
                           <ChevronDown className="mr-1 h-3 w-3" />
-                          Show{' '}
-                          {stackedSession?.sessions.length -
-                            INITIAL_SESSION_LIMIT}{' '}
-                          more sessions
+                          {t('show_more_sessions', {
+                            count:
+                              stackedSession?.sessions.length -
+                              INITIAL_SESSION_LIMIT,
+                          })}
                         </>
                       )}
                     </Button>
@@ -903,6 +910,7 @@ export function SessionHistory({
   categories,
   tasks,
 }: SessionHistoryProps) {
+  const t = useTranslations('time-tracker.session_history');
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: thresholdDays = 1 } = useWorkspaceTimeThreshold(wsId);
@@ -1202,10 +1210,10 @@ export function SessionHistory({
       });
 
       router.refresh();
-      toast.success(`Started new session: "${session.title}"`);
+      toast.success(t('started_new_session', { title: session.title }));
     } catch (error) {
       console.error('Error resuming session:', error);
-      toast.error('Failed to start new session');
+      toast.error(t('failed_to_start_session'));
     } finally {
       setActionStates((prev) => ({
         ...prev,
@@ -1254,9 +1262,7 @@ export function SessionHistory({
   const openMoveDialog = (session: SessionWithRelations | undefined) => {
     if (!session) return;
     if (session.is_running) {
-      toast.error(
-        'Cannot move running sessions. Please stop the session first.'
-      );
+      toast.error(t('cannot_move_running'));
       return;
     }
     setSessionToMove(session);
@@ -1289,11 +1295,11 @@ export function SessionHistory({
 
       router.refresh();
       setSessionToMove(null);
-      toast.success(result.message || 'Session moved successfully');
+      toast.success(result.message || t('session_moved_successfully'));
     } catch (error) {
       console.error('Error moving session:', error);
       const errorMessage =
-        error instanceof Error ? error.message : 'Failed to move session';
+        error instanceof Error ? error.message : t('failed_to_move_session');
       toast.error(errorMessage);
     } finally {
       setIsMoving(false);
@@ -1365,7 +1371,7 @@ export function SessionHistory({
       // Basic temporal guard: end >= start when both provided
       if (changes.startTime && changes.endTime) {
         if (dayjs(changes.endTime).isBefore(dayjs(changes.startTime))) {
-          toast.error('End time cannot be before start time');
+          toast.error(t('end_time_before_start'));
           setIsEditing(false);
           return;
         }
@@ -1375,7 +1381,7 @@ export function SessionHistory({
       if (Object.keys(changes).length === 1) {
         // Only the 'action' field is present, no actual changes
         closeEditDialog();
-        toast.info('No changes detected');
+        toast.info(t('no_changes_detected'));
         return;
       }
 
@@ -1397,11 +1403,11 @@ export function SessionHistory({
 
       router.refresh();
       closeEditDialog();
-      toast.success('Session updated successfully');
+      toast.success(t('session_updated_successfully'));
     } catch (error) {
       console.error('Error updating session:', error);
       const errorMessage =
-        error instanceof Error ? error.message : 'Failed to update session';
+        error instanceof Error ? error.message : t('failed_to_update_session');
       toast.error(errorMessage);
     } finally {
       setIsEditing(false);
@@ -1424,10 +1430,10 @@ export function SessionHistory({
 
       setSessionToDelete(null);
       router.refresh();
-      toast.success('Session deleted successfully');
+      toast.success(t('session_deleted_successfully'));
     } catch (error) {
       console.error('Error deleting session:', error);
-      toast.error('Failed to delete session');
+      toast.error(t('failed_to_delete_session'));
     } finally {
       setIsDeleting(false);
     }
@@ -1476,11 +1482,12 @@ export function SessionHistory({
                 <History className="h-5 w-5 text-dynamic-orange md:h-6 md:w-6" />
               </div>
               <div>
-                <div className="font-bold tracking-tight">Session History</div>
+                <div className="font-bold tracking-tight">{t('title')}</div>
                 {(sessionsForPeriod?.length || 0) > 0 && (
                   <div className="font-normal text-muted-foreground text-xs md:text-sm">
-                    {sessionsForPeriod?.length} session
-                    {sessionsForPeriod?.length !== 1 ? 's' : ''}
+                    {sessionsForPeriod?.length === 1
+                      ? t('sessions_count', { count: sessionsForPeriod?.length || 0 })
+                      : t('sessions_count_plural', { count: sessionsForPeriod?.length || 0 })}
                   </div>
                 )}
               </div>
@@ -1489,15 +1496,15 @@ export function SessionHistory({
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <Button onClick={openMissedEntryDialog} size="sm">
                 <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Add Missed Entry</span>
-                <span className="sm:hidden">Add Entry</span>
+                <span className="hidden sm:inline">{t('add_missed_entry')}</span>
+                <span className="sm:hidden">{t('add_entry')}</span>
               </Button>
 
               <div className="flex items-center gap-2">
                 <div className="relative flex-1 sm:flex-none">
                   <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search sessions..."
+                    placeholder={t('search_placeholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="h-9 w-full pl-10 sm:w-48 md:h-10 md:w-64"
@@ -1529,7 +1536,7 @@ export function SessionHistory({
                         filterSessionQuality !== 'all') && (
                         <div className="-top-1 -right-1 absolute h-2 w-2 rounded-full bg-dynamic-orange ring-2 ring-background" />
                       )}
-                      <span className="hidden md:inline">Filters</span>
+                      <span className="hidden md:inline">{t('filters')}</span>
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent
@@ -1540,7 +1547,7 @@ export function SessionHistory({
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h4 className="font-medium">
-                          Advanced Analytics Filters
+                          {t('advanced_analytics_filters')}
                         </h4>
                         <Button
                           variant="ghost"
@@ -1549,7 +1556,7 @@ export function SessionHistory({
                             setShowAdvancedFilters(!showAdvancedFilters)
                           }
                         >
-                          {showAdvancedFilters ? 'Simple' : 'Advanced'}
+                          {showAdvancedFilters ? t('simple') : t('advanced')}
                         </Button>
                       </div>
 
@@ -1558,18 +1565,18 @@ export function SessionHistory({
                         <div>
                           <Label className="flex items-center gap-2 font-medium text-sm">
                             <Tag className="h-3 w-3" />
-                            Category
+                            {t('category')}
                           </Label>
                           <Select
                             value={filterCategoryId}
                             onValueChange={setFilterCategoryId}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="All categories" />
+                              <SelectValue placeholder={t('all_categories')} />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="all">
-                                All categories
+                                {t('all_categories')}
                               </SelectItem>
                               {categories?.map((category) => (
                                 <SelectItem
@@ -1596,25 +1603,25 @@ export function SessionHistory({
                         <div>
                           <Label className="flex items-center gap-2 font-medium text-sm">
                             <Clock className="h-3 w-3" />
-                            Duration Type
+                            {t('duration_type')}
                           </Label>
                           <Select
                             value={filterDuration}
                             onValueChange={setFilterDuration}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="All durations" />
+                              <SelectValue placeholder={t('all_durations')} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="all">All durations</SelectItem>
+                              <SelectItem value="all">{t('all_durations')}</SelectItem>
                               <SelectItem value="short">
-                                🏃 Short (&lt; 30 min)
+                                {t('short_duration')}
                               </SelectItem>
                               <SelectItem value="medium">
-                                🚶 Medium (30 min - 2h)
+                                {t('medium_duration')}
                               </SelectItem>
                               <SelectItem value="long">
-                                🏔️ Long (2+ hours)
+                                {t('long_duration')}
                               </SelectItem>
                             </SelectContent>
                           </Select>
@@ -1627,31 +1634,31 @@ export function SessionHistory({
                           <div>
                             <Label className="flex items-center gap-2 font-medium text-sm">
                               <TrendingUp className="h-3 w-3" />
-                              Productivity Type
+                              {t('productivity_type')}
                             </Label>
                             <Select
                               value={filterProductivity}
                               onValueChange={setFilterProductivity}
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder="All productivity types" />
+                                <SelectValue placeholder={t('all_productivity_types')} />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="all">All types</SelectItem>
+                                <SelectItem value="all">{t('all_types')}</SelectItem>
                                 <SelectItem value="deep-work">
-                                  🧠 Deep Work (80+ focus)
+                                  {t('deep_work')}
                                 </SelectItem>
                                 <SelectItem value="focused">
-                                  🎯 Focused (60+ focus)
+                                  {t('focused')}
                                 </SelectItem>
                                 <SelectItem value="standard">
-                                  📋 Standard work
+                                  {t('standard')}
                                 </SelectItem>
                                 <SelectItem value="scattered">
-                                  🔀 Scattered (low focus)
+                                  {t('scattered')}
                                 </SelectItem>
                                 <SelectItem value="interrupted">
-                                  ⚡ Interrupted (&lt; 15 min)
+                                  {t('interrupted')}
                                 </SelectItem>
                               </SelectContent>
                             </Select>
@@ -1660,28 +1667,28 @@ export function SessionHistory({
                           <div>
                             <Label className="flex items-center gap-2 font-medium text-sm">
                               <Sun className="h-3 w-3" />
-                              Time of Day
+                              {t('time_of_day')}
                             </Label>
                             <Select
                               value={filterTimeOfDay}
                               onValueChange={setFilterTimeOfDay}
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder="All times" />
+                                <SelectValue placeholder={t('all_times')} />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="all">All times</SelectItem>
+                                <SelectItem value="all">{t('all_times')}</SelectItem>
                                 <SelectItem value="morning">
-                                  🌅 Morning (6 AM - 12 PM)
+                                  {t('morning')}
                                 </SelectItem>
                                 <SelectItem value="afternoon">
-                                  ☀️ Afternoon (12 PM - 6 PM)
+                                  {t('afternoon')}
                                 </SelectItem>
                                 <SelectItem value="evening">
-                                  🌇 Evening (6 PM - 12 AM)
+                                  {t('evening')}
                                 </SelectItem>
                                 <SelectItem value="night">
-                                  🌙 Night (12 AM - 6 AM)
+                                  {t('night')}
                                 </SelectItem>
                               </SelectContent>
                             </Select>
@@ -1690,33 +1697,33 @@ export function SessionHistory({
                           <div>
                             <Label className="flex items-center gap-2 font-medium text-sm">
                               <Briefcase className="h-3 w-3" />
-                              Project Context
+                              {t('project_context')}
                             </Label>
                             <Select
                               value={filterProjectContext}
                               onValueChange={setFilterProjectContext}
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder="All contexts" />
+                                <SelectValue placeholder={t('all_contexts')} />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">
-                                  All contexts
+                                  {t('all_contexts')}
                                 </SelectItem>
                                 <SelectItem value="project-work">
-                                  📁 Project Work
+                                  {t('project_work')}
                                 </SelectItem>
                                 <SelectItem value="meetings">
-                                  👥 Meetings
+                                  {t('meetings')}
                                 </SelectItem>
                                 <SelectItem value="learning">
-                                  📚 Learning
+                                  {t('learning')}
                                 </SelectItem>
                                 <SelectItem value="administrative">
-                                  📋 Administrative
+                                  {t('administrative')}
                                 </SelectItem>
                                 <SelectItem value="general">
-                                  🔧 General Tasks
+                                  {t('general_tasks')}
                                 </SelectItem>
                               </SelectContent>
                             </Select>
@@ -1725,30 +1732,30 @@ export function SessionHistory({
                           <div>
                             <Label className="flex items-center gap-2 font-medium text-sm">
                               <Star className="h-3 w-3" />
-                              Session Quality
+                              {t('session_quality')}
                             </Label>
                             <Select
                               value={filterSessionQuality}
                               onValueChange={setFilterSessionQuality}
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder="All qualities" />
+                                <SelectValue placeholder={t('all_qualities')} />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">
-                                  All qualities
+                                  {t('all_qualities')}
                                 </SelectItem>
                                 <SelectItem value="excellent">
-                                  ⭐ Excellent (80+ score)
+                                  {t('excellent')}
                                 </SelectItem>
                                 <SelectItem value="good">
-                                  👍 Good (60-79 score)
+                                  {t('good')}
                                 </SelectItem>
                                 <SelectItem value="average">
-                                  👌 Average (40-59 score)
+                                  {t('average')}
                                 </SelectItem>
                                 <SelectItem value="needs-improvement">
-                                  📈 Needs Improvement (&lt; 40)
+                                  {t('needs_improvement')}
                                 </SelectItem>
                               </SelectContent>
                             </Select>
@@ -1770,7 +1777,7 @@ export function SessionHistory({
                           }}
                           className="w-full"
                         >
-                          🧹 Clear All Filters
+                          {t('clear_all_filters')}
                         </Button>
                       </div>
 
@@ -1778,7 +1785,7 @@ export function SessionHistory({
                       {(filteredSessions?.length || 0) > 0 && (
                         <div className="rounded-lg border-t bg-muted/30 p-3">
                           <div className="mb-2 font-medium text-muted-foreground text-xs">
-                            📊 Filter Analytics
+                            {t('filter_analytics')}
                           </div>
                           <div className="grid grid-cols-2 gap-2 text-xs">
                             <div className="text-center">
@@ -1786,7 +1793,7 @@ export function SessionHistory({
                                 {filteredSessions?.length}
                               </div>
                               <div className="text-muted-foreground">
-                                Sessions
+                                {t('sessions')}
                               </div>
                             </div>
                           </div>
@@ -1811,7 +1818,7 @@ export function SessionHistory({
                     'h-9 min-w-[70px] flex-1 capitalize transition-all sm:flex-none md:h-10'
                   )}
                 >
-                  {mode}
+                  {t(mode as 'day' | 'week' | 'month')}
                 </Button>
               ))}
             </div>
@@ -1823,7 +1830,7 @@ export function SessionHistory({
                   size="icon"
                   onClick={goToPrevious}
                   className="h-9 w-9 shrink-0 transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:h-10 md:w-10"
-                  title="Previous"
+                  title={t('previous')}
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -1835,7 +1842,7 @@ export function SessionHistory({
                   size="icon"
                   onClick={goToNext}
                   className="h-9 w-9 shrink-0 transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:h-10 md:w-10"
-                  title="Next"
+                  title={t('next')}
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -1848,10 +1855,10 @@ export function SessionHistory({
                   className="h-9 whitespace-nowrap text-xs md:h-10 md:text-sm"
                 >
                   {viewMode === 'day'
-                    ? 'Today'
-                    : `This ${
-                        viewMode.charAt(0).toUpperCase() + viewMode.slice(1)
-                      }`}
+                    ? t('today')
+                    : viewMode === 'week'
+                      ? t('this_week')
+                      : t('this_month')}
                 </Button>
               )}
             </div>
@@ -1865,12 +1872,12 @@ export function SessionHistory({
                 <Clock className="h-10 w-10 text-dynamic-orange md:h-12 md:w-12" />
               </div>
               <h3 className="font-semibold text-foreground text-lg md:text-xl">
-                No sessions for this {viewMode}
+                {t('no_sessions_for_period', { period: t(viewMode as 'day' | 'week' | 'month') })}
               </h3>
               <p className="mt-2 max-w-md text-center text-muted-foreground text-sm leading-relaxed md:text-base">
                 {sessions?.length === 0
-                  ? 'Start tracking time to see your sessions here'
-                  : 'Try a different time period or adjusting your filters'}
+                  ? t('start_tracking_message')
+                  : t('try_different_period')}
               </p>
               {sessions?.length === 0 && (
                 <Button
@@ -1878,7 +1885,7 @@ export function SessionHistory({
                   className="mt-6 bg-dynamic-orange text-white hover:bg-dynamic-orange/90"
                 >
                   <Plus className="h-4 w-4" />
-                  Add Your First Entry
+                  {t('add_first_entry')}
                 </Button>
               )}
             </div>
@@ -1890,7 +1897,7 @@ export function SessionHistory({
                 <div className="rounded-lg border bg-linear-to-br from-blue-50 to-blue-100 p-4 dark:from-blue-950/50 dark:to-blue-900/50">
                   <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
                     <Clock className="h-4 w-4" />
-                    <span className="font-medium text-sm">Total Time</span>
+                    <span className="font-medium text-sm">{t('total_time')}</span>
                   </div>
                   <p className="mt-1 font-bold text-2xl text-blue-900 dark:text-blue-100">
                     {formatDuration(periodStats?.totalDuration)}
@@ -1900,7 +1907,7 @@ export function SessionHistory({
                 <div className="rounded-lg border bg-linear-to-br from-green-50 to-green-100 p-4 dark:from-green-950/50 dark:to-green-900/50">
                   <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
                     <Layers className="h-4 w-4" />
-                    <span className="font-medium text-sm">Activities</span>
+                    <span className="font-medium text-sm">{t('activities')}</span>
                   </div>
                   <p className="mt-1 font-bold text-2xl text-green-900 dark:text-green-100">
                     {periodStats?.breakdown.length}
@@ -1910,7 +1917,7 @@ export function SessionHistory({
                 <div className="rounded-lg border bg-linear-to-br from-purple-50 to-purple-100 p-4 dark:from-purple-950/50 dark:to-purple-900/50">
                   <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
                     <BarChart2 className="h-4 w-4" />
-                    <span className="font-medium text-sm">Sessions</span>
+                    <span className="font-medium text-sm">{t('sessions')}</span>
                   </div>
                   <p className="mt-1 font-bold text-2xl text-purple-900 dark:text-purple-100">
                     {sessionsForPeriod?.length}
@@ -1923,7 +1930,7 @@ export function SessionHistory({
                 <div className="rounded-lg border p-4">
                   <h3 className="mb-4 flex items-center gap-2 font-semibold text-base">
                     <BarChart2 className="h-5 w-5" />
-                    Top Activities This Month
+                    {t('top_activities_this_month')}
                   </h3>
                   <div className="space-y-3">
                     {periodStats?.breakdown.slice(0, 5).map((cat, index) => {
@@ -1972,29 +1979,29 @@ export function SessionHistory({
                 <div className="rounded-lg border p-4">
                   <h3 className="mb-4 flex items-center gap-2 font-semibold text-base">
                     <Brain className="h-5 w-5" />
-                    Productivity Insights
+                    {t('productivity_insights')}
                   </h3>
                   <div className="space-y-4">
                     {/* Best Time of Day */}
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground text-sm">
-                        Most Productive Time
+                        {t('most_productive_time')}
                       </span>
                       <span className="font-medium">
                         {periodStats?.bestTimeOfDay === 'morning' &&
-                          '🌅 Morning'}
+                          t('morning')}
                         {periodStats?.bestTimeOfDay === 'afternoon' &&
-                          '☀️ Afternoon'}
+                          t('afternoon')}
                         {periodStats?.bestTimeOfDay === 'evening' &&
-                          '🌇 Evening'}
-                        {periodStats?.bestTimeOfDay === 'night' && '🌙 Night'}
+                          t('evening')}
+                        {periodStats?.bestTimeOfDay === 'night' && t('night')}
                       </span>
                     </div>
 
                     {/* Session Types Breakdown */}
                     <div className="space-y-2">
                       <div className="text-muted-foreground text-sm">
-                        Session Types
+                        {t('session_types')}
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-xs">
                         <div className="text-center">
@@ -2002,7 +2009,7 @@ export function SessionHistory({
                             {periodStats?.longSessions}
                           </div>
                           <div className="text-muted-foreground">
-                            Deep (2h+)
+                            {t('deep')}
                           </div>
                         </div>
                         <div className="text-center">
@@ -2010,7 +2017,7 @@ export function SessionHistory({
                             {periodStats?.mediumSessions}
                           </div>
                           <div className="text-muted-foreground">
-                            Focus (30m-2h)
+                            {t('focus')}
                           </div>
                         </div>
                         <div className="text-center">
@@ -2018,7 +2025,7 @@ export function SessionHistory({
                             {periodStats?.shortSessions}
                           </div>
                           <div className="text-muted-foreground">
-                            Quick (&lt;30m)
+                            {t('quick')}
                           </div>
                         </div>
                       </div>
@@ -2028,7 +2035,7 @@ export function SessionHistory({
                     {periodStats?.longestSession && (
                       <div className="rounded-md bg-muted/30 p-3">
                         <div className="mb-1 text-muted-foreground text-xs">
-                          🏆 Longest Session
+                          {t('longest_session')}
                         </div>
                         <div className="font-medium text-sm">
                           {periodStats?.longestSession.title}
@@ -2048,7 +2055,7 @@ export function SessionHistory({
               <div className="space-y-4">
                 <h3 className="flex items-center gap-2 font-semibold text-base">
                   <History className="h-5 w-5" />
-                  Weekly Breakdown
+                  {t('weekly_breakdown')}
                 </h3>
                 {Object.entries(groupedStackedSessions).map(
                   ([groupTitle, groupSessions]) => {
@@ -2067,7 +2074,7 @@ export function SessionHistory({
                             {groupTitle}
                           </h4>
                           <div className="flex items-center gap-3 text-muted-foreground text-sm">
-                            <span>{groupSessions.length} activities</span>
+                            <span>{t('activities_count', { count: groupSessions.length })}</span>
                             <span>•</span>
                             <span className="font-semibold text-foreground">
                               {formatDuration(groupTotalDuration)}
@@ -2109,7 +2116,7 @@ export function SessionHistory({
                                   </div>
                                   {session.sessions.length > 1 && (
                                     <div className="text-muted-foreground text-xs">
-                                      {session.sessions.length} sessions
+                                      {t('sessions_count_label', { count: session.sessions.length })}
                                     </div>
                                   )}
                                 </div>
@@ -2129,7 +2136,7 @@ export function SessionHistory({
                                   }
                                 >
                                   <RotateCcw className="mr-1 h-3 w-3" />
-                                  Resume
+                                  {t('resume')}
                                 </Button>
                                 <Button
                                   variant="ghost"
@@ -2175,12 +2182,12 @@ export function SessionHistory({
               <div className="mb-6 rounded-lg border p-4">
                 <h3 className="mb-3 flex items-center gap-2 font-medium text-muted-foreground text-sm">
                   <BarChart2 className="h-4 w-4" />
-                  {viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} Summary
+                  {t('summary')}
                 </h3>
                 <div className="space-y-4">
                   <div>
                     <div className="mb-1 flex justify-between text-sm">
-                      <span className="font-medium">Total Time</span>
+                      <span className="font-medium">{t('total_time')}</span>
                       <span className="font-bold">
                         {formatDuration(periodStats?.totalDuration)}
                       </span>
@@ -2244,7 +2251,7 @@ export function SessionHistory({
                           </div>
                           {groupSessions.length > 1 && (
                             <div className="ml-3 text-muted-foreground text-xs">
-                              {formatDuration(groupTotalDuration)} total
+                              {formatDuration(groupTotalDuration)} {t('total')}
                             </div>
                           )}
                         </div>
@@ -2276,40 +2283,40 @@ export function SessionHistory({
       <Dialog open={!!sessionToEdit} onOpenChange={() => closeEditDialog()}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Session</DialogTitle>
+            <DialogTitle>{t('edit_session_title')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="edit-title">Title</Label>
+              <Label htmlFor="edit-title">{t('session_title')}</Label>
               <Input
                 id="edit-title"
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                placeholder="Session title"
+                placeholder={t('session_title_placeholder')}
               />
             </div>
             <div>
-              <Label htmlFor="edit-description">Description</Label>
+              <Label htmlFor="edit-description">{t('description')}</Label>
               <Textarea
                 id="edit-description"
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
-                placeholder="Optional description"
+                placeholder={t('optional_description')}
                 rows={3}
               />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label htmlFor="edit-category">Category</Label>
+                <Label htmlFor="edit-category">{t('category')}</Label>
                 <Select
                   value={editCategoryId}
                   onValueChange={setEditCategoryId}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue placeholder={t('select_category')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No category</SelectItem>
+                    <SelectItem value="none">{t('no_category')}</SelectItem>
                     {categories?.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         <div className="flex items-center gap-2">
@@ -2327,13 +2334,13 @@ export function SessionHistory({
                 </Select>
               </div>
               <div>
-                <Label htmlFor="edit-task">Task</Label>
+                <Label htmlFor="edit-task">{t('select_task')}</Label>
                 <Select value={editTaskId} onValueChange={setEditTaskId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select task" />
+                    <SelectValue placeholder={t('select_task')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No task</SelectItem>
+                    <SelectItem value="none">{t('no_task')}</SelectItem>
                     {tasks?.map(
                       (task) =>
                         task.id && (
@@ -2353,34 +2360,32 @@ export function SessionHistory({
                   <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
                     <AlertTriangle className="h-4 w-4" />
                     <span className="font-medium text-sm">
-                      Time Editing Restricted
+                      {t('time_editing_restricted')}
                     </span>
                   </div>
                   <p className="mt-2 text-orange-600 text-sm dark:text-orange-400">
                     {thresholdDays === 0 ? (
                       <>
-                        All time edits must be submitted as requests for
-                        approval. This session is from{' '}
-                        <span className="font-medium">
-                          {dayjs
+                        {t('all_edits_require_approval', {
+                          date: dayjs
                             .utc(sessionToEdit.start_time)
                             .tz(dayjs.tz.guess())
-                            .format('MMM D, YYYY')}
-                        </span>
-                        .
+                            .format('MMM D, YYYY'),
+                        })}
                       </>
                     ) : (
                       <>
-                        Start time and end time cannot be edited for sessions
-                        older than {thresholdDays} day
-                        {thresholdDays !== 1 ? 's' : ''}. This session is from{' '}
-                        <span className="font-medium">
-                          {dayjs
+                        {t('cannot_edit_old_session', {
+                          days: thresholdDays,
+                          dayLabel:
+                            thresholdDays === 1
+                              ? t('day_singular')
+                              : t('day_plural'),
+                          date: dayjs
                             .utc(sessionToEdit.start_time)
                             .tz(dayjs.tz.guess())
-                            .format('MMM D, YYYY')}
-                        </span>
-                        .
+                            .format('MMM D, YYYY'),
+                        })}
                       </>
                     )}
                   </p>
@@ -2389,7 +2394,7 @@ export function SessionHistory({
                 <>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <Label htmlFor="edit-start-time">Start Time</Label>
+                      <Label htmlFor="edit-start-time">{t('start_time')}</Label>
                       <Input
                         id="edit-start-time"
                         type="datetime-local"
@@ -2398,7 +2403,7 @@ export function SessionHistory({
                       />
                     </div>
                     <div>
-                      <Label htmlFor="edit-end-time">End Time</Label>
+                      <Label htmlFor="edit-end-time">{t('end_time')}</Label>
                       <Input
                         id="edit-end-time"
                         type="datetime-local"
@@ -2407,23 +2412,34 @@ export function SessionHistory({
                       />
                     </div>
                   </div>
-                  {/* Warning about the one day limit */}
+                  {/* Warning about the threshold limit */}
                   {editStartTime &&
-                    isDatetimeMoreThanOneDayAgo(
+                    isDatetimeMoreThanThresholdAgo(
                       editStartTime,
-                      dayjs.tz.guess()
+                      dayjs.tz.guess(),
+                      thresholdDays
                     ) && (
                       <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/50">
                         <div className="flex items-start gap-2 text-amber-700 dark:text-amber-300">
                           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                           <div className="text-xs">
                             <p className="font-medium">
-                              Cannot backdate more than one day
+                              {t('cannot_backdate', {
+                                days: thresholdDays,
+                                dayLabel:
+                                  thresholdDays === 1
+                                    ? t('day_singular')
+                                    : t('day_plural'),
+                              })}
                             </p>
                             <p className="mt-1 text-amber-600 dark:text-amber-400">
-                              Start times must be within the last 24 hours.
-                              Attempting to set a time older than one day ago
-                              will be rejected.
+                              {t('start_times_within_limit', {
+                                days: thresholdDays,
+                                dayLabel:
+                                  thresholdDays === 1
+                                    ? t('day_singular')
+                                    : t('day_plural'),
+                              })}
                             </p>
                           </div>
                         </div>
@@ -2437,7 +2453,7 @@ export function SessionHistory({
                 onClick={() => closeEditDialog()}
                 className="flex-1"
               >
-                Cancel
+                {t('cancel')}
               </Button>
               <Button
                 onClick={saveEdit}
@@ -2455,7 +2471,7 @@ export function SessionHistory({
                 }
                 className="flex-1"
               >
-                {isEditing ? 'Saving...' : 'Save Changes'}
+                {isEditing ? t('saving') : t('save_changes')}
               </Button>
             </div>
           </div>
@@ -2469,21 +2485,19 @@ export function SessionHistory({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Time Session</AlertDialogTitle>
+            <AlertDialogTitle>{t('delete_time_session')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the session "
-              {sessionToDelete?.title}"? This action cannot be undone and will
-              permanently remove the tracked time.
+              {t('delete_confirmation', { title: sessionToDelete?.title || '' })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={deleteSession}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? 'Deleting...' : 'Delete Session'}
+              {isDeleting ? t('deleting') : t('delete_session_action')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -18,6 +18,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface WorkspaceSelectDialogProps {
   isOpen: boolean;
@@ -43,6 +44,7 @@ export function WorkspaceSelectDialog({
   isMoving,
 }: WorkspaceSelectDialogProps) {
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>('');
+  const t = useTranslations('time-tracker.workspace_select_dialog');
 
   const { data: workspaces, isLoading } = useQuery<Workspace[]>({
     queryKey: ['workspaces'],
@@ -67,7 +69,7 @@ export function WorkspaceSelectDialog({
 
   const handleMove = async () => {
     if (!selectedWorkspaceId) {
-      toast.error('Please select a workspace');
+      toast.error(t('errors.selectWorkspace'));
       return;
     }
 
@@ -94,29 +96,28 @@ export function WorkspaceSelectDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Move className="h-5 w-5" />
-            Move Session to Another Workspace
+            {t('title')}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="rounded-lg bg-muted/30 p-3">
-            <p className="text-muted-foreground text-sm">Moving session:</p>
+            <p className="text-muted-foreground text-sm">{t('movingSession')}</p>
             <p className="font-medium">{sessionTitle}</p>
           </div>
 
           <div className="space-y-2">
-            <div className="font-medium text-sm">Select Target Workspace</div>
+            <div className="font-medium text-sm">{t('selectTarget')}</div>
             {isLoading ? (
               <div className="flex items-center gap-2 py-3">
                 <RefreshCw className="h-4 w-4 animate-spin" />
                 <span className="text-muted-foreground text-sm">
-                  Loading workspaces...
+                  {t('loadingWorkspaces')}
                 </span>
               </div>
             ) : !availableWorkspaces?.length ? (
               <div className="py-3 text-muted-foreground text-sm">
-                No other workspaces available. You need to be a member of at
-                least one other workspace to move sessions.
+                {t('noWorkspaces')}
               </div>
             ) : (
               <Select
@@ -125,7 +126,7 @@ export function WorkspaceSelectDialog({
                 disabled={isMoving}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Choose a workspace" />
+                  <SelectValue placeholder={t('chooseWorkspace')} />
                 </SelectTrigger>
                 <SelectContent>
                   {availableWorkspaces.map((workspace) => (
@@ -143,17 +144,11 @@ export function WorkspaceSelectDialog({
 
           {availableWorkspaces?.length ? (
             <div className="rounded-lg bg-blue-50 p-3 text-blue-700 text-sm dark:bg-blue-950/30 dark:text-blue-300">
-              <p className="mb-1 font-medium">Note:</p>
+              <p className="mb-1 font-medium">{t('note')}</p>
               <ul className="space-y-1 text-xs">
-                <li>• The session will be moved to the selected workspace</li>
-                <li>
-                  • Categories and tasks will be matched by name if they exist
-                  in the target workspace
-                </li>
-                <li>
-                  • If no matching category/task is found, they will be
-                  unassigned
-                </li>
+                <li>• {t('noteItems.move')}</li>
+                <li>• {t('noteItems.match')}</li>
+                <li>• {t('noteItems.unassign')}</li>
               </ul>
             </div>
           ) : null}
@@ -165,7 +160,7 @@ export function WorkspaceSelectDialog({
               disabled={isMoving}
               className="flex-1"
             >
-              Cancel
+              {t('actions.cancel')}
             </Button>
             <Button
               onClick={handleMove}
@@ -177,12 +172,12 @@ export function WorkspaceSelectDialog({
               {isMoving ? (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Moving...
+                  {t('actions.moving')}
                 </>
               ) : (
                 <>
                   <Move className="mr-2 h-4 w-4" />
-                  Move Session
+                  {t('actions.moveSession')}
                 </>
               )}
             </Button>
