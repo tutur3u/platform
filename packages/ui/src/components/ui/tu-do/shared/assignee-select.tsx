@@ -63,11 +63,17 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
     );
 
     // Fetch workspace members with React Query
-    const { data: members = [], isLoading: isFetchingMembers } = useQuery({
+    const {
+      data: members = [],
+      isLoading: isFetchingMembers,
+      error: membersError,
+    } = useQuery({
       queryKey: ['workspace-members', wsId],
       queryFn: async () => {
         const response = await fetch(`/api/workspaces/${wsId}/members`);
-        if (!response.ok) throw new Error('Failed to fetch members');
+        if (!response.ok) {
+          throw new Error('Failed to fetch members');
+        }
 
         const { members: fetchedMembers } = await response.json();
 
@@ -88,6 +94,15 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
       enabled: !!wsId,
       staleTime: 5 * 60 * 1000, // 5 minutes
     });
+
+    // Handle fetch errors
+    if (membersError) {
+      const errorMessage =
+        membersError instanceof Error
+          ? membersError.message
+          : 'Failed to get workspace members';
+      toast.error(errorMessage);
+    }
 
     // Mutation for updating task assignees
     const assigneeMutation = useMutation({
@@ -191,7 +206,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
       },
     });
 
-    const handleSelect = async (memberId: string) => {
+    const handleSelect = (memberId: string) => {
       const isAssigned = uniqueAssignees.some(
         (assignee) => assignee.id === memberId
       );
@@ -205,7 +220,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
     const handleRemoveAll = async () => {
       // Remove all assignees sequentially to avoid race conditions
       for (const assignee of uniqueAssignees) {
-        assigneeMutation.mutate({
+        await assigneeMutation.mutate({
           memberId: assignee.id,
           action: 'remove',
         });

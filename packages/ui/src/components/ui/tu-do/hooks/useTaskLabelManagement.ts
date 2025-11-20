@@ -17,7 +17,7 @@ interface UseTaskLabelManagementProps {
   boardId: string;
   workspaceLabels: WorkspaceTaskLabel[];
   workspaceId?: string;
-  selectedTasks?: Set<string>; // For bulk operations
+  selectedTasks?: Set<string>;
   isMultiSelectMode?: boolean;
   onClearSelection?: () => void;
 }
@@ -92,16 +92,17 @@ export function useTaskLabelManagement({
       : [];
 
     // Optimistically update the cache - only update tasks that actually change
-    queryClient.setQueryData(['tasks', boardId], (old: any[] | undefined) => {
+    queryClient.setQueryData<Task[]>(['tasks', boardId], (old) => {
       if (!old) return old;
       return old.map((t) => {
         if (active && tasksToRemoveFrom.includes(t.id)) {
           // Remove the label
           return {
             ...t,
-            labels: t.labels?.filter((l: any) => l.id !== labelId) || [],
+            labels: t.labels?.filter((l) => l.id !== labelId) || [],
           };
-        } else if (!active && tasksNeedingLabel.includes(t.id)) {
+        }
+        if (!active && tasksNeedingLabel.includes(t.id)) {
           // Add the label
           return {
             ...t,
@@ -136,11 +137,17 @@ export function useTaskLabelManagement({
           const { error } = await supabase.from('task_labels').insert(rows);
 
           // Ignore duplicate key errors
-          if (
-            error &&
-            !String(error.message).toLowerCase().includes('duplicate')
-          ) {
-            throw error;
+          if (error) {
+            // Check error code first for proper duplicate detection
+            if (
+              error.code === '23505' ||
+              (!error.code &&
+                String(error.message).toLowerCase().includes('duplicate'))
+            ) {
+              // Silently ignore duplicate errors
+            } else {
+              throw error;
+            }
           }
         }
       }
@@ -200,31 +207,38 @@ export function useTaskLabelManagement({
         const previousTasks = queryClient.getQueryData(['tasks', boardId]);
 
         // Optimistically update the cache
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: any[] | undefined) => {
-            if (!old) return old;
-            return old.map((t) => {
-              if (t.id === task.id) {
-                return {
-                  ...t,
-                  labels: [...(t.labels || []), newLabel],
-                };
-              }
-              return t;
-            });
-          }
-        );
+        queryClient.setQueryData<Task[]>(['tasks', boardId], (old) => {
+          if (!old) return old;
+          return old.map((t) => {
+            if (t.id === task.id) {
+              return {
+                ...t,
+                labels: [...(t.labels || []), newLabel],
+              };
+            }
+            return t;
+          });
+        });
 
         const { error: linkErr } = await supabase
           .from('task_labels')
           .insert({ task_id: task.id, label_id: newLabel.id });
         if (linkErr) {
-          // Rollback on error
-          queryClient.setQueryData(['tasks', boardId], previousTasks);
-          toast.error(
-            'The label was created but could not be attached to the task. Refresh and try manually.'
-          );
+          // Check error code first for proper duplicate detection
+          if (
+            linkErr.code === '23505' ||
+            (!linkErr.code &&
+              String(linkErr.message).toLowerCase().includes('duplicate'))
+          ) {
+            // Treat duplicates as success - label already exists on task
+            linkSucceeded = true;
+          } else {
+            // Rollback on other errors
+            queryClient.setQueryData(['tasks', boardId], previousTasks);
+            toast.error(
+              'The label was created but could not be attached to the task. Refresh and try manually.'
+            );
+          }
         } else {
           linkSucceeded = true;
         }

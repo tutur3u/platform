@@ -143,7 +143,7 @@ BEGIN
     IF OLD.start_date IS DISTINCT FROM NEW.start_date THEN
         v_has_changes := true;
         v_changes := v_changes || jsonb_build_object(
-            'start_date', jsonb_build_object('old', OLD.start_date, 'new', OLD.start_date)
+            'start_date', jsonb_build_object('old', OLD.start_date, 'new', NEW.start_date)
         );
 
         IF v_notification_type = 'task_updated' THEN
@@ -178,7 +178,7 @@ BEGIN
         PERFORM public.insert_task_history(
             NEW.id,
             'field_updated',
-            'estimation__points',
+            'estimation_points',
             to_jsonb(OLD.estimation_points),
             to_jsonb(NEW.estimation_points),
             jsonb_build_object('ws_id', v_task_details.ws_id, 'board_id', v_task_details.board_id)
