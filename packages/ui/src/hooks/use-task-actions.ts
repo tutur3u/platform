@@ -43,7 +43,6 @@ export function useTaskActions({
   setEstimationSaving,
   selectedTasks,
   isMultiSelectMode,
-  onClearSelection,
 }: UseTaskActionsProps) {
   const queryClient = useQueryClient();
   const updateTaskMutation = useUpdateTask(boardId);
@@ -289,10 +288,7 @@ export function useTaskActions({
               : `Task moved to ${targetList?.name || 'selected list'}`,
         });
 
-        // Clear selection after bulk move
-        if (shouldBulkMove && onClearSelection) {
-          onClearSelection();
-        }
+        // Don't auto-clear selection - let user manually clear with "Clear" button
 
         onUpdate();
       } catch (error) {
@@ -314,7 +310,6 @@ export function useTaskActions({
       setMenuOpen,
       isMultiSelectMode,
       selectedTasks,
-      onClearSelection,
     ]
   );
 
@@ -387,10 +382,7 @@ export function useTaskActions({
         // Invalidate queries to ensure fresh data
         await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
 
-        // Clear selection after bulk update
-        if (shouldBulkUpdate && onClearSelection) {
-          onClearSelection();
-        }
+        // Don't auto-clear selection - let user manually clear with "Clear" button
       } catch (error) {
         console.error('Failed to update due date:', error);
         // Rollback on error
@@ -410,7 +402,6 @@ export function useTaskActions({
       setIsLoading,
       isMultiSelectMode,
       selectedTasks,
-      onClearSelection,
       queryClient,
       boardId,
     ]
@@ -504,10 +495,7 @@ export function useTaskActions({
 
         console.log('✅ Priority update completed successfully');
 
-        // Clear selection after bulk update
-        if (shouldBulkUpdate && onClearSelection) {
-          onClearSelection();
-        }
+        // Don't auto-clear selection - let user manually clear with "Clear" button
       } catch (error) {
         console.error('❌ Failed to update priority:', error);
         // Rollback on error
@@ -528,7 +516,6 @@ export function useTaskActions({
       setIsLoading,
       isMultiSelectMode,
       selectedTasks,
-      onClearSelection,
       queryClient,
       boardId,
     ]
@@ -598,10 +585,7 @@ export function useTaskActions({
         // Invalidate queries to ensure fresh data
         await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
 
-        // Clear selection after bulk update
-        if (shouldBulkUpdate && onClearSelection) {
-          onClearSelection();
-        }
+        // Don't auto-clear selection - let user manually clear with "Clear" button
       } catch (e: any) {
         console.error('Failed to update estimation', e);
         // Rollback on error
@@ -622,7 +606,6 @@ export function useTaskActions({
       setEstimationSaving,
       isMultiSelectMode,
       selectedTasks,
-      onClearSelection,
       queryClient,
       boardId,
     ]
@@ -777,8 +760,8 @@ export function useTaskActions({
               .from('task_assignees')
               .insert(rows);
 
-            // Ignore duplicate key errors
-            if (error && !String(error.message).toLowerCase().includes('duplicate')) {
+            // Ignore duplicate key errors (code '23505' for unique_violation)
+            if (error && error.code !== '23505') {
               throw error;
             }
           }
@@ -798,10 +781,7 @@ export function useTaskActions({
           }
         );
 
-        // Clear selection after bulk update
-        if (shouldBulkUpdate && onClearSelection) {
-          onClearSelection();
-        }
+        // Don't auto-clear selection - let user manually clear with "Clear" button
       } catch (e: any) {
         // Rollback on error
         if (previousTasks) {
@@ -822,7 +802,6 @@ export function useTaskActions({
       setIsLoading,
       isMultiSelectMode,
       selectedTasks,
-      onClearSelection,
     ]
   );
 

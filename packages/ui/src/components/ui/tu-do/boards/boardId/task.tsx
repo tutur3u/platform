@@ -361,6 +361,18 @@ function TaskCardInner({
     onClearSelection,
   });
 
+  const onToggleAssignee = useCallback(
+    async (assigneeId: string) => {
+      try {
+        setAssigneeSaving(assigneeId);
+        await handleToggleAssignee(assigneeId);
+      } finally {
+        setAssigneeSaving(null);
+      }
+    },
+    [handleToggleAssignee]
+  );
+
   // Memoize drag handle for performance
   // Removed explicit drag handle – entire card is now draggable for better UX.
   // Keep attributes/listeners to spread onto root interactive area.
@@ -640,6 +652,13 @@ function TaskCardInner({
   const visibleBadges = taskBadges.slice(0, visibleBadgeCount);
   const hiddenBadges = taskBadges.slice(visibleBadgeCount);
 
+  // Get all tasks from query to subscribe to cache updates
+  const { data: allTasksFromQuery } = useQuery({
+    queryKey: ['tasks', boardId],
+    queryFn: () => [], // No-op function - we only want to read from cache
+    enabled: false, // Don't fetch, just subscribe to cache
+  });
+
   // Compute collective attributes for bulk operations
   const { displayLabels, displayProjects, displayAssignees } = useMemo(() => {
     const shouldUseBulkMode =
@@ -657,7 +676,7 @@ function TaskCardInner({
     }
 
     // Get all selected tasks data from query cache
-    const allTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]) || [];
+    const allTasks = (allTasksFromQuery as Task[]) || [];
     const selectedTasksData = allTasks.filter((t) => selectedTasks?.has(t.id));
 
     if (selectedTasksData.length === 0) {
@@ -709,7 +728,7 @@ function TaskCardInner({
       displayProjects: commonProjects,
       displayAssignees: commonAssignees,
     };
-  }, [isMultiSelectMode, selectedTasks, task, boardId, queryClient]);
+  }, [isMultiSelectMode, selectedTasks, task.id, task.labels, task.projects, task.assignees, allTasksFromQuery]);
 
   return (
     <Card
@@ -993,12 +1012,7 @@ function TaskCardInner({
                       availableMembers={workspaceMembers}
                       isLoading={membersLoading}
                       assigneeSaving={assigneeSaving}
-                      onToggleAssignee={(assigneeId) => {
-                        setAssigneeSaving(assigneeId);
-                        handleToggleAssignee(assigneeId).finally(() => {
-                          setAssigneeSaving(null);
-                        });
-                      }}
+                      onToggleAssignee={onToggleAssignee}
                       onMenuItemSelect={handleMenuItemSelect}
                     />
                   )}

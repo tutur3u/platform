@@ -29,7 +29,6 @@ export function useTaskLabelManagement({
   workspaceId,
   selectedTasks,
   isMultiSelectMode,
-  onClearSelection,
 }: UseTaskLabelManagementProps) {
   const queryClient = useQueryClient();
   const [labelsSaving, setLabelsSaving] = useState<string | null>(null);
@@ -57,7 +56,9 @@ export function useTaskLabelManagement({
     await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
 
     // Snapshot the previous value BEFORE optimistic update
-    const previousTasks = queryClient.getQueryData(['tasks', boardId]) as Task[] | undefined;
+    const previousTasks = queryClient.getQueryData(['tasks', boardId]) as
+      | Task[]
+      | undefined;
 
     // Determine action: remove if ALL selected tasks have the label, add otherwise
     let active = task.labels?.some((l) => l.id === labelId);
@@ -132,12 +133,13 @@ export function useTaskLabelManagement({
             task_id: taskId,
             label_id: labelId,
           }));
-          const { error } = await supabase
-            .from('task_labels')
-            .insert(rows);
+          const { error } = await supabase.from('task_labels').insert(rows);
 
           // Ignore duplicate key errors
-          if (error && !String(error.message).toLowerCase().includes('duplicate')) {
+          if (
+            error &&
+            !String(error.message).toLowerCase().includes('duplicate')
+          ) {
             throw error;
           }
         }
@@ -146,21 +148,14 @@ export function useTaskLabelManagement({
       // Invalidate queries to ensure fresh data
       await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
 
-      const taskCount = active ? tasksToRemoveFrom.length : tasksNeedingLabel.length;
-      toast.success(
-        active ? 'Label removed' : 'Label added',
-        {
-          description:
-            taskCount > 1
-              ? `${taskCount} tasks updated`
-              : undefined,
-        }
-      );
+      const taskCount = active
+        ? tasksToRemoveFrom.length
+        : tasksNeedingLabel.length;
+      toast.success(active ? 'Label removed' : 'Label added', {
+        description: taskCount > 1 ? `${taskCount} tasks updated` : undefined,
+      });
 
-      // Clear selection after bulk update
-      if (shouldBulkUpdate && onClearSelection) {
-        onClearSelection();
-      }
+      // Don't auto-clear selection - let user manually clear with "Clear" button
     } catch (e: any) {
       // Rollback on error
       queryClient.setQueryData(['tasks', boardId], previousTasks);

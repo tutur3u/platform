@@ -27,7 +27,6 @@ export function useTaskProjectManagement({
   workspaceId,
   selectedTasks,
   isMultiSelectMode,
-  onClearSelection,
 }: UseTaskProjectManagementProps) {
   const queryClient = useQueryClient();
   const [projectsSaving, setProjectsSaving] = useState<string | null>(null);
@@ -54,7 +53,9 @@ export function useTaskProjectManagement({
     await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
 
     // Snapshot the previous value BEFORE optimistic update
-    const previousTasks = queryClient.getQueryData(['tasks', boardId]) as Task[] | undefined;
+    const previousTasks = queryClient.getQueryData(['tasks', boardId]) as
+      | Task[]
+      | undefined;
 
     // Determine action: remove if ALL selected tasks have the project, add otherwise
     let active = task.projects?.some((p) => p.id === projectId);
@@ -95,8 +96,7 @@ export function useTaskProjectManagement({
           // Remove the project
           return {
             ...t,
-            projects:
-              t.projects?.filter((p: any) => p.id !== projectId) || [],
+            projects: t.projects?.filter((p: any) => p.id !== projectId) || [],
           };
         } else if (!active && tasksNeedingProject.includes(t.id)) {
           // Add the project
@@ -104,7 +104,7 @@ export function useTaskProjectManagement({
             ...t,
             projects: [
               ...(t.projects || []),
-              project || { id: projectId, name: 'Unknown', status: null },
+              project || { id: projectId, name: 'Unknown', status: 'unknown' },
             ],
           };
         }
@@ -144,21 +144,14 @@ export function useTaskProjectManagement({
       // Invalidate queries to ensure fresh data
       await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
 
-      const taskCount = active ? tasksToRemoveFrom.length : tasksNeedingProject.length;
-      toast.success(
-        active ? 'Project removed' : 'Project added',
-        {
-          description:
-            taskCount > 1
-              ? `${taskCount} tasks updated`
-              : undefined,
-        }
-      );
+      const taskCount = active
+        ? tasksToRemoveFrom.length
+        : tasksNeedingProject.length;
+      toast.success(active ? 'Project removed' : 'Project added', {
+        description: taskCount > 1 ? `${taskCount} tasks updated` : undefined,
+      });
 
-      // Clear selection after bulk update
-      if (shouldBulkUpdate && onClearSelection) {
-        onClearSelection();
-      }
+      // Don't auto-clear selection - let user manually clear with "Clear" button
     } catch (e: any) {
       // Rollback on error
       queryClient.setQueryData(['tasks', boardId], previousTasks);
