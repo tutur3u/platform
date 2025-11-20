@@ -268,10 +268,11 @@ export default function MembersSettings({
             {filteredMembers.map((member) => (
               <div
                 key={member.id || member.email}
-                className={`relative rounded-lg border p-4 transition-colors ${member?.pending
-                  ? 'border-dashed bg-transparent'
-                  : 'bg-primary-foreground/20 hover:bg-primary-foreground/30'
-                  }`}
+                className={`relative rounded-lg border p-4 transition-colors ${
+                  member?.pending
+                    ? 'border-dashed bg-transparent'
+                    : 'bg-primary-foreground/20 hover:bg-primary-foreground/30'
+                }`}
               >
                 <div className="flex items-center gap-2">
                   <Avatar className="rounded-sm">
