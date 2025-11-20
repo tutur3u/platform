@@ -165,6 +165,8 @@
     "default": "Default",
     "all": "All",
     "general": "General",
+    "workspace": "Workspace",
+    "members": "Members",
     "other": "Other",
     "empty": "Empty",
     "error": "Error",
@@ -1092,7 +1094,9 @@
     "integrations": "Integrations",
     "more_tools": "More tools",
     "realtime_chat": "Realtime Chat",
-    "track": "Track"
+    "track": "Track",
+    "time_tracker_requests": "Requests",
+    "time-tracker": "Time Tracker"
   },
   "usage": {
     "description": "Monitor workspace activity, feature usage, and system metrics across your organization",
@@ -1704,6 +1708,7 @@
     "reason": "Reason",
     "reason-placeholder": "Why is this being blacklisted? (optional)",
     "reason-description": "Optional explanation for why this entry is being blocked.",
+    "quick-reasons": "Quick Reasons",
     "email-description": "Block a specific email address",
     "domain-description": "Block all email addresses from a domain",
     "value-email-hint": "Enter the complete email address to block (e.g., user@example.com)",
@@ -1724,7 +1729,13 @@
     "operation-failed": "Operation failed",
     "network-error": "Network error occurred. Please try again.",
     "error": "Error",
-    "value-empty": "Value cannot be empty"
+    "value-empty": "Value cannot be empty",
+    "quick-reason-spam": "Spam/Phishing",
+    "quick-reason-policy-violation": "Policy Violation",
+    "quick-reason-fraud": "Fraud/Abuse",
+    "quick-reason-inactive": "Inactive/Abandoned",
+    "quick-reason-verification-failed": "Verification Failed",
+    "quick-reason-competitor": "Competitor Domain"
   },
   "email-blacklist-data-table": {
     "id": "ID",
@@ -2366,6 +2377,8 @@
   },
   "ws-settings": {
     "description": "Manage the settings of your workspace.",
+    "general-description": "Manage basic workspace information and settings",
+    "members-description": "View and manage workspace members and their permissions",
     "basic_info": "Basic Information",
     "basic_info_description": "Manage the basic information of your workspace.",
     "workspace_logo": "Workspace Logo",
@@ -3124,7 +3137,11 @@
     "leads": "Leads",
     "create_lead_generations": "Create Lead Generations",
     "create_lead_generations_description": "Allows members to create new lead generations in the workspace.",
-    "transactions": "Transactions"
+    "transactions": "Transactions",
+    "manage_time_tracking_requests": "Manage Time Tracking Requests",
+    "manage_time_tracking_requests_description": "Allows the user to view & approve/reject time tracking missed entries",
+    "bypass_time_tracking_request_approval": "Bypass Time Tracking Request Approval",
+    "bypass_time_tracking_request_approval_description": "Allows bypassing of restrictions when approving/denying time-tracking requests"
   },
   "platform-roles": {
     "plural": "Platform Roles",
@@ -3486,8 +3503,12 @@
   },
   "settings-account": {
     "account": "Account",
+    "account-description": "Manage your personal account settings and preferences",
     "avatar": "Avatar",
     "avatar-description": "Personalize your profile with a custom avatar.",
+    "appearance-description": "Customize the look and feel of your interface",
+    "security-description": "Manage your security settings and linked accounts",
+    "billing-description": "View and manage your subscription and billing information",
     "revert_changes": "Revert changes",
     "preview": "Preview",
     "display-name": "Display name",
@@ -6677,6 +6698,82 @@
     "metadata": {
       "title": "Time Tracker",
       "description": "Manage Time Tracker in your Tuturuuu workspace."
+    },
+    "requests": {
+      "title": "Time Tracking Requests",
+      "description": "Review and approve time tracking requests from team members",
+      "filters": {
+        "title": "Filters",
+        "description": "Filter requests by status and user",
+        "status": "Status",
+        "user": "User",
+        "clearFilters": "Clear Filters",
+        "allUsers": "All Users"
+      },
+      "status": {
+        "all": "All",
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "list": {
+        "title": "Requests",
+        "showing": "Showing {start} to {end} of {total} requests",
+        "itemsPerPage": "Items per page",
+        "noRequestsTitle": "No requests found",
+        "noRequestsMessage": "Try adjusting your filters to see more results.",
+        "noRequestsDefault": "No time tracking requests have been submitted yet.",
+        "duration": "{hours}h {minutes}m",
+        "task": "Task: {name}",
+        "attachments": "{count} image{plural}",
+        "approvedBy": "Approved by {name}",
+        "approvedOn": "on {date}",
+        "rejectedBy": "Rejected by {name}",
+        "rejectedOn": "on {date}",
+        "loading": "Loading requests...",
+        "error": "Failed to load requests"
+      },
+      "detail": {
+        "title": "Request Details",
+        "userInfo": "User Information",
+        "timeInfo": "Time Information",
+        "startTime": "Start Time",
+        "endTime": "End Time",
+        "duration": "Duration",
+        "linkedTask": "Linked Task",
+        "description": "Description",
+        "attachments": "Attachments ({count})",
+        "loadingMedia": "Loading media...",
+        "requestApproved": "Request Approved",
+        "requestRejected": "Request Rejected",
+        "rejectionReason": "Reason:",
+        "approveButton": "Approve Request",
+        "rejectButton": "Reject Request",
+        "confirmRejection": "Confirm Rejection",
+        "rejectionReasonPlaceholder": "Please provide a reason for rejecting this request...",
+        "rejectionReasonRequired": "Please provide a reason for rejection",
+        "rejectionReasonLabel": "Rejection Reason",
+        "imageNavigation": "Image {current} of {total}",
+        "previousImage": "Previous",
+        "nextImage": "Next",
+        "unknownUser": "Unknown User",
+        "approvedDate": "Approved by {name} on {date}",
+        "rejectedDate": "Rejected by {name} on {date}"
+      },
+      "toast": {
+        "approveSuccess": "Time tracking request approved successfully",
+        "approveFailed": "Failed to approve request",
+        "rejectSuccess": "Time tracking request rejected",
+        "rejectFailed": "Failed to reject request",
+        "loadImagesFailed": "Failed to load images"
+      },
+      "time-tracker": {
+        "requests": {
+          "status": {
+            "pending": "Pending"
+          }
+        }
+      }
     },
     "modes": {
       "switchedToAdvanced": "Switched to Advanced Mode",

@@ -12,8 +12,8 @@
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@tanstack/react-query": "^5.90.10",
-    "@tiptap/core": "^3.10.7",
-    "@tiptap/react": "^3.10.7",
+    "@tiptap/core": "^3.11.0",
+    "@tiptap/react": "^3.11.0",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/google": "workspace:*",
     "@tuturuuu/icons": "workspace:*",

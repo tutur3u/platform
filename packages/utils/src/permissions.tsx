@@ -38,6 +38,8 @@ import {
   UserPlus,
   Users,
   UserX,
+  Clock,
+  MessageCircleIcon,
 } from '@tuturuuu/icons';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { PermissionId } from '@tuturuuu/types';
@@ -246,6 +248,33 @@ export const permissionGroups = ({
             icon: <FileKey2 />,
             title: t('ws-roles.manage_documents'),
             description: t('ws-roles.manage_documents_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+        ],
+      },
+      {
+        id: 'time-tracker',
+        icon: <Clock />,
+        title: t('sidebar_tabs.time-tracker'),
+        permissions: [
+          {
+            id: 'manage_time_tracking_requests',
+            icon: <MessageCircleIcon />,
+            title: t('ws-roles.manage_time_tracking_requests'),
+            description: t(
+              'ws-roles.manage_time_tracking_requests_description'
+            ),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'bypass_time_tracking_request_approval',
+            icon: <CircleCheck />,
+            title: t('ws-roles.bypass_time_tracking_request_approval'),
+            description: t(
+              'ws-roles.bypass_time_tracking_request_approval_description'
+            ),
             disableOnProduction: false,
             disabled: false,
           },

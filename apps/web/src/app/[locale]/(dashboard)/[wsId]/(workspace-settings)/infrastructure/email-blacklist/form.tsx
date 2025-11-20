@@ -62,6 +62,15 @@ interface Props {
   onFinish?: () => void;
 }
 
+const QUICK_REASONS = [
+  'quick-reason-spam',
+  'quick-reason-policy-violation',
+  'quick-reason-fraud',
+  'quick-reason-inactive',
+  'quick-reason-verification-failed',
+  'quick-reason-competitor',
+] as const;
+
 export default function EmailBlacklistForm({
   data,
   onSuccess,
@@ -254,6 +263,31 @@ export default function EmailBlacklistForm({
             </FormItem>
           )}
         />
+
+        <div className="space-y-3">
+          <div className="text-sm font-medium">
+            {t('email-blacklist.quick-reasons')}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {QUICK_REASONS.map((reason) => (
+              <Button
+                key={reason}
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  form.setValue('reason', t(`email-blacklist.${reason}`), {
+                    shouldDirty: true,
+                  });
+                }}
+                disabled={isLoading}
+                className="text-xs"
+              >
+                {t(`email-blacklist.${reason}`)}
+              </Button>
+            ))}
+          </div>
+        </div>
 
         <div className="flex justify-end gap-2">
           <Button type="submit" disabled={isLoading}>

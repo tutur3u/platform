@@ -23,13 +23,6 @@ import {
   Search,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -401,19 +394,18 @@ export default function NotificationPreferencesTable({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className="rounded-full bg-dynamic-blue/20 p-2">
-            <Bell className="h-5 w-5 text-dynamic-blue" />
-          </div>
-          <div className="flex-1">
-            <CardTitle>{t('title')}</CardTitle>
-            <CardDescription>{t('description')}</CardDescription>
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="rounded-full bg-dynamic-blue/20 p-2.5">
+          <Bell className="h-5 w-5 text-dynamic-blue" />
         </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
+        <div className="space-y-1">
+          <h3 className="font-semibold text-lg">{t('title')}</h3>
+          <p className="text-muted-foreground text-sm">{t('description')}</p>
+        </div>
+      </div>
+
+      <div className="space-y-6">
         {/* Search bar */}
         <div className="relative">
           <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
@@ -429,7 +421,7 @@ export default function NotificationPreferencesTable({
         {/* Table */}
         <div className="space-y-4">
           {/* Sticky header */}
-          <div className="sticky top-0 z-10 grid grid-cols-4 gap-4 border-b bg-background pb-2">
+          <div className="-top-6 sticky z-10 grid grid-cols-4 gap-4 border-b bg-background p-2">
             <div className="font-medium text-sm">{t('event')}</div>
             {CHANNELS.map((channel) => (
               <div key={channel} className="text-center font-medium text-sm">
@@ -573,24 +565,22 @@ export default function NotificationPreferencesTable({
         <div className="rounded-lg bg-muted/50 p-4">
           <p className="text-muted-foreground text-xs">{t('auto-save-info')}</p>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
 function LoadingSkeleton() {
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-10 w-10 rounded-full" />
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-5 w-48" />
-            <Skeleton className="h-4 w-64" />
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-10 w-10 rounded-full" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-5 w-48" />
+          <Skeleton className="h-4 w-64" />
         </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
+      </div>
+      <div className="space-y-6">
         <Skeleton className="h-10 w-full" />
         <div className="space-y-4">
           <Skeleton className="h-12 w-full" />
@@ -598,7 +588,7 @@ function LoadingSkeleton() {
             <Skeleton key={i} className="h-16 w-full" />
           ))}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
