@@ -1222,7 +1222,6 @@ export default function MyTasksContent({
           collapsedSections={collapsedSections}
           toggleSection={toggleSection}
           handleUpdate={handleUpdate}
-          setBoardSelectorOpen={setBoardSelectorOpen}
         />
       </div>
 

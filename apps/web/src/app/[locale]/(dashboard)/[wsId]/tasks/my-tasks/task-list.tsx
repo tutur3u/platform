@@ -7,13 +7,14 @@ import {
   Clock,
   Flag,
   LayoutDashboard,
-  Plus,
 } from '@tuturuuu/icons';
 import type { TaskWithRelations } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import TaskListWithCompletion from './task-list-with-completion';
 
@@ -31,7 +32,6 @@ interface TaskListProps {
   };
   toggleSection: (section: 'overdue' | 'today' | 'upcoming') => void;
   handleUpdate: () => void;
-  setBoardSelectorOpen: (open: boolean) => void;
 }
 
 // Group tasks by priority for better organization
@@ -82,9 +82,11 @@ export default function TaskList({
   collapsedSections,
   toggleSection,
   handleUpdate,
-  setBoardSelectorOpen,
 }: TaskListProps) {
   const t = useTranslations();
+  const params = useParams();
+  const wsId = params?.wsId as string;
+  const locale = params?.locale as string;
 
   return (
     <>
@@ -492,41 +494,23 @@ export default function TaskList({
       {/* All Caught Up State */}
       {totalActiveTasks === 0 && !commandBarLoading && (
         <Card className="overflow-hidden border-dynamic-green/30 bg-linear-to-br from-dynamic-green/5 to-background shadow-sm">
-          <CardContent className="flex flex-col items-center justify-center gap-6 p-12 text-center">
+          <CardContent className="flex flex-col items-center justify-center gap-6 py-6 text-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-dynamic-green/15">
               <CheckCircle2 className="h-10 w-10 text-dynamic-green" />
             </div>
             <div className="space-y-2">
               <h3 className="font-semibold text-2xl">You're all caught up!</h3>
               <p className="mx-auto max-w-md text-muted-foreground">
-                No active tasks right now. Create a new task above to get
-                started, or take a moment to plan your next move.
+                No active tasks right now. Browse your boards to view all tasks
+                or take a moment to plan your next move.
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3">
-              <Button
-                variant="default"
-                onClick={() => {
-                  const textarea = document.querySelector(
-                    '#my-tasks-command-bar-textarea'
-                  ) as HTMLTextAreaElement;
-                  if (textarea) {
-                    textarea.focus();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }
-                }}
-                className="gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Create Task
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setBoardSelectorOpen(true)}
-                className="gap-2"
-              >
-                <LayoutDashboard className="h-4 w-4" />
-                Browse Boards
+              <Button variant="default" asChild className="gap-2">
+                <Link href={`/${locale}/${wsId}/tasks/boards`}>
+                  <LayoutDashboard className="h-4 w-4" />
+                  Browse Boards
+                </Link>
               </Button>
             </div>
           </CardContent>
