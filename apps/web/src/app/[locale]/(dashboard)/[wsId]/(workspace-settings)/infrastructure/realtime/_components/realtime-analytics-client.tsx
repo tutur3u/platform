@@ -118,15 +118,62 @@ export function RealtimeAnalyticsClient({
 
       // Return aggregated data
       return hourBuckets.map((bucket) => ({
-        time_bucket: bucket.hour,
-        hour: bucket.hour,
+        label: bucket.hour,
         count: filters.metric === 'requests' ? bucket.count : bucket.users.size,
       }));
     }
 
-    // Daily view - similar aggregation by date
-    return [];
-  }, [rawData, filters.metric, filters.viewMode]);
+    // Daily view - aggregate by date
+    // Calculate the number of days in the range
+    const startDate = new Date(filters.startDate);
+    const endDate = new Date(filters.endDate);
+    const dayCount =
+      Math.ceil(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      ) + 1;
+
+    // Create daily buckets
+    const dayBuckets = Array.from({ length: dayCount }, (_, i) => {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      return {
+        date: date.toISOString().split('T')[0] ?? '', // YYYY-MM-DD format
+        count: 0,
+        users: new Set<string>(),
+      };
+    });
+
+    // Aggregate raw UTC data into local date buckets
+    for (const row of rawData) {
+      // Parse UTC timestamp
+      const utcDate = new Date(row.time_bucket);
+
+      // Get local date (JavaScript Date automatically handles timezone)
+      const localDateStr = utcDate.toISOString().split('T')[0];
+
+      // Find the corresponding bucket
+      const bucket = dayBuckets.find((b) => b.date === localDateStr);
+      if (!bucket) continue;
+
+      bucket.count += row.total_count || 0;
+
+      if (row.user_id) {
+        bucket.users.add(row.user_id);
+      }
+    }
+
+    // Return aggregated data
+    return dayBuckets.map((bucket) => ({
+      label: bucket.date,
+      count: filters.metric === 'requests' ? bucket.count : bucket.users.size,
+    }));
+  }, [
+    rawData,
+    filters.metric,
+    filters.viewMode,
+    filters.startDate,
+    filters.endDate,
+  ]);
 
   // Fetch workspaces for filter dropdown
   const { data: workspaces } = useQuery({

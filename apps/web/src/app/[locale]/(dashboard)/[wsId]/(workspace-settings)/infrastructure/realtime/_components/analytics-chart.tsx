@@ -10,7 +10,7 @@ import { useTranslations } from 'next-intl';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 interface RealtimeAnalyticsChartProps {
-  data: Array<{ time_bucket: string; hour: string; count: number }>;
+  data: Array<{ label: string; count: number }>;
   metric: 'requests' | 'users';
   isLoading?: boolean;
 }
@@ -76,14 +76,14 @@ export function RealtimeAnalyticsChart({
   } satisfies ChartConfig;
 
   const chartData = data.map((item) => ({
-    hour: item.hour,
+    label: item.label,
     count: item.count,
   }));
 
   // Calculate stats
   const totalCount = data.reduce((sum, item) => sum + item.count, 0);
   const peakCount = Math.max(...data.map((item) => item.count));
-  const peakHour = data.find((item) => item.count === peakCount)?.hour;
+  const peakLabel = data.find((item) => item.count === peakCount)?.label;
   const avgCount = totalCount > 0 ? Math.round(totalCount / data.length) : 0;
 
   return (
@@ -102,10 +102,10 @@ export function RealtimeAnalyticsChart({
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
-              dataKey="hour"
+              dataKey="label"
               tickLine={false}
               axisLine={false}
-              interval={Math.max(1, Math.floor(data.length / 12))}
+              interval={0}
             />
             <YAxis tickLine={false} axisLine={false} width={40} />
             <ChartTooltip
@@ -130,13 +130,13 @@ export function RealtimeAnalyticsChart({
           </BarChart>
         </ChartContainer>
 
-        {/* Peak Hour Indicator */}
-        {peakHour && peakCount > 0 && (
+        {/* Peak Period Indicator */}
+        {peakLabel && peakCount > 0 && (
           <div className="absolute top-2 right-2 rounded-lg bg-dynamic-blue/10 px-3 py-1.5 backdrop-blur-sm">
             <div className="flex items-center gap-1.5">
               <div className="h-2 w-2 rounded-full bg-dynamic-blue" />
               <span className="font-medium text-dynamic-blue text-xs">
-                {t('stats.peak_hour')}: {peakHour}
+                {t('stats.peak_hour')}: {peakLabel}
               </span>
             </div>
           </div>
