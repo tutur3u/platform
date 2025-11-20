@@ -499,8 +499,8 @@ export default function TaskList({
 
       {/* All Caught Up State */}
       {totalActiveTasks === 0 && !commandBarLoading && (
-        <Card className="overflow-hidden border-dynamic-green/30 bg-linear-to-br from-dynamic-green/5 to-background shadow-sm">
-          <CardContent className="flex flex-col items-center justify-center gap-6 py-6 text-center">
+        <Card className="border-none bg-transparent">
+          <CardContent className="flex flex-col items-center justify-center gap-6 text-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-dynamic-green/15">
               <CheckCircle2 className="h-10 w-10 text-dynamic-green" />
             </div>
