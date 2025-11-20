@@ -222,12 +222,12 @@ function SettingsDialogContent({
                       isActive={item.id === activeSection}
                       onClick={() => setActiveSection(item.id)}
                     >
-                      <a href="#" className="group">
+                      <div className="group">
                         <item.icon className="h-5 w-5" />
                         <div className="flex flex-col">
                           <span>{item.name}</span>
                         </div>
-                      </a>
+                      </div>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}

@@ -3,6 +3,7 @@ import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
   getPermissions,
   getSecrets,
@@ -10,8 +11,8 @@ import {
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 import AdminTaskEmbeddings from './admin-task-embeddings';
 import WorkspaceAvatarSettings from './avatar';
 import BasicInfo from './basic-info';
@@ -35,6 +36,7 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
   const t = await getTranslations();
   const { wsId: id } = await params;
 
+  const user = await getCurrentUser();
   const ws = await getWorkspace(id);
   const wsId = ws?.id;
 
@@ -98,8 +100,9 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
         />
 
         <WorkspaceAvatarSettings
+          user={user}
           workspace={ws}
-          allowEdit={canManageWorkspace}
+          allowEdit={id !== 'personal' && canManageWorkspace}
         />
 
         {enableLogo && (

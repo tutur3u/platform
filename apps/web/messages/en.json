@@ -165,6 +165,8 @@
     "default": "Default",
     "all": "All",
     "general": "General",
+    "workspace": "Workspace",
+    "members": "Members",
     "other": "Other",
     "empty": "Empty",
     "error": "Error",
@@ -1706,6 +1708,7 @@
     "reason": "Reason",
     "reason-placeholder": "Why is this being blacklisted? (optional)",
     "reason-description": "Optional explanation for why this entry is being blocked.",
+    "quick-reasons": "Quick Reasons",
     "email-description": "Block a specific email address",
     "domain-description": "Block all email addresses from a domain",
     "value-email-hint": "Enter the complete email address to block (e.g., user@example.com)",
@@ -1726,7 +1729,13 @@
     "operation-failed": "Operation failed",
     "network-error": "Network error occurred. Please try again.",
     "error": "Error",
-    "value-empty": "Value cannot be empty"
+    "value-empty": "Value cannot be empty",
+    "quick-reason-spam": "Spam/Phishing",
+    "quick-reason-policy-violation": "Policy Violation",
+    "quick-reason-fraud": "Fraud/Abuse",
+    "quick-reason-inactive": "Inactive/Abandoned",
+    "quick-reason-verification-failed": "Verification Failed",
+    "quick-reason-competitor": "Competitor Domain"
   },
   "email-blacklist-data-table": {
     "id": "ID",
@@ -2368,6 +2377,8 @@
   },
   "ws-settings": {
     "description": "Manage the settings of your workspace.",
+    "general-description": "Manage basic workspace information and settings",
+    "members-description": "View and manage workspace members and their permissions",
     "basic_info": "Basic Information",
     "basic_info_description": "Manage the basic information of your workspace.",
     "workspace_logo": "Workspace Logo",
@@ -3492,8 +3503,12 @@
   },
   "settings-account": {
     "account": "Account",
+    "account-description": "Manage your personal account settings and preferences",
     "avatar": "Avatar",
     "avatar-description": "Personalize your profile with a custom avatar.",
+    "appearance-description": "Customize the look and feel of your interface",
+    "security-description": "Manage your security settings and linked accounts",
+    "billing-description": "View and manage your subscription and billing information",
     "revert_changes": "Revert changes",
     "preview": "Preview",
     "display-name": "Display name",

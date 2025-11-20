@@ -1,7 +1,11 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types';
+import type {
+  CalendarConnection,
+  Workspace,
+  WorkspaceCalendarGoogleToken,
+} from '@tuturuuu/types';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { useLocale, useTranslations } from 'next-intl';
@@ -10,17 +14,6 @@ import AddEventDialog from './components/add-event-dialog';
 import CalendarConnectionsManager from './components/calendar-connections-manager';
 import QuickCalendarToggle from './components/quick-calendar-toggle';
 import SyncDebugPanel from './components/sync-debug-panel';
-
-interface CalendarConnection {
-  id: string;
-  ws_id: string;
-  calendar_id: string;
-  calendar_name: string;
-  is_enabled: boolean;
-  color: string | null;
-  created_at: string;
-  updated_at: string;
-}
 
 export default function CalendarClientPage({
   experimentalGoogleToken,

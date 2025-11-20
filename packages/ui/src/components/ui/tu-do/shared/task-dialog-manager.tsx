@@ -1,12 +1,7 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import {
-  useParams,
-  usePathname,
-  useRouter,
-  useSearchParams,
-} from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
 import { TaskEditDialog } from './task-edit-dialog';
@@ -19,7 +14,7 @@ import { TaskEditDialog } from './task-edit-dialog';
  * instant dialog opening when clicking tasks. This is a core interaction
  * that benefits from immediate availability over bundle size optimization.
  */
-export function TaskDialogManager() {
+export function TaskDialogManager({ wsId }: { wsId: string }) {
   const {
     state,
     isPersonalWorkspace,
@@ -30,8 +25,6 @@ export function TaskDialogManager() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const params = useParams();
-  const wsId = params.wsId as string;
   const previousUrlRef = useRef<string | null>(null);
 
   // Fetch current user immediately on mount (persists across dialog open/close)

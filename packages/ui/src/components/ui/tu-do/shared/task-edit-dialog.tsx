@@ -22,13 +22,7 @@ import { convertJsonContentToYjsState } from '@tuturuuu/utils/yjs-helper';
 import dayjs from 'dayjs';
 import debounce from 'lodash/debounce';
 import { usePathname } from 'next/navigation';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import * as Y from 'yjs';
 import { BoardEstimationConfigDialog } from '../boards/boardId/task-dialogs/BoardEstimationConfigDialog';
@@ -99,7 +93,7 @@ export interface TaskEditDialogProps {
   onUpdate: () => void;
 }
 
-function TaskEditDialogComponent({
+export function TaskEditDialog({
   wsId,
   task,
   boardId,
@@ -2376,5 +2370,3 @@ function TaskEditDialogComponent({
     </>
   );
 }
-
-export const TaskEditDialog = React.memo(TaskEditDialogComponent);

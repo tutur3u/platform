@@ -1,15 +1,18 @@
 'use client';
 
-import type { Workspace } from '@tuturuuu/types';
+import type { User, UserPrivateDetails, Workspace } from '@tuturuuu/types';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { useTranslations } from 'next-intl';
 import AvatarInput from './avatar-input';
 
 interface Props {
+  user?: (User & UserPrivateDetails) | WorkspaceUser | null;
   workspace?: Workspace | null;
   allowEdit?: boolean;
 }
 
 export default function WorkspaceAvatarSettings({
+  user,
   workspace,
   allowEdit,
 }: Props) {
@@ -18,14 +21,20 @@ export default function WorkspaceAvatarSettings({
   if (!workspace) return null;
 
   return (
-    <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
-      <div className="mb-1 font-bold text-2xl">{t('workspace_avatar')}</div>
-      <div className="mb-4 font-semibold text-foreground/80">
-        {t('workspace_avatar_description')}
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h3 className="font-semibold text-lg">{t('workspace_avatar')}</h3>
+        <p className="text-muted-foreground text-sm">
+          {t('workspace_avatar_description')}
+        </p>
       </div>
 
       <AvatarInput
-        workspace={workspace}
+        workspace={
+          workspace.personal
+            ? { ...workspace, avatar_url: user?.avatar_url ?? null }
+            : workspace
+        }
         defaultValue={workspace.name}
         disabled={!workspace || !allowEdit}
       />

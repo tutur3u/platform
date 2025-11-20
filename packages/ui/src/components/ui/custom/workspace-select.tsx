@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckIcon, ChevronDown, Crown, PlusCircle } from '@tuturuuu/icons';
+import { CheckIcon, ChevronDown, PlusCircle } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -45,13 +45,14 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import {
   PERSONAL_WORKSPACE_SLUG,
+  ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
   toWorkspaceSlug,
 } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { WORKSPACE_LIMIT_ERROR_CODE } from '@tuturuuu/utils/workspace-limits';
-import { useParams, usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { z } from 'zod';
 
@@ -62,24 +63,21 @@ const FormSchema = z.object({
 
 export function WorkspaceSelect({
   t,
+  wsId,
   localUseQuery,
   hideLeading,
   customRedirectSuffix,
   disableCreateNewWorkspace,
 }: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  wsId: string;
   localUseQuery: any;
   hideLeading?: boolean;
   customRedirectSuffix?: string;
   disableCreateNewWorkspace?: boolean;
 }) {
   const router = useRouter();
-  const params = useParams();
   const pathname = usePathname();
-
-  const wsId = params.wsId as string | undefined;
 
   const workspacesQuery = localUseQuery({
     queryKey: ['workspaces'],
@@ -229,7 +227,7 @@ export function WorkspaceSelect({
 
   return (
     <>
-      {hideLeading || (
+      {hideLeading || wsId === ROOT_WORKSPACE_ID || (
         <div className="mx-1 h-4 w-px flex-none rotate-30 bg-foreground/20" />
       )}
       <Dialog
@@ -256,7 +254,10 @@ export function WorkspaceSelect({
               disabled={!workspaces || workspaces.length === 0}
             >
               <Avatar
-                className={cn(hideLeading || 'mr-2', 'h-5 w-5 flex-none')}
+                className={cn(
+                  'h-5 w-5 flex-none',
+                  workspace?.avatar_url ? 'rounded-xs' : 'rounded-sm'
+                )}
               >
                 <AvatarImage
                   src={
@@ -266,13 +267,21 @@ export function WorkspaceSelect({
                       : undefined)
                   }
                   alt={workspace?.name || 'Workspace'}
+                  className={
+                    workspace?.avatar_url ? 'rounded-xs' : 'rounded-sm'
+                  }
                 />
-                <AvatarFallback>
+                <AvatarFallback
+                  className={cn(
+                    'text-xs',
+                    workspace?.avatar_url ? 'rounded-xs' : 'rounded-sm'
+                  )}
+                >
                   {workspace?.name ? getInitials(workspace.name) : '?'}
                 </AvatarFallback>
               </Avatar>
               <div className={cn(hideLeading ? 'hidden' : 'w-full')}>
-                <span className="line-clamp-1 w-full break-all">
+                <span className="line-clamp-1 w-full break-all text-xs">
                   {workspace?.name || `${t('common.loading')}...`}
                 </span>
               </div>
@@ -306,23 +315,34 @@ export function WorkspaceSelect({
                           className="text-sm"
                           disabled={!team}
                         >
-                          <Avatar className="mr-2 h-5 w-5">
+                          <Avatar
+                            className={cn(
+                              'h-5 w-5',
+                              team.avatarUrl ? 'rounded-xs' : 'rounded-sm'
+                            )}
+                          >
                             <AvatarImage
                               src={
                                 team.avatarUrl ||
                                 `https://avatar.vercel.sh/${team.label}.png`
                               }
                               alt={team.label}
-                              className="grayscale"
+                              className={
+                                team.avatarUrl ? 'rounded-xs' : 'rounded-sm'
+                              }
                             />
-                            <AvatarFallback>
+                            <AvatarFallback
+                              className={cn(
+                                'text-xs',
+                                team.avatarUrl ? '' : 'rounded-sm'
+                              )}
+                            >
                               {getInitials(team.label)}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="line-clamp-1">{team.label}</span>
-                          {team.isCreator ? (
-                            <Crown className="ml-2 h-4 w-4 shrink-0 opacity-70" />
-                          ) : null}
+                          <span className="line-clamp-1 text-xs">
+                            {team.label}
+                          </span>
                           <CheckIcon
                             className={cn(
                               'ml-auto h-4 w-4',
@@ -347,7 +367,7 @@ export function WorkspaceSelect({
                         }}
                         disabled={disableCreateNewWorkspace}
                       >
-                        <PlusCircle className="mr-2 h-5 w-5" />
+                        <PlusCircle className="h-5 w-5" />
                         {t('common.create_new_workspace')}
                       </CommandItem>
                     </CommandGroup>
@@ -565,11 +585,11 @@ async function fetchWorkspaces() {
 
   if (error) return [];
 
-  // Resolve the display label for personal workspaces using the current user's profile
+  // Resolve the display label and avatar for personal workspaces using the current user's profile
   const [publicProfileRes, privateDetailsRes] = await Promise.all([
     supabase
       .from('users')
-      .select('display_name, handle')
+      .select('display_name, handle, avatar_url')
       .eq('id', user.id)
       .maybeSingle(),
     supabase
@@ -580,7 +600,11 @@ async function fetchWorkspaces() {
   ]);
 
   const publicProfile = publicProfileRes?.data as
-    | { display_name: string | null; handle: string | null }
+    | {
+        display_name: string | null;
+        handle: string | null;
+        avatar_url: string | null;
+      }
     | null
     | undefined;
   const privateDetails = privateDetailsRes?.data as
@@ -594,10 +618,16 @@ async function fetchWorkspaces() {
     privateDetails?.email ||
     undefined;
 
-  // For personal workspaces, override the name shown with the user's display name or email
+  const userAvatarUrl = publicProfile?.avatar_url || null;
+
+  // For personal workspaces, override the name and avatar with the user's data
   return (workspaces || []).map((ws) => {
     const base = ws?.personal
-      ? { ...ws, name: displayLabel || ws.name || 'Personal' }
+      ? {
+          ...ws,
+          name: displayLabel || ws.name || 'Personal',
+          avatar_url: userAvatarUrl || ws.avatar_url,
+        }
       : ws;
     return {
       ...base,
