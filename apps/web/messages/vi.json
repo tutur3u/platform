@@ -1798,6 +1798,7 @@
     "reason": "Lý do",
     "reason-placeholder": "Tại sao mục này bị chặn? (tùy chọn)",
     "reason-description": "Giải thích tùy chọn về lý do mục này bị chặn.",
+    "quick-reasons": "Lý do nhanh",
     "email-description": "Chặn một địa chỉ email cụ thể",
     "domain-description": "Chặn tất cả địa chỉ email từ một tên miền",
     "value-email-hint": "Nhập địa chỉ email đầy đủ để chặn (vd: user@example.com)",
@@ -1818,7 +1819,13 @@
     "operation-failed": "Thao tác thất bại",
     "network-error": "Đã xảy ra lỗi mạng. Vui lòng thử lại.",
     "error": "Lỗi",
-    "value-empty": "Giá trị không thể trống"
+    "value-empty": "Giá trị không thể trống",
+    "quick-reason-spam": "Spam/Giả mạo",
+    "quick-reason-policy-violation": "Vi phạm chính sách",
+    "quick-reason-fraud": "Gian lận/Lạm dụng",
+    "quick-reason-inactive": "Không hoạt động/Bỏ rơi",
+    "quick-reason-verification-failed": "Xác minh thất bại",
+    "quick-reason-competitor": "Tên miền đối thủ"
   },
   "email-blacklist-data-table": {
     "id": "Mã số",
