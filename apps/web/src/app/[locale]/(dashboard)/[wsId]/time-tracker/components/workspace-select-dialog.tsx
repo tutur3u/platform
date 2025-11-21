@@ -102,7 +102,9 @@ export function WorkspaceSelectDialog({
 
         <div className="space-y-4">
           <div className="rounded-lg bg-muted/30 p-3">
-            <p className="text-muted-foreground text-sm">{t('movingSession')}</p>
+            <p className="text-muted-foreground text-sm">
+              {t('movingSession')}
+            </p>
             <p className="font-medium">{sessionTitle}</p>
           </div>
 
