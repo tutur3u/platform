@@ -5,7 +5,7 @@ import contextlib
 import datetime
 import re
 from datetime import datetime as dt
-from typing import Any, cast
+from typing import Any
 from zoneinfo import ZoneInfo
 
 import aiohttp

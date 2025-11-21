@@ -92,8 +92,7 @@ def is_user_authorized_for_guild(discord_user_id: str, guild_id: str) -> bool:
 
         # Get the guild IDs that this user is linked to
         user_guild_ids = [
-            cast(dict[str, Any], member)["discord_guild_id"]
-            for member in member_result.data
+            cast(dict[str, Any], member)["discord_guild_id"] for member in member_result.data
         ]
 
         # Check if any of the user's guilds match the requested guild
@@ -137,8 +136,7 @@ def is_user_authorized_for_dm(discord_user_id: str) -> bool:
 
         # Get the guild IDs that this user is linked to
         user_guild_ids = [
-            cast(dict[str, Any], member)["discord_guild_id"]
-            for member in member_result.data
+            cast(dict[str, Any], member)["discord_guild_id"] for member in member_result.data
         ]
 
         # Check if any of the user's guilds have Discord integrations
@@ -262,8 +260,7 @@ def _get_dm_workspace_info(supabase, discord_user_id: str) -> tuple[str | None, 
 
     # Get all workspace IDs for this user's guilds and find one they're actually a member of
     user_guild_ids = [
-        cast(dict[str, Any], member)["discord_guild_id"]
-        for member in member_result.data
+        cast(dict[str, Any], member)["discord_guild_id"] for member in member_result.data
     ]
 
     for user_guild_id in user_guild_ids:
