@@ -13,7 +13,7 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type SupabaseProvider from '@tuturuuu/ui/hooks/supabase-provider';
 import { debounce } from 'lodash';
 import { TextSelection } from 'prosemirror-state';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type * as Y from 'yjs';
 import { getEditorExtensions } from './extensions';
 import { ToolBar } from './tool-bar';
@@ -92,9 +92,6 @@ export function RichTextEditor({
   allowCollaboration = false,
   editable = true,
 }: RichTextEditorProps) {
-  const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const dragCounterRef = useRef(0);
-
   // Use refs to ensure we have stable references for handlers
   const onImageUploadRef = useRef(onImageUpload);
   const workspaceIdRef = useRef(workspaceId);
@@ -517,51 +514,8 @@ export function RichTextEditor({
     };
   }, [editor, flushPendingRef, allowCollaboration]);
 
-  // Drag and drop overlay handlers
-  const handleDragEnter = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    // Check if dragging files
-    if (e.dataTransfer.types.includes('Files')) {
-      dragCounterRef.current += 1;
-      if (dragCounterRef.current === 1) {
-        setIsDraggingOver(true);
-      }
-    }
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    dragCounterRef.current -= 1;
-    if (dragCounterRef.current === 0) {
-      setIsDraggingOver(false);
-    }
-  }, []);
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    dragCounterRef.current = 0;
-    setIsDraggingOver(false);
-  }, []);
-
   return (
-    <div
-      className="group relative h-full"
-      onDragEnter={handleDragEnter}
-      onDragLeave={handleDragLeave}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-    >
+    <div className="group relative h-full">
       {!readOnly && (
         <ToolBar
           editor={editor}
@@ -589,37 +543,6 @@ export function RichTextEditor({
         </DragHandle>
       )}
       <EditorContent editor={editor} className="h-full" />
-      {isDraggingOver && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center border-4 border-dynamic-blue border-dashed bg-dynamic-blue/10 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-3 rounded-lg border-2 border-dynamic-blue bg-background/90 px-8 py-6 shadow-xl">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-dynamic-blue/20">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-8 w-8 text-dynamic-blue"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <title>Upload Icon</title>
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                />
-              </svg>
-            </div>
-            <div className="text-center">
-              <p className="font-semibold text-dynamic-blue text-lg">
-                Drop files here
-              </p>
-              <p className="text-muted-foreground text-sm">
-                Images and videos will be uploaded
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
