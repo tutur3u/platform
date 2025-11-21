@@ -1213,6 +1213,7 @@ export default function MyTasksContent({
       {/* Content Area - Task List */}
       <div className="fade-in mt-6 animate-in space-y-6 duration-300">
         <TaskList
+          wsId={wsId}
           isPersonal={isPersonal}
           commandBarLoading={commandBarLoading || previewMutation.isPending}
           isAiGenerating={previewMutation.isPending}

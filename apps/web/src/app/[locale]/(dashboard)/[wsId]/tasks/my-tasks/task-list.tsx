@@ -19,6 +19,7 @@ import { useTranslations } from 'next-intl';
 import TaskListWithCompletion from './task-list-with-completion';
 
 interface TaskListProps {
+  wsId: string;
   isPersonal: boolean;
   commandBarLoading: boolean;
   isAiGenerating?: boolean;
@@ -74,6 +75,7 @@ const groupTasksByPriority = (tasks: TaskWithRelations[] | undefined) => {
 };
 
 export default function TaskList({
+  wsId,
   isPersonal,
   commandBarLoading,
   isAiGenerating = false,
@@ -87,8 +89,7 @@ export default function TaskList({
 }: TaskListProps) {
   const t = useTranslations();
   const params = useParams();
-  const wsId = params?.wsId as string;
-  const locale = params?.locale as string;
+  const locale = params?.locale as string | undefined;
 
   return (
     <>
@@ -511,14 +512,16 @@ export default function TaskList({
                 or take a moment to plan your next move.
               </p>
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <Button variant="default" asChild className="gap-2">
-                <Link href={`/${locale}/${wsId}/tasks/boards`}>
-                  <LayoutDashboard className="h-4 w-4" />
-                  Browse Boards
-                </Link>
-              </Button>
-            </div>
+            {locale && (
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <Button variant="default" asChild className="gap-2">
+                  <Link href={`/${locale}/${wsId}/tasks/boards`}>
+                    <LayoutDashboard className="h-4 w-4" />
+                    Browse Boards
+                  </Link>
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
