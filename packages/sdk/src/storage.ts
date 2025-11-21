@@ -27,12 +27,14 @@
 
 import type { ZodSchema } from 'zod';
 import packageJson from '../package.json';
+import { AnalyticsClient } from './analytics';
 import {
   createErrorFromResponse,
   isApiErrorResponse,
   NetworkError,
   ValidationError,
 } from './errors';
+import { LinksClient } from './links';
 import type {
   AnalyticsResponse,
   BatchShareResponse,
@@ -704,6 +706,8 @@ export class TuturuuuClient {
 
   public readonly storage: StorageClient;
   public readonly documents: DocumentsClient;
+  public readonly analytics: AnalyticsClient;
+  public readonly links: LinksClient;
 
   /**
    * Creates a new Tuturuuu client instance
@@ -757,6 +761,8 @@ export class TuturuuuClient {
     // Initialize sub-clients
     this.storage = new StorageClient(this);
     this.documents = new DocumentsClient(this);
+    this.analytics = new AnalyticsClient(this);
+    this.links = new LinksClient(this);
   }
 
   /**

@@ -40,6 +40,9 @@ import {
   UserX,
   Clock,
   MessageCircleIcon,
+  TrendingUp,
+  BarChart3,
+  TestTube,
 } from '@tuturuuu/icons';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { PermissionId } from '@tuturuuu/types';
@@ -218,6 +221,38 @@ export const permissionGroups = ({
             icon: <CalendarCog />,
             title: t('ws-roles.manage_calendar'),
             description: t('ws-roles.manage_calendar_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+        ],
+      },
+      {
+        id: 'analytics',
+        icon: <TrendingUp />,
+        title: t('ws-roles.analytics'),
+        description: t('ws-roles.analytics_description'),
+        permissions: [
+          {
+            id: 'view_analytics',
+            icon: <BarChart3 />,
+            title: t('ws-roles.view_analytics'),
+            description: t('ws-roles.view_analytics_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'manage_analytics',
+            icon: <ChartBar />,
+            title: t('ws-roles.manage_analytics'),
+            description: t('ws-roles.manage_analytics_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'manage_experiments',
+            icon: <TestTube />,
+            title: t('ws-roles.manage_experiments'),
+            description: t('ws-roles.manage_experiments_description'),
             disableOnProduction: false,
             disabled: false,
           },

@@ -296,6 +296,379 @@ export type Database = {
         };
         Relationships: [];
       };
+      analytics_conversions: {
+        Row: {
+          conversion_properties: Json | null;
+          conversion_type: string;
+          conversion_value: number | null;
+          converted_at: string;
+          created_at: string;
+          event_id: string | null;
+          experiment_id: string | null;
+          id: string;
+          session_id: string;
+          variant_id: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          conversion_properties?: Json | null;
+          conversion_type: string;
+          conversion_value?: number | null;
+          converted_at?: string;
+          created_at?: string;
+          event_id?: string | null;
+          experiment_id?: string | null;
+          id?: string;
+          session_id: string;
+          variant_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          conversion_properties?: Json | null;
+          conversion_type?: string;
+          conversion_value?: number | null;
+          converted_at?: string;
+          created_at?: string;
+          event_id?: string | null;
+          experiment_id?: string | null;
+          id?: string;
+          session_id?: string;
+          variant_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'analytics_conversions_event_id_fkey';
+            columns: ['event_id'];
+            isOneToOne: false;
+            referencedRelation: 'analytics_events';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'analytics_conversions_experiment_id_fkey';
+            columns: ['experiment_id'];
+            isOneToOne: false;
+            referencedRelation: 'analytics_experiments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'analytics_conversions_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'analytics_sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'analytics_conversions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'analytics_conversions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      analytics_events: {
+        Row: {
+          created_at: string;
+          event_name: string;
+          event_properties: Json | null;
+          id: string;
+          page_path: string | null;
+          page_title: string | null;
+          page_url: string | null;
+          referrer: string | null;
+          referrer_domain: string | null;
+          session_id: string;
+          timestamp: string;
+          utm_campaign: string | null;
+          utm_content: string | null;
+          utm_medium: string | null;
+          utm_source: string | null;
+          utm_term: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          event_name: string;
+          event_properties?: Json | null;
+          id?: string;
+          page_path?: string | null;
+          page_title?: string | null;
+          page_url?: string | null;
+          referrer?: string | null;
+          referrer_domain?: string | null;
+          session_id: string;
+          timestamp?: string;
+          utm_campaign?: string | null;
+          utm_content?: string | null;
+          utm_medium?: string | null;
+          utm_source?: string | null;
+          utm_term?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          event_name?: string;
+          event_properties?: Json | null;
+          id?: string;
+          page_path?: string | null;
+          page_title?: string | null;
+          page_url?: string | null;
+          referrer?: string | null;
+          referrer_domain?: string | null;
+          session_id?: string;
+          timestamp?: string;
+          utm_campaign?: string | null;
+          utm_content?: string | null;
+          utm_medium?: string | null;
+          utm_source?: string | null;
+          utm_term?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'analytics_events_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'analytics_sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'analytics_events_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'analytics_events_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      analytics_experiments: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          ended_at: string | null;
+          experiment_key: string;
+          experiment_type: string;
+          id: string;
+          name: string;
+          started_at: string | null;
+          status: string;
+          target_metric: string | null;
+          traffic_allocation: number;
+          updated_at: string;
+          variants: Json;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          ended_at?: string | null;
+          experiment_key: string;
+          experiment_type: string;
+          id?: string;
+          name: string;
+          started_at?: string | null;
+          status?: string;
+          target_metric?: string | null;
+          traffic_allocation?: number;
+          updated_at?: string;
+          variants: Json;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          ended_at?: string | null;
+          experiment_key?: string;
+          experiment_type?: string;
+          id?: string;
+          name?: string;
+          started_at?: string | null;
+          status?: string;
+          target_metric?: string | null;
+          traffic_allocation?: number;
+          updated_at?: string;
+          variants?: Json;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'analytics_experiments_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'analytics_experiments_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      analytics_sessions: {
+        Row: {
+          browser: string | null;
+          browser_version: string | null;
+          city: string | null;
+          connection_type: string | null;
+          country: string | null;
+          country_region: string | null;
+          created_at: string;
+          device_brand: string | null;
+          device_model: string | null;
+          device_type: string | null;
+          id: string;
+          ip_address: unknown;
+          isp: string | null;
+          language: string | null;
+          last_active_at: string;
+          latitude: number | null;
+          longitude: number | null;
+          os: string | null;
+          os_version: string | null;
+          postal_code: string | null;
+          screen_height: number | null;
+          screen_width: number | null;
+          session_duration: number | null;
+          started_at: string;
+          timezone: string | null;
+          user_agent: string | null;
+          visitor_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          browser?: string | null;
+          browser_version?: string | null;
+          city?: string | null;
+          connection_type?: string | null;
+          country?: string | null;
+          country_region?: string | null;
+          created_at?: string;
+          device_brand?: string | null;
+          device_model?: string | null;
+          device_type?: string | null;
+          id?: string;
+          ip_address?: unknown;
+          isp?: string | null;
+          language?: string | null;
+          last_active_at?: string;
+          latitude?: number | null;
+          longitude?: number | null;
+          os?: string | null;
+          os_version?: string | null;
+          postal_code?: string | null;
+          screen_height?: number | null;
+          screen_width?: number | null;
+          session_duration?: number | null;
+          started_at?: string;
+          timezone?: string | null;
+          user_agent?: string | null;
+          visitor_id: string;
+          ws_id: string;
+        };
+        Update: {
+          browser?: string | null;
+          browser_version?: string | null;
+          city?: string | null;
+          connection_type?: string | null;
+          country?: string | null;
+          country_region?: string | null;
+          created_at?: string;
+          device_brand?: string | null;
+          device_model?: string | null;
+          device_type?: string | null;
+          id?: string;
+          ip_address?: unknown;
+          isp?: string | null;
+          language?: string | null;
+          last_active_at?: string;
+          latitude?: number | null;
+          longitude?: number | null;
+          os?: string | null;
+          os_version?: string | null;
+          postal_code?: string | null;
+          screen_height?: number | null;
+          screen_width?: number | null;
+          session_duration?: number | null;
+          started_at?: string;
+          timezone?: string | null;
+          user_agent?: string | null;
+          visitor_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'analytics_sessions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'analytics_sessions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      analytics_variant_assignments: {
+        Row: {
+          assigned_at: string;
+          experiment_id: string;
+          id: string;
+          session_id: string;
+          variant_id: string;
+        };
+        Insert: {
+          assigned_at?: string;
+          experiment_id: string;
+          id?: string;
+          session_id: string;
+          variant_id: string;
+        };
+        Update: {
+          assigned_at?: string;
+          experiment_id?: string;
+          id?: string;
+          session_id?: string;
+          variant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'analytics_variant_assignments_experiment_id_fkey';
+            columns: ['experiment_id'];
+            isOneToOne: false;
+            referencedRelation: 'analytics_experiments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'analytics_variant_assignments_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'analytics_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       audio_chunks: {
         Row: {
           chunk_order: number;
@@ -3301,6 +3674,7 @@ export type Database = {
           country_region: string | null;
           created_at: string;
           device_type: string | null;
+          experiment_id: string | null;
           id: string;
           ip_address: unknown;
           latitude: number | null;
@@ -3310,8 +3684,10 @@ export type Database = {
           postal_code: string | null;
           referrer: string | null;
           referrer_domain: string | null;
+          session_id: string | null;
           timezone: string | null;
           user_agent: string | null;
+          variant_id: string | null;
           vercel_id: string | null;
           vercel_region: string | null;
         };
@@ -3323,6 +3699,7 @@ export type Database = {
           country_region?: string | null;
           created_at?: string;
           device_type?: string | null;
+          experiment_id?: string | null;
           id?: string;
           ip_address?: unknown;
           latitude?: number | null;
@@ -3332,8 +3709,10 @@ export type Database = {
           postal_code?: string | null;
           referrer?: string | null;
           referrer_domain?: string | null;
+          session_id?: string | null;
           timezone?: string | null;
           user_agent?: string | null;
+          variant_id?: string | null;
           vercel_id?: string | null;
           vercel_region?: string | null;
         };
@@ -3345,6 +3724,7 @@ export type Database = {
           country_region?: string | null;
           created_at?: string;
           device_type?: string | null;
+          experiment_id?: string | null;
           id?: string;
           ip_address?: unknown;
           latitude?: number | null;
@@ -3354,12 +3734,21 @@ export type Database = {
           postal_code?: string | null;
           referrer?: string | null;
           referrer_domain?: string | null;
+          session_id?: string | null;
           timezone?: string | null;
           user_agent?: string | null;
+          variant_id?: string | null;
           vercel_id?: string | null;
           vercel_region?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'link_analytics_experiment_id_fkey';
+            columns: ['experiment_id'];
+            isOneToOne: false;
+            referencedRelation: 'analytics_experiments';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'link_analytics_link_id_fkey';
             columns: ['link_id'];
@@ -3386,6 +3775,13 @@ export type Database = {
             columns: ['link_id'];
             isOneToOne: false;
             referencedRelation: 'shortened_links';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'link_analytics_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'analytics_sessions';
             referencedColumns: ['id'];
           },
         ];
@@ -12078,6 +12474,61 @@ export type Database = {
       };
     };
     Views: {
+      analytics_daily_summary: {
+        Row: {
+          date: string | null;
+          total_events: number | null;
+          total_sessions: number | null;
+          unique_pages: number | null;
+          unique_referrers: number | null;
+          unique_visitors: number | null;
+          ws_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'analytics_events_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'analytics_events_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      analytics_geographic_summary: {
+        Row: {
+          city: string | null;
+          country: string | null;
+          country_region: string | null;
+          latitude: number | null;
+          longitude: number | null;
+          session_count: number | null;
+          unique_visitors: number | null;
+          ws_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'analytics_sessions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'analytics_sessions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       audit_logs: {
         Row: {
           auth_role: string | null;
@@ -13425,6 +13876,23 @@ export type Database = {
           total_tokens: number;
         }[];
       };
+      get_analytics_summary: {
+        Args: { p_end_date?: string; p_start_date?: string; p_ws_id: string };
+        Returns: {
+          avg_session_duration: number;
+          conversion_rate: number;
+          top_country: string;
+          top_country_count: number;
+          top_device_count: number;
+          top_device_type: string;
+          top_event_count: number;
+          top_event_name: string;
+          total_conversions: number;
+          total_events: number;
+          total_sessions: number;
+          unique_visitors: number;
+        }[];
+      };
       get_auth_provider_stats: {
         Args: never;
         Returns: {
@@ -13568,6 +14036,25 @@ export type Database = {
           dau: number;
           mau: number;
           wau: number;
+        }[];
+      };
+      get_experiment_results: {
+        Args: { p_experiment_id: string };
+        Returns: {
+          avg_value: number;
+          conversion_rate: number;
+          conversions: number;
+          impressions: number;
+          total_value: number;
+          variant_id: string;
+          variant_name: string;
+        }[];
+      };
+      get_experiment_variant: {
+        Args: { p_experiment_id: string; p_visitor_id: string };
+        Returns: {
+          variant_config: Json;
+          variant_id: string;
         }[];
       };
       get_feature_adoption: {
@@ -14429,6 +14916,15 @@ export type Database = {
           transaction_id: string;
         }[];
       };
+      record_variant_assignment: {
+        Args: {
+          p_experiment_id: string;
+          p_session_id: string;
+          p_variant_id: string;
+        };
+        Returns: string;
+      };
+      refresh_analytics_materialized_views: { Args: never; Returns: undefined };
       revoke_all_cross_app_tokens: {
         Args: { p_user_id: string };
         Returns: undefined;
@@ -14503,6 +14999,34 @@ export type Database = {
         Returns: {
           updated_count: number;
         }[];
+      };
+      track_analytics_event: {
+        Args: {
+          p_event_name: string;
+          p_event_properties?: Json;
+          p_page_title?: string;
+          p_page_url?: string;
+          p_referrer?: string;
+          p_session_id: string;
+          p_utm_campaign?: string;
+          p_utm_content?: string;
+          p_utm_medium?: string;
+          p_utm_source?: string;
+          p_utm_term?: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
+      track_conversion: {
+        Args: {
+          p_conversion_properties?: Json;
+          p_conversion_type: string;
+          p_conversion_value?: number;
+          p_event_id?: string;
+          p_session_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
       };
       transactions_have_same_abs_amount: {
         Args: { transaction_id_1: string; transaction_id_2: string };
@@ -14708,7 +15232,10 @@ export type Database = {
         | 'update_confidential_transactions'
         | 'delete_confidential_transactions'
         | 'manage_time_tracking_requests'
-        | 'bypass_time_tracking_request_approval';
+        | 'bypass_time_tracking_request_approval'
+        | 'view_analytics'
+        | 'manage_analytics'
+        | 'manage_experiments';
     };
     CompositeTypes: {
       email_block_status: {
@@ -14976,6 +15503,9 @@ export const Constants = {
         'delete_confidential_transactions',
         'manage_time_tracking_requests',
         'bypass_time_tracking_request_approval',
+        'view_analytics',
+        'manage_analytics',
+        'manage_experiments',
       ],
     },
   },

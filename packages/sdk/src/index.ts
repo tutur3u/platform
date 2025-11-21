@@ -2,7 +2,7 @@
  * Tuturuuu SDK
  *
  * Official TypeScript/JavaScript SDK for interacting with the Tuturuuu platform.
- * Provides access to storage (files/folders) and documents via API keys.
+ * Provides access to storage, documents, analytics, link shortening, and A/B testing via API keys.
  *
  * @packageDocumentation
  */
@@ -35,17 +35,28 @@ export type { TuturuuuClientConfig } from './storage';
  * ```typescript
  * import { tuturuuu } from 'tuturuuu';
  *
- * const analytics = await tuturuuu.storage.getAnalytics();
+ * // Storage operations
  * const files = await tuturuuu.storage.list({ path: 'documents' });
+ * const storageAnalytics = await tuturuuu.storage.getAnalytics();
+ *
+ * // Analytics tracking
+ * await tuturuuu.analytics.track('button_click', { button_id: 'signup_cta' });
+ * const summary = await tuturuuu.analytics.getAnalyticsSummary();
+ *
+ * // Link shortening
+ * const link = await tuturuuu.links.create({ url: 'https://example.com' });
+ * const linkAnalytics = await tuturuuu.links.getAnalytics(link.data.id);
  * ```
  */
 export {
+  AnalyticsClient,
   DocumentsClient,
+  LinksClient,
   StorageClient,
   tuturuuu,
   TuturuuuClient,
 } from './storage';
-// Types
+// Types - Storage & Documents
 export type {
   AnalyticsResponse,
   ApiErrorResponse,
@@ -73,13 +84,95 @@ export type {
   UploadOptions,
   UploadResponse,
 } from './types';
+// Types - Analytics
+export type {
+  AnalyticsEvent,
+  AnalyticsQueryOptions,
+  AnalyticsSession,
+  AnalyticsSummary,
+  AnalyticsSummaryResponse,
+  BatchTrackEventsOptions,
+  Conversion,
+  DeviceStats,
+  DeviceStatsResponse,
+  EventStat,
+  EventsListResponse,
+  GeoDataPoint,
+  GeoDataResponse,
+  GeoQueryOptions,
+  TimeSeriesDataPoint,
+  TimeSeriesQueryOptions,
+  TimeSeriesResponse,
+  TopEventsResponse,
+  TrackConversionOptions,
+  TrackConversionResponse,
+  TrackEventOptions,
+} from './types';
+// Types - Experiments
+export type {
+  CreateExperimentOptions,
+  CreateExperimentResponse,
+  Experiment,
+  ExperimentResults,
+  ExperimentResultsResponse,
+  ExperimentStatus,
+  ExperimentType,
+  ExperimentVariant,
+  GetExperimentResponse,
+  GetVariantResponse,
+  ListExperimentsOptions,
+  ListExperimentsResponse,
+  UpdateExperimentOptions,
+  UpdateExperimentResponse,
+  VariantAssignment,
+  VariantResult,
+} from './types';
+// Types - Links
+export type {
+  CityStat,
+  CountryStat,
+  CreateLinkExperimentOptions,
+  CreateLinkOptions,
+  CreateLinkResponse,
+  DeleteLinkResponse,
+  GetLinkResponse,
+  LinkAnalytics,
+  LinkAnalyticsOptions,
+  LinkAnalyticsResponse,
+  LinkAnalyticsSummary,
+  LinkClicksByDayResponse,
+  LinkExperiment,
+  LinkVariant,
+  ListLinksOptions,
+  ListLinksResponse,
+  ReferrerStat,
+  ShortLink,
+  TopCountriesResponse,
+  TopReferrersResponse,
+  UpdateLinkOptions,
+  UpdateLinkResponse,
+} from './types';
 // Zod schemas (for external validation if needed)
 export {
+  analyticsQueryOptionsSchema,
+  batchTrackEventsOptionsSchema,
   createDocumentDataSchema,
+  createExperimentOptionsSchema,
+  createLinkExperimentOptionsSchema,
+  createLinkOptionsSchema,
   createSignedUploadUrlOptionsSchema,
+  experimentVariantSchema,
+  linkAnalyticsOptionsSchema,
+  linkVariantSchema,
   listDocumentsOptionsSchema,
+  listExperimentsOptionsSchema,
+  listLinksOptionsSchema,
   listStorageOptionsSchema,
   shareOptionsSchema,
+  trackConversionOptionsSchema,
+  trackEventOptionsSchema,
   updateDocumentDataSchema,
+  updateExperimentOptionsSchema,
+  updateLinkOptionsSchema,
   uploadOptionsSchema,
 } from './types';
