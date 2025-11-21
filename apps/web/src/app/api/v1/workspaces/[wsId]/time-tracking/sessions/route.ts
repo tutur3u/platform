@@ -382,8 +382,7 @@ export async function POST(
         .eq('ws_id', wsId)
         .maybeSingle();
 
-      const thresholdDays =
-        workspaceSettings?.missed_entry_date_threshold ?? 1;
+      const thresholdDays = workspaceSettings?.missed_entry_date_threshold ?? 1;
 
       // If threshold is 0, all missed entries must go through request flow
       if (thresholdDays === 0) {
