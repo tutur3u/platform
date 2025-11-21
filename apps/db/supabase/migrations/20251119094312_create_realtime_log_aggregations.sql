@@ -70,7 +70,7 @@ USING (
         SELECT 1
         FROM public.workspace_role_members wrm
         JOIN public.workspace_roles wr ON wrm.role_id = wr.id
-        WHERE wr.ws_id = realtime_log_aggregations.ws_id
+        WHERE wr.ws_id = '00000000-0000-0000-0000-000000000000'
         AND wrm.user_id = auth.uid()
         AND wr.name IN ('OWNER', 'ADMIN')
     ))
