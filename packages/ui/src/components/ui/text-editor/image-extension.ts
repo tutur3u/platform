@@ -67,6 +67,30 @@ function calculatePresetWidth(
   return containerWidth;
 }
 
+/**
+ * Load an image file and get its natural dimensions
+ */
+function getImageDimensions(
+  file: File
+): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load image'));
+    };
+
+    img.src = url;
+  });
+}
+
 interface ImageOptions {
   onImageUpload?: (file: File) => Promise<string>;
 }
@@ -202,31 +226,6 @@ export const CustomImage = (options: ImageOptions = {}) => {
                   editorElement.clientWidth ||
                   800;
 
-                // Helper to load image and get natural dimensions
-                const getImageDimensions = (
-                  file: File
-                ): Promise<{ width: number; height: number }> => {
-                  return new Promise((resolve, reject) => {
-                    const img = new Image();
-                    const url = URL.createObjectURL(file);
-
-                    img.onload = () => {
-                      URL.revokeObjectURL(url);
-                      resolve({
-                        width: img.naturalWidth,
-                        height: img.naturalHeight,
-                      });
-                    };
-
-                    img.onerror = () => {
-                      URL.revokeObjectURL(url);
-                      reject(new Error('Failed to load image'));
-                    };
-
-                    img.src = url;
-                  });
-                };
-
                 // Process images asynchronously
                 (async () => {
                   // Delete selected content if there's a selection (replace it)
@@ -347,31 +346,6 @@ export const CustomImage = (options: ImageOptions = {}) => {
                   editorElement.querySelector('.ProseMirror')?.clientWidth ||
                   editorElement.clientWidth ||
                   800;
-
-                // Helper to load image and get natural dimensions
-                const getImageDimensions = (
-                  file: File
-                ): Promise<{ width: number; height: number }> => {
-                  return new Promise((resolve, reject) => {
-                    const img = new Image();
-                    const url = URL.createObjectURL(file);
-
-                    img.onload = () => {
-                      URL.revokeObjectURL(url);
-                      resolve({
-                        width: img.naturalWidth,
-                        height: img.naturalHeight,
-                      });
-                    };
-
-                    img.onerror = () => {
-                      URL.revokeObjectURL(url);
-                      reject(new Error('Failed to load image'));
-                    };
-
-                    img.src = url;
-                  });
-                };
 
                 // Process files sequentially to avoid transaction conflicts
                 (async () => {
