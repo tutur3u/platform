@@ -6814,6 +6814,7 @@
         "title": "Yêu Cầu Phê Duyệt",
         "allEntries": "Tất cả các phiên thời gian bị thiếu đều yêu cầu phê duyệt. Vui lòng tải lên ít nhất một hình ảnh làm bằng chứng công việc.",
         "entriesOlderThan": "Các phiên cũ hơn {days} ngày yêu cầu phê duyệt. Vui lòng tải lên ít nhất một hình ảnh làm bằng chứng công việc.",
+        "loadingThreshold": "Đang tải cài đặt ngưỡng...",
         "proofOfWork": "Bằng Chứng Công Việc * ({current}/{max})",
         "compressing": "Đang nén...",
         "dropImages": "Thả hình ảnh vào đây",
@@ -6835,6 +6836,7 @@
       },
       "actions": {
         "cancel": "Hủy",
+        "loading": "Đang tải...",
         "submitting": "Đang gửi...",
         "adding": "Đang thêm...",
         "submitForApproval": "Gửi Để Phê Duyệt",

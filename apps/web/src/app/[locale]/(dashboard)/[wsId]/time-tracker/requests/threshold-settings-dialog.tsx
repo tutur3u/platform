@@ -16,12 +16,18 @@ import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { z } from 'zod';
 
 interface ThresholdSettingsDialogProps {
   wsId: string;
   currentThreshold?: number;
   onUpdate: () => void;
 }
+
+const thresholdSchema = z.coerce
+  .number({ message: 'Please enter a valid number' })
+  .int('Threshold must be a whole number')
+  .min(0, 'Threshold must be 0 or greater');
 
 export function ThresholdSettingsDialog({
   wsId,
@@ -30,12 +36,26 @@ export function ThresholdSettingsDialog({
 }: ThresholdSettingsDialogProps) {
   const t = useTranslations('time-tracker.requests.settings');
   const [open, setOpen] = useState(false);
-  const [threshold, setThreshold] = useState(currentThreshold);
+  const [inputValue, setInputValue] = useState(String(currentThreshold));
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Validate using Zod
+  const validation = thresholdSchema.safeParse(inputValue);
+  const isSubmitDisabled = !validation.success || isLoading;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Final validation before submit
+    const result = thresholdSchema.safeParse(inputValue);
+    if (!result.success) {
+      setValidationError(result.error.issues[0]?.message ?? 'Invalid input');
+      return;
+    }
+
     setIsLoading(true);
+    setValidationError(null);
 
     try {
       const response = await fetch(
@@ -45,7 +65,7 @@ export function ThresholdSettingsDialog({
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ threshold }),
+          body: JSON.stringify({ threshold: result.data }),
         }
       );
 
@@ -59,9 +79,7 @@ export function ThresholdSettingsDialog({
       onUpdate();
     } catch (error) {
       console.error('Error updating threshold:', error);
-      toast.error(
-        error instanceof Error ? error.message : t('error')
-      );
+      toast.error(error instanceof Error ? error.message : t('error'));
     } finally {
       setIsLoading(false);
     }
@@ -75,7 +93,8 @@ export function ThresholdSettingsDialog({
           size="sm"
           className="gap-2"
           onClick={() => {
-            setThreshold(currentThreshold);
+            setInputValue(String(currentThreshold));
+            setValidationError(null);
             setOpen(true);
           }}
         >
@@ -96,27 +115,32 @@ export function ThresholdSettingsDialog({
                 id="threshold"
                 type="number"
                 min={0}
-                value={threshold}
-                onChange={(e) => setThreshold(Number.parseInt(e.target.value, 10))}
-                required
+                value={inputValue}
+                onChange={(e) => {
+                  setInputValue(e.target.value);
+                  setValidationError(null);
+                }}
                 className="w-full"
               />
-              <p className="text-muted-foreground text-sm">
-                {t('help')}
-              </p>
+              {validationError && (
+                <p className="text-dynamic-red text-sm">{validationError}</p>
+              )}
+              <p className="text-muted-foreground text-sm">{t('help')}</p>
               <div className="rounded-md bg-dynamic-blue/5 p-3 text-sm">
                 <p className="font-medium text-dynamic-blue">
                   {t('examples.title')}
                 </p>
                 <ul className="mt-2 space-y-1 text-muted-foreground">
                   <li>
-                    <strong>0 {t('examples.days')}:</strong> {t('examples.zero')}
+                    <strong>0 {t('examples.days')}:</strong>{' '}
+                    {t('examples.zero')}
                   </li>
                   <li>
                     <strong>1 {t('examples.day')}:</strong> {t('examples.one')}
                   </li>
                   <li>
-                    <strong>7 {t('examples.days')}:</strong> {t('examples.seven')}
+                    <strong>7 {t('examples.days')}:</strong>{' '}
+                    {t('examples.seven')}
                   </li>
                 </ul>
               </div>
@@ -131,7 +155,7 @@ export function ThresholdSettingsDialog({
             >
               {t('cancel')}
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isSubmitDisabled}>
               {isLoading ? t('saving') : t('save')}
             </Button>
           </DialogFooter>
@@ -140,4 +164,3 @@ export function ThresholdSettingsDialog({
     </Dialog>
   );
 }
-

@@ -7023,6 +7023,7 @@
         "title": "Approval Required",
         "allEntries": "All missed entries require approval. Please upload at least one image as proof of work.",
         "entriesOlderThan": "Entries older than {days} day{days, plural, =1 {} other {s}} require approval. Please upload at least one image as proof of work.",
+        "loadingThreshold": "Loading threshold settings...",
         "proofOfWork": "Proof of Work * ({current}/{max})",
         "compressing": "Compressing...",
         "dropImages": "Drop images here",
@@ -7044,6 +7045,7 @@
       },
       "actions": {
         "cancel": "Cancel",
+        "loading": "Loading...",
         "submitting": "Submitting...",
         "adding": "Adding...",
         "submitForApproval": "Submit for Approval",
