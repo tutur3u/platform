@@ -1,12 +1,14 @@
-import { Box, Check, Loader2, Plus } from '@tuturuuu/icons';
+import { Box, Check, Loader2, Plus, Search } from '@tuturuuu/icons';
 import {
   DropdownMenuItem,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { Input } from '@tuturuuu/ui/input';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
+import { useState } from 'react';
 
 interface TaskProject {
   id: string;
@@ -33,27 +35,49 @@ export function TaskProjectsMenu({
   onCreateNewProject,
   onMenuItemSelect,
 }: TaskProjectsMenuProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter projects based on search
+  const filteredProjects = availableProjects.filter(
+    (project) =>
+      !searchQuery ||
+      project.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <DropdownMenuSub>
       <DropdownMenuSubTrigger>
         <Box className="h-4 w-4 text-dynamic-sky" />
         Projects
       </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent className="max-h-[400px] w-56 overflow-hidden p-0">
-        {isLoading && (
-          <div className="px-2 py-1 text-muted-foreground text-xs">
-            Loading...
+      <DropdownMenuSubContent className="w-80 overflow-hidden p-0">
+        {/* Search Input */}
+        <div className="border-b p-2">
+          <div className="relative">
+            <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search projects..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-8 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
+            />
           </div>
-        )}
-        {!isLoading && availableProjects.length === 0 && (
-          <div className="px-2 py-2 text-center text-muted-foreground text-xs">
-            No projects available
+        </div>
+
+        {/* Projects List */}
+        {isLoading ? (
+          <div className="flex items-center justify-center gap-2 px-2 py-6">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            <p className="text-muted-foreground text-xs">Loading...</p>
           </div>
-        )}
-        {!isLoading && availableProjects.length > 0 && (
-          <ScrollArea style={{ height: 'min(300px, calc(100vh - 200px))' }}>
-            <div className="p-1">
-              {availableProjects.map((project) => {
+        ) : filteredProjects.length === 0 ? (
+          <div className="px-2 py-6 text-center text-muted-foreground text-xs">
+            {searchQuery ? 'No projects found' : 'No projects available'}
+          </div>
+        ) : (
+          <ScrollArea className="max-h-[200px]">
+            <div className="flex flex-col gap-1 p-1">
+              {filteredProjects.map((project) => {
                 const active = taskProjects.some((p) => p.id === project.id);
                 return (
                   <DropdownMenuItem
@@ -65,44 +89,37 @@ export function TaskProjectsMenu({
                     }
                     disabled={projectsSaving === project.id}
                     className={cn(
-                      'flex cursor-pointer items-center justify-between',
-                      active && 'bg-dynamic-indigo/10 text-dynamic-sky'
+                      'flex cursor-pointer items-center justify-between gap-2',
+                      active && 'bg-dynamic-sky/10 text-dynamic-sky'
                     )}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
                       {projectsSaving === project.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
+                        <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
                       ) : (
-                        <Box className="h-4 w-4 text-dynamic-sky" />
+                        <Box className="h-3 w-3 shrink-0 text-dynamic-sky" />
                       )}
-                      <span className="line-clamp-1">{project.name}</span>
+                      <span className="truncate text-sm">{project.name}</span>
                     </div>
-                    {active && <Check className="h-4 w-4" />}
+                    {active && <Check className="h-4 w-4 shrink-0" />}
                   </DropdownMenuItem>
                 );
               })}
             </div>
           </ScrollArea>
         )}
-        {!isLoading && taskProjects.length > 0 && (
-          <div className="relative z-10 border-t bg-background shadow-sm">
-            <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
-              {taskProjects.length} assigned
-            </div>
-          </div>
-        )}
+
+        {/* Create New Project Button */}
         {!isLoading && (
-          <div className="relative z-10 border-t bg-background shadow-sm">
+          <div className="border-t">
             <DropdownMenuItem
               onSelect={(e) =>
-                onMenuItemSelect(e as unknown as Event, () => {
-                  onCreateNewProject();
-                })
+                onMenuItemSelect(e as unknown as Event, onCreateNewProject)
               }
-              className="flex cursor-pointer items-center gap-2 text-muted-foreground hover:text-foreground"
+              className="cursor-pointer text-muted-foreground hover:text-foreground"
             >
               <Plus className="h-4 w-4" />
-              Add New Project
+              Create New Project
             </DropdownMenuItem>
           </div>
         )}
