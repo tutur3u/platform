@@ -2,25 +2,15 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-interface Params {
-  params: Promise<{
-    wsId: string;
-  }>;
-}
-
 const QueryParamsSchema = z.object({
   workspaceId: z.uuid().optional(),
   channelId: z.string().optional(),
   startDate: z.iso.datetime(),
   endDate: z.iso.datetime(),
   metric: z.enum(['requests', 'users']).default('requests'),
-  viewMode: z.enum(['daily', 'hourly']).default('hourly'),
 });
 
-export async function GET(req: NextRequest, { params }: Params) {
-  // wsId is validated through RLS policies on the database level
-  await params;
-
+export async function GET(req: NextRequest) {
   try {
     // Parse and validate query parameters
     const searchParams = req.nextUrl.searchParams;
@@ -30,7 +20,6 @@ export async function GET(req: NextRequest, { params }: Params) {
       startDate: searchParams.get('startDate'),
       endDate: searchParams.get('endDate'),
       metric: searchParams.get('metric') || 'requests',
-      viewMode: searchParams.get('viewMode') || 'hourly',
     });
 
     if (!validationResult.success) {
@@ -49,18 +38,14 @@ export async function GET(req: NextRequest, { params }: Params) {
     const { workspaceId, channelId, startDate, endDate, metric } =
       validationResult.data;
 
-    // Client sends UTC timestamps - use directly
-    const utcStartDate = new Date(startDate);
-    const utcEndDate = new Date(endDate);
-
     const supabase = await createClient();
 
     // Build the base query using UTC date range
     let query = supabase
       .from('realtime_log_aggregations')
       .select('time_bucket, total_count, user_id')
-      .gte('time_bucket', utcStartDate.toISOString())
-      .lte('time_bucket', utcEndDate.toISOString())
+      .gte('time_bucket', startDate)
+      .lte('time_bucket', endDate)
       .order('time_bucket', { ascending: true });
 
     // Apply optional filters
