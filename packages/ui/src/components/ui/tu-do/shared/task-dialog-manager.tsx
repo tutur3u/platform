@@ -1,7 +1,8 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
 import { TaskEditDialog } from './task-edit-dialog';
 
@@ -14,8 +15,41 @@ import { TaskEditDialog } from './task-edit-dialog';
  * that benefits from immediate availability over bundle size optimization.
  */
 export function TaskDialogManager({ wsId }: { wsId: string }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const { state, isPersonalWorkspace, triggerClose, triggerUpdate } =
     useTaskDialogContext();
+
+  // Store the original pathname before URL manipulation
+  const originalPathnameRef = useRef<string | null>(null);
+  const hasChangedUrlRef = useRef(false);
+
+  // Handle URL manipulation when fakeTaskUrl is enabled
+  useEffect(() => {
+    if (state.isOpen && state.fakeTaskUrl && state.task?.id) {
+      // Store original pathname if not already stored
+      if (!originalPathnameRef.current) {
+        originalPathnameRef.current = pathname;
+      }
+
+      const taskUrl = `/${wsId}/tasks/${state.task.id}`;
+      // Only push if the URL is different
+      if (pathname !== taskUrl) {
+        router.push(taskUrl, { scroll: false });
+        hasChangedUrlRef.current = true;
+      }
+    } else if (
+      !state.isOpen &&
+      hasChangedUrlRef.current &&
+      originalPathnameRef.current
+    ) {
+      // Revert to original URL when dialog closes
+      router.push(originalPathnameRef.current, { scroll: false });
+      // Reset refs
+      originalPathnameRef.current = null;
+      hasChangedUrlRef.current = false;
+    }
+  }, [state.isOpen, state.fakeTaskUrl, state.task?.id, wsId, router, pathname]);
 
   // Fetch current user immediately on mount (persists across dialog open/close)
   const [currentUser, setCurrentUser] = useState<{

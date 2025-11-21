@@ -28,7 +28,12 @@ import { useTaskDialogContext } from '../providers/task-dialog-provider';
  * ```
  */
 export function useTaskDialog(): {
-  openTask: (task: Task, boardId: string, availableLists?: TaskList[]) => void;
+  openTask: (
+    task: Task,
+    boardId: string,
+    availableLists?: TaskList[],
+    fakeTaskUrl?: boolean
+  ) => void;
   openTaskById: (taskId: string) => Promise<void>;
   createTask: (
     boardId: string,
