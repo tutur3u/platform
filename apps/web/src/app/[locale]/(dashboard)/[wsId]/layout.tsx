@@ -1,3 +1,4 @@
+import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
