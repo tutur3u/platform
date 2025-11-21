@@ -1,25 +1,25 @@
-import {
-  SIDEBAR_BEHAVIOR_COOKIE_NAME,
-  SIDEBAR_COLLAPSED_COOKIE_NAME,
-} from '@/constants/common';
-import { SidebarProvider } from '@/context/sidebar-context';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
   getWorkspace,
   toWorkspaceSlug,
 } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
+import {
+  SIDEBAR_BEHAVIOR_COOKIE_NAME,
+  SIDEBAR_COLLAPSED_COOKIE_NAME,
+} from '@/constants/common';
+import { SidebarProvider } from '@/context/sidebar-context';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
 import InvitationCard from './invitation-card';
 import { WorkspaceNavigationLinks } from './navigation';
 import PersonalWorkspacePrompt from './personal-workspace-prompt';
 import { Structure } from './structure';
-import { TaskDialogWrapper } from './task-dialog-wrapper';
 
 interface LayoutProps {
   params: Promise<{
