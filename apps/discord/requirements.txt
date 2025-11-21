@@ -29,3 +29,5 @@ pytest-cov
 # Development tools (optional)
 ruff
 mypy
+types-requests
+types-pytz

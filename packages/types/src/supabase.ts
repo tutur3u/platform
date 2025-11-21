@@ -10972,6 +10972,7 @@ export type Database = {
         Row: {
           created_at: string;
           guest_user_checkup_threshold: number | null;
+          missed_entry_date_threshold: number | null;
           referral_count_cap: number;
           referral_increment_percent: number;
           referral_promotion_id: string | null;
@@ -10981,6 +10982,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           guest_user_checkup_threshold?: number | null;
+          missed_entry_date_threshold?: number | null;
           referral_count_cap?: number;
           referral_increment_percent?: number;
           referral_promotion_id?: string | null;
@@ -10990,6 +10992,7 @@ export type Database = {
         Update: {
           created_at?: string;
           guest_user_checkup_threshold?: number | null;
+          missed_entry_date_threshold?: number | null;
           referral_count_cap?: number;
           referral_increment_percent?: number;
           referral_promotion_id?: string | null;

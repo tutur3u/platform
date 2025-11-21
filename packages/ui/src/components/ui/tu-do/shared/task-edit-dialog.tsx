@@ -54,14 +54,14 @@ import {
   SUGGESTION_MENU_WIDTH,
 } from './task-edit-dialog/constants';
 import { useEditorCommands } from './task-edit-dialog/hooks/use-editor-commands';
+import { useTaskData } from './task-edit-dialog/hooks/use-task-data';
+import { useTaskFormState } from './task-edit-dialog/hooks/use-task-form-state';
 import { useTaskMutations } from './task-edit-dialog/hooks/use-task-mutations';
 import { useTaskRealtimeSync } from './task-edit-dialog/hooks/use-task-realtime-sync';
 import { useTaskRelationships } from './task-edit-dialog/hooks/use-task-relationships';
 import { TaskDeleteDialog } from './task-edit-dialog/task-delete-dialog';
 import { TaskPropertiesSection } from './task-edit-dialog/task-properties-section';
 import type { WorkspaceTaskLabel } from './task-edit-dialog/types';
-import { useTaskData } from './task-edit-dialog/use-task-data';
-import { useTaskFormState } from './task-edit-dialog/use-task-form-state';
 import {
   clearDraft,
   getDescriptionContent,

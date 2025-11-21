@@ -1,5 +1,5 @@
-import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
   getWorkspace,
@@ -20,7 +20,6 @@ import InvitationCard from './invitation-card';
 import { WorkspaceNavigationLinks } from './navigation';
 import PersonalWorkspacePrompt from './personal-workspace-prompt';
 import { Structure } from './structure';
-import { TaskDialogWrapper } from './task-dialog-wrapper';
 
 interface LayoutProps {
   params: Promise<{

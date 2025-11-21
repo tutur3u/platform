@@ -1,0 +1,28 @@
+# Cargo Audit Configuration
+# This file configures which security advisories to ignore and why.
+# See: https://github.com/rustsec/rustsec/tree/main/cargo-audit
+
+[advisories]
+# RUSTSEC-2023-0071: Marvin Attack - RSA timing sidechannel vulnerability
+#
+# This vulnerability affects the rsa 0.9.8 crate, which is only pulled into
+# Cargo.lock through sqlx-mysql → sqlx-macros-core. We explicitly use
+# PostgreSQL only (not MySQL) and have disabled default sqlx features.
+#
+# The rsa crate appears in Cargo.lock due to a known Cargo limitation with
+# weak feature dependencies (rust-lang/cargo#10801), but it is NOT compiled
+# into our binary or used at runtime. Running `cargo tree | grep rsa` confirms
+# no actual dependency.
+#
+# Safe to ignore because:
+# 1. MySQL driver is never instantiated or used
+# 2. RSA code path is never executed
+# 3. Vulnerability only affects MySQL authentication, not PostgreSQL
+#
+# References:
+# - https://rustsec.org/advisories/RUSTSEC-2023-0071.html
+# - https://github.com/launchbadge/sqlx/issues/3211
+# - https://github.com/rust-lang/cargo/issues/10801
+ignore = [
+    "RUSTSEC-2023-0071",
+]

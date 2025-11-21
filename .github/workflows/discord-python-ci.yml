@@ -65,7 +65,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run mypy type checker
-        run: mypy . --ignore-missing-imports
+        run: mypy . --config-file mypy.ini
 
   test:
     name: Test Suite
