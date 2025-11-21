@@ -19,7 +19,7 @@ jobs:
       exit_code: ${{ steps.format-check.outputs.exit_code }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
@@ -75,7 +75,7 @@ jobs:
       exit_code: ${{ steps.lint-check.outputs.exit_code }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
@@ -129,7 +129,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
@@ -189,7 +189,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Close and delete outdated formatting PR
         uses: actions/github-script@v8
