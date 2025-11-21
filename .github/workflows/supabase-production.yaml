@@ -26,7 +26,7 @@ jobs:
       PRODUCTION_PROJECT_ID: ${{ secrets.PRODUCTION_PROJECT_ID }}
       PRODUCTION_DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Check prerequisites
         if: github.event_name != 'workflow_dispatch'
