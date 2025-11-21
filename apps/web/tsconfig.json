@@ -14,6 +14,10 @@
     "esModuleInterop": true,
     "resolveJsonModule": true
   },
-  "include": ["src", ".next/types/**/*.ts"],
+  "include": [
+    "src",
+    ".next/types/**/*.ts",
+    "../../packages/ui/src/components/ui/tu-do/shared/task-dialog-wrapper.tsx"
+  ],
   "exclude": ["node_modules", "dist", ".turbo"]
 }

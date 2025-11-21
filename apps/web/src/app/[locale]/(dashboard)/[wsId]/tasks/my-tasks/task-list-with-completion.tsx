@@ -179,7 +179,12 @@ export default function TaskListWithCompletion({
 
     // Type assertion is safe here because we're transforming the nested structure
     // to match the flat structure expected by openTask (Task type from primitives)
-    openTask(transformedTask as unknown as PrimitiveTask, boardId, undefined);
+    openTask(
+      transformedTask as unknown as PrimitiveTask,
+      boardId,
+      undefined,
+      true
+    );
   };
 
   const formatSmartDate = (date: Date) => {
