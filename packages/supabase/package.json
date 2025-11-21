@@ -72,7 +72,7 @@
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",
-    "@supabase/supabase-js": "^2.83.0",
+    "@supabase/supabase-js": "^2.84.0",
     "@tuturuuu/types": "workspace:*",
     "next": "^16.0.1",
     "react": "^19.2.0",
@@ -87,7 +87,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.10"
+    "vitest": "^4.0.12"
   },
   "peerDependencies": {
     "next": ">=15.0.0",
