@@ -10,6 +10,7 @@ import juice from 'juice';
 import { type NextRequest, NextResponse } from 'next/server';
 
 const forceEnableEmailSending = false;
+const forceDisableCredentialsCheckOnDev = true;
 const disableEmailSending = DEV_MODE && !forceEnableEmailSending;
 
 export async function POST(
@@ -107,7 +108,7 @@ export async function POST(
       );
     }
 
-    if (!credentials) {
+    if (!credentials && !forceDisableCredentialsCheckOnDev) {
       console.log(
         `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] No credentials found`
       );
@@ -172,14 +173,14 @@ export async function POST(
     }
 
     console.log(
-      `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Creating SES client for region: ${credentials.region}`
+      `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Creating SES client for region: ${credentials?.region}`
     );
 
     const sesClient = new SESClient({
-      region: credentials.region,
+      region: credentials?.region ?? 'ap-southeast-1',
       credentials: {
-        accessKeyId: credentials.access_id,
-        secretAccessKey: credentials.access_key,
+        accessKeyId: credentials?.access_id ?? '',
+        secretAccessKey: credentials?.access_key ?? '',
       },
     });
 
@@ -193,8 +194,9 @@ export async function POST(
         return sendEmail({
           wsId,
           client: sesClient,
-          sourceName: credentials.source_name,
-          sourceEmail: credentials.source_email,
+          sourceName: credentials?.source_name ?? 'Tuturuuu',
+          sourceEmail:
+            credentials?.source_email ?? 'notifications@tuturuuu.com',
           receiverId: user.id,
           recipient: user.email,
           subject,
