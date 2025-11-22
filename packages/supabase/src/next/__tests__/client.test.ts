@@ -14,12 +14,23 @@ vi.mock('../common', () => ({
   }),
 }));
 
+vi.mock('../realtime-log-provider', () => ({
+  getRealtimeLogLevel: vi.fn(() => 'info'),
+  realtimeLogger: vi.fn(),
+}));
+
 describe('Supabase Client', () => {
   it('should create a typed client with createClient', () => {
     createClient();
     expect(createBrowserClient).toHaveBeenCalledWith(
       'https://test.supabase.co',
-      'test-key'
+      'test-key',
+      {
+        realtime: {
+          logLevel: 'info',
+          logger: expect.any(Function),
+        },
+      }
     );
   });
 
@@ -27,7 +38,13 @@ describe('Supabase Client', () => {
     createDynamicClient();
     expect(createBrowserClient).toHaveBeenCalledWith(
       'https://test.supabase.co',
-      'test-key'
+      'test-key',
+      {
+        realtime: {
+          logLevel: 'info',
+          logger: expect.any(Function),
+        },
+      }
     );
   });
 });

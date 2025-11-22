@@ -114,7 +114,7 @@ When you run `bun run build` from the monorepo root, Turborepo will:
 ```bash
 # Terminal 1: Watch mode
 cd packages/supabase
-bun run build:watch
+bun run dev
 
 # Terminal 2: Run your app
 cd apps/web

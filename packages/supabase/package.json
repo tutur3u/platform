@@ -49,6 +49,10 @@
       "types": "./dist/next/realtime.d.ts",
       "default": "./dist/next/realtime.js"
     },
+    "./next/realtime-log-provider": {
+      "types": "./dist/next/realtime-log-provider.d.ts",
+      "default": "./dist/next/realtime-log-provider.js"
+    },
     "./next/server": {
       "types": "./dist/next/server.d.ts",
       "default": "./dist/next/server.js"
@@ -63,12 +67,12 @@
   },
   "scripts": {
     "build": "tsc --build",
-    "build:watch": "tsc --build --watch",
+    "dev": "tsc --build --watch",
+    "type-check": "tsc --noEmit",
     "clean": "rm -rf dist .turbo",
     "prepublishOnly": "bun run clean && bun run build",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "type-check": "tsc --noEmit"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",

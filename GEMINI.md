@@ -182,3 +182,7 @@ const { data, isLoading } = useQuery({
     -   Use the dialog system for modals: `import { Dialog, ... } from '@tuturuuu/ui/dialog';`. **Never** use native browser dialogs like `alert()` or `confirm()`.
 -   **Refactoring (Proactive):** Break down large files (>400 LOC) and components (>200 LOC) into smaller, focused units. Extract utilities to `src/lib/`, hooks to `src/hooks/`, and sub-components as needed. Apply best practices to BOTH old and new code—when touching existing code, assess and improve it. Follow single responsibility principle, use meaningful names, and eliminate duplication. Code quality is mandatory, not optional.
 -   **Workspace ID Resolution (CRITICAL):** Database `ws_id` columns ALWAYS store UUIDs. Route parameters (`wsId`) may contain special identifiers like `"personal"` or `"internal"`. **NEVER** use raw `wsId` directly in database queries. **Preferred pattern:** Components should accept a `workspace` prop and use `workspace.id` directly (parent components handle resolution). For API routes, use `normalizeWorkspaceId(wsId)` helper which calls `getWorkspace()` for "personal" or `resolveWorkspaceId()` for others. This prevents "invalid uuid" errors and avoids redundant resolution calls.
+
+### Database Schema Notes
+
+**CRITICAL**: The `public.users` table does NOT contain an `email` field. User email addresses are stored in `public.user_private_details` for privacy and security reasons. When you need to query or access user email information, always use the `user_private_details` table, not the `users` table.

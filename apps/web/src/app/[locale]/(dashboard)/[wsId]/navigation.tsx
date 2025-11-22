@@ -1,5 +1,3 @@
-import type { NavLink } from '@/components/navigation';
-import { DEV_MODE } from '@/constants/common';
 import {
   Archive,
   Banknote,
@@ -50,6 +48,7 @@ import {
   PencilLine,
   Play,
   QrCodeIcon,
+  Radio,
   ReceiptText,
   RotateCcw,
   RulerDimensionLine,
@@ -84,8 +83,8 @@ import {
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
-  resolveWorkspaceId,
   ROOT_WORKSPACE_ID,
+  resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
@@ -93,6 +92,8 @@ import {
   getSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
+import type { NavLink } from '@/components/navigation';
+import { DEV_MODE } from '@/constants/common';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -850,6 +851,7 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/api-keys`,
         `/${personalOrWsId}/secrets`,
         `/${personalOrWsId}/infrastructure`,
+        `/${personalOrWsId}/infrastructure/realtime`,
         `/${personalOrWsId}/infrastructure/calendar-sync`,
         `/${personalOrWsId}/migrations`,
         `/${personalOrWsId}/integrations`,
@@ -993,6 +995,11 @@ export async function WorkspaceNavigationLinks({
               title: 'Calendar Sync',
               href: `/${personalOrWsId}/infrastructure/calendar-sync`,
               icon: <FolderSync className="h-5 w-5" />,
+            },
+            {
+              title: t('infrastructure-tabs.realtime'),
+              href: `/${personalOrWsId}/infrastructure/realtime`,
+              icon: <Radio className="h-5 w-5" />,
             },
           ],
         },
