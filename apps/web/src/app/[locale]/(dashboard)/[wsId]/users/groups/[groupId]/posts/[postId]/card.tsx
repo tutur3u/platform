@@ -138,7 +138,10 @@ function UserCard({
 
   const handleSaveNotes = (formData: FormData) => {
     const notes = formData.get('notes') as string;
-    handleSaveStatus({ notes });
+    handleSaveStatus({ 
+      notes,
+      isCompleted: check?.is_completed ?? null,
+    });
   };
 
   const handleSendEmail = async () => {
