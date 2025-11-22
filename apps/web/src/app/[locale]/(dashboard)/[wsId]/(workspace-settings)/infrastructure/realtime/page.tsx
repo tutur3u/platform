@@ -1,3 +1,4 @@
+import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { getTranslations } from 'next-intl/server';
 import { RealtimeAnalyticsClient } from './_components/realtime-analytics-client';
 
@@ -18,7 +19,7 @@ export default async function RealtimePage({
       </div>
 
       {/* Client Component */}
-      <RealtimeAnalyticsClient wsId={wsId} />
+      <RealtimeAnalyticsClient wsId={resolveWorkspaceId(wsId)} />
     </div>
   );
 }
