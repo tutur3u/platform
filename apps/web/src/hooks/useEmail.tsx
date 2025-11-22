@@ -74,11 +74,13 @@ const useEmail = () => {
       );
 
       if (!res.ok) {
-        setLocalError('Failed to send email');
+        const errorData = await res.json().catch(() => ({}));
+        const errorMessage = errorData?.message || errorData?.error || `Failed to send email (${res.status})`;
+        setLocalError(errorMessage);
         setLocalLoading(false);
         setGlobalState({
           loading: false,
-          error: 'Failed to send email',
+          error: errorMessage,
           success: false,
         });
         return false;
