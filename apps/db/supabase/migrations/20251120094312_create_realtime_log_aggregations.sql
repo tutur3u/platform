@@ -53,25 +53,12 @@ ALTER TABLE "public"."realtime_log_aggregations"
     ADD CONSTRAINT "realtime_log_aggregations_unique_bucket"
     UNIQUE USING INDEX "realtime_log_aggregations_unique_bucket_idx";
 
--- RLS Policy: Users can view aggregated logs for their workspaces
-CREATE POLICY "Users can view aggregated logs for their workspaces"
+-- RLS Policy
+CREATE POLICY "Tuturuuu employees can view aggregated logs"
 ON "public"."realtime_log_aggregations"
 AS PERMISSIVE
 FOR SELECT
 TO authenticated
 USING (
-    (EXISTS (
-        SELECT 1
-        FROM public.workspace_members
-        WHERE ws_id = realtime_log_aggregations.ws_id
-        AND user_id = auth.uid()
-    )) OR
-    (EXISTS (
-        SELECT 1
-        FROM public.workspace_role_members wrm
-        JOIN public.workspace_roles wr ON wrm.role_id = wr.id
-        WHERE wr.ws_id = '00000000-0000-0000-0000-000000000000'
-        AND wrm.user_id = auth.uid()
-        AND wr.name IN ('OWNER', 'ADMIN')
-    ))
+    is_org_member(auth.uid(), '00000000-0000-0000-0000-000000000000')
 );
