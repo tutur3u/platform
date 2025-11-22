@@ -1,8 +1,8 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { useQuery } from '@tanstack/react-query';
 import UserCard, { type UserGroupPost } from './card';
 
 interface Props {
@@ -12,6 +12,7 @@ interface Props {
   canUpdateUserGroupsPosts: boolean;
   canSendUserGroupPostEmails: boolean;
   sentEmailUserIds: string[];
+  blacklistedEmails: Set<string>;
 }
 
 interface UserGroupPostCheck {
@@ -30,6 +31,7 @@ export function UsersList({
   canUpdateUserGroupsPosts,
   canSendUserGroupPostEmails,
   sentEmailUserIds,
+  blacklistedEmails,
 }: Props) {
   const supabase = createClient();
 
@@ -91,6 +93,9 @@ export function UsersList({
             wsId={wsId}
             post={post}
             disableEmailSending={sentEmailUserIds.includes(user.id)}
+            isEmailBlacklisted={
+              user.email ? blacklistedEmails.has(user.email) : false
+            }
             hideEmailSending={!canSendUserGroupPostEmails}
             canUpdateUserGroupsPosts={canUpdateUserGroupsPosts}
             initialCheck={checksMap?.[user.id]}

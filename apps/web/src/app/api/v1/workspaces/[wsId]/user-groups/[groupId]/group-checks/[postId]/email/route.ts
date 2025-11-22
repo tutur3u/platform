@@ -1,5 +1,8 @@
+import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
+import type { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts/[postId]/card';
 import { DEV_MODE } from '@/constants/common';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import { render } from '@react-email/render';
 import {
   createAdminClient,
   createClient,
@@ -69,11 +72,11 @@ export async function POST(
       users: {
         id: string;
         email: string;
-        content: string;
         username: string;
         notes: string;
         is_completed: boolean;
       }[];
+      post: UserGroupPost;
       date: string;
     };
 
@@ -191,6 +194,17 @@ export async function POST(
     const results = await Promise.all(
       allowedUsers.map(async (user) => {
         const subject = `Easy Center | Báo cáo tiến độ ngày ${dayjs(data.date).format('DD/MM/YYYY')} của ${user.username}`;
+
+        // Render email template server-side
+        const content = await render(
+          PostEmailTemplate({
+            post: data.post,
+            username: user.username,
+            isHomeworkDone: user.is_completed,
+            notes: user.notes || undefined,
+          })
+        );
+
         return sendEmail({
           wsId,
           client: sesClient,
@@ -200,7 +214,7 @@ export async function POST(
           receiverId: user.id,
           recipient: user.email,
           subject,
-          content: user.content,
+          content,
           postId,
         });
       })
@@ -299,15 +313,24 @@ const sendEmail = async ({
 
     if (!disableEmailSending) {
       console.log('Sending email:', params);
-      const command = new SendEmailCommand(params);
-      const sesResponse = await client.send(command);
-      console.log('Email sent:', params);
+      try {
+        const command = new SendEmailCommand(params);
+        const sesResponse = await client.send(command);
+        console.log('Email sent:', params);
 
-      if (sesResponse.$metadata.httpStatusCode !== 200) {
+        if (sesResponse.$metadata.httpStatusCode !== 200) {
+          console.error(
+            `[sendEmail] SES returned non-200 status for recipient ${recipient} (receiverId: ${receiverId}, postId: ${postId}):`,
+            `HTTP ${sesResponse.$metadata.httpStatusCode}`,
+            sesResponse
+          );
+          return false;
+        }
+      } catch (error) {
         console.error(
-          `[sendEmail] SES returned non-200 status for recipient ${recipient} (receiverId: ${receiverId}, postId: ${postId}):`,
-          `HTTP ${sesResponse.$metadata.httpStatusCode}`,
-          sesResponse
+          `[sendEmail] Error sending email to ${recipient} (receiverId: ${receiverId}, postId: ${postId}):`,
+          error instanceof Error ? error.message : error,
+          error
         );
         return false;
       }
@@ -320,10 +343,16 @@ const sendEmail = async ({
     } = await supabase.auth.getUser();
 
     if (!user) {
+      console.error(
+        '[sendEmail] No authenticated user found when logging sent email'
+      );
       return false;
     }
 
     if (!sourceName || !sourceEmail) {
+      console.error(
+        '[sendEmail] Missing sourceName or sourceEmail when logging sent email'
+      );
       return false;
     }
 

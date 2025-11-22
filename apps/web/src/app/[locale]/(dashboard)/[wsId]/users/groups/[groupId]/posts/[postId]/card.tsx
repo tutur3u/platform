@@ -1,7 +1,9 @@
 'use client';
 
 import useEmail from '@/hooks/useEmail';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
+  AlertCircle,
   Check,
   CircleSlash,
   Mail,
@@ -10,7 +12,6 @@ import {
   Save,
   Send,
   X,
-  AlertCircle,
 } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
@@ -20,7 +21,6 @@ import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { isEmail } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -31,6 +31,7 @@ interface Props {
   post: UserGroupPost;
   hideEmailSending: boolean;
   disableEmailSending: boolean;
+  isEmailBlacklisted?: boolean;
   canUpdateUserGroupsPosts?: boolean;
   initialCheck?: Partial<{
     user_id: string;
@@ -61,6 +62,7 @@ function UserCard({
   post,
   hideEmailSending,
   disableEmailSending,
+  isEmailBlacklisted = false,
   canUpdateUserGroupsPosts = false,
   initialCheck = null,
   isLoadingChecks = false,
@@ -298,6 +300,7 @@ function UserCard({
               onClick={handleSendEmail}
               disabled={
                 disableEmailSending ||
+                isEmailBlacklisted ||
                 localSuccess ||
                 localLoading ||
                 !user.email ||
@@ -307,7 +310,10 @@ function UserCard({
                 !check
               }
               variant={
-                localLoading || disableEmailSending || localSuccess
+                localLoading ||
+                disableEmailSending ||
+                localSuccess ||
+                isEmailBlacklisted
                   ? 'secondary'
                   : undefined
               }
@@ -317,6 +323,8 @@ function UserCard({
               <span className="flex items-center justify-center opacity-70">
                 {localLoading ? (
                   <LoadingIndicator />
+                ) : isEmailBlacklisted ? (
+                  'Email blacklisted'
                 ) : disableEmailSending || localSuccess ? (
                   'Email sent'
                 ) : (
@@ -343,7 +351,7 @@ function UserCard({
                   <div className="font-semibold text-sm">
                     Failed to send email
                   </div>
-                  <div className="opacity-80 wrap-break-word">
+                  <div className="wrap-break-word opacity-80">
                     {String(localError)}
                   </div>
                 </div>
