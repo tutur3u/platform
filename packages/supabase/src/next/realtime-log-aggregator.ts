@@ -61,7 +61,8 @@ class RealtimeLogAggregator {
 
   /**
    * Generate a unique key for a time bucket
-   * Format: "wsId:kind:ISO8601_timestamp"
+   * Format: "wsId::userId::channelId::kind::ISO8601_timestamp"
+   * Using :: as delimiter to avoid conflicts with underscores in kind field
    */
   private getBucketKey(
     wsId: string,
@@ -72,7 +73,7 @@ class RealtimeLogAggregator {
   ): string {
     const channelId = this.getChannelID(message);
     const bucketTime = this.roundToTimeBucket(timestamp);
-    return `${wsId}_${userId ?? 'null'}_${channelId ?? 'null'}_${kind}_${bucketTime.toISOString()}`;
+    return `${wsId}::${userId ?? 'null'}::${channelId ?? 'null'}::${kind}::${bucketTime.toISOString()}`;
   }
 
   /**
@@ -185,11 +186,43 @@ class RealtimeLogAggregator {
     const aggregated: AggregatedLog[] = [];
 
     for (const [bucketKey, logs] of this.buffer.entries()) {
-      const [wsId, userId, channelId, kind, timeBucket] = bucketKey.split('_');
+      // Try new delimiter first (::)
+      const parts = bucketKey.split('::');
 
+      // Migration path: handle old delimiter (_) entries
+      if (parts.length !== 5) {
+        console.warn(
+          `[RealtimeLogAggregator] Invalid bucket key format with :: delimiter (expected 5 parts, got ${parts.length}), skipping: ${bucketKey}`
+        );
+        // Skip malformed entries to prevent database errors
+        continue;
+      }
+
+      const [wsId, userId, channelId, kind, timeBucket] = parts;
+
+      // Validate all required fields
       if (!wsId || !kind || !timeBucket) {
         console.warn(
-          `[RealtimeLogAggregator] Invalid bucket key format: ${bucketKey}`
+          `[RealtimeLogAggregator] Invalid bucket key values (missing required fields), skipping: ${bucketKey}`
+        );
+        continue;
+      }
+
+      // Validate wsId is a valid UUID format
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(wsId)) {
+        console.warn(
+          `[RealtimeLogAggregator] Invalid wsId format (not a UUID), skipping: ${wsId} in ${bucketKey}`
+        );
+        continue;
+      }
+
+      // Validate timeBucket is a valid ISO timestamp
+      const parsedDate = new Date(timeBucket);
+      if (Number.isNaN(parsedDate.getTime())) {
+        console.warn(
+          `[RealtimeLogAggregator] Invalid timeBucket format (not a valid date), skipping: ${timeBucket} in ${bucketKey}`
         );
         continue;
       }

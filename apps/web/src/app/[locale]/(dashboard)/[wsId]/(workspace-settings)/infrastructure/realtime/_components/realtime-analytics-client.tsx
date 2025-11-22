@@ -5,6 +5,11 @@ import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { RealtimeAnalyticsChart } from './analytics-chart';
 import { RealtimeAnalyticsFilters } from './analytics-filters';
+import { InsightsPanel } from './insights-panel';
+import { MetricComparisons } from './metric-comparisons';
+import { RequestBreakdown } from './request-breakdown';
+import { SummaryStats } from './summary-stats';
+import { TopConsumersTable } from './top-consumers';
 
 interface AnalyticsFilters {
   workspaceId?: string;
@@ -199,6 +204,47 @@ export function RealtimeAnalyticsClient({
     staleTime: 300000, // 5 minutes
   });
 
+  // Fetch summary statistics and breakdowns
+  const {
+    data: summaryData,
+    isLoading: isSummaryLoading,
+    error: summaryError,
+  } = useQuery({
+    queryKey: [
+      'realtime-analytics-summary',
+      wsId,
+      filters.workspaceId,
+      filters.channelId,
+      filters.startDate.toISOString(),
+      filters.endDate.toISOString(),
+    ],
+    queryFn: async () => {
+      const queryParams = new URLSearchParams({
+        startDate: filters.startDate.toISOString(),
+        endDate: filters.endDate.toISOString(),
+      });
+
+      if (filters.workspaceId) {
+        queryParams.set('workspaceId', filters.workspaceId);
+      }
+
+      if (filters.channelId) {
+        queryParams.set('channelId', filters.channelId);
+      }
+
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/infrastructure/realtime/analytics/summary?${queryParams}`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch analytics summary');
+      }
+
+      return await response.json();
+    },
+    staleTime: 60000, // 1 minute
+  });
+
   return (
     <div className="space-y-6">
       {/* Filters */}
@@ -210,15 +256,47 @@ export function RealtimeAnalyticsClient({
       />
 
       {/* Error State */}
-      {error && (
+      {(error || summaryError) && (
         <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/10 p-4">
           <p className="font-medium text-dynamic-red">
             Failed to load analytics data
           </p>
           <p className="text-dynamic-red/80 text-sm">
-            {error instanceof Error ? error.message : 'Unknown error occurred'}
+            {error instanceof Error
+              ? error.message
+              : summaryError instanceof Error
+                ? summaryError.message
+                : 'Unknown error occurred'}
           </p>
         </div>
+      )}
+
+      {/* Summary Statistics */}
+      {summaryData?.summary && (
+        <SummaryStats
+          summary={summaryData.summary}
+          isLoading={isSummaryLoading}
+        />
+      )}
+
+      {/* Metric Comparisons */}
+      {summaryData && (
+        <MetricComparisons
+          topWorkspaces={summaryData.topWorkspaces || []}
+          topUsers={summaryData.topUsers || []}
+          totalRequests={summaryData.summary?.totalRequests || 0}
+          isLoading={isSummaryLoading}
+        />
+      )}
+
+      {/* Actionable Insights */}
+      {summaryData?.summary && (
+        <InsightsPanel
+          summary={summaryData.summary}
+          topWorkspaces={summaryData.topWorkspaces || []}
+          topChannels={summaryData.topChannels || []}
+          isLoading={isSummaryLoading}
+        />
       )}
 
       {/* Chart */}
@@ -232,6 +310,42 @@ export function RealtimeAnalyticsClient({
           isLoading={isLoading}
         />
       </div>
+
+      {/* Request Type Breakdown and Error Analysis */}
+      {summaryData?.summary && (
+        <RequestBreakdown
+          requestsByKind={summaryData.summary.requestsByKind || {}}
+          errorBreakdown={summaryData.errorBreakdown || []}
+          isLoading={isSummaryLoading}
+        />
+      )}
+
+      {/* Top Consumers */}
+      {summaryData && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <TopConsumersTable
+            title={t('top_consumers.workspaces')}
+            data={summaryData.topWorkspaces || []}
+            type="workspace"
+            isLoading={isSummaryLoading}
+          />
+          <TopConsumersTable
+            title={t('top_consumers.channels')}
+            data={summaryData.topChannels || []}
+            type="channel"
+            isLoading={isSummaryLoading}
+          />
+        </div>
+      )}
+
+      {summaryData && (
+        <TopConsumersTable
+          title={t('top_consumers.users')}
+          data={summaryData.topUsers || []}
+          type="user"
+          isLoading={isSummaryLoading}
+        />
+      )}
     </div>
   );
 }

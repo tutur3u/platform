@@ -341,6 +341,10 @@ Follow Conventional Commits & Branch naming (see `apps/docs/git-conventions.mdx`
 - Backfill in migration only if <30 lines & idempotent; else create script + escalate.
 - Never drop a column/table without confirming no code references (search + types build).
 
+**Important Schema Notes:**
+
+- The `public.users` table does NOT contain an `email` field. User email addresses are stored in `public.user_private_details` for privacy and security reasons. Always query `user_private_details` when you need email information.
+
 ### 5.9 Testing Principles
 
 - Fast unit tests: no network, DB, or file system unless integration explicitly.

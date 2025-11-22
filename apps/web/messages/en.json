@@ -1595,6 +1595,109 @@
       "total": "Total",
       "peak_hour": "Peak Hour",
       "avg_per_hour": "Avg per Hour"
+    },
+    "summary": {
+      "total_requests": "Total Requests",
+      "total_errors": "Total Errors",
+      "error_rate": "Error Rate",
+      "unique_users": "Unique Users",
+      "unique_channels": "Unique Channels",
+      "unique_workspaces": "Unique Workspaces",
+      "peak_hour": "Peak Hour",
+      "avg_per_hour": "Avg/Hour",
+      "requests": "requests",
+      "error_rate_card": "Error Rate"
+    },
+    "top_consumers": {
+      "workspaces": "Top Workspaces by Usage",
+      "channels": "Top Channels by Usage",
+      "users": "Top Users by Activity",
+      "workspace_name": "Workspace",
+      "channel_name": "Channel",
+      "user_name": "User",
+      "requests": "Requests",
+      "errors": "Errors",
+      "error_rate": "Error Rate",
+      "percentage": "% of Total",
+      "total_requests": "total",
+      "no_data": "No data available",
+      "showing_top": "Showing top {count} consumers"
+    },
+    "breakdown": {
+      "request_types": "Request Types Distribution",
+      "request_types_desc": "Visual breakdown of requests by operation type",
+      "request_types_detail": "Request Types Details",
+      "request_types_detail_desc": "Detailed breakdown with percentages and metrics",
+      "error_breakdown": "Error Breakdown",
+      "error_breakdown_desc": "Errors categorized by request type",
+      "kind": "Type",
+      "errors": "Errors",
+      "total": "Total",
+      "error_rate": "Error Rate",
+      "percentage": "% of Total",
+      "visual": "Distribution",
+      "rank": "#",
+      "requests": "Requests",
+      "total_requests_chart": "Total",
+      "no_data": "No data available",
+      "no_errors": "No Errors Detected",
+      "no_errors_desc": "All requests completed successfully"
+    },
+    "insights": {
+      "title": "Actionable Insights",
+      "description": "AI-powered recommendations to optimize realtime performance",
+      "no_insights": "No actionable insights at this time",
+      "high_error_rate": {
+        "title": "Critical: High Error Rate",
+        "message": "Your error rate is {rate}%, significantly above the 5% threshold",
+        "action": "Review error logs and investigate failing operations immediately"
+      },
+      "elevated_error_rate": {
+        "title": "Warning: Elevated Error Rate",
+        "message": "Your error rate is {rate}%, above the ideal 1% threshold",
+        "action": "Monitor error patterns and consider implementing retry logic"
+      },
+      "low_error_rate": {
+        "title": "Healthy: Low Error Rate",
+        "message": "Your error rate is {rate}%, well within acceptable limits"
+      },
+      "high_usage": {
+        "title": "High Realtime Usage Detected",
+        "message": "Averaging {avg} requests/hour, which may impact costs",
+        "action": "Consider implementing connection pooling or request batching"
+      },
+      "traffic_spike": {
+        "title": "Traffic Spike Pattern Detected",
+        "message": "Peak hour is {ratio}x higher than average",
+        "action": "Consider implementing rate limiting during peak hours"
+      },
+      "workspace_concentration": {
+        "title": "Usage Concentrated in Single Workspace",
+        "message": "{name} accounts for {percentage}% of all requests",
+        "action": "Review this workspace's integration to optimize request patterns"
+      },
+      "workspace_errors": {
+        "title": "Workspace Experiencing High Errors",
+        "message": "{name} has a {rate}% error rate",
+        "action": "Investigate this workspace's configuration and data integrity"
+      },
+      "many_channels": {
+        "title": "High Channel Count",
+        "message": "{count} active channels detected",
+        "action": "Consider consolidating channels or implementing cleanup policies"
+      }
+    },
+    "comparisons": {
+      "title": "Usage Distribution Analysis",
+      "description": "Analyze how traffic is distributed across workspaces and users",
+      "top_workspace": "Top Workspace Share",
+      "top_3_workspaces": "Top 3 Workspaces",
+      "top_user": "Top User Share",
+      "requests": "requests",
+      "healthy_distribution": "Healthy Distribution",
+      "healthy_distribution_desc": "Traffic is well-distributed across workspaces, reducing single points of failure",
+      "concentrated_distribution": "Concentrated Usage",
+      "concentrated_distribution_desc": "Traffic is concentrated in few workspaces. Consider load balancing or investigating high-usage patterns"
     }
   },
   "basic-data-table": {
