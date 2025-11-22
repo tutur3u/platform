@@ -11,8 +11,6 @@ import {
   Send,
   X,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { GroupPostCheck } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -21,9 +19,10 @@ import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { isEmail } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 interface Props {
   user: WorkspaceUser;
@@ -32,6 +31,15 @@ interface Props {
   hideEmailSending: boolean;
   disableEmailSending: boolean;
   canUpdateUserGroupsPosts?: boolean;
+  initialCheck?: Partial<{
+    user_id: string;
+    post_id: string;
+    is_completed: boolean | null;
+    notes: string;
+    created_at?: string;
+    email_id?: string | null;
+  }> | null;
+  isLoadingChecks?: boolean;
 }
 
 export interface UserGroupPost {
@@ -53,12 +61,11 @@ function UserCard({
   hideEmailSending,
   disableEmailSending,
   canUpdateUserGroupsPosts = false,
+  initialCheck = null,
+  isLoadingChecks = false,
 }: Props) {
   const router = useRouter();
-
-  const [check, setCheck] = useState<Partial<GroupPostCheck>>();
-  const [notes, setNotes] = useState('');
-  const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
 
   const { sendEmail, localLoading, localError, localSuccess } = useEmail();
 
@@ -66,105 +73,72 @@ function UserCard({
     if (localSuccess) router.refresh();
   }, [router, localSuccess]);
 
-  const supabase = createClient();
+  // Use check data from parent query
+  const check = initialCheck;
+  const isLoadingCheck = isLoadingChecks;
 
-  useEffect(() => {
-    async function fetchData() {
-      if (!user.id || !post.id) return;
-      setSaving(true);
-
-      const { data, error } = await supabase
-        .from('user_group_post_checks')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('post_id', post.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching data:', error.message);
-      } else if (data) {
-        setCheck({
-          ...data,
-          notes: data.notes || '',
-        });
-        setNotes(data.notes || '');
-      } else {
-        setCheck({
-          user_id: user.id,
-          post_id: post.id,
-          notes: '',
-        });
-        setNotes('');
+  // Save or update group post check status
+  const { mutate: handleSaveStatus, isPending: isSaving } = useMutation({
+    mutationFn: async ({
+      isCompleted,
+      notes,
+    }: {
+      isCompleted?: boolean | null;
+      notes?: string;
+    }) => {
+      if (!user.id || !post.id || !post.group_id) {
+        throw new Error('Missing required fields');
       }
 
-      setSaving(false);
-    }
+      const finalNotes = notes ?? check?.notes ?? '';
 
-    fetchData();
-  }, [supabase, user.id, post.id]);
+      if (
+        isCompleted === check?.is_completed &&
+        finalNotes === check?.notes
+      ) {
+        return check;
+      }
 
-  async function handleSaveStatus({
-    isCompleted,
-    notes,
-  }: {
-    isCompleted?: boolean | null;
-    notes: string;
-  }) {
-    if (
-      !user.id ||
-      !post.id ||
-      !post.group_id ||
-      (isCompleted === check?.is_completed && notes === check?.notes)
-    )
-      return;
+      const method = check?.user_id && check?.post_id ? 'PUT' : 'POST';
 
-    setSaving(true);
+      const endpoint =
+        check?.user_id && check?.post_id
+          ? `/api/v1/workspaces/${wsId}/user-groups/${post.group_id}/group-checks/${post.id}`
+          : `/api/v1/workspaces/${wsId}/user-groups/${post.group_id}/group-checks`;
 
-    const method = check?.user_id && check.post_id ? 'PUT' : 'POST';
-
-    const endpoint =
-      check?.user_id && check.post_id
-        ? `/api/v1/workspaces/${wsId}/user-groups/${post.group_id}/group-checks/${post.id}`
-        : `/api/v1/workspaces/${wsId}/user-groups/${post.group_id}/group-checks`;
-
-    const response = await fetch(endpoint, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ...check,
-        user_id: user.id,
-        post_id: post.id,
-        is_completed: isCompleted,
-        notes,
-      }),
-    });
-
-    if (response.ok) {
-      console.log('Data saved/updated successfully');
-      if (isCompleted == null)
-        setCheck({
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...check,
           user_id: user.id,
           post_id: post.id,
-          notes,
-        });
-      else
-        setCheck((prev) => ({
-          ...prev,
-          user_id: user.id,
-          post_id: post.id,
-          is_completed: isCompleted ?? check?.is_completed ?? true,
-          notes,
-        }));
+          is_completed: isCompleted,
+          notes: finalNotes,
+        }),
+      });
 
+      if (!response.ok) {
+        throw new Error('Error saving/updating data');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate the parent query that fetches all checks
+      queryClient.invalidateQueries({
+        queryKey: ['group-post-checks', post.id],
+      });
       router.refresh();
-    } else {
-      console.error('Error saving/updating data');
-    }
+    },
+  });
 
-    setSaving(false);
-  }
+  const handleSaveNotes = (formData: FormData) => {
+    const notes = formData.get('notes') as string;
+    handleSaveStatus({ notes });
+  };
 
   const handleSendEmail = async () => {
     if (post && user.email && check?.is_completed != null) {
@@ -220,12 +194,15 @@ function UserCard({
         </div>
       </div>
 
-      <Textarea
-        placeholder="Notes"
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        disabled={saving || !check}
-      />
+      <form action={handleSaveNotes} id={`notes-form-${user.id}`}>
+        <Textarea
+          key={check?.notes}
+          name="notes"
+          placeholder="Notes"
+          defaultValue={check?.notes || ''}
+          disabled={isLoadingCheck || !check}
+        />
+      </form>
 
       <div
         className={cn(
@@ -234,81 +211,73 @@ function UserCard({
         )}
       >
         <div className="flex w-full items-center justify-center gap-2">
-          {check && check.notes !== notes ? (
-            canUpdateUserGroupsPosts && (
-              <Button
-                onClick={() =>
-                  handleSaveStatus({
-                    notes,
-                  })
-                }
-                disabled={saving || !check}
-              >
-                <Save />
-              </Button>
-            )
-          ) : (
-            <>
-              {canUpdateUserGroupsPosts && (
-                <Button
-                  variant={
-                    check?.is_completed != null && check.is_completed
-                      ? 'outline'
-                      : 'ghost'
-                  }
-                  onClick={() =>
-                    handleSaveStatus({
-                      isCompleted: false,
-                      notes,
-                    })
-                  }
-                  className={cn(
-                    check?.is_completed != null && !check.is_completed
-                      ? 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20 hover:text-dynamic-red'
-                      : '',
-                    'w-full border'
-                  )}
-                  disabled={saving || !check}
-                >
-                  <X />
-                </Button>
+          {canUpdateUserGroupsPosts && (
+            <Button
+              type="submit"
+              form={`notes-form-${user.id}`}
+              disabled={isSaving || !check}
+              variant="outline"
+              className="w-full border"
+            >
+              <Save />
+            </Button>
+          )}
+          {canUpdateUserGroupsPosts && (
+            <Button
+              variant={
+                check?.is_completed != null && check.is_completed
+                  ? 'outline'
+                  : 'ghost'
+              }
+              onClick={() =>
+                handleSaveStatus({
+                  isCompleted: false,
+                })
+              }
+              className={cn(
+                check?.is_completed != null && !check.is_completed
+                  ? 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20 hover:text-dynamic-red'
+                  : '',
+                'w-full border'
               )}
-              {canUpdateUserGroupsPosts && (
-                <Button
-                  variant={check?.is_completed != null ? 'outline' : 'ghost'}
-                  onClick={() =>
-                    handleSaveStatus({
-                      isCompleted: null,
-                      notes,
-                    })
-                  }
-                  className={cn(
-                    check?.is_completed == null
-                      ? 'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20 hover:text-dynamic-blue'
-                      : '',
-                    'w-full border'
-                  )}
-                  disabled={saving || !check}
-                >
-                  <CircleSlash />
-                </Button>
+              disabled={isSaving || !check}
+            >
+              <X />
+            </Button>
+          )}
+          {canUpdateUserGroupsPosts && (
+            <Button
+              variant={check?.is_completed != null ? 'outline' : 'ghost'}
+              onClick={() =>
+                handleSaveStatus({
+                  isCompleted: null,
+                })
+              }
+              className={cn(
+                check?.is_completed == null
+                  ? 'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20 hover:text-dynamic-blue'
+                  : '',
+                'w-full border'
               )}
-              {canUpdateUserGroupsPosts && (
-                <Button
-                  variant={check?.is_completed == null ? 'outline' : 'ghost'}
-                  onClick={() => handleSaveStatus({ isCompleted: true, notes })}
-                  className={cn(
-                    check?.is_completed != null && check.is_completed
-                      ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20 hover:text-dynamic-green'
-                      : '',
-                    'w-full border'
-                  )}
-                  disabled={saving || !check}
-                >
-                  <Check />
-                </Button>
+              disabled={isSaving || !check}
+            >
+              <CircleSlash />
+            </Button>
+          )}
+          {canUpdateUserGroupsPosts && (
+            <Button
+              variant={check?.is_completed == null ? 'outline' : 'ghost'}
+              onClick={() => handleSaveStatus({ isCompleted: true })}
+              className={cn(
+                check?.is_completed != null && check.is_completed
+                  ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20 hover:text-dynamic-green'
+                  : '',
+                'w-full border'
               )}
-            </>
+              disabled={isSaving || !check}
+            >
+              <Check />
+            </Button>
           )}
         </div>
 
@@ -332,11 +301,9 @@ function UserCard({
                 localLoading ||
                 !user.email ||
                 !isEmail(user.email) ||
-                user.email.endsWith('@easy.com') ||
                 check?.is_completed == null ||
-                saving ||
-                !check ||
-                (check?.notes != null && check?.notes !== notes)
+                isSaving ||
+                !check
               }
               variant={
                 localLoading || disableEmailSending || localSuccess

@@ -171,15 +171,22 @@ export async function POST(
   const failureCount = results.filter((result) => !result).length;
   const blockedCount = blockedEmails.size;
 
-  return NextResponse.json(
-    {
-      message: 'Emails sent and logged',
-      successCount,
-      failureCount,
-      blockedCount,
-    },
-    { status: failureCount > 0 ? 500 : 200 }
-  );
+return NextResponse.json(
+  {
+    message: 'Emails sent and logged',
+    successCount,
+    failureCount,
+    blockedCount,
+  },
+  { 
+    status: 
+      failureCount === 0 
+        ? 200 // All succeeded
+        : successCount > 0 
+          ? 207 // Mixed success and failure
+          : 500 // All failed, or a catastrophic failure occurred
+  }
+);
 }
 
 const sendEmail = async ({

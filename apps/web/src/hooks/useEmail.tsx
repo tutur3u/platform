@@ -46,47 +46,60 @@ const useEmail = () => {
     setLocalSuccess(false);
     setGlobalState({ loading: true, error: null, success: false });
 
-    const users = rawUsers.map((user) => ({
-      ...user,
-      content: ReactDOMServer.renderToString(
-        <PostEmailTemplate
-          post={post}
-          username={user.username}
-          isHomeworkDone={user?.is_completed}
-          notes={user?.notes || undefined}
-        />
-      ),
-    }));
+    try {
+      const users = rawUsers.map((user) => ({
+        ...user,
+        content: ReactDOMServer.renderToString(
+          <PostEmailTemplate
+            post={post}
+            username={user.username}
+            isHomeworkDone={user?.is_completed}
+            notes={user?.notes || undefined}
+          />
+       ),
+      }));
 
-    const res = await fetch(
-      `/api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          users,
-          date: post.created_at,
-        }),
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            users,
+            date: post.created_at,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        setLocalError('Failed to send email');
+        setLocalLoading(false);
+        setGlobalState({
+          loading: false,
+          error: 'Failed to send email',
+          success: false,
+        });
+        return false;
       }
-    );
 
-    if (!res.ok) {
-      setLocalError('Failed to send email');
+      setLocalSuccess(true);
+      setLocalLoading(false);
+      setGlobalState({ loading: false, error: null, success: true });
+      return true;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'An unexpected error occurred';
+      setLocalError(errorMessage);
       setLocalLoading(false);
       setGlobalState({
         loading: false,
-        error: 'Failed to send email',
+        error: errorMessage,
         success: false,
       });
       return false;
     }
-
-    setLocalSuccess(true);
-    setLocalLoading(false);
-    setGlobalState({ loading: false, error: null, success: true });
-    return true;
   };
 
   return {
