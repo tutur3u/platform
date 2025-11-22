@@ -1,3 +1,5 @@
+import type { NavLink } from '@/components/navigation';
+import { DEV_MODE } from '@/constants/common';
 import {
   Archive,
   Banknote,
@@ -83,8 +85,8 @@ import {
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
-  ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
+  ROOT_WORKSPACE_ID,
 } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
@@ -92,8 +94,6 @@ import {
   getSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
-import type { NavLink } from '@/components/navigation';
-import { DEV_MODE } from '@/constants/common';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -408,6 +408,7 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/users/structure`,
       ],
       icon: <Users className="h-5 w-5" />,
+      href: `/${personalOrWsId}/users/database`,
       children: [
         {
           title: t('workspace-users-tabs.overview'),
@@ -454,6 +455,17 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/users/reports`,
           icon: <ClipboardList className="h-5 w-5" />,
           disabled: withoutPermission('manage_users'),
+        },
+        {
+          title: t('sidebar_tabs.posts'),
+          href: `/${personalOrWsId}/posts`,
+          icon: <GalleryVerticalEnd className="h-5 w-5" />,
+          disabled:
+            !hasSecret('ENABLE_EMAIL_SENDING', 'true') ||
+            (!DEV_MODE &&
+              (ENABLE_AI_ONLY ||
+                withoutPermission('send_user_group_post_emails'))),
+          experimental: 'beta',
         },
         {
           title: t('workspace-users-tabs.guest_leads'),
@@ -754,17 +766,6 @@ export async function WorkspaceNavigationLinks({
               ],
               requireRootMember: true,
               disabled: !isPersonal,
-              experimental: 'beta',
-            },
-            {
-              title: t('sidebar_tabs.posts'),
-              href: `/${personalOrWsId}/posts`,
-              icon: <GalleryVerticalEnd className="h-5 w-5" />,
-              disabled:
-                !hasSecret('ENABLE_EMAIL_SENDING', 'true') ||
-                (!DEV_MODE &&
-                  (ENABLE_AI_ONLY ||
-                    withoutPermission('send_user_group_post_emails'))),
               experimental: 'beta',
             },
             {
