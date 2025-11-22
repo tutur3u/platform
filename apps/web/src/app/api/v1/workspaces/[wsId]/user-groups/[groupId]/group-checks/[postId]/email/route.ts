@@ -228,6 +228,9 @@ const sendEmail = async ({
       .limit(1);
 
     if (data && data.length > 0) {
+      console.error(
+        `[sendEmail] Email already sent to ${recipient} (receiverId: ${receiverId}, postId: ${postId}). Skipping duplicate send.`
+      );
       return false;
     }
 
