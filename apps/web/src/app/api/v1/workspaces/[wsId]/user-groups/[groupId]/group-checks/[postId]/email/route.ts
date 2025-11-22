@@ -252,18 +252,18 @@ const sendEmail = async ({
     if (!disableEmailSending) {
       console.log('Sending email:', params);
       try {
-      const command = new SendEmailCommand(params);
-      const sesResponse = await client.send(command);
-      console.log('Email sent:', params);
+        const command = new SendEmailCommand(params);
+        const sesResponse = await client.send(command);
+        console.log('Email sent:', params);
 
-      if (sesResponse.$metadata.httpStatusCode !== 200) {
-        console.error(
-          `[sendEmail] SES returned non-200 status for recipient ${recipient} (receiverId: ${receiverId}, postId: ${postId}):`,
-          `HTTP ${sesResponse.$metadata.httpStatusCode}`,
-          sesResponse
-        );
-        return false;
-      }
+        if (sesResponse.$metadata.httpStatusCode !== 200) {
+          console.error(
+            `[sendEmail] SES returned non-200 status for recipient ${recipient} (receiverId: ${receiverId}, postId: ${postId}):`,
+            `HTTP ${sesResponse.$metadata.httpStatusCode}`,
+            sesResponse
+          );
+          return false;
+        }
       } catch (error) {
         console.error(
           `[sendEmail] Error sending email to ${recipient} (receiverId: ${receiverId}, postId: ${postId}):`,
@@ -281,12 +281,16 @@ const sendEmail = async ({
     } = await supabase.auth.getUser();
 
     if (!user) {
-      console.error('[sendEmail] No authenticated user found when logging sent email');
+      console.error(
+        '[sendEmail] No authenticated user found when logging sent email'
+      );
       return false;
     }
 
     if (!sourceName || !sourceEmail) {
-      console.error('[sendEmail] Missing sourceName or sourceEmail when logging sent email');
+      console.error(
+        '[sendEmail] Missing sourceName or sourceEmail when logging sent email'
+      );
       return false;
     }
 
