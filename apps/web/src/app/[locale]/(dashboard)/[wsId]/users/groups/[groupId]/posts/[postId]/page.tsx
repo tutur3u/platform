@@ -9,9 +9,9 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import UserCard from './card';
 import { CheckAll } from './check-all';
 import { EmailList } from './email-list';
+import { UsersList } from './users-list';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
@@ -185,27 +185,18 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
               </div>
             </div>
             <Separator className="my-4" />
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {users.map((user) => (
-                <div
-                  key={`post-${postId}-${user.id}-${status.checked === status.count}`}
-                  className="relative"
-                >
-                  <UserCard
-                    user={user}
-                    wsId={wsId}
-                    post={{
-                      ...post,
-                      group_id: groupId,
-                      group_name: group.name,
-                    }}
-                    disableEmailSending={status.sent?.includes(user.id)}
-                    hideEmailSending={!canSendUserGroupPostEmails}
-                    canUpdateUserGroupsPosts={canUpdateUserGroupsPosts}
-                  />
-                </div>
-              ))}
-            </div>
+            <UsersList
+              users={users}
+              wsId={wsId}
+              post={{
+                ...post,
+                group_id: groupId,
+                group_name: group.name,
+              }}
+              canUpdateUserGroupsPosts={canUpdateUserGroupsPosts}
+              canSendUserGroupPostEmails={canSendUserGroupPostEmails}
+              sentEmailUserIds={status.sent || []}
+            />
           </div>
         );
       }}
