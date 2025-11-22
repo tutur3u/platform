@@ -93,10 +93,7 @@ function UserCard({
 
       const finalNotes = notes ?? check?.notes ?? '';
 
-      if (
-        isCompleted === check?.is_completed &&
-        finalNotes === check?.notes
-      ) {
+      if (isCompleted === check?.is_completed && finalNotes === check?.notes) {
         return check;
       }
 
@@ -138,7 +135,7 @@ function UserCard({
 
   const handleSaveNotes = (formData: FormData) => {
     const notes = formData.get('notes') as string;
-    handleSaveStatus({ 
+    handleSaveStatus({
       notes,
       isCompleted: check?.is_completed ?? null,
     });
@@ -343,8 +340,12 @@ function UserCard({
               >
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div className="flex-1 text-xs">
-                  <div className="font-semibold text-sm">Failed to send email</div>
-                  <div className="opacity-80 wrap-break-word">{String(localError)}</div>
+                  <div className="font-semibold text-sm">
+                    Failed to send email
+                  </div>
+                  <div className="opacity-80 wrap-break-word">
+                    {String(localError)}
+                  </div>
                 </div>
               </div>
             )}
