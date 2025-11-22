@@ -467,8 +467,8 @@ export default function MigrationDashboard() {
       resetData(module);
 
       const externalUrl = `${apiEndpoint}${externalPath}`;
-      const chunkSize = 1000;
-      const healthCheckLimit = 1001;
+      const chunkSize = 500;
+      const healthCheckLimit = 501;
 
       // ========== STAGE 1 & 2: FETCH EXTERNAL AND INTERNAL DATA IN PARALLEL ==========
       setStage(module, 'external');
@@ -495,11 +495,11 @@ export default function MigrationDashboard() {
 
           const allInternalData: any[] = [];
           let offset = 0;
-          const batchSize = 1000;
+          const batchSize = 500;
           const maxFetch = healthCheckMode ? healthCheckLimit : 100000;
 
           try {
-            // Keep fetching in batches of 1000 until we get all data or hit the limit
+            // Keep fetching in batches of 500 until we get all data or hit the limit
             while (offset < maxFetch) {
               const res = await fetch(
                 `${internalFetchUrl}?ws_id=${workspaceId}&offset=${offset}&limit=${batchSize}`

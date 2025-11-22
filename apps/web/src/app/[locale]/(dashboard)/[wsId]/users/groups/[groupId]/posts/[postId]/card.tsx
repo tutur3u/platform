@@ -10,6 +10,7 @@ import {
   Save,
   Send,
   X,
+  AlertCircle,
 } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
@@ -331,7 +332,19 @@ function UserCard({
                 </>
               )}
             </Button>
-            {localError && <p>Error: {localError}</p>}
+            {localError && (
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="mt-2 flex items-start gap-2 rounded border border-dynamic-red/15 bg-dynamic-red/15 p-2 text-dynamic-red text-sm"
+              >
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div className="flex-1 text-xs">
+                  <div className="font-semibold text-sm">Failed to send email</div>
+                  <div className="opacity-80 wrap-break-word">{String(localError)}</div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
