@@ -56,7 +56,7 @@ const useEmail = () => {
             isHomeworkDone={user?.is_completed}
             notes={user?.notes || undefined}
           />
-       ),
+        ),
       }));
 
       const res = await fetch(
@@ -75,7 +75,10 @@ const useEmail = () => {
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        const errorMessage = errorData?.message || errorData?.error || `Failed to send email (${res.status})`;
+        const errorMessage =
+          errorData?.message ||
+          errorData?.error ||
+          `Failed to send email (${res.status})`;
         setLocalError(errorMessage);
         setLocalLoading(false);
         setGlobalState({

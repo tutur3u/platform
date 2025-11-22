@@ -56,7 +56,7 @@ export function UsersList({
 
       // Create a map of user_id -> check data
       const checksMap: Record<string, UserGroupPostCheck> = {};
-      
+
       for (const check of data || []) {
         checksMap[check.user_id] = {
           ...check,
