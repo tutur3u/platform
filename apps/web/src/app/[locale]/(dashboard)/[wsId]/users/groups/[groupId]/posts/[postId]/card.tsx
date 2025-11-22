@@ -310,7 +310,10 @@ function UserCard({
                 !check
               }
               variant={
-                localLoading || disableEmailSending || localSuccess || isEmailBlacklisted
+                localLoading ||
+                disableEmailSending ||
+                localSuccess ||
+                isEmailBlacklisted
                   ? 'secondary'
                   : undefined
               }

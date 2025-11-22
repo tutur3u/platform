@@ -93,7 +93,9 @@ export function UsersList({
             wsId={wsId}
             post={post}
             disableEmailSending={sentEmailUserIds.includes(user.id)}
-            isEmailBlacklisted={user.email ? blacklistedEmails.has(user.email) : false}
+            isEmailBlacklisted={
+              user.email ? blacklistedEmails.has(user.email) : false
+            }
             hideEmailSending={!canSendUserGroupPostEmails}
             canUpdateUserGroupsPosts={canUpdateUserGroupsPosts}
             initialCheck={checksMap?.[user.id]}

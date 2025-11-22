@@ -1,5 +1,8 @@
 import { Check, CheckCheck, CircleHelp, Clock, Send, X } from '@tuturuuu/icons';
-import { createClient, createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  createClient,
+  createAdminClient,
+} from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -70,7 +73,9 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
         }));
 
         // Check email blacklist status for all users
-        const userEmails = users.map((u) => u.email).filter(Boolean) as string[];
+        const userEmails = users
+          .map((u) => u.email)
+          .filter(Boolean) as string[];
         const blacklistedEmails = await getEmailBlacklistStatus(userEmails);
 
         // Get permissions
