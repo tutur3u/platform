@@ -79,7 +79,10 @@ export async function POST(
     .maybeSingle();
 
   if (credentialsError) {
-    console.error('Error fetching credentials:', credentialsError);
+    console.error(
+      `[POST /api/v1/workspaces/${wsId}/user-groups/.../group-checks/${postId}/email] Error fetching workspace email credentials:`,
+      credentialsError.message || credentialsError
+    );
     return NextResponse.json(
       { message: 'Error fetching credentials' },
       { status: 500 }
@@ -103,7 +106,10 @@ export async function POST(
   );
 
   if (blockCheckError) {
-    console.error('Error checking email blacklist:', blockCheckError);
+    console.error(
+      `[POST /api/v1/workspaces/${wsId}/user-groups/.../group-checks/${postId}/email] Error checking email blacklist via RPC:`,
+      blockCheckError.message || blockCheckError
+    );
     return NextResponse.json(
       { message: 'Error checking email blacklist' },
       { status: 500 }
@@ -247,7 +253,11 @@ const sendEmail = async ({
       console.log('Email sent:', params);
 
       if (sesResponse.$metadata.httpStatusCode !== 200) {
-        console.error('Error sending email:', sesResponse);
+        console.error(
+          `[sendEmail] SES returned non-200 status for recipient ${recipient} (receiverId: ${receiverId}, postId: ${postId}):`,
+          `HTTP ${sesResponse.$metadata.httpStatusCode}`,
+          sesResponse
+        );
         return false;
       }
 
@@ -283,12 +293,18 @@ const sendEmail = async ({
       .single();
 
     if (!sentEmail) {
-      console.error('Error logging sent email:', error);
+      console.error(
+        `[sendEmail] Failed to log sent email in database for recipient ${recipient} (receiverId: ${receiverId}, postId: ${postId}):`,
+        error?.message || error || 'No data returned from insert'
+      );
       return false;
     }
 
     if (error) {
-      console.error('Error logging sent email:', error);
+      console.error(
+        `[sendEmail] Error logging sent email for recipient ${recipient} (receiverId: ${receiverId}, postId: ${postId}):`,
+        (error as any)?.message || error
+      );
       return false;
     }
 
@@ -301,13 +317,20 @@ const sendEmail = async ({
       .eq('user_id', receiverId);
 
     if (checkUpdateError) {
-      console.error('Error updating check:', checkUpdateError);
+      console.error(
+        `[sendEmail] Error updating user_group_post_checks with email_id for recipient ${recipient} (receiverId: ${receiverId}, postId: ${postId}, emailId: ${sentEmail.id}):`,
+        checkUpdateError.message || checkUpdateError
+      );
       return false;
     }
 
     return true;
   } catch (err) {
-    console.error('Error sending email:', err);
+    console.error(
+      `[sendEmail] Unhandled error sending email to ${recipient} (receiverId: ${receiverId}, postId: ${postId}):`,
+      err instanceof Error ? err.message : err,
+      err
+    );
     return false;
   }
 };
