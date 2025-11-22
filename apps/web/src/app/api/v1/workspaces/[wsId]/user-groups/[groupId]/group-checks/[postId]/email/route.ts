@@ -248,6 +248,7 @@ const sendEmail = async ({
 
     if (!disableEmailSending) {
       console.log('Sending email:', params);
+      try {
       const command = new SendEmailCommand(params);
       const sesResponse = await client.send(command);
       console.log('Email sent:', params);
@@ -260,6 +261,14 @@ const sendEmail = async ({
         );
         return false;
       }
+      } catch (error) {
+        console.error(
+          `[sendEmail] Error sending email to ${recipient} (receiverId: ${receiverId}, postId: ${postId}):`,
+          error instanceof Error ? error.message : error,
+          error
+        );
+        return false;
+      }
 
       console.log('Email sent successfully:', params);
     }
@@ -269,10 +278,12 @@ const sendEmail = async ({
     } = await supabase.auth.getUser();
 
     if (!user) {
+      console.error('[sendEmail] No authenticated user found when logging sent email');
       return false;
     }
 
     if (!sourceName || !sourceEmail) {
+      console.error('[sendEmail] Missing sourceName or sourceEmail when logging sent email');
       return false;
     }
 
