@@ -1,4 +1,5 @@
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import { render } from '@react-email/render';
 import {
   createAdminClient,
   createClient,
@@ -7,6 +8,8 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import dayjs from 'dayjs';
 import juice from 'juice';
 import { type NextRequest, NextResponse } from 'next/server';
+import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
+import type { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts/[postId]/card';
 import { DEV_MODE } from '@/constants/common';
 
 const forceEnableEmailSending = false;
@@ -56,11 +59,11 @@ export async function POST(
     users: {
       id: string;
       email: string;
-      content: string;
       username: string;
       notes: string;
       is_completed: boolean;
     }[];
+    post: UserGroupPost;
     date: string;
   };
 
@@ -159,6 +162,17 @@ export async function POST(
   const results = await Promise.all(
     allowedUsers.map(async (user) => {
       const subject = `Easy Center | Báo cáo tiến độ ngày ${dayjs(data.date).format('DD/MM/YYYY')} của ${user.username}`;
+      
+      // Render email template server-side
+      const content = await render(
+        PostEmailTemplate({
+          post: data.post,
+          username: user.username,
+          isHomeworkDone: user.is_completed,
+          notes: user.notes || undefined,
+        })
+      );
+      
       return sendEmail({
         wsId,
         client: sesClient,
@@ -167,7 +181,7 @@ export async function POST(
         receiverId: user.id,
         recipient: user.email,
         subject,
-        content: user.content,
+        content,
         postId,
       });
     })

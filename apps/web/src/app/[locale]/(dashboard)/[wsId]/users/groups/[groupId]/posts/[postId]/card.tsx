@@ -31,6 +31,7 @@ interface Props {
   post: UserGroupPost;
   hideEmailSending: boolean;
   disableEmailSending: boolean;
+  isEmailBlacklisted?: boolean;
   canUpdateUserGroupsPosts?: boolean;
   initialCheck?: Partial<{
     user_id: string;
@@ -61,6 +62,7 @@ function UserCard({
   post,
   hideEmailSending,
   disableEmailSending,
+  isEmailBlacklisted = false,
   canUpdateUserGroupsPosts = false,
   initialCheck = null,
   isLoadingChecks = false,
@@ -298,6 +300,7 @@ function UserCard({
               onClick={handleSendEmail}
               disabled={
                 disableEmailSending ||
+                isEmailBlacklisted ||
                 localSuccess ||
                 localLoading ||
                 !user.email ||
@@ -307,7 +310,7 @@ function UserCard({
                 !check
               }
               variant={
-                localLoading || disableEmailSending || localSuccess
+                localLoading || disableEmailSending || localSuccess || isEmailBlacklisted
                   ? 'secondary'
                   : undefined
               }
@@ -317,6 +320,8 @@ function UserCard({
               <span className="flex items-center justify-center opacity-70">
                 {localLoading ? (
                   <LoadingIndicator />
+                ) : isEmailBlacklisted ? (
+                  'Email blacklisted'
                 ) : disableEmailSending || localSuccess ? (
                   'Email sent'
                 ) : (
