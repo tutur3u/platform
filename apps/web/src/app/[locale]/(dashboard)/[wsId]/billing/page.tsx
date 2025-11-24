@@ -96,6 +96,7 @@ const fetchSubscription = async ({
   if (!polarProduct) return null;
 
   return {
+    id: dbSub.id,
     status: dbSub.status,
     currentPeriodStart: dbSub.current_period_start,
     currentPeriodEnd: dbSub.current_period_end,
@@ -165,6 +166,8 @@ export default async function BillingPage({
 
         const currentPlan = subscription?.product
           ? {
+              id: subscription.id,
+              polar_subscription_id: subscription.polar_subscription_id,
               name: subscription.product.name || 'No Plan',
               price:
                 subscription.product.price &&
@@ -189,6 +192,8 @@ export default async function BillingPage({
               ],
             }
           : {
+              id: '',
+              polar_subscription_id: '',
               name: 'Free Plan',
               price: '$0',
               billingCycle: 'month',

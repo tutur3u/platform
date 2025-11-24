@@ -3,8 +3,8 @@ import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
-  req: NextRequest,
-  _: { params: Promise<{ wsId: string; productId: string }> }
+  _req: NextRequest,
+  { params }: { params: Promise<{ subscriptionId: string }> }
 ) {
   const user = await getCurrentSupabaseUser();
 
@@ -12,9 +12,9 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { polarSubscriptionId } = await req.json();
+  const { subscriptionId } = await params;
 
-  if (!polarSubscriptionId) {
+  if (!subscriptionId) {
     return NextResponse.json(
       { error: 'Subscription ID is required' },
       { status: 400 }
@@ -34,7 +34,7 @@ export async function POST(
       customerSession: session.token,
     },
     {
-      id: polarSubscriptionId,
+      id: subscriptionId,
     }
   );
 

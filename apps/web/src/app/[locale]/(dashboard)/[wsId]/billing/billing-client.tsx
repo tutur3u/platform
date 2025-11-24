@@ -3,12 +3,15 @@
 import { ArrowUpCircle, CheckCircle } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import PurchaseLink from './data-polar-checkout';
 
 // Define types for the props we're passing from the server component
 interface Plan {
+  id: string;
+  polar_subscription_id: string;
   name: string;
   price: string;
   billingCycle: string;
@@ -28,32 +31,6 @@ interface BillingClientProps {
   activeSubscriptionId?: string;
 }
 
-const syncToProduct = async (products: any[]) => {
-  const supabase = createClient();
-
-  const insertedProducts = await Promise.all(
-    products.map(async (product) => {
-      const { data, error } = await supabase
-        .from('workspace_subscription_products')
-        .insert({
-          id: product.id,
-          name: product.name,
-          price: Number(product.price),
-          recurring_interval: product.recurringInterval,
-          description: product.description || '',
-        })
-        .select();
-
-      if (error) {
-        console.error('Error inserting product:', error);
-        return null;
-      }
-      return data;
-    })
-  );
-
-  return insertedProducts;
-};
 export function BillingClient({
   currentPlan,
   isAdmin = false,
@@ -62,39 +39,13 @@ export function BillingClient({
   isCreator,
 }: BillingClientProps) {
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
-  const [_isLoading, _setIsLoading] = useState(false);
-  const [message, _setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState('');
   const [syncCompleted, setSyncCompleted] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
   const t = useTranslations('billing');
-  // const handleCancelSubscription = async () => {
-  //   setIsLoading(true);
-  //   setMessage('');
+  const router = useRouter();
 
-  //   const response = await fetch(`/api/${wsId}/${product_id}/cancel`, {
-  //     method: 'POST',
-  //     headers: {
-  //       'Content-Type': 'application/json',
-  //     },
-
-  //     body: JSON.stringify({ polarSubscriptionId: activeSubscriptionId }),
-  //   });
-
-  //   setIsLoading(false);
-
-  //   if (response.ok) {
-  //     setMessage(
-  //       'Your subscription will be canceled at the end of your billing period.'
-  //     );
-  //     // Reload the page to show the updated subscription status
-  //     window.location.reload();
-  //   } else {
-  //     const errorData = await response.json();
-  //     setMessage(
-  //       `Error: ${errorData.error || 'Could not cancel subscription.'}`
-  //     );
-  //   }
-  // };
   const upgradePlans = products.map((product, index) => ({
     id: product.id,
     name: product.name,
@@ -125,12 +76,65 @@ export function BillingClient({
     setSyncLoading(true);
     setSyncCompleted(false);
     try {
-      await syncToProduct(products);
+      const supabase = createClient();
+
+      await Promise.allSettled(
+        products.map(async (product) => {
+          const { data, error } = await supabase
+            .from('workspace_subscription_products')
+            .insert({
+              id: product.id,
+              name: product.name,
+              price: Number(product.price),
+              recurring_interval: product.recurringInterval,
+              description: product.description || '',
+            })
+            .select();
+
+          if (error) {
+            console.error('Error inserting product:', error);
+            return null;
+          }
+          return data;
+        })
+      );
+
       setSyncCompleted(true);
     } catch (error) {
       console.error('Sync failed:', error);
     } finally {
       setSyncLoading(false);
+    }
+  };
+
+  const handleCancelSubscription = async (subscriptionId: string) => {
+    if (!subscriptionId) return;
+
+    setIsLoading(true);
+    setMessage('');
+
+    const response = await fetch(
+      `/api/payment/customer-portal/subscriptions/${subscriptionId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    setIsLoading(false);
+
+    if (response.ok) {
+      setMessage(
+        'Your subscription will be canceled at the end of your billing period.'
+      );
+      router.refresh();
+    } else {
+      const errorData = await response.json();
+      setMessage(
+        `Error: ${errorData.error || 'Could not cancel subscription.'}`
+      );
     }
   };
 
@@ -233,15 +237,17 @@ export function BillingClient({
                 <ArrowUpCircle className="mr-2 h-5 w-5" />
                 {showUpgradeOptions ? t('hide-upgrade') : t('upgrade-plan')}
               </Button>
-              {/* <Button
+              <Button
                 variant="outline"
                 size="lg"
                 className="border-border"
-                onClick={handleCancelSubscription}
-                disabled={isLoading || !activeSubscriptionId}
+                onClick={() =>
+                  handleCancelSubscription(currentPlan.polar_subscription_id)
+                }
+                disabled={isLoading || !currentPlan.id}
               >
                 {isLoading ? 'Cancelling...' : 'Cancel Subscription'}
-              </Button> */}
+              </Button>
             </div>
           </div>
         </div>

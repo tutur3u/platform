@@ -41,7 +41,6 @@ export const POST = Webhooks({
         ws_id: ws_id,
         status: subscriptionPayload.status,
         polar_subscription_id: subscriptionPayload.id,
-        // polar_customer_id: payload.customer.id,
         product_id: subscriptionPayload.product.id,
         current_period_start:
           subscriptionPayload.currentPeriodStart.toISOString(),

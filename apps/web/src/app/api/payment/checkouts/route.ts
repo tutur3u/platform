@@ -5,23 +5,23 @@ import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { PORT } from '@/constants/common';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ wsId: string; productId: string }> }
-) {
-  const searchParams = request.nextUrl.searchParams;
-  const sandbox = searchParams.get('sandbox') === 'true';
-
+export async function POST(request: NextRequest) {
   const BASE_URL =
     process.env.NODE_ENV === 'development'
       ? `http://localhost:${PORT}`
       : 'https://tuturuuu.com';
 
-  // const sbAdmin = await createAdminClient();
-  const user = await getCurrentSupabaseUser();
+  const { wsId, productId, sandbox } = await request.json();
 
-  const { wsId, productId } = await params;
+  // Validate that you have the info you need
+  if (!productId || !wsId) {
+    return new Response('Product ID and Workspace ID are required', {
+      status: 400,
+    });
+  }
+
   const supabase = await createClient();
+  const user = await getCurrentSupabaseUser();
 
   const { data, error } = await supabase
     .from('users')
@@ -35,6 +35,7 @@ export async function GET(
       status: 500,
     });
   }
+
   const { data: isCreatorAllowed, error: rpcError } = await supabase.rpc(
     'check_ws_creator',
     {
@@ -59,12 +60,6 @@ export async function GET(
       }
     );
   }
-  // Validate that you have the info you need
-  if (!productId || !wsId) {
-    return new Response('Product ID and Workspace ID are required', {
-      status: 400,
-    });
-  }
 
   const polarClient = createPolarClient({
     sandbox:
@@ -79,7 +74,7 @@ export async function GET(
   const checkoutSession = await polarClient.checkouts.create({
     products: [productId],
     successUrl: `${BASE_URL}/${wsId}/billing/success`,
-    // externalCustomerId: user?.id || '',
+    externalCustomerId: user?.id || '',
     metadata: {
       wsId,
     },
