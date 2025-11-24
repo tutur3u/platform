@@ -1,9 +1,9 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { createPolarClient } from '@/lib/polar';
+import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { checkTuturuuuAdmin } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { BillingClient } from './billing-client';
 import BillingHistory from './billing-history';
 

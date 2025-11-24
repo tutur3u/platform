@@ -1,4 +1,4 @@
-import { createPolarClient } from '@/lib/polar';
+import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { Webhooks } from '@tuturuuu/payment/polar/next';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
