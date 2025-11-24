@@ -12,7 +12,7 @@ import { HeatmapSettingsForm } from './heatmap-settings-form';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('time-tracker.page_settings.metadata');
-  
+
   return {
     title: t('title'),
     description: t('description'),
@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function TimeTrackerSettingsPage() {
   const t = await getTranslations('time-tracker.page_settings');
-  
+
   return (
     <Card>
       <CardHeader>
@@ -30,10 +30,10 @@ export default async function TimeTrackerSettingsPage() {
             <Settings className="h-5 w-5 text-white" />
           </div>
           <div>
-            <CardTitle className="text-lg sm:text-xl">{t('timer_settings')}</CardTitle>
-            <CardDescription>
-              {t('customize_experience')}
-            </CardDescription>
+            <CardTitle className="text-lg sm:text-xl">
+              {t('timer_settings')}
+            </CardTitle>
+            <CardDescription>{t('customize_experience')}</CardDescription>
           </div>
         </div>
       </CardHeader>
