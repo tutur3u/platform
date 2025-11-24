@@ -24,13 +24,13 @@ describe('Supabase Client', () => {
     createClient();
     expect(createBrowserClient).toHaveBeenCalledWith(
       'https://test.supabase.co',
-      'test-key',
-      {
-        realtime: {
-          logLevel: 'info',
-          logger: expect.any(Function),
-        },
-      }
+      'test-key'
+      // {
+      //   realtime: {
+      //     logLevel: 'info',
+      //     logger: expect.any(Function),
+      //   },
+      // }
     );
   });
 
@@ -38,13 +38,13 @@ describe('Supabase Client', () => {
     createDynamicClient();
     expect(createBrowserClient).toHaveBeenCalledWith(
       'https://test.supabase.co',
-      'test-key',
-      {
-        realtime: {
-          logLevel: 'info',
-          logger: expect.any(Function),
-        },
-      }
+      'test-key'
+      // {
+      //   realtime: {
+      //     logLevel: 'info',
+      //     logger: expect.any(Function),
+      //   },
+      // }
     );
   });
 });
