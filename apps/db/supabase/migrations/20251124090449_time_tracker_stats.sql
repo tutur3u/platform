@@ -14,7 +14,7 @@ WHERE duration_seconds IS NOT NULL
 GROUP BY user_id, ws_id, DATE(start_time);
 
 -- Create a function to calculate streak for a user
--- This function calculates consecutive days of activity
+-- This function calculates consecutive days of activity using gap-and-islands pattern
 CREATE OR REPLACE FUNCTION calculate_time_tracker_streak(
   p_user_id UUID,
   p_ws_id UUID,
@@ -23,55 +23,45 @@ CREATE OR REPLACE FUNCTION calculate_time_tracker_streak(
 RETURNS INTEGER AS $$
 DECLARE
   v_streak INTEGER := 0;
-  v_check_date DATE := CURRENT_DATE;
-  v_has_today BOOLEAN;
-  v_has_activity BOOLEAN;
 BEGIN
-  -- Check if there's activity today
-  IF p_is_personal THEN
-    SELECT EXISTS(
-      SELECT 1 FROM time_tracker_daily_activity
-      WHERE user_id = p_user_id
-        AND activity_date = CURRENT_DATE
-    ) INTO v_has_today;
-  ELSE
-    SELECT EXISTS(
-      SELECT 1 FROM time_tracker_daily_activity
-      WHERE user_id = p_user_id
-        AND ws_id = p_ws_id
-        AND activity_date = CURRENT_DATE
-    ) INTO v_has_today;
-  END IF;
+  -- Use gap-and-islands pattern with ROW_NUMBER() to find consecutive activity groups
+  -- in a single query instead of looping with O(n) EXISTS checks
+  WITH activity_data AS (
+    SELECT DISTINCT activity_date
+    FROM time_tracker_daily_activity
+    WHERE user_id = p_user_id
+      AND (p_is_personal OR ws_id = p_ws_id)
+      AND activity_date <= CURRENT_DATE
+  ),
+  -- Create islands by subtracting row number from date
+  -- Consecutive dates will have the same island_id
+  islands AS (
+    SELECT 
+      activity_date,
+      activity_date - (ROW_NUMBER() OVER (ORDER BY activity_date))::INTEGER AS island_id
+    FROM activity_data
+  ),
+  -- Aggregate each island to find first and last date, and count
+  island_groups AS (
+    SELECT 
+      island_id,
+      MIN(activity_date) AS first_date,
+      MAX(activity_date) AS last_date,
+      COUNT(*)::INTEGER AS day_count
+    FROM islands
+    GROUP BY island_id
+  )
+  -- Find the island whose last_date is today or yesterday
+  -- (streak continues if activity was today, or if yesterday was the last day)
+  SELECT day_count INTO v_streak
+  FROM island_groups
+  WHERE last_date = CURRENT_DATE 
+     OR last_date = CURRENT_DATE - INTERVAL '1 day'
+  ORDER BY last_date DESC
+  LIMIT 1;
 
-  -- If no activity today, start checking from yesterday
-  IF NOT v_has_today THEN
-    v_check_date := CURRENT_DATE - INTERVAL '1 day';
-  END IF;
-
-  -- Count consecutive days backwards
-  LOOP
-    IF p_is_personal THEN
-      SELECT EXISTS(
-        SELECT 1 FROM time_tracker_daily_activity
-        WHERE user_id = p_user_id
-          AND activity_date = v_check_date
-      ) INTO v_has_activity;
-    ELSE
-      SELECT EXISTS(
-        SELECT 1 FROM time_tracker_daily_activity
-        WHERE user_id = p_user_id
-          AND ws_id = p_ws_id
-          AND activity_date = v_check_date
-      ) INTO v_has_activity;
-    END IF;
-
-    EXIT WHEN NOT v_has_activity;
-    
-    v_streak := v_streak + 1;
-    v_check_date := v_check_date - INTERVAL '1 day';
-  END LOOP;
-
-  RETURN v_streak;
+  -- Return 0 if no streak found (handles no-activity case)
+  RETURN COALESCE(v_streak, 0);
 END;
 $$ LANGUAGE plpgsql STABLE;
 

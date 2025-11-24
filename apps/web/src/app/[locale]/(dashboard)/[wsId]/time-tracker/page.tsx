@@ -13,6 +13,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import type { DailyActivity } from '@/lib/time-tracking-helper';
 import { ActivityHeatmap } from './components/activity-heatmap';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -23,13 +24,6 @@ export async function generateMetadata(): Promise<Metadata> {
     description: t('metadata.description'),
   };
 }
-
-// Type definition for daily activity data
-type DailyActivity = Array<{
-  date: string;
-  duration: number;
-  sessions: number;
-}>;
 
 const formatDuration = (seconds: number | undefined): string => {
   const safeSeconds = Math.max(0, Math.floor(seconds || 0));
@@ -64,7 +58,7 @@ async function fetchTimeTrackingStats(
       weekTime: 0,
       monthTime: 0,
       streak: 0,
-      dailyActivity: [] as DailyActivity,
+      dailyActivity: [] as DailyActivity[],
     };
   }
 
@@ -77,7 +71,7 @@ async function fetchTimeTrackingStats(
       weekTime: 0,
       monthTime: 0,
       streak: 0,
-      dailyActivity: [] as DailyActivity,
+      dailyActivity: [] as DailyActivity[],
     };
   }
 
@@ -86,7 +80,7 @@ async function fetchTimeTrackingStats(
     weekTime: stats.week_time || 0,
     monthTime: stats.month_time || 0,
     streak: stats.streak || 0,
-    dailyActivity: (stats.daily_activity || []) as DailyActivity,
+    dailyActivity: (stats.daily_activity || []) as unknown as DailyActivity[],
   };
 }
 
@@ -258,7 +252,7 @@ function StatsCardSkeleton() {
 }
 
 // Heatmap card with loading state
-function HeatmapCard({ dailyActivity }: { dailyActivity: DailyActivity }) {
+function HeatmapCard({ dailyActivity }: { dailyActivity: DailyActivity[] }) {
   return (
     <Card className="relative overflow-x-auto">
       <CardContent className="pt-6">

@@ -1,6 +1,8 @@
 import { Providers } from '@/components/providers';
 import { siteConfig } from '@/constants/configs';
 import { type Locale, routing, supportedLocales } from '@/i18n/routing';
+import '@mantine/core/styles.css';
+import '@mantine/charts/styles.css';
 import '@/style/prosemirror.css';
 import '@/style/mantine-theme-override.css';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
@@ -12,13 +14,10 @@ import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { ReactScan } from '@tuturuuu/utils/common/scan';
 import { cn } from '@tuturuuu/utils/format';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
-import '@mantine/core/styles.css';
-import '@mantine/charts/styles.css';
 import type { Metadata } from 'next';
-import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { setRequestLocale } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
-
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';
 

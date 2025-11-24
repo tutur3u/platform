@@ -35,6 +35,11 @@ import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import classes from '@/style/mantine-heatmap.module.css';
+import {
+  DEFAULT_SETTINGS,
+  type HeatmapSettings,
+  type HeatmapViewMode,
+} from '../settings/heatmap-settings-form';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -50,18 +55,6 @@ interface ActivityHeatmapProps {
   }>;
 }
 
-type HeatmapViewMode =
-  | 'original'
-  | 'hybrid'
-  | 'calendar-only'
-  | 'compact-cards';
-
-interface HeatmapSettings {
-  viewMode: HeatmapViewMode;
-  timeReference: 'relative' | 'absolute' | 'smart';
-  showOnboardingTips: boolean;
-}
-
 const formatDuration = (seconds: number | undefined): string => {
   const safeSeconds = Math.max(0, Math.floor(seconds || 0));
   const hours = Math.floor(safeSeconds / 3600);
@@ -74,6 +67,27 @@ const formatDuration = (seconds: number | undefined): string => {
   return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
+// Get intensity level (0-4) based on duration - still used by other view modes
+const getIntensity = (duration: number): number => {
+  if (duration === 0) return 0;
+  if (duration < 1800) return 1; // < 30 minutes
+  if (duration < 3600) return 2; // < 1 hour
+  if (duration < 7200) return 3; // < 2 hours
+  return 4; // 2+ hours
+};
+
+// Get color class based on intensity - still used by other view modes
+const getColorClass = (intensity: number): string => {
+  const colors = [
+    'bg-gray-100 dark:bg-gray-800/50', // No activity
+    'bg-emerald-200 dark:bg-emerald-900/60', // Low activity
+    'bg-emerald-400 dark:bg-emerald-700/70', // Medium-low activity
+    'bg-emerald-600 dark:bg-emerald-600/80', // Medium-high activity
+    'bg-emerald-800 dark:bg-emerald-400/90', // High activity
+  ];
+  return colors[Math.max(0, Math.min(4, intensity))]!;
+};
+
 export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
   const t = useTranslations('time-tracker.heatmap');
   const locale = useLocale();
@@ -81,11 +95,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
 
   const [settings, setSettings] = useLocalStorage<HeatmapSettings>(
     'heatmap-settings',
-    {
-      viewMode: 'hybrid',
-      timeReference: 'smart',
-      showOnboardingTips: true,
-    }
+    DEFAULT_SETTINGS
   );
 
   // Use the existing mobile detection hook
@@ -102,7 +112,6 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
   const [dateRangeConfig, setDateRangeConfig] = useState({
     startDate: dayjs().subtract(364, 'day').format('YYYY-MM-DD'),
     endDate: dayjs().format('YYYY-MM-DD'),
-    splitMonths: false,
     withOutsideDates: true,
   });
 
@@ -121,7 +130,6 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
             .startOf('month')
             .format('YYYY-MM-DD'),
           endDate: today.format('YYYY-MM-DD'),
-          splitMonths: true,
           withOutsideDates: false,
         });
       } else if (width < 768) {
@@ -133,7 +141,6 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
             .startOf('month')
             .format('YYYY-MM-DD'),
           endDate: today.format('YYYY-MM-DD'),
-          splitMonths: true,
           withOutsideDates: false,
         });
       } else if (width < 1024) {
@@ -145,7 +152,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
             .startOf('month')
             .format('YYYY-MM-DD'),
           endDate: today.format('YYYY-MM-DD'),
-          splitMonths: true,
+
           withOutsideDates: false,
         });
       } else if (width < 1280) {
@@ -154,7 +161,6 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
         setDateRangeConfig({
           startDate: today.subtract(364, 'day').format('YYYY-MM-DD'),
           endDate: today.format('YYYY-MM-DD'),
-          splitMonths: false,
           withOutsideDates: true,
         });
       } else {
@@ -163,7 +169,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
         setDateRangeConfig({
           startDate: today.subtract(364, 'day').format('YYYY-MM-DD'),
           endDate: today.format('YYYY-MM-DD'),
-          splitMonths: false,
+
           withOutsideDates: true,
         });
       }
@@ -248,18 +254,18 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
 
   // Handle tip dismissal
   const handleDismissTips = useCallback(() => {
-    setOnboardingState({
-      ...onboardingState,
+    setOnboardingState((prev) => ({
+      ...prev,
       showTips: false,
       dismissedAt: new Date().toISOString(),
-    });
+    }));
 
     // Clear auto-hide timer if active
     if (tipAutoHideTimer) {
       clearTimeout(tipAutoHideTimer);
       setTipAutoHideTimer(null);
     }
-  }, [onboardingState, setOnboardingState, tipAutoHideTimer]);
+  }, [setOnboardingState, tipAutoHideTimer]);
 
   // Set up auto-hide timer when tips are shown (optional - can be disabled)
   // biome-ignore lint/correctness/useExhaustiveDependencies(handleDismissTips): suppress dependency array linting
@@ -319,27 +325,6 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
 
   const totalDuration =
     dailyActivity?.reduce((sum, day) => sum + day.duration, 0) || 0;
-
-  // Get intensity level (0-4) based on duration - still used by other view modes
-  const getIntensity = (duration: number): number => {
-    if (duration === 0) return 0;
-    if (duration < 1800) return 1; // < 30 minutes
-    if (duration < 3600) return 2; // < 1 hour
-    if (duration < 7200) return 3; // < 2 hours
-    return 4; // 2+ hours
-  };
-
-  // Get color class based on intensity - still used by other view modes
-  const getColorClass = (intensity: number): string => {
-    const colors = [
-      'bg-gray-100 dark:bg-gray-800/50', // No activity
-      'bg-emerald-200 dark:bg-emerald-900/60', // Low activity
-      'bg-emerald-400 dark:bg-emerald-700/70', // Medium-low activity
-      'bg-emerald-600 dark:bg-emerald-600/80', // Medium-high activity
-      'bg-emerald-800 dark:bg-emerald-400/90', // High activity
-    ];
-    return colors[Math.max(0, Math.min(4, intensity))]!;
-  };
 
   // Render year overview bars (simplified GitHub-style) - memoized
   const renderYearOverview = useCallback(() => {
@@ -418,7 +403,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
         </div>
       </div>
     );
-  }, [dailyActivity, userTimezone, today, t, setCurrentMonth]);
+  }, [dailyActivity, userTimezone, today, t]);
 
   // Render monthly calendar view - memoized
   const renderMonthlyCalendar = useCallback(() => {
@@ -905,7 +890,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
         <div className="mb-2">
           <div className="grid grid-cols-7 gap-px">
             {Array.from({ length: 7 * 4 }, (_, i) => {
-              const monthStart = dayjs(monthKey + '-01');
+              const monthStart = dayjs(`${monthKey} -01`);
               const dayOffset = i - monthStart.day();
               const currentDay = monthStart.add(dayOffset, 'day');
 
@@ -1265,7 +1250,6 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
           data={heatmapData}
           startDate={startDate}
           endDate={endDate}
-          splitMonths={false}
           withOutsideDates={false}
           withMonthLabels
           withWeekdayLabels
@@ -1337,15 +1321,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
         />
       );
     },
-    [
-      heatmapData,
-      activityMap,
-      settings.timeReference,
-      today,
-      t,
-      heatmapSize,
-      classes,
-    ]
+    [heatmapData, activityMap, settings.timeReference, today, t, heatmapSize]
   );
 
   // Render mobile heatmaps - split into 3 separate 2-month ranges

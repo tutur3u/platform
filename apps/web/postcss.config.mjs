@@ -1,8 +1,8 @@
-export { default } from '@tuturuuu/ui/postcss.config';
-
-
-module.exports = {
+import baseConfig from '@tuturuuu/ui/postcss.config';
+export default {
+  ...baseConfig,
   plugins: {
+    ...baseConfig.plugins,
     'postcss-preset-mantine': {},
     'postcss-simple-vars': {
       variables: {

@@ -1,7 +1,7 @@
 'use client';
 
-import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { Calendar } from '@tuturuuu/icons';
+import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
@@ -13,25 +13,29 @@ import {
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 
-interface HeatmapSettings {
-  viewMode: 'original' | 'hybrid' | 'calendar-only' | 'compact-cards';
+export type HeatmapViewMode =
+  | 'original'
+  | 'hybrid'
+  | 'calendar-only'
+  | 'compact-cards';
+
+export interface HeatmapSettings {
+  viewMode: HeatmapViewMode;
   timeReference: 'relative' | 'absolute' | 'smart';
   showOnboardingTips: boolean;
 }
 
-const DEFAULT_SETTINGS: HeatmapSettings = {
-  viewMode: 'original',
+export const DEFAULT_SETTINGS: HeatmapSettings = {
+  viewMode: 'hybrid',
   timeReference: 'smart',
   showOnboardingTips: true,
 };
 
 export function HeatmapSettingsForm() {
   const t = useTranslations('time-tracker.heatmap_settings');
-  
-  const [heatmapSettings, setHeatmapSettings] = useLocalStorage<HeatmapSettings>(
-    'heatmap-settings',
-    DEFAULT_SETTINGS
-  );
+
+  const [heatmapSettings, setHeatmapSettings] =
+    useLocalStorage<HeatmapSettings>('heatmap-settings', DEFAULT_SETTINGS);
 
   const updateSettings = (updates: Partial<HeatmapSettings>) => {
     setHeatmapSettings({
@@ -118,7 +122,9 @@ export function HeatmapSettingsForm() {
               <SelectItem value="absolute">
                 {t('time_reference_modes.absolute')}
               </SelectItem>
-              <SelectItem value="smart">{t('time_reference_modes.smart')}</SelectItem>
+              <SelectItem value="smart">
+                {t('time_reference_modes.smart')}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
