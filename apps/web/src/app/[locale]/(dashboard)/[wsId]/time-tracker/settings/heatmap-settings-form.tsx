@@ -27,11 +27,9 @@ const DEFAULT_SETTINGS: HeatmapSettings = {
 
 export function HeatmapSettingsForm() {
   const t = useTranslations('time-tracker.heatmap_settings');
-  
-  const [heatmapSettings, setHeatmapSettings] = useLocalStorage<HeatmapSettings>(
-    'heatmap-settings',
-    DEFAULT_SETTINGS
-  );
+
+  const [heatmapSettings, setHeatmapSettings] =
+    useLocalStorage<HeatmapSettings>('heatmap-settings', DEFAULT_SETTINGS);
 
   const updateSettings = (updates: Partial<HeatmapSettings>) => {
     setHeatmapSettings({
@@ -118,7 +116,9 @@ export function HeatmapSettingsForm() {
               <SelectItem value="absolute">
                 {t('time_reference_modes.absolute')}
               </SelectItem>
-              <SelectItem value="smart">{t('time_reference_modes.smart')}</SelectItem>
+              <SelectItem value="smart">
+                {t('time_reference_modes.smart')}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>

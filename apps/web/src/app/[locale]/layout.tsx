@@ -16,7 +16,6 @@ import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
 
-
 export { viewport } from '@tuturuuu/utils/common/nextjs';
 
 interface Props {

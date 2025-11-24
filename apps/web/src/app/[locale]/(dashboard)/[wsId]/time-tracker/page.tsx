@@ -258,11 +258,7 @@ function StatsCardSkeleton() {
 }
 
 // Heatmap card with loading state
-function HeatmapCard({
-  dailyActivity,
-}: {
-  dailyActivity: DailyActivity;
-}) {
+function HeatmapCard({ dailyActivity }: { dailyActivity: DailyActivity }) {
   return (
     <Card className="relative overflow-visible">
       <CardContent className="pt-6">
