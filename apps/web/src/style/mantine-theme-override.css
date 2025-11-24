@@ -1,0 +1,196 @@
+/**
+ * Mantine Theme Override - Color Synchronization & Global Style Reset
+ *
+ * CRITICAL: This file maps application theme colors to Mantine's color system
+ * and prevents Mantine from polluting global styles.
+ *
+ * ⚠️  IMPORTANT: When updating colors in packages/ui/src/globals.css, you MUST
+ *     update the corresponding Mantine variables in this file to maintain
+ *     visual consistency.
+ *
+ * 📖 Documentation: See docs/MANTINE_THEME_SYNC.md for:
+ *    - Complete color mapping reference
+ *    - Maintenance workflow
+ *    - Troubleshooting guide
+ *    - AI agent instructions
+ *
+ * Source of Truth: packages/ui/src/globals.css
+ * Last Synced: 2024-11-24
+ */
+
+/* ============================================================================
+ * CRITICAL: Prevent Mantine from affecting global font size
+ * ============================================================================
+ * Mantine sets a default font-size on the html element which can cascade
+ * throughout the application. We need to reset this and ensure our app's
+ * typography system takes precedence.
+ */
+
+/* Reset Mantine's global font-size override */
+html {
+  font-size: 16px !important;
+}
+
+/* Reset Mantine's rem calculation - prevent it from scaling everything */
+:root {
+  --mantine-scale: 1 !important;
+}
+
+/* Ensure all Mantine components inherit font settings from parent */
+[class*="mantine-"] {
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+
+/* Specifically target common Mantine text elements */
+.mantine-Text-root,
+.mantine-Title-root,
+.mantine-Button-root,
+.mantine-Input-input,
+.mantine-Select-input,
+.mantine-Textarea-input {
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+
+/* Ensure Tailwind utilities are not overridden by Mantine */
+/* This needs to be very specific to override Mantine's styles */
+.text-xs {
+  font-size: 0.75rem !important;
+  line-height: 1rem !important;
+}
+
+.text-sm {
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+}
+
+.text-base {
+  font-size: 1rem !important;
+  line-height: 1.5rem !important;
+}
+
+.text-lg {
+  font-size: 1.125rem !important;
+  line-height: 1.75rem !important;
+}
+
+.text-xl {
+  font-size: 1.25rem !important;
+  line-height: 1.75rem !important;
+}
+
+/* Override Mantine's dark mode colors to match our application */
+.dark {
+  /* Mantine body/background colors - match app's dark background */
+  --mantine-color-body: hsl(0, 4%, 10%) !important;
+  --mantine-color-text: hsl(0 0% 98%) !important;
+
+  /* Mantine default background and text */
+  --mantine-color-default: hsl(0 0% 14.9%) !important;
+  --mantine-color-default-hover: hsl(0 0% 20%) !important;
+  --mantine-color-default-color: hsl(0 0% 98%) !important;
+  --mantine-color-default-border: hsl(0 0% 14.9%) !important;
+
+  /* Mantine dark color scheme backgrounds */
+  --mantine-color-dark-0: hsl(0 0% 80%) !important;
+  --mantine-color-dark-1: hsl(0 0% 70%) !important;
+  --mantine-color-dark-2: hsl(0 0% 60%) !important;
+  --mantine-color-dark-3: hsl(0 0% 50%) !important;
+  --mantine-color-dark-4: hsl(0 0% 40%) !important;
+  --mantine-color-dark-5: hsl(0 0% 30%) !important;
+  --mantine-color-dark-6: hsl(0 0% 20%) !important;
+  --mantine-color-dark-7: hsl(0 0% 14.9%) !important;
+  --mantine-color-dark-8: hsl(0 0% 10%) !important;
+  --mantine-color-dark-9: hsl(0 0% 3.9%) !important;
+
+  /* Dimmed text color */
+  --mantine-color-dimmed: hsl(0 0% 63.9%) !important;
+
+  /* Placeholder color */
+  --mantine-color-placeholder: hsl(0 0% 45%) !important;
+
+  /* Border colors */
+  --mantine-color-border: hsl(0 0% 14.9%) !important;
+}
+
+/* Light mode overrides to ensure consistency */
+:root:not(.dark) {
+  --mantine-color-body: hsl(0 0% 100%) !important;
+  --mantine-color-text: hsl(0 0% 3.9%) !important;
+  --mantine-color-dimmed: hsl(0 0% 45.1%) !important;
+  --mantine-color-placeholder: hsl(0 0% 60%) !important;
+  --mantine-color-border: hsl(0 0% 89.8%) !important;
+}
+
+/* Ensure Mantine components inherit app's background and text colors */
+.dark [data-mantine-color-scheme="dark"] {
+  background-color: transparent !important;
+  color: hsl(0 0% 98%) !important;
+}
+
+/* Override Mantine's tooltip colors in dark mode */
+.dark .mantine-Tooltip-tooltip {
+  background-color: hsl(0 0% 14.9%) !important;
+  color: hsl(0 0% 98%) !important;
+  border: 1px solid hsl(0 0% 20%) !important;
+}
+
+/* Override Mantine's popover colors in dark mode */
+.dark .mantine-Popover-dropdown {
+  background-color: hsl(0 0% 3.9%) !important;
+  border-color: hsl(0 0% 14.9%) !important;
+  color: hsl(0 0% 98%) !important;
+}
+
+/* Override Mantine's modal colors in dark mode */
+.dark .mantine-Modal-content {
+  background-color: hsl(0 0% 3.9%) !important;
+  color: hsl(0 0% 98%) !important;
+}
+
+/* Override Mantine's paper/card colors in dark mode */
+.dark .mantine-Paper-root {
+  background-color: hsl(0 0% 3.9%) !important;
+  border-color: hsl(0 0% 14.9%) !important;
+  color: hsl(0 0% 98%) !important;
+}
+
+/* Ensure text elements use app's foreground color */
+.dark .mantine-Text-root {
+  color: inherit !important;
+}
+
+/* Override any Mantine element that might have white background in dark mode */
+.dark [class*="mantine-"] {
+  /* Don't override specific component backgrounds, just ensure text is readable */
+  color: inherit;
+}
+
+/*
+ * ============================================================================
+ * MAINTENANCE CHECKLIST
+ * ============================================================================
+ * 
+ * When updating application theme colors (packages/ui/src/globals.css):
+ * 
+ * ☐ Update corresponding --mantine-color-* variables above
+ * ☐ Test both light and dark modes with Mantine components
+ * ☐ Verify no visual discontinuities with surrounding UI
+ * ☐ Update "Last Synced" date in header comment
+ * ☐ Update color mapping tables in docs/MANTINE_THEME_SYNC.md
+ * ☐ Test across different pages using Mantine components
+ * 
+ * Key Color Mappings (Dark Mode):
+ * - --root-background (hsl(0, 4%, 10%)) → --mantine-color-body
+ * - --background (hsl(0 0% 3.9%)) → --mantine-color-dark-9
+ * - --foreground (hsl(0 0% 98%)) → --mantine-color-text
+ * - --secondary (hsl(0 0% 14.9%)) → --mantine-color-default
+ * - --muted-foreground (hsl(0 0% 63.9%)) → --mantine-color-dimmed
+ * - --border (hsl(0 0% 14.9%)) → --mantine-color-border
+ * 
+ * See docs/MANTINE_THEME_SYNC.md for complete documentation.
+ * ============================================================================
+ */
