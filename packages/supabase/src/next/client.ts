@@ -2,7 +2,8 @@ import { createBrowserClient } from '@supabase/ssr';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@tuturuuu/types';
 import { checkEnvVariables } from './common';
-import { getRealtimeLogLevel, realtimeLogger } from './realtime-log-provider';
+
+// import { getRealtimeLogLevel, realtimeLogger } from './realtime-log-provider';
 
 const { url, key } = checkEnvVariables({ useSecretKey: false });
 type TypedSupabaseClient = SupabaseClient<Database>;
@@ -10,21 +11,29 @@ type TypedSupabaseClient = SupabaseClient<Database>;
 // Using SupabaseClient<any> to allow dynamic client creation without schema constraints.
 // This is intentional for cases where the database schema type is determined at runtime.
 export function createDynamicClient(): SupabaseClient<any> {
-  return createBrowserClient(url, key, {
-    realtime: {
-      logLevel: getRealtimeLogLevel() as any,
-      logger: realtimeLogger,
-    },
-  });
+  return createBrowserClient(
+    url,
+    key
+    // {
+    //   realtime: {
+    //     logLevel: getRealtimeLogLevel() as any,
+    //     logger: realtimeLogger,
+    //   },
+    // }
+  );
 }
 
 export function createClient<T = Database>(): SupabaseClient<T> {
-  return createBrowserClient<T>(url, key, {
-    realtime: {
-      logLevel: getRealtimeLogLevel() as any,
-      logger: realtimeLogger,
-    },
-  });
+  return createBrowserClient<T>(
+    url,
+    key
+    // {
+    //   realtime: {
+    //     logLevel: getRealtimeLogLevel() as any,
+    //     logger: realtimeLogger,
+    //   },
+    // }
+  );
 }
 
 /**
@@ -34,12 +43,16 @@ export function createClient<T = Database>(): SupabaseClient<T> {
 export async function createClientWithSession<T = Database>(
   session: Session
 ): Promise<SupabaseClient<T>> {
-  const client = createBrowserClient<T>(url, key, {
-    realtime: {
-      logLevel: getRealtimeLogLevel() as any,
-      logger: realtimeLogger,
-    },
-  });
+  const client = createBrowserClient<T>(
+    url,
+    key
+    // {
+    //   realtime: {
+    //     logLevel: getRealtimeLogLevel() as any,
+    //     logger: realtimeLogger,
+    //   },
+    // }
+  );
 
   // Set the session manually
   // This will override any existing session
