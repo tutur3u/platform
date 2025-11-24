@@ -75,11 +75,11 @@
   .heatmapContainer :global(.mantine-Heatmap-monthLabel) {
     font-size: 9px !important;
   }
-  
+
   .heatmapContainer :global(.mantine-Heatmap-weekdayLabel) {
     font-size: 8px !important;
   }
-  
+
   /* Enhanced scrolling for mobile - horizontal scroll */
   .heatmapContainer {
     overflow-x: auto;
@@ -88,7 +88,7 @@
     scroll-behavior: smooth;
     scroll-padding: 1rem;
   }
-  
+
   .heatmapContainer :global(.mantine-Heatmap-root) {
     -webkit-overflow-scrolling: touch;
     scroll-padding: 1rem;
@@ -102,4 +102,3 @@
     scroll-padding: 1rem;
   }
 }
-
