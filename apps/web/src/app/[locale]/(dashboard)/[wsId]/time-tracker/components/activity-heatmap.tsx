@@ -28,10 +28,13 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import 'dayjs/locale/vi';
+import { Heatmap } from '@mantine/charts';
+import { ScrollArea } from '@mantine/core';
+import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
+import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
-import { Heatmap } from '@mantine/charts';
+import classes from '@/style/mantine-heatmap.module.css';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -79,11 +82,109 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
   const [settings, setSettings] = useLocalStorage<HeatmapSettings>(
     'heatmap-settings',
     {
-      viewMode: 'original',
+      viewMode: 'hybrid',
       timeReference: 'smart',
       showOnboardingTips: true,
     }
   );
+
+  // Use the existing mobile detection hook
+  const isMobile = useIsMobile();
+
+  // Responsive heatmap sizing based on screen width
+  const [heatmapSize, setHeatmapSize] = useState({
+    rectSize: 14,
+    rectRadius: 2,
+    gap: 3,
+  });
+
+  // Responsive date range configuration
+  const [dateRangeConfig, setDateRangeConfig] = useState({
+    startDate: dayjs().subtract(364, 'day').format('YYYY-MM-DD'),
+    endDate: dayjs().format('YYYY-MM-DD'),
+    splitMonths: false,
+    withOutsideDates: true,
+  });
+
+  useEffect(() => {
+    const updateSize = () => {
+      const width = window.innerWidth;
+      const timezone = dayjs.tz.guess();
+      const today = dayjs().tz(timezone);
+
+      if (width < 640) {
+        // Mobile: smaller squares, last 6 months with split months
+        setHeatmapSize({ rectSize: 20, rectRadius: 1, gap: 2 });
+        setDateRangeConfig({
+          startDate: today
+            .subtract(6, 'month')
+            .startOf('month')
+            .format('YYYY-MM-DD'),
+          endDate: today.format('YYYY-MM-DD'),
+          splitMonths: true,
+          withOutsideDates: false,
+        });
+      } else if (width < 768) {
+        // Small tablet: last 6 months with split months
+        setHeatmapSize({ rectSize: 12, rectRadius: 2, gap: 2 });
+        setDateRangeConfig({
+          startDate: today
+            .subtract(6, 'month')
+            .startOf('month')
+            .format('YYYY-MM-DD'),
+          endDate: today.format('YYYY-MM-DD'),
+          splitMonths: true,
+          withOutsideDates: false,
+        });
+      } else if (width < 1024) {
+        // Tablet: last 9 months with split months
+        setHeatmapSize({ rectSize: 12, rectRadius: 2, gap: 2.5 });
+        setDateRangeConfig({
+          startDate: today
+            .subtract(9, 'month')
+            .startOf('month')
+            .format('YYYY-MM-DD'),
+          endDate: today.format('YYYY-MM-DD'),
+          splitMonths: true,
+          withOutsideDates: false,
+        });
+      } else if (width < 1280) {
+        // Small desktop: full year without split months
+        setHeatmapSize({ rectSize: 14, rectRadius: 2, gap: 3 });
+        setDateRangeConfig({
+          startDate: today.subtract(364, 'day').format('YYYY-MM-DD'),
+          endDate: today.format('YYYY-MM-DD'),
+          splitMonths: false,
+          withOutsideDates: true,
+        });
+      } else {
+        // Large desktop: full year without split months
+        setHeatmapSize({ rectSize: 24, rectRadius: 3, gap: 3 });
+        setDateRangeConfig({
+          startDate: today.subtract(364, 'day').format('YYYY-MM-DD'),
+          endDate: today.format('YYYY-MM-DD'),
+          splitMonths: false,
+          withOutsideDates: true,
+        });
+      }
+    };
+
+    // Initial size calculation
+    updateSize();
+
+    // Debounced resize handler for better performance
+    let resizeTimer: ReturnType<typeof setTimeout>;
+    const debouncedResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(updateSize, 150);
+    };
+
+    window.addEventListener('resize', debouncedResize);
+    return () => {
+      window.removeEventListener('resize', debouncedResize);
+      clearTimeout(resizeTimer);
+    };
+  }, []);
 
   // Smart onboarding tips state - separate from general settings for better control
   const [onboardingState, setOnboardingState] = useLocalStorage(
@@ -199,7 +300,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
     dailyActivity?.forEach((activity) => {
       const activityDate = dayjs.utc(activity.date).tz(userTimezone);
       const dateStr = activityDate.format('YYYY-MM-DD');
-      // Use duration in hours for better visualization
+      // Store duration in seconds (Mantine will handle the scaling)
       dataObj[dateStr] = activity.duration;
     });
     return dataObj;
@@ -1156,19 +1257,158 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
     );
   }
 
+  // Helper function to render a single heatmap with given date range
+  const renderSingleHeatmap = useCallback(
+    (startDate: string, endDate: string) => {
+      return (
+        <Heatmap
+          data={heatmapData}
+          startDate={startDate}
+          endDate={endDate}
+          splitMonths={false}
+          withOutsideDates={false}
+          withMonthLabels
+          withWeekdayLabels
+          withTooltip
+          firstDayOfWeek={1} // Monday
+          monthLabels={[
+            t('months.jan'),
+            t('months.feb'),
+            t('months.mar'),
+            t('months.apr'),
+            t('months.may'),
+            t('months.jun'),
+            t('months.jul'),
+            t('months.aug'),
+            t('months.sep'),
+            t('months.oct'),
+            t('months.nov'),
+            t('months.dec'),
+          ]}
+          weekdayLabels={[
+            t('days.sunShort'),
+            t('days.monShort'),
+            '',
+            t('days.wedShort'),
+            '',
+            t('days.friShort'),
+            '',
+          ]}
+          getTooltipLabel={({ date, value }) => {
+            const activity = activityMap.get(date);
+            const dateObj = dayjs(date);
+
+            if (!activity || value === null || value === 0) {
+              return `${dateObj.format('ddd, DD/MM/YYYY')} – ${t('noActivityRecorded')}`;
+            }
+
+            const parts: string[] = [dateObj.format('ddd, DD/MM/YYYY')];
+
+            if (settings.timeReference === 'smart') {
+              parts.push(dateObj.fromNow());
+            }
+
+            parts.push(`${formatDuration(activity.duration)} ${t('tracked')}`);
+
+            if (activity.sessions > 0) {
+              parts.push(t('sessions', { count: activity.sessions }));
+            }
+
+            if (dateObj.isSame(today, 'day')) {
+              parts.push(`(${t('today')})`);
+            }
+
+            return parts.join(' • ');
+          }}
+          colors={[
+            'var(--heatmap-level-1)',
+            'var(--heatmap-level-2)',
+            'var(--heatmap-level-3)',
+            'var(--heatmap-level-4)',
+          ]}
+          rectSize={heatmapSize.rectSize}
+          rectRadius={heatmapSize.rectRadius}
+          gap={heatmapSize.gap}
+          classNames={classes}
+        />
+      );
+    },
+    [
+      heatmapData,
+      activityMap,
+      settings.timeReference,
+      today,
+      t,
+      heatmapSize,
+      classes,
+    ]
+  );
+
+  // Render mobile heatmaps - split into 3 separate 2-month ranges
+  const renderMobileHeatmaps = useCallback(() => {
+    const timezone = dayjs.tz.guess();
+    const now = dayjs().tz(timezone);
+
+    // Calculate 3 periods of 2 months each (total 6 months)
+    const period3End = now.format('YYYY-MM-DD');
+    const period3Start = now
+      .subtract(2, 'month')
+      .startOf('month')
+      .format('YYYY-MM-DD');
+
+    const period2End = now
+      .subtract(2, 'month')
+      .startOf('month')
+      .subtract(1, 'day')
+      .format('YYYY-MM-DD');
+    const period2Start = now
+      .subtract(4, 'month')
+      .startOf('month')
+      .format('YYYY-MM-DD');
+
+    const period1End = now
+      .subtract(4, 'month')
+      .startOf('month')
+      .subtract(1, 'day')
+      .format('YYYY-MM-DD');
+    const period1Start = now
+      .subtract(6, 'month')
+      .startOf('month')
+      .format('YYYY-MM-DD');
+
+    return (
+      <div className="space-y-4">
+        {/* Period 1: Oldest 2 months */}
+        <ScrollArea type="auto">
+          {renderSingleHeatmap(period1Start, period1End)}
+        </ScrollArea>
+
+        {/* Period 2: Middle 2 months */}
+        <ScrollArea type="auto">
+          {renderSingleHeatmap(period2Start, period2End)}
+        </ScrollArea>
+
+        {/* Period 3: Most recent 2 months */}
+        <ScrollArea type="auto">
+          {renderSingleHeatmap(period3Start, period3End)}
+        </ScrollArea>
+      </div>
+    );
+  }, [renderSingleHeatmap]);
+
   return (
     <div className="relative space-y-4 overflow-visible sm:space-y-5">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 flex items-center gap-3">
+      <div className="flex flex-row gap-3 md:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-dynamic-green to-dynamic-cyan shadow-lg">
             <Calendar className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900 text-lg sm:text-xl dark:text-gray-100">
+            <h3 className="font-semibold text-dynamic-foreground text-lg sm:text-xl">
               {t('title')}
             </h3>
-            <p className="text-gray-600 text-sm sm:text-base dark:text-gray-400">
+            <p className="text-dynamic-muted text-sm sm:text-base">
               {totalDuration > 0
                 ? t('trackedThisYear', {
                     duration: formatDuration(totalDuration),
@@ -1177,7 +1417,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col items-center gap-2 md:flex-row">
           {/* View Mode Settings */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -1286,23 +1526,28 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
           </DropdownMenu>
 
           {/* Legend */}
-          <div className="flex items-center gap-2 rounded-lg bg-white/80 px-3 py-2 text-gray-600 text-xs shadow-sm ring-1 ring-gray-200/50 sm:gap-3 dark:bg-gray-800/80 dark:text-gray-400 dark:ring-gray-700/50">
-            <span className="hidden font-medium sm:inline">
+          <div
+            className={cn(
+              'flex items-center gap-2 rounded-lg border border-dynamic-border/60 bg-dynamic-surface/80 px-3 py-2 text-dynamic-muted text-xs shadow-sm sm:gap-3',
+              classes.heatmapColors
+            )}
+          >
+            <span className="hidden font-medium text-dynamic-foreground sm:inline">
               {t('legend.less')}
             </span>
             <div className="flex items-center gap-1">
-              {[0, 1, 2, 3, 4].map((intensity) => (
+              {[1, 2, 3, 4].map((intensity) => (
                 <div
                   key={intensity}
-                  className={cn(
-                    'h-2.5 w-2.5 rounded-[2px] transition-transform hover:scale-125 sm:h-3 sm:w-3',
-                    getColorClass(intensity)
-                  )}
+                  className="h-2.5 w-2.5 rounded-[2px] transition-transform hover:scale-125 sm:h-3 sm:w-3"
+                  style={{
+                    backgroundColor: `var(--heatmap-level-${intensity})`,
+                  }}
                   title={t('legend.levelIntensity', { level: intensity })}
                 />
               ))}
             </div>
-            <span className="hidden font-medium sm:inline">
+            <span className="hidden font-medium text-dynamic-foreground sm:inline">
               {t('legend.more')}
             </span>
           </div>
@@ -1367,74 +1612,26 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
 
       {/* Render Different Views Based on Settings */}
       {settings.viewMode === 'original' && (
-        <div className="rounded-lg border bg-white/50 p-4 dark:border-gray-700/60 dark:bg-gray-900/30">
-          <Heatmap
-            data={heatmapData}
-            startDate={dayjs().subtract(364, 'day').format('YYYY-MM-DD')}
-            endDate={dayjs().format('YYYY-MM-DD')}
-            withMonthLabels
-            withWeekdayLabels
-            withTooltip
-            firstDayOfWeek={1} // Monday
-            monthLabels={[
-              t('months.jan'),
-              t('months.feb'),
-              t('months.mar'),
-              t('months.apr'),
-              t('months.may'),
-              t('months.jun'),
-              t('months.jul'),
-              t('months.aug'),
-              t('months.sep'),
-              t('months.oct'),
-              t('months.nov'),
-              t('months.dec'),
-            ]}
-            weekdayLabels={[
-              t('days.sunShort'),
-              t('days.monShort'),
-              t('days.tueShort'),
-              t('days.wedShort'),
-              t('days.thuShort'),
-              t('days.friShort'),
-              t('days.satShort'),
-            ]}
-            getTooltipLabel={({ date, value }) => {
-              const activity = activityMap.get(date);
-              const dateObj = dayjs(date);
-              
-              let tooltip = `${dateObj.format('ddd, DD/MM/YYYY')}`;
-              
-              if (settings.timeReference === 'smart') {
-                tooltip += `\n${dateObj.fromNow()}`;
-              }
-              
-              if (activity) {
-                tooltip += `\n${formatDuration(activity.duration)} ${t('tracked')}`;
-                if (activity.sessions > 0) {
-                  tooltip += `\n${t('sessions', { count: activity.sessions })}`;
-                }
-              } else {
-                tooltip += `\n${t('noActivityRecorded')}`;
-              }
-              
-              if (dateObj.isSame(today, 'day')) {
-                tooltip += `\n${t('today')}`;
-              }
-              
-              return tooltip;
-            }}
-            colors={[
-              'var(--mantine-color-emerald-2)',
-              'var(--mantine-color-emerald-4)',
-              'var(--mantine-color-emerald-6)',
-              'var(--mantine-color-emerald-8)',
-            ]}
-            domain={[0, 7200]} // 0 to 2 hours in seconds
-            rectSize={15}
-            rectRadius={2}
-            gap={2.5}
-          />
+        <div
+          className={cn(
+            'w-full bg-dynamic-surface/50 p-4',
+            classes.heatmapContainer,
+            classes.heatmapColors
+          )}
+        >
+          {/* Conditional rendering based on screen size - only render what's needed */}
+          {isMobile ? (
+            // Mobile: 3 separate heatmaps in vertical layout, each horizontally scrollable
+            renderMobileHeatmaps()
+          ) : (
+            // Desktop: Single scrollable heatmap
+            <ScrollArea type="auto">
+              {renderSingleHeatmap(
+                dateRangeConfig.startDate,
+                dateRangeConfig.endDate
+              )}
+            </ScrollArea>
+          )}
         </div>
       )}
 

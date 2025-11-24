@@ -4,13 +4,6 @@
   "workspaces": {
     "": {
       "name": "tutur3u",
-      "dependencies": {
-        "@mantine/charts": "^8.3.8",
-        "@mantine/core": "^8.3.8",
-        "postcss": "^8.5.6",
-        "postcss-preset-mantine": "^1.18.0",
-        "postcss-simple-vars": "^7.0.1",
-      },
       "devDependencies": {
         "@biomejs/biome": "^2.3.7",
         "@tuturuuu/typescript-config": "workspace:*",
@@ -410,6 +403,8 @@
         "@emotion/server": "^11.11.0",
         "@formatjs/intl-localematcher": "^0.6.2",
         "@hookform/resolvers": "^5.2.2",
+        "@mantine/charts": "^8.3.9",
+        "@mantine/core": "^8.3.9",
         "@mantine/hooks": "^8.3.8",
         "@octokit/auth-app": "^8.1.2",
         "@octokit/rest": "^22.0.1",

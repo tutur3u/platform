@@ -9,11 +9,11 @@ import {
 } from '@tuturuuu/ui/card';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
-import { ActivityHeatmap } from './components/activity-heatmap';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { ActivityHeatmap } from './components/activity-heatmap';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('time-tracker');
@@ -258,13 +258,9 @@ function StatsCardSkeleton() {
 }
 
 // Heatmap card with loading state
-function HeatmapCard({
-  dailyActivity,
-}: {
-  dailyActivity: DailyActivity;
-}) {
+function HeatmapCard({ dailyActivity }: { dailyActivity: DailyActivity }) {
   return (
-    <Card className="relative overflow-visible">
+    <Card className="relative overflow-x-auto">
       <CardContent className="pt-6">
         <div className="relative overflow-visible">
           <ActivityHeatmap dailyActivity={dailyActivity} />
@@ -276,7 +272,7 @@ function HeatmapCard({
 
 function HeatmapCardSkeleton() {
   return (
-    <Card className="relative overflow-visible">
+    <Card className="relative overflow-x-auto">
       <CardHeader>
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
