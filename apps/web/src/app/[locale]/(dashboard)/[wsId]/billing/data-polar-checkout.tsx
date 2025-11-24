@@ -36,12 +36,10 @@ const PurchaseLink = ({
         }),
       });
 
-      if (response.redirected) {
-        window.location.href = response.url;
-      } else if (response.ok) {
+      if (response.ok) {
         const data = await response.json();
         if (data.url) {
-          window.location.href = data.url;
+          window.open(data.url, '_blank', 'noopener,noreferrer');
         }
       } else {
         console.error('Failed to create checkout session');

@@ -78,10 +78,11 @@ export async function POST(request: NextRequest) {
     metadata: {
       wsId,
     },
+    customerName: data.display_name,
+    customerEmail: user?.email,
   });
 
-  return NextResponse.redirect(
-    checkoutSession.url +
-      `?customerEmail=${user?.email}&customer_name=${data.display_name}`
-  );
+  const checkoutUrl = checkoutSession.url;
+
+  return NextResponse.json({ url: checkoutUrl });
 }
