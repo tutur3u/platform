@@ -1318,7 +1318,11 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
               parts.push(`(${t('today')})`);
             }
 
-            return parts.join(' • ');
+            return parts.join(' ');
+          }}
+          tooltipProps={{
+            multiline: true,
+            w: 200,
           }}
           colors={[
             'var(--heatmap-level-1)',
