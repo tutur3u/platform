@@ -8341,9 +8341,11 @@ export type Database = {
           created_at: string | null;
           deleted: boolean | null;
           display_name: string | null;
+          first_day_of_week: string | null;
           handle: string | null;
           id: string;
           services: Database['public']['Enums']['platform_service'][];
+          timezone: string | null;
         };
         Insert: {
           avatar_url?: string | null;
@@ -8351,9 +8353,11 @@ export type Database = {
           created_at?: string | null;
           deleted?: boolean | null;
           display_name?: string | null;
+          first_day_of_week?: string | null;
           handle?: string | null;
           id?: string;
           services?: Database['public']['Enums']['platform_service'][];
+          timezone?: string | null;
         };
         Update: {
           avatar_url?: string | null;
@@ -8361,9 +8365,11 @@ export type Database = {
           created_at?: string | null;
           deleted?: boolean | null;
           display_name?: string | null;
+          first_day_of_week?: string | null;
           handle?: string | null;
           id?: string;
           services?: Database['public']['Enums']['platform_service'][];
+          timezone?: string | null;
         };
         Relationships: [
           {
@@ -12193,33 +12199,39 @@ export type Database = {
           created_at: string | null;
           creator_id: string | null;
           deleted: boolean | null;
+          first_day_of_week: string | null;
           handle: string | null;
           id: string;
           logo_url: string | null;
           name: string | null;
           personal: boolean;
+          timezone: string | null;
         };
         Insert: {
           avatar_url?: string | null;
           created_at?: string | null;
           creator_id?: string | null;
           deleted?: boolean | null;
+          first_day_of_week?: string | null;
           handle?: string | null;
           id?: string;
           logo_url?: string | null;
           name?: string | null;
           personal?: boolean;
+          timezone?: string | null;
         };
         Update: {
           avatar_url?: string | null;
           created_at?: string | null;
           creator_id?: string | null;
           deleted?: boolean | null;
+          first_day_of_week?: string | null;
           handle?: string | null;
           id?: string;
           logo_url?: string | null;
           name?: string | null;
           personal?: boolean;
+          timezone?: string | null;
         };
         Relationships: [
           {

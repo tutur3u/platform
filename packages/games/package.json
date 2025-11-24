@@ -19,7 +19,7 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.10.1",
-    "@types/react": "^19.2.6",
+    "@types/react": "^19.2.7",
     "@vitejs/plugin-react": "^5.1.1",
     "typescript": "^5.9.3",
     "vite": "^7.2.4"

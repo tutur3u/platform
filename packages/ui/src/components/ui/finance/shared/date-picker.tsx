@@ -12,6 +12,10 @@ interface Props {
   fromDate?: Date;
   toDate?: Date;
   className?: string;
+  preferences?: {
+    weekStartsOn?: 0 | 1 | 6;
+    timezone?: string;
+  };
 }
 
 export function DatePicker({
@@ -20,6 +24,7 @@ export function DatePicker({
   className,
   fromDate,
   toDate,
+  preferences,
 }: Props) {
   const [open, setOpen] = useState(false);
 
@@ -54,6 +59,7 @@ export function DatePicker({
           }}
           fromDate={fromDate}
           toDate={toDate}
+          preferences={preferences}
           initialFocus
         />
       </PopoverContent>

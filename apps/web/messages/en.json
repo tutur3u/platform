@@ -3644,6 +3644,10 @@
     "appearance-description": "Customize the look and feel of your interface",
     "security-description": "Manage your security settings and linked accounts",
     "billing-description": "View and manage your subscription and billing information",
+    "timezone": "Timezone",
+    "timezone-description": "Set your preferred timezone for calendar and scheduling features. This overrides workspace timezone.",
+    "first-day-of-week": "First day of week",
+    "first-day-of-week-description": "Choose the first day of your week for calendar display. This overrides workspace settings.",
     "revert_changes": "Revert changes",
     "preview": "Preview",
     "display-name": "Display name",
@@ -3847,7 +3851,14 @@
     "appearance": "Appearance",
     "appearance-description": "Customize the look and feel of Tuturuuu.",
     "light-mode": "Light mode",
-    "dark-mode": "Dark mode"
+    "dark-mode": "Dark mode",
+    "auto": "Auto",
+    "auto-detect": "Auto-detect",
+    "sunday": "Sunday",
+    "monday": "Monday",
+    "saturday": "Saturday",
+    "timezone-auto-description": "Automatically detect timezone from your system",
+    "first-day-auto-description": "Automatically detect first day of week based on your locale"
   },
   "settings-security": {
     "security": "Security",

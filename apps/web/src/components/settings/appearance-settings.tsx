@@ -1,5 +1,7 @@
 'use client';
 
+import { detectSystemTimezone } from '@/lib/calendar-settings-resolver';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { Label } from '@tuturuuu/ui/label';
 import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
@@ -11,6 +13,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useRouter } from 'next/navigation';
@@ -22,6 +25,52 @@ export default function AppearanceSettings() {
   const locale = useLocale();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
+
+  // Fetch user calendar settings
+  const { data: calendarSettings, isLoading: isLoadingSettings } = useQuery({
+    queryKey: ['user-calendar-settings'],
+    queryFn: async () => {
+      const res = await fetch('/api/v1/users/calendar-settings');
+      if (!res.ok) throw new Error('Failed to fetch calendar settings');
+      return res.json() as Promise<{
+        timezone: string;
+        first_day_of_week: string;
+      }>;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Mutation for updating user calendar settings
+  const updateCalendarSettings = useMutation({
+    mutationFn: async (data: {
+      timezone?: string;
+      first_day_of_week?: string;
+    }) => {
+      const res = await fetch('/api/v1/users/calendar-settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error('Failed to update calendar settings');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-calendar-settings'] });
+      // Also invalidate workspace calendar settings to refresh override badges
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-calendar-settings'],
+      });
+      toast.success(t('common.success'), {
+        description: 'Calendar settings updated successfully',
+      });
+    },
+    onError: () => {
+      toast.error(t('common.error'), {
+        description: 'Failed to update calendar settings',
+      });
+    },
+  });
 
   const handleLocaleChange = async (newLocale: string) => {
     const res = await fetch('/api/v1/infrastructure/languages', {
@@ -38,6 +87,18 @@ export default function AppearanceSettings() {
       });
     }
   };
+
+  const handleTimezoneChange = (timezone: string) => {
+    updateCalendarSettings.mutate({ timezone });
+  };
+
+  const handleFirstDayChange = (firstDay: string) => {
+    updateCalendarSettings.mutate({ first_day_of_week: firstDay });
+  };
+
+  // Get list of available timezones
+  const timezones = Intl.supportedValuesOf('timeZone');
+  const systemTimezone = detectSystemTimezone();
 
   return (
     <div className="space-y-8">
@@ -104,6 +165,64 @@ export default function AppearanceSettings() {
           <SelectContent>
             <SelectItem value="en">English</SelectItem>
             <SelectItem value="vi">Tiếng Việt</SelectItem>
+          </SelectContent>
+        </Select>
+      </SettingItemTab>
+
+      <Separator />
+
+      <SettingItemTab
+        title={t('settings-account.timezone')}
+        description={t('settings-account.timezone-description')}
+      >
+        <Select
+          value={calendarSettings?.timezone || 'auto'}
+          onValueChange={handleTimezoneChange}
+          disabled={isLoadingSettings || updateCalendarSettings.isPending}
+        >
+          <SelectTrigger className="w-[300px]">
+            <SelectValue placeholder={t('settings-appearance.auto-detect')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="auto">
+              {t('settings-appearance.auto-detect')} ({systemTimezone})
+            </SelectItem>
+            {timezones.map((tz) => (
+              <SelectItem key={tz} value={tz}>
+                {tz}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </SettingItemTab>
+
+      <Separator />
+
+      <SettingItemTab
+        title={t('settings-account.first-day-of-week')}
+        description={t('settings-account.first-day-of-week-description')}
+      >
+        <Select
+          value={calendarSettings?.first_day_of_week || 'auto'}
+          onValueChange={handleFirstDayChange}
+          disabled={isLoadingSettings || updateCalendarSettings.isPending}
+        >
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder={t('settings-appearance.auto')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="auto">
+              {t('settings-appearance.auto')}
+            </SelectItem>
+            <SelectItem value="sunday">
+              {t('settings-appearance.sunday')}
+            </SelectItem>
+            <SelectItem value="monday">
+              {t('settings-appearance.monday')}
+            </SelectItem>
+            <SelectItem value="saturday">
+              {t('settings-appearance.saturday')}
+            </SelectItem>
           </SelectContent>
         </Select>
       </SettingItemTab>

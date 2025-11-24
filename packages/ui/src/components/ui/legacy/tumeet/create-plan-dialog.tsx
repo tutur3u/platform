@@ -40,7 +40,7 @@ import { useState } from 'react';
 import * as z from 'zod';
 
 interface Props {
-  user: User | null;
+  user: Partial<User> | null;
   plan: {
     dates: Date[] | undefined;
     startTime: number | undefined;
