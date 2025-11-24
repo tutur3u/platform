@@ -10,11 +10,11 @@
   },
   "dependencies": {
     "@polar-sh/checkout": "^0.1.14",
-    "@polar-sh/nextjs": "^0.7.0",
+    "@polar-sh/nextjs": "^0.8.0",
     "@polar-sh/sdk": "^0.41.5"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*"
   },
-  "packageManager": "bun@1.3.2"
+  "packageManager": "bun@1.3.3"
 }

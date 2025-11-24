@@ -232,6 +232,8 @@ Supabase migrations are located in `apps/db/supabase/migrations/`. The database 
 - Nova platform tables (challenges, submissions, test cases)
 - Hierarchical task management (Workspaces → Initiatives → Projects → Boards → Lists → Tasks)
 
+**CRITICAL Schema Note**: The `public.users` table does NOT contain an `email` field. User email addresses are stored in `public.user_private_details` for privacy and security reasons. When querying user email information, always use the `user_private_details` table, not the `users` table.
+
 ### Task Management Hierarchy
 
 1. **Workspaces** - Top-level container with multiple members

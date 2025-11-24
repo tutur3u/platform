@@ -49,8 +49,8 @@ import { useBoardConfig } from '@tuturuuu/utils/task-helper';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CommandBar, type TaskOptions } from './command-bar';
 import { LabelProjectFilter } from './label-project-filter';
@@ -973,7 +973,7 @@ export default function MyTasksContent({
           }}
           selectedDestination={selectedDestination}
           onClearDestination={handleClearDestination}
-          isLoading={commandBarLoading}
+          isLoading={commandBarLoading || previewMutation.isPending}
           aiGenerateDescriptions={aiGenerateDescriptions}
           aiGeneratePriority={aiGeneratePriority}
           aiGenerateLabels={aiGenerateLabels}
@@ -1213,8 +1213,10 @@ export default function MyTasksContent({
       {/* Content Area - Task List */}
       <div className="fade-in mt-6 animate-in space-y-6 duration-300">
         <TaskList
+          wsId={wsId}
           isPersonal={isPersonal}
-          commandBarLoading={commandBarLoading}
+          commandBarLoading={commandBarLoading || previewMutation.isPending}
+          isAiGenerating={previewMutation.isPending}
           overdueTasks={filteredTasks.overdueTasks}
           todayTasks={filteredTasks.todayTasks}
           upcomingTasks={filteredTasks.upcomingTasks}
@@ -1222,7 +1224,6 @@ export default function MyTasksContent({
           collapsedSections={collapsedSections}
           toggleSection={toggleSection}
           handleUpdate={handleUpdate}
-          setBoardSelectorOpen={setBoardSelectorOpen}
         />
       </div>
 

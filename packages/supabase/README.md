@@ -299,7 +299,7 @@ If you're actively working on this package, you can set up watch mode:
 
 ```bash
 # Terminal 1: Watch and rebuild on changes
-bun run build:watch
+bun run dev
 
 # Terminal 2: Run your app that depends on this package
 cd ../../apps/web

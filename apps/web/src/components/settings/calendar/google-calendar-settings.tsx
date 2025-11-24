@@ -1,8 +1,19 @@
 'use client';
 
-import { Check, ExternalLink, Link, Loader2, RefreshCw } from '@tuturuuu/icons';
+import {
+  Check,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  Link,
+  Loader2,
+  RefreshCw,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types';
+import type {
+  CalendarConnection,
+  WorkspaceCalendarGoogleToken,
+} from '@tuturuuu/types';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -17,8 +28,9 @@ import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Switch } from '@tuturuuu/ui/switch';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 export type SmartSchedulingData = {
   enableSmartScheduling: boolean;
@@ -54,13 +66,16 @@ type GoogleCalendarSettingsProps = {
   wsId: string;
   workspace?: { id: string } | null;
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
+  calendarConnections?: CalendarConnection[];
 };
 
 export function GoogleCalendarSettings({
   workspace,
   experimentalGoogleToken,
+  calendarConnections = [],
 }: GoogleCalendarSettingsProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [googleCalendarConnected, setGoogleCalendarConnected] = useState(
     !!experimentalGoogleToken?.id
   );
@@ -88,22 +103,23 @@ export function GoogleCalendarSettings({
   const { syncGoogleCalendarNow, getGoogleEvents } = useCalendar();
   const { setIsActiveSyncOn, isActiveSyncOn } = useCalendarSync();
 
-  const [isTuturuuuUser, setIsTuturuuuUser] = useState(false);
+  const [togglingCalendarIds, setTogglingCalendarIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [isImportingCalendars, setIsImportingCalendars] = useState(false);
 
-  useEffect(() => {
-    const checkIfTuturuuuUser = async () => {
+  // Check if user is a Tuturuuu user (using TanStack Query)
+  const { data: isTuturuuuUser = false } = useQuery({
+    queryKey: ['is-tuturuuu-user'],
+    queryFn: async () => {
       const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (user?.email?.includes('@tuturuuu.com')) {
-        setIsTuturuuuUser(true);
-      } else {
-        setIsTuturuuuUser(false);
-      }
-    };
-    checkIfTuturuuuUser();
-  }, []);
+      return user?.email?.includes('@tuturuuu.com') || false;
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes - this rarely changes
+  });
 
   // Show connected events count
   const connectedEventsCount = getGoogleEvents().length;
@@ -381,6 +397,118 @@ export function GoogleCalendarSettings({
     );
   };
 
+  const handleImportCalendars = async () => {
+    if (!workspace?.id) {
+      toast({
+        title: 'Error',
+        description: 'No workspace selected',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsImportingCalendars(true);
+    try {
+      const response = await fetch('/api/v1/calendar/auth/import-calendars', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wsId: workspace.id }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to import calendars');
+      }
+
+      // Optimistically update the cache with the new connections
+      queryClient.setQueryData(
+        ['calendar-connections', workspace.id],
+        data.connections
+      );
+
+      toast({
+        title: 'Success',
+        description: `Imported ${data.imported} calendar${data.imported !== 1 ? 's' : ''}. Total: ${data.total}`,
+      });
+
+      // Refresh RSC data in the background
+      router.refresh();
+    } catch (error) {
+      console.error('Error importing calendars:', error);
+      toast({
+        title: 'Error',
+        description:
+          error instanceof Error ? error.message : 'Failed to import calendars',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsImportingCalendars(false);
+    }
+  };
+
+  const handleToggleCalendarVisibility = async (
+    connectionId: string,
+    currentState: boolean
+  ) => {
+    if (!workspace?.id) return;
+
+    const newState = !currentState;
+    setTogglingCalendarIds((prev) => new Set(prev).add(connectionId));
+
+    // Save previous state for rollback
+    const queryKey = ['calendar-connections', workspace.id];
+    const previousConnections =
+      queryClient.getQueryData<CalendarConnection[]>(queryKey);
+
+    try {
+      // Optimistically update the cache
+      queryClient.setQueryData<CalendarConnection[]>(queryKey, (old) =>
+        old?.map((conn) =>
+          conn.id === connectionId ? { ...conn, is_enabled: newState } : conn
+        )
+      );
+
+      const response = await fetch('/api/v1/calendar/connections', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: connectionId, isEnabled: newState }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        // Rollback on error
+        queryClient.setQueryData(queryKey, previousConnections);
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to update calendar visibility',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Success',
+          description: `Calendar ${newState ? 'enabled' : 'disabled'} successfully`,
+        });
+        // Refresh RSC data in the background
+        router.refresh();
+      }
+    } catch (_error) {
+      // Rollback on error
+      queryClient.setQueryData(queryKey, previousConnections);
+      toast({
+        title: 'Error',
+        description: 'Failed to update calendar visibility',
+        variant: 'destructive',
+      });
+    } finally {
+      setTogglingCalendarIds((prev) => {
+        const next = new Set(prev);
+        next.delete(connectionId);
+        return next;
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -546,6 +674,130 @@ export function GoogleCalendarSettings({
           </div>
         </CardContent>
       </Card>
+
+      {/* Calendar Connections List */}
+      {experimentalGoogleToken && googleCalendarConnected && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Connected Calendars</CardTitle>
+            <CardDescription>
+              {calendarConnections.length > 0
+                ? 'Manage visibility of your connected Google calendars'
+                : 'No calendars synced yet'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {calendarConnections.length > 0 ? (
+              <>
+                <div className="space-y-2">
+                  {calendarConnections.map((connection) => {
+                    const isEnabled = connection.is_enabled;
+                    const isToggling = togglingCalendarIds.has(connection.id);
+
+                    return (
+                      <div
+                        key={connection.id}
+                        className="flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-accent/50"
+                      >
+                        {/* Color indicator */}
+                        {connection.color && (
+                          <div
+                            className="h-5 w-5 shrink-0 rounded-full border-2 border-border"
+                            style={{ backgroundColor: connection.color }}
+                          />
+                        )}
+
+                        {/* Calendar name */}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium text-sm">
+                            {connection.calendar_name}
+                          </p>
+                          {connection.calendar_id && (
+                            <p className="truncate text-muted-foreground text-xs">
+                              {connection.calendar_id}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Visibility toggle */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="gap-2"
+                          onClick={() =>
+                            handleToggleCalendarVisibility(
+                              connection.id,
+                              isEnabled
+                            )
+                          }
+                          disabled={isToggling}
+                        >
+                          {isToggling ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : isEnabled ? (
+                            <>
+                              <Eye className="h-4 w-4 text-primary" />
+                              <span className="text-xs">Visible</span>
+                            </>
+                          ) : (
+                            <>
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-xs">Hidden</span>
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Summary */}
+                <div className="mt-4 rounded-md bg-muted/50 p-3">
+                  <p className="text-muted-foreground text-xs">
+                    {calendarConnections.filter((c) => c.is_enabled).length} of{' '}
+                    {calendarConnections.length} calendar
+                    {calendarConnections.length !== 1 ? 's' : ''} visible
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-4">
+                <Alert>
+                  <AlertDescription className="text-sm">
+                    <p className="mb-3">
+                      No calendars imported yet. Import your Google calendars to
+                      manage their visibility and sync events.
+                    </p>
+                  </AlertDescription>
+                </Alert>
+
+                <Button
+                  onClick={handleImportCalendars}
+                  disabled={isImportingCalendars}
+                  className="w-full gap-2"
+                >
+                  {isImportingCalendars ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Importing Calendars...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4" />
+                      Import Calendars from Google
+                    </>
+                  )}
+                </Button>
+
+                <p className="text-center text-muted-foreground text-xs">
+                  This will fetch all your Google calendars and allow you to
+                  manage which ones are visible in your workspace.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

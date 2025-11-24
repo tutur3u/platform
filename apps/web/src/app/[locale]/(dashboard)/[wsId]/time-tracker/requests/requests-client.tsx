@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import {
   CalendarIcon,
   CheckCircle2Icon,
@@ -37,10 +38,12 @@ import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import { useAvailableUsers, useRequests } from './hooks/use-requests';
 import type { ExtendedTimeTrackingRequest } from './page';
 import { RequestDetailModal } from './request-detail-modal';
+import { ThresholdSettingsDialog } from './threshold-settings-dialog';
 
 interface RequestsClientProps {
   wsId: string;
@@ -72,6 +75,7 @@ export function RequestsClient({
   const t = useTranslations('time-tracker.requests');
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const [selectedRequest, setSelectedRequest] =
     useState<ExtendedTimeTrackingRequest | null>(null);
 
@@ -116,6 +120,9 @@ export function RequestsClient({
       wsId,
       // initialData: initialAvailableUsers,
     });
+
+  const { data: thresholdData, isLoading: thresholdLoading } =
+    useWorkspaceTimeThreshold(wsId);
 
   const requests = requestsData?.requests || [];
   const totalCount = requestsData?.totalCount || 0;
@@ -173,6 +180,12 @@ export function RequestsClient({
     const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
     return `${hours}h ${minutes}m`;
   };
+
+  const handleThresholdUpdate = useCallback(() => {
+    queryClient.invalidateQueries({
+      queryKey: ['workspace-time-threshold', wsId],
+    });
+  }, [queryClient, wsId]);
 
   return (
     <>
@@ -237,7 +250,7 @@ export function RequestsClient({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                        {Object.entries(STATUS_LABELS).map(([value]) => (
                           <SelectItem key={value} value={value}>
                             {t(`status.${value as keyof typeof STATUS_LABELS}`)}
                           </SelectItem>
@@ -325,6 +338,15 @@ export function RequestsClient({
               </div>
 
               <div className="flex items-center gap-2">
+                {thresholdLoading ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <ThresholdSettingsDialog
+                    wsId={wsId}
+                    currentThreshold={thresholdData}
+                    onUpdate={handleThresholdUpdate}
+                  />
+                )}
                 <span className="text-muted-foreground text-sm">
                   {t('list.itemsPerPage')}:
                 </span>

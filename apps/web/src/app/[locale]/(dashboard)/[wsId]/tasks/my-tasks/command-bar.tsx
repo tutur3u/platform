@@ -41,7 +41,7 @@ import {
 } from '@tuturuuu/ui/tu-do/shared/estimation-mapping';
 import { cn } from '@tuturuuu/utils/format';
 import type { KeyboardEvent } from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 export interface TaskOptions {
   priority?: 'critical' | 'high' | 'normal' | 'low' | null;
@@ -126,6 +126,45 @@ export function CommandBar({
   onValueChange,
 }: CommandBarProps) {
   const [aiEnabled, setAiEnabled] = useState(false);
+
+  // Input history for undo functionality
+  const inputHistoryRef = useRef<string[]>([]);
+  const historyIndexRef = useRef<number>(-1);
+  const isUndoingRef = useRef(false);
+
+  // Track input changes for history
+  useEffect(() => {
+    if (isUndoingRef.current) {
+      isUndoingRef.current = false;
+      return;
+    }
+
+    // Only track non-empty values that are different from the last entry
+    if (
+      value.trim() &&
+      inputHistoryRef.current[inputHistoryRef.current.length - 1] !== value
+    ) {
+      inputHistoryRef.current.push(value);
+      historyIndexRef.current = inputHistoryRef.current.length - 1;
+    }
+  }, [value]);
+
+  // Handle undo (CMD/Ctrl+Z)
+  const handleUndo = () => {
+    if (inputHistoryRef.current.length === 0) return;
+
+    // If we're at the current position, save it and move back
+    if (historyIndexRef.current === inputHistoryRef.current.length - 1) {
+      historyIndexRef.current -= 1;
+    } else if (historyIndexRef.current > 0) {
+      historyIndexRef.current -= 1;
+    }
+
+    if (historyIndexRef.current >= 0) {
+      isUndoingRef.current = true;
+      onValueChange(inputHistoryRef.current[historyIndexRef.current] || '');
+    }
+  };
 
   // Optional task fields
   const [priority, setPriority] = useState<
@@ -220,6 +259,14 @@ export function CommandBar({
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    // Handle CMD/Ctrl+Z for undo
+    if (event.key === 'z' && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      handleUndo();
+      return;
+    }
+
+    // Handle CMD/Ctrl+Enter for submit
     if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
       event.preventDefault();
       handleAction();
@@ -1191,7 +1238,9 @@ export function CommandBar({
               {isLoading ? (
                 <>
                   <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent md:h-4 md:w-4" />
-                  <span className="hidden sm:inline">Creating...</span>
+                  <span className="hidden sm:inline">
+                    {aiEnabled ? 'Generating...' : 'Creating...'}
+                  </span>
                 </>
               ) : aiEnabled ? (
                 <>

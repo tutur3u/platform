@@ -315,7 +315,7 @@ export function useTaskSubscription(wsId: string) {
 
     // Subscribe to changes
     const channel = supabase
-      .channel(`workspace_tasks:${wsId}`)
+      .channel(`workspace-tasks-${wsId}`)
       .on(
         'postgres_changes',
         {

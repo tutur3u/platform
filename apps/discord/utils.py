@@ -2,6 +2,7 @@
 
 import os
 import re
+from typing import Any, cast
 from urllib.parse import urlparse
 
 import nanoid
@@ -90,7 +91,9 @@ def is_user_authorized_for_guild(discord_user_id: str, guild_id: str) -> bool:
             return False
 
         # Get the guild IDs that this user is linked to
-        user_guild_ids = [member["discord_guild_id"] for member in member_result.data]
+        user_guild_ids = [
+            cast(dict[str, Any], member)["discord_guild_id"] for member in member_result.data
+        ]
 
         # Check if any of the user's guilds match the requested guild
         if guild_id not in user_guild_ids:
@@ -132,7 +135,9 @@ def is_user_authorized_for_dm(discord_user_id: str) -> bool:
             return False
 
         # Get the guild IDs that this user is linked to
-        user_guild_ids = [member["discord_guild_id"] for member in member_result.data]
+        user_guild_ids = [
+            cast(dict[str, Any], member)["discord_guild_id"] for member in member_result.data
+        ]
 
         # Check if any of the user's guilds have Discord integrations
         for guild_id in user_guild_ids:
@@ -186,13 +191,14 @@ def get_user_workspace_info(discord_user_id: str, guild_id: str | None = None) -
         if not workspace_member_result.data:
             return None
 
-        member_info = workspace_member_result.data[0]
+        member_info = cast(dict[str, Any], workspace_member_result.data[0])
+        users_info = cast(dict[str, Any], member_info["users"])
 
         result = {
             "workspace_id": workspace_id,
             "platform_user_id": platform_user_id,
-            "display_name": member_info["users"]["display_name"],
-            "handle": member_info["users"]["handle"],
+            "display_name": users_info["display_name"],
+            "handle": users_info["handle"],
         }
 
         print(
@@ -220,7 +226,7 @@ def _get_guild_workspace_info(
     if not integration_result.data:
         return None, None
 
-    workspace_id = integration_result.data[0]["ws_id"]
+    workspace_id = cast(dict[str, Any], integration_result.data[0])["ws_id"]
 
     # Get user's platform user ID for this specific guild
     member_result = (
@@ -234,7 +240,7 @@ def _get_guild_workspace_info(
     if not member_result.data:
         return None, None
 
-    platform_user_id = member_result.data[0]["platform_user_id"]
+    platform_user_id = cast(dict[str, Any], member_result.data[0])["platform_user_id"]
     return workspace_id, platform_user_id
 
 
@@ -250,10 +256,12 @@ def _get_dm_workspace_info(supabase, discord_user_id: str) -> tuple[str | None, 
     if not member_result.data:
         return None, None
 
-    platform_user_id = member_result.data[0]["platform_user_id"]
+    platform_user_id = cast(dict[str, Any], member_result.data[0])["platform_user_id"]
 
     # Get all workspace IDs for this user's guilds and find one they're actually a member of
-    user_guild_ids = [member["discord_guild_id"] for member in member_result.data]
+    user_guild_ids = [
+        cast(dict[str, Any], member)["discord_guild_id"] for member in member_result.data
+    ]
 
     for user_guild_id in user_guild_ids:
         # Get workspace ID for this guild
@@ -265,7 +273,7 @@ def _get_dm_workspace_info(supabase, discord_user_id: str) -> tuple[str | None, 
         )
 
         if integration_result.data:
-            potential_workspace_id = integration_result.data[0]["ws_id"]
+            potential_workspace_id = cast(dict[str, Any], integration_result.data[0])["ws_id"]
 
             # Check if the user is actually a member of this workspace
             workspace_member_check = (

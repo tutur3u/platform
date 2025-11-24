@@ -83,11 +83,15 @@ export async function PUT(req: Request, { params }: Params) {
       .eq('post_id', postId);
 
     if (error) {
-      console.error('Error updating user_group_post_checks:', error.message);
+      console.error(
+        `[PUT /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}] Error upserting multiple user_group_post_checks:`,
+        error.message || error,
+        `Attempted to update ${validatedData instanceof Array ? validatedData.length : 1} records`
+      );
       return NextResponse.json(
         {
           message: 'Error updating user_group_post_checks',
-          details: error.message,
+          details: error.message || 'Database operation failed',
         },
         { status: 500 }
       );
@@ -113,11 +117,15 @@ export async function PUT(req: Request, { params }: Params) {
       .eq('user_id', singleData.user_id);
 
     if (error) {
-      console.error('Error updating user_group_post_checks:', error.message);
+      console.error(
+        `[PUT /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}] Error upserting single user_group_post_check:`,
+        error.message || error,
+        `userId: ${singleData.user_id}, postId: ${postId}`
+      );
       return NextResponse.json(
         {
           message: 'Error updating user_group_post_checks',
-          details: error.message,
+          details: error.message || 'Database operation failed',
         },
         { status: 500 }
       );

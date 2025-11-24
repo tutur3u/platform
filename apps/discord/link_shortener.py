@@ -1,6 +1,7 @@
 """Link shortener functionality for the Discord bot."""
 
 import os
+from typing import Any, cast
 
 from supabase import Client, create_client
 
@@ -129,4 +130,4 @@ class LinkShortener:
 
         result = self.supabase.table("shortened_links").insert(insert_data).execute()
 
-        return result.data[0] if result.data else None
+        return cast(dict[Any, Any], result.data[0]) if result.data else None

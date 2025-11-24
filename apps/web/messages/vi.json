@@ -1535,7 +1535,8 @@
     "integrations": "Dịch vụ tích hợp",
     "ai_whitelisted_emails": "Email nằm trong danh sách trắng của AI",
     "email_blacklist": "Danh sách đen email",
-    "translations": "Bản dịch"
+    "translations": "Bản dịch",
+    "realtime": "Thời gian thực"
   },
   "infrastructure-analytics": {
     "page-description": "Giám sát và quản lý cơ sở hạ tầng, người dùng và tài nguyên nền tảng với phân tích toàn diện.",
@@ -1653,6 +1654,140 @@
       "time": "Thời Gian",
       "unknown": "Không xác định",
       "actions": "Hành Động"
+    }
+  },
+  "realtime-analytics": {
+    "title": "Phân Tích Thời Gian Thực",
+    "description": "Giám sát kết nối và hoạt động thời gian thực trên các không gian làm việc và kênh",
+    "metric": {
+      "requests": "Yêu cầu",
+      "users": "Người dùng"
+    },
+    "filters": {
+      "workspace": "Không gian làm việc",
+      "workspace_placeholder": "Chọn không gian làm việc",
+      "all_workspaces": "Tất cả không gian làm việc",
+      "channel": "Kênh",
+      "channel_placeholder": "Nhập ID kênh",
+      "date_range": "Khoảng thời gian",
+      "metric_toggle": "Loại chỉ số"
+    },
+    "chart": {
+      "hourly_activity": "Hoạt động theo giờ",
+      "hour_label": "Giờ",
+      "requests_label": "Yêu cầu",
+      "users_label": "Người dùng duy nhất",
+      "no_data": "Không có dữ liệu",
+      "no_data_description": "Không tìm thấy hoạt động thời gian thực nào cho bộ lọc và khoảng thời gian đã chọn",
+      "loading": "Đang tải phân tích..."
+    },
+    "stats": {
+      "total": "Tổng cộng",
+      "peak_hour": "Giờ cao điểm",
+      "avg_per_hour": "TB mỗi giờ"
+    },
+    "summary": {
+      "total_requests": "Tổng Yêu Cầu",
+      "total_errors": "Tổng Lỗi",
+      "error_rate": "Tỷ Lệ Lỗi",
+      "unique_users": "Người Dùng Duy Nhất",
+      "unique_channels": "Kênh Duy Nhất",
+      "unique_workspaces": "Không Gian Duy Nhất",
+      "peak_hour": "Giờ Cao Điểm",
+      "avg_per_hour": "TB/Giờ",
+      "requests": "yêu cầu",
+      "error_rate_card": "Tỷ Lệ Lỗi"
+    },
+    "top_consumers": {
+      "workspaces": "Không Gian Sử Dụng Nhiều Nhất",
+      "channels": "Kênh Sử Dụng Nhiều Nhất",
+      "users": "Người Dùng Hoạt Động Nhiều Nhất",
+      "workspace_name": "Không gian",
+      "channel_name": "Kênh",
+      "user_name": "Người dùng",
+      "requests": "Yêu cầu",
+      "errors": "Lỗi",
+      "error_rate": "Tỷ Lệ Lỗi",
+      "percentage": "% Tổng",
+      "total_requests": "tổng",
+      "no_data": "Không có dữ liệu",
+      "showing_top": "Hiển thị top {count} người tiêu thụ"
+    },
+    "breakdown": {
+      "request_types": "Phân Phối Loại Yêu Cầu",
+      "request_types_desc": "Trực quan hóa phân phối yêu cầu theo loại hoạt động",
+      "request_types_detail": "Chi Tiết Loại Yêu Cầu",
+      "request_types_detail_desc": "Phân tích chi tiết với tỷ lệ phần trăm và số liệu",
+      "error_breakdown": "Phân Tích Lỗi",
+      "error_breakdown_desc": "Lỗi được phân loại theo loại yêu cầu",
+      "kind": "Loại",
+      "errors": "Lỗi",
+      "total": "Tổng",
+      "error_rate": "Tỷ Lệ Lỗi",
+      "percentage": "% Tổng",
+      "visual": "Phân Phối",
+      "rank": "#",
+      "requests": "Yêu cầu",
+      "total_requests_chart": "Tổng",
+      "no_data": "Không có dữ liệu",
+      "no_errors": "Không Phát Hiện Lỗi",
+      "no_errors_desc": "Tất cả yêu cầu hoàn thành thành công"
+    },
+    "insights": {
+      "title": "Thông Tin Chi Tiết",
+      "description": "Khuyến nghị được hỗ trợ AI để tối ưu hóa hiệu suất thời gian thực",
+      "no_insights": "Không có thông tin chi tiết khả dụng lúc này",
+      "high_error_rate": {
+        "title": "Nghiêm Trọng: Tỷ Lệ Lỗi Cao",
+        "message": "Tỷ lệ lỗi của bạn là {rate}%, vượt đáng kể ngưỡng 5%",
+        "action": "Xem lại nhật ký lỗi và điều tra các hoạt động thất bại ngay lập tức"
+      },
+      "elevated_error_rate": {
+        "title": "Cảnh Báo: Tỷ Lệ Lỗi Cao",
+        "message": "Tỷ lệ lỗi của bạn là {rate}%, cao hơn ngưỡng lý tưởng 1%",
+        "action": "Theo dõi các mẫu lỗi và xem xét triển khai logic thử lại"
+      },
+      "low_error_rate": {
+        "title": "Tốt: Tỷ Lệ Lỗi Thấp",
+        "message": "Tỷ lệ lỗi của bạn là {rate}%, trong giới hạn chấp nhận được"
+      },
+      "high_usage": {
+        "title": "Phát Hiện Sử Dụng Thời Gian Thực Cao",
+        "message": "Trung bình {avg} yêu cầu/giờ, có thể ảnh hưởng đến chi phí",
+        "action": "Xem xét triển khai gộp kết nối hoặc gộp yêu cầu"
+      },
+      "traffic_spike": {
+        "title": "Phát Hiện Mẫu Tăng Đột Biến",
+        "message": "Giờ cao điểm cao gấp {ratio} lần so với trung bình",
+        "action": "Xem xét triển khai giới hạn tỷ lệ trong giờ cao điểm"
+      },
+      "workspace_concentration": {
+        "title": "Sử Dụng Tập Trung Vào Một Không Gian",
+        "message": "{name} chiếm {percentage}% tổng số yêu cầu",
+        "action": "Xem lại tích hợp của không gian này để tối ưu hóa mẫu yêu cầu"
+      },
+      "workspace_errors": {
+        "title": "Không Gian Gặp Lỗi Cao",
+        "message": "{name} có tỷ lệ lỗi {rate}%",
+        "action": "Điều tra cấu hình và tính toàn vẹn dữ liệu của không gian này"
+      },
+      "many_channels": {
+        "title": "Số Lượng Kênh Cao",
+        "message": "Phát hiện {count} kênh đang hoạt động",
+        "action": "Xem xét hợp nhất các kênh hoặc triển khai chính sách dọn dẹp"
+      }
+    },
+    "comparisons": {
+      "title": "Phân Tích Phân Phối Sử Dụng",
+      "description": "Phân tích cách lưu lượng được phân phối giữa các không gian và người dùng",
+      "top_workspace": "Tỷ Trọng Không Gian Hàng Đầu",
+      "top_3_workspaces": "Top 3 Không Gian",
+      "top_user": "Tỷ Trọng Người Dùng Hàng Đầu",
+      "requests": "yêu cầu",
+      "healthy_distribution": "Phân Phối Lành Mạnh",
+      "healthy_distribution_desc": "Lưu lượng được phân phối tốt giữa các không gian, giảm điểm lỗi đơn lẻ",
+      "concentrated_distribution": "Sử Dụng Tập Trung",
+      "concentrated_distribution_desc": "Lưu lượng tập trung vào một số ít không gian. Xem xét cân bằng tải hoặc điều tra các mẫu sử dụng cao"
     }
   },
   "basic-data-table": {
@@ -6562,6 +6697,26 @@
         "rejectSuccess": "Yêu cầu theo dõi thời gian đã bị từ chối",
         "rejectFailed": "Không thể từ chối yêu cầu",
         "loadImagesFailed": "Không thể tải hình ảnh"
+      },
+      "settings": {
+        "button": "Cài Đặt",
+        "title": "Cài Đặt Ngưỡng Nhập Thiếu",
+        "description": "Cấu hình khoảng thời gian người dùng có thể thêm mục thời gian bị thiếu mà không cần phê duyệt.",
+        "label": "Ngưỡng (ngày)",
+        "help": "Đặt số ngày người dùng có thể quay lại để thêm mục thời gian. Đặt về 0 để yêu cầu phê duyệt cho tất cả các mục bị thiếu.",
+        "examples": {
+          "title": "Ví dụ:",
+          "days": "ngày",
+          "day": "ngày",
+          "zero": "Tất cả các mục bị thiếu đều yêu cầu phê duyệt",
+          "one": "Người dùng có thể thêm mục từ hôm qua mà không cần phê duyệt",
+          "seven": "Người dùng có thể thêm mục từ tuần trước mà không cần phê duyệt"
+        },
+        "cancel": "Hủy",
+        "save": "Lưu Thay Đổi",
+        "saving": "Đang lưu...",
+        "success": "Ngưỡng đã được cập nhật thành công",
+        "error": "Không thể cập nhật ngưỡng"
       }
     },
     "modes": {
@@ -6787,6 +6942,95 @@
         "failedToLoadData": "Không thể tải dữ liệu theo dõi thời gian: {message}"
       }
     },
+    "missed_entry_dialog": {
+      "title": "Thêm Phiên Làm Việc Bị Thiếu",
+      "form": {
+        "title": "Tiêu Đề *",
+        "titlePlaceholder": "Bạn đang làm gì?",
+        "description": "Mô Tả",
+        "descriptionPlaceholder": "Chi tiết tùy chọn về công việc",
+        "category": "Danh Mục",
+        "selectCategory": "Chọn danh mục",
+        "noCategory": "Không có danh mục",
+        "task": "Nhiệm Vụ",
+        "selectTask": "Chọn nhiệm vụ",
+        "noTask": "Không có nhiệm vụ",
+        "startTime": "Thời Gian Bắt Đầu *",
+        "endTime": "Thời Gian Kết Thúc *"
+      },
+      "approval": {
+        "title": "Yêu Cầu Phê Duyệt",
+        "allEntries": "Tất cả các phiên thời gian bị thiếu đều yêu cầu phê duyệt. Vui lòng tải lên ít nhất một hình ảnh làm bằng chứng công việc.",
+        "entriesOlderThan": "Các phiên cũ hơn {days} ngày yêu cầu phê duyệt. Vui lòng tải lên ít nhất một hình ảnh làm bằng chứng công việc.",
+        "loadingThreshold": "Đang tải cài đặt ngưỡng...",
+        "proofOfWork": "Bằng Chứng Công Việc * ({current}/{max})",
+        "compressing": "Đang nén...",
+        "dropImages": "Thả hình ảnh vào đây",
+        "clickToUpload": "Nhấp để tải lên hoặc kéo thả",
+        "imageFormats": "PNG, JPG, GIF hoặc WebP tối đa 1MB mỗi tệp",
+        "proofImageAlt": "Hình ảnh bằng chứng {number}"
+      },
+      "presets": {
+        "title": "Cài Đặt Nhanh",
+        "lastHour": "Giờ vừa qua",
+        "last2Hours": "2 giờ vừa qua",
+        "morning": "Buổi sáng (9-12)",
+        "afternoon": "Buổi chiều (13-17)",
+        "yesterday": "Hôm qua"
+      },
+      "duration": {
+        "label": "Thời Lượng: ",
+        "invalidRange": "Khoảng thời gian không hợp lệ"
+      },
+      "actions": {
+        "cancel": "Hủy",
+        "loading": "Đang tải...",
+        "submitting": "Đang gửi...",
+        "adding": "Đang thêm...",
+        "submitForApproval": "Gửi Để Phê Duyệt",
+        "addEntry": "Thêm Mục"
+      },
+      "errors": {
+        "titleRequired": "Vui lòng nhập tiêu đề cho phiên",
+        "timesRequired": "Vui lòng nhập cả thời gian bắt đầu và kết thúc",
+        "endBeforeStart": "Thời gian kết thúc không thể trước thời gian bắt đầu",
+        "minDuration": "Phiên phải dài ít nhất 1 phút",
+        "imageRequiredAll": "Vui lòng tải lên ít nhất một hình ảnh cho tất cả các mục bị thiếu",
+        "imageRequiredOlder": "Vui lòng tải lên ít nhất một hình ảnh cho các mục cũ hơn {days} ngày",
+        "invalidFileType": "{count} tệp bị từ chối: chỉ chấp nhận hình ảnh (PNG, JPEG, WebP, GIF).",
+        "maxImagesExceeded": "Bạn có thể tải lên tối đa {max} hình ảnh. {overflow} tệp đã bị từ chối.",
+        "fileTooLarge": "{count} tệp bị từ chối (vượt quá 1MB ngay cả sau khi nén): {names}",
+        "createRequestFailed": "Không thể tạo yêu cầu theo dõi thời gian",
+        "createSessionFailed": "Không thể tạo phiên",
+        "createEntryFailed": "Không thể tạo mục"
+      },
+      "success": {
+        "requestSubmitted": "Yêu cầu theo dõi thời gian đã được gửi để phê duyệt",
+        "entryAdded": "Đã thêm mục bị thiếu thành công"
+      }
+    },
+    "workspace_select_dialog": {
+      "title": "Di Chuyển Phiên Sang Không Gian Làm Việc Khác",
+      "movingSession": "Đang di chuyển phiên:",
+      "selectTarget": "Chọn Không Gian Làm Việc Đích",
+      "loadingWorkspaces": "Đang tải không gian làm việc...",
+      "noWorkspaces": "Không có không gian làm việc nào khác. Bạn cần là thành viên của ít nhất một không gian làm việc khác để di chuyển phiên.",
+      "chooseWorkspace": "Chọn một không gian làm việc",
+      "note": "Lưu ý:",
+      "noteItems": {
+        "move": "Phiên sẽ được di chuyển sang không gian làm việc đã chọn",
+        "match": "Danh mục và nhiệm vụ sẽ được khớp theo tên nếu chúng tồn tại trong không gian làm việc đích",
+        "unassign": "Nếu không tìm thấy danh mục/nhiệm vụ khớp, chúng sẽ bị hủy gán"
+      },
+      "actions": {
+        "cancel": "Hủy",
+        "moving": "Đang di chuyển...",
+        "moveSession": "Di Chuyển Phiên"
+      },
+      "errors": {
+        "selectWorkspace": "Vui lòng chọn một không gian làm việc"
+      }
+    },
     "controls": {
       "cannot_switch_modes": "Không thể chuyển chế độ hẹn giờ trong phiên hoạt động",
       "stop_or_pause_first": "Vui lòng dừng hoặc tạm dừng bộ hẹn giờ hiện tại của bạn trước.",
@@ -6994,6 +7238,145 @@
       "add_session_notes": "Thêm ghi chú về phiên này...",
       "quick_start": "Khởi động nhanh",
       "duration_tracked": "{duration} đã được theo dõi"
+    },
+    "session_history": {
+      "title": "Lịch Sử Phiên",
+      "sessions_count": "{count} phiên",
+      "sessions_count_plural": "{count} phiên",
+      "add_missed_entry": "Thêm Phiên Bị Bỏ Lỡ",
+      "add_entry": "Thêm Mục",
+      "search_placeholder": "Tìm kiếm phiên...",
+      "filters": "Bộ lọc",
+      "advanced_analytics_filters": "Bộ Lọc Phân Tích Nâng Cao",
+      "simple": "Đơn giản",
+      "advanced": "Nâng cao",
+      "category": "Danh mục",
+      "all_categories": "Tất cả danh mục",
+      "duration_type": "Loại Thời Lượng",
+      "all_durations": "Tất cả thời lượng",
+      "short_duration": "🏃 Ngắn (< 30 phút)",
+      "medium_duration": "🚶 Trung bình (30 phút - 2h)",
+      "long_duration": "🏔️ Dài (2+ giờ)",
+      "productivity_type": "Loại Năng Suất",
+      "all_productivity_types": "Tất cả loại năng suất",
+      "all_types": "Tất cả loại",
+      "deep_work": "🧠 Công Việc Sâu (80+ tập trung)",
+      "focused": "🎯 Tập Trung (60+ tập trung)",
+      "standard": "📋 Công việc tiêu chuẩn",
+      "scattered": "🔀 Rải rác (tập trung thấp)",
+      "interrupted": "⚡ Bị Gián Đoạn (< 15 phút)",
+      "time_of_day": "Thời Điểm Trong Ngày",
+      "all_times": "Tất cả thời điểm",
+      "morning": "🌅 Sáng (6h - 12h)",
+      "afternoon": "☀️ Chiều (12h - 18h)",
+      "evening": "🌇 Tối (18h - 24h)",
+      "night": "🌙 Đêm (0h - 6h)",
+      "project_context": "Ngữ Cảnh Dự Án",
+      "all_contexts": "Tất cả ngữ cảnh",
+      "project_work": "📁 Công Việc Dự Án",
+      "meetings": "👥 Cuộc Họp",
+      "learning": "📚 Học Tập",
+      "administrative": "📋 Hành Chính",
+      "general_tasks": "🔧 Nhiệm Vụ Chung",
+      "session_quality": "Chất Lượng Phiên",
+      "all_qualities": "Tất cả chất lượng",
+      "excellent": "⭐ Xuất Sắc (80+ điểm)",
+      "good": "👍 Tốt (60-79 điểm)",
+      "average": "👌 Trung Bình (40-59 điểm)",
+      "needs_improvement": "📈 Cần Cải Thiện (< 40)",
+      "clear_all_filters": "🧹 Xóa Tất Cả Bộ Lọc",
+      "filter_analytics": "📊 Phân Tích Bộ Lọc",
+      "sessions": "Phiên",
+      "day": "ngày",
+      "week": "tuần",
+      "month": "tháng",
+      "previous": "Trước",
+      "next": "Tiếp",
+      "today": "Hôm Nay",
+      "this_day": "Ngày Này",
+      "this_week": "Tuần Này",
+      "this_month": "Tháng Này",
+      "no_sessions_for_period": "Không có phiên nào cho {period} này",
+      "start_tracking_message": "Bắt đầu theo dõi thời gian để xem các phiên của bạn ở đây",
+      "try_different_period": "Thử một khoảng thời gian khác hoặc điều chỉnh bộ lọc của bạn",
+      "add_first_entry": "Thêm Mục Đầu Tiên Của Bạn",
+      "total_time": "Tổng Thời Gian",
+      "activities": "Hoạt Động",
+      "top_activities_this_month": "Hoạt Động Hàng Đầu Tháng Này",
+      "productivity_insights": "Thông Tin Năng Suất",
+      "most_productive_time": "Thời Điểm Năng Suất Nhất",
+      "session_types": "Loại Phiên",
+      "deep": "Sâu (2h+)",
+      "focus": "Tập Trung (30p-2h)",
+      "quick": "Nhanh (<30p)",
+      "longest_session": "🏆 Phiên Dài Nhất",
+      "weekly_breakdown": "Phân Tích Theo Tuần",
+      "activities_count": "{count} hoạt động",
+      "sessions_count_label": "{count} phiên",
+      "summary": "Tóm Tắt",
+      "total": "tổng",
+      "manual": "Thủ Công",
+      "ongoing": "đang diễn ra",
+      "active": "Hoạt Động",
+      "running": "Đang Chạy",
+      "individual_sessions": "Phiên Cá Nhân ({count})",
+      "days_count": "{count} ngày",
+      "completed": "đã hoàn thành",
+      "completed_count": "{completed} đã hoàn thành",
+      "running_count": "{running} đang chạy",
+      "show_less": "Hiển thị ít hơn ({shown} trong {total})",
+      "show_more_sessions": "Hiển thị thêm {count} phiên",
+      "hide_details": "Ẩn Chi Tiết",
+      "show_sessions": "Hiển thị {count} Phiên",
+      "hide_individual_sessions": "Ẩn các phiên riêng lẻ",
+      "show_individual_sessions": "Hiển thị các phiên riêng lẻ",
+      "more_options": "Thêm tùy chọn",
+      "start_new_session": "Bắt Đầu Phiên Mới",
+      "edit_session": "Chỉnh Sửa Phiên",
+      "move_to_workspace": "Di Chuyển Đến Không Gian Làm Việc Khác",
+      "delete_session": "Xóa Phiên",
+      "edit": "Chỉnh sửa",
+      "move": "Di chuyển",
+      "delete": "Xóa",
+      "resume": "Tiếp Tục",
+      "overlapping_session": "Phiên trùng lặp",
+      "break": "nghỉ",
+      "edit_session_title": "Chỉnh Sửa Phiên",
+      "session_title": "Tiêu Đề",
+      "session_title_placeholder": "Tiêu đề phiên",
+      "description": "Mô Tả",
+      "optional_description": "Mô tả tùy chọn",
+      "select_category": "Chọn danh mục",
+      "no_category": "Không có danh mục",
+      "select_task": "Chọn nhiệm vụ",
+      "no_task": "Không có nhiệm vụ",
+      "start_time": "Thời Gian Bắt Đầu",
+      "end_time": "Thời Gian Kết Thúc",
+      "time_editing_restricted": "Chỉnh Sửa Thời Gian Bị Hạn Chế",
+      "all_edits_require_approval": "Tất cả các chỉnh sửa thời gian phải được gửi dưới dạng yêu cầu phê duyệt. Phiên này từ {date}.",
+      "cannot_edit_old_session": "Thời gian bắt đầu và kết thúc không thể chỉnh sửa cho các phiên cũ hơn {days} {dayLabel}. Phiên này từ {date}.",
+      "day_singular": "ngày",
+      "day_plural": "ngày",
+      "cannot_backdate": "Không thể đặt ngày lùi quá {days} {dayLabel}",
+      "start_times_within_limit": "Thời gian bắt đầu phải trong {days} {dayLabel} gần nhất.",
+      "cancel": "Hủy",
+      "saving": "Đang lưu...",
+      "save_changes": "Lưu Thay Đổi",
+      "delete_time_session": "Xóa Phiên Thời Gian",
+      "delete_confirmation": "Bạn có chắc chắn muốn xóa phiên \"{title}\"? Hành động này không thể hoàn tác và sẽ xóa vĩnh viễn thời gian đã theo dõi.",
+      "deleting": "Đang xóa...",
+      "delete_session_action": "Xóa Phiên",
+      "cannot_move_running": "Không thể di chuyển các phiên đang chạy. Vui lòng dừng phiên trước.",
+      "session_moved_successfully": "Di chuyển phiên thành công",
+      "started_new_session": "Đã bắt đầu phiên mới: \"{title}\"",
+      "failed_to_start_session": "Không thể bắt đầu phiên mới",
+      "session_updated_successfully": "Cập nhật phiên thành công",
+      "failed_to_update_session": "Không thể cập nhật phiên",
+      "session_deleted_successfully": "Xóa phiên thành công",
+      "failed_to_delete_session": "Không thể xóa phiên",
+      "end_time_before_start": "Thời gian kết thúc không thể trước thời gian bắt đầu",
+      "no_changes_detected": "Không phát hiện thay đổi",
+      "failed_to_move_session": "Không thể di chuyển phiên"
     }
   },
   "command_palette": {
