@@ -193,10 +193,11 @@ bun trigger:deploy
 8. **Always** add new documentation pages to `apps/docs/mint.json` navigation
 9. **Always** update main navigation (`apps/web/src/app/[locale]/(dashboard)/[wsId]/navigation.tsx`) when adding new routes - add to both `aliases` array and `children` navigation items with proper icons and permissions
 10. **Always** provide translations for both English AND Vietnamese when adding user-facing strings to `apps/web/messages/{locale}.json`
-11. **Always** refactor files >400 LOC and components >200 LOC into smaller, focused units
-12. **Always** apply best practices to both old and new code - code quality is never optional
-13. **Always** break down components following single responsibility principle and extract complex logic to utilities/hooks
-14. **Always** use TanStack Query for ALL client-side data fetching - raw fetch/useEffect patterns are forbidden
+11. **Always** infer types from `packages/types/src/db.ts` (only after user runs migrations via `bun sb:push` and typegen via `bun sb:typegen`) - never attempt to run these commands yourself
+12. **Always** refactor files >400 LOC and components >200 LOC into smaller, focused units
+13. **Always** apply best practices to both old and new code - code quality is never optional
+14. **Always** break down components following single responsibility principle and extract complex logic to utilities/hooks
+15. **Always** use TanStack Query for ALL client-side data fetching - raw fetch/useEffect patterns are forbidden
 
 ### Escalate When
 
@@ -288,6 +289,7 @@ Raw `fetch()`, `useEffect` with manual state, or custom hooks without React Quer
 - **CRITICAL:** The only acceptable pattern is `useQuery`/`useMutation`/`useInfiniteQuery` from TanStack Query
 
 **Banned Patterns (Will Cause Code Rejection):**
+
 ```typescript
 // ❌ NEVER DO THIS
 useEffect(() => {
@@ -322,6 +324,7 @@ const { data } = useQuery({
 **Database `ws_id` columns ALWAYS store UUIDs.** Route parameters may contain special identifiers like `"personal"` that must be resolved.
 
 **Resolution Pattern:**
+
 - `"personal"` → User's personal workspace UUID (DB lookup)
 - `"internal"` → `ROOT_WORKSPACE_ID` constant
 - Valid UUID → Pass through unchanged
@@ -395,6 +398,7 @@ Five seed accounts are available:
 - Use `bun sb:diff` to generate migrations from local changes
 - Migrations are auto-applied when starting Supabase locally with `bun sb:up`
 - **Agents**: Can run `bun sb:up` for local testing; NEVER run `bun sb:push`
+- **Type Inference**: After user runs migrations and typegen, always import types from `packages/types/src/db.ts` for convenient type aliases (e.g., `Workspace`, `WorkspaceTask`, `TaskProjectWithRelations`). Never attempt to infer types before migrations are applied.
 - RLS policies are critical - test permissions thoroughly
 - Prefer additive migrations; document destructive changes with reversible notes
 
@@ -426,6 +430,7 @@ Five seed accounts are available:
 - Keep React Server Components default; add `'use client'` only when necessary
 - Avoid deep relative imports; expose via package `index.ts`
 - Use Zod for runtime validation of external inputs
+- **Type Inference from Database**: Always prefer importing types from `packages/types/src/db.ts` (e.g., `Workspace`, `WorkspaceTask`, `TaskWithRelations`) rather than manually defining database types. Only use these types AFTER migrations have been applied by the user via `bun sb:push` and types regenerated via `bun sb:typegen`. Never attempt to run these commands yourself.
 
 #### Code Quality & Refactoring Policy
 
@@ -691,10 +696,11 @@ Before requesting review:
 9. ✅ **Code follows best practices (both old and new code touched)**
 10. ✅ **Components follow single responsibility; complex logic extracted to utilities/hooks**
 11. ✅ **ALL client-side data fetching uses TanStack Query (ZERO `useEffect` for fetching; no raw fetch patterns)**
-12. ✅ No secrets, tokens, or API keys committed
-13. ✅ Edge runtime export added where required
-14. ✅ All external inputs validated with Zod
-15. ✅ All user-facing strings have both English and Vietnamese translations
+12. ✅ **Database types imported from `packages/types/src/db.ts` (only after user runs migrations + typegen)**
+13. ✅ No secrets, tokens, or API keys committed
+14. ✅ Edge runtime export added where required
+15. ✅ All external inputs validated with Zod
+16. ✅ All user-facing strings have both English and Vietnamese translations
 
 ## Reference
 

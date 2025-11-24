@@ -102,6 +102,7 @@ Semantics & norms:
 |------|------|
 | Cross-app sharing | Prefer extracting to `packages/*` before duplicating logic. |
 | Supabase types | Always regenerate via `bun sb:typegen`—never hand-edit generated files. |
+| Type inference | Prefer importing types from `packages/types/src/db.ts` (only after user runs migrations + typegen). Never attempt to run migrations yourself. |
 | App isolation | Avoid importing from another app's `src/`; use published workspace packages. |
 | Environment config | Each Next.js app consumes root `.env*` plus its own; Python services manage their own `.env`. |
 | Naming | Package names follow `@tuturuuu/<name>`; commit scopes mirror these names. |
@@ -172,9 +173,10 @@ Each workflow must be: minimal, idempotent, documented in PR description.
 2. Prefer additive changes. For destructive ops: comment rationale + reversible notes.
 3. (User-only) Application: User runs `bun sb:push` (The agent is allowed to run `bun sb:up` for ephemeral changes, as it only affect local supabase instance in Docker). Agent MUST NOT execute `bun sb:push`.
 4. Types: Runs `bun sb:typegen`; agent incorporates updated generated types via terminal command (never hand-edit).
-5. Update application code referencing new columns (after user supplies regenerated types in repo state).
-6. Add data backfill script (idempotent) if needed (<30 LOC) inside migration or separate script; else escalate.
-7. Prepare targeted tests referencing new schema (user executes them).
+5. Type Inference: After user runs migrations + typegen, prefer importing types from `packages/types/src/db.ts` for convenient type aliases and extended types (e.g., `Workspace`, `WorkspaceTask`, `TaskProjectWithRelations`). Never attempt to infer types before migrations are applied.
+6. Update application code referencing new columns (after user supplies regenerated types in repo state).
+7. Add data backfill script (idempotent) if needed (<30 LOC) inside migration or separate script; else escalate.
+8. Prepare targeted tests referencing new schema (user executes them).
 
 ### 4.6 Formatting, Linting, Typecheck
 
@@ -300,6 +302,7 @@ Follow Conventional Commits & Branch naming (see `apps/docs/git-conventions.mdx`
 - Keep React Server Components default; add `'use client'` only when necessary.
 - Avoid deep relative imports into other packages—expose via their `index.ts`.
 - Use Zod for runtime validation of external inputs (API bodies, env-derived config).
+- **Type Inference from Database**: Always prefer importing types from `packages/types/src/db.ts` (e.g., `Workspace`, `WorkspaceTask`, `TaskWithRelations`) rather than manually defining database types. Only use these types AFTER migrations have been applied by the user via `bun sb:push` and types regenerated via `bun sb:typegen`. Never attempt to run these commands yourself.
 
 ### 5.3 Python (apps/discord)
 
@@ -405,6 +408,7 @@ When TO use React Query (MANDATORY for client-side fetching):
 **TanStack Query is the ONLY approved method for client-side data fetching.**
 
 **ABSOLUTELY FORBIDDEN PATTERNS:**
+
 - ❌ **NEVER use `useEffect` for data fetching** - This is the #1 most common violation
 - ❌ Raw `fetch()` in client components
 - ❌ Manual state management (`useState` + `useEffect`) for API calls
@@ -424,6 +428,7 @@ Use React Query for:
 - **Polling or periodic refetch** scenarios.
 
 **CRITICAL RULES:**
+
 1. **NEVER use `useEffect` for data fetching** - No exceptions, no special cases
 2. If you see `useEffect` + `fetch`/API calls in existing code, refactor it to React Query
 3. If you write client-side data fetching without React Query, the code WILL BE REJECTED
