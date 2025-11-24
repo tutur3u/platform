@@ -4,7 +4,7 @@ import { AccountSwitcherKeyboardShortcut } from '@/components/account-switcher';
 import { AccountSwitcherProvider } from '@/context/account-switcher-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
-import {ReactQueryDevtools} from '@tanstack/react-query-devtools'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { ReactNode } from 'react';
 
 const queryClient = new QueryClient();
