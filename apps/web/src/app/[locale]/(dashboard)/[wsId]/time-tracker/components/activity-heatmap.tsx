@@ -28,8 +28,18 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import 'dayjs/locale/vi';
+import { Heatmap } from '@mantine/charts';
+import { ScrollArea } from '@mantine/core';
+import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
+import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import classes from '@/style/mantine-heatmap.module.css';
+import {
+  DEFAULT_SETTINGS,
+  type HeatmapSettings,
+  type HeatmapViewMode,
+} from '../settings/heatmap-settings-form';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -45,18 +55,6 @@ interface ActivityHeatmapProps {
   }>;
 }
 
-type HeatmapViewMode =
-  | 'original'
-  | 'hybrid'
-  | 'calendar-only'
-  | 'compact-cards';
-
-interface HeatmapSettings {
-  viewMode: HeatmapViewMode;
-  timeReference: 'relative' | 'absolute' | 'smart';
-  showOnboardingTips: boolean;
-}
-
 const formatDuration = (seconds: number | undefined): string => {
   const safeSeconds = Math.max(0, Math.floor(seconds || 0));
   const hours = Math.floor(safeSeconds / 3600);
@@ -69,83 +67,141 @@ const formatDuration = (seconds: number | undefined): string => {
   return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
+// Get intensity level (0-4) based on duration - still used by other view modes
+const getIntensity = (duration: number): number => {
+  if (duration === 0) return 0;
+  if (duration < 1800) return 1; // < 30 minutes
+  if (duration < 3600) return 2; // < 1 hour
+  if (duration < 7200) return 3; // < 2 hours
+  return 4; // 2+ hours
+};
+
+// Get color class based on intensity - still used by other view modes
+const getColorClass = (intensity: number): string => {
+  const colors = [
+    'bg-gray-100 dark:bg-gray-800/50', // No activity
+    'bg-emerald-200 dark:bg-emerald-900/60', // Low activity
+    'bg-emerald-400 dark:bg-emerald-700/70', // Medium-low activity
+    'bg-emerald-600 dark:bg-emerald-600/80', // Medium-high activity
+    'bg-emerald-800 dark:bg-emerald-400/90', // High activity
+  ];
+  return colors[Math.max(0, Math.min(4, intensity))]!;
+};
+
 export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
   const t = useTranslations('time-tracker.heatmap');
   const locale = useLocale();
   dayjs.locale(locale);
 
-  const [heatmapSettings] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('heatmap-settings');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch {
-          // Fall through to default
-        }
-      }
-    }
-    return {
-      viewMode: 'original' as 'original' | 'hybrid' | 'calendar-only',
-      timeReference: 'smart' as 'relative' | 'absolute' | 'smart',
-      showOnboardingTips: true,
-    };
+  const [settings, setSettings] = useLocalStorage<HeatmapSettings>(
+    'heatmap-settings',
+    DEFAULT_SETTINGS
+  );
+
+  // Use the existing mobile detection hook
+  const isMobile = useIsMobile();
+
+  // Responsive heatmap sizing based on screen width
+  const [heatmapSize, setHeatmapSize] = useState({
+    rectSize: 14,
+    rectRadius: 2,
+    gap: 3,
   });
 
-  const [internalSettings, setInternalSettings] = useState<HeatmapSettings>({
-    viewMode: 'original',
-    timeReference: 'smart',
-    showOnboardingTips: true,
+  // Responsive date range configuration
+  const [dateRangeConfig, setDateRangeConfig] = useState({
+    startDate: dayjs().subtract(364, 'day').format('YYYY-MM-DD'),
+    endDate: dayjs().format('YYYY-MM-DD'),
+    withOutsideDates: true,
   });
 
   useEffect(() => {
-    setInternalSettings(heatmapSettings);
-  }, [heatmapSettings]);
+    const updateSize = () => {
+      const width = window.innerWidth;
+      const timezone = dayjs.tz.guess();
+      const today = dayjs().tz(timezone);
+
+      if (width < 640) {
+        // Mobile: smaller squares, last 6 months with split months
+        setHeatmapSize({ rectSize: 20, rectRadius: 1, gap: 2 });
+        setDateRangeConfig({
+          startDate: today
+            .subtract(6, 'month')
+            .startOf('month')
+            .format('YYYY-MM-DD'),
+          endDate: today.format('YYYY-MM-DD'),
+          withOutsideDates: false,
+        });
+      } else if (width < 768) {
+        // Small tablet: last 6 months with split months
+        setHeatmapSize({ rectSize: 12, rectRadius: 2, gap: 2 });
+        setDateRangeConfig({
+          startDate: today
+            .subtract(6, 'month')
+            .startOf('month')
+            .format('YYYY-MM-DD'),
+          endDate: today.format('YYYY-MM-DD'),
+          withOutsideDates: false,
+        });
+      } else if (width < 1024) {
+        // Tablet: last 9 months with split months
+        setHeatmapSize({ rectSize: 12, rectRadius: 2, gap: 2.5 });
+        setDateRangeConfig({
+          startDate: today
+            .subtract(9, 'month')
+            .startOf('month')
+            .format('YYYY-MM-DD'),
+          endDate: today.format('YYYY-MM-DD'),
+
+          withOutsideDates: false,
+        });
+      } else if (width < 1280) {
+        // Small desktop: full year without split months
+        setHeatmapSize({ rectSize: 14, rectRadius: 2, gap: 3 });
+        setDateRangeConfig({
+          startDate: today.subtract(364, 'day').format('YYYY-MM-DD'),
+          endDate: today.format('YYYY-MM-DD'),
+          withOutsideDates: true,
+        });
+      } else {
+        // Large desktop: full year without split months
+        setHeatmapSize({ rectSize: 24, rectRadius: 3, gap: 3 });
+        setDateRangeConfig({
+          startDate: today.subtract(364, 'day').format('YYYY-MM-DD'),
+          endDate: today.format('YYYY-MM-DD'),
+
+          withOutsideDates: true,
+        });
+      }
+    };
+
+    // Initial size calculation
+    updateSize();
+
+    // Debounced resize handler for better performance
+    let resizeTimer: ReturnType<typeof setTimeout>;
+    const debouncedResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(updateSize, 150);
+    };
+
+    window.addEventListener('resize', debouncedResize);
+    return () => {
+      window.removeEventListener('resize', debouncedResize);
+      clearTimeout(resizeTimer);
+    };
+  }, []);
 
   // Smart onboarding tips state - separate from general settings for better control
-  const [onboardingState, setOnboardingState] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('time-tracker-onboarding');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          // Check if user dismissed tips recently (within 7 days)
-          if (parsed.dismissedAt) {
-            const dismissedDate = new Date(parsed.dismissedAt);
-            const daysSinceDismissed = Math.floor(
-              (Date.now() - dismissedDate.getTime()) / (1000 * 60 * 60 * 24)
-            );
-
-            // If dismissed recently, don't show tips
-            if (daysSinceDismissed < 7) {
-              return {
-                showTips: false,
-                dismissedAt: parsed.dismissedAt,
-                viewCount: parsed.viewCount || 0,
-                lastViewMode: parsed.lastViewMode || 'original',
-              };
-            }
-          }
-          return {
-            showTips: true,
-            dismissedAt: null,
-            viewCount: parsed.viewCount || 0,
-            lastViewMode: parsed.lastViewMode || 'original',
-          };
-        } catch {
-          // Fall through to default
-        }
-      }
-    }
-    return {
+  const [onboardingState, setOnboardingState] = useLocalStorage(
+    'time-tracker-onboarding',
+    {
       showTips: true,
-      dismissedAt: null,
+      dismissedAt: null as string | null,
       viewCount: 0,
-      lastViewMode: 'original',
-    };
-  });
-
-  const settings = internalSettings;
+      lastViewMode: 'original' as HeatmapViewMode,
+    }
+  );
 
   // Auto-hide tips after 30 seconds of inactivity (optional enhancement)
   const [tipAutoHideTimer, setTipAutoHideTimer] = useState<ReturnType<
@@ -167,11 +223,11 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
     // Show for experienced users occasionally (every 14 days after 10+ views)
     const isPeriodicReminder =
       onboardingState.viewCount >= 10 &&
-      (!onboardingState.dismissedAt ||
-        Math.floor(
-          (Date.now() - new Date(onboardingState.dismissedAt).getTime()) /
-            (1000 * 60 * 60 * 24)
-        ) >= 14);
+      onboardingState.dismissedAt &&
+      Math.floor(
+        (Date.now() - new Date(onboardingState.dismissedAt).getTime()) /
+          (1000 * 60 * 60 * 24)
+      ) >= 14;
 
     return isNewUser || changedViewMode || isPeriodicReminder;
   }, [
@@ -185,54 +241,31 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
 
   // Track view mode changes and update count
   useEffect(() => {
-    setOnboardingState((currentState) => {
-      if (settings.viewMode !== currentState.lastViewMode) {
-        const newState = {
-          ...currentState,
-          viewCount: currentState.viewCount + 1,
-          lastViewMode: settings.viewMode,
-          showTips: true, // Reset to show tips when view mode changes
-          dismissedAt: null,
-        };
-
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(
-            'time-tracker-onboarding',
-            JSON.stringify(newState)
-          );
-        }
-
-        return newState;
-      }
-      return currentState;
-    });
-  }, [settings.viewMode]);
+    if (settings.viewMode !== onboardingState.lastViewMode) {
+      setOnboardingState({
+        ...onboardingState,
+        viewCount: onboardingState.viewCount + 1,
+        lastViewMode: settings.viewMode,
+        showTips: true, // Reset to show tips when view mode changes
+        dismissedAt: null,
+      });
+    }
+  }, [settings.viewMode, onboardingState, setOnboardingState]);
 
   // Handle tip dismissal
   const handleDismissTips = useCallback(() => {
-    setOnboardingState((currentState) => {
-      const newState = {
-        ...currentState,
-        showTips: false,
-        dismissedAt: new Date().toISOString(),
-      };
-
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(
-          'time-tracker-onboarding',
-          JSON.stringify(newState)
-        );
-      }
-
-      return newState;
-    });
+    setOnboardingState((prev) => ({
+      ...prev,
+      showTips: false,
+      dismissedAt: new Date().toISOString(),
+    }));
 
     // Clear auto-hide timer if active
     if (tipAutoHideTimer) {
       clearTimeout(tipAutoHideTimer);
       setTipAutoHideTimer(null);
     }
-  }, [tipAutoHideTimer]);
+  }, [setOnboardingState, tipAutoHideTimer]);
 
   // Set up auto-hide timer when tips are shown (optional - can be disabled)
   // biome-ignore lint/correctness/useExhaustiveDependencies(handleDismissTips): suppress dependency array linting
@@ -267,351 +300,31 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
   const userTimezone = dayjs.tz.guess();
   const today = dayjs().tz(userTimezone);
 
-  // Pre-compute week grid data structure - memoized to avoid recreating 371+ dayjs objects on every render
-  const weekGridData = useMemo(() => {
-    // Compute today inside memo to avoid stale closure and unnecessary recalculations
-    const memoToday = dayjs().tz(userTimezone);
-
-    const activityMap = new Map<
-      string,
-      { duration: number; sessions: number }
-    >();
+  // Transform data for Mantine Heatmap - convert array to object with date keys
+  const heatmapData = useMemo(() => {
+    const dataObj: Record<string, number> = {};
     dailyActivity?.forEach((activity) => {
       const activityDate = dayjs.utc(activity.date).tz(userTimezone);
       const dateStr = activityDate.format('YYYY-MM-DD');
-      activityMap.set(dateStr, activity);
+      // Store duration in seconds (Mantine will handle the scaling)
+      dataObj[dateStr] = activity.duration;
     });
-
-    const weeks: Array<
-      Array<{
-        date: dayjs.Dayjs;
-        dateStr: string;
-        activity: { duration: number; sessions: number } | null;
-      } | null>
-    > = [];
-
-    // Start from 365 days ago
-    const startDate = memoToday.subtract(364, 'day');
-    // Align to Monday (start of ISO week)
-    const firstMonday = startDate.startOf('isoWeek');
-
-    // Generate 53 weeks of data
-    let currentDate = firstMonday;
-    for (let week = 0; week < 53; week++) {
-      const currentWeek = [];
-
-      for (let day = 0; day < 7; day++) {
-        const dateStr = currentDate.format('YYYY-MM-DD');
-        const activity = activityMap.get(dateStr);
-
-        if (currentDate.isAfter(memoToday, 'day')) {
-          // Future dates
-          currentWeek.push(null);
-        } else {
-          currentWeek.push({
-            date: currentDate,
-            dateStr,
-            activity: activity || null,
-          });
-        }
-
-        currentDate = currentDate.add(1, 'day');
-      }
-      weeks.push(currentWeek);
-    }
-
-    return { weeks, activityMap };
+    return dataObj;
   }, [dailyActivity, userTimezone]);
 
-  const weeks = weekGridData.weeks;
-
-  // Get intensity level (0-4) based on duration
-  const getIntensity = (duration: number): number => {
-    if (duration === 0) return 0;
-    if (duration < 1800) return 1; // < 30 minutes
-    if (duration < 3600) return 2; // < 1 hour
-    if (duration < 7200) return 3; // < 2 hours
-    return 4; // 2+ hours
-  };
-
-  // Get color class based on intensity - minimal design
-  const getColorClass = (intensity: number): string => {
-    const colors = [
-      'bg-gray-100 dark:bg-gray-800/50', // No activity
-      'bg-emerald-200 dark:bg-emerald-900/60', // Low activity
-      'bg-emerald-400 dark:bg-emerald-700/70', // Medium-low activity
-      'bg-emerald-600 dark:bg-emerald-600/80', // Medium-high activity
-      'bg-emerald-800 dark:bg-emerald-400/90', // High activity
-    ];
-    return colors[Math.max(0, Math.min(4, intensity))]!;
-  };
-
-  const monthNames = useMemo(
-    () => [
-      t('months.jan'),
-      t('months.feb'),
-      t('months.mar'),
-      t('months.apr'),
-      t('months.may'),
-      t('months.jun'),
-      t('months.jul'),
-      t('months.aug'),
-      t('months.sep'),
-      t('months.oct'),
-      t('months.nov'),
-      t('months.dec'),
-    ],
-    [t]
-  );
+  // Store activity map for tooltips and other features
+  const activityMap = useMemo(() => {
+    const map = new Map<string, { duration: number; sessions: number }>();
+    dailyActivity?.forEach((activity) => {
+      const activityDate = dayjs.utc(activity.date).tz(userTimezone);
+      const dateStr = activityDate.format('YYYY-MM-DD');
+      map.set(dateStr, activity);
+    });
+    return map;
+  }, [dailyActivity, userTimezone]);
 
   const totalDuration =
     dailyActivity?.reduce((sum, day) => sum + day.duration, 0) || 0;
-
-  // Split weeks for different layouts
-  // Mobile: 3 rows of ~4 months each (17-18 weeks per row)
-  const mobileFirstRow = weeks.slice(0, 18);
-  const mobileSecondRow = weeks.slice(18, 35);
-  const mobileThirdRow = weeks.slice(35);
-
-  // Desktop: 2 rows of ~6 months each (26-27 weeks per row)
-  const desktopFirstRow = weeks.slice(0, 26);
-  const desktopSecondRow = weeks.slice(26);
-
-  // Helper function to render month labels for a subset of weeks
-  const getMonthLabelsForWeeks = (weeksSubset: typeof weeks) => {
-    const labels: Array<{ label: string; weekIndex: number }> = [];
-    let lastMonth = -1;
-
-    weeksSubset.forEach((week, weekIndex) => {
-      const firstDayOfWeek = week.find((day) => day !== null);
-      if (firstDayOfWeek) {
-        const month = firstDayOfWeek.date.month();
-        const dayOfMonth = firstDayOfWeek.date.date();
-
-        if (month !== lastMonth && dayOfMonth <= 7) {
-          labels.push({
-            label: monthNames[month]!,
-            weekIndex: weekIndex,
-          });
-          lastMonth = month;
-        }
-      }
-    });
-
-    return labels;
-  };
-
-  // Helper function to render a heatmap section - memoized to prevent recreation
-  const renderHeatmapSection = useCallback(
-    (weeksSubset: typeof weeks, sectionKey: string, isMobile = false) => {
-      // Calculate global index offset for proper unique keys
-      let globalOffset = 0;
-      if (sectionKey === 'mobile-second')
-        globalOffset = mobileFirstRow.flat().length;
-      if (sectionKey === 'mobile-third')
-        globalOffset =
-          mobileFirstRow.flat().length + mobileSecondRow.flat().length;
-      if (sectionKey === 'desktop-second')
-        globalOffset = desktopFirstRow.flat().length;
-
-      return (
-        <div
-          className={cn(
-            'relative space-y-1.5 overflow-visible',
-            isMobile ? 'space-y-1' : 'space-y-2'
-          )}
-        >
-          {/* Month Labels */}
-          <div
-            className="grid font-medium text-gray-500 text-xs dark:text-gray-400"
-            style={{
-              gridTemplateColumns: `repeat(${weeksSubset.length}, minmax(0, 1fr))`,
-              gap: isMobile ? '1.5px' : '2.5px',
-            }}
-          >
-            {getMonthLabelsForWeeks(weeksSubset).map(({ label, weekIndex }) => (
-              <div
-                key={`${sectionKey}-${label}-${weekIndex}`}
-                className="text-center"
-                style={{ gridColumnStart: weekIndex + 1 }}
-              >
-                <span
-                  className={cn(
-                    isMobile ? 'text-[10px]' : 'text-xs',
-                    'sm:hidden'
-                  )}
-                >
-                  {label.slice(0, 1)}
-                </span>
-                <span className="hidden text-xs sm:inline">{label}</span>
-              </div>
-            ))}
-          </div>
-          {/* Grid with improved overflow handling */}
-          <div
-            className="relative grid grid-flow-col grid-rows-7 overflow-visible"
-            style={{
-              gridTemplateColumns: `repeat(${weeksSubset.length}, minmax(0, 1fr))`,
-              gap: isMobile ? '1.5px' : '2.5px',
-            }}
-          >
-            {weeksSubset.flat().map((day, index) => {
-              const globalIndex = globalOffset + index;
-
-              if (!day) {
-                return (
-                  <div
-                    key={globalIndex}
-                    className={cn(
-                      '/30 aspect-square rounded-[2px] border bg-gray-100/80 dark:border-gray-700/30 dark:bg-gray-800/60',
-                      isMobile
-                        ? 'min-h-[11px] min-w-[11px]'
-                        : 'min-h-[13px] min-w-[13px] sm:min-h-[15px] sm:min-w-[15px]'
-                    )}
-                  />
-                );
-              }
-
-              const intensity = getIntensity(day.activity?.duration || 0);
-              const isToday = day.date.isSame(today, 'day');
-
-              return (
-                <Tooltip key={globalIndex}>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      className={cn(
-                        'relative aspect-square rounded-[2px] transition-all duration-200 ease-out focus:outline-none',
-                        isMobile
-                          ? 'min-h-[11px] min-w-[11px]'
-                          : 'min-h-[13px] min-w-[13px] sm:min-h-[15px] sm:min-w-[15px]',
-                        getColorClass(intensity),
-                        // Enhanced hover and focus states with better z-index
-                        'hover:z-10 hover:scale-110 hover:shadow-lg hover:ring-2 hover:ring-emerald-400/60 hover:ring-offset-1',
-                        'focus:z-10 focus:scale-110 focus:ring-2 focus:ring-emerald-400/50 focus:ring-offset-1',
-                        'dark:hover:ring-emerald-500/50 dark:hover:ring-offset-gray-900',
-                        'dark:focus:ring-emerald-500/50 dark:focus:ring-offset-gray-900',
-                        // Today indicator with higher z-index
-                        isToday &&
-                          'z-20 shadow-lg ring-2 ring-blue-500/80 ring-offset-2 dark:ring-blue-400/70 dark:ring-offset-gray-900',
-                        // Mobile specific hover states
-                        isMobile && 'hover:scale-[1.2] sm:hover:scale-110'
-                      )}
-                      aria-label={t('aria.activityFor', {
-                        date: day.date.format('MMMM D, YYYY'),
-                        duration: day.activity
-                          ? formatDuration(day.activity.duration)
-                          : t('noActivity'),
-                      })}
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="top"
-                    className="pointer-events-none z-50 max-w-sm border border-border/20 bg-white/98 p-3 shadow-2xl backdrop-blur-lg dark:bg-gray-900/98"
-                    sideOffset={8}
-                    avoidCollisions={true}
-                    collisionPadding={8}
-                  >
-                    <div className="space-y-2.5">
-                      <div className="font-semibold text-gray-900 dark:text-gray-100">
-                        {day.date.format('dd, DD/MM/YYYY')}
-                        {settings.timeReference === 'smart' && (
-                          <div className="mt-1 text-gray-500 text-xs dark:text-gray-400">
-                            {day.date.fromNow()}
-                          </div>
-                        )}
-                      </div>
-                      {day.activity ? (
-                        <div className="space-y-2 text-sm">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                              <div
-                                className={cn(
-                                  'h-2.5 w-2.5 rounded-full shadow-sm',
-                                  intensity === 0
-                                    ? 'bg-gray-400'
-                                    : intensity === 1
-                                      ? 'bg-emerald-300'
-                                      : intensity === 2
-                                        ? 'bg-emerald-400'
-                                        : intensity === 3
-                                          ? 'bg-emerald-500'
-                                          : 'bg-emerald-600'
-                                )}
-                              />
-                              <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                                {formatDuration(day.activity.duration)}
-                              </span>
-                            </div>
-                            <span className="text-gray-500 dark:text-gray-400">
-                              {t('tracked')}
-                            </span>
-                          </div>
-                          {day.activity.sessions > 0 && (
-                            <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-                              <div className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-                              <span>
-                                {t('sessions', {
-                                  count: day.activity.sessions,
-                                })}
-                              </span>
-                            </div>
-                          )}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1">
-                              {[...Array(5)].map((_, i) => (
-                                <div
-                                  key={i}
-                                  className={cn(
-                                    'h-1.5 w-1.5 rounded-full transition-colors',
-                                    i < intensity
-                                      ? 'bg-emerald-500'
-                                      : 'bg-gray-300 dark:bg-gray-600'
-                                  )}
-                                />
-                              ))}
-                            </div>
-                            <span className="font-medium text-gray-500 text-xs dark:text-gray-400">
-                              {t('level', { level: intensity })}
-                            </span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
-                          <div className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-                          <span className="text-sm">
-                            {t('noActivityRecorded')}
-                          </span>
-                        </div>
-                      )}
-                      {isToday && (
-                        <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-2.5 py-1.5 dark:bg-blue-900/40">
-                          <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-blue-500 shadow-sm" />
-                          <span className="font-semibold text-blue-600 text-sm dark:text-blue-400">
-                            {t('today')}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
-          </div>
-        </div>
-      );
-    },
-    [
-      weeks,
-      mobileFirstRow,
-      mobileSecondRow,
-      desktopFirstRow,
-      today,
-      settings.timeReference,
-      t,
-      getMonthLabelsForWeeks,
-    ]
-  );
 
   // Render year overview bars (simplified GitHub-style) - memoized
   const renderYearOverview = useCallback(() => {
@@ -690,14 +403,14 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
         </div>
       </div>
     );
-  }, [dailyActivity, userTimezone, today, t, setCurrentMonth]);
+  }, [dailyActivity, userTimezone, today, t]);
 
   // Render monthly calendar view - memoized
   const renderMonthlyCalendar = useCallback(() => {
     const monthStart = currentMonth.startOf('month');
     const monthEnd = currentMonth.endOf('month');
-    const calendarStart = monthStart.startOf('week');
-    const calendarEnd = monthEnd.endOf('week');
+    const calendarStart = monthStart.startOf('isoWeek');
+    const calendarEnd = monthEnd.endOf('isoWeek');
 
     const days = [];
     let currentDay = calendarStart;
@@ -776,13 +489,13 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
           {/* Day Headers */}
           <div className="grid grid-cols-7 gap-1.5 text-center font-medium text-gray-500 text-xs dark:text-gray-400">
             {[
-              t('days.sun'),
               t('days.mon'),
               t('days.tue'),
               t('days.wed'),
               t('days.thu'),
               t('days.fri'),
               t('days.sat'),
+              t('days.sun'),
             ].map((day) => (
               <div key={day} className="py-1 text-center">
                 {day}
@@ -1177,7 +890,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
         <div className="mb-2">
           <div className="grid grid-cols-7 gap-px">
             {Array.from({ length: 7 * 4 }, (_, i) => {
-              const monthStart = dayjs(monthKey + '-01');
+              const monthStart = dayjs(`${monthKey} -01`);
               const dayOffset = i - monthStart.day();
               const currentDay = monthStart.add(dayOffset, 'day');
 
@@ -1529,19 +1242,153 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
     );
   }
 
+  // Helper function to render a single heatmap with given date range
+  const renderSingleHeatmap = useCallback(
+    (startDate: string, endDate: string) => {
+      return (
+        <Heatmap
+          data={heatmapData}
+          startDate={startDate}
+          endDate={endDate}
+          withOutsideDates={false}
+          withMonthLabels
+          withWeekdayLabels
+          withTooltip
+          firstDayOfWeek={1} // Monday
+          monthLabels={[
+            t('months.jan'),
+            t('months.feb'),
+            t('months.mar'),
+            t('months.apr'),
+            t('months.may'),
+            t('months.jun'),
+            t('months.jul'),
+            t('months.aug'),
+            t('months.sep'),
+            t('months.oct'),
+            t('months.nov'),
+            t('months.dec'),
+          ]}
+          weekdayLabels={[
+            t('days.sunShort'),
+            t('days.monShort'),
+            '',
+            t('days.wedShort'),
+            '',
+            t('days.friShort'),
+            '',
+          ]}
+          getTooltipLabel={({ date, value }) => {
+            const activity = activityMap.get(date);
+            const dateObj = dayjs(date);
+
+            if (!activity || value === null || value === 0) {
+              return `${dateObj.format('ddd, DD/MM/YYYY')} – ${t('noActivityRecorded')}`;
+            }
+
+            const parts: string[] = [dateObj.format('ddd, DD/MM/YYYY')];
+
+            if (settings.timeReference === 'smart') {
+              parts.push(dateObj.fromNow());
+            }
+
+            parts.push(`${formatDuration(activity.duration)} ${t('tracked')}`);
+
+            if (activity.sessions > 0) {
+              parts.push(t('sessions', { count: activity.sessions }));
+            }
+
+            if (dateObj.isSame(today, 'day')) {
+              parts.push(`(${t('today')})`);
+            }
+
+            return parts.join(' ');
+          }}
+          tooltipProps={{
+            multiline: true,
+            w: 200,
+          }}
+          colors={[
+            'var(--heatmap-level-1)',
+            'var(--heatmap-level-2)',
+            'var(--heatmap-level-3)',
+            'var(--heatmap-level-4)',
+          ]}
+          rectSize={heatmapSize.rectSize}
+          rectRadius={heatmapSize.rectRadius}
+          gap={heatmapSize.gap}
+          classNames={classes}
+        />
+      );
+    },
+    [heatmapData, activityMap, settings.timeReference, today, t, heatmapSize]
+  );
+
+  // Render mobile heatmaps - split into 3 separate 2-month ranges
+  const renderMobileHeatmaps = useCallback(() => {
+    const timezone = dayjs.tz.guess();
+    const now = dayjs().tz(timezone);
+
+    // Calculate 3 periods of 2 months each (total 6 months)
+    const period3End = now.format('YYYY-MM-DD');
+    const period3Start = now
+      .subtract(2, 'month')
+      .startOf('month')
+      .format('YYYY-MM-DD');
+
+    const period2End = now
+      .subtract(2, 'month')
+      .startOf('month')
+      .subtract(1, 'day')
+      .format('YYYY-MM-DD');
+    const period2Start = now
+      .subtract(4, 'month')
+      .startOf('month')
+      .format('YYYY-MM-DD');
+
+    const period1End = now
+      .subtract(4, 'month')
+      .startOf('month')
+      .subtract(1, 'day')
+      .format('YYYY-MM-DD');
+    const period1Start = now
+      .subtract(6, 'month')
+      .startOf('month')
+      .format('YYYY-MM-DD');
+
+    return (
+      <div className="space-y-4">
+        {/* Period 1: Oldest 2 months */}
+        <ScrollArea type="auto">
+          {renderSingleHeatmap(period1Start, period1End)}
+        </ScrollArea>
+
+        {/* Period 2: Middle 2 months */}
+        <ScrollArea type="auto">
+          {renderSingleHeatmap(period2Start, period2End)}
+        </ScrollArea>
+
+        {/* Period 3: Most recent 2 months */}
+        <ScrollArea type="auto">
+          {renderSingleHeatmap(period3Start, period3End)}
+        </ScrollArea>
+      </div>
+    );
+  }, [renderSingleHeatmap]);
+
   return (
     <div className="relative space-y-4 overflow-visible sm:space-y-5">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 flex items-center gap-3">
+      <div className="flex flex-row gap-3 md:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-dynamic-green to-dynamic-cyan shadow-lg">
             <Calendar className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900 text-lg sm:text-xl dark:text-gray-100">
+            <h3 className="font-semibold text-dynamic-foreground text-lg sm:text-xl">
               {t('title')}
             </h3>
-            <p className="text-gray-600 text-sm sm:text-base dark:text-gray-400">
+            <p className="text-dynamic-muted text-sm sm:text-base">
               {totalDuration > 0
                 ? t('trackedThisYear', {
                     duration: formatDuration(totalDuration),
@@ -1550,7 +1397,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col items-center gap-2 md:flex-row">
           {/* View Mode Settings */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -1566,10 +1413,10 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
               <DropdownMenuItem
                 className="text-xs hover:cursor-pointer"
                 onClick={() =>
-                  setInternalSettings((prev) => ({
-                    ...prev,
+                  setSettings({
+                    ...settings,
                     viewMode: 'original',
-                  }))
+                  })
                 }
               >
                 <Grid3X3 className="mr-2 h-3 w-3" />
@@ -1581,10 +1428,10 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
               <DropdownMenuItem
                 className="text-xs hover:cursor-pointer"
                 onClick={() =>
-                  setInternalSettings((prev) => ({
-                    ...prev,
+                  setSettings({
+                    ...settings,
                     viewMode: 'hybrid',
-                  }))
+                  })
                 }
               >
                 <Calendar className="mr-2 h-3 w-3" />
@@ -1596,10 +1443,10 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
               <DropdownMenuItem
                 className="text-xs hover:cursor-pointer"
                 onClick={() =>
-                  setInternalSettings((prev) => ({
-                    ...prev,
+                  setSettings({
+                    ...settings,
                     viewMode: 'calendar-only',
-                  }))
+                  })
                 }
               >
                 <Calendar className="mr-2 h-3 w-3" />
@@ -1611,10 +1458,10 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
               <DropdownMenuItem
                 className="text-xs hover:cursor-pointer"
                 onClick={() =>
-                  setInternalSettings((prev) => ({
-                    ...prev,
+                  setSettings({
+                    ...settings,
                     viewMode: 'compact-cards',
-                  }))
+                  })
                 }
               >
                 <LayoutDashboard className="mr-2 h-3 w-3" />
@@ -1631,14 +1478,14 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
                 className="text-xs hover:cursor-pointer"
                 checked={settings.timeReference === 'smart'}
                 onCheckedChange={(checked) =>
-                  setInternalSettings((prev) => ({
-                    ...prev,
+                  setSettings({
+                    ...settings,
                     timeReference: checked
                       ? 'smart'
-                      : prev.timeReference === 'smart'
+                      : settings.timeReference === 'smart'
                         ? 'relative'
-                        : prev.timeReference,
-                  }))
+                        : settings.timeReference,
+                  })
                 }
               >
                 {t('settings.showSmartTimeReferences')}
@@ -1647,10 +1494,10 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
                 className="text-xs hover:cursor-pointer"
                 checked={settings.showOnboardingTips}
                 onCheckedChange={(checked) =>
-                  setInternalSettings((prev) => ({
-                    ...prev,
+                  setSettings({
+                    ...settings,
                     showOnboardingTips: checked,
-                  }))
+                  })
                 }
               >
                 {t('settings.showHelpfulTips')}
@@ -1659,23 +1506,28 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
           </DropdownMenu>
 
           {/* Legend */}
-          <div className="flex items-center gap-2 rounded-lg bg-white/80 px-3 py-2 text-gray-600 text-xs shadow-sm ring-1 ring-gray-200/50 sm:gap-3 dark:bg-gray-800/80 dark:text-gray-400 dark:ring-gray-700/50">
-            <span className="hidden font-medium sm:inline">
+          <div
+            className={cn(
+              'flex items-center gap-2 rounded-lg border border-dynamic-border/60 bg-dynamic-surface/80 px-3 py-2 text-dynamic-muted text-xs shadow-sm sm:gap-3',
+              classes.heatmapColors
+            )}
+          >
+            <span className="hidden font-medium text-dynamic-foreground sm:inline">
               {t('legend.less')}
             </span>
             <div className="flex items-center gap-1">
-              {[0, 1, 2, 3, 4].map((intensity) => (
+              {[1, 2, 3, 4].map((intensity) => (
                 <div
                   key={intensity}
-                  className={cn(
-                    'h-2.5 w-2.5 rounded-[2px] transition-transform hover:scale-125 sm:h-3 sm:w-3',
-                    getColorClass(intensity)
-                  )}
+                  className="h-2.5 w-2.5 rounded-[2px] transition-transform hover:scale-125 sm:h-3 sm:w-3"
+                  style={{
+                    backgroundColor: `var(--heatmap-level-${intensity})`,
+                  }}
                   title={t('legend.levelIntensity', { level: intensity })}
                 />
               ))}
             </div>
-            <span className="hidden font-medium sm:inline">
+            <span className="hidden font-medium text-dynamic-foreground sm:inline">
               {t('legend.more')}
             </span>
           </div>
@@ -1740,96 +1592,27 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
 
       {/* Render Different Views Based on Settings */}
       {settings.viewMode === 'original' && (
-        <>
-          {/* Mobile: Three-row layout */}
-          <div className="block overflow-visible lg:hidden">
-            <div className="space-y-6">
-              {/* Day labels for mobile */}
-              <div className="flex items-start gap-3 overflow-visible">
-                <div className="flex w-8 flex-col justify-between gap-0.5 font-medium text-gray-500 text-xs dark:text-gray-400">
-                  <span className="leading-none">{t('days.monShort')}</span>
-                  <span className="leading-none">{t('days.tueShort')}</span>
-                  <span className="leading-none">{t('days.wedShort')}</span>
-                  <span className="leading-none">{t('days.thuShort')}</span>
-                  <span className="leading-none">{t('days.friShort')}</span>
-                  <span className="leading-none">{t('days.satShort')}</span>
-                  <span className="leading-none">{t('days.sunShort')}</span>
-                </div>
-                <div className="flex-1 overflow-visible">
-                  {renderHeatmapSection(mobileFirstRow, 'mobile-first', true)}
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 overflow-visible">
-                <div className="flex w-8 flex-col justify-between gap-0.5 font-medium text-gray-500 text-xs dark:text-gray-400">
-                  <span className="leading-none">{t('days.monShort')}</span>
-                  <span className="leading-none">{t('days.tueShort')}</span>
-                  <span className="leading-none">{t('days.wedShort')}</span>
-                  <span className="leading-none">{t('days.thuShort')}</span>
-                  <span className="leading-none">{t('days.friShort')}</span>
-                  <span className="leading-none">{t('days.satShort')}</span>
-                  <span className="leading-none">{t('days.sunShort')}</span>
-                </div>
-                <div className="flex-1 overflow-visible">
-                  {renderHeatmapSection(mobileSecondRow, 'mobile-second', true)}
-                </div>
-              </div>
-
-              {/* Third row for mobile */}
-              <div className="flex items-start gap-3 overflow-visible">
-                <div className="flex w-8 flex-col justify-between gap-0.5 font-medium text-gray-500 text-xs dark:text-gray-400">
-                  <span className="leading-none">{t('days.monShort')}</span>
-                  <span className="leading-none">{t('days.tueShort')}</span>
-                  <span className="leading-none">{t('days.wedShort')}</span>
-                  <span className="leading-none">{t('days.thuShort')}</span>
-                  <span className="leading-none">{t('days.friShort')}</span>
-                  <span className="leading-none">{t('days.satShort')}</span>
-                  <span className="leading-none">{t('days.sunShort')}</span>
-                </div>
-                <div className="flex-1 overflow-visible">
-                  {renderHeatmapSection(mobileThirdRow, 'mobile-third', true)}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Desktop: Two-row layout */}
-          <div className="hidden overflow-visible lg:block">
-            <div className="space-y-6">
-              {/* Row 1: First 6 months */}
-              <div className="flex gap-4 overflow-visible">
-                <div className="flex flex-col justify-between font-semibold text-gray-500 text-sm dark:text-gray-400">
-                  <span className="leading-none">{t('days.mon')}</span>
-                  <span className="leading-none">{t('days.wed')}</span>
-                  <span className="leading-none">{t('days.fri')}</span>
-                </div>
-                <div className="flex-1 overflow-visible">
-                  {renderHeatmapSection(
-                    desktopFirstRow,
-                    'desktop-first',
-                    false
-                  )}
-                </div>
-              </div>
-
-              {/* Row 2: Last 6 months */}
-              <div className="flex gap-4 overflow-visible">
-                <div className="flex flex-col justify-between font-semibold text-gray-500 text-sm dark:text-gray-400">
-                  <span className="leading-none">{t('days.mon')}</span>
-                  <span className="leading-none">{t('days.wed')}</span>
-                  <span className="leading-none">{t('days.fri')}</span>
-                </div>
-                <div className="flex-1 overflow-visible">
-                  {renderHeatmapSection(
-                    desktopSecondRow,
-                    'desktop-second',
-                    false
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
+        <div
+          className={cn(
+            'w-full bg-dynamic-surface/50 p-4',
+            classes.heatmapContainer,
+            classes.heatmapColors
+          )}
+        >
+          {/* Conditional rendering based on screen size - only render what's needed */}
+          {isMobile ? (
+            // Mobile: 3 separate heatmaps in vertical layout, each horizontally scrollable
+            renderMobileHeatmaps()
+          ) : (
+            // Desktop: Single scrollable heatmap
+            <ScrollArea type="auto">
+              {renderSingleHeatmap(
+                dateRangeConfig.startDate,
+                dateRangeConfig.endDate
+              )}
+            </ScrollArea>
+          )}
+        </div>
       )}
 
       {settings.viewMode === 'hybrid' && (

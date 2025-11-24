@@ -12862,6 +12862,59 @@ export type Database = {
         };
         Relationships: [];
       };
+      time_tracker_daily_activity: {
+        Row: {
+          activity_date: string | null;
+          session_count: number | null;
+          total_duration: number | null;
+          user_id: string | null;
+          ws_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'time_tracking_sessions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_sessions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_sessions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_sessions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_sessions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_tracking_sessions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       time_tracking_session_analytics: {
         Row: {
           category_color: string | null;
@@ -13497,6 +13550,10 @@ export type Database = {
       };
       calculate_productivity_score: {
         Args: { category_color: string; duration_seconds: number };
+        Returns: number;
+      };
+      calculate_time_tracker_streak: {
+        Args: { p_is_personal: boolean; p_user_id: string; p_ws_id: string };
         Returns: number;
       };
       can_create_workspace: { Args: { p_user_id: string }; Returns: boolean };
@@ -14172,6 +14229,16 @@ export type Database = {
         }[];
       };
       get_task_workspace_id: { Args: { p_task_id: string }; Returns: string };
+      get_time_tracker_stats: {
+        Args: { p_is_personal?: boolean; p_user_id: string; p_ws_id: string };
+        Returns: {
+          daily_activity: Json;
+          month_time: number;
+          streak: number;
+          today_time: number;
+          week_time: number;
+        }[];
+      };
       get_time_tracking_daily_activity: {
         Args: { p_days_back?: number; p_user_id?: string; p_ws_id: string };
         Returns: Json;

@@ -858,6 +858,117 @@ Guardrail Enforcement:
 
 Cross-Reference: See 5.2 (TypeScript) for type safety, 5.12 (Data Fetching & React Query) for state management patterns, 4.7 (Testing) for verification strategies.
 
+### 5.20 Third-Party UI Library Integration & Theme Synchronization
+
+When integrating third-party UI libraries (e.g., Mantine, Radix, Material-UI) that have their own theming systems, **theme synchronization is mandatory** to maintain visual consistency.
+
+#### Mantine UI Integration (Centralized)
+
+Mantine is integrated application-wide and available in any component:
+
+1. **Global CSS Loading**: Mantine CSS is imported in root layout (`apps/web/src/app/[locale]/layout.tsx`).
+   ```typescript
+   // In apps/web/src/app/[locale]/layout.tsx
+   import '@mantine/core/styles.css';
+   import '@mantine/charts/styles.css';
+   import '@/style/mantine-theme-override.css';
+   ```
+
+2. **Theme Provider**: `MantineThemeProvider` is configured in root providers (`apps/web/src/components/providers.tsx`).
+   - Automatically syncs with next-themes for light/dark mode
+   - Configured to minimize global style pollution
+   - No need to wrap individual routes or components
+
+3. **Theme Override File**: `apps/web/src/style/mantine-theme-override.css` maps application colors to Mantine's color system.
+   - Single source of truth for all Mantine color overrides
+   - Uses `!important` flags on critical color variables
+   - Must be kept in sync with `packages/ui/src/globals.css`
+
+4. **Component-Specific Styles**: Shared Mantine component styles in `apps/web/src/style/`:
+   - `mantine-heatmap.module.css` - Heatmap-specific styles
+   - Can be imported by any component: `import classes from '@/style/mantine-heatmap.module.css'`
+
+5. **Color Mapping Documentation**: See `apps/web/docs/MANTINE_THEME_SYNC.md` for:
+   - Complete color variable mappings (application → Mantine)
+   - Maintenance workflow for keeping colors in sync
+   - Troubleshooting guide
+   - AI agent instructions
+
+6. **Synchronization Requirement**: When updating colors in `packages/ui/src/globals.css`, you MUST:
+   - Update corresponding variables in `apps/web/src/style/mantine-theme-override.css`
+   - Test both light and dark modes across pages using Mantine
+   - Update "Last Synced" date in override file
+   - Verify no visual discontinuities
+
+7. **Usage Example**:
+   ```typescript
+   'use client';
+   
+   import { Heatmap } from '@mantine/charts';
+   import classes from '@/style/mantine-heatmap.module.css';
+   
+   export function MyComponent() {
+     return <Heatmap data={data} classNames={classes} />;
+   }
+   ```
+   No provider setup or CSS imports needed in components.
+
+#### Other Third-Party Libraries (Route-Scoped Pattern)
+
+For libraries not yet centralized, use route-scoped integration:
+
+1. **Route-Scoped CSS Loading**: Import third-party CSS in route-specific `layout.tsx` files.
+   ```typescript
+   // In apps/web/src/app/[locale]/(dashboard)/[wsId]/some-route/layout.tsx
+   import '@third-party/core/styles.css';
+   import './third-party-theme-override.css';
+   ```
+
+2. **Theme Override File**: Create a `*-theme-override.css` file in the route directory.
+   - Import AFTER the third-party CSS to ensure overrides take precedence
+   - Use `!important` flags on critical color variables
+
+3. **Consider Centralization**: If the library is used in multiple routes, consider centralizing like Mantine.
+
+#### Pattern Template (for new route-scoped libraries):
+
+```css
+/* third-party-theme-override.css */
+/**
+ * [Library Name] Theme Override - Color Synchronization
+ * 
+ * CRITICAL: Maps application theme colors to [Library]'s color system.
+ * 
+ * ⚠️  IMPORTANT: When updating colors in packages/ui/src/globals.css,
+ *     update corresponding variables here.
+ * 
+ * 📖 Documentation: See [LIBRARY]_THEME_SYNC.md
+ * Source of Truth: packages/ui/src/globals.css
+ * Last Synced: YYYY-MM-DD
+ */
+
+.dark {
+  --library-bg: var(--background) !important;
+  --library-text: var(--foreground) !important;
+  /* ... more mappings */
+}
+```
+
+Rationale:
+
+- Prevents jarring visual inconsistencies when third-party components render
+- Maintains brand identity and design system integrity
+- Ensures dark mode works correctly across all UI components
+- Centralized integration (like Mantine) preferred for multi-route usage
+- Route-scoped integration for single-route or experimental usage
+
+Quality Gate:
+
+- PRs integrating new UI libraries must include theme override file + documentation
+- PRs changing `globals.css` colors must update `apps/web/src/style/mantine-theme-override.css`
+- Review checklist: "Are third-party theme colors synchronized?"
+- Consider centralizing if library used in 3+ routes
+
 Use the unified dialog system from `@tuturuuu/ui/dialog` for all modal interactions.
 
 Rules:
@@ -1160,6 +1271,8 @@ Agent Responsibilities:
 | Add API route | Create `app/api/.../route.ts` | Validate input early |
 | Add AI endpoint | See 4.4 | Use schema + auth + feature flag |
 | Add docs page | Create `.mdx` in `apps/docs/` + add to `mint.json` | **CRITICAL: Add to navigation or won't be visible** |
+| Integrate 3rd-party UI lib | See 5.20 workflow | Route-scoped CSS + theme override + sync docs |
+| Update app theme colors | Edit `packages/ui/src/globals.css` | **MUST** update all `*-theme-override.css` files |
 | Edge runtime | `export const runtime = 'edge'` | Only if required |
 | Supabase admin client | Import from `@tuturuuu/supabase` | Avoid direct REST calls |
 | Escape hatch escalation | Open issue `policy-gap` | Provide context & proposal |
@@ -1178,6 +1291,7 @@ Top Failure Causes → Fix Fast:
 6. **New routes not in navigation** → update `navigation.tsx` with aliases and children.
 7. **Missing Vietnamese translations** → add entries to both `en.json` AND `vi.json`.
 8. Release workflow skipped → ensure PR title `chore(@tuturuuu/<pkg>): ...`.
+9. **Third-party UI colors mismatched** → update theme override file + sync documentation (see 5.20).
 
 Escalate if: multi-app breaking refactor, destructive schema change, data backfill >30 LOC, new external service, auth/token contract change.
 
