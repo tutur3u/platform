@@ -109,6 +109,15 @@ export function TaskProjectsMenu({
           </ScrollArea>
         )}
 
+        {/* Footer with count */}
+        {!isLoading && taskProjects.length > 0 && (
+          <div className="relative z-10 border-t bg-background shadow-sm">
+            <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
+              {taskProjects.length} assigned
+            </div>
+          </div>
+        )}
+
         {/* Create New Project Button */}
         {!isLoading && (
           <div className="border-t">

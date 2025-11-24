@@ -115,6 +115,15 @@ export function TaskLabelsMenu({
           </ScrollArea>
         )}
 
+        {/* Footer with count */}
+        {!isLoading && taskLabels.length > 0 && (
+          <div className="relative z-10 border-t bg-background shadow-sm">
+            <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
+              {taskLabels.length} applied
+            </div>
+          </div>
+        )}
+
         {/* Create New Label Button */}
         {!isLoading && (
           <div className="border-t">
