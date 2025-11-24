@@ -1,4 +1,6 @@
+import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
   getWorkspace,
@@ -19,7 +21,6 @@ import InvitationCard from './invitation-card';
 import { WorkspaceNavigationLinks } from './navigation';
 import PersonalWorkspacePrompt from './personal-workspace-prompt';
 import { Structure } from './structure';
-import { TaskDialogWrapper } from './task-dialog-wrapper';
 
 interface LayoutProps {
   params: Promise<{
@@ -159,13 +160,18 @@ export default async function Layout({ children, params }: LayoutProps) {
               <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
             }
           >
-            <UserNav hideMetadata />
+            <UserNav hideMetadata workspace={workspace} />
           </Suspense>
         }
       >
-        <TaskDialogWrapper isPersonalWorkspace={!!workspace.personal}>
-          {children}
-        </TaskDialogWrapper>
+        <RealtimeLogProvider wsId={wsId}>
+          <TaskDialogWrapper
+            isPersonalWorkspace={!!workspace.personal}
+            wsId={wsId}
+          >
+            {children}
+          </TaskDialogWrapper>
+        </RealtimeLogProvider>
       </Structure>
     </SidebarProvider>
   );

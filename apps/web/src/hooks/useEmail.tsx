@@ -1,8 +1,6 @@
+import type { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts';
 import { atom, useAtom } from 'jotai';
 import { useState } from 'react';
-import ReactDOMServer from 'react-dom/server';
-import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
-import type { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts';
 
 interface EmailState {
   loading: boolean;
@@ -46,47 +44,54 @@ const useEmail = () => {
     setLocalSuccess(false);
     setGlobalState({ loading: true, error: null, success: false });
 
-    const users = rawUsers.map((user) => ({
-      ...user,
-      content: ReactDOMServer.renderToString(
-        <PostEmailTemplate
-          post={post}
-          username={user.username}
-          isHomeworkDone={user?.is_completed}
-          notes={user?.notes || undefined}
-        />
-      ),
-    }));
+    try {
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            users: rawUsers,
+            post,
+            date: post.created_at,
+          }),
+        }
+      );
 
-    const res = await fetch(
-      `/api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          users,
-          date: post.created_at,
-        }),
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        const errorMessage =
+          errorData?.message ||
+          errorData?.error ||
+          `Failed to send email (${res.status})`;
+        setLocalError(errorMessage);
+        setLocalLoading(false);
+        setGlobalState({
+          loading: false,
+          error: errorMessage,
+          success: false,
+        });
+        return false;
       }
-    );
 
-    if (!res.ok) {
-      setLocalError('Failed to send email');
+      setLocalSuccess(true);
+      setLocalLoading(false);
+      setGlobalState({ loading: false, error: null, success: true });
+      return true;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'An unexpected error occurred';
+      setLocalError(errorMessage);
       setLocalLoading(false);
       setGlobalState({
         loading: false,
-        error: 'Failed to send email',
+        error: errorMessage,
         success: false,
       });
       return false;
     }
-
-    setLocalSuccess(true);
-    setLocalLoading(false);
-    setGlobalState({ loading: false, error: null, success: true });
-    return true;
   };
 
   return {

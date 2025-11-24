@@ -59,4 +59,3 @@ export async function GET(_: NextRequest, { params }: Params) {
     );
   }
 }
-

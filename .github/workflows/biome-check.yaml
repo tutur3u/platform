@@ -19,7 +19,7 @@ jobs:
       exit_code: ${{ steps.format-check.outputs.exit_code }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
@@ -75,7 +75,7 @@ jobs:
       exit_code: ${{ steps.lint-check.outputs.exit_code }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
@@ -129,9 +129,10 @@ jobs:
       pull-requests: write
     steps:
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
+          persist-credentials: false
 
       - name: Setup Biome
         uses: biomejs/setup-biome@v2
@@ -171,6 +172,8 @@ jobs:
           branch: fix/biome-formatting-${{ github.ref_name }}
           base: ${{ github.ref_name }}
           delete-branch: true
+          committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
 
       - name: Fail Workflow After Creating PR
         if: steps.create-pr.outputs.pull-request-url != ''
@@ -189,7 +192,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Close and delete outdated formatting PR
         uses: actions/github-script@v8

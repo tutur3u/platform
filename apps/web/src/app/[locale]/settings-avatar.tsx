@@ -279,13 +279,13 @@ export default function UserAvatar({ user }: AvatarProps) {
           <DialogTrigger asChild>
             <div className="flex items-center justify-center">
               <div className="relative flex w-fit flex-col items-center justify-center gap-4">
-                <Avatar className="h-32 w-32 cursor-pointer overflow-visible border border-foreground font-semibold text-3xl">
+                <Avatar className="h-32 w-32 cursor-pointer overflow-hidden rounded-md border border-foreground font-semibold text-3xl">
                   <AvatarImage
                     src={previewSrc || undefined}
                     alt="Avatar"
-                    className="rounded-full object-cover"
+                    className="object-cover"
                   />
-                  <AvatarFallback className="font-semibold">
+                  <AvatarFallback className="rounded-none font-semibold">
                     {getInitials(user?.display_name || user?.email) || (
                       <UserIcon className="h-12 w-12" />
                     )}
@@ -303,13 +303,13 @@ export default function UserAvatar({ user }: AvatarProps) {
             </DialogHeader>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
               <div className="flex flex-col items-center gap-4">
-                <Avatar className="h-32 w-32 overflow-visible font-semibold text-3xl">
+                <Avatar className="h-32 w-32 overflow-hidden rounded-md font-semibold text-3xl">
                   <AvatarImage
                     src={previewSrc || undefined}
                     alt="Avatar"
-                    className="rounded-full object-cover"
+                    className="object-cover"
                   />
-                  <AvatarFallback className="font-semibold">
+                  <AvatarFallback className="rounded-none font-semibold">
                     {getInitials(user?.display_name || user?.email) || (
                       <UserIcon className="h-12 w-12" />
                     )}

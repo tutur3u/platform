@@ -366,7 +366,11 @@ Total: **{fmt_dur(weekend_total)}** | 👥 Active: **{weekend_active_users}** of
         user_id = item["user"].get("platform_user_id")
         if user_id:
             user_weekend_data: WeekendStats | dict[str, Any] = weekend_map.get(user_id, {})
-            weekend_time = user_weekend_data.get("weekendTotal", 0) if isinstance(user_weekend_data, dict) else 0
+            weekend_time = (
+                user_weekend_data.get("weekendTotal", 0)
+                if isinstance(user_weekend_data, dict)
+                else 0
+            )
             monday_time = item["stats"].get("todayTime", 0)
             combined_stats[user_id] = {
                 "user": item["user"],
@@ -444,7 +448,6 @@ async def trigger_daily_report(now: datetime | None = None) -> dict[str, str]:
     # Load configuration
     config = ReportConfig.from_environment()
 
-    handler = CommandHandler()
     target_time = now.astimezone(config.timezone) if now else datetime.now(config.timezone)
 
     # Check if weekend and skip if configured
@@ -457,6 +460,9 @@ async def trigger_daily_report(now: datetime | None = None) -> dict[str, str]:
             "content": skip_message,
             "skipped": "true",
         }
+
+    # Initialize handler for data fetching
+    handler = CommandHandler()
 
     # Check if Monday for 3-day summary
     if _is_monday(target_time, config.timezone):

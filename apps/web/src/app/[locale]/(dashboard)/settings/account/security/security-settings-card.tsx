@@ -1,3 +1,5 @@
+'use client';
+
 import {
   AlertTriangle,
   Calendar,
@@ -10,33 +12,26 @@ import {
   Smartphone,
   UserCheck,
 } from '@tuturuuu/icons';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getTranslations } from 'next-intl/server';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import MFAMethodList from './mfa-method-list';
 import ResetPasswordDialog from './reset-password-dialog';
 
 interface SecuritySettingsCardProps {
-  user: SupabaseUser | null;
+  user: WorkspaceUser | null;
   className?: string;
 }
 
-export default async function SecuritySettingsCard({
+export default function SecuritySettingsCard({
   user,
   className,
 }: SecuritySettingsCardProps) {
-  const t = await getTranslations('settings-account');
+  const t = useTranslations('settings-account');
 
   if (!user) return null;
 
@@ -44,52 +39,51 @@ export default async function SecuritySettingsCard({
   const hasPassword = true; // Assuming user has password - you might want to check this
 
   // Get account age
-  const accountAge = Date.now() - new Date(user.created_at).getTime();
+  const accountAge = user?.created_at
+    ? Date.now() - new Date(user.created_at).getTime()
+    : 0; // Handle undefined created_at
   const accountAgeDays = Math.floor(accountAge / (1000 * 60 * 60 * 24));
 
   // Get user's sessions count (you might want to implement this)
   const activeSessions = 1; // Placeholder
 
   return (
-    <Card className={className}>
-      <CardHeader className="pb-4">
-        <div className="flex items-center gap-3">
-          <div className="rounded-full bg-dynamic-green/10 p-2.5">
-            <Shield className="h-5 w-5 text-dynamic-green" />
-          </div>
-          <div className="space-y-1">
-            <CardTitle className="font-semibold text-xl">
-              {t('security-settings')}
-            </CardTitle>
-            <CardDescription className="text-sm">
-              {t('security-settings-description')}
-            </CardDescription>
-          </div>
-          <div className="ml-auto">
-            <Badge
-              variant={securityLevel === 'good' ? 'default' : 'destructive'}
-              className={
-                securityLevel === 'good'
-                  ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
-                  : 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red'
-              }
-            >
-              {securityLevel === 'good' ? (
-                <>
-                  <CheckCircle2 className="mr-1 h-3 w-3" />
-                  {t('security-good')}
-                </>
-              ) : (
-                <>
-                  <AlertTriangle className="mr-1 h-3 w-3" />
-                  {t('security-warning')}
-                </>
-              )}
-            </Badge>
-          </div>
+    <div className={className}>
+      <div className="mb-6 flex items-center gap-3">
+        <div className="rounded-full bg-dynamic-green/10 p-2.5">
+          <Shield className="h-5 w-5 text-dynamic-green" />
         </div>
-      </CardHeader>
-      <CardContent className="space-y-6 p-6 pt-0">
+        <div className="space-y-1">
+          <h3 className="font-semibold text-lg">{t('security-settings')}</h3>
+          <p className="text-muted-foreground text-sm">
+            {t('security-settings-description')}
+          </p>
+        </div>
+        <div className="ml-auto">
+          <Badge
+            variant={securityLevel === 'good' ? 'default' : 'destructive'}
+            className={
+              securityLevel === 'good'
+                ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
+                : 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red'
+            }
+          >
+            {securityLevel === 'good' ? (
+              <>
+                <CheckCircle2 className="mr-1 h-3 w-3" />
+                {t('security-good')}
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="mr-1 h-3 w-3" />
+                {t('security-warning')}
+              </>
+            )}
+          </Badge>
+        </div>
+      </div>
+
+      <div className="space-y-8">
         {/* Security Overview */}
         <div className="grid gap-4 sm:grid-cols-3">
           {/* Email Verification */}
@@ -172,8 +166,8 @@ export default async function SecuritySettingsCard({
         </div>
 
         {/* Security Actions */}
-        <div className="space-y-4">
-          <h4 className="font-medium text-foreground text-sm">
+        <div className="space-y-6">
+          <h4 className="font-medium text-foreground text-sm uppercase tracking-wider">
             {t('security-actions')}
           </h4>
 
@@ -262,7 +256,7 @@ export default async function SecuritySettingsCard({
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

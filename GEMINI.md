@@ -90,6 +90,80 @@ This section summarizes the key operating procedures for AI agents working in th
 -   Disabling linting, formatting, or type-checking.
 -   Executing destructive database commands without a reversible strategy.
 -   Running `bun sb:push`, `bun sb:linkpush`, `bun lint:fix`, or `bun format:fix`. Prepare the changes and ask the user to run these commands.
+-   **🚫 USING `useEffect` FOR DATA FETCHING - THIS IS THE #1 MOST CRITICAL VIOLATION 🚫**
+-   **Using raw `fetch()` without TanStack Query wrapper in client components.**
+-   **Manual state management (useState + useEffect) for API calls - ABSOLUTELY FORBIDDEN.**
+
+### Data Fetching Strategy (CRITICAL)
+
+**TanStack Query (React Query) is MANDATORY for ALL client-side data fetching.** This is a hard requirement, not a suggestion.
+
+**Decision Order (Prefer Earlier):**
+
+1.  **Pure Server Component (RSC)** - for read-only, cacheable, SEO-critical data.
+2.  **Server Action** - for mutations returning updated state to RSC.
+3.  **RSC + Client hydration** - when background refresh is needed.
+4.  **TanStack Query client-side (REQUIRED)** - for ALL client-side data fetching including:
+    -   Interactive state and rapidly changing data
+    -   Mutations with optimistic UI updates
+    -   Paginated or infinite lists
+    -   Dependent queries (sequential client-side fetching)
+    -   Shared client state across components
+    -   Any API calls requiring caching, refetching, or state management
+    -   Polling or periodic refresh scenarios
+5.  **Realtime subscriptions** (Supabase channels) - only when live updates materially improve UX.
+
+**ABSOLUTELY FORBIDDEN PATTERNS (Code Will Be REJECTED):**
+
+```typescript
+// ❌ NEVER EVER DO THIS - #1 VIOLATION
+useEffect(() => {
+  fetch('/api/data').then(r => r.json()).then(setData);
+}, []);
+
+// ❌ NEVER DO THIS EITHER
+useEffect(() => {
+  async function fetchData() {
+    const response = await fetch('/api/data');
+    const json = await response.json();
+    setData(json);
+  }
+  fetchData();
+}, [dependency]);
+
+// ❌ NO MANUAL STATE MANAGEMENT FOR DATA FETCHING
+const [data, setData] = useState(null);
+const [loading, setLoading] = useState(false);
+useEffect(() => { /* fetch logic */ }, []);
+
+// ✅ ONLY ACCEPTABLE PATTERN
+const { data, isLoading } = useQuery({
+  queryKey: ['data', dependency],
+  queryFn: () => fetch('/api/data').then(r => r.json())
+});
+```
+
+**Key Points:**
+-   ❌ **`useEffect` is BANNED for data fetching**
+-   ❌ Raw `fetch()` without React Query wrapper
+-   ❌ Custom hooks using `useEffect` for fetching
+-   ✅ **ONLY use TanStack Query's `useQuery`/`useMutation`/`useInfiniteQuery`**
+
+**React Query Best Practices:**
+
+-   Use stable array query keys: `[domain, subdomain?, paramsHash, version?]`
+-   Set `staleTime` > 0 for rarely-changing data to prevent unnecessary refetches
+-   Implement optimistic updates with rollback on error for better UX
+-   Use narrow invalidations (avoid global `invalidateQueries()`)
+-   Hydrate initial cache from RSC to prevent double fetching after SSR
+-   Define mutations with proper error handling and cache updates
+-   **If you encounter `useEffect` + fetch in existing code, REFACTOR it to React Query immediately**
+
+**ENFORCEMENT RULES:**
+1. **NEVER use `useEffect` for data fetching** - Zero tolerance, no exceptions
+2. If writing client-side data fetching without TanStack Query → Code REJECTED
+3. If you see the pattern `useEffect(() => { fetch... }, [])` → MUST refactor to `useQuery`
+4. The ONLY acceptable client-side data fetching is through TanStack Query hooks
 
 ### Key Workflows
 
@@ -107,3 +181,8 @@ This section summarizes the key operating procedures for AI agents working in th
     -   Use `sonner` for toasts: `import { toast } from '@tuturuuu/ui/sonner';`. Avoid the deprecated `@tuturuuu/ui/toast`.
     -   Use the dialog system for modals: `import { Dialog, ... } from '@tuturuuu/ui/dialog';`. **Never** use native browser dialogs like `alert()` or `confirm()`.
 -   **Refactoring (Proactive):** Break down large files (>400 LOC) and components (>200 LOC) into smaller, focused units. Extract utilities to `src/lib/`, hooks to `src/hooks/`, and sub-components as needed. Apply best practices to BOTH old and new code—when touching existing code, assess and improve it. Follow single responsibility principle, use meaningful names, and eliminate duplication. Code quality is mandatory, not optional.
+-   **Workspace ID Resolution (CRITICAL):** Database `ws_id` columns ALWAYS store UUIDs. Route parameters (`wsId`) may contain special identifiers like `"personal"` or `"internal"`. **NEVER** use raw `wsId` directly in database queries. **Preferred pattern:** Components should accept a `workspace` prop and use `workspace.id` directly (parent components handle resolution). For API routes, use `normalizeWorkspaceId(wsId)` helper which calls `getWorkspace()` for "personal" or `resolveWorkspaceId()` for others. This prevents "invalid uuid" errors and avoids redundant resolution calls.
+
+### Database Schema Notes
+
+**CRITICAL**: The `public.users` table does NOT contain an `email` field. User email addresses are stored in `public.user_private_details` for privacy and security reasons. When you need to query or access user email information, always use the `user_private_details` table, not the `users` table.

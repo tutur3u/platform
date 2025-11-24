@@ -2,8 +2,8 @@ import type { JSONContent } from '@tiptap/react';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { DRAFT_SAVE_DEBOUNCE_MS } from './constants';
-import type { TaskFormState, WorkspaceTaskLabel } from './types';
+import { DRAFT_SAVE_DEBOUNCE_MS } from '../constants';
+import type { TaskFormState, WorkspaceTaskLabel } from '../types';
 import {
   clearDraft,
   getDescriptionContent,
@@ -11,7 +11,7 @@ import {
   hasDraftContent,
   loadDraft,
   saveDraft,
-} from './utils';
+} from '../utils';
 
 interface UseTaskFormStateProps {
   task?: Task;

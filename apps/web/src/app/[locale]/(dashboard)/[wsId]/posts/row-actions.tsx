@@ -40,7 +40,7 @@ export default function PostsRowActions({
     !!data.group_name &&
     !!data.post_title &&
     !!data.post_content &&
-    !!data?.is_completed;
+    (data?.is_completed === true || data?.is_completed === false);
 
   // Check if email is sent (either from server data or optimistically)
   const isSent =
@@ -61,7 +61,7 @@ export default function PostsRowActions({
       !!data.group_name &&
       !!data.post_title &&
       !!data.post_content &&
-      !!data?.is_completed
+      (data?.is_completed === true || data?.is_completed === false)
     ) {
       // Mark as optimistically loading immediately
       markAsOptimisticallyLoading(

@@ -50,6 +50,7 @@ import {
   PencilLine,
   Play,
   QrCodeIcon,
+  Radio,
   ReceiptText,
   RotateCcw,
   RulerDimensionLine,
@@ -407,6 +408,7 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/users/structure`,
       ],
       icon: <Users className="h-5 w-5" />,
+      href: `/${personalOrWsId}/users/database`,
       children: [
         {
           title: t('workspace-users-tabs.overview'),
@@ -453,6 +455,17 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/users/reports`,
           icon: <ClipboardList className="h-5 w-5" />,
           disabled: withoutPermission('manage_users'),
+        },
+        {
+          title: t('sidebar_tabs.posts'),
+          href: `/${personalOrWsId}/posts`,
+          icon: <GalleryVerticalEnd className="h-5 w-5" />,
+          disabled:
+            !hasSecret('ENABLE_EMAIL_SENDING', 'true') ||
+            (!DEV_MODE &&
+              (ENABLE_AI_ONLY ||
+                withoutPermission('send_user_group_post_emails'))),
+          experimental: 'beta',
         },
         {
           title: t('workspace-users-tabs.guest_leads'),
@@ -756,17 +769,6 @@ export async function WorkspaceNavigationLinks({
               experimental: 'beta',
             },
             {
-              title: t('sidebar_tabs.posts'),
-              href: `/${personalOrWsId}/posts`,
-              icon: <GalleryVerticalEnd className="h-5 w-5" />,
-              disabled:
-                !hasSecret('ENABLE_EMAIL_SENDING', 'true') ||
-                (!DEV_MODE &&
-                  (ENABLE_AI_ONLY ||
-                    withoutPermission('send_user_group_post_emails'))),
-              experimental: 'beta',
-            },
-            {
               title: t('sidebar_tabs.education'),
               href: `/${personalOrWsId}/education`,
               icon: <GraduationCap className="h-5 w-5" />,
@@ -850,6 +852,7 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/api-keys`,
         `/${personalOrWsId}/secrets`,
         `/${personalOrWsId}/infrastructure`,
+        `/${personalOrWsId}/infrastructure/realtime`,
         `/${personalOrWsId}/infrastructure/calendar-sync`,
         `/${personalOrWsId}/migrations`,
         `/${personalOrWsId}/integrations`,
@@ -993,6 +996,11 @@ export async function WorkspaceNavigationLinks({
               title: 'Calendar Sync',
               href: `/${personalOrWsId}/infrastructure/calendar-sync`,
               icon: <FolderSync className="h-5 w-5" />,
+            },
+            {
+              title: t('infrastructure-tabs.realtime'),
+              href: `/${personalOrWsId}/infrastructure/realtime`,
+              icon: <Radio className="h-5 w-5" />,
             },
           ],
         },

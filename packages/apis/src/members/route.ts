@@ -27,6 +27,15 @@ export async function GET(_: NextRequest, { params }: Params) {
 
   const wsId = await normalizeWorkspaceId(id);
 
+  // Fetch workspace creator_id
+  const { data: workspace } = await supabase
+    .from('workspaces')
+    .select('creator_id')
+    .eq('id', wsId)
+    .single();
+
+  const creatorId = workspace?.creator_id;
+
   const { data, error } = await supabase
     .from('workspace_members')
     .select(
@@ -50,13 +59,14 @@ export async function GET(_: NextRequest, { params }: Params) {
     );
   }
 
-  // Transform the data to flatten the user information
+  // Transform the data to flatten the user information and add is_creator field
   const members =
     data?.map((member) => ({
       id: member.users.id,
       display_name: member.users.display_name,
       email: member.users.email,
       avatar_url: member.users.avatar_url,
+      is_creator: member.users.id === creatorId,
     })) || [];
 
   return NextResponse.json({ members });

@@ -1535,7 +1535,8 @@
     "integrations": "Dịch vụ tích hợp",
     "ai_whitelisted_emails": "Email nằm trong danh sách trắng của AI",
     "email_blacklist": "Danh sách đen email",
-    "translations": "Bản dịch"
+    "translations": "Bản dịch",
+    "realtime": "Thời gian thực"
   },
   "infrastructure-analytics": {
     "page-description": "Giám sát và quản lý cơ sở hạ tầng, người dùng và tài nguyên nền tảng với phân tích toàn diện.",
@@ -1653,6 +1654,140 @@
       "time": "Thời Gian",
       "unknown": "Không xác định",
       "actions": "Hành Động"
+    }
+  },
+  "realtime-analytics": {
+    "title": "Phân Tích Thời Gian Thực",
+    "description": "Giám sát kết nối và hoạt động thời gian thực trên các không gian làm việc và kênh",
+    "metric": {
+      "requests": "Yêu cầu",
+      "users": "Người dùng"
+    },
+    "filters": {
+      "workspace": "Không gian làm việc",
+      "workspace_placeholder": "Chọn không gian làm việc",
+      "all_workspaces": "Tất cả không gian làm việc",
+      "channel": "Kênh",
+      "channel_placeholder": "Nhập ID kênh",
+      "date_range": "Khoảng thời gian",
+      "metric_toggle": "Loại chỉ số"
+    },
+    "chart": {
+      "hourly_activity": "Hoạt động theo giờ",
+      "hour_label": "Giờ",
+      "requests_label": "Yêu cầu",
+      "users_label": "Người dùng duy nhất",
+      "no_data": "Không có dữ liệu",
+      "no_data_description": "Không tìm thấy hoạt động thời gian thực nào cho bộ lọc và khoảng thời gian đã chọn",
+      "loading": "Đang tải phân tích..."
+    },
+    "stats": {
+      "total": "Tổng cộng",
+      "peak_hour": "Giờ cao điểm",
+      "avg_per_hour": "TB mỗi giờ"
+    },
+    "summary": {
+      "total_requests": "Tổng Yêu Cầu",
+      "total_errors": "Tổng Lỗi",
+      "error_rate": "Tỷ Lệ Lỗi",
+      "unique_users": "Người Dùng Duy Nhất",
+      "unique_channels": "Kênh Duy Nhất",
+      "unique_workspaces": "Không Gian Duy Nhất",
+      "peak_hour": "Giờ Cao Điểm",
+      "avg_per_hour": "TB/Giờ",
+      "requests": "yêu cầu",
+      "error_rate_card": "Tỷ Lệ Lỗi"
+    },
+    "top_consumers": {
+      "workspaces": "Không Gian Sử Dụng Nhiều Nhất",
+      "channels": "Kênh Sử Dụng Nhiều Nhất",
+      "users": "Người Dùng Hoạt Động Nhiều Nhất",
+      "workspace_name": "Không gian",
+      "channel_name": "Kênh",
+      "user_name": "Người dùng",
+      "requests": "Yêu cầu",
+      "errors": "Lỗi",
+      "error_rate": "Tỷ Lệ Lỗi",
+      "percentage": "% Tổng",
+      "total_requests": "tổng",
+      "no_data": "Không có dữ liệu",
+      "showing_top": "Hiển thị top {count} người tiêu thụ"
+    },
+    "breakdown": {
+      "request_types": "Phân Phối Loại Yêu Cầu",
+      "request_types_desc": "Trực quan hóa phân phối yêu cầu theo loại hoạt động",
+      "request_types_detail": "Chi Tiết Loại Yêu Cầu",
+      "request_types_detail_desc": "Phân tích chi tiết với tỷ lệ phần trăm và số liệu",
+      "error_breakdown": "Phân Tích Lỗi",
+      "error_breakdown_desc": "Lỗi được phân loại theo loại yêu cầu",
+      "kind": "Loại",
+      "errors": "Lỗi",
+      "total": "Tổng",
+      "error_rate": "Tỷ Lệ Lỗi",
+      "percentage": "% Tổng",
+      "visual": "Phân Phối",
+      "rank": "#",
+      "requests": "Yêu cầu",
+      "total_requests_chart": "Tổng",
+      "no_data": "Không có dữ liệu",
+      "no_errors": "Không Phát Hiện Lỗi",
+      "no_errors_desc": "Tất cả yêu cầu hoàn thành thành công"
+    },
+    "insights": {
+      "title": "Thông Tin Chi Tiết",
+      "description": "Khuyến nghị được hỗ trợ AI để tối ưu hóa hiệu suất thời gian thực",
+      "no_insights": "Không có thông tin chi tiết khả dụng lúc này",
+      "high_error_rate": {
+        "title": "Nghiêm Trọng: Tỷ Lệ Lỗi Cao",
+        "message": "Tỷ lệ lỗi của bạn là {rate}%, vượt đáng kể ngưỡng 5%",
+        "action": "Xem lại nhật ký lỗi và điều tra các hoạt động thất bại ngay lập tức"
+      },
+      "elevated_error_rate": {
+        "title": "Cảnh Báo: Tỷ Lệ Lỗi Cao",
+        "message": "Tỷ lệ lỗi của bạn là {rate}%, cao hơn ngưỡng lý tưởng 1%",
+        "action": "Theo dõi các mẫu lỗi và xem xét triển khai logic thử lại"
+      },
+      "low_error_rate": {
+        "title": "Tốt: Tỷ Lệ Lỗi Thấp",
+        "message": "Tỷ lệ lỗi của bạn là {rate}%, trong giới hạn chấp nhận được"
+      },
+      "high_usage": {
+        "title": "Phát Hiện Sử Dụng Thời Gian Thực Cao",
+        "message": "Trung bình {avg} yêu cầu/giờ, có thể ảnh hưởng đến chi phí",
+        "action": "Xem xét triển khai gộp kết nối hoặc gộp yêu cầu"
+      },
+      "traffic_spike": {
+        "title": "Phát Hiện Mẫu Tăng Đột Biến",
+        "message": "Giờ cao điểm cao gấp {ratio} lần so với trung bình",
+        "action": "Xem xét triển khai giới hạn tỷ lệ trong giờ cao điểm"
+      },
+      "workspace_concentration": {
+        "title": "Sử Dụng Tập Trung Vào Một Không Gian",
+        "message": "{name} chiếm {percentage}% tổng số yêu cầu",
+        "action": "Xem lại tích hợp của không gian này để tối ưu hóa mẫu yêu cầu"
+      },
+      "workspace_errors": {
+        "title": "Không Gian Gặp Lỗi Cao",
+        "message": "{name} có tỷ lệ lỗi {rate}%",
+        "action": "Điều tra cấu hình và tính toàn vẹn dữ liệu của không gian này"
+      },
+      "many_channels": {
+        "title": "Số Lượng Kênh Cao",
+        "message": "Phát hiện {count} kênh đang hoạt động",
+        "action": "Xem xét hợp nhất các kênh hoặc triển khai chính sách dọn dẹp"
+      }
+    },
+    "comparisons": {
+      "title": "Phân Tích Phân Phối Sử Dụng",
+      "description": "Phân tích cách lưu lượng được phân phối giữa các không gian và người dùng",
+      "top_workspace": "Tỷ Trọng Không Gian Hàng Đầu",
+      "top_3_workspaces": "Top 3 Không Gian",
+      "top_user": "Tỷ Trọng Người Dùng Hàng Đầu",
+      "requests": "yêu cầu",
+      "healthy_distribution": "Phân Phối Lành Mạnh",
+      "healthy_distribution_desc": "Lưu lượng được phân phối tốt giữa các không gian, giảm điểm lỗi đơn lẻ",
+      "concentrated_distribution": "Sử Dụng Tập Trung",
+      "concentrated_distribution_desc": "Lưu lượng tập trung vào một số ít không gian. Xem xét cân bằng tải hoặc điều tra các mẫu sử dụng cao"
     }
   },
   "basic-data-table": {
@@ -1798,6 +1933,7 @@
     "reason": "Lý do",
     "reason-placeholder": "Tại sao mục này bị chặn? (tùy chọn)",
     "reason-description": "Giải thích tùy chọn về lý do mục này bị chặn.",
+    "quick-reasons": "Lý do nhanh",
     "email-description": "Chặn một địa chỉ email cụ thể",
     "domain-description": "Chặn tất cả địa chỉ email từ một tên miền",
     "value-email-hint": "Nhập địa chỉ email đầy đủ để chặn (vd: user@example.com)",
@@ -1818,7 +1954,13 @@
     "operation-failed": "Thao tác thất bại",
     "network-error": "Đã xảy ra lỗi mạng. Vui lòng thử lại.",
     "error": "Lỗi",
-    "value-empty": "Giá trị không thể trống"
+    "value-empty": "Giá trị không thể trống",
+    "quick-reason-spam": "Spam/Giả mạo",
+    "quick-reason-policy-violation": "Vi phạm chính sách",
+    "quick-reason-fraud": "Gian lận/Lạm dụng",
+    "quick-reason-inactive": "Không hoạt động/Bỏ rơi",
+    "quick-reason-verification-failed": "Xác minh thất bại",
+    "quick-reason-competitor": "Tên miền đối thủ"
   },
   "email-blacklist-data-table": {
     "id": "Mã số",
@@ -2468,6 +2610,8 @@
   },
   "ws-settings": {
     "description": "Quản lý các thiết lập không gian làm việc.",
+    "general-description": "Quản lý thông tin và cài đặt cơ bản của không gian làm việc",
+    "members-description": "Xem và quản lý thành viên cùng quyền hạn của họ",
     "basic_info": "Thông tin cơ bản",
     "basic_info_description": "Quản lý các thông tin cơ bản của không gian làm việc.",
     "workspace_logo": "Logo",
@@ -3657,8 +3801,12 @@
   },
   "settings-account": {
     "account": "Tài khoản",
+    "account-description": "Quản lý cài đặt và tùy chọn tài khoản cá nhân của bạn",
     "avatar": "Ảnh đại diện",
     "avatar-description": "Cá nhân hoá hồ sơ của bạn với ảnh đại diện tùy chỉnh.",
+    "appearance-description": "Tùy chỉnh giao diện và trải nghiệm sử dụng",
+    "security-description": "Quản lý cài đặt bảo mật và tài khoản liên kết",
+    "billing-description": "Xem và quản lý thông tin thanh toán và đăng ký",
     "revert_changes": "Hoàn tác thay đổi",
     "preview": "Xem trước",
     "display-name": "Tên hiển thị",
@@ -6814,6 +6962,7 @@
         "title": "Yêu Cầu Phê Duyệt",
         "allEntries": "Tất cả các phiên thời gian bị thiếu đều yêu cầu phê duyệt. Vui lòng tải lên ít nhất một hình ảnh làm bằng chứng công việc.",
         "entriesOlderThan": "Các phiên cũ hơn {days} ngày yêu cầu phê duyệt. Vui lòng tải lên ít nhất một hình ảnh làm bằng chứng công việc.",
+        "loadingThreshold": "Đang tải cài đặt ngưỡng...",
         "proofOfWork": "Bằng Chứng Công Việc * ({current}/{max})",
         "compressing": "Đang nén...",
         "dropImages": "Thả hình ảnh vào đây",
@@ -6835,6 +6984,7 @@
       },
       "actions": {
         "cancel": "Hủy",
+        "loading": "Đang tải...",
         "submitting": "Đang gửi...",
         "adding": "Đang thêm...",
         "submitForApproval": "Gửi Để Phê Duyệt",

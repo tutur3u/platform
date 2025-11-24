@@ -492,7 +492,7 @@ export function RealtimeTaskList({ wsId }: { wsId: string }) {
 
     // Subscribe to changes
     const channel = supabase
-      .channel(`workspace_tasks:${wsId}`)
+      .channel(`workspace-tasks-${wsId}`)
       .on(
         'postgres_changes',
         {
@@ -683,7 +683,7 @@ export function TaskDetails({ taskId }: { taskId: string }) {
 4. **Don't use Realtime for infrequent updates**
    ```typescript
    // ❌ Bad: Waste of resources
-   supabase.channel('user_profiles:changes')
+   supabase.channel('user-profiles-changes')
    ```
 
 ## Related Documentation

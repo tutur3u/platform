@@ -1,12 +1,22 @@
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  AlertCircle,
+  Clock,
+  Plus,
+  RefreshCw,
+  Upload,
+  X,
+} from '@tuturuuu/icons';
+import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { Label } from '@tuturuuu/ui/label';
 import { Input } from '@tuturuuu/ui/input';
-import { Textarea } from '@tuturuuu/ui/textarea';
+import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
   SelectContent,
@@ -14,27 +24,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  RefreshCw,
-  Plus,
-  Clock,
-  AlertCircle,
-  Upload,
-  X,
-} from '@tuturuuu/icons';
-import dayjs from 'dayjs';
-import { cn, isValidBlobUrl } from '@tuturuuu/utils/format';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useRouter } from 'next/navigation';
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
-import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types';
-import { formatDuration, getCategoryColor } from './session-history';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import { cn, isValidBlobUrl } from '@tuturuuu/utils/format';
 import imageCompression from 'browser-image-compression';
+import dayjs from 'dayjs';
 import Image from 'next/image';
-import { useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
+import { formatDuration, getCategoryColor } from './session-history';
 
 interface MissedEntryDialogProps {
   open: boolean;
@@ -71,7 +71,11 @@ export default function MissedEntryDialog({
 }: MissedEntryDialogProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { data: thresholdDays = 1 } = useWorkspaceTimeThreshold(wsId);
+  const {
+    data: thresholdDays,
+    isLoading: isLoadingThreshold,
+    isError: isErrorThreshold,
+  } = useWorkspaceTimeThreshold(wsId);
   const t = useTranslations('time-tracker.missed_entry_dialog');
 
   // State for missed entry form
@@ -158,9 +162,7 @@ export default function MissedEntryDialog({
 
     const invalidTypeCount = files.length - validTypeFiles.length;
     if (invalidTypeCount > 0) {
-      setImageError(
-        t('errors.invalidFileType', { count: invalidTypeCount })
-      );
+      setImageError(t('errors.invalidFileType', { count: invalidTypeCount }));
     }
 
     const currentImageCount = images.length;
@@ -299,17 +301,12 @@ export default function MissedEntryDialog({
       return;
     }
 
-    // Check if start time is older than threshold days
-    // When threshold is 0, all entries must go through request flow
-    const isOlderThanThreshold =
-      thresholdDays === 0 ||
-      startTime.isBefore(dayjs().subtract(thresholdDays, 'day'));
-
-    if (isOlderThanThreshold && images.length === 0) {
+    // Use the pre-computed threshold check
+    if (isStartTimeOlderThanThreshold && images.length === 0) {
       toast.error(
         thresholdDays === 0
           ? t('errors.imageRequiredAll')
-          : t('errors.imageRequiredOlder', { days: thresholdDays })
+          : t('errors.imageRequiredOlder', { days: thresholdDays ?? 1 })
       );
       return;
     }
@@ -320,7 +317,7 @@ export default function MissedEntryDialog({
       const userTz = dayjs.tz.guess();
 
       // If older than threshold (or threshold is 0), create a time tracking request instead
-      if (isOlderThanThreshold) {
+      if (isStartTimeOlderThanThreshold) {
         const formData = new FormData();
         formData.append('title', missedEntryTitle);
         formData.append('description', missedEntryDescription || '');
@@ -356,9 +353,7 @@ export default function MissedEntryDialog({
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(
-            errorData.error || t('errors.createRequestFailed')
-          );
+          throw new Error(errorData.error || t('errors.createRequestFailed'));
         }
 
         queryClient.invalidateQueries({
@@ -412,13 +407,22 @@ export default function MissedEntryDialog({
 
   // Check if start time is older than threshold days
   // When threshold is 0, all entries require approval
+  // Treat as requiring approval if threshold is still loading/error to prevent invalid submissions
   const isStartTimeOlderThanThreshold = useMemo(() => {
     if (!missedEntryStartTime) return false;
+    // If threshold is loading, errored, or undefined, treat as requiring approval (safer default)
+    if (isLoadingThreshold || isErrorThreshold || thresholdDays === undefined)
+      return true;
     if (thresholdDays === 0) return true; // All entries require approval when threshold is 0
     const startTime = dayjs(missedEntryStartTime);
     const thresholdAgo = dayjs().subtract(thresholdDays, 'day');
     return startTime.isBefore(thresholdAgo);
-  }, [missedEntryStartTime, thresholdDays]);
+  }, [
+    missedEntryStartTime,
+    thresholdDays,
+    isLoadingThreshold,
+    isErrorThreshold,
+  ]);
   return (
     <Dialog
       open={open}
@@ -443,7 +447,9 @@ export default function MissedEntryDialog({
             />
           </div>
           <div>
-            <Label htmlFor="missed-entry-description">{t('form.description')}</Label>
+            <Label htmlFor="missed-entry-description">
+              {t('form.description')}
+            </Label>
             <Textarea
               id="missed-entry-description"
               value={missedEntryDescription}
@@ -454,7 +460,9 @@ export default function MissedEntryDialog({
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label htmlFor="missed-entry-category">{t('form.category')}</Label>
+              <Label htmlFor="missed-entry-category">
+                {t('form.category')}
+              </Label>
               <Select
                 value={missedEntryCategoryId}
                 onValueChange={setMissedEntryCategoryId}
@@ -503,9 +511,11 @@ export default function MissedEntryDialog({
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             <div>
-              <Label htmlFor="missed-entry-start-time">{t('form.startTime')}</Label>
+              <Label htmlFor="missed-entry-start-time">
+                {t('form.startTime')}
+              </Label>
               <Input
                 id="missed-entry-start-time"
                 type="datetime-local"
@@ -527,17 +537,21 @@ export default function MissedEntryDialog({
           {/* Warning and image upload for entries older than threshold */}
           {isStartTimeOlderThanThreshold && (
             <div className="space-y-4">
-              <div className="rounded-lg border-dynamic-orange bg-dynamic-orange/10 p-3 border">
+              <div className="rounded-lg border border-dynamic-orange bg-dynamic-orange/10 p-3">
                 <div className="flex items-start gap-2">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-dynamic-orange" />
                   <div className="text-sm">
                     <p className="font-medium text-dynamic-orange">
                       {t('approval.title')}
                     </p>
-                    <p className="text-muted-foreground mt-1">
-                      {thresholdDays === 0
-                        ? t('approval.allEntries')
-                        : t('approval.entriesOlderThan', { days: thresholdDays })}
+                    <p className="mt-1 text-muted-foreground">
+                      {isLoadingThreshold || thresholdDays === undefined
+                        ? t('approval.loadingThreshold')
+                        : thresholdDays === 0
+                          ? t('approval.allEntries')
+                          : t('approval.entriesOlderThan', {
+                              days: thresholdDays,
+                            })}
                     </p>
                   </div>
                 </div>
@@ -625,7 +639,9 @@ export default function MissedEntryDialog({
                                 ? preview
                                 : '/placeholder.svg'
                             }
-                            alt={t('approval.proofImageAlt', { number: index + 1 })}
+                            alt={t('approval.proofImageAlt', {
+                              number: index + 1,
+                            })}
                             className="h-full w-full object-cover"
                             width={100}
                             height={100}
@@ -769,6 +785,7 @@ export default function MissedEntryDialog({
             onClick={createMissedEntry}
             disabled={
               isCreatingMissedEntry ||
+              isLoadingThreshold ||
               !missedEntryTitle.trim() ||
               !missedEntryStartTime ||
               !missedEntryEndTime ||
@@ -779,16 +796,20 @@ export default function MissedEntryDialog({
             {isCreatingMissedEntry ? (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin" />
-                {isStartTimeOlderThanThreshold
-                  ? t('actions.submitting')
-                  : t('actions.adding')}
+                {isLoadingThreshold
+                  ? t('actions.loading')
+                  : isStartTimeOlderThanThreshold
+                    ? t('actions.submitting')
+                    : t('actions.adding')}
               </>
             ) : (
               <>
                 <Plus className="h-4 w-4" />
-                {isStartTimeOlderThanThreshold
-                  ? t('actions.submitForApproval')
-                  : t('actions.addEntry')}
+                {isLoadingThreshold
+                  ? t('actions.loading')
+                  : isStartTimeOlderThanThreshold
+                    ? t('actions.submitForApproval')
+                    : t('actions.addEntry')}
               </>
             )}
           </Button>

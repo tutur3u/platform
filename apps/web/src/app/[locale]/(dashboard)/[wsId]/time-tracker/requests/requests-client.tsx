@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import {
   CalendarIcon,
   CheckCircle2Icon,
@@ -38,12 +39,11 @@ import { format } from 'date-fns';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
+import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import { useAvailableUsers, useRequests } from './hooks/use-requests';
 import type { ExtendedTimeTrackingRequest } from './page';
 import { RequestDetailModal } from './request-detail-modal';
 import { ThresholdSettingsDialog } from './threshold-settings-dialog';
-import { useThreshold } from './hooks/use-threshold';
-import { useQueryClient } from '@tanstack/react-query';
 
 interface RequestsClientProps {
   wsId: string;
@@ -121,7 +121,8 @@ export function RequestsClient({
       // initialData: initialAvailableUsers,
     });
 
-  const { data: thresholdData } = useThreshold({ wsId });
+  const { data: thresholdData, isLoading: thresholdLoading } =
+    useWorkspaceTimeThreshold(wsId);
 
   const requests = requestsData?.requests || [];
   const totalCount = requestsData?.totalCount || 0;
@@ -249,7 +250,7 @@ export function RequestsClient({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                        {Object.entries(STATUS_LABELS).map(([value]) => (
                           <SelectItem key={value} value={value}>
                             {t(`status.${value as keyof typeof STATUS_LABELS}`)}
                           </SelectItem>
@@ -337,11 +338,15 @@ export function RequestsClient({
               </div>
 
               <div className="flex items-center gap-2">
-                <ThresholdSettingsDialog
-                  wsId={wsId}
-                  currentThreshold={thresholdData?.threshold}
-                  onUpdate={handleThresholdUpdate}
-                />
+                {thresholdLoading ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <ThresholdSettingsDialog
+                    wsId={wsId}
+                    currentThreshold={thresholdData}
+                    onUpdate={handleThresholdUpdate}
+                  />
+                )}
                 <span className="text-muted-foreground text-sm">
                   {t('list.itemsPerPage')}:
                 </span>

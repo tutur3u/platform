@@ -53,7 +53,7 @@ interface TaskDialogState {
   collaborationMode?: boolean;
   originalPathname?: string;
   filters?: TaskFilters;
-  previousUrl?: string;
+  fakeTaskUrl?: boolean;
 }
 
 interface TaskDialogContextValue {
@@ -68,6 +68,7 @@ interface TaskDialogContextValue {
     task: Task,
     boardId: string,
     availableLists?: TaskList[],
+    fakeTaskUrl?: boolean,
     options?: { preserveUrl?: boolean }
   ) => void;
 
@@ -131,7 +132,12 @@ export function TaskDialogProvider({
   const closeCallbackRef = useRef<(() => void) | null>(null);
 
   const openTask = useCallback(
-    (task: Task, boardId: string, availableLists?: TaskList[]) => {
+    (
+      task: Task,
+      boardId: string,
+      availableLists?: TaskList[],
+      fakeTaskUrl?: boolean
+    ) => {
       setState({
         isOpen: true,
         task,
@@ -139,6 +145,7 @@ export function TaskDialogProvider({
         mode: 'edit',
         availableLists,
         collaborationMode: !isPersonalWorkspace,
+        fakeTaskUrl,
       });
     },
     [isPersonalWorkspace]

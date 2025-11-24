@@ -165,6 +165,8 @@
     "default": "Default",
     "all": "All",
     "general": "General",
+    "workspace": "Workspace",
+    "members": "Members",
     "other": "Other",
     "empty": "Empty",
     "error": "Error",
@@ -1443,7 +1445,8 @@
     "integrations": "Integrations",
     "ai_whitelisted_emails": "AI Whitelisted Emails",
     "translations": "Translations",
-    "email_blacklist": "Email Blacklist"
+    "email_blacklist": "Email Blacklist",
+    "realtime": "Realtime"
   },
   "infrastructure-analytics": {
     "page-description": "Monitor and manage your platform infrastructure, users, and resources with comprehensive analytics.",
@@ -1561,6 +1564,140 @@
       "time": "Time",
       "unknown": "Unknown",
       "actions": "Actions"
+    }
+  },
+  "realtime-analytics": {
+    "title": "Realtime Analytics",
+    "description": "Monitor realtime connections and activity across workspaces and channels",
+    "metric": {
+      "requests": "Requests",
+      "users": "Users"
+    },
+    "filters": {
+      "workspace": "Workspace",
+      "workspace_placeholder": "Select workspace",
+      "all_workspaces": "All Workspaces",
+      "channel": "Channel",
+      "channel_placeholder": "Enter channel ID",
+      "date_range": "Date Range",
+      "metric_toggle": "Metric Type"
+    },
+    "chart": {
+      "hourly_activity": "Hourly Activity",
+      "hour_label": "Hour",
+      "requests_label": "Requests",
+      "users_label": "Unique Users",
+      "no_data": "No Data Available",
+      "no_data_description": "No realtime activity found for the selected filters and time range",
+      "loading": "Loading analytics..."
+    },
+    "stats": {
+      "total": "Total",
+      "peak_hour": "Peak Hour",
+      "avg_per_hour": "Avg per Hour"
+    },
+    "summary": {
+      "total_requests": "Total Requests",
+      "total_errors": "Total Errors",
+      "error_rate": "Error Rate",
+      "unique_users": "Unique Users",
+      "unique_channels": "Unique Channels",
+      "unique_workspaces": "Unique Workspaces",
+      "peak_hour": "Peak Hour",
+      "avg_per_hour": "Avg/Hour",
+      "requests": "requests",
+      "error_rate_card": "Error Rate"
+    },
+    "top_consumers": {
+      "workspaces": "Top Workspaces by Usage",
+      "channels": "Top Channels by Usage",
+      "users": "Top Users by Activity",
+      "workspace_name": "Workspace",
+      "channel_name": "Channel",
+      "user_name": "User",
+      "requests": "Requests",
+      "errors": "Errors",
+      "error_rate": "Error Rate",
+      "percentage": "% of Total",
+      "total_requests": "total",
+      "no_data": "No data available",
+      "showing_top": "Showing top {count} consumers"
+    },
+    "breakdown": {
+      "request_types": "Request Types Distribution",
+      "request_types_desc": "Visual breakdown of requests by operation type",
+      "request_types_detail": "Request Types Details",
+      "request_types_detail_desc": "Detailed breakdown with percentages and metrics",
+      "error_breakdown": "Error Breakdown",
+      "error_breakdown_desc": "Errors categorized by request type",
+      "kind": "Type",
+      "errors": "Errors",
+      "total": "Total",
+      "error_rate": "Error Rate",
+      "percentage": "% of Total",
+      "visual": "Distribution",
+      "rank": "#",
+      "requests": "Requests",
+      "total_requests_chart": "Total",
+      "no_data": "No data available",
+      "no_errors": "No Errors Detected",
+      "no_errors_desc": "All requests completed successfully"
+    },
+    "insights": {
+      "title": "Actionable Insights",
+      "description": "AI-powered recommendations to optimize realtime performance",
+      "no_insights": "No actionable insights at this time",
+      "high_error_rate": {
+        "title": "Critical: High Error Rate",
+        "message": "Your error rate is {rate}%, significantly above the 5% threshold",
+        "action": "Review error logs and investigate failing operations immediately"
+      },
+      "elevated_error_rate": {
+        "title": "Warning: Elevated Error Rate",
+        "message": "Your error rate is {rate}%, above the ideal 1% threshold",
+        "action": "Monitor error patterns and consider implementing retry logic"
+      },
+      "low_error_rate": {
+        "title": "Healthy: Low Error Rate",
+        "message": "Your error rate is {rate}%, well within acceptable limits"
+      },
+      "high_usage": {
+        "title": "High Realtime Usage Detected",
+        "message": "Averaging {avg} requests/hour, which may impact costs",
+        "action": "Consider implementing connection pooling or request batching"
+      },
+      "traffic_spike": {
+        "title": "Traffic Spike Pattern Detected",
+        "message": "Peak hour is {ratio}x higher than average",
+        "action": "Consider implementing rate limiting during peak hours"
+      },
+      "workspace_concentration": {
+        "title": "Usage Concentrated in Single Workspace",
+        "message": "{name} accounts for {percentage}% of all requests",
+        "action": "Review this workspace's integration to optimize request patterns"
+      },
+      "workspace_errors": {
+        "title": "Workspace Experiencing High Errors",
+        "message": "{name} has a {rate}% error rate",
+        "action": "Investigate this workspace's configuration and data integrity"
+      },
+      "many_channels": {
+        "title": "High Channel Count",
+        "message": "{count} active channels detected",
+        "action": "Consider consolidating channels or implementing cleanup policies"
+      }
+    },
+    "comparisons": {
+      "title": "Usage Distribution Analysis",
+      "description": "Analyze how traffic is distributed across workspaces and users",
+      "top_workspace": "Top Workspace Share",
+      "top_3_workspaces": "Top 3 Workspaces",
+      "top_user": "Top User Share",
+      "requests": "requests",
+      "healthy_distribution": "Healthy Distribution",
+      "healthy_distribution_desc": "Traffic is well-distributed across workspaces, reducing single points of failure",
+      "concentrated_distribution": "Concentrated Usage",
+      "concentrated_distribution_desc": "Traffic is concentrated in few workspaces. Consider load balancing or investigating high-usage patterns"
     }
   },
   "basic-data-table": {
@@ -1706,6 +1843,7 @@
     "reason": "Reason",
     "reason-placeholder": "Why is this being blacklisted? (optional)",
     "reason-description": "Optional explanation for why this entry is being blocked.",
+    "quick-reasons": "Quick Reasons",
     "email-description": "Block a specific email address",
     "domain-description": "Block all email addresses from a domain",
     "value-email-hint": "Enter the complete email address to block (e.g., user@example.com)",
@@ -1726,7 +1864,13 @@
     "operation-failed": "Operation failed",
     "network-error": "Network error occurred. Please try again.",
     "error": "Error",
-    "value-empty": "Value cannot be empty"
+    "value-empty": "Value cannot be empty",
+    "quick-reason-spam": "Spam/Phishing",
+    "quick-reason-policy-violation": "Policy Violation",
+    "quick-reason-fraud": "Fraud/Abuse",
+    "quick-reason-inactive": "Inactive/Abandoned",
+    "quick-reason-verification-failed": "Verification Failed",
+    "quick-reason-competitor": "Competitor Domain"
   },
   "email-blacklist-data-table": {
     "id": "ID",
@@ -2368,6 +2512,8 @@
   },
   "ws-settings": {
     "description": "Manage the settings of your workspace.",
+    "general-description": "Manage basic workspace information and settings",
+    "members-description": "View and manage workspace members and their permissions",
     "basic_info": "Basic Information",
     "basic_info_description": "Manage the basic information of your workspace.",
     "workspace_logo": "Workspace Logo",
@@ -3492,8 +3638,12 @@
   },
   "settings-account": {
     "account": "Account",
+    "account-description": "Manage your personal account settings and preferences",
     "avatar": "Avatar",
     "avatar-description": "Personalize your profile with a custom avatar.",
+    "appearance-description": "Customize the look and feel of your interface",
+    "security-description": "Manage your security settings and linked accounts",
+    "billing-description": "View and manage your subscription and billing information",
     "revert_changes": "Revert changes",
     "preview": "Preview",
     "display-name": "Display name",
@@ -7023,6 +7173,7 @@
         "title": "Approval Required",
         "allEntries": "All missed entries require approval. Please upload at least one image as proof of work.",
         "entriesOlderThan": "Entries older than {days} day{days, plural, =1 {} other {s}} require approval. Please upload at least one image as proof of work.",
+        "loadingThreshold": "Loading threshold settings...",
         "proofOfWork": "Proof of Work * ({current}/{max})",
         "compressing": "Compressing...",
         "dropImages": "Drop images here",
@@ -7044,6 +7195,7 @@
       },
       "actions": {
         "cancel": "Cancel",
+        "loading": "Loading...",
         "submitting": "Submitting...",
         "adding": "Adding...",
         "submitForApproval": "Submit for Approval",

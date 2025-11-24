@@ -204,7 +204,7 @@ export default function RealtimeChatContent({
   const subscribeToMessages = useCallback(
     (channelId: string) => {
       const channel = supabase
-        .channel(`chat:${channelId}`)
+        .channel(`chat-${channelId}`)
         .on(
           'postgres_changes',
           {

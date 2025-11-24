@@ -281,7 +281,7 @@ export function useNotificationSubscription(
 
     // Subscribe to all user's notifications (including user-scoped with null ws_id)
     const channel = supabase
-      .channel(`notifications:${userId}`)
+      .channel(`notifications-${userId}`)
       .on(
         'postgres_changes',
         {

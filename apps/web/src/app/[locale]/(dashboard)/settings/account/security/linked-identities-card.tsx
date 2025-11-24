@@ -33,18 +33,11 @@ import {
 } from '@tuturuuu/ui/alert-dialog';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface LinkedIdentitiesCardProps {
   className?: string;
@@ -77,7 +70,7 @@ export default function LinkedIdentitiesCard({
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
 
-  const loadIdentities = async () => {
+  const loadIdentities = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -109,7 +102,7 @@ export default function LinkedIdentitiesCard({
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase, t]);
 
   const handleLinkIdentity = async (provider: string) => {
     try {
@@ -258,28 +251,24 @@ export default function LinkedIdentitiesCard({
       // Reload identities after linking
       setTimeout(() => loadIdentities(), 1000);
     }
-  }, []);
+  }, [loadIdentities, t]);
 
   // Loading State
   if (loading) {
     return (
-      <Card className={className}>
-        <CardHeader className="pb-6">
-          <div className="flex items-center gap-2">
-            <div className="rounded-full bg-dynamic-blue/10 p-2.5 dark:bg-dynamic-blue/20">
-              <LinkIcon className="h-5 w-5 text-dynamic-blue dark:text-dynamic-blue/80" />
-            </div>
-            <div className="space-y-1">
-              <CardTitle className="font-semibold text-xl">
-                {t('linked-accounts')}
-              </CardTitle>
-              <CardDescription className="text-sm">
-                {t('linked-accounts-description')}
-              </CardDescription>
-            </div>
+      <div className={className}>
+        <div className="mb-6 flex items-center gap-2">
+          <div className="rounded-full bg-dynamic-blue/10 p-2.5 dark:bg-dynamic-blue/20">
+            <LinkIcon className="h-5 w-5 text-dynamic-blue dark:text-dynamic-blue/80" />
           </div>
-        </CardHeader>
-        <CardContent className="space-y-6 p-6 pt-0">
+          <div className="space-y-1">
+            <h3 className="font-semibold text-lg">{t('linked-accounts')}</h3>
+            <p className="text-muted-foreground text-sm">
+              {t('linked-accounts-description')}
+            </p>
+          </div>
+        </div>
+        <div className="space-y-6">
           <div className="space-y-4">
             <Skeleton className="h-4 w-32" />
             <div className="space-y-3">
@@ -300,59 +289,51 @@ export default function LinkedIdentitiesCard({
               ))}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   // Error State
   if (error) {
     return (
-      <Card className={className}>
-        <CardHeader className="pb-6">
-          <div className="flex items-center gap-2">
-            <div className="rounded-full bg-dynamic-red/10 p-2.5 dark:bg-dynamic-red/20">
-              <AlertTriangle className="h-5 w-5 text-dynamic-red dark:text-dynamic-red/80" />
-            </div>
-            <div className="space-y-1">
-              <CardTitle className="font-semibold text-xl">
-                {t('linked-accounts')}
-              </CardTitle>
-              <CardDescription className="text-dynamic-red text-sm dark:text-dynamic-red/80">
-                {error}
-              </CardDescription>
-            </div>
+      <div className={className}>
+        <div className="mb-6 flex items-center gap-2">
+          <div className="rounded-full bg-dynamic-red/10 p-2.5 dark:bg-dynamic-red/20">
+            <AlertTriangle className="h-5 w-5 text-dynamic-red dark:text-dynamic-red/80" />
           </div>
-        </CardHeader>
-        <CardContent className="p-6 pt-0">
+          <div className="space-y-1">
+            <h3 className="font-semibold text-lg">{t('linked-accounts')}</h3>
+            <p className="text-dynamic-red text-sm dark:text-dynamic-red/80">
+              {error}
+            </p>
+          </div>
+        </div>
+        <div>
           <Button onClick={loadIdentities} variant="outline" className="w-full">
             {t('try-again')}
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   const availableProviders = getAvailableProviders();
 
   return (
-    <Card className={className}>
-      <CardHeader className="pb-6">
-        <div className="flex items-center gap-2">
-          <div className="rounded-full bg-dynamic-blue/10 p-2.5 dark:bg-dynamic-blue/20">
-            <LinkIcon className="h-5 w-5 text-dynamic-blue dark:text-dynamic-blue/80" />
-          </div>
-          <div className="flex-1 space-y-1">
-            <CardTitle className="font-semibold text-xl">
-              {t('linked-accounts')}
-            </CardTitle>
-            <CardDescription className="text-sm">
-              {t('linked-accounts-description')}
-            </CardDescription>
-          </div>
+    <div className={className}>
+      <div className="mb-6 flex items-center gap-2">
+        <div className="rounded-full bg-dynamic-blue/10 p-2.5 dark:bg-dynamic-blue/20">
+          <LinkIcon className="h-5 w-5 text-dynamic-blue dark:text-dynamic-blue/80" />
         </div>
-      </CardHeader>
-      <CardContent className="space-y-8 p-6 pt-0">
+        <div className="flex-1 space-y-1">
+          <h3 className="font-semibold text-lg">{t('linked-accounts')}</h3>
+          <p className="text-muted-foreground text-sm">
+            {t('linked-accounts-description')}
+          </p>
+        </div>
+      </div>
+      <div className="space-y-8">
         {/* Prominent Link New Accounts Section */}
         {availableProviders.length > 0 && (
           <div className="rounded-lg border border-dynamic-blue/20 bg-linear-to-br from-dynamic-blue/5 to-dynamic-indigo/5 p-6 dark:border-dynamic-blue/30 dark:from-dynamic-blue/5 dark:to-dynamic-indigo/5">
@@ -552,7 +533,7 @@ export default function LinkedIdentitiesCard({
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

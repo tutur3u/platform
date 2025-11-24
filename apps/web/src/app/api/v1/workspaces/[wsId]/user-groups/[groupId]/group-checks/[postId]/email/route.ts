@@ -1,4 +1,8 @@
+import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
+import type { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts/[postId]/card';
+import { DEV_MODE } from '@/constants/common';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import { render } from '@react-email/render';
 import {
   createAdminClient,
   createClient,
@@ -7,9 +11,9 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import dayjs from 'dayjs';
 import juice from 'juice';
 import { type NextRequest, NextResponse } from 'next/server';
-import { DEV_MODE } from '@/constants/common';
 
 const forceEnableEmailSending = false;
+const forceDisableCredentialsCheckOnDev = true;
 const disableEmailSending = DEV_MODE && !forceEnableEmailSending;
 
 export async function POST(
@@ -17,169 +21,243 @@ export async function POST(
   {
     params,
   }: {
-    params: Promise<{ wsId: string; postId: string }>;
+    params: Promise<{ wsId: string; groupId: string; postId: string }>;
   }
 ) {
-  const sbAdmin = await createAdminClient();
-  const { wsId, postId } = await params;
+  try {
+    const sbAdmin = await createAdminClient();
+    const { wsId, groupId, postId } = await params;
 
-  const { withoutPermission } = await getPermissions({
-    wsId,
-  });
-
-  if (withoutPermission('send_user_group_post_emails')) {
-    console.log('Permission denied');
-    return NextResponse.json({ message: 'Permission denied' }, { status: 403 });
-  }
-
-  const { data: workspaceSecret } =
-    wsId === process.env.MAILBOX_ALLOWED_WS_ID
-      ? { data: { id: wsId, value: 'true' } }
-      : await sbAdmin
-          .from('workspace_secrets')
-          .select('*')
-          .eq('ws_id', wsId)
-          .eq('name', 'ENABLE_EMAIL_SENDING')
-          .maybeSingle();
-
-  const isWSIDAllowed = workspaceSecret?.value === 'true';
-
-  if (!isWSIDAllowed) {
-    console.log('Workspace ID is not allowed');
-    return NextResponse.json(
-      { message: 'Workspace ID is not allowed' },
-      { status: 403 }
-    );
-  }
-
-  const data = (await req.json()) as {
-    users: {
-      id: string;
-      email: string;
-      content: string;
-      username: string;
-      notes: string;
-      is_completed: boolean;
-    }[];
-    date: string;
-  };
-
-  if (!data.users) {
-    console.log('Invalid request body');
-    return NextResponse.json(
-      { message: 'Invalid request body' },
-      { status: 400 }
-    );
-  }
-
-  const { data: credentials, error: credentialsError } = await sbAdmin
-    .from('workspace_email_credentials')
-    .select('*')
-    .eq('ws_id', wsId)
-    .maybeSingle();
-
-  if (credentialsError) {
-    console.error('Error fetching credentials:', credentialsError);
-    return NextResponse.json(
-      { message: 'Error fetching credentials' },
-      { status: 500 }
-    );
-  }
-
-  if (!credentials) {
-    console.log('No credentials found');
-    return NextResponse.json(
-      { message: 'No credentials found' },
-      { status: 400 }
-    );
-  }
-
-  // Check all emails in batch using RPC function
-  const supabase = await createClient();
-  const userEmails = data.users.map((user) => user.email);
-  const { data: blockStatuses, error: blockCheckError } = await supabase.rpc(
-    'get_email_block_statuses',
-    { p_emails: userEmails }
-  );
-
-  if (blockCheckError) {
-    console.error('Error checking email blacklist:', blockCheckError);
-    return NextResponse.json(
-      { message: 'Error checking email blacklist' },
-      { status: 500 }
-    );
-  }
-
-  // Create a Set of blocked emails for quick lookup
-  const blockedEmails = new Set(
-    (blockStatuses || [])
-      .filter((status) => status.is_blocked)
-      .map((status) => status.email)
-  );
-
-  // Log blocked emails for visibility
-  if (blockedEmails.size > 0) {
     console.log(
-      `Filtered out ${blockedEmails.size} blocked email(s):`,
-      Array.from(blockedEmails)
+      `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Request received`
     );
-  }
 
-  // Filter out users with blocked emails
-  const allowedUsers = data.users.filter(
-    (user) => !blockedEmails.has(user.email)
-  );
+    const { withoutPermission } = await getPermissions({
+      wsId,
+    });
 
-  if (allowedUsers.length === 0) {
+    if (withoutPermission('send_user_group_post_emails')) {
+      console.log(
+        `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Permission denied`
+      );
+      return NextResponse.json(
+        { message: 'Permission denied' },
+        { status: 403 }
+      );
+    }
+
+    const { data: workspaceSecret } =
+      wsId === process.env.MAILBOX_ALLOWED_WS_ID
+        ? { data: { id: wsId, value: 'true' } }
+        : await sbAdmin
+            .from('workspace_secrets')
+            .select('*')
+            .eq('ws_id', wsId)
+            .eq('name', 'ENABLE_EMAIL_SENDING')
+            .maybeSingle();
+
+    const isWSIDAllowed = workspaceSecret?.value === 'true';
+
+    if (!isWSIDAllowed) {
+      console.log(
+        `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Workspace ID is not allowed`
+      );
+      return NextResponse.json(
+        { message: 'Workspace ID is not allowed' },
+        { status: 403 }
+      );
+    }
+
+    const data = (await req.json()) as {
+      users: {
+        id: string;
+        email: string;
+        username: string;
+        notes: string;
+        is_completed: boolean;
+      }[];
+      post: UserGroupPost;
+      date: string;
+    };
+
+    if (!data.users) {
+      console.log(
+        `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Invalid request body - missing users`
+      );
+      return NextResponse.json(
+        { message: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+
+    console.log(
+      `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Processing ${data.users.length} users`
+    );
+
+    const { data: credentials, error: credentialsError } = await sbAdmin
+      .from('workspace_email_credentials')
+      .select('*')
+      .eq('ws_id', wsId)
+      .maybeSingle();
+
+    if (credentialsError) {
+      console.error(
+        `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Error fetching workspace email credentials:`,
+        credentialsError.message || credentialsError
+      );
+      return NextResponse.json(
+        { message: 'Error fetching credentials' },
+        { status: 500 }
+      );
+    }
+
+    if (!credentials && !forceDisableCredentialsCheckOnDev) {
+      console.log(
+        `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] No credentials found`
+      );
+      return NextResponse.json(
+        { message: 'No credentials found' },
+        { status: 400 }
+      );
+    }
+
+    // Check all emails in batch using RPC function
+    const supabase = await createClient();
+    const userEmails = data.users.map((user) => user.email);
+    const { data: blockStatuses, error: blockCheckError } = await supabase.rpc(
+      'get_email_block_statuses',
+      { p_emails: userEmails }
+    );
+
+    if (blockCheckError) {
+      console.error(
+        `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Error checking email blacklist via RPC:`,
+        blockCheckError.message || blockCheckError
+      );
+      return NextResponse.json(
+        { message: 'Error checking email blacklist' },
+        { status: 500 }
+      );
+    }
+
+    // Create a Set of blocked emails for quick lookup
+    const blockedEmails = new Set(
+      (blockStatuses || [])
+        .filter((status) => status.is_blocked)
+        .map((status) => status.email)
+    );
+
+    // Log blocked emails for visibility
+    if (blockedEmails.size > 0) {
+      console.log(
+        `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Filtered out ${blockedEmails.size} blocked email(s):`,
+        Array.from(blockedEmails)
+      );
+    }
+
+    // Filter out users with blocked emails
+    const allowedUsers = data.users.filter(
+      (user) => !blockedEmails.has(user.email)
+    );
+
+    if (allowedUsers.length === 0) {
+      console.log(
+        `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] All recipient emails are blacklisted`
+      );
+      return NextResponse.json(
+        {
+          message: 'All recipient emails are blacklisted',
+          successCount: 0,
+          failureCount: 0,
+          blockedCount: data.users.length,
+        },
+        { status: 400 }
+      );
+    }
+
+    console.log(
+      `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Creating SES client for region: ${credentials?.region}`
+    );
+
+    const sesClient = new SESClient({
+      region: credentials?.region ?? 'ap-southeast-1',
+      credentials: {
+        accessKeyId: credentials?.access_id ?? '',
+        secretAccessKey: credentials?.access_key ?? '',
+      },
+    });
+
+    console.log(
+      `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Sending ${allowedUsers.length} emails`
+    );
+
+    const results = await Promise.all(
+      allowedUsers.map(async (user) => {
+        const subject = `Easy Center | Báo cáo tiến độ ngày ${dayjs(data.date).format('DD/MM/YYYY')} của ${user.username}`;
+
+        // Render email template server-side
+        const content = await render(
+          PostEmailTemplate({
+            post: data.post,
+            username: user.username,
+            isHomeworkDone: user.is_completed,
+            notes: user.notes || undefined,
+          })
+        );
+
+        return sendEmail({
+          wsId,
+          client: sesClient,
+          sourceName: credentials?.source_name ?? 'Tuturuuu',
+          sourceEmail:
+            credentials?.source_email ?? 'notifications@tuturuuu.com',
+          receiverId: user.id,
+          recipient: user.email,
+          subject,
+          content,
+          postId,
+        });
+      })
+    );
+
+    const successCount = results.filter((result) => result).length;
+    const failureCount = results.filter((result) => !result).length;
+    const blockedCount = blockedEmails.size;
+
+    console.log(
+      `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Results - Success: ${successCount}, Failures: ${failureCount}, Blocked: ${blockedCount}`
+    );
+
     return NextResponse.json(
       {
-        message: 'All recipient emails are blacklisted',
-        successCount: 0,
-        failureCount: 0,
-        blockedCount: data.users.length,
+        message: 'Emails sent and logged',
+        successCount,
+        failureCount,
+        blockedCount,
       },
-      { status: 400 }
+      {
+        status:
+          failureCount === 0
+            ? 200 // All succeeded
+            : successCount > 0
+              ? 207 // Mixed success and failure
+              : 500, // All failed, or a catastrophic failure occurred
+      }
+    );
+  } catch (error) {
+    console.error(
+      `[POST /api/v1/workspaces/.../user-groups/.../group-checks/.../email] Unhandled error in POST handler:`,
+      error instanceof Error ? error.message : error,
+      error
+    );
+    return NextResponse.json(
+      {
+        message: 'Internal server error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
     );
   }
-
-  const sesClient = new SESClient({
-    region: credentials.region,
-    credentials: {
-      accessKeyId: credentials.access_id,
-      secretAccessKey: credentials.access_key,
-    },
-  });
-
-  const results = await Promise.all(
-    allowedUsers.map(async (user) => {
-      const subject = `Easy Center | Báo cáo tiến độ ngày ${dayjs(data.date).format('DD/MM/YYYY')} của ${user.username}`;
-      return sendEmail({
-        wsId,
-        client: sesClient,
-        sourceName: credentials.source_name,
-        sourceEmail: credentials.source_email,
-        receiverId: user.id,
-        recipient: user.email,
-        subject,
-        content: user.content,
-        postId,
-      });
-    })
-  );
-
-  const successCount = results.filter((result) => result).length;
-  const failureCount = results.filter((result) => !result).length;
-  const blockedCount = blockedEmails.size;
-
-  return NextResponse.json(
-    {
-      message: 'Emails sent and logged',
-      successCount,
-      failureCount,
-      blockedCount,
-    },
-    { status: failureCount > 0 ? 500 : 200 }
-  );
 }
 
 const sendEmail = async ({
@@ -235,12 +313,25 @@ const sendEmail = async ({
 
     if (!disableEmailSending) {
       console.log('Sending email:', params);
-      const command = new SendEmailCommand(params);
-      const sesResponse = await client.send(command);
-      console.log('Email sent:', params);
+      try {
+        const command = new SendEmailCommand(params);
+        const sesResponse = await client.send(command);
+        console.log('Email sent:', params);
 
-      if (sesResponse.$metadata.httpStatusCode !== 200) {
-        console.error('Error sending email:', sesResponse);
+        if (sesResponse.$metadata.httpStatusCode !== 200) {
+          console.error(
+            `[sendEmail] SES returned non-200 status for recipient ${recipient} (receiverId: ${receiverId}, postId: ${postId}):`,
+            `HTTP ${sesResponse.$metadata.httpStatusCode}`,
+            sesResponse
+          );
+          return false;
+        }
+      } catch (error) {
+        console.error(
+          `[sendEmail] Error sending email to ${recipient} (receiverId: ${receiverId}, postId: ${postId}):`,
+          error instanceof Error ? error.message : error,
+          error
+        );
         return false;
       }
 
@@ -252,10 +343,16 @@ const sendEmail = async ({
     } = await supabase.auth.getUser();
 
     if (!user) {
+      console.error(
+        '[sendEmail] No authenticated user found when logging sent email'
+      );
       return false;
     }
 
     if (!sourceName || !sourceEmail) {
+      console.error(
+        '[sendEmail] Missing sourceName or sourceEmail when logging sent email'
+      );
       return false;
     }
 
@@ -276,12 +373,18 @@ const sendEmail = async ({
       .single();
 
     if (!sentEmail) {
-      console.error('Error logging sent email:', error);
+      console.error(
+        `[sendEmail] Failed to log sent email in database for recipient ${recipient} (receiverId: ${receiverId}, postId: ${postId}):`,
+        error?.message || error || 'No data returned from insert'
+      );
       return false;
     }
 
     if (error) {
-      console.error('Error logging sent email:', error);
+      console.error(
+        `[sendEmail] Error logging sent email for recipient ${recipient} (receiverId: ${receiverId}, postId: ${postId}):`,
+        (error as any)?.message || error
+      );
       return false;
     }
 
@@ -294,13 +397,20 @@ const sendEmail = async ({
       .eq('user_id', receiverId);
 
     if (checkUpdateError) {
-      console.error('Error updating check:', checkUpdateError);
+      console.error(
+        `[sendEmail] Error updating user_group_post_checks with email_id for recipient ${recipient} (receiverId: ${receiverId}, postId: ${postId}, emailId: ${sentEmail.id}):`,
+        checkUpdateError.message || checkUpdateError
+      );
       return false;
     }
 
     return true;
   } catch (err) {
-    console.error('Error sending email:', err);
+    console.error(
+      `[sendEmail] Unhandled error sending email to ${recipient} (receiverId: ${receiverId}, postId: ${postId}):`,
+      err instanceof Error ? err.message : err,
+      err
+    );
     return false;
   }
 };

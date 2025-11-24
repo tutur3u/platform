@@ -10,7 +10,6 @@ import { CalendarViewWithTrail } from './calendar-view-with-trail';
 import { CreateEventButton } from './create-event-button';
 import { EventModal } from './event-modal';
 import { MonthCalendar } from './month-calendar';
-import { SettingsButton } from './settings-button';
 import { useCalendarSettings } from './settings/settings-context';
 import { WeekdayBar } from './weekday-bar';
 
@@ -491,12 +490,6 @@ export const CalendarContent = ({
         <>
           {workspace && <EventModal />}
           <CreateEventButton />
-          {workspace?.id && (
-            <SettingsButton
-              wsId={workspace?.id}
-              experimentalGoogleToken={experimentalGoogleToken}
-            />
-          )}
         </>
       )}
     </div>

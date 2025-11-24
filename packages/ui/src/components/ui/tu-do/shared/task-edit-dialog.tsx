@@ -22,13 +22,7 @@ import { convertJsonContentToYjsState } from '@tuturuuu/utils/yjs-helper';
 import dayjs from 'dayjs';
 import debounce from 'lodash/debounce';
 import { usePathname } from 'next/navigation';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import * as Y from 'yjs';
 import { BoardEstimationConfigDialog } from '../boards/boardId/task-dialogs/BoardEstimationConfigDialog';
@@ -60,14 +54,14 @@ import {
   SUGGESTION_MENU_WIDTH,
 } from './task-edit-dialog/constants';
 import { useEditorCommands } from './task-edit-dialog/hooks/use-editor-commands';
+import { useTaskData } from './task-edit-dialog/hooks/use-task-data';
+import { useTaskFormState } from './task-edit-dialog/hooks/use-task-form-state';
 import { useTaskMutations } from './task-edit-dialog/hooks/use-task-mutations';
 import { useTaskRealtimeSync } from './task-edit-dialog/hooks/use-task-realtime-sync';
 import { useTaskRelationships } from './task-edit-dialog/hooks/use-task-relationships';
 import { TaskDeleteDialog } from './task-edit-dialog/task-delete-dialog';
 import { TaskPropertiesSection } from './task-edit-dialog/task-properties-section';
 import type { WorkspaceTaskLabel } from './task-edit-dialog/types';
-import { useTaskData } from './task-edit-dialog/use-task-data';
-import { useTaskFormState } from './task-edit-dialog/use-task-form-state';
 import {
   clearDraft,
   getDescriptionContent,
@@ -99,7 +93,7 @@ export interface TaskEditDialogProps {
   onUpdate: () => void;
 }
 
-function TaskEditDialogComponent({
+export function TaskEditDialog({
   wsId,
   task,
   boardId,
@@ -2376,5 +2370,3 @@ function TaskEditDialogComponent({
     </>
   );
 }
-
-export const TaskEditDialog = React.memo(TaskEditDialogComponent);

@@ -178,6 +178,8 @@ bun trigger:deploy
 8. **NEVER** hand-edit generated type files in `packages/types/src/supabase.ts`
 9. **NEVER** import from `@tuturuuu/ui/toast` (deprecated) - use `@tuturuuu/ui/sonner`
 10. **NEVER** use emojis in UI code - use lucide-react icons via `@tuturuuu/icons`
+11. **NEVER** use `useEffect` for data fetching - THIS IS THE #1 VIOLATION - use TanStack Query's `useQuery`/`useMutation` instead
+12. **NEVER** use raw `fetch()` in client components without TanStack Query wrapper
 
 ### Mandatory Actions
 
@@ -194,6 +196,7 @@ bun trigger:deploy
 11. **Always** refactor files >400 LOC and components >200 LOC into smaller, focused units
 12. **Always** apply best practices to both old and new code - code quality is never optional
 13. **Always** break down components following single responsibility principle and extract complex logic to utilities/hooks
+14. **Always** use TanStack Query for ALL client-side data fetching - raw fetch/useEffect patterns are forbidden
 
 ### Escalate When
 
@@ -229,6 +232,8 @@ Supabase migrations are located in `apps/db/supabase/migrations/`. The database 
 - Nova platform tables (challenges, submissions, test cases)
 - Hierarchical task management (Workspaces → Initiatives → Projects → Boards → Lists → Tasks)
 
+**CRITICAL Schema Note**: The `public.users` table does NOT contain an `email` field. User email addresses are stored in `public.user_private_details` for privacy and security reasons. When querying user email information, always use the `user_private_details` table, not the `users` table.
+
 ### Task Management Hierarchy
 
 1. **Workspaces** - Top-level container with multiple members
@@ -259,19 +264,51 @@ Supabase migrations are located in `apps/db/supabase/migrations/`. The database 
 
 ### Data Fetching Strategy (Prefer Earlier)
 
+**CRITICAL: TanStack Query (React Query) is MANDATORY for ALL client-side data fetching.**
+
+**🚫 ABSOLUTELY FORBIDDEN: NEVER USE `useEffect` FOR DATA FETCHING 🚫**
+
+Raw `fetch()`, `useEffect` with manual state, or custom hooks without React Query are BANNED. The pattern `useEffect(() => { fetch(...).then(setData) }, [])` will result in immediate code rejection.
+
 1. **Pure Server Component (RSC)** - for read-only, cacheable, SEO-critical data
 2. **Server Action** - for mutations returning updated state to RSC
 3. **RSC + Client hydration** - when background refresh needed
-4. **React Query client-side** - for interactive, rapidly changing state
+4. **TanStack Query client-side (REQUIRED)** - for ALL client-side data fetching including: interactive state, rapidly changing data, mutations with optimistic UI, paginated/infinite lists, dependent queries, shared client state, any API calls needing caching/refetching
 5. **Realtime subscriptions** - only when live updates materially improve UX
 
-**React Query Guidelines**:
+**React Query Guidelines (MANDATORY)**:
 
+- **#1 RULE: NEVER use `useEffect` for data fetching - NO EXCEPTIONS**
 - Use stable array query keys: `[domain, subdomain?, paramsHash, version?]`
 - Set `staleTime` > 0 for rarely-changing data
 - Implement optimistic updates with rollback on error
 - Narrow invalidations (avoid global `invalidateQueries()`)
 - Hydrate initial cache from RSC to prevent double fetches
+- If you see `useEffect` + API calls in existing code, REFACTOR to React Query immediately
+- **CRITICAL:** The only acceptable pattern is `useQuery`/`useMutation`/`useInfiniteQuery` from TanStack Query
+
+**Banned Patterns (Will Cause Code Rejection):**
+```typescript
+// ❌ NEVER DO THIS
+useEffect(() => {
+  fetch('/api/data').then(r => r.json()).then(setData);
+}, []);
+
+// ❌ NEVER DO THIS
+useEffect(() => {
+  const fetchData = async () => {
+    const data = await fetch('/api/data');
+    setData(data);
+  };
+  fetchData();
+}, []);
+
+// ✅ ONLY DO THIS
+const { data } = useQuery({
+  queryKey: ['data'],
+  queryFn: () => fetch('/api/data').then(r => r.json())
+});
+```
 
 ### Workspace Management
 
@@ -279,6 +316,58 @@ Supabase migrations are located in `apps/db/supabase/migrations/`. The database 
 - Workspace-scoped resources and permissions
 - Invitation system with pending/accepted states
 - User groups and tags for organization
+
+### Workspace ID Resolution (CRITICAL)
+
+**Database `ws_id` columns ALWAYS store UUIDs.** Route parameters may contain special identifiers like `"personal"` that must be resolved.
+
+**Resolution Pattern:**
+- `"personal"` → User's personal workspace UUID (DB lookup)
+- `"internal"` → `ROOT_WORKSPACE_ID` constant
+- Valid UUID → Pass through unchanged
+
+**Client Component Pattern (Preferred):**
+
+Components should receive the `workspace` object and use `workspace.id` directly:
+
+```typescript
+// ❌ WRONG - Using raw wsId
+const { data } = await supabase
+  .from('table')
+  .eq('ws_id', wsId);
+
+// ✅ CORRECT - Use workspace.id from props
+type MyComponentProps = {
+  workspace?: Workspace | null;
+};
+
+export function MyComponent({ workspace }: MyComponentProps) {
+  useEffect(() => {
+    if (!workspace?.id) return;
+
+    const { data } = await supabase
+      .from('table')
+      .eq('ws_id', workspace.id);
+  }, [workspace?.id]);
+}
+```
+
+**Why:** Parent components already fetch workspace data. Using `workspace.id` directly avoids redundant resolution calls and improves performance.
+
+**API Routes:** Use `normalizeWorkspaceId(wsId)` helper:
+
+```typescript
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { resolveWorkspaceId, PERSONAL_WORKSPACE_SLUG } from '@tuturuuu/utils/constants';
+
+const normalizeWorkspaceId = async (wsId: string) => {
+  if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
+    const workspace = await getWorkspace(wsId);
+    return workspace.id;
+  }
+  return resolveWorkspaceId(wsId);
+};
+```
 
 ## Local Development Setup
 
@@ -601,10 +690,11 @@ Before requesting review:
 8. ✅ **Long files (>400 LOC) and components (>200 LOC) refactored into focused units**
 9. ✅ **Code follows best practices (both old and new code touched)**
 10. ✅ **Components follow single responsibility; complex logic extracted to utilities/hooks**
-11. ✅ No secrets, tokens, or API keys committed
-12. ✅ Edge runtime export added where required
-13. ✅ All external inputs validated with Zod
-14. ✅ All user-facing strings have both English and Vietnamese translations
+11. ✅ **ALL client-side data fetching uses TanStack Query (ZERO `useEffect` for fetching; no raw fetch patterns)**
+12. ✅ No secrets, tokens, or API keys committed
+13. ✅ Edge runtime export added where required
+14. ✅ All external inputs validated with Zod
+15. ✅ All user-facing strings have both English and Vietnamese translations
 
 ## Reference
 
