@@ -1,8 +1,6 @@
+import type { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts';
 import { atom, useAtom } from 'jotai';
 import { useState } from 'react';
-import ReactDOMServer from 'react-dom/server';
-import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
-import type { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts';
 
 interface EmailState {
   loading: boolean;
@@ -47,18 +45,6 @@ const useEmail = () => {
     setGlobalState({ loading: true, error: null, success: false });
 
     try {
-      const users = rawUsers.map((user) => ({
-        ...user,
-        content: ReactDOMServer.renderToString(
-          <PostEmailTemplate
-            post={post}
-            username={user.username}
-            isHomeworkDone={user?.is_completed}
-            notes={user?.notes || undefined}
-          />
-        ),
-      }));
-
       const res = await fetch(
         `/api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email`,
         {
@@ -67,7 +53,8 @@ const useEmail = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            users,
+            users: rawUsers,
+            post,
             date: post.created_at,
           }),
         }

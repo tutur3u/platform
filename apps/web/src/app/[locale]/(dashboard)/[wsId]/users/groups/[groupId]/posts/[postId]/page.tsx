@@ -1,5 +1,9 @@
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { Check, CheckCheck, CircleHelp, Clock, Send, X } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -12,7 +16,6 @@ import { notFound } from 'next/navigation';
 import { CheckAll } from './check-all';
 import { EmailList } from './email-list';
 import { UsersList } from './users-list';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'Postid Details',
@@ -68,6 +71,12 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
           ...u,
           href: `/${wsId}/users/database/${u.id}`,
         }));
+
+        // Check email blacklist status for all users
+        const userEmails = users
+          .map((u) => u.email)
+          .filter(Boolean) as string[];
+        const blacklistedEmails = await getEmailBlacklistStatus(userEmails);
 
         // Get permissions
 
@@ -196,6 +205,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
               canUpdateUserGroupsPosts={canUpdateUserGroupsPosts}
               canSendUserGroupPostEmails={canSendUserGroupPostEmails}
               sentEmailUserIds={status.sent || []}
+              blacklistedEmails={blacklistedEmails}
             />
           </div>
         );
@@ -306,4 +316,27 @@ async function getUserData(
   }
 
   return { data, count } as unknown as { data: WorkspaceUser[]; count: number };
+}
+
+async function getEmailBlacklistStatus(emails: string[]): Promise<Set<string>> {
+  if (emails.length === 0) return new Set();
+
+  const sbAdmin = await createAdminClient();
+  const { data: blockStatuses, error } = await sbAdmin.rpc(
+    'get_email_block_statuses',
+    { p_emails: emails }
+  );
+
+  if (error) {
+    console.error('Error checking email blacklist:', error);
+    return new Set();
+  }
+
+  const blacklistedEmails = new Set(
+    (blockStatuses || [])
+      .filter((status) => status.is_blocked && status.email)
+      .map((status) => status.email as string)
+  );
+
+  return blacklistedEmails;
 }
