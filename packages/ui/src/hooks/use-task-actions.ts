@@ -381,10 +381,8 @@ export function useTaskActions({
                 : 'Due date removed',
         });
 
-        // Invalidate queries to ensure fresh data
-        await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-
-        // Don't auto-clear selection - let user manually clear with "Clear" button
+        // NOTE: No invalidation needed - optimistic update already handles the UI
+        // and realtime subscription handles cross-user sync
       } catch (error) {
         console.error('Failed to update due date:', error);
         // Rollback on error
@@ -495,8 +493,8 @@ export function useTaskActions({
                 : 'Priority cleared',
         });
 
-        // Invalidate queries to ensure fresh data
-        await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+        // NOTE: No invalidation needed - optimistic update already handles the UI
+        // and realtime subscription handles cross-user sync
 
         console.log('✅ Priority update completed successfully');
 
@@ -589,10 +587,8 @@ export function useTaskActions({
               : 'Estimation points updated successfully',
         });
 
-        // Invalidate queries to ensure fresh data
-        await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-
-        // Don't auto-clear selection - let user manually clear with "Clear" button
+        // NOTE: No invalidation needed - optimistic update already handles the UI
+        // and realtime subscription handles cross-user sync
       } catch (e: any) {
         console.error('Failed to update estimation', e);
         // Rollback on error
@@ -784,8 +780,8 @@ export function useTaskActions({
           }
         }
 
-        // Invalidate queries to ensure fresh data
-        await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+        // NOTE: No invalidation needed - optimistic update already handles the UI
+        // and realtime subscription handles cross-user sync
 
         const taskCount = active
           ? tasksToRemoveFrom.length

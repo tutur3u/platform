@@ -193,7 +193,9 @@ BEGIN
             PERFORM public.create_notification(
                 p_ws_id := v_task_details.ws_id,
                 p_user_id := v_assignee_id,
+                p_email := NULL,
                 p_type := v_notification_type,
+                p_code := NULL,
                 p_title := 'Task updated',
                 p_description := v_updater_name || ' updated "' || NEW.name || '"',
                 p_data := jsonb_build_object(
@@ -206,7 +208,10 @@ BEGIN
                     'updated_by_name', v_updater_name
                 ),
                 p_entity_type := 'task',
-                p_entity_id := NEW.id
+                p_entity_id := NEW.id,
+                p_created_by := auth.uid(),
+                p_scope := 'workspace',
+                p_priority := 'medium'
             );
         END LOOP;
     END IF;

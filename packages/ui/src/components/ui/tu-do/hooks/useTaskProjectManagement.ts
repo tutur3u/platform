@@ -35,9 +35,6 @@ export function useTaskProjectManagement({
 
   // Toggle a project for the task (quick projects submenu)
   async function toggleTaskProject(projectId: string) {
-    setProjectsSaving(projectId);
-    const supabase = createClient();
-
     // Check if we're in multi-select mode with multiple tasks selected
     const shouldBulkUpdate =
       isMultiSelectMode &&
@@ -49,6 +46,8 @@ export function useTaskProjectManagement({
       ? Array.from(selectedTasks)
       : [task.id];
 
+    setProjectsSaving(projectId);
+
     // Cancel any outgoing refetches
     await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
 
@@ -58,20 +57,17 @@ export function useTaskProjectManagement({
       | undefined;
 
     // Determine action: remove if ALL selected tasks have the project, add otherwise
-    let active = task.projects?.some((p) => p.id === projectId);
+    let active = task.projects?.some((p) => p.id === projectId) ?? false;
 
     if (shouldBulkUpdate && previousTasks) {
       const selectedTasksData = previousTasks.filter((t) =>
         selectedTasks?.has(t.id)
       );
       // Only mark as active (to remove) if ALL selected tasks have the project
-      active = selectedTasksData.every((t) =>
-        t.projects?.some((p) => p.id === projectId)
+      active = selectedTasksData.every(
+        (t) => t.projects?.some((p) => p.id === projectId) ?? false
       );
     }
-
-    // Find the project details from workspace projects
-    const project = workspaceProjects.find((p) => p.id === projectId);
 
     // Pre-calculate which tasks actually need to change
     const tasksNeedingProject = !active
@@ -88,8 +84,11 @@ export function useTaskProjectManagement({
         })
       : [];
 
+    // Get project details from workspace projects for optimistic update
+    const project = workspaceProjects.find((p) => p.id === projectId);
+
     // Optimistically update the cache - only update tasks that actually change
-    queryClient.setQueryData(['tasks', boardId], (old: any[] | undefined) => {
+    queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
       if (!old) return old;
       return old.map((t) => {
         if (active && tasksToRemoveFrom.includes(t.id)) {
@@ -113,6 +112,7 @@ export function useTaskProjectManagement({
     });
 
     try {
+      const supabase = createClient();
       if (active) {
         // Remove project only from tasks that have it
         if (tasksToRemoveFrom.length > 0) {
@@ -134,15 +134,12 @@ export function useTaskProjectManagement({
             .from('task_project_tasks')
             .insert(rows);
 
-          // Ignore duplicate key errors
+          // Ignore duplicate key errors (code '23505' for unique_violation)
           if (error && error.code !== '23505') {
             throw error;
           }
         }
       }
-
-      // Invalidate queries to ensure fresh data
-      await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
 
       const taskCount = active
         ? tasksToRemoveFrom.length
@@ -154,8 +151,13 @@ export function useTaskProjectManagement({
       // Don't auto-clear selection - let user manually clear with "Clear" button
     } catch (e: any) {
       // Rollback on error
-      queryClient.setQueryData(['tasks', boardId], previousTasks);
-      toast.error(e.message || 'Unable to toggle project');
+      if (previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], previousTasks);
+      }
+      console.error('Failed to toggle project:', e);
+      toast.error('Error', {
+        description: 'Failed to update project. Please try again.',
+      });
     } finally {
       setProjectsSaving(null);
     }
@@ -185,6 +187,19 @@ export function useTaskProjectManagement({
       }
 
       const newProject = await response.json();
+
+      // Optimistically add the new project to workspace projects cache
+      queryClient.setQueryData(
+        ['task_projects', workspaceId],
+        (old: TaskProject[] | undefined) => {
+          if (!old) return [newProject];
+          // Check if project already exists (shouldn't happen, but defensive)
+          if (old.some((p) => p.id === newProject.id)) return old;
+          // Add to sorted position by name
+          const updated = [...old, newProject];
+          return updated.sort((a, b) => a.name.localeCompare(b.name));
+        }
+      );
 
       // Auto-apply the newly created project to this task
       let linkSucceeded = false;
@@ -240,10 +255,7 @@ export function useTaskProjectManagement({
         );
       }
 
-      // Invalidate workspace projects cache so all task cards get the new project
-      queryClient.invalidateQueries({
-        queryKey: ['task_projects', workspaceId],
-      });
+      // ✅ NO invalidation - workspace projects cache already updated optimistically above
 
       return newProject;
     } catch (e: any) {

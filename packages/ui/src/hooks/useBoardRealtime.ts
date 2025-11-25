@@ -128,6 +128,9 @@ export function useBoardRealtime(
       );
     }
     // Listen for changes to task assignees (no filter - catches all tasks including newly created ones)
+    // NOTE: We skip invalidation here because optimistic updates already handle local changes.
+    // Realtime is for syncing changes from OTHER users. Instead of invalidating (which causes
+    // a flash/refetch), we use a stale-while-revalidate approach with a longer debounce.
     channel.on(
       'postgres_changes',
       {
@@ -141,12 +144,19 @@ export function useBoardRealtime(
         const oldRecord = payload.old as { task_id?: string } | undefined;
         const taskId = newRecord?.task_id || oldRecord?.task_id;
         if (taskId && stableTaskIds.includes(taskId)) {
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+          // Instead of invalidating immediately (which conflicts with optimistic updates),
+          // we mark the query as stale. React Query will refetch in the background
+          // without causing a loading state.
+          queryClient.invalidateQueries({
+            queryKey: ['tasks', boardId],
+            refetchType: 'none', // Don't refetch immediately - let stale-while-revalidate handle it
+          });
         }
       }
     );
 
     // Listen for changes to task labels (no filter - catches all tasks including newly created ones)
+    // NOTE: Same approach as assignees - skip immediate refetch to avoid conflicts with optimistic updates
     channel.on(
       'postgres_changes',
       {
@@ -160,7 +170,35 @@ export function useBoardRealtime(
         const oldRecord = payload.old as { task_id?: string } | undefined;
         const taskId = newRecord?.task_id || oldRecord?.task_id;
         if (taskId && stableTaskIds.includes(taskId)) {
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+          // Mark as stale without immediate refetch - optimistic update handles local changes
+          queryClient.invalidateQueries({
+            queryKey: ['tasks', boardId],
+            refetchType: 'none',
+          });
+        }
+      }
+    );
+
+    // Listen for changes to task project assignments (no filter - catches all tasks including newly created ones)
+    // NOTE: Same approach as labels - skip immediate refetch to avoid conflicts with optimistic updates
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'task_project_tasks',
+      },
+      async (payload) => {
+        // Only process if the task belongs to one of our lists
+        const newRecord = payload.new as { task_id?: string } | undefined;
+        const oldRecord = payload.old as { task_id?: string } | undefined;
+        const taskId = newRecord?.task_id || oldRecord?.task_id;
+        if (taskId && stableTaskIds.includes(taskId)) {
+          // Mark as stale without immediate refetch - optimistic update handles local changes
+          queryClient.invalidateQueries({
+            queryKey: ['tasks', boardId],
+            refetchType: 'none',
+          });
         }
       }
     );
