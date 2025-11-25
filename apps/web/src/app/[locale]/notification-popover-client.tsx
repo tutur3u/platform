@@ -234,11 +234,11 @@ function NotificationCard({
   onActionComplete,
 }: NotificationCardProps) {
   const isUnread = !notification.read_at;
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingAction, setProcessingAction] = useState<string | null>(null);
   const router = useRouter();
 
   const handleAction = async (actionType: string, payload: any) => {
-    setIsProcessing(true);
+    setProcessingAction(actionType);
 
     try {
       switch (actionType) {
@@ -312,7 +312,7 @@ function NotificationCard({
       console.error('Action error:', error);
       toast.error('An error occurred');
     } finally {
-      setIsProcessing(false);
+      setProcessingAction(null);
     }
   };
 
@@ -396,10 +396,10 @@ function NotificationCard({
                     wsId: notification.data?.workspace_id,
                   })
                 }
-                disabled={isProcessing}
+                disabled={!!processingAction}
                 className="h-7 gap-1 text-xs"
               >
-                {isProcessing ? (
+                {processingAction === 'WORKSPACE_INVITE_DECLINE' ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
                 ) : (
                   <X className="h-3 w-3" />
@@ -413,10 +413,10 @@ function NotificationCard({
                     wsId: notification.data?.workspace_id,
                   })
                 }
-                disabled={isProcessing}
+                disabled={!!processingAction}
                 className="h-7 gap-1 text-xs"
               >
-                {isProcessing ? (
+                {processingAction === 'WORKSPACE_INVITE_ACCEPT' ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
                 ) : (
                   <Check className="h-3 w-3" />
