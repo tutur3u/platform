@@ -487,9 +487,9 @@ function ParentSection({
           onCreateNew={
             onCreateParent
               ? async (name) => {
-                await onCreateParent(name);
-                setSearchOpen(false);
-              }
+                  await onCreateParent(name);
+                  setSearchOpen(false);
+                }
               : undefined
           }
           placeholder="Set parent task..."
@@ -808,9 +808,9 @@ function DependenciesSection({
         onCreateNew={
           handleCreateNew
             ? async (name) => {
-              await handleCreateNew(name);
-              setSearchOpen(false);
-            }
+                await handleCreateNew(name);
+                setSearchOpen(false);
+              }
             : undefined
         }
         placeholder={
@@ -894,9 +894,9 @@ function RelatedSection({
         onCreateNew={
           onCreateRelatedTask
             ? async (name) => {
-              await onCreateRelatedTask(name);
-              setSearchOpen(false);
-            }
+                await onCreateRelatedTask(name);
+                setSearchOpen(false);
+              }
             : undefined
         }
         placeholder="Link related task..."

@@ -1,4 +1,4 @@
-import { useDebouncedValue } from '@tanstack/react-pacer/debouncer'
+import { useDebouncedValue } from '@tanstack/react-pacer/debouncer';
 
 /**
  * Hook that returns a debounced value.
@@ -8,5 +8,5 @@ import { useDebouncedValue } from '@tanstack/react-pacer/debouncer'
  * @returns The debounced value
  */
 export function useDebounce<T>(value: T, delay: number) {
-  return useDebouncedValue(value, {wait: delay});
+  return useDebouncedValue(value, { wait: delay });
 }

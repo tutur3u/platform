@@ -2304,8 +2304,6 @@ export function useReorderTask(boardId: string) {
 // TASK RELATIONSHIPS
 // =============================================================================
 
-
-
 /**
  * Fetch all relationships for a given task
  */
@@ -2560,7 +2558,7 @@ export function useCreateTaskRelationship(boardId?: string) {
         }),
         // Also invalidate tasks cache to refresh relationship badges
         boardId &&
-        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
       ]);
     },
   });
@@ -2601,7 +2599,7 @@ export function useDeleteTaskRelationship(boardId?: string) {
         }),
         // Also invalidate tasks cache to refresh relationship badges
         boardId &&
-        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
       ]);
     },
   });
@@ -2771,7 +2769,7 @@ export function useCreateTaskWithRelationship(boardId: string, wsId: string) {
       await Promise.all([
         // Invalidate tasks cache for the board
         boardId &&
-        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
         // Invalidate relationships for both tasks
         queryClient.invalidateQueries({
           queryKey: ['task-relationships', variables.currentTaskId],
