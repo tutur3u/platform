@@ -8,6 +8,7 @@ import {
   Search,
   X,
 } from '@tuturuuu/icons';
+import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
@@ -83,14 +84,14 @@ export function TaskPickerPopover({
 }: TaskPickerPopoverProps) {
   const [open, setOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  const [debouncedSearchQuery] = useDebounce(searchQuery, 300);
 
   // Fetch tasks from workspace
   const { data: tasks = [], isLoading: tasksLoading } = useWorkspaceTasks(
     wsId,
     {
       excludeTaskIds,
-      searchQuery: debouncedSearch || undefined,
+      searchQuery: debouncedSearchQuery || undefined,
       limit: 50,
       enabled: open,
     }
@@ -253,7 +254,7 @@ export function TaskPickerPopover({
                             className={cn(
                               'truncate font-medium',
                               task.completed &&
-                                'text-muted-foreground line-through'
+                              'text-muted-foreground line-through'
                             )}
                           >
                             {task.name}
@@ -285,21 +286,4 @@ export function TaskPickerPopover({
       </PopoverContent>
     </Popover>
   );
-}
-
-// Utility hook for debouncing search input
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = React.useState<T>(value);
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { Link2, Loader2, Plus, Search, X } from '@tuturuuu/icons';
+import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import type { RelatedTaskInfo } from '@tuturuuu/types/primitives/TaskRelationship';
 import {
   Command,
@@ -35,8 +36,6 @@ interface TaskRelatedMenuProps {
   onAddRelated: (task: RelatedTaskInfo) => void;
   /** Called when removing a related task */
   onRemoveRelated: (taskId: string) => void;
-  /** Handler for menu item selection (to control menu close behavior) */
-  onMenuItemSelect: (e: Event, action: () => void) => void;
 }
 
 export function TaskRelatedMenu({
@@ -47,10 +46,9 @@ export function TaskRelatedMenu({
   savingTaskId,
   onAddRelated,
   onRemoveRelated,
-  onMenuItemSelect,
 }: TaskRelatedMenuProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  const [debouncedSearch] = useDebounce(searchQuery, 300);
 
   // Exclude current task and all already-related tasks
   const excludeIds = React.useMemo(() => {
@@ -199,21 +197,4 @@ export function TaskRelatedMenu({
       </DropdownMenuSubContent>
     </DropdownMenuSub>
   );
-}
-
-// Utility hook for debouncing search input
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = React.useState<T>(value);
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
 }

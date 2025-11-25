@@ -1,6 +1,7 @@
 'use client';
 
 import { Ban, Loader2, Plus, Search, X } from '@tuturuuu/icons';
+import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import {
   Command,
   CommandEmpty,
@@ -59,7 +60,7 @@ export function TaskBlockingMenu({
     'blocks'
   );
   const [searchQuery, setSearchQuery] = React.useState('');
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  const [debouncedSearch] = useDebounce(searchQuery, 300);
 
   // Exclude current task and all already-related tasks
   const excludeIds = React.useMemo(() => {
@@ -244,21 +245,4 @@ export function TaskBlockingMenu({
       </DropdownMenuSubContent>
     </DropdownMenuSub>
   );
-}
-
-// Utility hook for debouncing search input
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = React.useState<T>(value);
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
 }

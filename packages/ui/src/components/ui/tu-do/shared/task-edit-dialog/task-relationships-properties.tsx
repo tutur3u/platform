@@ -13,6 +13,7 @@ import {
   Sparkles,
   X,
 } from '@tuturuuu/icons';
+import { useDebouncedValue } from '@tuturuuu/ui/hooks/use-debounce';
 import type { RelatedTaskInfo } from '@tuturuuu/types/primitives/TaskRelationship';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -486,9 +487,9 @@ function ParentSection({
           onCreateNew={
             onCreateParent
               ? async (name) => {
-                  await onCreateParent(name);
-                  setSearchOpen(false);
-                }
+                await onCreateParent(name);
+                setSearchOpen(false);
+              }
               : undefined
           }
           placeholder="Set parent task..."
@@ -807,9 +808,9 @@ function DependenciesSection({
         onCreateNew={
           handleCreateNew
             ? async (name) => {
-                await handleCreateNew(name);
-                setSearchOpen(false);
-              }
+              await handleCreateNew(name);
+              setSearchOpen(false);
+            }
             : undefined
         }
         placeholder={
@@ -893,9 +894,9 @@ function RelatedSection({
         onCreateNew={
           onCreateRelatedTask
             ? async (name) => {
-                await onCreateRelatedTask(name);
-                setSearchOpen(false);
-              }
+              await onCreateRelatedTask(name);
+              setSearchOpen(false);
+            }
             : undefined
         }
         placeholder="Link related task..."
@@ -1124,21 +1125,4 @@ function TaskSearchPopover({
       </PopoverContent>
     </Popover>
   );
-}
-
-// Utility hook for debouncing search input
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = React.useState<T>(value);
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
 }

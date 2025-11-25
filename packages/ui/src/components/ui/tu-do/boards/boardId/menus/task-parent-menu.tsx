@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowUpCircle, Loader2, Search, X } from '@tuturuuu/icons';
+import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import type { RelatedTaskInfo } from '@tuturuuu/types/primitives/TaskRelationship';
 import {
   Command,
@@ -46,7 +47,7 @@ export function TaskParentMenu({
   onRemoveParent,
 }: TaskParentMenuProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  const [debouncedSearch] = useDebounce(searchQuery, 300);
 
   // Exclude current task and all its children (to prevent cycles)
   const excludeIds = React.useMemo(() => {
@@ -170,21 +171,4 @@ export function TaskParentMenu({
       </DropdownMenuSubContent>
     </DropdownMenuSub>
   );
-}
-
-// Utility hook for debouncing search input
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = React.useState<T>(value);
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
 }
