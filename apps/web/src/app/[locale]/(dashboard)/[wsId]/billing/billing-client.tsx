@@ -1,6 +1,18 @@
 'use client';
 
-import { ArrowUpCircle, CheckCircle } from '@tuturuuu/icons';
+import {
+  AlertCircle,
+  ArrowUpCircle,
+  Calendar,
+  CheckCircle,
+  Clock,
+  CreditCard,
+  Info,
+  Shield,
+  Sparkles,
+  X,
+  Zap,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { useRouter } from 'next/navigation';
@@ -11,13 +23,14 @@ import PurchaseLink from './data-polar-checkout';
 // Define types for the props we're passing from the server component
 interface Plan {
   id: string;
-  polar_subscription_id: string;
+  polarSubscriptionId: string;
   name: string;
   price: string;
   billingCycle: string;
-  startDate?: string;
-  nextBillingDate?: string;
-  status?: string;
+  startDate: string;
+  nextBillingDate: string;
+  cancelAtPeriodEnd: boolean;
+  status: string;
   features?: string[];
 }
 
@@ -144,215 +157,423 @@ export function BillingClient({
   };
 
   return (
-    <>
-      <h1 className="mb-2 font-bold text-3xl tracking-tight">{t('billing')}</h1>
-      <p className="mb-8 text-muted-foreground">{t('billing-info')}</p>
+    <div className="mx-auto max-w-7xl space-y-8">
+      {/* Header Section with Gradient */}
+      <div className="mb-2 flex items-center gap-2">
+        <CreditCard className="h-6 w-6 text-dynamic-blue" />
+        <h1 className="font-bold text-2xl tracking-tight">{t('billing')}</h1>
+      </div>
+      <p className="text-muted-foreground">{t('billing-info')}</p>
 
       {/* Current Plan Card */}
-      <div className="mb-8 rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h2 className="font-semibold text-2xl text-card-foreground tracking-tight">
-              {t('current-plan')}
-            </h2>
-            <p className="text-muted-foreground">{t('current-plan-details')}</p>
-          </div>
-          <div className="flex items-center">
-            <span
-              className={`rounded-full px-3 py-1 font-medium text-sm ${
-                currentPlan.status === 'active'
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-              }`}
-            >
-              {currentPlan.status === 'active' ? 'Active' : 'Pending'}
-            </span>
-          </div>
-        </div>
+      <div
+        className={
+          'rounded-2xl border-2 border-border bg-background shadow-xl transition-all duration-300'
+        }
+      >
+        <div className="p-8">
+          {/* Cancellation Warning Banner */}
+          {currentPlan.cancelAtPeriodEnd && (
+            <div className="mb-8 flex items-start gap-4 rounded-xl border-2 border-dynamic-orange bg-dynamic-orange/10 p-5 shadow-lg backdrop-blur-sm dark:bg-dynamic-orange/20">
+              <div className="rounded-full bg-dynamic-orange p-2">
+                <AlertCircle className="h-5 w-5 text-foreground" />
+              </div>
+              <div className="flex-1">
+                <h3 className="mb-1.5 font-bold text-dynamic-orange">
+                  Subscription Ending Soon
+                </h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Your subscription will end on{' '}
+                  <span className="font-semibold text-dynamic-orange">
+                    {currentPlan.nextBillingDate}
+                  </span>
+                  . You'll lose access to premium features after this date.
+                </p>
+              </div>
+            </div>
+          )}
 
-        <div className="grid grid-cols-1 gap-8">
-          <div>
-            <div className="mb-6">
-              <h3 className="mb-1 font-bold text-card-foreground text-xl">
-                {currentPlan.name}
-              </h3>
-              <p className="font-bold text-2xl text-primary">
-                {currentPlan.price}
-                <span className="text-muted-foreground text-sm">
-                  /{currentPlan.billingCycle}
-                </span>
+          {/* Header with Status Badge */}
+          <div className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex-1">
+              <div className="mb-2">
+                <h2 className="font-bold text-xl tracking-tight">
+                  {t('current-plan')}
+                </h2>
+              </div>
+              <p className="text-muted-foreground text-sm">
+                {t('current-plan-details')}
               </p>
             </div>
+          </div>
 
-            <div className="mb-6 grid grid-cols-2 gap-6 md:grid-cols-4">
-              <div>
-                <p className="text-muted-foreground text-sm">
+          {/* Plan Name and Pricing - Hero Style */}
+          <div className="mb-8 rounded-xl border border-border/50 bg-linear-to-br from-muted/50 to-background p-6 shadow-inner">
+            <div className="flex items-end gap-4">
+              <div className="flex-1">
+                <p className="mb-2 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+                  Your Plan
+                </p>
+                <h3 className="mb-2 font-black text-2xl tracking-tight">
+                  {currentPlan.name}
+                </h3>
+                <div className="flex items-baseline gap-2">
+                  <span className="font-black text-3xl text-primary">
+                    {currentPlan.price}
+                  </span>
+                  <span className="text-muted-foreground">
+                    /{currentPlan.billingCycle}
+                  </span>
+                </div>
+              </div>
+              <div className="rounded-full bg-primary/10 p-3">
+                <Shield className="h-6 w-6 text-primary" />
+              </div>
+            </div>
+          </div>
+
+          {/* Billing Information Cards */}
+          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="group relative overflow-hidden rounded-xl border border-border/50 bg-muted/30 p-4 shadow-sm transition-all hover:border-border hover:shadow-md">
+              <div className="mb-2 flex items-center gap-2">
+                <div className="rounded-lg bg-primary/10 p-1.5">
+                  <Calendar className="h-4 w-4 text-primary" />
+                </div>
+                <p className="font-bold text-muted-foreground text-xs uppercase tracking-wider">
                   {t('start-date')}
                 </p>
-                <p className="font-medium text-card-foreground">
-                  {currentPlan.startDate}
-                </p>
               </div>
-              <div>
-                <p className="text-muted-foreground text-sm">
-                  {t('next-billing')}
-                </p>
-                <p className="font-medium text-card-foreground">
-                  {currentPlan.nextBillingDate}
-                </p>
-              </div>
+              <p className="font-bold text-lg">{currentPlan.startDate}</p>
             </div>
 
-            <div className="mb-8">
-              <h4 className="mb-4 font-medium text-card-foreground">
-                Plan Features:
-              </h4>
-              <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {currentPlan.features?.map((feature, index) => (
-                  <li
-                    key={index}
-                    className="flex items-center text-card-foreground"
-                  >
-                    <CheckCircle className="mr-3 h-5 w-5 shrink-0 text-primary" />
-                    <span className="text-sm">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {message && (
-              <div
-                className={`mb-4 rounded-lg p-3 text-sm ${
-                  message.includes('Error')
-                    ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                    : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+            <div
+              className={`group relative overflow-hidden rounded-xl border p-4 shadow-sm transition-all ${
+                currentPlan.cancelAtPeriodEnd
+                  ? 'border-dynamic-orange/50 bg-dynamic-orange/10 hover:shadow-lg'
+                  : 'border-border/50 bg-muted/30 hover:border-border hover:shadow-md'
+              }`}
+            >
+              <div className="mb-2 flex items-center gap-2">
+                <div
+                  className={`rounded-lg p-1.5 ${
+                    currentPlan.cancelAtPeriodEnd
+                      ? 'bg-dynamic-orange/20'
+                      : 'bg-primary/10'
+                  }`}
+                >
+                  <Clock
+                    className={`h-4 w-4 ${
+                      currentPlan.cancelAtPeriodEnd
+                        ? 'text-dynamic-orange'
+                        : 'text-primary'
+                    }`}
+                  />
+                </div>
+                <p
+                  className={`font-bold text-xs uppercase tracking-wider ${
+                    currentPlan.cancelAtPeriodEnd
+                      ? 'text-dynamic-orange'
+                      : 'text-muted-foreground'
+                  }`}
+                >
+                  {currentPlan.cancelAtPeriodEnd
+                    ? 'Ends on'
+                    : t('next-billing')}
+                </p>
+              </div>
+              <p
+                className={`font-bold text-lg ${
+                  currentPlan.cancelAtPeriodEnd ? 'text-dynamic-orange' : ''
                 }`}
               >
-                {message}
-              </div>
-            )}
+                {currentPlan.nextBillingDate}
+              </p>
+            </div>
+          </div>
 
-            <div className="flex flex-wrap gap-3">
+          {/* Plan Features */}
+          <div className="mb-8 rounded-xl border border-border/50 bg-muted/20 p-5">
+            <div className="mb-4 flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <h4 className="font-bold">Plan Features</h4>
+            </div>
+            <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {currentPlan.features?.map((feature, index) => (
+                <li
+                  key={index}
+                  className="group flex items-start gap-2 rounded-lg p-2 transition-colors hover:bg-primary/5"
+                >
+                  <div className="rounded-full bg-primary/10 p-1 transition-colors group-hover:bg-primary/20">
+                    <CheckCircle className="h-4 w-4 shrink-0 text-primary" />
+                  </div>
+                  <span className="flex-1 text-sm leading-relaxed">
+                    {feature}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Messages */}
+          {message && (
+            <div
+              className={`mb-6 flex items-start gap-3 rounded-xl border-2 p-4 shadow-lg ${
+                message.includes('Error')
+                  ? 'border-dynamic-red/50 bg-dynamic-red/10 dark:bg-dynamic-red/20'
+                  : 'border-dynamic-green/50 bg-dynamic-green/10 dark:bg-dynamic-green/20'
+              }`}
+            >
+              <div
+                className={`rounded-full p-1.5 ${
+                  message.includes('Error')
+                    ? 'bg-dynamic-red/20'
+                    : 'bg-dynamic-green/20'
+                }`}
+              >
+                {message.includes('Error') ? (
+                  <AlertCircle
+                    className={`h-5 w-5 ${
+                      message.includes('Error')
+                        ? 'text-dynamic-red'
+                        : 'text-dynamic-green'
+                    }`}
+                  />
+                ) : (
+                  <CheckCircle className="h-5 w-5 text-dynamic-green" />
+                )}
+              </div>
+              <div className="flex-1">
+                <p
+                  className={`font-medium text-sm leading-relaxed ${
+                    message.includes('Error')
+                      ? 'text-dynamic-red'
+                      : 'text-dynamic-green'
+                  }`}
+                >
+                  {message}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-4">
+            {currentPlan.cancelAtPeriodEnd ? (
               <Button
                 disabled={!isCreator}
                 onClick={() => setShowUpgradeOptions(!showUpgradeOptions)}
-                className="flex items-center"
+                className="flex-1 bg-dynamic-orange text-background shadow-lg transition-all hover:scale-105 hover:bg-dynamic-orange/90 hover:shadow-xl sm:flex-none"
                 size="lg"
               >
                 <ArrowUpCircle className="mr-2 h-5 w-5" />
-                {showUpgradeOptions ? t('hide-upgrade') : t('upgrade-plan')}
+                Renew or Upgrade Plan
               </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-border"
-                onClick={() =>
-                  handleCancelSubscription(currentPlan.polar_subscription_id)
-                }
-                disabled={isLoading || !currentPlan.id}
-              >
-                {isLoading ? 'Cancelling...' : 'Cancel Subscription'}
-              </Button>
-            </div>
+            ) : (
+              <>
+                <Button
+                  disabled={!isCreator}
+                  onClick={() => setShowUpgradeOptions(!showUpgradeOptions)}
+                  className="flex-1 shadow-lg transition-all hover:scale-105 hover:shadow-xl sm:flex-none"
+                  size="lg"
+                >
+                  <ArrowUpCircle className="mr-2 h-5 w-5" />
+                  {showUpgradeOptions ? t('hide-upgrade') : t('upgrade-plan')}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="border-2 border-dynamic-red text-dynamic-red shadow-lg transition-all hover:scale-105 hover:bg-dynamic-red/10 hover:shadow-xl"
+                  onClick={() => handleCancelSubscription(currentPlan.id)}
+                  disabled={isLoading}
+                >
+                  <X className="mr-2 h-5 w-5" />
+                  {isLoading ? 'Cancelling...' : 'Cancel Subscription'}
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
 
       {/* Upgrade Options */}
       {showUpgradeOptions && (
-        <div className="mb-8 rounded-lg border-2 border-primary/20 bg-card p-8 shadow-sm dark:bg-card/80">
-          <h2 className="mb-6 font-semibold text-2xl text-card-foreground">
-            {t('upgrade-plan')}
-          </h2>
-          {isAdmin && (
-            <div className="mb-6 flex items-center gap-3">
-              {!syncCompleted ? (
-                <Button
-                  onClick={handleSyncToProduct}
-                  disabled={syncLoading}
-                  className="flex items-center"
-                >
-                  {syncLoading ? 'Syncing...' : 'Sync to product to database'}
-                </Button>
-              ) : (
-                <Button
-                  disabled
-                  className="flex items-center bg-green-600 hover:bg-green-600"
-                >
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Sync Completed
-                </Button>
-              )}
+        <div className="relative overflow-hidden rounded-2xl border-2 border-primary/30 bg-linear-to-br from-card via-card to-primary/5 p-8 shadow-2xl dark:from-card/80">
+          {/* Decorative Background */}
+          <div className="absolute top-0 left-0 h-full w-full overflow-hidden opacity-30">
+            <div className="-top-24 -left-24 absolute h-96 w-96 rounded-full bg-linear-to-br from-dynamic-blue/20 to-dynamic-purple/20 blur-3xl" />
+            <div className="-bottom-24 -right-24 absolute h-96 w-96 rounded-full bg-linear-to-br from-dynamic-pink/20 to-dynamic-orange/20 blur-3xl" />
+          </div>
+
+          <div className="relative z-10">
+            <div className="mb-8 flex items-center gap-3">
+              <Sparkles className="h-6 w-6 text-primary" />
+              <h2 className="font-bold text-xl tracking-tight">
+                {t('upgrade-plan')}
+              </h2>
             </div>
-          )}
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {upgradePlans.map((plan) => (
-              <div
-                key={plan.id}
-                className={`rounded-lg border transition-shadow hover:shadow-md ${
-                  plan.popular ? 'relative border-primary' : 'border-border'
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute top-0 right-0 rounded-tr-md rounded-bl-lg bg-primary px-3 py-1 text-primary-foreground text-xs">
-                    {t('recommend')}
-                  </div>
-                )}
-                <div className="p-6">
-                  <h3 className="mb-1 font-bold text-card-foreground text-xl">
-                    {plan.name}
-                  </h3>
-                  <p className="mb-4 font-bold text-2xl text-primary">
-                    {plan.price}
-                    <span className="text-muted-foreground text-sm">
-                      /{plan.billingCycle}
-                    </span>
+
+            {/* Admin Sync Section */}
+            {isAdmin && (
+              <div className="mb-8 rounded-xl border border-border bg-background/50 p-6 backdrop-blur-sm">
+                <div className="mb-3 flex items-center gap-2">
+                  <Info className="h-5 w-5 text-muted-foreground" />
+                  <p className="font-medium text-muted-foreground text-sm">
+                    Admin Controls
                   </p>
-                  <ul className="mb-6">
-                    {plan.features.map((feature, index) => (
-                      <li key={index} className="mb-2 flex items-start">
-                        <CheckCircle className="mt-0.5 mr-2 h-5 w-5 shrink-0 text-primary" />
-                        <span className="text-card-foreground">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  {plan.isEnterprise ? (
-                    <Button className="w-full" variant="outline" disabled>
-                      {t('contact-sales')}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant={plan.popular ? 'default' : 'outline'}
-                      className={`w-full ${
-                        plan.popular
-                          ? ''
-                          : 'border-primary bg-transparent text-primary hover:bg-primary/10'
-                      }`}
-                      asChild
-                    >
-                      <PurchaseLink
-                        productId={plan.id}
-                        wsId={wsId}
-                        customerEmail="t@test.com"
-                        theme="auto"
-                        className="flex w-full items-center justify-center"
-                      >
-                        Select {plan.name}
-                      </PurchaseLink>
-                    </Button>
+                </div>
+                {!syncCompleted ? (
+                  <Button
+                    onClick={handleSyncToProduct}
+                    disabled={syncLoading}
+                    className="shadow-lg transition-all hover:scale-105"
+                    size="lg"
+                  >
+                    {syncLoading ? 'Syncing...' : 'Sync Products to Database'}
+                  </Button>
+                ) : (
+                  <Button
+                    disabled
+                    className="bg-dynamic-green shadow-lg hover:bg-dynamic-green"
+                    size="lg"
+                  >
+                    <CheckCircle className="mr-2 h-5 w-5" />
+                    Sync Completed
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {/* Pricing Cards Grid */}
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+              {upgradePlans.map((plan) => (
+                <div
+                  key={plan.id}
+                  className={`group hover:-translate-y-2 relative overflow-hidden rounded-2xl border-2 transition-all duration-300 hover:shadow-2xl ${
+                    plan.popular
+                      ? 'border-primary bg-linear-to-br from-primary/5 via-background to-background shadow-xl'
+                      : 'border-border bg-background shadow-lg hover:border-primary/50'
+                  }`}
+                >
+                  {/* Popular Badge */}
+                  {plan.popular && (
+                    <div className="absolute top-0 right-0 z-10">
+                      <div className="flex items-center gap-2 rounded-tr-xl rounded-bl-2xl bg-linear-to-br from-primary to-primary/80 px-4 py-2 shadow-lg">
+                        <Sparkles className="h-4 w-4 text-primary-foreground" />
+                        <span className="font-bold text-primary-foreground text-xs uppercase tracking-wider">
+                          {t('recommend')}
+                        </span>
+                      </div>
+                    </div>
                   )}
-                  {plan.isEnterprise && (
-                    <p className="mt-2 text-center text-muted-foreground text-xs">
-                      {t('contact-sales-desc')}
-                    </p>
+
+                  {/* Card Content */}
+                  <div className="relative z-10 p-6">
+                    {/* Plan Header */}
+                    <div className="mb-6">
+                      <div className="mb-3 flex items-center gap-2">
+                        <div
+                          className={`rounded-lg p-2 ${
+                            plan.isEnterprise
+                              ? 'bg-dynamic-purple/10'
+                              : plan.popular
+                                ? 'bg-primary/10'
+                                : 'bg-muted'
+                          }`}
+                        >
+                          {plan.isEnterprise ? (
+                            <Zap className="h-6 w-6 text-dynamic-purple" />
+                          ) : (
+                            <Shield className="h-6 w-6 text-primary" />
+                          )}
+                        </div>
+                        <h3 className="font-black text-xl tracking-tight">
+                          {plan.name}
+                        </h3>
+                      </div>
+
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-black text-3xl text-primary">
+                          {plan.price}
+                        </span>
+                        <span className="text-muted-foreground">
+                          /{plan.billingCycle}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Features List */}
+                    <ul className="mb-6 space-y-2">
+                      {plan.features.map((feature, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <div className="rounded-full bg-primary/10 p-1 transition-colors group-hover:bg-primary/20">
+                            <CheckCircle className="h-4 w-4 shrink-0 text-primary" />
+                          </div>
+                          <span className="flex-1 text-sm leading-relaxed">
+                            {feature}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* CTA Button */}
+                    {plan.isEnterprise ? (
+                      <div>
+                        <Button
+                          className="w-full shadow-lg transition-all hover:scale-105"
+                          variant="outline"
+                          disabled
+                          size="lg"
+                        >
+                          <Zap className="mr-2 h-5 w-5" />
+                          {t('contact-sales')}
+                        </Button>
+                        <p className="mt-3 text-center text-muted-foreground text-sm">
+                          {t('contact-sales-desc')}
+                        </p>
+                      </div>
+                    ) : (
+                      <Button
+                        variant={plan.popular ? 'default' : 'outline'}
+                        className={`w-full shadow-lg transition-all hover:scale-105 hover:shadow-xl ${
+                          plan.popular
+                            ? ''
+                            : 'border-2 border-primary bg-transparent text-primary hover:bg-primary/10'
+                        }`}
+                        asChild
+                        size="lg"
+                      >
+                        <PurchaseLink
+                          productId={plan.id}
+                          wsId={wsId}
+                          customerEmail="t@test.com"
+                          theme="auto"
+                          className="flex w-full items-center justify-center gap-2"
+                        >
+                          <ArrowUpCircle className="h-5 w-5" />
+                          Select {plan.name}
+                        </PurchaseLink>
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Decorative Gradient for Popular Plan */}
+                  {plan.popular && (
+                    <div className="absolute bottom-0 left-0 h-1 w-full bg-linear-to-r from-dynamic-blue via-dynamic-purple to-dynamic-pink" />
                   )}
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+
+            {/* Footer Note */}
+            <div className="mt-8 flex items-start gap-3 rounded-xl border border-border/50 bg-muted/30 p-6">
+              <Info className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                {t('plan-desc')}
+              </p>
+            </div>
           </div>
-          <p className="mt-6 text-muted-foreground text-sm">{t('plan-desc')}</p>
         </div>
       )}
-    </>
+    </div>
   );
 }

@@ -1,4 +1,5 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -22,6 +23,21 @@ export async function DELETE(
   }
 
   try {
+    const supabase = await createClient();
+
+    const { data: subscription } = await supabase
+      .from('workspace_subscription')
+      .select('*')
+      .eq('id', subscriptionId)
+      .single();
+
+    if (!subscription) {
+      return NextResponse.json(
+        { error: 'Subscription not found' },
+        { status: 404 }
+      );
+    }
+
     const polarClient = createPolarClient({
       sandbox: process.env.NODE_ENV === 'development',
     });
@@ -35,9 +51,32 @@ export async function DELETE(
         customerSession: session.token,
       },
       {
-        id: subscriptionId,
+        id: subscription.polar_subscription_id,
       }
     );
+
+    // Update subscription status in database based on Polar's response
+    const { error: updateError } = await supabase
+      .from('workspace_subscription')
+      .update({
+        status: result.status as any,
+        cancel_at_period_end: result.cancelAtPeriodEnd,
+        current_period_start: result.currentPeriodStart?.toISOString(),
+        current_period_end: result.currentPeriodEnd?.toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', subscription.id);
+
+    if (updateError) {
+      console.error('Error updating subscription status:', updateError);
+      return NextResponse.json(
+        {
+          error: 'Subscription canceled but failed to update database',
+          message: updateError.message,
+        },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,

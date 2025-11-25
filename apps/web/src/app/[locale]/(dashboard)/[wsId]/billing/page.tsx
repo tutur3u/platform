@@ -1,5 +1,6 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { checkTuturuuuAdmin } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
@@ -30,8 +31,6 @@ const fetchProducts = async ({
     });
 
     const res = await polarClient.products.list({ isArchived: false });
-
-    console.log('Fetched products:', res.result.items);
     return res.result.items ?? [];
   } catch (err) {
     console.error('Failed to fetch products:', err);
@@ -100,7 +99,8 @@ const fetchSubscription = async ({
     status: dbSub.status,
     currentPeriodStart: dbSub.current_period_start,
     currentPeriodEnd: dbSub.current_period_end,
-    polar_subscription_id: dbSub.polar_subscription_id,
+    cancelAtPeriodEnd: dbSub.cancel_at_period_end,
+    polarSubscriptionId: dbSub.polar_subscription_id,
     product: {
       id: polarProduct.id,
       name: polarProduct.name,
@@ -167,7 +167,7 @@ export default async function BillingPage({
         const currentPlan = subscription?.product
           ? {
               id: subscription.id,
-              polar_subscription_id: subscription.polar_subscription_id,
+              polarSubscriptionId: subscription.polarSubscriptionId,
               name: subscription.product.name || 'No Plan',
               price:
                 subscription.product.price &&
@@ -184,7 +184,8 @@ export default async function BillingPage({
               nextBillingDate: subscription.currentPeriodEnd
                 ? new Date(subscription.currentPeriodEnd).toLocaleDateString()
                 : '-',
-              status: subscription.status || 'inactive',
+              cancelAtPeriodEnd: subscription.cancelAtPeriodEnd ?? false,
+              status: subscription.status || 'unknown',
               features: [
                 subscription.product.description || 'Standard features',
                 'Customer support',
@@ -193,12 +194,13 @@ export default async function BillingPage({
             }
           : {
               id: '',
-              polar_subscription_id: '',
+              polarSubscriptionId: '',
               name: 'Free Plan',
               price: '$0',
               billingCycle: 'month',
               startDate: '-',
               nextBillingDate: '-',
+              cancelAtPeriodEnd: false,
               status: 'active',
               features: [
                 'Basic features',
@@ -234,9 +236,11 @@ export default async function BillingPage({
               products={products}
               product_id={subscription?.product.id || ''}
               wsId={wsId}
-              activeSubscriptionId={subscription?.polar_subscription_id || ''}
+              activeSubscriptionId={subscription?.polarSubscriptionId || ''}
               isCreator={isCreator}
             />
+
+            <Separator className="my-8" />
 
             <BillingHistory billingHistory={billingHistory} />
           </div>
