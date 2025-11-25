@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const polarClient = createPolarClient({
+  const polar = createPolarClient({
     sandbox:
       // Always use sandbox for development
       process.env.NODE_ENV === 'development'
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
   });
 
   // HERE is where you add the metadata
-  const checkoutSession = await polarClient.checkouts.create({
+  const checkoutSession = await polar.checkouts.create({
     products: [productId],
     successUrl: `${BASE_URL}/${wsId}/billing/success`,
     externalCustomerId: user?.id || '',

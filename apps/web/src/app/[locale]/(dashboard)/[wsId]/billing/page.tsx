@@ -21,7 +21,7 @@ const fetchProducts = async ({
   sandbox: boolean;
 }) => {
   try {
-    const polarClient = createPolarClient({
+    const polar = createPolarClient({
       sandbox:
         // Always use sandbox for development
         process.env.NODE_ENV === 'development'
@@ -30,7 +30,7 @@ const fetchProducts = async ({
             !!(wsId === ROOT_WORKSPACE_ID && sandbox),
     });
 
-    const res = await polarClient.products.list({ isArchived: false });
+    const res = await polar.products.list({ isArchived: false });
     return res.result.items ?? [];
   } catch (err) {
     console.error('Failed to fetch products:', err);
@@ -86,7 +86,7 @@ const fetchSubscription = async ({
     return null;
   }
 
-  const polarClient = createPolarClient({
+  const polar = createPolarClient({
     sandbox:
       // Always use sandbox for development
       process.env.NODE_ENV === 'development'
@@ -95,7 +95,7 @@ const fetchSubscription = async ({
           !!(wsId === ROOT_WORKSPACE_ID && sandbox), // Otherwise, use production
   });
 
-  const polarProduct = await polarClient.products.get({
+  const polarProduct = await polar.products.get({
     id: dbSub.product_id || '',
   });
 

@@ -38,15 +38,15 @@ export async function PATCH(
       );
     }
 
-    const polarClient = createPolarClient({
+    const polar = createPolarClient({
       sandbox: process.env.NODE_ENV === 'development',
     });
 
-    const session = await polarClient.customerSessions.create({
+    const session = await polar.customerSessions.create({
       externalCustomerId: user.id,
     });
 
-    const result = await polarClient.customerPortal.subscriptions.update(
+    const result = await polar.customerPortal.subscriptions.update(
       {
         customerSession: session.token,
       },
@@ -131,15 +131,15 @@ export async function DELETE(
       );
     }
 
-    const polarClient = createPolarClient({
+    const polar = createPolarClient({
       sandbox: process.env.NODE_ENV === 'development',
     });
 
-    const session = await polarClient.customerSessions.create({
+    const session = await polar.customerSessions.create({
       externalCustomerId: user.id,
     });
 
-    const result = await polarClient.customerPortal.subscriptions.cancel(
+    const result = await polar.customerPortal.subscriptions.cancel(
       {
         customerSession: session.token,
       },

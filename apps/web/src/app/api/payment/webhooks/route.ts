@@ -72,7 +72,7 @@ export const POST = Webhooks({
 
         if (countError) throw countError;
 
-        const polarClient = createPolarClient({
+        const polar = createPolarClient({
           sandbox:
             // Always use sandbox for development
             process.env.NODE_ENV === 'development'
@@ -81,7 +81,7 @@ export const POST = Webhooks({
                 !!(ws_id === ROOT_WORKSPACE_ID && sandbox), // Otherwise, use production
         });
 
-        await polarClient.events.ingest({
+        await polar.events.ingest({
           events: [
             {
               name: 'workspace.seats.sync',
