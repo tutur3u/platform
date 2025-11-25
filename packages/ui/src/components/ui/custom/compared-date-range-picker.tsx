@@ -35,6 +35,11 @@ interface ComparedDateRangePickerProps {
   locale?: string;
   /** Option for showing compare feature */
   showCompare?: boolean;
+  /** Calendar preferences for week start and timezone */
+  preferences?: {
+    weekStartsOn?: 0 | 1 | 6;
+    timezone?: string;
+  };
 }
 
 const formatDate = (date: Date, locale: string = 'en-us'): string => {
@@ -92,6 +97,7 @@ export const ComparedDateRangePicker = ({
   align = 'end',
   locale = 'en-US',
   showCompare = true,
+  preferences,
 }: ComparedDateRangePickerProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -512,6 +518,7 @@ export const ComparedDateRangePicker = ({
                       )
                     )
                   }
+                  preferences={preferences}
                 />
               </div>
             </div>

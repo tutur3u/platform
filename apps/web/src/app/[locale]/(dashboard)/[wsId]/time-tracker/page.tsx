@@ -9,11 +9,12 @@ import {
 } from '@tuturuuu/ui/card';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
-import { ActivityHeatmap } from './components/activity-heatmap';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import type { DailyActivity } from '@/lib/time-tracking-helper';
+import { ActivityHeatmap } from './components/activity-heatmap';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('time-tracker');
@@ -36,62 +37,6 @@ const formatDuration = (seconds: number | undefined): string => {
   return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
-// Optimized date calculations - cache date objects and return Today as Date
-function getDateBoundaries() {
-  const now = Date.now();
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-
-  const dayOfWeek = today.getDay();
-  const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - daysToSubtract);
-
-  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
-  // Only fetch last year of data for performance
-  const oneYearAgo = new Date(today);
-  oneYearAgo.setFullYear(today.getFullYear() - 1);
-
-  return {
-    today: today.getTime(),
-    todayDate: today, // Pass Date object directly to avoid reparsing
-    startOfWeek: startOfWeek.getTime(),
-    startOfMonth: startOfMonth.getTime(),
-    oneYearAgo: oneYearAgo.getTime(),
-  };
-}
-
-// Optimized streak calculation - use Date object directly, normalize comparisons once
-function calculateStreak(activityDays: Set<string>, todayDate: Date): number {
-  if (activityDays.size === 0) return 0;
-
-  const oneDayMs = 24 * 60 * 60 * 1000;
-
-  let streak = 0;
-  let checkDate = new Date(todayDate); // Clone to avoid mutating input
-
-  // Normalize today's dateString once for comparison
-  const todayDateStr = checkDate.toDateString();
-
-  // If today has activity, start counting from today
-  if (activityDays.has(todayDateStr)) {
-    while (activityDays.has(checkDate.toDateString())) {
-      streak++;
-      checkDate.setTime(checkDate.getTime() - oneDayMs);
-    }
-  } else {
-    // If today has no activity, check yesterday and count backwards
-    checkDate.setTime(checkDate.getTime() - oneDayMs);
-    while (activityDays.has(checkDate.toDateString())) {
-      streak++;
-      checkDate.setTime(checkDate.getTime() - oneDayMs);
-    }
-  }
-
-  return streak;
-}
-
 async function fetchTimeTrackingStats(
   userId: string,
   wsId: string,
@@ -99,25 +44,11 @@ async function fetchTimeTrackingStats(
 ) {
   const supabase = await createClient();
 
-  const boundaries = getDateBoundaries();
-
-  // Optimized query: only fetch last year of data with date filtering
-  // If personal workspace: fetch all sessions for user
-  // If not personal: only fetch sessions from this workspace
-  let query = supabase
-    .from('time_tracking_sessions')
-    .select('start_time, duration_seconds')
-    .eq('user_id', userId)
-    .not('duration_seconds', 'is', null)
-    .gte('start_time', new Date(boundaries.oneYearAgo).toISOString());
-
-  // Only filter by ws_id if it's not a personal workspace
-  if (!isPersonal) {
-    query = query.eq('ws_id', wsId);
-  }
-
-  const { data: sessions, error } = await query.order('start_time', {
-    ascending: false,
+  // Call the database function to get pre-calculated stats
+  const { data, error } = await supabase.rpc('get_time_tracker_stats', {
+    p_user_id: userId,
+    p_ws_id: wsId,
+    p_is_personal: isPersonal,
   });
 
   if (error) {
@@ -127,88 +58,29 @@ async function fetchTimeTrackingStats(
       weekTime: 0,
       monthTime: 0,
       streak: 0,
-      dailyActivity: [],
+      dailyActivity: [] as DailyActivity[],
     };
   }
 
-  if (!sessions || sessions.length === 0) {
+  // The RPC returns an array with a single row
+  const stats = data?.[0];
+
+  if (!stats) {
     return {
       todayTime: 0,
       weekTime: 0,
       monthTime: 0,
       streak: 0,
-      dailyActivity: [],
+      dailyActivity: [] as DailyActivity[],
     };
   }
 
-  // Pre-calculate boundaries as timestamps for faster comparison
-  const todayTime = boundaries.today;
-  const weekTime = boundaries.startOfWeek;
-  const monthTime = boundaries.startOfMonth;
-
-  let todayDuration = 0;
-  let weekDuration = 0;
-  let monthDuration = 0;
-  const activityDays = new Set<string>();
-  const dailyActivityMap = new Map<
-    string,
-    { duration: number; sessions: number }
-  >();
-
-  // Single pass through sessions - optimize Date object creation
-  // Use array length caching for micro-optimization
-  const sessionsLength = sessions.length;
-  for (let i = 0; i < sessionsLength; i++) {
-    const session = sessions[i];
-    if (!session || !session.duration_seconds || !session.start_time) continue;
-
-    // Parse timestamp once
-    const startTimeMs = new Date(session.start_time).getTime();
-    const duration = session.duration_seconds;
-
-    // Fast timestamp comparisons
-    if (startTimeMs >= todayTime) {
-      todayDuration += duration;
-    }
-    if (startTimeMs >= weekTime) {
-      weekDuration += duration;
-    }
-    if (startTimeMs >= monthTime) {
-      monthDuration += duration;
-    }
-
-    // Build activity days set (local day) and daily activity map (UTC YYYY-MM-DD) in one pass
-    const localDayStr = new Date(session.start_time).toDateString(); // local day for streaks
-    activityDays.add(localDayStr);
-    const utcDayKey = session.start_time.slice(0, 10); // "YYYY-MM-DD" from ISO UTC
-    const existing = dailyActivityMap.get(utcDayKey);
-    if (existing) {
-      existing.duration += duration;
-      existing.sessions += 1;
-    } else {
-      dailyActivityMap.set(utcDayKey, {
-        duration,
-        sessions: 1,
-      });
-    }
-  }
-
-  const streak = calculateStreak(activityDays, boundaries.todayDate);
-
-  const dailyActivity = Array.from(dailyActivityMap.entries()).map(
-    ([date, data]) => ({
-      date,
-      duration: data.duration,
-      sessions: data.sessions,
-    })
-  );
-
   return {
-    todayTime: todayDuration,
-    weekTime: weekDuration,
-    monthTime: monthDuration,
-    streak,
-    dailyActivity,
+    todayTime: stats.today_time || 0,
+    weekTime: stats.week_time || 0,
+    monthTime: stats.month_time || 0,
+    streak: stats.streak || 0,
+    dailyActivity: (stats.daily_activity || []) as unknown as DailyActivity[],
   };
 }
 
@@ -380,13 +252,9 @@ function StatsCardSkeleton() {
 }
 
 // Heatmap card with loading state
-function HeatmapCard({
-  dailyActivity,
-}: {
-  dailyActivity: Array<{ date: string; duration: number; sessions: number }>;
-}) {
+function HeatmapCard({ dailyActivity }: { dailyActivity: DailyActivity[] }) {
   return (
-    <Card className="relative overflow-visible">
+    <Card className="relative overflow-x-auto">
       <CardContent className="pt-6">
         <div className="relative overflow-visible">
           <ActivityHeatmap dailyActivity={dailyActivity} />
@@ -398,7 +266,7 @@ function HeatmapCard({
 
 function HeatmapCardSkeleton() {
   return (
-    <Card className="relative overflow-visible">
+    <Card className="relative overflow-x-auto">
       <CardHeader>
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />

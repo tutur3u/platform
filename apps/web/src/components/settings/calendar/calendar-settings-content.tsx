@@ -13,7 +13,7 @@ import { NotificationSettings } from './notification-settings';
 import { useCalendarSettings } from './settings-context';
 import { SmartSchedulingSettings } from './smart-scheduling-settings';
 import { TaskSettings } from './task-settings';
-import { TimezoneSettings } from './timezone-settings';
+import { WorkspaceCalendarPreferences } from './workspace-calendar-preferences';
 
 interface CalendarSettingsContentProps {
   section: string;
@@ -44,13 +44,11 @@ export function CalendarSettingsContent({
             <HoursSettings wsId={wsId} workspace={workspace} />
           </CalendarSettingsLayout>
           <CalendarSettingsLayout
-            title="Timezone"
-            description="Set your calendar timezone"
+            title="Timezone & First Day of Week"
+            description="Set workspace-level calendar preferences"
+            hideActions
           >
-            <TimezoneSettings
-              value={settings.timezone}
-              onChange={(value) => updateSettings('timezone', value)}
-            />
+            <WorkspaceCalendarPreferences wsId={wsId} workspace={workspace} />
           </CalendarSettingsLayout>
         </div>
       );

@@ -23,6 +23,10 @@ interface CustomDatePickerDialogProps {
   onPeriodChange: (period: 'AM' | 'PM') => void;
   onCancel: () => void;
   onInsert: () => void;
+  preferences?: {
+    weekStartsOn?: 0 | 1 | 6;
+    timezone?: string;
+  };
 }
 
 export function CustomDatePickerDialog({
@@ -38,6 +42,7 @@ export function CustomDatePickerDialog({
   onPeriodChange,
   onCancel,
   onInsert,
+  preferences,
 }: CustomDatePickerDialogProps) {
   return (
     <div
@@ -54,6 +59,7 @@ export function CustomDatePickerDialog({
         selected={selectedDate}
         onSelect={onDateSelect}
         className="rounded-md border p-0"
+        preferences={preferences}
       />
       <div className="mt-3 flex items-center gap-2 rounded-md border p-2">
         <Switch checked={includeTime} onCheckedChange={onIncludeTimeChange} />

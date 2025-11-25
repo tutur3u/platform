@@ -37,7 +37,6 @@ import {
   SidebarProvider,
 } from '@tuturuuu/ui/sidebar';
 import { cn } from '@tuturuuu/utils/format';
-import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import WorkspaceAvatarSettings from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/avatar';
@@ -56,19 +55,19 @@ import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
 import MembersSettings from './workspace/members-settings';
 
 interface SettingsDialogProps {
+  wsId?: string;
   user: WorkspaceUser | null;
   defaultTab?: string;
   workspace?: Workspace | null;
 }
 
 export function SettingsDialog({
+  wsId,
   user,
   defaultTab = 'profile',
   workspace: workspaceProp,
 }: SettingsDialogProps) {
   const t = useTranslations();
-  const params = useParams();
-  const wsId = params?.wsId as string | undefined;
   const [activeTab, setActiveTab] = useState(defaultTab);
 
   // Fetch workspace data if not provided (using TanStack Query)
@@ -356,7 +355,19 @@ export function SettingsDialog({
           </header>
           <div className="flex h-32 grow flex-col gap-4 overflow-y-auto p-6 pb-20">
             <div className="mx-auto w-full max-w-3xl">
-              <CalendarSettingsWrapper>
+              <CalendarSettingsWrapper
+                wsId={wsId}
+                initialSettings={
+                  workspace
+                    ? {
+                        timezone: {
+                          timezone: workspace.timezone || 'auto',
+                          showSecondaryTimezone: false,
+                        },
+                      }
+                    : undefined
+                }
+              >
                 {activeTab === 'profile' && user && (
                   <div className="space-y-8">
                     <div className="grid gap-6">

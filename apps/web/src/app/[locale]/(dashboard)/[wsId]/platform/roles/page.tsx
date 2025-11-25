@@ -1,3 +1,5 @@
+import { CustomDataTable } from '@/components/custom-data-table';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
   Building,
   Crown,
@@ -13,10 +15,8 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { notFound, redirect } from 'next/navigation';
 import { getPlatformRoleColumns } from './columns';
 
 export const metadata: Metadata = {
@@ -33,6 +33,8 @@ type SearchUserResult = {
   avatar_url: string;
   handle: string;
   bio: string;
+  timezone?: string;
+  first_day_of_week?: string;
   user_id: string;
   enabled: boolean;
   allow_challenge_management: boolean;
@@ -310,6 +312,10 @@ async function getPlatformUserData({
             ...user,
             services: [] as User['services'], // Provide default empty services array
             allow_workspace_creation: user.allow_workspace_creation ?? false, // Provide default value
+            allow_discord_integrations:
+              user.allow_discord_integrations ?? false, // Provide default value
+            timezone: user.timezone ?? null, // Provide default value
+            first_day_of_week: user.first_day_of_week ?? null, // Provide default value
           })),
           userCount: (data || []).length,
         };
@@ -320,6 +326,9 @@ async function getPlatformUserData({
           ...user,
           services: [] as User['services'], // Provide default empty services array
           allow_workspace_creation: user.allow_workspace_creation ?? false, // Provide default value
+          allow_discord_integrations: user.allow_discord_integrations ?? false, // Provide default value
+          timezone: user.timezone ?? null, // Provide default value
+          first_day_of_week: user.first_day_of_week ?? null, // Provide default value
         })),
         userCount: countData || 0,
       };
