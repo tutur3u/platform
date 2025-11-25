@@ -101,12 +101,7 @@ const fetchSubscription = async ({
     currentPeriodEnd: dbSub.current_period_end,
     cancelAtPeriodEnd: dbSub.cancel_at_period_end,
     polarSubscriptionId: dbSub.polar_subscription_id,
-    product: {
-      id: polarProduct.id,
-      name: polarProduct.name,
-      description: polarProduct.description,
-      price: polarProduct.prices[0] || null,
-    },
+    product: polarProduct,
   };
 };
 
@@ -170,14 +165,13 @@ export default async function BillingPage({
               polarSubscriptionId: subscription.polarSubscriptionId,
               name: subscription.product.name || 'No Plan',
               price:
-                subscription.product.price &&
-                'priceAmount' in subscription.product.price
-                  ? `$${(subscription.product.price.priceAmount / 100).toFixed(2)}`
-                  : 'Free',
-              billingCycle:
-                subscription.product.price?.type === 'recurring'
-                  ? subscription.product.price?.recurringInterval || 'month'
-                  : 'one-time',
+                subscription.product.prices.length > 0
+                  ? subscription.product.prices[0] &&
+                    'priceAmount' in subscription.product.prices[0]
+                    ? subscription.product.prices[0].priceAmount
+                    : 0
+                  : 0,
+              billingCycle: subscription.product.recurringInterval,
               startDate: subscription.currentPeriodStart
                 ? new Date(subscription.currentPeriodStart).toLocaleDateString()
                 : '-',
@@ -196,7 +190,7 @@ export default async function BillingPage({
               id: '',
               polarSubscriptionId: '',
               name: 'Free Plan',
-              price: '$0',
+              price: 0,
               billingCycle: 'month',
               startDate: '-',
               nextBillingDate: '-',
@@ -223,7 +217,7 @@ export default async function BillingPage({
                 price: sub.workspace_subscription_products.price || 0,
                 recurring_interval:
                   sub.workspace_subscription_products.recurring_interval ||
-                  'month',
+                  'one-time',
               }
             : null,
         }));

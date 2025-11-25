@@ -13,6 +13,7 @@ import {
   X,
   Zap,
 } from '@tuturuuu/icons';
+import type { Product } from '@tuturuuu/payment/polar';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { useRouter } from 'next/navigation';
@@ -25,8 +26,8 @@ interface Plan {
   id: string;
   polarSubscriptionId: string;
   name: string;
-  price: string;
-  billingCycle: string;
+  price: number;
+  billingCycle: string | null;
   startDate: string;
   nextBillingDate: string;
   cancelAtPeriodEnd: boolean;
@@ -37,7 +38,7 @@ interface Plan {
 interface BillingClientProps {
   currentPlan: Plan;
   wsId: string;
-  products: any[];
+  products: Product[]; // Keep for admin sync functionality
   product_id: string;
   isCreator: boolean;
   isAdmin?: boolean;
@@ -59,31 +60,32 @@ export function BillingClient({
   const t = useTranslations('billing');
   const router = useRouter();
 
-  const upgradePlans = products.map((product, index) => ({
-    id: product.id,
-    name: product.name,
-    price:
-      product.prices && product.prices.length > 0
-        ? product.prices[0] && 'priceAmount' in product.prices[0]
-          ? `$${(product.prices[0].priceAmount / 100).toFixed(2)}`
-          : 'Free'
-        : 'Custom',
-    billingCycle:
-      product.prices && product.prices.length > 0
-        ? product.prices[0]?.type === 'recurring'
-          ? product.prices[0]?.recurringInterval || 'month'
-          : 'one-time'
-        : 'month',
-    popular: index === 1,
-    features: product.description
-      ? [product.description, 'Customer support', 'Access to platform features']
-      : [
-          'Standard features',
-          'Customer support',
-          'Access to platform features',
-        ],
-    isEnterprise: product.name.toLowerCase().includes('enterprise'),
-  }));
+  const upgradePlans = products
+    .map((product, index) => ({
+      id: product.id,
+      name: product.name,
+      price:
+        product.prices.length > 0
+          ? product.prices[0] && 'priceAmount' in product.prices[0]
+            ? product.prices[0].priceAmount
+            : 0
+          : 0,
+      billingCycle: product.recurringInterval,
+      popular: index === 1,
+      features: product.description
+        ? [
+            product.description,
+            'Customer support',
+            'Access to platform features',
+          ]
+        : [
+            'Standard features',
+            'Customer support',
+            'Access to platform features',
+          ],
+      isEnterprise: product.name.toLowerCase().includes('enterprise'),
+    }))
+    .sort((a, b) => a.price - b.price);
 
   const handleSyncToProduct = async () => {
     setSyncLoading(true);
@@ -98,9 +100,14 @@ export function BillingClient({
             .insert({
               id: product.id,
               name: product.name,
-              price: Number(product.price),
-              recurring_interval: product.recurringInterval,
               description: product.description || '',
+              price:
+                product.prices.length > 0
+                  ? product.prices[0] && 'priceAmount' in product.prices[0]
+                    ? product.prices[0].priceAmount
+                    : 0
+                  : 0,
+              recurring_interval: product.recurringInterval,
             })
             .select();
 
@@ -155,6 +162,8 @@ export function BillingClient({
       setIsLoading(false);
     }
   };
+
+  const centToDollar = (price: number) => `$${(price / 100).toFixed(2)}`;
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">
@@ -219,11 +228,13 @@ export function BillingClient({
                 </h3>
                 <div className="flex items-baseline gap-2">
                   <span className="font-black text-3xl text-primary">
-                    {currentPlan.price}
+                    {centToDollar(currentPlan.price)}
                   </span>
-                  <span className="text-muted-foreground">
-                    /{currentPlan.billingCycle}
-                  </span>
+                  {currentPlan.billingCycle && (
+                    <span className="text-muted-foreground">
+                      /{currentPlan.billingCycle}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="rounded-full bg-primary/10 p-3">
@@ -379,7 +390,7 @@ export function BillingClient({
                   <ArrowUpCircle className="mr-2 h-5 w-5" />
                   {showUpgradeOptions ? t('hide-upgrade') : t('upgrade-plan')}
                 </Button>
-                {currentPlan.status === 'active' && (
+                {currentPlan.id && (
                   <Button
                     variant="outline"
                     size="lg"
@@ -495,11 +506,13 @@ export function BillingClient({
 
                       <div className="flex items-baseline gap-2">
                         <span className="font-black text-3xl text-primary">
-                          {plan.price}
+                          {centToDollar(plan.price)}
                         </span>
-                        <span className="text-muted-foreground">
-                          /{plan.billingCycle}
-                        </span>
+                        {plan.billingCycle && (
+                          <span className="text-muted-foreground">
+                            /{plan.billingCycle}
+                          </span>
+                        )}
                       </div>
                     </div>
 
