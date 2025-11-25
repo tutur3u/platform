@@ -17,10 +17,10 @@ interface Props {
 
 export default async function WorkspaceTaskBoardPage({ params }: Props) {
   return (
-    <WorkspaceWrapper params={params} >
+    <WorkspaceWrapper params={params}>
       {({ wsId, boardId, workspace }) => (
         <TaskBoardPage params={{ wsId, boardId, workspace }} />
       )}
     </WorkspaceWrapper>
-  )
+  );
 }

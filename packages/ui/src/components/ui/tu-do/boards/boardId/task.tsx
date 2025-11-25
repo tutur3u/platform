@@ -717,7 +717,16 @@ function TaskCardInner({
     }
 
     return badges;
-  }, [task, boardConfig, descriptionMeta, parentTask, childTasks, blockingTasks, blockedByTasks, relatedTasks]);
+  }, [
+    task,
+    boardConfig,
+    descriptionMeta,
+    parentTask,
+    childTasks,
+    blockingTasks,
+    blockedByTasks,
+    relatedTasks,
+  ]);
 
   // Calculate visible badges based on available width
   useEffect(() => {

@@ -2392,7 +2392,9 @@ export async function getTaskRelationships(
       name: targetTask.name,
       display_number: targetTask.display_number,
       completed: targetTask.completed,
-      priority: (isTaskPriority(targetTask.priority) ? targetTask.priority : null) as 'low' | 'normal' | 'high' | 'critical' | null,
+      priority: (isTaskPriority(targetTask.priority)
+        ? targetTask.priority
+        : null) as 'low' | 'normal' | 'high' | 'critical' | null,
       board_id: targetTask.board_id,
       board_name: targetTask.list?.board?.name,
     };
@@ -2422,7 +2424,9 @@ export async function getTaskRelationships(
       name: sourceTask.name,
       display_number: sourceTask.display_number,
       completed: sourceTask.completed,
-      priority: (isTaskPriority(sourceTask.priority) ? sourceTask.priority : null) as 'low' | 'normal' | 'high' | 'critical' | null,
+      priority: (isTaskPriority(sourceTask.priority)
+        ? sourceTask.priority
+        : null) as 'low' | 'normal' | 'high' | 'critical' | null,
       board_id: sourceTask.board_id,
       board_name: sourceTask.list?.board?.name,
     };
@@ -2743,7 +2747,10 @@ export async function createTaskWithRelationship(
     type: relationshipType,
   };
 
-  const relationship = await createTaskRelationship(supabase, relationshipInput);
+  const relationship = await createTaskRelationship(
+    supabase,
+    relationshipInput
+  );
 
   return { task: newTask, relationship };
 }

@@ -173,9 +173,7 @@ export function TaskPickerPopover({
       );
     }
 
-    return (
-      <span className="text-muted-foreground">{placeholder}</span>
-    );
+    return <span className="text-muted-foreground">{placeholder}</span>;
   };
 
   return (
@@ -254,16 +252,18 @@ export function TaskPickerPopover({
                           <span
                             className={cn(
                               'truncate font-medium',
-                              task.completed && 'text-muted-foreground line-through'
+                              task.completed &&
+                                'text-muted-foreground line-through'
                             )}
                           >
                             {task.name}
                           </span>
-                          {task.priority && ['high', 'critical'].includes(task.priority) && (
-                            <span className="shrink-0 rounded bg-dynamic-red/10 px-1 py-0.5 font-medium text-[10px] text-dynamic-red">
-                              {task.priority === 'critical' ? 'P1' : 'P2'}
-                            </span>
-                          )}
+                          {task.priority &&
+                            ['high', 'critical'].includes(task.priority) && (
+                              <span className="shrink-0 rounded bg-dynamic-red/10 px-1 py-0.5 font-medium text-[10px] text-dynamic-red">
+                                {task.priority === 'critical' ? 'P1' : 'P2'}
+                              </span>
+                            )}
                         </div>
                         {task.board_name && (
                           <div className="flex items-center gap-1 text-muted-foreground text-xs">

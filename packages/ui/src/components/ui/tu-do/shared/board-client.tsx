@@ -42,7 +42,6 @@ export function BoardClient({
     initialData: initialBoard,
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnMount: false, // Disable initial refetch on mount
-
   });
 
   const { data: tasks = initialTasks } = useQuery({

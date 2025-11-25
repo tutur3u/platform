@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  Link2,
-  Loader2,
-  Plus,
-  Search,
-  X,
-} from '@tuturuuu/icons';
+import { Link2, Loader2, Plus, Search, X } from '@tuturuuu/icons';
 import type { RelatedTaskInfo } from '@tuturuuu/types/primitives/TaskRelationship';
 import {
   Command,
