@@ -749,8 +749,10 @@ function DependenciesSection({
 
   const currentList = subTab === 'blocks' ? blockingTasks : blockedByTasks;
   const handleAdd = subTab === 'blocks' ? onAddBlocking : onAddBlockedBy;
-  const handleRemove = subTab === 'blocks' ? onRemoveBlocking : onRemoveBlockedBy;
-  const handleCreateNew = subTab === 'blocks' ? onCreateBlockingTask : onCreateBlockedByTask;
+  const handleRemove =
+    subTab === 'blocks' ? onRemoveBlocking : onRemoveBlockedBy;
+  const handleCreateNew =
+    subTab === 'blocks' ? onCreateBlockingTask : onCreateBlockedByTask;
 
   return (
     <div className="space-y-3">
@@ -1029,7 +1031,9 @@ function TaskSearchPopoverContent({
 
             {/* Existing tasks */}
             {tasks.length > 0 && (
-              <CommandGroup heading={showCreateOption ? 'Existing tasks' : undefined}>
+              <CommandGroup
+                heading={showCreateOption ? 'Existing tasks' : undefined}
+              >
                 {tasks.map((task) => (
                   <CommandItem
                     key={task.id}

@@ -429,7 +429,14 @@ export function useTaskDependencies({
         setSavingRelationship(null);
       }
     },
-    [isCreateMode, taskId, listId, createTaskWithRelationship, toast, invalidateCaches]
+    [
+      isCreateMode,
+      taskId,
+      listId,
+      createTaskWithRelationship,
+      toast,
+      invalidateCaches,
+    ]
   );
 
   // =========================================================================
@@ -546,7 +553,14 @@ export function useTaskDependencies({
         setSavingRelationship(null);
       }
     },
-    [isCreateMode, taskId, listId, createTaskWithRelationship, toast, invalidateCaches]
+    [
+      isCreateMode,
+      taskId,
+      listId,
+      createTaskWithRelationship,
+      toast,
+      invalidateCaches,
+    ]
   );
 
   // =========================================================================
@@ -590,9 +604,7 @@ export function useTaskDependencies({
   const removeRelatedTask = useCallback(
     async (relatedTaskId: string) => {
       if (isCreateMode) {
-        setPendingRelated((prev) =>
-          prev.filter((t) => t.id !== relatedTaskId)
-        );
+        setPendingRelated((prev) => prev.filter((t) => t.id !== relatedTaskId));
         return;
       }
 
@@ -678,7 +690,14 @@ export function useTaskDependencies({
         setSavingRelationship(null);
       }
     },
-    [isCreateMode, taskId, listId, createTaskWithRelationship, toast, invalidateCaches]
+    [
+      isCreateMode,
+      taskId,
+      listId,
+      createTaskWithRelationship,
+      toast,
+      invalidateCaches,
+    ]
   );
 
   // =========================================================================

@@ -61,8 +61,7 @@ export function useTaskCardRelationships({
   const createRelationship = useCreateTaskRelationship(boardId);
   const deleteRelationship = useDeleteTaskRelationship(boardId);
 
-  const isSaving =
-    createRelationship.isPending || deleteRelationship.isPending;
+  const isSaving = createRelationship.isPending || deleteRelationship.isPending;
 
   // Extract relationship data
   const parentTask = relationships?.parentTask ?? null;
