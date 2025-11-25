@@ -3807,6 +3807,10 @@
     "appearance-description": "Tùy chỉnh giao diện và trải nghiệm sử dụng",
     "security-description": "Quản lý cài đặt bảo mật và tài khoản liên kết",
     "billing-description": "Xem và quản lý thông tin thanh toán và đăng ký",
+    "timezone": "Múi giờ",
+    "timezone-description": "Đặt múi giờ ưa thích của bạn cho lịch và các tính năng lập lịch. Cài đặt này sẽ ghi đè múi giờ của workspace.",
+    "first-day-of-week": "Ngày đầu tuần",
+    "first-day-of-week-description": "Chọn ngày đầu tuần của bạn để hiển thị lịch. Cài đặt này sẽ ghi đè cài đặt workspace.",
     "revert_changes": "Hoàn tác thay đổi",
     "preview": "Xem trước",
     "display-name": "Tên hiển thị",
@@ -4000,7 +4004,14 @@
     "appearance": "Hiển thị",
     "appearance-description": "Tuỳ chỉnh giao diện Tuturuuu",
     "light-mode": "Chế độ sáng",
-    "dark-mode": "Chế độ tối"
+    "dark-mode": "Chế độ tối",
+    "auto": "Tự động",
+    "auto-detect": "Tự động phát hiện",
+    "sunday": "Chủ nhật",
+    "monday": "Thứ hai",
+    "saturday": "Thứ bảy",
+    "timezone-auto-description": "Tự động phát hiện múi giờ từ hệ thống của bạn",
+    "first-day-auto-description": "Tự động phát hiện ngày đầu tuần dựa trên ngôn ngữ của bạn"
   },
   "settings-security": {
     "security": "Bảo mật",
@@ -7377,6 +7388,39 @@
       "end_time_before_start": "Thời gian kết thúc không thể trước thời gian bắt đầu",
       "no_changes_detected": "Không phát hiện thay đổi",
       "failed_to_move_session": "Không thể di chuyển phiên"
+    },
+    "page_settings": {
+      "metadata": {
+        "title": "Cài Đặt",
+        "description": "Quản lý Cài Đặt trong khu vực Theo dõi Thời gian của không gian làm việc Tuturuuu của bạn."
+      },
+      "timer_settings": "Cài Đặt Bộ Hẹn Giờ",
+      "customize_experience": "Tùy chỉnh trải nghiệm theo dõi của bạn ",
+      "more_settings_coming_soon": "Sắp Có Thêm Cài Đặt",
+      "more_settings_description": "Thông báo, danh mục mặc định, mục tiêu năng suất và nhiều tùy chọn tùy chỉnh khác."
+    },
+    "heatmap_settings": {
+      "activity_heatmap_display": "Hiển Thị Bản Đồ Nhiệt Hoạt Động",
+      "heatmap_view_style": "Kiểu Hiển Thị Bản Đồ Nhiệt",
+      "view_modes": {
+        "original_grid": "Lưới Gốc",
+        "hybrid": "Kết Hợp (Năm + Lịch)",
+        "calendar_only": "Chỉ Lịch",
+        "compact_cards": "Thẻ Nhỏ Gọn"
+      },
+      "view_descriptions": {
+        "original_grid": "Chế độ xem lưới kiểu GitHub với nhãn ngày",
+        "hybrid": "Tổng quan năm cộng với chi tiết lịch hàng tháng",
+        "calendar_only": "Giao diện lịch truyền thống",
+        "compact_cards": "Thẻ tóm tắt hàng tháng với các chỉ số chính và xem trước nhỏ"
+      },
+      "time_reference": "Tham Chiếu Thời Gian",
+      "time_reference_modes": {
+        "relative": "Tương Đối (\"2 tuần trước\")",
+        "absolute": "Tuyệt Đối (\"15 Tháng 1, 2024\")",
+        "smart": "Thông Minh (Kết hợp cả hai)"
+      },
+      "show_onboarding_tips": "Hiển thị mẹo hướng dẫn"
     }
   },
   "command_palette": {

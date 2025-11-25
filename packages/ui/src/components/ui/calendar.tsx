@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import * as React from 'react';
 import { DayPicker } from 'react-day-picker';
+import { useCalendarPreferences } from '../../hooks/use-calendar-preferences';
 import { buttonVariants } from './button';
 import {
   Select,
@@ -18,6 +19,10 @@ import {
 export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
   onSubmit?: (date: Date) => void;
   minDate?: Date;
+  preferences?: {
+    weekStartsOn?: 0 | 1 | 6;
+    timezone?: string;
+  };
 };
 
 function Calendar({
@@ -25,8 +30,12 @@ function Calendar({
   classNames,
   onSubmit,
   minDate,
+  preferences: preferencesProp,
   ...props
 }: CalendarProps) {
+  const contextPreferences = useCalendarPreferences();
+  const preferences = preferencesProp ?? contextPreferences;
+
   const defaultMonth = props.defaultMonth || new Date();
   const [month, setMonth] = React.useState<Date>(defaultMonth);
 
@@ -198,6 +207,7 @@ function Calendar({
           onMonthChange={setMonth}
           defaultMonth={defaultMonth}
           showOutsideDays={true}
+          weekStartsOn={props.weekStartsOn ?? preferences.weekStartsOn}
           className={cn('', className)}
           classNames={{
             root: 'bg-transparent',

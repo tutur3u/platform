@@ -16,7 +16,7 @@ export default function Form({
   user,
 }: {
   wsId?: string;
-  user: User | null;
+  user: Partial<User> | null;
 }) {
   const t = useTranslations('meet-together');
 

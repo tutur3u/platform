@@ -295,7 +295,7 @@ export async function POST(request: Request) {
 
   if (!validation.success) {
     return Response.json(
-      { error: validation.error.errors },
+      { error: validation.error.issues },
       { status: 400 }
     );
   }

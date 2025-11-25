@@ -33,6 +33,10 @@ interface DateTimePickerProps {
   side?: 'top' | 'right' | 'bottom' | 'left';
   align?: 'start' | 'center' | 'end';
   collisionPadding?: number;
+  preferences?: {
+    weekStartsOn?: 0 | 1 | 6;
+    timezone?: string;
+  };
 }
 
 // Utility to find the nearest scrollable parent
@@ -67,6 +71,7 @@ export function DateTimePicker({
   side = 'bottom',
   align = 'start',
   collisionPadding = 16,
+  preferences,
 }: DateTimePickerProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(date);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -393,6 +398,7 @@ export function DateTimePicker({
                         ]
                       : undefined
                   }
+                  preferences={preferences}
                   aria-label="Calendar selector"
                 />
               </TabsContent>
@@ -565,6 +571,7 @@ export function DateTimePicker({
                     ]
                   : undefined
               }
+              preferences={preferences}
               aria-label="Calendar selector"
             />
           )}
