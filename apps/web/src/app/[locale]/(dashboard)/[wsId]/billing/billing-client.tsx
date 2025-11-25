@@ -379,16 +379,18 @@ export function BillingClient({
                   <ArrowUpCircle className="mr-2 h-5 w-5" />
                   {showUpgradeOptions ? t('hide-upgrade') : t('upgrade-plan')}
                 </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="border-2 border-dynamic-red text-dynamic-red shadow-lg transition-all hover:scale-105 hover:bg-dynamic-red/10 hover:shadow-xl"
-                  onClick={() => handleCancelSubscription(currentPlan.id)}
-                  disabled={isLoading}
-                >
-                  <X className="mr-2 h-5 w-5" />
-                  {isLoading ? 'Cancelling...' : 'Cancel Subscription'}
-                </Button>
+                {currentPlan.status === 'active' && (
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="border-2 border-dynamic-red text-dynamic-red shadow-lg transition-all hover:scale-105 hover:bg-dynamic-red/10 hover:shadow-xl"
+                    onClick={() => handleCancelSubscription(currentPlan.id)}
+                    disabled={isLoading}
+                  >
+                    <X className="mr-2 h-5 w-5" />
+                    {isLoading ? 'Cancelling...' : 'Cancel Subscription'}
+                  </Button>
+                )}
               </>
             )}
           </div>
