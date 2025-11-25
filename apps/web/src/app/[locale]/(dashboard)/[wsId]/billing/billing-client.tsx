@@ -163,6 +163,40 @@ export function BillingClient({
     }
   };
 
+  const handleContinueSubscription = async (subscriptionId: string) => {
+    if (!subscriptionId) return;
+
+    setIsLoading(true);
+    setMessage('');
+
+    try {
+      const response = await fetch(
+        `/api/payment/customer-portal/subscriptions/${subscriptionId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to continue subscription');
+      }
+
+      setMessage('Your subscription will continue at the next billing period.');
+      router.refresh();
+    } catch (error) {
+      console.error('Error continuing subscription:', error);
+      setMessage(
+        `Error: ${error instanceof Error ? error.message : 'Network error occurred. Please try again.'}`
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const centToDollar = (price: number) => `$${(price / 100).toFixed(2)}`;
 
   return (
@@ -369,41 +403,39 @@ export function BillingClient({
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-4">
-            {currentPlan.cancelAtPeriodEnd ? (
-              <Button
-                disabled={!isCreator}
-                onClick={() => setShowUpgradeOptions(!showUpgradeOptions)}
-                className="flex-1 bg-dynamic-orange text-background shadow-lg transition-all hover:scale-105 hover:bg-dynamic-orange/90 hover:shadow-xl sm:flex-none"
-                size="lg"
-              >
-                <ArrowUpCircle className="mr-2 h-5 w-5" />
-                Renew or Upgrade Plan
-              </Button>
-            ) : (
-              <>
+            <Button
+              disabled={!isCreator}
+              onClick={() => setShowUpgradeOptions(!showUpgradeOptions)}
+              className="flex-1 shadow-lg transition-all hover:scale-105 hover:shadow-xl sm:flex-none"
+              size="lg"
+            >
+              <ArrowUpCircle className="mr-2 h-5 w-5" />
+              {showUpgradeOptions ? t('hide-upgrade') : t('upgrade-plan')}
+            </Button>
+            {currentPlan.id &&
+              (currentPlan.cancelAtPeriodEnd ? (
                 <Button
-                  disabled={!isCreator}
-                  onClick={() => setShowUpgradeOptions(!showUpgradeOptions)}
-                  className="flex-1 shadow-lg transition-all hover:scale-105 hover:shadow-xl sm:flex-none"
+                  variant="outline"
                   size="lg"
+                  className="border-2 border-dynamic-green text-dynamic-green shadow-lg transition-all hover:scale-105 hover:bg-dynamic-green/10 hover:shadow-xl"
+                  onClick={() => handleContinueSubscription(currentPlan.id)}
+                  disabled={isLoading}
                 >
-                  <ArrowUpCircle className="mr-2 h-5 w-5" />
-                  {showUpgradeOptions ? t('hide-upgrade') : t('upgrade-plan')}
+                  <CheckCircle className="mr-2 h-5 w-5" />
+                  {isLoading ? 'Continuing...' : 'Continue Subscription'}
                 </Button>
-                {currentPlan.id && (
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="border-2 border-dynamic-red text-dynamic-red shadow-lg transition-all hover:scale-105 hover:bg-dynamic-red/10 hover:shadow-xl"
-                    onClick={() => handleCancelSubscription(currentPlan.id)}
-                    disabled={isLoading}
-                  >
-                    <X className="mr-2 h-5 w-5" />
-                    {isLoading ? 'Cancelling...' : 'Cancel Subscription'}
-                  </Button>
-                )}
-              </>
-            )}
+              ) : (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="border-2 border-dynamic-red text-dynamic-red shadow-lg transition-all hover:scale-105 hover:bg-dynamic-red/10 hover:shadow-xl"
+                  onClick={() => handleCancelSubscription(currentPlan.id)}
+                  disabled={isLoading}
+                >
+                  <X className="mr-2 h-5 w-5" />
+                  {isLoading ? 'Cancelling...' : 'Cancel Subscription'}
+                </Button>
+              ))}
           </div>
         </div>
       </div>

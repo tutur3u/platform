@@ -41,21 +41,28 @@ const fetchProducts = async ({
 const checkCreator = async (wsId: string) => {
   const supabase = await createClient();
 
-  if (wsId !== ROOT_WORKSPACE_ID) {
-    console.error('Billing page is only available for root workspace');
-    throw new Error('Billing page is only available for root workspace');
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    console.error('Error checking user:', userError);
+    return false;
   }
 
-  const { data, error } = await supabase.rpc('check_ws_creator', {
-    ws_id: wsId,
-  });
+  const { data, error } = await supabase
+    .from('workspaces')
+    .select('creator_id')
+    .eq('id', wsId)
+    .single();
 
   if (error) {
     console.error('Error checking workspace creator:', error);
     return false;
   }
 
-  return data;
+  return data.creator_id === user?.id;
 };
 
 const fetchSubscription = async ({
