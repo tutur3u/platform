@@ -13514,6 +13514,7 @@ export type Database = {
       cleanup_expired_cross_app_tokens: { Args: never; Returns: undefined };
       cleanup_expired_notifications: { Args: never; Returns: number };
       cleanup_old_api_key_usage_logs: { Args: never; Returns: undefined };
+      cleanup_old_log_aggregations: { Args: never; Returns: undefined };
       cleanup_old_typing_indicators: { Args: never; Returns: undefined };
       cleanup_role_inconsistencies: { Args: never; Returns: undefined };
       compute_ai_cost_usd: {
@@ -14917,7 +14918,14 @@ export type Database = {
         | 'completed'
         | 'failed';
       recurring_frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
-      subscription_status: 'trialing' | 'active' | 'canceled' | 'past_due';
+      subscription_status:
+        | 'incomplete'
+        | 'incomplete_expired'
+        | 'trialing'
+        | 'active'
+        | 'past_due'
+        | 'canceled'
+        | 'unpaid';
       support_type: 'bug' | 'feature-request' | 'support' | 'job-application';
       task_board_status:
         | 'not_started'
@@ -15182,7 +15190,15 @@ export const Constants = {
         'failed',
       ],
       recurring_frequency: ['daily', 'weekly', 'monthly', 'yearly'],
-      subscription_status: ['trialing', 'active', 'canceled', 'past_due'],
+      subscription_status: [
+        'incomplete',
+        'incomplete_expired',
+        'trialing',
+        'active',
+        'past_due',
+        'canceled',
+        'unpaid',
+      ],
       support_type: ['bug', 'feature-request', 'support', 'job-application'],
       task_board_status: [
         'not_started',
