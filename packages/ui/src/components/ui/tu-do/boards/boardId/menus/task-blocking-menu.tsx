@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  Ban,
-  Loader2,
-  Plus,
-  Search,
-  X,
-} from '@tuturuuu/icons';
+import { Ban, Loader2, Plus, Search, X } from '@tuturuuu/icons';
 import {
   Command,
   CommandEmpty,

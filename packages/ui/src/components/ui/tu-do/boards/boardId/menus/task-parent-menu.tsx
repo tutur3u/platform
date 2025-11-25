@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  ArrowUpCircle,
-  Loader2,
-  Search,
-  X,
-} from '@tuturuuu/icons';
+import { ArrowUpCircle, Loader2, Search, X } from '@tuturuuu/icons';
 import type { RelatedTaskInfo } from '@tuturuuu/types/primitives/TaskRelationship';
 import {
   Command,
@@ -88,9 +83,7 @@ export function TaskParentMenu({
         <ArrowUpCircle className="h-4 w-4 text-dynamic-purple" />
         Parent Task
         {parentTask && (
-          <span className="ml-auto text-muted-foreground text-xs">
-            1 set
-          </span>
+          <span className="ml-auto text-muted-foreground text-xs">1 set</span>
         )}
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent className="w-72 p-0">
