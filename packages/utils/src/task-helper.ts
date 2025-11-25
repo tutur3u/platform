@@ -2699,3 +2699,84 @@ export function useWorkspaceTasks(
     staleTime: 30000, // 30 seconds
   });
 }
+
+/**
+ * Input for creating a task with a relationship in one operation
+ */
+export interface CreateTaskWithRelationshipInput {
+  /** Name of the new task to create */
+  name: string;
+  /** List ID where the task will be created */
+  listId: string;
+  /** The current task ID that the new task will be related to */
+  currentTaskId: string;
+  /** Type of relationship to create */
+  relationshipType: TaskRelationshipType;
+  /**
+   * Whether the current task is the source of the relationship.
+   * - For parent: false (new task is parent, current is child)
+   * - For child/subtask: true (current task is parent, new is child)
+   * - For blocks: true (current task blocks new task)
+   * - For blocked-by: false (new task blocks current task)
+   * - For related: true (direction doesn't matter for related)
+   */
+  currentTaskIsSource: boolean;
+}
+
+/**
+ * Create a new task and establish a relationship with an existing task in one operation
+ */
+export async function createTaskWithRelationship(
+  supabase: TypedSupabaseClient,
+  input: CreateTaskWithRelationshipInput
+): Promise<{ task: Task; relationship: TaskRelationship }> {
+  const { name, listId, currentTaskId, relationshipType, currentTaskIsSource } =
+    input;
+
+  // First, create the new task
+  const newTask = await createTask(supabase, listId, { name });
+
+  // Then, create the relationship
+  const relationshipInput: CreateTaskRelationshipInput = {
+    source_task_id: currentTaskIsSource ? currentTaskId : newTask.id,
+    target_task_id: currentTaskIsSource ? newTask.id : currentTaskId,
+    type: relationshipType,
+  };
+
+  const relationship = await createTaskRelationship(supabase, relationshipInput);
+
+  return { task: newTask, relationship };
+}
+
+/**
+ * React Query mutation hook for creating a task with a relationship
+ */
+export function useCreateTaskWithRelationship(boardId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: CreateTaskWithRelationshipInput) => {
+      const supabase = createClient();
+      return createTaskWithRelationship(supabase, input);
+    },
+    onSuccess: async (result, variables) => {
+      // Invalidate all relevant caches
+      await Promise.all([
+        // Invalidate tasks cache for the board
+        boardId &&
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
+        // Invalidate relationships for both tasks
+        queryClient.invalidateQueries({
+          queryKey: ['task-relationships', variables.currentTaskId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['task-relationships', result.task.id],
+        }),
+        // Invalidate workspace tasks (for task picker)
+        queryClient.invalidateQueries({
+          queryKey: ['workspace-tasks'],
+        }),
+      ]);
+    },
+  });
+}

@@ -6105,6 +6105,33 @@
       "missing_task_description": "Missing task description"
     }
   },
+  "task-relationships": {
+    "parent_task": "Parent Task",
+    "sub_tasks": "Sub-tasks",
+    "blocking": "Blocking",
+    "blocked_by": "Blocked By",
+    "related": "Related",
+    "search_tasks": "Search tasks...",
+    "no_tasks_found": "No tasks found",
+    "create_new_task": "Create as new task",
+    "create_new_subtask": "Create new sub-task",
+    "add_existing_subtask": "Add existing as sub-task",
+    "create_parent_task": "Create parent task",
+    "create_blocking_task": "Create blocking task",
+    "create_blocked_by_task": "Create blocked-by task",
+    "create_related_task": "Create related task",
+    "creating_task": "Creating task...",
+    "task_created": "Task created successfully",
+    "task_creation_failed": "Failed to create task",
+    "relationship_added": "Relationship added successfully",
+    "relationship_removed": "Relationship removed successfully",
+    "set_as_parent": "Set as parent",
+    "remove_parent": "Remove parent",
+    "add_subtask": "Add sub-task",
+    "add_blocking": "Add blocking task",
+    "add_blocked_by": "Add blocked-by task",
+    "add_related": "Add related task"
+  },
   "about": {
     "hero": {
       "badge": "The Age of Partners",

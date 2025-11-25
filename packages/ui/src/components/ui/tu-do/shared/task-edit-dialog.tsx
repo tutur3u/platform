@@ -589,6 +589,7 @@ export function TaskEditDialog({
     parentTask,
     setParentTask,
     childTasks,
+    addChildTask,
     blocking: blockingTasks,
     addBlockingTask,
     removeBlockingTask,
@@ -2284,6 +2285,7 @@ export function TaskEditDialog({
                     }
                   }}
                   onAddSubtask={onAddSubtask}
+                  onAddExistingAsSubtask={addChildTask}
                   isSaving={!!savingRelationship}
                   savingTaskId={savingRelationship}
                 />
