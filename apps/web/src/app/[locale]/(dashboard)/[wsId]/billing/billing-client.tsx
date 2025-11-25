@@ -113,28 +113,33 @@ export function BillingClient({
     setIsLoading(true);
     setMessage('');
 
-    const response = await fetch(
-      `/api/payment/customer-portal/subscriptions/${subscriptionId}`,
-      {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+    try {
+      const response = await fetch(
+        `/api/payment/customer-portal/subscriptions/${subscriptionId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to cancel subscription');
       }
-    );
 
-    setIsLoading(false);
-
-    if (response.ok) {
       setMessage(
         'Your subscription will be canceled at the end of your billing period.'
       );
       router.refresh();
-    } else {
-      const errorData = await response.json();
+    } catch (error) {
+      console.error('Error canceling subscription:', error);
       setMessage(
-        `Error: ${errorData.error || 'Could not cancel subscription.'}`
+        `Error: ${error instanceof Error ? error.message : 'Network error occurred. Please try again.'}`
       );
+    } finally {
+      setIsLoading(false);
     }
   };
 
