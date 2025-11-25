@@ -1,5 +1,5 @@
 import type { Editor, JSONContent } from '@tiptap/react';
-import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { CalendarHoursType, Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { TaskFilters } from '../types';
 
@@ -41,6 +41,13 @@ export interface TaskFormState {
   selectedLabels: WorkspaceTaskLabel[];
   selectedAssignees: any[];
   selectedProjects: any[];
+  // Scheduling fields
+  totalDuration: number | null;
+  isSplittable: boolean;
+  minSplitDurationMinutes: number | null;
+  maxSplitDurationMinutes: number | null;
+  calendarHours: CalendarHoursType | null;
+  autoSchedule: boolean;
 }
 
 export interface EditorCallbacks {

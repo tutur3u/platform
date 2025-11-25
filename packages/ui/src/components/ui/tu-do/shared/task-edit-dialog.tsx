@@ -144,6 +144,19 @@ export function TaskEditDialog({
     setSelectedProjects,
     hasDraft,
     clearDraftState,
+    // Scheduling fields
+    totalDuration,
+    setTotalDuration,
+    isSplittable,
+    setIsSplittable,
+    minSplitDurationMinutes,
+    setMinSplitDurationMinutes,
+    maxSplitDurationMinutes,
+    setMaxSplitDurationMinutes,
+    calendarHours,
+    setCalendarHours,
+    autoSchedule,
+    setAutoSchedule,
   } = useTaskFormState({
     task,
     boardId,
@@ -418,6 +431,61 @@ export function TaskEditDialog({
   const [createMultiple, setCreateMultiple] = useState(false);
   const [showSyncWarning, setShowSyncWarning] = useState(false);
 
+  // Local state for calendar events (updated after scheduling)
+  const [localCalendarEvents, setLocalCalendarEvents] = useState<
+    Task['calendar_events'] | undefined
+  >(task?.calendar_events);
+
+  // Sync localCalendarEvents when task prop changes
+  // Include task?.id to ensure state resets when switching between tasks
+  useEffect(() => {
+    setLocalCalendarEvents(task?.calendar_events);
+  }, [task?.calendar_events]);
+
+  // Fetch calendar events when dialog opens for existing tasks
+  useEffect(() => {
+    if (!isOpen || isCreateMode || !task?.id || !wsId) return;
+
+    // Only fetch if task has scheduling settings (total_duration set)
+    if (!task.total_duration || task.total_duration <= 0) return;
+
+    const fetchCalendarEvents = async () => {
+      try {
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/tasks/${task.id}/schedule`
+        );
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (data.events && Array.isArray(data.events)) {
+          setLocalCalendarEvents(
+            data.events.map(
+              (e: {
+                id: string;
+                title: string;
+                start_at: string;
+                end_at: string;
+                scheduled_minutes: number;
+                completed: boolean;
+              }) => ({
+                id: e.id,
+                title: e.title,
+                start_at: e.start_at,
+                end_at: e.end_at,
+                scheduled_minutes: e.scheduled_minutes,
+                completed: e.completed,
+              })
+            )
+          );
+        }
+      } catch (error) {
+        console.error('Error fetching calendar events:', error);
+      }
+    };
+
+    fetchCalendarEvents();
+  }, [isOpen, isCreateMode, task?.id, task?.total_duration, wsId]);
+
   // ============================================================================
   // NAME UPDATE & DEBOUNCING
   // ============================================================================
@@ -524,8 +592,11 @@ export function TaskEditDialog({
     updateEndDate,
     updateList,
     saveNameToDatabase,
+    saveSchedulingSettings,
+    schedulingSaving,
   } = useTaskMutations({
     taskId: task?.id,
+    wsId,
     isCreateMode,
     boardId,
     estimationPoints: estimationPoints ?? null,
@@ -538,6 +609,7 @@ export function TaskEditDialog({
     setEndDate,
     setSelectedListId,
     onUpdate,
+    onCalendarEventsUpdate: setLocalCalendarEvents,
   });
 
   const {
@@ -867,34 +939,105 @@ export function TaskEditDialog({
           start_date: startDate ? startDate.toISOString() : undefined,
           end_date: endDate ? endDate.toISOString() : undefined,
           estimation_points: estimationPoints ?? null,
+          // Scheduling fields
+          total_duration: totalDuration,
+          is_splittable: isSplittable,
+          min_split_duration_minutes: minSplitDurationMinutes,
+          max_split_duration_minutes: maxSplitDurationMinutes,
+          calendar_hours: calendarHours,
+          auto_schedule: autoSchedule,
         };
         const newTask = await createTask(supabase, selectedListId, taskData);
 
         if (selectedLabels.length > 0) {
-          await supabase.from('task_labels').insert(
-            selectedLabels.map((l) => ({
-              task_id: newTask.id,
-              label_id: l.id,
-            }))
-          );
+          const { error: labelsError } = await supabase
+            .from('task_labels')
+            .insert(
+              selectedLabels.map((l) => ({
+                task_id: newTask.id,
+                label_id: l.id,
+              }))
+            );
+          if (labelsError) {
+            console.error('Error adding labels:', labelsError);
+          }
         }
 
         if (selectedAssignees.length > 0) {
-          await supabase.from('task_assignees').insert(
-            selectedAssignees.map((a) => ({
+          // Use user_id if available, fallback to id for compatibility
+          const assigneesToInsert = selectedAssignees
+            .map((a) => ({
               task_id: newTask.id,
-              user_id: a.user_id,
+              user_id: a.user_id || a.id,
             }))
-          );
+            .filter((a) => a.user_id); // Filter out any with null/undefined user_id
+
+          if (assigneesToInsert.length > 0) {
+            const { error: assigneesError } = await supabase
+              .from('task_assignees')
+              .insert(assigneesToInsert);
+            if (assigneesError) {
+              console.error('Error adding assignees:', assigneesError);
+              toast({
+                title: 'Warning',
+                description:
+                  'Task created but some assignees could not be added',
+                variant: 'destructive',
+              });
+            }
+          }
         }
 
         if (selectedProjects.length > 0) {
-          await supabase.from('task_project_tasks').insert(
-            selectedProjects.map((p) => ({
-              task_id: newTask.id,
-              project_id: p.id,
-            }))
-          );
+          const { error: projectsError } = await supabase
+            .from('task_project_tasks')
+            .insert(
+              selectedProjects.map((p) => ({
+                task_id: newTask.id,
+                project_id: p.id,
+              }))
+            );
+          if (projectsError) {
+            console.error('Error adding projects:', projectsError);
+          }
+        }
+
+        // Auto-schedule the task if autoSchedule is enabled and duration is set
+        if (autoSchedule && totalDuration && totalDuration > 0) {
+          try {
+            const scheduleResponse = await fetch(
+              `/api/v1/workspaces/${wsId}/tasks/${newTask.id}/schedule`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+              }
+            );
+            if (scheduleResponse.ok) {
+              const scheduleData = await scheduleResponse.json();
+              toast({
+                title: 'Task scheduled',
+                description:
+                  scheduleData.message ||
+                  `Created ${scheduleData.events?.length || 0} calendar event(s)`,
+              });
+            } else {
+              const errorData = await scheduleResponse.json().catch(() => ({}));
+              console.error('Error scheduling task:', errorData);
+              toast({
+                title: 'Scheduling failed',
+                description:
+                  errorData.error || 'Task created but could not be scheduled',
+                variant: 'destructive',
+              });
+            }
+          } catch (scheduleError) {
+            console.error('Error auto-scheduling task:', scheduleError);
+            toast({
+              title: 'Scheduling failed',
+              description: 'Task created but could not be scheduled',
+              variant: 'destructive',
+            });
+          }
         }
 
         await invalidateTaskCaches(queryClient, boardId);
@@ -917,6 +1060,8 @@ export function TaskEditDialog({
           setEndDate(undefined);
           setEstimationPoints(null);
           setSelectedLabels([]);
+          setSelectedAssignees([]);
+          setSelectedProjects([]);
           onClose();
         }
       } catch (error: any) {
@@ -941,6 +1086,13 @@ export function TaskEditDialog({
       end_date: endDate ? endDate.toISOString() : null,
       list_id: selectedListId,
       estimation_points: estimationPoints ?? null,
+      // Scheduling fields
+      total_duration: totalDuration,
+      is_splittable: isSplittable,
+      min_split_duration_minutes: minSplitDurationMinutes,
+      max_split_duration_minutes: maxSplitDurationMinutes,
+      calendar_hours: calendarHours,
+      auto_schedule: autoSchedule,
     };
 
     // Always update description field for embeddings and calculations
@@ -1013,6 +1165,7 @@ export function TaskEditDialog({
     selectedProjects,
     queryClient,
     boardId,
+    wsId,
     toast,
     onUpdate,
     createMultiple,
@@ -1027,7 +1180,85 @@ export function TaskEditDialog({
     setEndDate,
     setEstimationPoints,
     setSelectedLabels,
+    setSelectedAssignees,
+    setSelectedProjects,
+    // Scheduling fields
+    totalDuration,
+    isSplittable,
+    minSplitDurationMinutes,
+    maxSplitDurationMinutes,
+    calendarHours,
+    autoSchedule,
   ]);
+
+  // Handle scheduling task on calendar
+  const handleScheduleTask = useCallback(async () => {
+    if (!task?.id || isCreateMode) return;
+
+    try {
+      // 1. Schedule the task (creates events)
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/tasks/${task.id}/schedule`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to schedule task');
+      }
+
+      // 2. Fetch updated scheduling data with events
+      const scheduleResponse = await fetch(
+        `/api/v1/workspaces/${wsId}/tasks/${task.id}/schedule`
+      );
+      const scheduleData = await scheduleResponse.json();
+
+      // 3. Update local calendar events state
+      if (scheduleData.events && Array.isArray(scheduleData.events)) {
+        setLocalCalendarEvents(
+          scheduleData.events.map(
+            (e: {
+              id: string;
+              title: string;
+              start_at: string;
+              end_at: string;
+              scheduled_minutes: number;
+              completed: boolean;
+            }) => ({
+              id: e.id,
+              title: e.title,
+              start_at: e.start_at,
+              end_at: e.end_at,
+              scheduled_minutes: e.scheduled_minutes,
+              completed: e.completed,
+            })
+          )
+        );
+      }
+
+      toast({
+        title: 'Task scheduled',
+        description:
+          data.message ||
+          `Created ${data.events?.length || 0} calendar event(s)`,
+      });
+
+      // Refresh task data in background
+      await invalidateTaskCaches(queryClient, boardId);
+      onUpdate();
+    } catch (error: any) {
+      console.error('Error scheduling task:', error);
+      toast({
+        title: 'Failed to schedule task',
+        description: error.message || 'Please try again later',
+        variant: 'destructive',
+      });
+    }
+  }, [task?.id, isCreateMode, wsId, boardId, queryClient, toast, onUpdate]);
 
   const handleClose = useCallback(async () => {
     // Check if we're in collaboration mode and not synced - show warning
@@ -2173,6 +2404,8 @@ export function TaskEditDialog({
 
                 {/* Task Properties Section */}
                 <TaskPropertiesSection
+                  wsId={wsId}
+                  taskId={task?.id}
                   priority={priority}
                   startDate={startDate}
                   endDate={endDate}
@@ -2183,6 +2416,13 @@ export function TaskEditDialog({
                   selectedAssignees={selectedAssignees}
                   isLoading={isLoading}
                   isPersonalWorkspace={isPersonalWorkspace}
+                  // Scheduling state
+                  totalDuration={totalDuration}
+                  isSplittable={isSplittable}
+                  minSplitDurationMinutes={minSplitDurationMinutes}
+                  maxSplitDurationMinutes={maxSplitDurationMinutes}
+                  calendarHours={calendarHours}
+                  autoSchedule={autoSchedule}
                   availableLists={availableLists}
                   availableLabels={availableLabels}
                   taskProjects={taskProjects}
@@ -2202,6 +2442,32 @@ export function TaskEditDialog({
                   onShowEstimationConfigDialog={() =>
                     setShowEstimationConfigDialog(true)
                   }
+                  // Scheduling handlers
+                  onTotalDurationChange={setTotalDuration}
+                  onIsSplittableChange={setIsSplittable}
+                  onMinSplitDurationChange={setMinSplitDurationMinutes}
+                  onMaxSplitDurationChange={setMaxSplitDurationMinutes}
+                  onCalendarHoursChange={setCalendarHours}
+                  onAutoScheduleChange={setAutoSchedule}
+                  onScheduleTask={handleScheduleTask}
+                  isCreateMode={isCreateMode}
+                  savedSchedulingSettings={
+                    task
+                      ? {
+                          totalDuration: task.total_duration ?? null,
+                          isSplittable: task.is_splittable ?? false,
+                          minSplitDurationMinutes:
+                            task.min_split_duration_minutes ?? null,
+                          maxSplitDurationMinutes:
+                            task.max_split_duration_minutes ?? null,
+                          calendarHours: task.calendar_hours ?? null,
+                          autoSchedule: task.auto_schedule ?? false,
+                        }
+                      : undefined
+                  }
+                  onSaveSchedulingSettings={saveSchedulingSettings}
+                  schedulingSaving={schedulingSaving}
+                  scheduledEvents={localCalendarEvents}
                 />
 
                 {/* Task Description - Full editor experience with subtle border */}

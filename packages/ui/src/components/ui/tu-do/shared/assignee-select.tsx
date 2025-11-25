@@ -14,6 +14,7 @@ import { useState } from 'react';
 
 interface Member {
   id: string;
+  user_id?: string; // For consistency with task creation flow
   display_name?: string;
   email?: string;
   avatar_url?: string;
@@ -60,11 +61,15 @@ export function AssigneeSelect({ taskId, assignees = [] }: Props) {
       const { members: fetchedMembers } = await response.json();
 
       // Deduplicate members by ID using O(n) Map approach
+      // Also ensure user_id is set for consistency with task creation flow
       const uniqueMembers = Array.from(
         fetchedMembers
           .reduce((map: Map<string, Member>, member: Member) => {
             if (member.id) {
-              map.set(member.id, member);
+              map.set(member.id, {
+                ...member,
+                user_id: member.user_id || member.id, // Ensure user_id is set
+              });
             }
             return map;
           }, new Map<string, Member>())

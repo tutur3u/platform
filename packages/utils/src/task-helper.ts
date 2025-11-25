@@ -218,6 +218,13 @@ export async function createTask(
     estimation_points: task.estimation_points ?? null,
     sort_key: newSortKey,
     created_at: new Date().toISOString(),
+    // Scheduling fields
+    total_duration: task.total_duration ?? null,
+    is_splittable: task.is_splittable ?? false,
+    min_split_duration_minutes: task.min_split_duration_minutes ?? null,
+    max_split_duration_minutes: task.max_split_duration_minutes ?? null,
+    calendar_hours: task.calendar_hours ?? null,
+    auto_schedule: task.auto_schedule ?? false,
   };
 
   // Now try the normal insert with the fixed database
@@ -328,15 +335,19 @@ export async function updateTask(
 }
 
 // Utility function to transform and deduplicate assignees
+// Returns user objects with user_id included for consistency with workspace members
 export function transformAssignees(
   assignees: (TaskAssignee & { user: User })[]
-): User[] {
+): (User & { user_id: string })[] {
   return (
     assignees
-      ?.map((a) => a.user)
+      ?.map((a) => ({
+        ...a.user,
+        user_id: a.user?.id || '', // Include user_id for consistency with workspace members structure
+      }))
       .filter(
-        (user: User, index: number, self: User[]) =>
-          user?.id && self.findIndex((u: User) => u.id === user.id) === index
+        (user, index: number, self) =>
+          user?.id && self.findIndex((u) => u.id === user.id) === index
       ) || []
   );
 }

@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '13.0.5';
-  };
   public: {
     Tables: {
       ai_chat_members: {
@@ -6069,6 +6064,51 @@ export type Database = {
         };
         Relationships: [];
       };
+      task_calendar_events: {
+        Row: {
+          completed: boolean;
+          created_at: string | null;
+          event_id: string;
+          id: string;
+          scheduled_minutes: number;
+          task_id: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          completed?: boolean;
+          created_at?: string | null;
+          event_id: string;
+          id?: string;
+          scheduled_minutes?: number;
+          task_id: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          completed?: boolean;
+          created_at?: string | null;
+          event_id?: string;
+          id?: string;
+          scheduled_minutes?: number;
+          task_id?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_calendar_events_event_id_fkey';
+            columns: ['event_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_calendar_events';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_calendar_events_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       task_cycle_tasks: {
         Row: {
           created_at: string | null;
@@ -6901,6 +6941,7 @@ export type Database = {
       };
       tasks: {
         Row: {
+          auto_schedule: boolean | null;
           board_id: string | null;
           calendar_hours: Database['public']['Enums']['calendar_hours'] | null;
           closed_at: string | null;
@@ -6928,6 +6969,7 @@ export type Database = {
           total_duration: number | null;
         };
         Insert: {
+          auto_schedule?: boolean | null;
           board_id?: string | null;
           calendar_hours?: Database['public']['Enums']['calendar_hours'] | null;
           closed_at?: string | null;
@@ -6955,6 +6997,7 @@ export type Database = {
           total_duration?: number | null;
         };
         Update: {
+          auto_schedule?: boolean | null;
           board_id?: string | null;
           calendar_hours?: Database['public']['Enums']['calendar_hours'] | null;
           closed_at?: string | null;
@@ -12306,7 +12349,36 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       calendar_event_participants: {
         Row: {
