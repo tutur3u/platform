@@ -15,7 +15,7 @@ BEGIN
             (entry_type = 'domain' AND value = v_domain)
     );
 END;
-$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = '';
 
 
 CREATE OR REPLACE FUNCTION public.get_email_block_statuses(p_emails TEXT[])
@@ -30,11 +30,9 @@ WITH input_emails AS (
     GROUP BY e.email_in
 ),
 matches AS (
-    -- Find all matches and their reasons
+    -- Find all matches (blocking reason is not returned to caller for security)
     SELECT
-        i.original_email,
-        -- Aggregate reasons if both email and domain are blocked
-        string_agg(bl.reason, '; ') AS combined_reason
+        i.original_email
     FROM input_emails AS i
     -- Use INNER JOIN to find only those that *are* blocked
     JOIN public.email_blacklist AS bl
@@ -47,7 +45,7 @@ matches AS (
 SELECT
     i.original_email AS email,
     (m.original_email IS NOT NULL) AS is_blocked,
-    m.combined_reason AS reason
+    NULL::TEXT AS reason
 FROM input_emails AS i
 LEFT JOIN matches AS m ON i.original_email = m.original_email;
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '';
