@@ -13583,7 +13583,6 @@ export type Database = {
       cleanup_expired_cross_app_tokens: { Args: never; Returns: undefined };
       cleanup_expired_notifications: { Args: never; Returns: number };
       cleanup_old_api_key_usage_logs: { Args: never; Returns: undefined };
-      cleanup_old_log_aggregations: { Args: never; Returns: undefined };
       cleanup_old_typing_indicators: { Args: never; Returns: undefined };
       cleanup_role_inconsistencies: { Args: never; Returns: undefined };
       compute_ai_cost_usd: {
