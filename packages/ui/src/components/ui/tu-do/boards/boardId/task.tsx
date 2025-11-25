@@ -1059,7 +1059,6 @@ function TaskCardInner({
                         isSaving={relationshipSaving}
                         onSetParent={setParentTask}
                         onRemoveParent={removeParentTask}
-                        onMenuItemSelect={handleMenuItemSelect}
                       />
 
                       {/* Blocking/Blocked By Menu */}
@@ -1074,7 +1073,6 @@ function TaskCardInner({
                         onRemoveBlocking={removeBlockingTask}
                         onAddBlockedBy={addBlockedByTask}
                         onRemoveBlockedBy={removeBlockedByTask}
-                        onMenuItemSelect={handleMenuItemSelect}
                       />
 
                       {/* Related Tasks Menu */}
@@ -1086,7 +1084,6 @@ function TaskCardInner({
                         savingTaskId={relationshipSavingTaskId}
                         onAddRelated={addRelatedTask}
                         onRemoveRelated={removeRelatedTask}
-                        onMenuItemSelect={handleMenuItemSelect}
                       />
 
                       <DropdownMenuSeparator />
