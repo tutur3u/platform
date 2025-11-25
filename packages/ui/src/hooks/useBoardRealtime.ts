@@ -53,10 +53,7 @@ export function useBoardRealtime(
      * Marks queries as stale without immediate refetch to avoid conflicts with optimistic updates.
      * Changes will only appear on the next manual/background refetch (focus, remount, manual).
      */
-    const setupTaskRelationListener = (
-      tableName: string,
-      comment: string
-    ) => {
+    const setupTaskRelationListener = (tableName: string, comment: string) => {
       channel.on(
         'postgres_changes',
         {
