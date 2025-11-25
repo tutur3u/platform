@@ -2,7 +2,7 @@
 
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
 import { TaskEditDialog } from './task-edit-dialog';
 
@@ -17,8 +17,14 @@ import { TaskEditDialog } from './task-edit-dialog';
 export function TaskDialogManager({ wsId }: { wsId: string }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { state, isPersonalWorkspace, triggerClose, triggerUpdate } =
-    useTaskDialogContext();
+  const {
+    state,
+    isPersonalWorkspace,
+    triggerClose,
+    triggerUpdate,
+    openTaskById,
+    createSubtask,
+  } = useTaskDialogContext();
 
   // Store the original pathname before URL manipulation
   const originalPathnameRef = useRef<string | null>(null);
@@ -100,6 +106,34 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
     triggerClose();
   };
 
+  // Navigate to a task by opening it in the dialog
+  const handleNavigateToTask = useCallback(
+    async (taskId: string) => {
+      await openTaskById(taskId);
+    },
+    [openTaskById]
+  );
+
+  // Open subtask creation dialog for the current task
+  const handleAddSubtask = useCallback(() => {
+    if (!state.task?.id || !state.boardId || !state.task?.list_id) return;
+
+    // Use createSubtask to open the dialog in create mode with parent relationship
+    createSubtask(
+      state.task.id,
+      state.task.name,
+      state.boardId,
+      state.task.list_id,
+      state.availableLists
+    );
+  }, [
+    state.task?.id,
+    state.task?.list_id,
+    state.boardId,
+    state.availableLists,
+    createSubtask,
+  ]);
+
   if (!state.isOpen || !state.task) {
     return null;
   }
@@ -115,9 +149,13 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       mode={state.mode}
       collaborationMode={state.collaborationMode}
       isPersonalWorkspace={isPersonalWorkspace}
+      parentTaskId={state.parentTaskId}
+      parentTaskName={state.parentTaskName}
       currentUser={currentUser || undefined}
       onClose={handleClose}
       onUpdate={triggerUpdate}
+      onNavigateToTask={handleNavigateToTask}
+      onAddSubtask={handleAddSubtask}
     />
   );
 }

@@ -8,13 +8,16 @@ import { useTaskDialogContext } from '../providers/task-dialog-provider';
  *
  * Usage:
  * ```tsx
- * const { openTask, createTask, closeDialog, onUpdate, onClose } = useTaskDialog();
+ * const { openTask, createTask, createSubtask, closeDialog, onUpdate, onClose } = useTaskDialog();
  *
  * // Open existing task for editing
  * openTask(task, boardId, availableLists);
  *
  * // Create new task
  * createTask(boardId, listId, availableLists, filters);
+ *
+ * // Create subtask (child of existing task)
+ * createSubtask(parentTaskId, boardId, listId, availableLists);
  *
  * // Register an update callback
  * onUpdate(() => {
@@ -41,17 +44,31 @@ export function useTaskDialog(): {
     availableLists?: TaskList[],
     filters?: TaskFilters
   ) => void;
+  createSubtask: (
+    parentTaskId: string,
+    boardId: string,
+    listId: string,
+    availableLists?: TaskList[]
+  ) => void;
   closeDialog: () => void;
   onUpdate: (callback: () => void) => void;
   onClose: (callback: () => void) => void;
 } {
-  const { openTask, openTaskById, createTask, closeDialog, onUpdate, onClose } =
-    useTaskDialogContext();
+  const {
+    openTask,
+    openTaskById,
+    createTask,
+    createSubtask,
+    closeDialog,
+    onUpdate,
+    onClose,
+  } = useTaskDialogContext();
 
   return {
     openTask,
     openTaskById,
     createTask,
+    createSubtask,
     closeDialog,
     onUpdate,
     onClose,

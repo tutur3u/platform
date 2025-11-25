@@ -4,3 +4,7 @@ export { TaskEstimationMenu } from './task-estimation-menu';
 export { TaskLabelsMenu } from './task-labels-menu';
 export { TaskProjectsMenu } from './task-projects-menu';
 export { TaskMoveMenu } from './task-move-menu';
+export { TaskPickerPopover } from './task-picker-popover';
+export { TaskParentMenu } from './task-parent-menu';
+export { TaskBlockingMenu } from './task-blocking-menu';
+export { TaskRelatedMenu } from './task-related-menu';

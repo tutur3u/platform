@@ -54,6 +54,8 @@ interface TaskDialogState {
   originalPathname?: string;
   filters?: TaskFilters;
   fakeTaskUrl?: boolean;
+  parentTaskId?: string; // For creating subtasks
+  parentTaskName?: string; // Name of parent task for subtasks
 }
 
 interface TaskDialogContextValue {
@@ -81,6 +83,15 @@ interface TaskDialogContextValue {
     listId: string,
     availableLists?: TaskList[],
     filters?: TaskFilters
+  ) => void;
+
+  // Open dialog for creating a subtask (child of existing task)
+  createSubtask: (
+    parentTaskId: string,
+    parentTaskName: string,
+    boardId: string,
+    listId: string,
+    availableLists?: TaskList[]
   ) => void;
 
   // Close dialog
@@ -257,6 +268,37 @@ export function TaskDialogProvider({
     []
   );
 
+  const createSubtask = useCallback(
+    (
+      parentTaskId: string,
+      parentTaskName: string,
+      boardId: string,
+      listId: string,
+      availableLists?: TaskList[]
+    ) => {
+      setState({
+        isOpen: true,
+        task: {
+          id: 'new',
+          name: '',
+          list_id: listId,
+          display_number: 1,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          deleted: false,
+          archived: false,
+        } as Task,
+        boardId,
+        mode: 'create',
+        availableLists,
+        collaborationMode: false,
+        parentTaskId,
+        parentTaskName,
+      });
+    },
+    []
+  );
+
   const closeDialog = useCallback(() => {
     setState({
       isOpen: false,
@@ -308,6 +350,7 @@ export function TaskDialogProvider({
       openTask,
       openTaskById,
       createTask,
+      createSubtask,
       closeDialog,
       onUpdate,
       onClose,
@@ -320,6 +363,7 @@ export function TaskDialogProvider({
       openTask,
       openTaskById,
       createTask,
+      createSubtask,
       closeDialog,
       onUpdate,
       onClose,

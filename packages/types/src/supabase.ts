@@ -6899,6 +6899,76 @@ export type Database = {
           },
         ];
       };
+      task_relationships: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          source_task_id: string;
+          target_task_id: string;
+          type: Database['public']['Enums']['task_relationship_type'];
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          source_task_id: string;
+          target_task_id: string;
+          type: Database['public']['Enums']['task_relationship_type'];
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          source_task_id?: string;
+          target_task_id?: string;
+          type?: Database['public']['Enums']['task_relationship_type'];
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_relationships_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_relationships_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_relationships_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_relationships_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_relationships_source_task_id_fkey';
+            columns: ['source_task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_relationships_target_task_id_fkey';
+            columns: ['target_task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       tasks: {
         Row: {
           board_id: string | null;
@@ -13810,6 +13880,18 @@ export type Database = {
           phone: string;
         }[];
       };
+      get_blocked_tasks: {
+        Args: { p_task_id: string };
+        Returns: {
+          task_id: string;
+        }[];
+      };
+      get_blocking_tasks: {
+        Args: { p_task_id: string };
+        Returns: {
+          task_id: string;
+        }[];
+      };
       get_browsers: {
         Args: { p_limit?: number; p_link_id: string };
         Returns: {
@@ -14164,6 +14246,12 @@ export type Database = {
           log_type: string;
         }[];
       };
+      get_related_tasks: {
+        Args: { p_task_id: string };
+        Returns: {
+          task_id: string;
+        }[];
+      };
       get_retention_rate: {
         Args: { period?: string };
         Returns: {
@@ -14227,6 +14315,13 @@ export type Database = {
           unique_users_count: number;
         }[];
       };
+      get_task_children: {
+        Args: { p_task_id: string };
+        Returns: {
+          depth: number;
+          task_id: string;
+        }[];
+      };
       get_task_details: {
         Args: { p_task_id: string };
         Returns: {
@@ -14238,6 +14333,13 @@ export type Database = {
           task_id: string;
           task_name: string;
           ws_id: string;
+        }[];
+      };
+      get_task_parents: {
+        Args: { p_task_id: string };
+        Returns: {
+          depth: number;
+          task_id: string;
         }[];
       };
       get_task_workspace_id: { Args: { p_task_id: string }; Returns: string };
@@ -15005,6 +15107,7 @@ export type Database = {
         | 'closed'
         | 'documents';
       task_priority: 'low' | 'normal' | 'high' | 'critical';
+      task_relationship_type: 'parent_child' | 'blocks' | 'related';
       time_tracking_request_status: 'PENDING' | 'APPROVED' | 'REJECTED';
       workspace_api_key_scope:
         | 'gemini-2.0-flash'
@@ -15271,6 +15374,7 @@ export const Constants = {
         'documents',
       ],
       task_priority: ['low', 'normal', 'high', 'critical'],
+      task_relationship_type: ['parent_child', 'blocks', 'related'],
       time_tracking_request_status: ['PENDING', 'APPROVED', 'REJECTED'],
       workspace_api_key_scope: [
         'gemini-2.0-flash',

@@ -55,12 +55,14 @@ import {
 } from './task-edit-dialog/constants';
 import { useEditorCommands } from './task-edit-dialog/hooks/use-editor-commands';
 import { useTaskData } from './task-edit-dialog/hooks/use-task-data';
+import { useTaskDependencies } from './task-edit-dialog/hooks/use-task-dependencies';
 import { useTaskFormState } from './task-edit-dialog/hooks/use-task-form-state';
 import { useTaskMutations } from './task-edit-dialog/hooks/use-task-mutations';
 import { useTaskRealtimeSync } from './task-edit-dialog/hooks/use-task-realtime-sync';
 import { useTaskRelationships } from './task-edit-dialog/hooks/use-task-relationships';
 import { TaskDeleteDialog } from './task-edit-dialog/task-delete-dialog';
 import { TaskPropertiesSection } from './task-edit-dialog/task-properties-section';
+import { TaskRelationshipsProperties } from './task-edit-dialog/task-relationships-properties';
 import type { WorkspaceTaskLabel } from './task-edit-dialog/types';
 import {
   clearDraft,
@@ -83,6 +85,8 @@ export interface TaskEditDialogProps {
   mode?: 'edit' | 'create';
   collaborationMode?: boolean;
   isPersonalWorkspace?: boolean;
+  parentTaskId?: string; // For creating subtasks - will set parent relationship on save
+  parentTaskName?: string; // Name of parent task when creating subtasks
   currentUser?: {
     id: string;
     display_name?: string;
@@ -91,6 +95,8 @@ export interface TaskEditDialogProps {
   };
   onClose: () => void;
   onUpdate: () => void;
+  onNavigateToTask?: (taskId: string) => Promise<void>;
+  onAddSubtask?: () => void;
 }
 
 export function TaskEditDialog({
@@ -103,9 +109,13 @@ export function TaskEditDialog({
   mode = 'edit',
   collaborationMode = false,
   isPersonalWorkspace = false,
+  parentTaskId,
+  parentTaskName,
   currentUser: propsCurrentUser,
   onClose,
   onUpdate,
+  onNavigateToTask,
+  onAddSubtask,
 }: TaskEditDialogProps) {
   const isCreateMode = mode === 'create';
   const pathname = usePathname();
@@ -572,6 +582,31 @@ export function TaskEditDialog({
   });
 
   // ============================================================================
+  // TASK DEPENDENCIES - Parent, children, blocking, blocked-by, related tasks
+  // ============================================================================
+  const {
+    isLoading: dependenciesLoading,
+    parentTask,
+    setParentTask,
+    childTasks,
+    blocking: blockingTasks,
+    addBlockingTask,
+    removeBlockingTask,
+    blockedBy: blockedByTasks,
+    addBlockedByTask,
+    removeBlockedByTask,
+    relatedTasks,
+    addRelatedTask,
+    removeRelatedTask,
+    savingRelationship,
+  } = useTaskDependencies({
+    taskId: task?.id,
+    boardId,
+    isCreateMode,
+    onUpdate,
+  });
+
+  // ============================================================================
   // REALTIME SYNC - Subscribe to task changes from other users
   // ============================================================================
   useTaskRealtimeSync({
@@ -870,6 +905,19 @@ export function TaskEditDialog({
         };
         const newTask = await createTask(supabase, selectedListId, taskData);
 
+        // If this is a subtask, create the parent-child relationship
+        if (parentTaskId) {
+          await supabase.from('task_relationships').insert({
+            source_task_id: parentTaskId,
+            target_task_id: newTask.id,
+            type: 'parent_child',
+          });
+          // Invalidate relationship caches
+          await queryClient.invalidateQueries({
+            queryKey: ['task-relationships', parentTaskId],
+          });
+        }
+
         if (selectedLabels.length > 0) {
           await supabase.from('task_labels').insert(
             selectedLabels.map((l) => ({
@@ -898,7 +946,10 @@ export function TaskEditDialog({
         }
 
         await invalidateTaskCaches(queryClient, boardId);
-        toast({ title: 'Task created', description: 'New task added.' });
+        toast({
+          title: parentTaskId ? 'Sub-task created' : 'Task created',
+          description: parentTaskId ? 'New sub-task added.' : 'New task added.',
+        });
         onUpdate();
         if (createMultiple) {
           setName('');
@@ -2128,6 +2179,8 @@ export function TaskEditDialog({
               synced={synced}
               connected={connected}
               taskId={task?.id}
+              parentTaskId={parentTaskId}
+              parentTaskName={parentTaskName}
               user={
                 user
                   ? {
@@ -2202,6 +2255,37 @@ export function TaskEditDialog({
                   onShowEstimationConfigDialog={() =>
                     setShowEstimationConfigDialog(true)
                   }
+                />
+
+                {/* Task Relationships Properties - Parent, Sub-tasks, Dependencies, Related */}
+                <TaskRelationshipsProperties
+                  wsId={wsId}
+                  taskId={task?.id}
+                  boardId={boardId}
+                  listId={task?.list_id}
+                  isCreateMode={isCreateMode}
+                  parentTask={parentTask}
+                  childTasks={childTasks}
+                  blockingTasks={blockingTasks}
+                  blockedByTasks={blockedByTasks}
+                  relatedTasks={relatedTasks}
+                  isLoading={dependenciesLoading}
+                  onSetParent={setParentTask}
+                  onRemoveParent={() => setParentTask(null)}
+                  onAddBlockingTask={addBlockingTask}
+                  onRemoveBlockingTask={removeBlockingTask}
+                  onAddBlockedByTask={addBlockedByTask}
+                  onRemoveBlockedByTask={removeBlockedByTask}
+                  onAddRelatedTask={addRelatedTask}
+                  onRemoveRelatedTask={removeRelatedTask}
+                  onNavigateToTask={async (taskId) => {
+                    if (onNavigateToTask) {
+                      await onNavigateToTask(taskId);
+                    }
+                  }}
+                  onAddSubtask={onAddSubtask}
+                  isSaving={!!savingRelationship}
+                  savingTaskId={savingRelationship}
                 />
 
                 {/* Task Description - Full editor experience with subtle border */}

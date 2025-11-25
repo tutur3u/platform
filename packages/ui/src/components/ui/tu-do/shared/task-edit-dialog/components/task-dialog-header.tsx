@@ -14,6 +14,8 @@ interface TaskDialogHeaderProps {
   synced: boolean;
   connected: boolean;
   taskId?: string;
+  parentTaskId?: string | null;
+  parentTaskName?: string | null;
   user: {
     id: string;
     display_name: string | null;
@@ -41,6 +43,8 @@ export function TaskDialogHeader({
   synced,
   connected,
   taskId,
+  parentTaskId,
+  parentTaskName,
   user,
   createMultiple,
   hasDraft,
@@ -56,19 +60,26 @@ export function TaskDialogHeader({
   handleSave,
 }: TaskDialogHeaderProps) {
   return (
-    <div className="flex items-center justify-between border-b px-4 py-2 md:px-8">
+    <>
+      <div className="flex items-center justify-between border-b px-4 py-2 md:px-8">
       <div className="flex items-center gap-2">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-dynamic-orange/10 ring-1 ring-dynamic-orange/20">
           <ListTodo className="h-4 w-4 text-dynamic-orange" />
         </div>
         <div className="flex min-w-0 flex-col gap-0.5">
           <DialogTitle className="truncate font-semibold text-base text-foreground md:text-lg">
-            {isCreateMode ? 'Create New Task' : 'Edit Task'}
+            {isCreateMode && parentTaskId
+              ? 'Creating Sub-Task'
+              : isCreateMode
+                ? 'Create New Task'
+                : 'Edit Task'}
           </DialogTitle>
-          <DialogDescription className="sr-only">
-            {isCreateMode
-              ? 'Create a new task with details, assignments, and project associations'
-              : 'Edit task details, assignments, and project associations'}
+          <DialogDescription className="truncate text-xs text-muted-foreground md:text-sm">
+            {isCreateMode && parentTaskId && parentTaskName
+              ? `of "${parentTaskName}"`
+              : isCreateMode && parentTaskId
+                ? 'of parent task'
+                : ''}
           </DialogDescription>
         </div>
       </div>
@@ -203,5 +214,6 @@ export function TaskDialogHeader({
         )}
       </div>
     </div>
+    </>
   );
 }
