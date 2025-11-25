@@ -9,9 +9,10 @@ interface Props {
 }
 
 export default async function WorkspaceTaskBoardPage({ params }: Props) {
+  const resolvedParams = await params;
   return (
     <Suspense>
-      <TaskBoardPage params={params} />
+      <TaskBoardPage params={resolvedParams} />
     </Suspense>
   );
 }

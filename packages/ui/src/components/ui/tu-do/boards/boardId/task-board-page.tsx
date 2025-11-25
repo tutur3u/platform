@@ -8,18 +8,25 @@ import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { notFound, redirect } from 'next/navigation';
 import { BoardClient } from '../../shared/board-client';
 import type { Workspace } from '@tuturuuu/types';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 interface Props {
   params: {
     wsId: string;
     boardId: string;
-    workspace: Workspace;
+    workspace?: Workspace;
   };
 }
 
 export default async function TaskBoardPage({ params }: Props) {
   const { wsId, boardId, workspace } = params;
+
   const supabase = await createClient();
+
+  let resolvedWorkspace = workspace;
+  if (!resolvedWorkspace) {
+    resolvedWorkspace = await getWorkspace(wsId);
+  }
 
   const board = await getTaskBoard(supabase, boardId);
 
@@ -39,7 +46,7 @@ export default async function TaskBoardPage({ params }: Props) {
 
   return (
     <BoardClient
-      workspace={workspace}
+      workspace={resolvedWorkspace}
       initialBoard={board}
       initialTasks={tasks}
       initialLists={lists}

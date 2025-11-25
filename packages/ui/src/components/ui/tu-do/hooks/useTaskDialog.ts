@@ -46,6 +46,7 @@ export function useTaskDialog(): {
   ) => void;
   createSubtask: (
     parentTaskId: string,
+    parentTaskName: string,
     boardId: string,
     listId: string,
     availableLists?: TaskList[]
