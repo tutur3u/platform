@@ -1,5 +1,5 @@
 -- Migration: Task Relationships (Parent-Child, Blocking, Related)
--- 
+--
 -- This migration creates a unified table for managing task relationships:
 -- 1. parent_child: Sub-tasks / sub-issues (child can only have one parent)
 -- 2. blocks: Task A blocks Task B (A must be completed before B can start)
@@ -7,32 +7,32 @@
 -- 4. related: Related tasks (bidirectional relationship)
 
 -- Create enum for relationship types
-CREATE TYPE task_relationship_type AS ENUM (
+CREATE TYPE IF NOT EXISTS task_relationship_type AS ENUM (
   'parent_child',  -- Source is parent, target is child (sub-task)
   'blocks',        -- Source blocks target (source must complete first)
   'related'        -- Source and target are related (informational)
 );
 
 -- Create the unified task_relationships table
-CREATE TABLE public.task_relationships (
+CREATE TABLE IF NOT EXISTS public.task_relationships (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  
+
   -- The source task in the relationship
   source_task_id UUID NOT NULL REFERENCES public.tasks(id) ON DELETE CASCADE,
-  
+
   -- The target task in the relationship
   target_task_id UUID NOT NULL REFERENCES public.tasks(id) ON DELETE CASCADE,
-  
+
   -- Type of relationship
   type task_relationship_type NOT NULL,
-  
+
   -- Metadata
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   created_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
-  
+
   -- Ensure source and target are different tasks
   CONSTRAINT task_relationships_no_self_reference CHECK (source_task_id != target_task_id),
-  
+
   -- Unique constraint: prevent duplicate relationships of the same type
   -- For parent_child: a child can only have ONE parent (enforced by trigger)
   -- For blocks/related: prevent exact duplicates
@@ -40,13 +40,13 @@ CREATE TABLE public.task_relationships (
 );
 
 -- Index for efficient lookups
-CREATE INDEX idx_task_relationships_source ON public.task_relationships(source_task_id);
-CREATE INDEX idx_task_relationships_target ON public.task_relationships(target_task_id);
-CREATE INDEX idx_task_relationships_type ON public.task_relationships(type);
+CREATE INDEX IF NOT EXISTS idx_task_relationships_source ON public.task_relationships(source_task_id);
+CREATE INDEX IF NOT EXISTS idx_task_relationships_target ON public.task_relationships(target_task_id);
+CREATE INDEX IF NOT EXISTS idx_task_relationships_type ON public.task_relationships(type);
 
 -- Composite index for common queries (e.g., find all children of a task)
-CREATE INDEX idx_task_relationships_source_type ON public.task_relationships(source_task_id, type);
-CREATE INDEX idx_task_relationships_target_type ON public.task_relationships(target_task_id, type);
+CREATE INDEX IF NOT EXISTS idx_task_relationships_source_type ON public.task_relationships(source_task_id, type);
+CREATE INDEX IF NOT EXISTS idx_task_relationships_target_type ON public.task_relationships(target_task_id, type);
 
 -- Comments for documentation
 COMMENT ON TABLE public.task_relationships IS 'Unified table for task relationships: parent-child (sub-tasks), blocking dependencies, and related tasks';
@@ -69,20 +69,22 @@ BEGIN
   IF NEW.type = 'parent_child' THEN
     -- Check if the target task already has a parent
     IF EXISTS (
-      SELECT 1 
-      FROM public.task_relationships 
-      WHERE target_task_id = NEW.target_task_id 
+      SELECT 1
+      FROM public.task_relationships
+      WHERE target_task_id = NEW.target_task_id
         AND type = 'parent_child'
         AND id != COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000'::uuid)
     ) THEN
       RAISE EXCEPTION 'Task % already has a parent. A sub-task can only have one parent.', NEW.target_task_id;
     END IF;
   END IF;
-  
+
   RETURN NEW;
 END;
 $$;
 
+-- Ensure any existing trigger is removed before creating a new one (safe re-runs)
+DROP TRIGGER IF EXISTS trigger_enforce_single_parent ON public.task_relationships;
 CREATE TRIGGER trigger_enforce_single_parent
   BEFORE INSERT OR UPDATE ON public.task_relationships
   FOR EACH ROW
@@ -110,27 +112,27 @@ BEGIN
 
   -- Walk up the parent chain from the new parent (source) to check if we encounter the new child (target)
   v_current_task_id := NEW.source_task_id;
-  
+
   WHILE v_current_task_id IS NOT NULL AND v_depth < v_max_depth LOOP
     -- Check if we've reached the task we're trying to make a child
     IF v_current_task_id = NEW.target_task_id THEN
       RAISE EXCEPTION 'Circular parent-child relationship detected. Task % cannot be a child of task % because it would create a cycle.', NEW.target_task_id, NEW.source_task_id;
     END IF;
-    
+
     -- Move up to the parent
     SELECT source_task_id INTO v_current_task_id
     FROM public.task_relationships
     WHERE target_task_id = v_current_task_id
       AND type = 'parent_child';
-    
+
     v_depth := v_depth + 1;
   END LOOP;
-  
+
   -- Also check if the source is already a descendant of target (walking down)
   -- This prevents making a parent out of a child
   v_current_task_id := NEW.target_task_id;
   v_depth := 0;
-  
+
   -- Use recursive CTE to find all descendants
   IF EXISTS (
     WITH RECURSIVE descendants AS (
@@ -139,9 +141,9 @@ BEGIN
       FROM public.task_relationships
       WHERE source_task_id = NEW.target_task_id
         AND type = 'parent_child'
-      
+
       UNION ALL
-      
+
       -- Recursive case: children of children
       SELECT tr.target_task_id
       FROM public.task_relationships tr
@@ -152,11 +154,12 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Circular parent-child relationship detected. Task % is already a descendant of task %.', NEW.source_task_id, NEW.target_task_id;
   END IF;
-  
+
   RETURN NEW;
 END;
 $$;
 
+DROP TRIGGER IF EXISTS trigger_prevent_circular_parent_child ON public.task_relationships;
 CREATE TRIGGER trigger_prevent_circular_parent_child
   BEFORE INSERT OR UPDATE ON public.task_relationships
   FOR EACH ROW
@@ -177,20 +180,21 @@ BEGIN
   IF NEW.type = 'related' THEN
     -- Check if the inverse relationship already exists
     IF EXISTS (
-      SELECT 1 
-      FROM public.task_relationships 
-      WHERE source_task_id = NEW.target_task_id 
+      SELECT 1
+      FROM public.task_relationships
+      WHERE source_task_id = NEW.target_task_id
         AND target_task_id = NEW.source_task_id
         AND type = 'related'
     ) THEN
       RAISE EXCEPTION 'Related relationship already exists between tasks % and %. Related relationships are bidirectional.', NEW.source_task_id, NEW.target_task_id;
     END IF;
   END IF;
-  
+
   RETURN NEW;
 END;
 $$;
 
+DROP TRIGGER IF EXISTS trigger_normalize_related_relationship ON public.task_relationships;
 CREATE TRIGGER trigger_normalize_related_relationship
   BEFORE INSERT OR UPDATE ON public.task_relationships
   FOR EACH ROW
@@ -215,21 +219,22 @@ BEGIN
   -- Get board_id for both tasks
   SELECT board_id INTO v_source_board_id FROM public.tasks WHERE id = NEW.source_task_id;
   SELECT board_id INTO v_target_board_id FROM public.tasks WHERE id = NEW.target_task_id;
-  
+
   -- If both tasks have board_ids, verify they're in the same workspace
   IF v_source_board_id IS NOT NULL AND v_target_board_id IS NOT NULL THEN
     SELECT ws_id INTO v_source_ws_id FROM public.workspace_boards WHERE id = v_source_board_id;
     SELECT ws_id INTO v_target_ws_id FROM public.workspace_boards WHERE id = v_target_board_id;
-    
+
     IF v_source_ws_id != v_target_ws_id THEN
       RAISE EXCEPTION 'Task relationships can only be created between tasks in the same workspace.';
     END IF;
   END IF;
-  
+
   RETURN NEW;
 END;
 $$;
 
+DROP TRIGGER IF EXISTS trigger_validate_task_relationship_scope ON public.task_relationships;
 CREATE TRIGGER trigger_validate_task_relationship_scope
   BEFORE INSERT OR UPDATE ON public.task_relationships
   FOR EACH ROW
@@ -241,8 +246,8 @@ CREATE TRIGGER trigger_validate_task_relationship_scope
 
 ALTER TABLE public.task_relationships ENABLE ROW LEVEL SECURITY;
 
--- Policy: Users can view relationships for tasks they have access to
--- (tasks in boards within workspaces they are members of)
+-- Ensure policies are recreated idempotently
+DROP POLICY IF EXISTS "Users can view task relationships in their workspaces" ON public.task_relationships;
 CREATE POLICY "Users can view task relationships in their workspaces"
   ON public.task_relationships
   FOR SELECT
@@ -257,7 +262,7 @@ CREATE POLICY "Users can view task relationships in their workspaces"
     )
   );
 
--- Policy: Users can create relationships for tasks in their workspaces
+DROP POLICY IF EXISTS "Users can create task relationships in their workspaces" ON public.task_relationships;
 CREATE POLICY "Users can create task relationships in their workspaces"
   ON public.task_relationships
   FOR INSERT
@@ -281,7 +286,7 @@ CREATE POLICY "Users can create task relationships in their workspaces"
     )
   );
 
--- Policy: Users can update relationships for tasks in their workspaces
+DROP POLICY IF EXISTS "Users can update task relationships in their workspaces" ON public.task_relationships;
 CREATE POLICY "Users can update task relationships in their workspaces"
   ON public.task_relationships
   FOR UPDATE
@@ -296,7 +301,7 @@ CREATE POLICY "Users can update task relationships in their workspaces"
     )
   );
 
--- Policy: Users can delete relationships for tasks in their workspaces
+DROP POLICY IF EXISTS "Users can delete task relationships in their workspaces" ON public.task_relationships;
 CREATE POLICY "Users can delete task relationships in their workspaces"
   ON public.task_relationships
   FOR DELETE
@@ -331,9 +336,9 @@ AS $$
     FROM public.task_relationships
     WHERE source_task_id = p_task_id
       AND type = 'parent_child'
-    
+
     UNION ALL
-    
+
     -- Recursive case: children of children
     SELECT tr.target_task_id, c.depth + 1
     FROM public.task_relationships tr
@@ -362,9 +367,9 @@ AS $$
     FROM public.task_relationships
     WHERE target_task_id = p_task_id
       AND type = 'parent_child'
-    
+
     UNION ALL
-    
+
     -- Recursive case: parent of parent
     SELECT tr.source_task_id, p.depth + 1
     FROM public.task_relationships tr
@@ -419,9 +424,9 @@ AS $$
   FROM public.task_relationships
   WHERE source_task_id = p_task_id
     AND type = 'related'
-  
+
   UNION
-  
+
   SELECT source_task_id AS task_id
   FROM public.task_relationships
   WHERE target_task_id = p_task_id

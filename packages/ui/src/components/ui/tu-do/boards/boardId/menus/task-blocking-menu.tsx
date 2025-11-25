@@ -18,16 +18,7 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
-
-interface RelatedTaskInfo {
-  id: string;
-  name: string;
-  display_number?: number | null;
-  completed?: boolean | null;
-  priority?: 'low' | 'normal' | 'high' | 'critical' | null;
-  board_id?: string | null;
-  board_name?: string;
-}
+import type { RelatedTaskInfo } from '@tuturuuu/types/primitives/TaskRelationship';
 
 interface TaskBlockingMenuProps {
   /** Current workspace ID */
@@ -50,8 +41,6 @@ interface TaskBlockingMenuProps {
   onAddBlockedBy: (task: RelatedTaskInfo) => void;
   /** Called when removing a task that blocks this task */
   onRemoveBlockedBy: (taskId: string) => void;
-  /** Handler for menu item selection (to control menu close behavior) */
-  onMenuItemSelect: (e: Event, action: () => void) => void;
 }
 
 export function TaskBlockingMenu({
@@ -65,7 +54,6 @@ export function TaskBlockingMenu({
   onRemoveBlocking,
   onAddBlockedBy,
   onRemoveBlockedBy,
-  onMenuItemSelect,
 }: TaskBlockingMenuProps) {
   const [activeTab, setActiveTab] = React.useState<'blocks' | 'blocked-by'>(
     'blocks'

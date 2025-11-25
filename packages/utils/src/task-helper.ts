@@ -17,7 +17,13 @@ import type {
 } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { User } from '@tuturuuu/types/primitives/User';
-
+import type {
+  CreateTaskRelationshipInput,
+  RelatedTaskInfo,
+  TaskRelationship,
+  TaskRelationshipType,
+  TaskRelationshipsResponse,
+} from '@tuturuuu/types/primitives/TaskRelationship';
 /**
  * Generate a human-readable ticket identifier from prefix and display number
  * @param prefix - Board's ticket prefix (e.g., "DEV", "BUG")
@@ -2298,13 +2304,7 @@ export function useReorderTask(boardId: string) {
 // TASK RELATIONSHIPS
 // =============================================================================
 
-import type {
-  CreateTaskRelationshipInput,
-  RelatedTaskInfo,
-  TaskRelationship,
-  TaskRelationshipType,
-  TaskRelationshipsResponse,
-} from '@tuturuuu/types/primitives/TaskRelationship';
+
 
 /**
  * Fetch all relationships for a given task
@@ -2560,7 +2560,7 @@ export function useCreateTaskRelationship(boardId?: string) {
         }),
         // Also invalidate tasks cache to refresh relationship badges
         boardId &&
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
+        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
       ]);
     },
   });
@@ -2601,7 +2601,7 @@ export function useDeleteTaskRelationship(boardId?: string) {
         }),
         // Also invalidate tasks cache to refresh relationship badges
         boardId &&
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
+        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
       ]);
     },
   });
@@ -2758,7 +2758,7 @@ export async function createTaskWithRelationship(
 /**
  * React Query mutation hook for creating a task with a relationship
  */
-export function useCreateTaskWithRelationship(boardId?: string) {
+export function useCreateTaskWithRelationship(boardId: string, wsId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -2771,7 +2771,7 @@ export function useCreateTaskWithRelationship(boardId?: string) {
       await Promise.all([
         // Invalidate tasks cache for the board
         boardId &&
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
+        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
         // Invalidate relationships for both tasks
         queryClient.invalidateQueries({
           queryKey: ['task-relationships', variables.currentTaskId],
@@ -2779,9 +2779,9 @@ export function useCreateTaskWithRelationship(boardId?: string) {
         queryClient.invalidateQueries({
           queryKey: ['task-relationships', result.task.id],
         }),
-        // Invalidate workspace tasks (for task picker)
+        // Invalidate workspace tasks (for task picker) - scoped to specific workspace
         queryClient.invalidateQueries({
-          queryKey: ['workspace-tasks'],
+          queryKey: ['workspace-tasks', wsId],
         }),
       ]);
     },

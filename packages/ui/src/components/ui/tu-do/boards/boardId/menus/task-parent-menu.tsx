@@ -34,8 +34,6 @@ interface TaskParentMenuProps {
   onSetParent: (task: RelatedTaskInfo) => void;
   /** Called when parent is removed */
   onRemoveParent: () => void;
-  /** Handler for menu item selection (to control menu close behavior) */
-  onMenuItemSelect: (e: Event, action: () => void) => void;
 }
 
 export function TaskParentMenu({
@@ -46,7 +44,6 @@ export function TaskParentMenu({
   isSaving,
   onSetParent,
   onRemoveParent,
-  onMenuItemSelect,
 }: TaskParentMenuProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const debouncedSearch = useDebounce(searchQuery, 300);
