@@ -1,5 +1,3 @@
-'use client';
-
 import { Copy, Plus, Trash2 } from '@tuturuuu/icons';
 import {
   AlertDialog,
@@ -81,7 +79,7 @@ function normalizeTimeString(time: string): string {
   const parts = time.split(':');
   const h = parts[0] !== undefined ? Number(parts[0]) : 0;
   const m = parts[1] !== undefined ? Number(parts[1]) : 0;
-  if (isNaN(h) || isNaN(m)) return '00:00';
+  if (Number.isNaN(h) || Number.isNaN(m)) return '00:00';
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 }
 
@@ -173,7 +171,12 @@ export function TimeRangePicker({
   // Helper to convert time string to minutes
   const timeToMinutes = (t: string) => {
     const [h, m] = t.split(':').map(Number);
-    if (typeof h !== 'number' || isNaN(h) || typeof m !== 'number' || isNaN(m))
+    if (
+      typeof h !== 'number' ||
+      Number.isNaN(h) ||
+      typeof m !== 'number' ||
+      Number.isNaN(m)
+    )
       return 0;
     return h * 60 + m;
   };
@@ -321,10 +324,10 @@ export function TimeRangePicker({
       // Auto-correct if possible
       if (correctedEnd) {
         updatedBlock.endTime = correctedEnd;
-        toast.error(message + '. Auto-corrected end time.');
+        toast.error(`${message}. Auto-corrected end time.`);
       } else if (correctedStart) {
         updatedBlock.startTime = correctedStart;
-        toast.error(message + '. Auto-corrected start time.');
+        toast.error(`${message}. Auto-corrected start time.`);
       } else {
         toast.error(message);
         return;
@@ -458,18 +461,18 @@ export function TimeRangePicker({
                     size="sm"
                     className={cn(
                       'h-9 w-9 p-0',
-                      !safeTimeRanges[key]?.enabled && 'opacity-50'
+                      !safeTimeRanges[key]?.enabled &&
+                        activeDay !== key &&
+                        'opacity-50'
                     )}
                     onClick={() => setActiveDay(key)}
-                    disabled={!safeTimeRanges[key]?.enabled}
-                    tabIndex={safeTimeRanges[key]?.enabled ? 0 : -1}
                   >
                     {dayLabel}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
                   {fullLabel}
-                  {!safeTimeRanges[key]?.enabled && ' (Disabled)'}
+                  {!safeTimeRanges[key]?.enabled && ' (Click to enable)'}
                 </TooltipContent>
               </Tooltip>
             ))}
@@ -538,6 +541,36 @@ export function TimeRangePicker({
                 </TooltipContent>
               </Tooltip>
             </div>
+
+            {/* Visual timeline bar */}
+            {safeTimeRanges[key]?.enabled &&
+              (safeTimeRanges[key]?.timeBlocks?.length ?? 0) > 0 && (
+                <div className="relative mt-2 h-8 rounded-md bg-muted/30">
+                  {/* Hour markers */}
+                  <div className="absolute inset-0 flex justify-between px-1 text-[10px] text-muted-foreground">
+                    <span>12am</span>
+                    <span>6am</span>
+                    <span>12pm</span>
+                    <span>6pm</span>
+                    <span>12am</span>
+                  </div>
+                  {/* Time blocks visualization */}
+                  {safeTimeRanges[key]?.timeBlocks?.map((block, idx) => {
+                    const startMin = timeToMinutes(block.startTime);
+                    const endMin = timeToMinutes(block.endTime);
+                    const left = (startMin / 1440) * 100;
+                    const width = ((endMin - startMin) / 1440) * 100;
+                    return (
+                      <div
+                        key={idx}
+                        className="absolute top-3 h-4 rounded bg-primary/70 transition-all hover:bg-primary"
+                        style={{ left: `${left}%`, width: `${width}%` }}
+                        title={`${normalizeTimeString(block.startTime)} - ${normalizeTimeString(block.endTime)}`}
+                      />
+                    );
+                  })}
+                </div>
+              )}
 
             {/* Time block inputs with improved visual separation */}
             {safeTimeRanges[key]?.enabled && (
@@ -653,6 +686,16 @@ export function TimeRangePicker({
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Disabled day message */}
+            {!safeTimeRanges[key]?.enabled && (
+              <div className="rounded-md border border-dashed bg-muted/10 p-4 text-center">
+                <p className="text-muted-foreground text-sm">
+                  This day is disabled. Toggle the switch above to set
+                  availability.
+                </p>
               </div>
             )}
           </div>
