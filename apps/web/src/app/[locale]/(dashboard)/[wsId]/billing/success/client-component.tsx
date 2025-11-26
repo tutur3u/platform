@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft,
   CheckCircle,
@@ -12,7 +13,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { addHours, format, isAfter } from 'date-fns';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { centToDollar } from '@/utils/price-helper';
 
 interface PaymentDetails {
   planName?: string;
@@ -30,52 +31,42 @@ interface WorkspaceSubscription {
   id: string;
   ws_id: string;
   created_at: string;
-  plan_name?: string;
-  workspace_subscription_products?: {
-    price: number;
-  };
+  product_id: string | null;
+  status: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  workspace_subscription_products: {
+    id: string;
+    name: string | null;
+    description: string | null;
+    price: number | null;
+    recurring_interval: string | null;
+  } | null;
 }
 
 export default function ClientComponent({ wsId }: ClientComponentProps) {
-  const [subscription, setSubscription] =
-    useState<WorkspaceSubscription | null>(null);
-  const [loading, setLoading] = useState(true);
   const t = useTranslations('billing');
 
-  useEffect(() => {
-    const fetchWorkspaceSubscription = async () => {
-      try {
-        const supabase = createClient();
+  const { data: subscription, isLoading: loading } = useQuery({
+    queryKey: ['workspace-subscription', wsId],
+    queryFn: async () => {
+      const supabase = createClient();
 
-        const { data: subscription, error } = await supabase
-          .from('workspace_subscription')
-          .select('*, workspace_subscription_products(price)')
-          .eq('ws_id', wsId)
-          .single();
+      const { data, error } = await supabase
+        .from('workspace_subscription')
+        .select('*, workspace_subscription_products(*)')
+        .eq('ws_id', wsId)
+        .single();
 
-        if (error) {
-          console.error('Failed to fetch workspace subscription:', error);
-          setSubscription(null);
-        } else {
-          setSubscription({
-            ...subscription,
-            workspace_subscription_products: Array.isArray(
-              subscription.workspace_subscription_products
-            )
-              ? subscription.workspace_subscription_products[0]
-              : subscription.workspace_subscription_products,
-          });
-        }
-      } catch (err) {
-        console.error('Failed to fetch workspace subscription:', err);
-        setSubscription(null);
-      } finally {
-        setLoading(false);
+      if (error) {
+        console.error('Failed to fetch workspace subscription:', error);
+        return null;
       }
-    };
 
-    fetchWorkspaceSubscription();
-  }, [wsId]);
+      return data as WorkspaceSubscription;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
   const createdAt = subscription?.created_at
     ? new Date(subscription.created_at)
@@ -85,9 +76,10 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
 
   const paymentDetails: PaymentDetails = subscription
     ? {
-        planName: subscription.plan_name || 'Pro Plan',
+        planName:
+          subscription.workspace_subscription_products?.name || 'Pro Plan',
         amount: subscription.workspace_subscription_products?.price
-          ? `$${subscription.workspace_subscription_products.price.toFixed(2)}`
+          ? `${centToDollar(subscription.workspace_subscription_products.price)}`
           : '--',
         invoiceId: subscription.id || 'N/A',
         date: subscription.created_at

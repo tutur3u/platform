@@ -19,6 +19,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { centToDollar } from '@/utils/price-helper';
 import PurchaseLink from './data-polar-checkout';
 
 // Define types for the props we're passing from the server component
@@ -196,8 +197,6 @@ export function BillingClient({
       setIsLoading(false);
     }
   };
-
-  const centToDollar = (price: number) => (price / 100).toFixed(2);
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">

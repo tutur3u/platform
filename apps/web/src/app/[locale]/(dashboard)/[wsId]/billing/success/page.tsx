@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import ClientComponent from './client-component';
 
 export const metadata: Metadata = {
@@ -12,7 +13,11 @@ export default async function SuccessPage({
   params: Promise<{ wsId: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const { wsId } = await params;
-
-  return <ClientComponent wsId={wsId} />;
+  return (
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+        return <ClientComponent wsId={wsId} />;
+      }}
+    </WorkspaceWrapper>
+  );
 }

@@ -1,5 +1,6 @@
 import { Receipt } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
+import { centToDollar } from '@/utils/price-helper';
 
 interface BillingHistoryItem {
   id: string;
@@ -53,8 +54,6 @@ export default function BillingHistory({
         return createdDate;
     }
   };
-
-  const centToDollar = (price: number) => (price / 100).toFixed(2);
 
   return (
     <div>
