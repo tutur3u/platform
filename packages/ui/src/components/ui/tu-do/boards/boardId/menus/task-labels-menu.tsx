@@ -1,12 +1,14 @@
-import { Check, Loader2, Plus, Tag } from '@tuturuuu/icons';
+import { Check, Loader2, Plus, Search, Tag } from '@tuturuuu/icons';
 import {
   DropdownMenuItem,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { Input } from '@tuturuuu/ui/input';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
+import { useState } from 'react';
 
 interface WorkspaceTaskLabel {
   id: string;
@@ -33,27 +35,49 @@ export function TaskLabelsMenu({
   onCreateNewLabel,
   onMenuItemSelect,
 }: TaskLabelsMenuProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter labels based on search
+  const filteredLabels = availableLabels.filter(
+    (label) =>
+      !searchQuery ||
+      label.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <DropdownMenuSub>
       <DropdownMenuSubTrigger>
         <Tag className="h-4 w-4 text-dynamic-cyan" />
         Labels
       </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent className="max-h-[400px] w-56 overflow-hidden p-0">
-        {isLoading && (
-          <div className="px-2 py-1 text-muted-foreground text-xs">
-            Loading...
+      <DropdownMenuSubContent className="w-80 overflow-hidden p-0">
+        {/* Search Input */}
+        <div className="border-b p-2">
+          <div className="relative">
+            <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search labels..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-8 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
+            />
           </div>
-        )}
-        {!isLoading && availableLabels.length === 0 && (
-          <div className="px-2 py-2 text-center text-muted-foreground text-xs">
-            No labels yet. Create your first label below.
+        </div>
+
+        {/* Labels List */}
+        {isLoading ? (
+          <div className="flex items-center justify-center gap-2 px-2 py-6">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            <p className="text-muted-foreground text-xs">Loading...</p>
           </div>
-        )}
-        {!isLoading && availableLabels.length > 0 && (
-          <ScrollArea style={{ height: 'min(300px, calc(100vh - 200px))' }}>
-            <div className="p-1">
-              {availableLabels.map((label) => {
+        ) : filteredLabels.length === 0 ? (
+          <div className="px-2 py-6 text-center text-muted-foreground text-xs">
+            {searchQuery ? 'No labels found' : 'No labels available'}
+          </div>
+        ) : (
+          <ScrollArea className="max-h-[200px]">
+            <div className="flex flex-col gap-1 p-1">
+              {filteredLabels.map((label) => {
                 const active = taskLabels.some((l) => l.id === label.id);
                 return (
                   <DropdownMenuItem
@@ -65,31 +89,33 @@ export function TaskLabelsMenu({
                     }
                     disabled={labelsSaving === label.id}
                     className={cn(
-                      'flex cursor-pointer items-center justify-between',
+                      'flex cursor-pointer items-center justify-between gap-2',
                       active && 'bg-dynamic-cyan/10 text-dynamic-cyan'
                     )}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
                       {labelsSaving === label.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
+                        <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
                       ) : (
                         <span
-                          className="h-3 w-3 rounded-full"
+                          className="h-3 w-3 shrink-0 rounded-full"
                           style={{
                             backgroundColor: label.color,
                             opacity: 0.9,
                           }}
                         />
                       )}
-                      <span className="truncate">{label.name}</span>
+                      <span className="truncate text-sm">{label.name}</span>
                     </div>
-                    {active && <Check className="h-4 w-4" />}
+                    {active && <Check className="h-4 w-4 shrink-0" />}
                   </DropdownMenuItem>
                 );
               })}
             </div>
           </ScrollArea>
         )}
+
+        {/* Footer with count */}
         {!isLoading && taskLabels.length > 0 && (
           <div className="relative z-10 border-t bg-background shadow-sm">
             <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
@@ -97,18 +123,18 @@ export function TaskLabelsMenu({
             </div>
           </div>
         )}
+
+        {/* Create New Label Button */}
         {!isLoading && (
-          <div className="relative z-10 border-t bg-background shadow-sm">
+          <div className="border-t">
             <DropdownMenuItem
               onSelect={(e) =>
-                onMenuItemSelect(e as unknown as Event, () => {
-                  onCreateNewLabel();
-                })
+                onMenuItemSelect(e as unknown as Event, onCreateNewLabel)
               }
-              className="flex cursor-pointer items-center gap-2 text-muted-foreground hover:text-foreground"
+              className="cursor-pointer text-muted-foreground hover:text-foreground"
             >
               <Plus className="h-4 w-4" />
-              Add New Label
+              Create New Label
             </DropdownMenuItem>
           </div>
         )}

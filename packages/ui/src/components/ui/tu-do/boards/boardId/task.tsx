@@ -18,9 +18,6 @@ import {
   Play,
   Timer,
   Trash2,
-  UserMinus,
-  UserStar,
-  X,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
@@ -35,9 +32,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useTaskActions } from '@tuturuuu/ui/hooks/use-task-actions';
@@ -46,7 +40,6 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@tuturuuu/ui/hover-card';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import {
@@ -84,6 +77,7 @@ import {
 import { formatSmartDate } from '../../utils/taskDateUtils';
 import { getPriorityIndicator } from '../../utils/taskPriorityUtils';
 import {
+  TaskAssigneesMenu,
   TaskDueDateMenu,
   TaskEstimationMenu,
   TaskLabelsMenu,
@@ -165,6 +159,7 @@ function TaskCardInner({
 
   // Local state for UI interactions
   const [estimationSaving, setEstimationSaving] = useState(false);
+  const [assigneeSaving, setAssigneeSaving] = useState<string | null>(null);
 
   // Use extracted label management hook
   const {
@@ -181,6 +176,9 @@ function TaskCardInner({
     boardId,
     workspaceLabels,
     workspaceId: boardConfig?.ws_id,
+    selectedTasks,
+    isMultiSelectMode,
+    onClearSelection,
   });
 
   // Fetch workspace projects
@@ -217,6 +215,23 @@ function TaskCardInner({
     boardId,
     workspaceProjects,
     workspaceId: boardConfig?.ws_id,
+    selectedTasks,
+    isMultiSelectMode,
+    onClearSelection,
+  });
+
+  // Fetch workspace members
+  const { data: workspaceMembers = [], isLoading: membersLoading } = useQuery({
+    queryKey: ['workspace-members', wsId],
+    queryFn: async () => {
+      const response = await fetch(`/api/workspaces/${wsId}/members`);
+      if (!response.ok) throw new Error('Failed to fetch members');
+
+      const { members: fetchedMembers } = await response.json();
+      return fetchedMembers || [];
+    },
+    enabled: !!wsId && !isPersonalWorkspace,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Fetch available task lists using React Query (same key as other components)
@@ -317,13 +332,12 @@ function TaskCardInner({
     handleMoveToCompletion,
     handleMoveToClose,
     handleDelete,
-    handleRemoveAllAssignees,
-    handleRemoveAssignee,
     handleMoveToList,
     handleDueDateChange,
     handlePriorityChange,
     updateEstimationPoints,
     handleCustomDateChange,
+    handleToggleAssignee,
   } = useTaskActions({
     task,
     boardId,
@@ -346,6 +360,18 @@ function TaskCardInner({
     isMultiSelectMode,
     onClearSelection,
   });
+
+  const onToggleAssignee = useCallback(
+    async (assigneeId: string) => {
+      try {
+        setAssigneeSaving(assigneeId);
+        await handleToggleAssignee(assigneeId);
+      } finally {
+        setAssigneeSaving(null);
+      }
+    },
+    [handleToggleAssignee]
+  );
 
   // Memoize drag handle for performance
   // Removed explicit drag handle – entire card is now draggable for better UX.
@@ -626,6 +652,92 @@ function TaskCardInner({
   const visibleBadges = taskBadges.slice(0, visibleBadgeCount);
   const hiddenBadges = taskBadges.slice(visibleBadgeCount);
 
+  // Get all tasks from query to subscribe to cache updates
+  const { data: allTasksFromQuery } = useQuery({
+    queryKey: ['tasks', boardId],
+    queryFn: () => [], // No-op function - we only want to read from cache
+    enabled: false, // Don't fetch, just subscribe to cache
+  });
+
+  // Compute collective attributes for bulk operations
+  const { displayLabels, displayProjects, displayAssignees } = useMemo(() => {
+    const shouldUseBulkMode =
+      isMultiSelectMode &&
+      selectedTasks &&
+      selectedTasks.size > 1 &&
+      selectedTasks.has(task.id);
+
+    if (!shouldUseBulkMode) {
+      return {
+        displayLabels: task.labels || [],
+        displayProjects: task.projects || [],
+        displayAssignees: task.assignees || [],
+      };
+    }
+
+    // Get all selected tasks data from query cache
+    const allTasks = (allTasksFromQuery as Task[]) || [];
+    const selectedTasksData = allTasks.filter((t) => selectedTasks?.has(t.id));
+
+    if (selectedTasksData.length === 0) {
+      return {
+        displayLabels: task.labels || [],
+        displayProjects: task.projects || [],
+        displayAssignees: task.assignees || [],
+      };
+    }
+
+    // Find attributes that ALL selected tasks have in common
+    // Start with all unique attributes from all selected tasks
+    const allLabels = new Map<string, any>();
+    const allProjects = new Map<string, any>();
+    const allAssignees = new Map<string, any>();
+
+    selectedTasksData.forEach((t) => {
+      t.labels?.forEach((label) => {
+        allLabels.set(label.id, label);
+      });
+      t.projects?.forEach((project) => {
+        allProjects.set(project.id, project);
+      });
+      t.assignees?.forEach((assignee) => {
+        allAssignees.set(assignee.id, assignee);
+      });
+    });
+
+    // Filter to only those present in ALL selected tasks
+    const commonLabels = Array.from(allLabels.values()).filter((label) =>
+      selectedTasksData.every((t) => t.labels?.some((l) => l.id === label.id))
+    );
+
+    const commonProjects = Array.from(allProjects.values()).filter((project) =>
+      selectedTasksData.every((t) =>
+        t.projects?.some((p) => p.id === project.id)
+      )
+    );
+
+    const commonAssignees = Array.from(allAssignees.values()).filter(
+      (assignee) =>
+        selectedTasksData.every((t) =>
+          t.assignees?.some((a) => a.id === assignee.id)
+        )
+    );
+
+    return {
+      displayLabels: commonLabels,
+      displayProjects: commonProjects,
+      displayAssignees: commonAssignees,
+    };
+  }, [
+    isMultiSelectMode,
+    selectedTasks,
+    task.id,
+    task.labels,
+    task.projects,
+    task.assignees,
+    allTasksFromQuery,
+  ]);
+
   return (
     <Card
       data-id={task.id}
@@ -862,7 +974,7 @@ function TaskCardInner({
 
                   {/* Labels Menu */}
                   <TaskLabelsMenu
-                    taskLabels={task.labels || []}
+                    taskLabels={displayLabels}
                     availableLabels={workspaceLabels}
                     isLoading={labelsLoading}
                     labelsSaving={labelsSaving}
@@ -876,7 +988,7 @@ function TaskCardInner({
 
                   {/* Projects Menu */}
                   <TaskProjectsMenu
-                    taskProjects={task.projects || []}
+                    taskProjects={displayProjects}
                     availableProjects={workspaceProjects}
                     isLoading={projectsLoading}
                     projectsSaving={projectsSaving}
@@ -901,63 +1013,17 @@ function TaskCardInner({
                     />
                   )}
 
-                  {/* Assignee Actions - Only show if not personal workspace and has assignees */}
-                  {!isPersonalWorkspace &&
-                    task.assignees &&
-                    task.assignees.length > 0 && (
-                      <DropdownMenuSub>
-                        <DropdownMenuSubTrigger>
-                          <UserStar className="h-4 w-4 text-dynamic-yellow" />
-                          Assignees
-                        </DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent className="max-h-[400px] w-56 overflow-hidden p-0">
-                          <ScrollArea
-                            style={{
-                              height: 'min(300px, calc(100vh - 200px))',
-                            }}
-                          >
-                            <div className="p-1">
-                              {task.assignees.map((assignee) => (
-                                <DropdownMenuItem
-                                  key={assignee.id}
-                                  onSelect={(e) =>
-                                    handleMenuItemSelect(
-                                      e as unknown as Event,
-                                      () => handleRemoveAssignee(assignee.id)
-                                    )
-                                  }
-                                  className="cursor-pointer text-muted-foreground"
-                                  disabled={isLoading}
-                                >
-                                  <X className="h-4 w-4" />
-                                  Remove{' '}
-                                  {assignee.display_name ||
-                                    assignee.email?.split('@')[0] ||
-                                    'User'}
-                                </DropdownMenuItem>
-                              ))}
-                            </div>
-                          </ScrollArea>
-                          {task.assignees.length > 1 && (
-                            <div className="border-t bg-background">
-                              <DropdownMenuItem
-                                onSelect={(e) =>
-                                  handleMenuItemSelect(
-                                    e as unknown as Event,
-                                    handleRemoveAllAssignees
-                                  )
-                                }
-                                className="cursor-pointer text-dynamic-red hover:bg-dynamic-red/10 hover:text-dynamic-red/90"
-                                disabled={isLoading}
-                              >
-                                <UserMinus className="h-4 w-4" />
-                                Remove all assignees
-                              </DropdownMenuItem>
-                            </div>
-                          )}
-                        </DropdownMenuSubContent>
-                      </DropdownMenuSub>
-                    )}
+                  {/* Assignee Actions - Show if not personal workspace */}
+                  {!isPersonalWorkspace && (
+                    <TaskAssigneesMenu
+                      taskAssignees={displayAssignees}
+                      availableMembers={workspaceMembers}
+                      isLoading={membersLoading}
+                      assigneeSaving={assigneeSaving}
+                      onToggleAssignee={onToggleAssignee}
+                      onMenuItemSelect={handleMenuItemSelect}
+                    />
+                  )}
 
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

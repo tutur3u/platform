@@ -1,12 +1,12 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
-import { TaskPriorityMenu } from '../task-priority-menu';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { describe, expect, it, vi } from 'vitest';
 import { TaskDueDateMenu } from '../task-due-date-menu';
 import { TaskEstimationMenu } from '../task-estimation-menu';
 import { TaskLabelsMenu } from '../task-labels-menu';
-import { TaskProjectsMenu } from '../task-projects-menu';
 import { TaskMoveMenu } from '../task-move-menu';
-import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { TaskPriorityMenu } from '../task-priority-menu';
+import { TaskProjectsMenu } from '../task-projects-menu';
 
 // Mock dropdown components to avoid Radix UI context issues in tests
 vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
@@ -250,7 +250,7 @@ describe('TaskLabelsMenu', () => {
     expect(screen.getByText('Feature')).toBeInTheDocument();
   });
 
-  it('should show add new label option', () => {
+  it('should show create new label option', () => {
     render(
       <TaskLabelsMenu
         taskLabels={[]}
@@ -263,7 +263,7 @@ describe('TaskLabelsMenu', () => {
       />
     );
 
-    expect(screen.getByText('Add New Label')).toBeInTheDocument();
+    expect(screen.getByText('Create New Label')).toBeInTheDocument();
   });
 
   it('should show applied count when labels are selected', () => {
@@ -295,9 +295,7 @@ describe('TaskLabelsMenu', () => {
       />
     );
 
-    expect(
-      screen.getByText('No labels yet. Create your first label below.')
-    ).toBeInTheDocument();
+    expect(screen.getByText('No labels available')).toBeInTheDocument();
   });
 });
 

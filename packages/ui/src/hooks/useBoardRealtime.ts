@@ -48,6 +48,36 @@ export function useBoardRealtime(
     const supabase = createClient();
     const channel = supabase.channel(`board-realtime-${boardId}`);
 
+    /**
+     * Helper function to set up a realtime listener for task-related tables.
+     * Marks queries as stale without immediate refetch to avoid conflicts with optimistic updates.
+     * Changes will only appear on the next manual/background refetch (focus, remount, manual).
+     */
+    const setupTaskRelationListener = (tableName: string, comment: string) => {
+      channel.on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: tableName,
+        },
+        async (payload) => {
+          // Only process if the task belongs to one of our lists
+          const newRecord = payload.new as { task_id?: string } | undefined;
+          const oldRecord = payload.old as { task_id?: string } | undefined;
+          const taskId = newRecord?.task_id || oldRecord?.task_id;
+          if (taskId && stableTaskIds.includes(taskId)) {
+            // Mark as stale without immediate refetch (refetchType: 'none' semantics).
+            // Changes will only appear on the next manual/background refetch (focus, remount, manual).
+            queryClient.invalidateQueries({
+              queryKey: ['tasks', boardId],
+              refetchType: 'none',
+            });
+          }
+        }
+      );
+    };
+
     channel.on(
       'postgres_changes',
       {
@@ -127,42 +157,21 @@ export function useBoardRealtime(
         }
       );
     }
-    // Listen for changes to task assignees (no filter - catches all tasks including newly created ones)
-    channel.on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'task_assignees',
-      },
-      async (payload) => {
-        // Only process if the task belongs to one of our lists
-        const newRecord = payload.new as { task_id?: string } | undefined;
-        const oldRecord = payload.old as { task_id?: string } | undefined;
-        const taskId = newRecord?.task_id || oldRecord?.task_id;
-        if (taskId && stableTaskIds.includes(taskId)) {
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-        }
-      }
+    // Set up listeners for task-related tables using helper function
+    // NOTE: These listeners mark queries as stale without immediate refetch to avoid
+    // conflicts with optimistic updates. Changes will only appear on the next manual/
+    // background refetch (focus, remount, manual).
+    setupTaskRelationListener(
+      'task_assignees',
+      'task assignees (catches all tasks including newly created ones)'
     );
-
-    // Listen for changes to task labels (no filter - catches all tasks including newly created ones)
-    channel.on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'task_labels',
-      },
-      async (payload) => {
-        // Only process if the task belongs to one of our lists
-        const newRecord = payload.new as { task_id?: string } | undefined;
-        const oldRecord = payload.old as { task_id?: string } | undefined;
-        const taskId = newRecord?.task_id || oldRecord?.task_id;
-        if (taskId && stableTaskIds.includes(taskId)) {
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-        }
-      }
+    setupTaskRelationListener(
+      'task_labels',
+      'task labels (catches all tasks including newly created ones)'
+    );
+    setupTaskRelationListener(
+      'task_project_tasks',
+      'task project assignments (catches all tasks including newly created ones)'
     );
 
     // Listen for changes to workspace labels (affects all tasks in the workspace)

@@ -86,8 +86,9 @@ describe('useTaskLabelManagement', () => {
     vi.clearAllMocks();
 
     // Setup default mock implementations
+    // The actual code uses: .delete().in('task_id', [...]).eq('label_id', labelId)
     mockDelete.mockReturnValue({
-      eq: vi.fn().mockReturnValue({
+      in: vi.fn().mockReturnValue({
         eq: vi.fn().mockResolvedValue({ error: null }),
       }),
     });
@@ -220,9 +221,9 @@ describe('useTaskLabelManagement', () => {
     });
 
     it('should rollback on error and show toast', async () => {
-      // Mock error for this test
+      // Mock error for this test - using .in().eq() pattern
       mockDelete.mockReturnValue({
-        eq: vi.fn().mockReturnValue({
+        in: vi.fn().mockReturnValue({
           eq: vi
             .fn()
             .mockResolvedValue({ error: { message: 'Database error' } }),
@@ -254,8 +255,10 @@ describe('useTaskLabelManagement', () => {
       ]);
       expect(cachedTasks).toEqual(originalTasks);
 
-      // Verify error toast was shown
-      expect(mockToast.error).toHaveBeenCalledWith('Database error');
+      // Verify error toast was shown with the correct format
+      expect(mockToast.error).toHaveBeenCalledWith('Error', {
+        description: 'Failed to update label. Please try again.',
+      });
     });
   });
 
@@ -492,7 +495,7 @@ describe('useTaskLabelManagement', () => {
       expect(result.current.creatingLabel).toBe(false);
     });
 
-    it('should invalidate workspace labels cache after creation', async () => {
+    it('should optimistically update workspace labels cache after creation', async () => {
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -508,7 +511,7 @@ describe('useTaskLabelManagement', () => {
         mockWorkspaceLabels
       );
 
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const setQueryDataSpy = vi.spyOn(queryClient, 'setQueryData');
 
       const { result } = renderHook(
         () =>
@@ -529,11 +532,13 @@ describe('useTaskLabelManagement', () => {
         await result.current.createNewLabel();
       });
 
-      expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: ['workspace-labels', 'ws-1'],
-      });
+      // The implementation uses setQueryData for optimistic updates, not invalidateQueries
+      expect(setQueryDataSpy).toHaveBeenCalledWith(
+        ['workspace-labels', 'ws-1'],
+        expect.any(Function)
+      );
 
-      invalidateSpy.mockRestore();
+      setQueryDataSpy.mockRestore();
     });
   });
 
