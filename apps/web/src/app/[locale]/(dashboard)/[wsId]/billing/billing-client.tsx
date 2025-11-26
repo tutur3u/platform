@@ -197,7 +197,7 @@ export function BillingClient({
     }
   };
 
-  const centToDollar = (price: number) => `$${(price / 100).toFixed(2)}`;
+  const centToDollar = (price: number) => (price / 100).toFixed(2);
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">
@@ -262,7 +262,7 @@ export function BillingClient({
                 </h3>
                 <div className="flex items-baseline gap-2">
                   <span className="font-black text-3xl text-primary">
-                    {centToDollar(currentPlan.price)}
+                    {`$${centToDollar(currentPlan.price)}`}
                   </span>
                   {currentPlan.billingCycle && (
                     <span className="text-muted-foreground">
@@ -538,7 +538,7 @@ export function BillingClient({
 
                       <div className="flex items-baseline gap-2">
                         <span className="font-black text-3xl text-primary">
-                          {centToDollar(plan.price)}
+                          {`$${centToDollar(plan.price)}`}
                         </span>
                         {plan.billingCycle && (
                           <span className="text-muted-foreground">

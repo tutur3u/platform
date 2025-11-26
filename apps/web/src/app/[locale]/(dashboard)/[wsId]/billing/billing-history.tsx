@@ -54,6 +54,8 @@ export default function BillingHistory({
     }
   };
 
+  const centToDollar = (price: number) => (price / 100).toFixed(2);
+
   return (
     <div>
       <div className="rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
@@ -109,7 +111,7 @@ export default function BillingHistory({
                       {subscription.product ? (
                         <div>
                           <div className="font-medium">
-                            ${subscription.product.price}
+                            {`$${centToDollar(subscription.product.price)}`}
                           </div>
                           <div className="text-muted-foreground text-sm">
                             per {subscription.product.recurring_interval}
