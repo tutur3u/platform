@@ -15,15 +15,42 @@ export async function POST(request: NextRequest) {
 
   // Validate that you have the info you need
   if (!productId || !wsId) {
-    return new Response('Product ID and Workspace ID are required', {
-      status: 400,
-    });
+    return NextResponse.json(
+      { error: 'Product ID and Workspace ID are required' },
+      { status: 400 }
+    );
   }
 
   const supabase = await createClient();
+
+  const { data: isCreator, error: creatorError } = await supabase.rpc(
+    'check_ws_creator',
+    { ws_id: wsId }
+  );
+
+  if (creatorError) {
+    console.error('Error checking workspace creator:', creatorError);
+    return NextResponse.json(
+      { error: `Error checking creator status: ${creatorError.message}` },
+      { status: 500 }
+    );
+  }
+
+  if (!isCreator) {
+    console.error(
+      `You are not authorized to create subscription for wsId: ${wsId}`
+    );
+    return NextResponse.json(
+      {
+        error: 'Unauthorized: You are not the workspace creator',
+      },
+      { status: 403 } // Forbidden
+    );
+  }
+
   const user = await getCurrentSupabaseUser();
 
-  const { data, error } = await supabase
+  const { data: userData, error } = await supabase
     .from('users')
     .select('display_name')
     .eq('id', user?.id || '')
@@ -31,58 +58,38 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     console.error('Error fetching user display name:', error);
-    return new Response('Error fetching user display name', {
-      status: 500,
-    });
-  }
-
-  const { data: isCreatorAllowed, error: rpcError } = await supabase.rpc(
-    'check_ws_creator',
-    {
-      ws_id: wsId,
-    }
-  );
-  if (rpcError) {
-    console.error('Error checking workspace creator:', rpcError);
-    return new Response(`Error checking creator status: ${rpcError.message}`, {
-      status: 500,
-    });
-  }
-
-  if (!isCreatorAllowed) {
-    console.warn(
-      `User (auth.uid()) is not authorized to create subscription for wsId: ${wsId} or subscription already exists.`
-    );
-    return new Response(
-      'Unauthorized: You are not the workspace creator or an active subscription already exists.',
-      {
-        status: 403, // Forbidden
-      }
+    return NextResponse.json(
+      { error: 'Error fetching user display name' },
+      { status: 500 }
     );
   }
-
-  const polar = createPolarClient({
-    sandbox:
-      // Always use sandbox for development
-      process.env.NODE_ENV === 'development'
-        ? true
-        : // If the workspace is the root workspace and the sandbox is true, use sandbox
-          !!(wsId === ROOT_WORKSPACE_ID && sandbox), // Otherwise, use production
-  });
 
   // HERE is where you add the metadata
-  const checkoutSession = await polar.checkouts.create({
-    products: [productId],
-    successUrl: `${BASE_URL}/${wsId}/billing/success`,
-    externalCustomerId: user?.id || '',
-    metadata: {
-      wsId,
-    },
-    customerName: data.display_name,
-    customerEmail: user?.email,
-  });
+  try {
+    const polar = createPolarClient({
+      sandbox:
+        // Always use sandbox for development
+        process.env.NODE_ENV === 'development'
+          ? true
+          : // If the workspace is the root workspace and the sandbox is true, use sandbox
+            !!(wsId === ROOT_WORKSPACE_ID && sandbox), // Otherwise, use production
+    });
 
-  const checkoutUrl = checkoutSession.url;
+    const checkoutSession = await polar.checkouts.create({
+      products: [productId],
+      successUrl: `${BASE_URL}/${wsId}/billing/success`,
+      externalCustomerId: user?.id || '',
+      metadata: { wsId },
+      customerName: userData.display_name,
+      customerEmail: user?.email,
+    });
 
-  return NextResponse.json({ url: checkoutUrl });
+    return NextResponse.json({ url: checkoutSession.url });
+  } catch (error) {
+    console.error('Failed to create checkout session:', error);
+    return NextResponse.json(
+      { error: 'Failed to create checkout session' },
+      { status: 500 }
+    );
+  }
 }
