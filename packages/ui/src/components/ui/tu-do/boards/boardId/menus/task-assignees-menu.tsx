@@ -1,4 +1,5 @@
-import { Box, Check, Loader2, Plus, Search } from '@tuturuuu/icons';
+import { Check, Loader2, Search, UserStar } from '@tuturuuu/icons';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import {
   DropdownMenuItem,
   DropdownMenuSub,
@@ -10,45 +11,45 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 
-interface TaskProject {
+interface Member {
   id: string;
-  name: string;
-  status: string | null;
+  display_name?: string;
+  email?: string;
+  avatar_url?: string;
 }
 
-interface TaskProjectsMenuProps {
-  taskProjects: TaskProject[];
-  availableProjects: TaskProject[];
+interface TaskAssigneesMenuProps {
+  taskAssignees: Member[];
+  availableMembers: Member[];
   isLoading: boolean;
-  projectsSaving: string | null;
-  onToggleProject: (projectId: string) => void;
-  onCreateNewProject: () => void;
+  assigneeSaving: string | null;
+  onToggleAssignee: (assigneeId: string) => void;
   onMenuItemSelect: (e: Event, action: () => void) => void;
 }
 
-export function TaskProjectsMenu({
-  taskProjects,
-  availableProjects,
+export function TaskAssigneesMenu({
+  taskAssignees,
+  availableMembers,
   isLoading,
-  projectsSaving,
-  onToggleProject,
-  onCreateNewProject,
+  assigneeSaving,
+  onToggleAssignee,
   onMenuItemSelect,
-}: TaskProjectsMenuProps) {
+}: TaskAssigneesMenuProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filter projects based on search
-  const filteredProjects = availableProjects.filter(
-    (project) =>
+  // Filter members based on search
+  const filteredMembers = availableMembers.filter(
+    (member) =>
       !searchQuery ||
-      project.name.toLowerCase().includes(searchQuery.toLowerCase())
+      member.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <DropdownMenuSub>
       <DropdownMenuSubTrigger>
-        <Box className="h-4 w-4 text-dynamic-sky" />
-        Projects
+        <UserStar className="h-4 w-4 text-dynamic-yellow" />
+        Assignees
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent className="w-80 overflow-hidden p-0">
         {/* Search Input */}
@@ -56,7 +57,7 @@ export function TaskProjectsMenu({
           <div className="relative">
             <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search projects..."
+              placeholder="Search members..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-8 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
@@ -64,42 +65,53 @@ export function TaskProjectsMenu({
           </div>
         </div>
 
-        {/* Projects List */}
+        {/* Members List */}
         {isLoading ? (
           <div className="flex items-center justify-center gap-2 px-2 py-6">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             <p className="text-muted-foreground text-xs">Loading...</p>
           </div>
-        ) : filteredProjects.length === 0 ? (
+        ) : filteredMembers.length === 0 ? (
           <div className="px-2 py-6 text-center text-muted-foreground text-xs">
-            {searchQuery ? 'No projects found' : 'No projects available'}
+            {searchQuery
+              ? 'No members found'
+              : 'No workspace members available'}
           </div>
         ) : (
           <ScrollArea className="max-h-[200px]">
             <div className="flex flex-col gap-1 p-1">
-              {filteredProjects.map((project) => {
-                const active = taskProjects.some((p) => p.id === project.id);
+              {filteredMembers.map((member) => {
+                const active = taskAssignees.some((a) => a.id === member.id);
                 return (
                   <DropdownMenuItem
-                    key={project.id}
+                    key={member.id}
                     onSelect={(e) =>
                       onMenuItemSelect(e as unknown as Event, () =>
-                        onToggleProject(project.id)
+                        onToggleAssignee(member.id)
                       )
                     }
-                    disabled={projectsSaving === project.id}
+                    disabled={assigneeSaving === member.id}
                     className={cn(
                       'flex cursor-pointer items-center justify-between gap-2',
-                      active && 'bg-dynamic-sky/10 text-dynamic-sky'
+                      active && 'bg-dynamic-yellow/10 text-dynamic-yellow'
                     )}
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-2">
-                      {projectsSaving === project.id ? (
-                        <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
+                      {assigneeSaving === member.id ? (
+                        <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
                       ) : (
-                        <Box className="h-3 w-3 shrink-0 text-dynamic-sky" />
+                        <Avatar className="h-4 w-4 shrink-0">
+                          <AvatarImage src={member.avatar_url} />
+                          <AvatarFallback className="bg-muted font-semibold text-[9px]">
+                            {member.display_name?.[0] ||
+                              member.email?.[0] ||
+                              '?'}
+                          </AvatarFallback>
+                        </Avatar>
                       )}
-                      <span className="truncate text-sm">{project.name}</span>
+                      <span className="truncate text-sm">
+                        {member.display_name || member.email}
+                      </span>
                     </div>
                     {active && <Check className="h-4 w-4 shrink-0" />}
                   </DropdownMenuItem>
@@ -110,26 +122,11 @@ export function TaskProjectsMenu({
         )}
 
         {/* Footer with count */}
-        {!isLoading && taskProjects.length > 0 && (
+        {!isLoading && taskAssignees.length > 0 && (
           <div className="relative z-10 border-t bg-background shadow-sm">
             <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
-              {taskProjects.length} assigned
+              {taskAssignees.length} assigned
             </div>
-          </div>
-        )}
-
-        {/* Create New Project Button */}
-        {!isLoading && (
-          <div className="border-t">
-            <DropdownMenuItem
-              onSelect={(e) =>
-                onMenuItemSelect(e as unknown as Event, onCreateNewProject)
-              }
-              className="cursor-pointer text-muted-foreground hover:text-foreground"
-            >
-              <Plus className="h-4 w-4" />
-              Create New Project
-            </DropdownMenuItem>
           </div>
         )}
       </DropdownMenuSubContent>
