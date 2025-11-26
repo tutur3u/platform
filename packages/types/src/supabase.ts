@@ -7,6 +7,11 @@ export type Json =
   | Json[];
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: '13.0.5';
+  };
   public: {
     Tables: {
       ai_chat_members: {
@@ -2478,6 +2483,93 @@ export type Database = {
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      habit_calendar_events: {
+        Row: {
+          completed: boolean | null;
+          created_at: string | null;
+          event_id: string;
+          habit_id: string;
+          id: string;
+          occurrence_date: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          completed?: boolean | null;
+          created_at?: string | null;
+          event_id: string;
+          habit_id: string;
+          id?: string;
+          occurrence_date: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          completed?: boolean | null;
+          created_at?: string | null;
+          event_id?: string;
+          habit_id?: string;
+          id?: string;
+          occurrence_date?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'habit_calendar_events_event_id_fkey';
+            columns: ['event_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_calendar_events';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'habit_calendar_events_habit_id_fkey';
+            columns: ['habit_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_habits';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      habit_completions: {
+        Row: {
+          completed_at: string;
+          created_at: string | null;
+          event_id: string | null;
+          habit_id: string;
+          id: string;
+          occurrence_date: string;
+        };
+        Insert: {
+          completed_at?: string;
+          created_at?: string | null;
+          event_id?: string | null;
+          habit_id: string;
+          id?: string;
+          occurrence_date: string;
+        };
+        Update: {
+          completed_at?: string;
+          created_at?: string | null;
+          event_id?: string | null;
+          habit_id?: string;
+          id?: string;
+          occurrence_date?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'habit_completions_event_id_fkey';
+            columns: ['event_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_calendar_events';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'habit_completions_habit_id_fkey';
+            columns: ['habit_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_habits';
             referencedColumns: ['id'];
           },
         ];
@@ -10139,6 +10231,151 @@ export type Database = {
           },
         ];
       };
+      workspace_habits: {
+        Row: {
+          auto_schedule: boolean | null;
+          calendar_hours: Database['public']['Enums']['calendar_hours'] | null;
+          color: string | null;
+          created_at: string | null;
+          creator_id: string | null;
+          day_of_month: number | null;
+          day_of_week_monthly: number | null;
+          days_of_week: number[] | null;
+          deleted_at: string | null;
+          description: string | null;
+          duration_minutes: number;
+          end_date: string | null;
+          frequency: Database['public']['Enums']['habit_frequency'];
+          id: string;
+          ideal_time: string | null;
+          is_active: boolean | null;
+          max_duration_minutes: number | null;
+          min_duration_minutes: number | null;
+          monthly_type:
+            | Database['public']['Enums']['monthly_recurrence_type']
+            | null;
+          name: string;
+          priority: Database['public']['Enums']['task_priority'] | null;
+          recurrence_interval: number | null;
+          start_date: string;
+          time_preference:
+            | Database['public']['Enums']['time_of_day_preference']
+            | null;
+          updated_at: string | null;
+          week_of_month: number | null;
+          ws_id: string;
+        };
+        Insert: {
+          auto_schedule?: boolean | null;
+          calendar_hours?: Database['public']['Enums']['calendar_hours'] | null;
+          color?: string | null;
+          created_at?: string | null;
+          creator_id?: string | null;
+          day_of_month?: number | null;
+          day_of_week_monthly?: number | null;
+          days_of_week?: number[] | null;
+          deleted_at?: string | null;
+          description?: string | null;
+          duration_minutes?: number;
+          end_date?: string | null;
+          frequency?: Database['public']['Enums']['habit_frequency'];
+          id?: string;
+          ideal_time?: string | null;
+          is_active?: boolean | null;
+          max_duration_minutes?: number | null;
+          min_duration_minutes?: number | null;
+          monthly_type?:
+            | Database['public']['Enums']['monthly_recurrence_type']
+            | null;
+          name: string;
+          priority?: Database['public']['Enums']['task_priority'] | null;
+          recurrence_interval?: number | null;
+          start_date?: string;
+          time_preference?:
+            | Database['public']['Enums']['time_of_day_preference']
+            | null;
+          updated_at?: string | null;
+          week_of_month?: number | null;
+          ws_id: string;
+        };
+        Update: {
+          auto_schedule?: boolean | null;
+          calendar_hours?: Database['public']['Enums']['calendar_hours'] | null;
+          color?: string | null;
+          created_at?: string | null;
+          creator_id?: string | null;
+          day_of_month?: number | null;
+          day_of_week_monthly?: number | null;
+          days_of_week?: number[] | null;
+          deleted_at?: string | null;
+          description?: string | null;
+          duration_minutes?: number;
+          end_date?: string | null;
+          frequency?: Database['public']['Enums']['habit_frequency'];
+          id?: string;
+          ideal_time?: string | null;
+          is_active?: boolean | null;
+          max_duration_minutes?: number | null;
+          min_duration_minutes?: number | null;
+          monthly_type?:
+            | Database['public']['Enums']['monthly_recurrence_type']
+            | null;
+          name?: string;
+          priority?: Database['public']['Enums']['task_priority'] | null;
+          recurrence_interval?: number | null;
+          start_date?: string;
+          time_preference?:
+            | Database['public']['Enums']['time_of_day_preference']
+            | null;
+          updated_at?: string | null;
+          week_of_month?: number | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_habits_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_habits_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_habits_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habits_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habits_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habits_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_invite_link_uses: {
         Row: {
           id: string;
@@ -12349,36 +12586,7 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       calendar_event_participants: {
         Row: {
@@ -15043,6 +15251,8 @@ export type Database = {
         | 'ENABLE_EDUCATION'
         | 'ENABLE_CHALLENGES'
         | 'ENABLE_QUIZZES';
+      habit_frequency: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom';
+      monthly_recurrence_type: 'day_of_month' | 'day_of_week';
       notification_priority: 'low' | 'medium' | 'high' | 'urgent';
       notification_scope: 'user' | 'workspace' | 'system';
       platform_service: 'TUTURUUU' | 'REWISE' | 'NOVA' | 'UPSKII';
@@ -15077,6 +15287,7 @@ export type Database = {
         | 'closed'
         | 'documents';
       task_priority: 'low' | 'normal' | 'high' | 'critical';
+      time_of_day_preference: 'morning' | 'afternoon' | 'evening' | 'night';
       time_tracking_request_status: 'PENDING' | 'APPROVED' | 'REJECTED';
       workspace_api_key_scope:
         | 'gemini-2.0-flash'
@@ -15306,6 +15517,8 @@ export const Constants = {
         'ENABLE_CHALLENGES',
         'ENABLE_QUIZZES',
       ],
+      habit_frequency: ['daily', 'weekly', 'monthly', 'yearly', 'custom'],
+      monthly_recurrence_type: ['day_of_month', 'day_of_week'],
       notification_priority: ['low', 'medium', 'high', 'urgent'],
       notification_scope: ['user', 'workspace', 'system'],
       platform_service: ['TUTURUUU', 'REWISE', 'NOVA', 'UPSKII'],
@@ -15343,6 +15556,7 @@ export const Constants = {
         'documents',
       ],
       task_priority: ['low', 'normal', 'high', 'critical'],
+      time_of_day_preference: ['morning', 'afternoon', 'evening', 'night'],
       time_tracking_request_status: ['PENDING', 'APPROVED', 'REJECTED'],
       workspace_api_key_scope: [
         'gemini-2.0-flash',

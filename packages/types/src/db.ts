@@ -24,6 +24,9 @@ export type WorkspaceTaskList = Tables<'task_lists'> & {
 export type WorkspaceTask = Tables<'tasks'>;
 export type TaskProject = Tables<'task_projects'>;
 export type TaskCalendarEvent = Tables<'task_calendar_events'>;
+export type WorkspaceHabit = Tables<'workspace_habits'>;
+export type HabitCalendarEventRow = Tables<'habit_calendar_events'>;
+export type HabitCompletionRow = Tables<'habit_completions'>;
 
 /**
  * Calendar hours type for task scheduling

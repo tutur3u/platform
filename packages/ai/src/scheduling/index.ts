@@ -8,18 +8,21 @@
  * - Support work, personal, and meeting hour types
  */
 
-// Core algorithm
 export {
   prepareTaskChunks,
   promoteEventToTask,
   scheduleTasks,
   scheduleWithFlexibleEvents,
 } from './algorithm';
-// Defaults
 export { defaultActiveHours, defaultTasks } from './default';
-// Templates
+export {
+  calculateOccurrences,
+  getNextOccurrence,
+  getNextOccurrenceDescription,
+  getOccurrencesInRange,
+  isOccurrenceDate,
+} from './recurrence-calculator';
 export { templateScenarios } from './templates';
-// Core types
 export type {
   ActiveHours,
   CalendarHoursType,
@@ -33,8 +36,6 @@ export type {
   WebScheduleResult,
   WebTaskInput,
 } from './types';
-
-// Web adapter functions
 export {
   convertHourSettingsToActiveHours,
   convertWebEventsToLocked,

@@ -52,6 +52,7 @@ import {
   QrCodeIcon,
   Radio,
   ReceiptText,
+  Repeat,
   RotateCcw,
   RulerDimensionLine,
   ScanSearch,
@@ -175,7 +176,7 @@ export async function WorkspaceNavigationLinks({
     {
       title: t('sidebar_tabs.tasks'),
       href: `/${personalOrWsId}/tasks/my-tasks`,
-      aliases: [`/${personalOrWsId}/tasks`],
+      aliases: [`/${personalOrWsId}/tasks`, `/${personalOrWsId}/tasks/habits`],
       icon: <CircleCheck className="h-5 w-5" />,
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
       experimental: 'beta',
@@ -190,6 +191,11 @@ export async function WorkspaceNavigationLinks({
           title: t('sidebar_tabs.notes'),
           href: `/${personalOrWsId}/tasks/notes`,
           icon: <StickyNote className="h-4 w-4" />,
+        },
+        {
+          title: t('sidebar_tabs.habits'),
+          href: `/${personalOrWsId}/tasks/habits`,
+          icon: <Repeat className="h-4 w-4" />,
         },
         {
           title: t('sidebar_tabs.all_boards'),
