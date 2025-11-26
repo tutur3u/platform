@@ -239,8 +239,8 @@ export function getRecurrenceDescription(habit: Habit): string {
       }
       if (
         habit.monthly_type === 'day_of_week' &&
-        habit.week_of_month !== null &&
-        habit.day_of_week_monthly !== null
+        habit.week_of_month != null &&
+        habit.day_of_week_monthly != null
       ) {
         const weekNames = ['1st', '2nd', '3rd', '4th', 'last'];
         const weekName =
