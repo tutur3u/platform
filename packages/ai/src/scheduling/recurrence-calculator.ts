@@ -153,7 +153,12 @@ function findNextOccurrence(
     return null;
   }
 
-  // Search for up to 366 days (handles leap years)
+  // For yearly patterns, use optimized search that handles leap years
+  if (habit.frequency === 'yearly') {
+    return findNextYearlyOccurrence(habit, startDate, current, endDate);
+  }
+
+  // Search for up to 366 days (handles leap years for non-yearly patterns)
   const maxDaysToSearch = 366;
   for (let i = 0; i < maxDaysToSearch; i++) {
     if (matchesRecurrencePattern(habit, current)) {
@@ -172,6 +177,87 @@ function findNextOccurrence(
   }
 
   return null;
+}
+
+/**
+ * Optimized search for yearly patterns
+ * Handles leap year dates (Feb 29) correctly by jumping to candidate years
+ */
+function findNextYearlyOccurrence(
+  habit: Habit,
+  startDate: dayjs.Dayjs,
+  current: dayjs.Dayjs,
+  endDate: dayjs.Dayjs | null
+): Date | null {
+  const interval = habit.recurrence_interval;
+  const targetMonth = startDate.month();
+  const targetDay = startDate.date();
+  const isLeapYearDate = targetMonth === 1 && targetDay === 29; // Feb 29
+
+  // Calculate the first candidate year
+  let candidateYear = current.year();
+
+  // If we're past the target date this year, start from next year
+  const thisYearTarget = dayjs()
+    .year(candidateYear)
+    .month(targetMonth)
+    .date(targetDay)
+    .startOf('day');
+
+  if (current.isAfter(thisYearTarget)) {
+    candidateYear++;
+  }
+
+  // Align to the interval from start year
+  const startYear = startDate.year();
+  const yearsDiff = candidateYear - startYear;
+  if (yearsDiff < 0) {
+    candidateYear = startYear;
+  } else if (yearsDiff % interval !== 0) {
+    // Round up to next valid interval year
+    candidateYear = startYear + Math.ceil(yearsDiff / interval) * interval;
+  }
+
+  // Search up to 100 years (handles leap year dates needing to find next leap year)
+  const maxYearsToSearch = 100;
+  for (let i = 0; i < maxYearsToSearch; i++) {
+    // For leap year dates, check if this year is a leap year
+    if (isLeapYearDate) {
+      if (!isLeapYear(candidateYear)) {
+        candidateYear += interval;
+        continue;
+      }
+    }
+
+    const candidate = dayjs()
+      .year(candidateYear)
+      .month(targetMonth)
+      .date(targetDay)
+      .startOf('day');
+
+    // Verify the date is valid (handles edge cases)
+    if (
+      candidate.month() === targetMonth &&
+      candidate.date() === targetDay &&
+      !candidate.isBefore(current)
+    ) {
+      if (endDate && candidate.isAfter(endDate)) {
+        return null;
+      }
+      return candidate.toDate();
+    }
+
+    candidateYear += interval;
+  }
+
+  return null;
+}
+
+/**
+ * Check if a year is a leap year
+ */
+function isLeapYear(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 }
 
 /**
