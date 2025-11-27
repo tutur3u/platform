@@ -790,9 +790,12 @@ describe('useTaskActions', () => {
       });
 
       // Verify error toast was shown
-      expect(mockToast.error).toHaveBeenCalledWith('Failed to update estimation', {
-        description: 'Database connection failed',
-      });
+      expect(mockToast.error).toHaveBeenCalledWith(
+        'Failed to update estimation',
+        {
+          description: 'Database connection failed',
+        }
+      );
 
       // Verify loading states were called correctly
       expect(setEstimationSaving).toHaveBeenCalledWith(true);
@@ -877,7 +880,10 @@ describe('useTaskActions', () => {
 
       // Mock insert to fail (simulating add assignee flow)
       mockSupabase.insert = vi.fn(() =>
-        Promise.resolve({ error: new Error('Database write failed'), data: null })
+        Promise.resolve({
+          error: new Error('Database write failed'),
+          data: null,
+        })
       );
 
       const setIsLoading = vi.fn();
@@ -934,7 +940,10 @@ describe('useTaskActions', () => {
 
       // Mock delete to fail (simulating remove assignee flow)
       mockSupabase.in = vi.fn(() =>
-        Promise.resolve({ error: new Error('Database delete failed'), data: null })
+        Promise.resolve({
+          error: new Error('Database delete failed'),
+          data: null,
+        })
       );
 
       const setIsLoading = vi.fn();
