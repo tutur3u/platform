@@ -1,10 +1,10 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import CalendarClientPage from './client';
 
 export const metadata: Metadata = {
@@ -33,11 +33,7 @@ export default async function CalendarPage({ params }: PageProps) {
         } = await supabase.auth.getUser();
 
         // Fetch Google auth token, calendar connections, and user email in parallel for better performance
-        const [
-          { data: googleToken },
-          { data: calendarConnections },
-          { data: userPrivateDetails },
-        ] = user?.id
+        const [{ data: googleToken }, { data: calendarConnections }] = user?.id
           ? await Promise.all([
               supabase
                 .from('calendar_auth_tokens')
@@ -49,16 +45,8 @@ export default async function CalendarPage({ params }: PageProps) {
                 .select('*')
                 .eq('ws_id', wsId)
                 .order('created_at', { ascending: true }),
-              supabase
-                .from('user_private_details')
-                .select('email')
-                .eq('id', user?.id)
-                .maybeSingle(),
             ])
           : [
-              {
-                data: null,
-              },
               {
                 data: null,
               },
@@ -70,9 +58,7 @@ export default async function CalendarPage({ params }: PageProps) {
         if (withoutPermission('manage_calendar')) redirect(`/${wsId}`);
 
         // Check if user has valid Tuturuuu email for Smart Schedule feature
-        const hasValidTuturuuuEmail = isValidTuturuuuEmail(
-          userPrivateDetails?.email
-        );
+        const hasValidTuturuuuEmail = isValidTuturuuuEmail(user?.email);
 
         return (
           <CalendarSyncProvider
