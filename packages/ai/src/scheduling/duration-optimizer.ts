@@ -449,9 +449,10 @@ export function scoreSlotForTask(
   let score = 0;
 
   // 1. ALWAYS prefer earlier slots - tasks should fill gaps ASAP
-  // Earlier hour = higher score (+300 at midnight, -10 per hour)
+  // Earlier hour = higher score (+300 at midnight, -2 per hour)
   // This ensures gaps are filled before moving to later slots
-  score += 300 - slot.start.getHours() * 10;
+  // Reduced penalty from -10 to -2 to prevent gaps between tasks
+  score += 300 - slot.start.getHours() * 2;
 
   // 2. Small bonus for slots that fit well (max 50 points)
   // This is secondary to time preference - we want earlier slots first

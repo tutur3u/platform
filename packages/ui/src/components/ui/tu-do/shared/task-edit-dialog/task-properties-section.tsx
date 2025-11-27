@@ -7,7 +7,6 @@ import {
   Briefcase,
   Calendar,
   CalendarClock,
-  CalendarPlus,
   Check,
   CheckCircle,
   ChevronDown,
@@ -122,7 +121,6 @@ interface TaskPropertiesSectionProps {
   onCalendarHoursChange: (hourType: CalendarHoursType | null) => void;
   onAutoScheduleChange: (autoSchedule: boolean) => void;
   onSaveSchedulingSettings: (settings: SchedulingSettings) => Promise<boolean>;
-  onScheduleTask?: () => Promise<void>;
   schedulingSaving: boolean;
 }
 
@@ -310,7 +308,6 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
     onCalendarHoursChange,
     onAutoScheduleChange,
     onSaveSchedulingSettings,
-    onScheduleTask,
     schedulingSaving,
   } = props;
 
@@ -323,7 +320,6 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
   const [isAssigneesPopoverOpen, setIsAssigneesPopoverOpen] = useState(false);
   const [isListPopoverOpen, setIsListPopoverOpen] = useState(false);
   const [isSchedulingPopoverOpen, setIsSchedulingPopoverOpen] = useState(false);
-  const [isScheduling, setIsScheduling] = useState(false);
 
   // Track last saved settings locally (updates after successful save)
   const [lastSavedSettings, setLastSavedSettings] = useState<
@@ -461,40 +457,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
     onSaveSchedulingSettings,
   ]);
 
-  // Handle schedule task
-  const handleScheduleTask = useCallback(async () => {
-    if (!onScheduleTask || isScheduling) return;
-    setIsScheduling(true);
-    try {
-      await onScheduleTask();
-    } finally {
-      setIsScheduling(false);
-    }
-  }, [onScheduleTask, isScheduling]);
-
-  // Check if task can be scheduled (has saved settings with duration and hour type)
-  const canScheduleTask = useMemo(() => {
-    const hasSavedDuration =
-      lastSavedSettings?.totalDuration && lastSavedSettings.totalDuration > 0;
-    const hasSavedHourType =
-      lastSavedSettings?.calendarHours !== null &&
-      lastSavedSettings?.calendarHours !== undefined;
-    const hasNoUnsavedChanges = !hasUnsavedSchedulingChanges;
-    return (
-      hasSavedDuration &&
-      hasSavedHourType &&
-      hasNoUnsavedChanges &&
-      !isScheduling &&
-      !isCreateMode &&
-      !!onScheduleTask
-    );
-  }, [
-    lastSavedSettings,
-    hasUnsavedSchedulingChanges,
-    isScheduling,
-    isCreateMode,
-    onScheduleTask,
-  ]);
+  // Note: Manual scheduling removed - handled by Smart Schedule button in Calendar
 
   // Handlers for duration inputs
   const handleDurationHoursChange = useCallback(
@@ -1686,23 +1649,6 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             </>
                           )}
                         </Button>
-                        {onScheduleTask && !autoSchedule && (
-                          <Button
-                            size="sm"
-                            onClick={handleScheduleTask}
-                            disabled={!canScheduleTask}
-                            className="flex-1"
-                          >
-                            {isScheduling ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <>
-                                <CalendarPlus className="mr-1.5 h-3.5 w-3.5" />
-                                Schedule
-                              </>
-                            )}
-                          </Button>
-                        )}
                         {(durationHours > 0 || durationMinutes > 0) && (
                           <Button
                             size="sm"

@@ -188,15 +188,17 @@ export async function WorkspaceNavigationLinks({
           matchExact: true,
         },
         {
+          title: t('sidebar_tabs.habits'),
+          href: `/${personalOrWsId}/tasks/habits`,
+          icon: <Repeat className="h-4 w-4" />,
+          requireRootMember: true,
+        },
+        {
           title: t('sidebar_tabs.notes'),
           href: `/${personalOrWsId}/tasks/notes`,
           icon: <StickyNote className="h-4 w-4" />,
         },
-        {
-          title: t('sidebar_tabs.habits'),
-          href: `/${personalOrWsId}/tasks/habits`,
-          icon: <Repeat className="h-4 w-4" />,
-        },
+        null,
         {
           title: t('sidebar_tabs.all_boards'),
           href: `/${personalOrWsId}/tasks/boards`,

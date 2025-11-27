@@ -7,7 +7,6 @@ import {
   Edit,
   Flame,
   MoreVertical,
-  Play,
   Trash2,
 } from '@tuturuuu/icons';
 import type { Habit, HabitStreak } from '@tuturuuu/types/primitives/Habit';
@@ -35,7 +34,6 @@ interface HabitCardProps {
   wsId: string;
   onEdit: () => void;
   onDelete: () => void;
-  onSchedule: () => void;
   onComplete: (date: string) => void;
 }
 
@@ -61,7 +59,6 @@ export default function HabitCard({
   habit,
   onEdit,
   onDelete,
-  onSchedule,
   onComplete,
 }: HabitCardProps) {
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -99,10 +96,6 @@ export default function HabitCard({
               <DropdownMenuItem onClick={onEdit}>
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onSchedule}>
-                <Play className="mr-2 h-4 w-4" />
-                Schedule Now
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

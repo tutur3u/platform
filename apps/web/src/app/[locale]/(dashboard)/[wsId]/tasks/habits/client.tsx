@@ -79,24 +79,7 @@ export default function HabitsClientPage({ wsId }: HabitsClientPageProps) {
     }
   };
 
-  const handleSchedule = async (habitId: string) => {
-    try {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/habits/${habitId}/schedule`,
-        { method: 'POST' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to schedule habit');
-      }
-
-      const result = await response.json();
-      queryClient.invalidateQueries({ queryKey: ['habits', wsId] });
-      toast.success(`Scheduled ${result.eventsCreated} occurrence(s)`);
-    } catch {
-      toast.error('Failed to schedule habit');
-    }
-  };
+  // Note: Manual scheduling removed - handled by Smart Schedule button in Calendar
 
   const handleComplete = async (habitId: string, date: string) => {
     try {
@@ -248,7 +231,6 @@ export default function HabitsClientPage({ wsId }: HabitsClientPageProps) {
               wsId={wsId}
               onEdit={() => setEditingHabit(habit)}
               onDelete={() => handleDelete(habit.id)}
-              onSchedule={() => handleSchedule(habit.id)}
               onComplete={(date) => handleComplete(habit.id, date)}
             />
           ))}

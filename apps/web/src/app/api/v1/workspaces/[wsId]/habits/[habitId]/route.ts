@@ -9,7 +9,6 @@
 import {
   deleteFutureHabitEvents,
   fetchHabitStreak,
-  scheduleHabit,
 } from '@/lib/calendar/habit-scheduler';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Habit, HabitInput } from '@tuturuuu/types/primitives/Habit';
@@ -225,25 +224,14 @@ export async function PUT(
     }
 
     // If scheduling changed or habit was deactivated, delete future events
-    let rescheduled = false;
+    // Note: Rescheduling is handled by the Smart Schedule button in Calendar
     if (schedulingChanged || body.is_active === false) {
       await deleteFutureHabitEvents(supabase as any, habitId);
-
-      // If still active with auto_schedule, reschedule
-      if (updatedHabit.is_active && updatedHabit.auto_schedule) {
-        try {
-          await scheduleHabit(supabase as any, wsId, updatedHabit as Habit);
-          rescheduled = true;
-        } catch (scheduleError) {
-          console.error('Error rescheduling habit:', scheduleError);
-        }
-      }
     }
 
     return NextResponse.json({
       habit: updatedHabit,
-      rescheduled,
-      message: rescheduled ? 'Habit updated and rescheduled' : 'Habit updated',
+      message: 'Habit updated',
     });
   } catch (error) {
     console.error('Error in habit PUT:', error);

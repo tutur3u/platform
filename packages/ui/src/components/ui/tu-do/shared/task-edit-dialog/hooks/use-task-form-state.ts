@@ -63,7 +63,7 @@ export function useTaskFormState({
     task?.total_duration ?? null
   );
   const [isSplittable, setIsSplittable] = useState<boolean>(
-    task?.is_splittable ?? false
+    task?.is_splittable ?? true
   );
   const [minSplitDurationMinutes, setMinSplitDurationMinutes] = useState<
     number | null
@@ -75,7 +75,7 @@ export function useTaskFormState({
     task?.calendar_hours ?? null
   );
   const [autoSchedule, setAutoSchedule] = useState<boolean>(
-    task?.auto_schedule ?? false
+    task?.auto_schedule ?? true
   );
 
   // Draft state
@@ -139,11 +139,11 @@ export function useTaskFormState({
     setSelectedProjects(newTask?.projects || []);
     // Reset scheduling fields
     setTotalDuration(newTask?.total_duration ?? null);
-    setIsSplittable(newTask?.is_splittable ?? false);
+    setIsSplittable(newTask?.is_splittable ?? true);
     setMinSplitDurationMinutes(newTask?.min_split_duration_minutes ?? null);
     setMaxSplitDurationMinutes(newTask?.max_split_duration_minutes ?? null);
     setCalendarHours(newTask?.calendar_hours ?? null);
-    setAutoSchedule(newTask?.auto_schedule ?? false);
+    setAutoSchedule(newTask?.auto_schedule ?? true);
   }, []);
 
   // Load draft when opening in create mode

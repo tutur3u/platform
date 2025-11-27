@@ -5,6 +5,7 @@ import {
   type ReactNode,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -168,23 +169,34 @@ export function CalendarSettingsProvider({
   const [hasChanges, setHasChanges] = useState(false);
 
   // Sync settings when initialSettings prop changes (e.g., when workspace data loads)
+  // Sync settings when initialSettings prop changes (e.g., when workspace data loads)
+  const prevInitialSettingsRef = useRef<string>('');
+
   useEffect(() => {
     if (initialSettings) {
-      setSettings((prev) =>
-        deepMergeSettings(defaultCalendarSettings, prev, initialSettings)
-      );
-      setOriginalSettings((prev) =>
-        deepMergeSettings(defaultCalendarSettings, prev, initialSettings)
-      );
+      const initialSettingsStr = JSON.stringify(initialSettings);
+      if (initialSettingsStr !== prevInitialSettingsRef.current) {
+        prevInitialSettingsRef.current = initialSettingsStr;
+
+        setSettings((prev) =>
+          deepMergeSettings(defaultCalendarSettings, prev, initialSettings)
+        );
+        setOriginalSettings((prev) =>
+          deepMergeSettings(defaultCalendarSettings, prev, initialSettings)
+        );
+      }
     }
   }, [initialSettings]);
 
   // Update hasChanges when settings change
+  // Update hasChanges when settings change
   useEffect(() => {
     const settingsChanged =
       JSON.stringify(settings) !== JSON.stringify(originalSettings);
-    setHasChanges(settingsChanged);
-  }, [settings, originalSettings]);
+    if (hasChanges !== settingsChanged) {
+      setHasChanges(settingsChanged);
+    }
+  }, [settings, originalSettings, hasChanges]);
 
   const updateSettings = <K extends keyof CalendarSettings>(
     section: K,

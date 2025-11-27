@@ -6,10 +6,9 @@
  */
 
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { Habit, HabitInput } from '@tuturuuu/types/primitives/Habit';
+import type { HabitInput } from '@tuturuuu/types/primitives/Habit';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
-import { scheduleHabit } from '@/lib/calendar/habit-scheduler';
 
 interface RouteParams {
   wsId: string;
@@ -257,27 +256,12 @@ export async function POST(
       );
     }
 
-    // If auto_schedule is enabled, schedule the habit
-    let scheduleResult = null;
-    if (habit.auto_schedule) {
-      try {
-        scheduleResult = await scheduleHabit(
-          supabase as any,
-          wsId,
-          habit as Habit
-        );
-      } catch (scheduleError) {
-        console.error('Error auto-scheduling habit:', scheduleError);
-        // Don't fail the request, just note that scheduling failed
-      }
-    }
+    // Note: Auto-scheduling is handled by the Smart Schedule button in Calendar
+    // The auto_schedule flag is saved to the habit for the unified scheduler to use
 
     return NextResponse.json({
       habit,
-      scheduled: scheduleResult?.eventsCreated ?? 0,
-      message: scheduleResult
-        ? `Habit created and ${scheduleResult.eventsCreated} occurrence(s) scheduled`
-        : 'Habit created',
+      message: 'Habit created',
     });
   } catch (error) {
     console.error('Error in habits POST:', error);

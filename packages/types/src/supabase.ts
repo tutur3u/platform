@@ -11393,6 +11393,9 @@ export type Database = {
       };
       workspace_settings: {
         Row: {
+          break_duration_minutes: number | null;
+          break_enabled: boolean | null;
+          break_interval_minutes: number | null;
           created_at: string;
           guest_user_checkup_threshold: number | null;
           missed_entry_date_threshold: number | null;
@@ -11403,6 +11406,9 @@ export type Database = {
           ws_id: string;
         };
         Insert: {
+          break_duration_minutes?: number | null;
+          break_enabled?: boolean | null;
+          break_interval_minutes?: number | null;
           created_at?: string;
           guest_user_checkup_threshold?: number | null;
           missed_entry_date_threshold?: number | null;
@@ -11413,6 +11419,9 @@ export type Database = {
           ws_id: string;
         };
         Update: {
+          break_duration_minutes?: number | null;
+          break_enabled?: boolean | null;
+          break_interval_minutes?: number | null;
           created_at?: string;
           guest_user_checkup_threshold?: number | null;
           missed_entry_date_threshold?: number | null;

@@ -23,20 +23,63 @@ import {
   calculateOptimalDuration,
   calculatePriorityScore,
   comparePriority,
-  findBestSlotForHabit as findBestSlotForHabitAI,
-  findBestSlotForTask as findBestSlotForTaskAI,
-  getEffectiveDurationBounds,
   getEffectivePriority,
   getOccurrencesInRange,
-  getSlotCharacteristics,
   isUrgent,
 } from '@tuturuuu/ai/scheduling';
+import {
+  findBestSlotForHabit as findBestSlotForHabitAI,
+  findBestSlotForTask,
+  getEffectiveDurationBounds,
+  getSlotCharacteristics,
+  scoreSlotForHabit,
+  scoreSlotForTask,
+} from '@tuturuuu/ai/scheduling/duration-optimizer';
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { TaskWithScheduling } from '@tuturuuu/types';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 
 import { fetchHourSettings } from './task-scheduler';
+
+// ============================================================================
+// WORKSPACE BREAK SETTINGS
+// ============================================================================
+
+export interface WorkspaceBreakSettings {
+  break_enabled: boolean;
+  break_duration_minutes: number;
+  break_interval_minutes: number;
+}
+
+/**
+ * Fetch workspace-level break settings from workspace_settings table
+ */
+async function fetchWorkspaceBreakSettings(
+  supabase: SupabaseClient,
+  wsId: string
+): Promise<WorkspaceBreakSettings> {
+  const { data, error } = await supabase
+    .from('workspace_settings')
+    .select('break_enabled, break_duration_minutes, break_interval_minutes')
+    .eq('ws_id', wsId)
+    .single();
+
+  if (error || !data) {
+    // Return defaults if no settings exist
+    return {
+      break_enabled: false,
+      break_duration_minutes: 15,
+      break_interval_minutes: 90,
+    };
+  }
+
+  return {
+    break_enabled: data.break_enabled ?? false,
+    break_duration_minutes: data.break_duration_minutes ?? 15,
+    break_interval_minutes: data.break_interval_minutes ?? 90,
+  };
+}
 
 // ============================================================================
 // TYPES
@@ -73,18 +116,84 @@ export interface BumpedHabitEvent {
   originalEvent: ScheduledEvent;
 }
 
-export interface UnifiedScheduleResult {
+export type ScheduleResult = {
   habits: {
     events: HabitScheduleResult[];
     warnings: string[];
   };
   tasks: {
     events: TaskScheduleResult[];
-    bumpedHabitEvents: BumpedHabitEvent[];
+    bumpedHabits: BumpedHabitEvent[];
     warnings: string[];
+  };
+  summary: {
+    totalEvents: number;
+    habitsScheduled: number;
+    tasksScheduled: number;
+    bumpedHabits: number;
+    breaksScheduled?: number;
   };
   rescheduledHabits: HabitScheduleResult[];
   warnings: string[];
+  debugLogs: SchedulingLogEntry[];
+};
+
+export interface SchedulingLogEntry {
+  type: 'habit' | 'task' | 'info' | 'warning' | 'error';
+  message: string;
+  details?: any;
+  timestamp: number;
+  relatedId?: string;
+  relatedName?: string;
+}
+
+class SchedulingLogger {
+  private logs: SchedulingLogEntry[] = [];
+
+  log(
+    type: SchedulingLogEntry['type'],
+    message: string,
+    details?: any,
+    relatedId?: string,
+    relatedName?: string
+  ) {
+    this.logs.push({
+      type,
+      message,
+      details,
+      timestamp: Date.now(),
+      relatedId,
+      relatedName,
+    });
+
+    // Also log to console for server-side debugging
+    if (type === 'error') console.error(`[SmartSchedule] ${message}`, details);
+    else if (type === 'warning')
+      console.warn(`[SmartSchedule] ${message}`, details);
+    else console.log(`[SmartSchedule] ${message}`, details ? details : '');
+  }
+
+  warn(
+    message: string,
+    details?: any,
+    relatedId?: string,
+    relatedName?: string
+  ) {
+    this.log('warning', message, details, relatedId, relatedName);
+  }
+
+  error(
+    message: string,
+    details?: any,
+    relatedId?: string,
+    relatedName?: string
+  ) {
+    this.log('error', message, details, relatedId, relatedName);
+  }
+
+  getLogs() {
+    return this.logs;
+  }
 }
 
 interface OccupiedSlot {
@@ -148,10 +257,12 @@ class OccupiedSlotTracker {
 
   /**
    * Find habit events that can be bumped by a higher-priority task
+   * NEVER bumps ongoing events (start <= now < end)
    */
   findBumpableHabitEvents(
     taskPriority: TaskPriority,
-    beforeDate: Date
+    beforeDate: Date,
+    now: Date
   ): OccupiedSlot[] {
     return this.slots.filter((slot) => {
       // Only bump habit events
@@ -159,6 +270,9 @@ class OccupiedSlotTracker {
 
       // Only bump events before the deadline
       if (slot.start >= beforeDate) return false;
+
+      // NEVER bump ongoing events (user is currently doing this)
+      if (isSlotOngoing(slot.start, slot.end, now)) return false;
 
       // Only bump lower-priority habits
       const habitPriority = slot.priority || 'normal';
@@ -174,6 +288,14 @@ class OccupiedSlotTracker {
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
+
+/**
+ * Check if a time slot is currently ongoing
+ * A slot is ongoing if: start <= now < end
+ */
+function isSlotOngoing(start: Date, end: Date, now: Date): boolean {
+  return start <= now && now < end;
+}
 
 /**
  * Fetch all active habits with auto_schedule enabled
@@ -226,9 +348,10 @@ async function fetchSchedulableTasks(
 }
 
 /**
- * Fetch locked events (user-created, Google Calendar synced)
+ * Fetch ALL calendar events in the scheduling window as blocked time
+ * These are time slots that shouldn't be double-booked
  */
-async function fetchLockedEvents(
+async function fetchAllBlockedEvents(
   supabase: SupabaseClient,
   wsId: string,
   windowDays: number
@@ -237,16 +360,17 @@ async function fetchLockedEvents(
   const endDate = new Date(now);
   endDate.setDate(endDate.getDate() + windowDays);
 
+  // Fetch ALL existing calendar events in the window
+  // These are blocked time slots that shouldn't be double-booked
   const { data, error } = await supabase
     .from('workspace_calendar_events')
     .select('id, start_at, end_at')
     .eq('ws_id', wsId)
-    .eq('locked', true)
     .gt('end_at', now.toISOString())
     .lt('start_at', endDate.toISOString());
 
   if (error) {
-    console.error('Error fetching locked events:', error);
+    console.error('Error fetching blocked events:', error);
     return [];
   }
 
@@ -314,6 +438,9 @@ function findAvailableSlotsInDay(
   const slots: Array<{ start: Date; end: Date; maxAvailable: number }> = [];
 
   for (const block of timeBlocks) {
+    // Skip blocks with empty start/end times (prevents midnight scheduling bug)
+    if (!block.startTime || !block.endTime) continue;
+
     const [startHour, startMin] = block.startTime.split(':').map(Number);
     const [endHour, endMin] = block.endTime.split(':').map(Number);
 
@@ -429,7 +556,8 @@ async function scheduleHabitsPhase(
   habits: Habit[],
   hourSettings: HourSettings,
   occupiedSlots: OccupiedSlotTracker,
-  windowDays: number
+  windowDays: number,
+  logger: SchedulingLogger
 ): Promise<{
   events: HabitScheduleResult[];
   habitEventMap: Map<
@@ -457,6 +585,13 @@ async function scheduleHabitsPhase(
   rangeEnd.setDate(rangeEnd.getDate() + windowDays);
 
   for (const habit of sortedHabits) {
+    logger.log(
+      'habit',
+      `Scheduling habit: ${habit.name}`,
+      { habit },
+      habit.id,
+      habit.name
+    );
     // Get occurrences in the scheduling window
     const occurrences = getOccurrencesInRange(habit, now, rangeEnd);
 
@@ -474,7 +609,16 @@ async function scheduleHabitsPhase(
       const occurrenceDate = occurrence.toISOString().split('T')[0];
 
       // Skip already scheduled occurrences
-      if (scheduledDates.has(occurrenceDate)) continue;
+      if (scheduledDates.has(occurrenceDate)) {
+        logger.log(
+          'info',
+          `Habit "${habit.name}" on ${occurrenceDate} already scheduled, skipping.`,
+          null,
+          habit.id,
+          habit.name
+        );
+        continue;
+      }
 
       // Get duration bounds
       const { min: minDuration } = getEffectiveDurationBounds({
@@ -483,31 +627,109 @@ async function scheduleHabitsPhase(
         max_duration_minutes: habit.max_duration_minutes,
       });
 
-      // Find available slots for this occurrence date
+      // Find available slots
       const slots = findAvailableSlotsInDay(
         occurrence,
         hourSettings,
         habit.calendar_hours,
         occupiedSlots,
-        minDuration
+        minDuration || 15
       );
 
-      // Filter out past slots and find best slot based on habit time preferences
-      const futureSlots = filterFutureSlots(slots, now);
-      const bestSlot = findBestSlotForHabitAI(
-        convertHabitToConfig(habit),
-        futureSlots
-      );
-
-      if (!bestSlot) {
+      if (slots.length === 0) {
+        logger.log(
+          'warning',
+          `No slots found for ${habit.name} on ${occurrenceDate}`,
+          {
+            calendar_hours: habit.calendar_hours,
+            minDuration,
+            dayOfWeek: occurrence.getDay(),
+          },
+          habit.id,
+          habit.name
+        );
         warnings.push(
           `No available slot for habit "${habit.name}" on ${occurrenceDate}`
         );
         continue;
       }
 
+      // Filter out past slots and find best slot based on habit time preferences
+      const futureSlots = filterFutureSlots(slots, now);
+      const habitConfig = convertHabitToConfig(habit);
+      const bestSlot = findBestSlotForHabitAI(habitConfig, futureSlots);
+
+      if (!bestSlot) {
+        logger.log(
+          'warning',
+          `No suitable slot found for ${habit.name} on ${occurrenceDate} (min duration not met)`,
+          { slotsCount: futureSlots.length },
+          habit.id,
+          habit.name
+        );
+        warnings.push(
+          `No available slot for habit "${habit.name}" on ${occurrenceDate}`
+        );
+        continue;
+      }
+
+      // Check if ideal time was possible but missed
+      if (habit.ideal_time) {
+        const idealTimePossible = futureSlots.some((s) => {
+          // Simple check if ideal time string is within slot range
+          // This is a rough check for logging purposes
+          const [idealHour, idealMin] = habit
+            .ideal_time!.split(':')
+            .map(Number);
+          const idealTime = new Date(s.start);
+          idealTime.setHours(idealHour ?? 0, idealMin ?? 0, 0, 0);
+          return idealTime >= s.start && idealTime <= s.end;
+        });
+        if (!idealTimePossible) {
+          logger.log(
+            'warning',
+            `Ideal time ${habit.ideal_time} not possible in available slots for ${habit.name} on ${occurrenceDate}`,
+            { slots: futureSlots },
+            habit.id,
+            habit.name
+          );
+        }
+      }
+
+      // Debug logging for workout timing issue
+      if (habit.name.toLowerCase().includes('workout')) {
+        logger.log(
+          'info',
+          `Scheduling workout on ${occurrenceDate}`,
+          null,
+          habit.id,
+          habit.name
+        );
+        logger.log(
+          'info',
+          `Best slot: ${bestSlot.start.toISOString()} - ${bestSlot.end.toISOString()} (${bestSlot.maxAvailable}m)`,
+          null,
+          habit.id,
+          habit.name
+        );
+        logger.log(
+          'info',
+          `Habit preferences:`,
+          convertHabitToConfig(habit),
+          habit.id,
+          habit.name
+        );
+        logger.log(
+          'info',
+          `Ideal time: ${habit.ideal_time}, Preference: ${habit.time_preference}`,
+          null,
+          habit.id,
+          habit.name
+        );
+      }
+
       // Calculate optimal duration
-      const characteristics = getSlotCharacteristics(habit, {
+      const characteristics = getSlotCharacteristics(habitConfig, {
         start: bestSlot.start,
         end: bestSlot.end,
         maxAvailable: bestSlot.maxAvailable,
@@ -524,9 +746,28 @@ async function scheduleHabitsPhase(
       );
 
       if (duration === 0) {
+        logger.log(
+          'warning',
+          `Cannot fit habit "${habit.name}" on ${occurrenceDate} (duration 0)`,
+          null,
+          habit.id,
+          habit.name
+        );
         warnings.push(`Cannot fit habit "${habit.name}" on ${occurrenceDate}`);
         continue;
       }
+
+      logger.log(
+        'habit',
+        `Selected slot for ${habit.name}`,
+        {
+          slot: bestSlot,
+          characteristics,
+          score: scoreSlotForHabit(habitConfig, bestSlot),
+        },
+        habit.id,
+        habit.name
+      );
 
       // Calculate ideal start time within the slot based on habit preferences
       // This ensures habits don't all stack at the beginning of available blocks
@@ -544,8 +785,11 @@ async function scheduleHabitsPhase(
 
       // Safety check: Verify no conflict before scheduling
       if (occupiedSlots.hasConflict(idealStartTime, eventEnd)) {
-        console.warn(
-          `Conflict detected for habit "${habit.name}" at ${idealStartTime.toISOString()}-${eventEnd.toISOString()}, skipping`
+        logger.warn(
+          `Conflict detected for habit "${habit.name}" at ${idealStartTime.toISOString()}-${eventEnd.toISOString()}, skipping`,
+          null,
+          habit.id,
+          habit.name
         );
         warnings.push(
           `Could not schedule habit "${habit.name}" on ${occurrenceDate} due to conflict`
@@ -568,7 +812,12 @@ async function scheduleHabitsPhase(
         .single();
 
       if (eventError || !event) {
-        console.error('Error creating habit event:', eventError);
+        logger.error(
+          'Error creating habit event:',
+          eventError,
+          habit.id,
+          habit.name
+        );
         continue;
       }
 
@@ -583,7 +832,12 @@ async function scheduleHabitsPhase(
         });
 
       if (linkError) {
-        console.error('Error linking habit to event:', linkError);
+        logger.error(
+          'Error linking habit to event:',
+          linkError,
+          habit.id,
+          habit.name
+        );
         await supabase
           .from('workspace_calendar_events')
           .delete()
@@ -600,6 +854,14 @@ async function scheduleHabitsPhase(
         source_id: habit.id,
         occurrence_date: occurrenceDate || '',
       };
+
+      logger.log(
+        'habit',
+        `Successfully scheduled habit "${habit.name}" from ${idealStartTime.toISOString()} to ${eventEnd.toISOString()}`,
+        { event: scheduledEvent },
+        habit.id,
+        habit.name
+      );
 
       // Track the occupied slot
       occupiedSlots.add(scheduledEvent, habit.priority || 'normal');
@@ -638,7 +900,8 @@ async function scheduleTasksPhase(
     string,
     { habit: Habit; occurrence: Date; event: ScheduledEvent }
   >,
-  windowDays: number
+  windowDays: number,
+  logger: SchedulingLogger
 ): Promise<{
   events: TaskScheduleResult[];
   bumpedHabitEvents: BumpedHabitEvent[];
@@ -683,11 +946,25 @@ async function scheduleTasksPhase(
   const now = new Date();
 
   for (const task of sortedTasks) {
+    logger.log(
+      'task',
+      `Scheduling task: ${task.name}`,
+      { task },
+      task.id,
+      task.name
+    );
     const totalMinutes = (task.total_duration ?? 0) * 60;
     const scheduledMinutes = task.scheduled_minutes ?? 0;
     let remainingMinutes = totalMinutes - scheduledMinutes;
 
     if (remainingMinutes <= 0) {
+      logger.log(
+        'info',
+        `Task "${task.name}" already fully scheduled or has no duration.`,
+        null,
+        task.id,
+        task.name
+      );
       results.push({
         task,
         events: [],
@@ -723,6 +1000,13 @@ async function scheduleTasksPhase(
 
       // Respect task start date
       if (task.start_date && searchDate < new Date(task.start_date)) {
+        logger.log(
+          'info',
+          `Skipping ${searchDate.toISOString().split('T')[0]} for task "${task.name}" due to start_date constraint.`,
+          null,
+          task.id,
+          task.name
+        );
         continue;
       }
 
@@ -737,24 +1021,72 @@ async function scheduleTasksPhase(
 
       // If urgent and no slots, try to bump lower-priority habits
       if (taskIsUrgent && slots.length === 0 && task.end_date) {
+        logger.log(
+          'info',
+          `No slots for urgent task ${task.name} on ${searchDate.toISOString().split('T')[0]}, attempting to bump habits`,
+          null,
+          task.id,
+          task.name
+        );
         const deadline = new Date(task.end_date);
         const bumpable = occupiedSlots.findBumpableHabitEvents(
           taskPriority,
-          deadline
+          deadline,
+          now
         );
 
         for (const bumpableSlot of bumpable) {
           const habitInfo = habitEventMap.get(bumpableSlot.id);
           if (habitInfo) {
+            logger.log(
+              'info',
+              `Bumping habit "${habitInfo.habit.name}" for urgent task "${task.name}"`,
+              { bumpedSlot: bumpableSlot },
+              task.id,
+              task.name
+            );
             // Remove the bumped event
             occupiedSlots.remove(bumpableSlot.id);
 
-            // Delete from database
-            await supabase
+            // Also delete from DB to prevent ghosts
+            // Delete link first to avoid FK constraints
+            const { error: linkDeleteError } = await supabase
+              .from('habit_calendar_events')
+              .delete()
+              .eq('event_id', bumpableSlot.id);
+
+            if (linkDeleteError) {
+              logger.error(
+                'Error deleting bumped habit link:',
+                linkDeleteError,
+                task.id,
+                task.name
+              );
+            }
+
+            const { error: eventDeleteError } = await supabase
               .from('workspace_calendar_events')
               .delete()
               .eq('id', bumpableSlot.id);
 
+            if (eventDeleteError) {
+              logger.error(
+                'Error deleting bumped habit event:',
+                eventDeleteError,
+                task.id,
+                task.name
+              );
+            } else {
+              logger.log(
+                'info',
+                `Successfully deleted bumped habit event ${bumpableSlot.id}`,
+                null,
+                task.id,
+                task.name
+              );
+            }
+
+            // Track bumped habit for rescheduling
             bumpedHabitEvents.push({
               habit: habitInfo.habit,
               occurrence: habitInfo.occurrence,
@@ -767,7 +1099,7 @@ async function scheduleTasksPhase(
           }
         }
 
-        // Retry finding slots
+        // Retry finding slots after bumping
         slots = findAvailableSlotsInDay(
           searchDate,
           hourSettings,
@@ -780,6 +1112,17 @@ async function scheduleTasksPhase(
       // Filter to future slots only (can't schedule in the past)
       const futureSlots = filterFutureSlots(slots, now);
 
+      if (futureSlots.length === 0) {
+        logger.log(
+          'warning',
+          `No future slots found for ${task.name} on ${searchDate.toISOString().split('T')[0]}`,
+          null,
+          task.id,
+          task.name
+        );
+        continue;
+      }
+
       // Create task config for smart slot selection
       const taskConfig: TaskSlotConfig = {
         deadline: task.end_date ? new Date(task.end_date) : null,
@@ -791,14 +1134,34 @@ async function scheduleTasksPhase(
       // This ensures tasks don't all stack at 7am
       while (remainingMinutes > 0 && futureSlots.length > 0) {
         // Find the best slot for this task based on deadline and priority
-        const bestSlot = findBestSlotForTaskAI(
+        const bestSlot = findBestSlotForTask(
           taskConfig,
           futureSlots,
           minDuration,
           now
         );
 
-        if (!bestSlot) break;
+        if (!bestSlot) {
+          logger.log(
+            'warning',
+            `No suitable slot found for ${task.name} (min duration not met) on ${searchDate.toISOString().split('T')[0]}`,
+            { slotsCount: futureSlots.length },
+            task.id,
+            task.name
+          );
+          break;
+        }
+
+        logger.log(
+          'task',
+          `Selected slot for ${task.name}`,
+          {
+            slot: bestSlot,
+            score: scoreSlotForTask(taskConfig, bestSlot, now),
+          },
+          task.id,
+          task.name
+        );
 
         // Calculate duration for this event
         let eventDuration = Math.min(
@@ -812,6 +1175,13 @@ async function scheduleTasksPhase(
         );
 
         if (eventDuration < minDuration && remainingMinutes >= minDuration) {
+          logger.log(
+            'info',
+            `Best slot for ${task.name} is too small (${eventDuration}m) for min duration (${minDuration}m), removing slot.`,
+            { bestSlot },
+            task.id,
+            task.name
+          );
           // Remove this slot as it's too small
           const slotIndex = futureSlots.indexOf(bestSlot);
           if (slotIndex > -1) futureSlots.splice(slotIndex, 1);
@@ -833,12 +1203,26 @@ async function scheduleTasksPhase(
         // Check if scheduled after deadline
         if (task.end_date && eventEnd > new Date(task.end_date)) {
           scheduledAfterDeadline = true;
+          logger.log(
+            'warning',
+            `Task "${task.name}" event scheduled after deadline.`,
+            {
+              eventStart: idealStartTime,
+              eventEnd: eventEnd,
+              deadline: task.end_date,
+            },
+            task.id,
+            task.name
+          );
         }
 
         // Safety check: Verify no conflict before scheduling
         if (occupiedSlots.hasConflict(idealStartTime, eventEnd)) {
-          console.warn(
-            `Conflict detected for task "${task.name}" at ${idealStartTime.toISOString()}-${eventEnd.toISOString()}, skipping slot`
+          logger.warn(
+            `Conflict detected for task "${task.name}" at ${idealStartTime.toISOString()}-${eventEnd.toISOString()}, skipping slot`,
+            null,
+            task.id,
+            task.name
           );
           const slotIndex = futureSlots.indexOf(bestSlot);
           if (slotIndex > -1) futureSlots.splice(slotIndex, 1);
@@ -848,6 +1232,15 @@ async function scheduleTasksPhase(
         // Determine event title
         const totalParts = Math.ceil(totalMinutes / maxDuration);
         const partNumber = taskEvents.length + 1;
+
+        logger.log(
+          'info',
+          `Task "${task.name}": Part ${partNumber}/${totalParts} (Total: ${totalMinutes}m, Max: ${maxDuration}m)`,
+          null,
+          task.id,
+          task.name
+        );
+
         const eventTitle =
           totalParts > 1
             ? `${task.name || 'Task'} (${partNumber}/${totalParts})`
@@ -868,7 +1261,12 @@ async function scheduleTasksPhase(
           .single();
 
         if (eventError || !event) {
-          console.error('Error creating task event:', eventError);
+          logger.error(
+            'Error creating task event:',
+            eventError,
+            task.id,
+            task.name
+          );
           // Remove this slot to avoid infinite loop
           const slotIndex = futureSlots.indexOf(bestSlot);
           if (slotIndex > -1) futureSlots.splice(slotIndex, 1);
@@ -884,7 +1282,7 @@ async function scheduleTasksPhase(
             completed: false,
           });
         } catch (e) {
-          console.error('Error linking task to event:', e);
+          logger.error('Error linking task to event:', e, task.id, task.name);
         }
 
         const scheduledEvent: ScheduledEvent = {
@@ -896,6 +1294,14 @@ async function scheduleTasksPhase(
           source_id: task.id,
           scheduled_minutes: eventDuration,
         };
+
+        logger.log(
+          'task',
+          `Successfully scheduled task "${task.name}" part ${partNumber} from ${idealStartTime.toISOString()} to ${eventEnd.toISOString()}`,
+          { event: scheduledEvent },
+          task.id,
+          task.name
+        );
 
         occupiedSlots.add(scheduledEvent, taskPriority);
         taskEvents.push(scheduledEvent);
@@ -955,13 +1361,29 @@ async function rescheduleBumpedHabits(
   wsId: string,
   bumpedEvents: BumpedHabitEvent[],
   hourSettings: HourSettings,
-  occupiedSlots: OccupiedSlotTracker
+  occupiedSlots: OccupiedSlotTracker,
+  logger: SchedulingLogger
 ): Promise<HabitScheduleResult[]> {
   const results: HabitScheduleResult[] = [];
   const now = new Date();
 
+  if (bumpedEvents.length > 0) {
+    logger.log(
+      'info',
+      `Attempting to reschedule ${bumpedEvents.length} bumped habits.`,
+      { bumpedEventsCount: bumpedEvents.length }
+    );
+  }
+
   for (const bumped of bumpedEvents) {
-    const { habit, occurrence } = bumped;
+    const { habit, occurrence, originalEvent } = bumped;
+    logger.log(
+      'habit',
+      `Rescheduling bumped habit: ${habit.name} (original event: ${originalEvent.id})`,
+      { habit, originalEvent },
+      habit.id,
+      habit.name
+    );
 
     const { min: minDuration } = getEffectiveDurationBounds({
       duration_minutes: habit.duration_minutes,
@@ -990,17 +1412,20 @@ async function rescheduleBumpedHabits(
 
     // Filter out past slots and find best slot based on habit time preferences
     const futureSlots = filterFutureSlots(allSlots, now);
-    const bestSlot = findBestSlotForHabitAI(
-      convertHabitToConfig(habit),
-      futureSlots
-    );
+    const habitConfig = convertHabitToConfig(habit);
+    const bestSlot = findBestSlotForHabitAI(habitConfig, futureSlots);
 
     if (!bestSlot) {
-      console.warn(`Could not reschedule bumped habit "${habit.name}"`);
+      logger.warn(
+        `Could not reschedule bumped habit "${habit.name}" - no suitable slot found.`,
+        null,
+        habit.id,
+        habit.name
+      );
       continue;
     }
 
-    const characteristics = getSlotCharacteristics(habit, {
+    const characteristics = getSlotCharacteristics(habitConfig, {
       start: bestSlot.start,
       end: bestSlot.end,
       maxAvailable: bestSlot.maxAvailable,
@@ -1016,7 +1441,15 @@ async function rescheduleBumpedHabits(
       characteristics
     );
 
-    if (duration === 0) continue;
+    if (duration === 0) {
+      logger.warn(
+        `Could not reschedule bumped habit "${habit.name}" - duration calculated as 0.`,
+        null,
+        habit.id,
+        habit.name
+      );
+      continue;
+    }
 
     // Calculate ideal start time within the slot based on habit preferences
     // Pass `now` to ensure we don't schedule before current time
@@ -1032,8 +1465,11 @@ async function rescheduleBumpedHabits(
 
     // Safety check: Verify no conflict before scheduling
     if (occupiedSlots.hasConflict(idealStartTime, eventEnd)) {
-      console.warn(
-        `Conflict detected for rescheduled habit "${habit.name}" at ${idealStartTime.toISOString()}-${eventEnd.toISOString()}, skipping`
+      logger.warn(
+        `Conflict detected for rescheduled habit "${habit.name}" at ${idealStartTime.toISOString()}-${eventEnd.toISOString()}, skipping`,
+        null,
+        habit.id,
+        habit.name
       );
       continue;
     }
@@ -1055,7 +1491,12 @@ async function rescheduleBumpedHabits(
       .single();
 
     if (eventError || !event) {
-      console.error('Error creating rescheduled habit event:', eventError);
+      logger.error(
+        'Error creating rescheduled habit event:',
+        eventError,
+        habit.id,
+        habit.name
+      );
       continue;
     }
 
@@ -1077,6 +1518,14 @@ async function rescheduleBumpedHabits(
       occurrence_date: occurrenceDate || '',
     };
 
+    logger.log(
+      'habit',
+      `Successfully rescheduled bumped habit "${habit.name}" from ${idealStartTime.toISOString()} to ${eventEnd.toISOString()}`,
+      { event: scheduledEvent },
+      habit.id,
+      habit.name
+    );
+
     occupiedSlots.add(scheduledEvent, habit.priority || 'normal');
 
     results.push({
@@ -1088,6 +1537,135 @@ async function rescheduleBumpedHabits(
   }
 
   return results;
+}
+
+// ============================================================================
+// UNIVERSAL BREAKS SCHEDULING
+// ============================================================================
+
+/**
+ * Schedule universal breaks based on workspace settings
+ *
+ * This function analyzes the scheduled events and inserts break events
+ * after periods of continuous work that exceed the configured interval.
+ *
+ * @returns Number of break events created
+ */
+async function scheduleUniversalBreaks(
+  supabase: SupabaseClient,
+  wsId: string,
+  breakSettings: WorkspaceBreakSettings,
+  occupiedSlots: OccupiedSlotTracker,
+  windowDays: number,
+  logger: SchedulingLogger
+): Promise<number> {
+  const { break_duration_minutes, break_interval_minutes } = breakSettings;
+
+  // Get all scheduled events (habits and tasks) sorted by start time
+  const allSlots = occupiedSlots
+    .getAll()
+    .filter((slot) => slot.type === 'habit' || slot.type === 'task')
+    .sort((a, b) => a.start.getTime() - b.start.getTime());
+
+  if (allSlots.length === 0) {
+    logger.log('info', 'No scheduled events found, skipping break scheduling');
+    return 0;
+  }
+
+  const now = new Date();
+  const endDate = new Date(now);
+  endDate.setDate(endDate.getDate() + windowDays);
+
+  let breaksCreated = 0;
+  let cumulativeWorkMinutes = 0;
+  let lastEventEnd: Date | null = null;
+
+  for (const slot of allSlots) {
+    // Skip past events
+    if (slot.end <= now) continue;
+
+    // If there's a gap of more than 30 minutes, reset cumulative work time
+    // (user likely took an organic break)
+    if (lastEventEnd) {
+      const gapMinutes =
+        (slot.start.getTime() - lastEventEnd.getTime()) / (1000 * 60);
+      if (gapMinutes >= 30) {
+        cumulativeWorkMinutes = 0;
+      }
+    }
+
+    // Calculate work duration for this event
+    const eventDuration =
+      (slot.end.getTime() - slot.start.getTime()) / (1000 * 60);
+    cumulativeWorkMinutes += eventDuration;
+
+    // Check if we've exceeded the break interval
+    if (cumulativeWorkMinutes >= break_interval_minutes) {
+      // Schedule a break after this event
+      const breakStart = new Date(slot.end);
+      const breakEnd = new Date(breakStart);
+      breakEnd.setMinutes(breakEnd.getMinutes() + break_duration_minutes);
+
+      // Only schedule if the break doesn't conflict with existing events
+      if (!occupiedSlots.hasConflict(breakStart, breakEnd)) {
+        const { data: breakEvent, error: breakEventError } = await supabase
+          .from('workspace_calendar_events')
+          .insert({
+            ws_id: wsId,
+            title: 'Break',
+            description: `Scheduled break after ${Math.round(cumulativeWorkMinutes)} minutes of work`,
+            start_at: breakStart.toISOString(),
+            end_at: breakEnd.toISOString(),
+            color: 'GRAY',
+          })
+          .select()
+          .single();
+
+        if (!breakEventError && breakEvent) {
+          logger.log('info', `Scheduled universal break`, {
+            start: breakStart.toISOString(),
+            end: breakEnd.toISOString(),
+            afterWorkMinutes: cumulativeWorkMinutes,
+          });
+
+          // Add break to occupied slots
+          occupiedSlots.add(
+            {
+              id: breakEvent.id,
+              title: 'Break',
+              start_at: breakStart.toISOString(),
+              end_at: breakEnd.toISOString(),
+              type: 'habit', // Using 'habit' type for breaks to avoid conflicts
+              source_id: 'universal-break',
+            },
+            'normal'
+          );
+
+          breaksCreated++;
+          cumulativeWorkMinutes = 0; // Reset after scheduling a break
+        } else {
+          logger.warn('Failed to create break event', {
+            error: breakEventError,
+          });
+        }
+      } else {
+        logger.log(
+          'info',
+          'Skipped break due to conflict with existing event',
+          {
+            breakStart: breakStart.toISOString(),
+            breakEnd: breakEnd.toISOString(),
+          }
+        );
+        // Reset anyway since user has something else scheduled (implicit break)
+        cumulativeWorkMinutes = 0;
+      }
+    }
+
+    lastEventEnd = slot.end;
+  }
+
+  return breaksCreated;
 }
 
 // ============================================================================
@@ -1109,31 +1687,58 @@ export async function scheduleWorkspace(
     windowDays?: number;
     forceReschedule?: boolean;
   } = {}
-): Promise<UnifiedScheduleResult> {
+): Promise<ScheduleResult> {
   const { windowDays = 30, forceReschedule = false } = options;
 
+  const logger = new SchedulingLogger();
+  logger.log('info', 'Starting Smart Schedule', {
+    windowDays,
+    forceReschedule,
+  });
+
   // 1. Fetch all scheduling context in parallel
-  const [hourSettings, lockedEvents, habits, tasks] = await Promise.all([
-    fetchHourSettings(supabase, wsId),
-    fetchLockedEvents(supabase, wsId, windowDays),
-    fetchSchedulableHabits(supabase, wsId),
-    fetchSchedulableTasks(supabase, wsId),
-  ]);
+  const [hourSettings, blockedEvents, habits, tasks, breakSettings] =
+    await Promise.all([
+      fetchHourSettings(supabase, wsId),
+      fetchAllBlockedEvents(supabase, wsId, windowDays),
+      fetchSchedulableHabits(supabase, wsId),
+      fetchSchedulableTasks(supabase, wsId),
+      fetchWorkspaceBreakSettings(supabase, wsId),
+    ]);
+  logger.log('info', 'Fetched initial data', {
+    habitsCount: habits.length,
+    tasksCount: tasks.length,
+    blockedEventsCount: blockedEvents.length,
+    breakSettings,
+  });
 
-  // 2. Build occupied slots from locked events
-  const occupiedSlots = new OccupiedSlotTracker(lockedEvents);
+  // 2. Build occupied slots from ALL existing calendar events
+  // This ensures no double-booking of any time slots
+  const occupiedSlots = new OccupiedSlotTracker(blockedEvents);
+  logger.log(
+    'info',
+    `OccupiedSlotTracker initialized with ${blockedEvents.length} blocked events.`
+  );
 
-  // 3. If force reschedule, delete auto-scheduled events that haven't ended yet
+  // 3. If force reschedule, delete auto-scheduled events that haven't started yet
+  // IMPORTANT: We preserve ongoing events (start_at <= now < end_at) since user may be in the middle of them
   if (forceReschedule) {
+    logger.log(
+      'info',
+      'Force reschedule enabled, deleting future auto-scheduled events.'
+    );
     const now = new Date();
+    let deletedHabitEventsCount = 0;
+    let deletedTaskEventsCount = 0;
 
-    // Delete habit events that haven't ended (including today's past-start events)
+    // Delete habit events that haven't started yet (NOT ongoing ones)
+    // Only delete where start_at > now (future events that haven't begun)
     for (const habit of habits) {
       const { data: futureLinks } = await supabase
         .from('habit_calendar_events')
-        .select('event_id, workspace_calendar_events!inner(end_at)')
+        .select('event_id, workspace_calendar_events!inner(start_at)')
         .eq('habit_id', habit.id)
-        .gt('workspace_calendar_events.end_at', now.toISOString());
+        .gt('workspace_calendar_events.start_at', now.toISOString());
 
       if (futureLinks && futureLinks.length > 0) {
         const eventIds = futureLinks.map((l) => l.event_id);
@@ -1141,38 +1746,74 @@ export async function scheduleWorkspace(
           .from('workspace_calendar_events')
           .delete()
           .in('id', eventIds);
+        deletedHabitEventsCount += eventIds.length;
+        logger.log(
+          'info',
+          `Deleted ${eventIds.length} future habit events for habit "${habit.name}".`,
+          null,
+          habit.id,
+          habit.name
+        );
       }
     }
 
-    // Delete task events that haven't ended (including today's past-start events)
+    // Delete task events that haven't started yet (NOT ongoing ones)
+    // Only delete where start_at > now (future events that haven't begun)
     for (const task of tasks) {
       const { data: futureLinks } = await supabase
         .from('task_calendar_events')
-        .select('event_id, workspace_calendar_events!inner(end_at)')
+        .select('event_id, workspace_calendar_events!inner(start_at)')
         .eq('task_id', task.id)
-        .gt('workspace_calendar_events.end_at', now.toISOString());
+        .gt('workspace_calendar_events.start_at', now.toISOString());
 
       if (futureLinks && futureLinks.length > 0) {
         const eventIds = futureLinks.map((l) => l.event_id);
+        logger.log(
+          'info',
+          `Deleting ${eventIds.length} future events for task ${task.name}`,
+          null,
+          task.id,
+          task.name
+        );
         await supabase
           .from('workspace_calendar_events')
           .delete()
           .in('id', eventIds);
+        deletedTaskEventsCount += eventIds.length;
+      } else {
+        logger.log(
+          'info',
+          `No future events found for task ${task.name} (start > ${now.toISOString()})`,
+          null,
+          task.id,
+          task.name
+        );
       }
     }
+    logger.log(
+      'info',
+      `Force reschedule complete. Deleted ${deletedHabitEventsCount} habit events and ${deletedTaskEventsCount} task events.`
+    );
   }
 
   // 4. PHASE 1: Schedule habits (priority order)
+  logger.log('info', `Scheduling ${habits.length} habits`);
   const habitResults = await scheduleHabitsPhase(
     supabase,
     wsId,
     habits,
     hourSettings,
     occupiedSlots,
-    windowDays
+    windowDays,
+    logger
+  );
+  logger.log(
+    'info',
+    `Habit scheduling phase complete. Scheduled ${habitResults.events.length} events.`
   );
 
   // 5. PHASE 2: Schedule tasks (deadline-priority order)
+  logger.log('info', `Scheduling ${tasks.length} tasks`);
   const taskResults = await scheduleTasksPhase(
     supabase,
     wsId,
@@ -1180,7 +1821,12 @@ export async function scheduleWorkspace(
     hourSettings,
     occupiedSlots,
     habitResults.habitEventMap,
-    windowDays
+    windowDays,
+    logger
+  );
+  logger.log(
+    'info',
+    `Task scheduling phase complete. Scheduled ${taskResults.events.length} events, bumped ${taskResults.bumpedHabitEvents.length} habits.`
   );
 
   // 6. Reschedule bumped habits
@@ -1189,8 +1835,24 @@ export async function scheduleWorkspace(
     wsId,
     taskResults.bumpedHabitEvents,
     hourSettings,
-    occupiedSlots
+    occupiedSlots,
+    logger
   );
+
+  // 7. PHASE 3: Schedule universal breaks based on workspace settings
+  let breaksScheduled = 0;
+  if (breakSettings.break_enabled) {
+    logger.log('info', 'Scheduling universal breaks', { breakSettings });
+    breaksScheduled = await scheduleUniversalBreaks(
+      supabase,
+      wsId,
+      breakSettings,
+      occupiedSlots,
+      windowDays,
+      logger
+    );
+    logger.log('info', `Scheduled ${breaksScheduled} break events`);
+  }
 
   return {
     habits: {
@@ -1199,10 +1861,21 @@ export async function scheduleWorkspace(
     },
     tasks: {
       events: taskResults.events,
-      bumpedHabitEvents: taskResults.bumpedHabitEvents,
+      bumpedHabits: taskResults.bumpedHabitEvents,
       warnings: taskResults.warnings,
+    },
+    summary: {
+      totalEvents:
+        habitResults.events.length +
+        taskResults.events.length +
+        breaksScheduled,
+      habitsScheduled: habitResults.events.length,
+      tasksScheduled: taskResults.events.length,
+      bumpedHabits: taskResults.bumpedHabitEvents.length,
+      breaksScheduled,
     },
     rescheduledHabits,
     warnings: [...habitResults.warnings, ...taskResults.warnings],
+    debugLogs: logger.getLogs(),
   };
 }

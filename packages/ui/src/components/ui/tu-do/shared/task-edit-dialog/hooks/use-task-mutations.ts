@@ -15,18 +15,8 @@ export interface SchedulingSettings {
   autoSchedule: boolean;
 }
 
-export interface ScheduledCalendarEvent {
-  id: string;
-  title: string;
-  start_at: string;
-  end_at: string;
-  scheduled_minutes: number;
-  completed: boolean;
-}
-
 export interface UseTaskMutationsProps {
   taskId?: string;
-  wsId: string;
   isCreateMode: boolean;
   boardId: string;
   estimationPoints: number | null;
@@ -39,7 +29,6 @@ export interface UseTaskMutationsProps {
   setEndDate: (value: Date | undefined) => void;
   setSelectedListId: (value: string) => void;
   onUpdate: () => void;
-  onCalendarEventsUpdate?: (events: ScheduledCalendarEvent[]) => void;
 }
 
 export interface UseTaskMutationsReturn {
@@ -62,7 +51,6 @@ const supabase = createClient();
  */
 export function useTaskMutations({
   taskId,
-  wsId,
   isCreateMode,
   boardId,
   estimationPoints,
@@ -75,7 +63,6 @@ export function useTaskMutations({
   setEndDate,
   setSelectedListId,
   onUpdate,
-  onCalendarEventsUpdate,
 }: UseTaskMutationsProps): UseTaskMutationsReturn {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -288,92 +275,12 @@ export function useTaskMutations({
 
         await invalidateTaskCaches(queryClient, boardId);
 
-        // Auto-schedule if enabled and has duration
-        if (
-          settings.autoSchedule &&
-          settings.totalDuration &&
-          settings.totalDuration > 0 &&
-          wsId
-        ) {
-          try {
-            const scheduleResponse = await fetch(
-              `/api/v1/workspaces/${wsId}/tasks/${taskId}/schedule`,
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-              }
-            );
-            const scheduleData = await scheduleResponse.json();
-
-            if (scheduleResponse.ok) {
-              toast({
-                title: 'Task auto-scheduled',
-                description: scheduleData.message || 'Calendar events created',
-              });
-
-              // Show warning if scheduled past deadline
-              if (scheduleData.warning) {
-                toast({
-                  title: 'Scheduling warning',
-                  description: scheduleData.warning,
-                  variant: 'destructive',
-                });
-              }
-
-              // Fetch updated events and notify parent
-              if (onCalendarEventsUpdate) {
-                try {
-                  const eventsResponse = await fetch(
-                    `/api/v1/workspaces/${wsId}/tasks/${taskId}/schedule`
-                  );
-                  if (eventsResponse.ok) {
-                    const eventsData = await eventsResponse.json();
-                    if (eventsData.events && Array.isArray(eventsData.events)) {
-                      onCalendarEventsUpdate(
-                        eventsData.events.map(
-                          (e: {
-                            id: string;
-                            title: string;
-                            start_at: string;
-                            end_at: string;
-                            scheduled_minutes: number;
-                            completed: boolean;
-                          }) => ({
-                            id: e.id,
-                            title: e.title,
-                            start_at: e.start_at,
-                            end_at: e.end_at,
-                            scheduled_minutes: e.scheduled_minutes,
-                            completed: e.completed,
-                          })
-                        )
-                      );
-                    }
-                  }
-                } catch (fetchError) {
-                  console.error('Failed to fetch updated events:', fetchError);
-                }
-              }
-            } else {
-              toast({
-                title: 'Settings saved',
-                description:
-                  scheduleData.error || 'Auto-scheduling could not complete',
-              });
-            }
-          } catch (scheduleError) {
-            console.error('Auto-schedule failed:', scheduleError);
-            toast({
-              title: 'Settings saved',
-              description: 'Auto-scheduling could not complete',
-            });
-          }
-        } else {
-          toast({
-            title: 'Scheduling settings saved',
-            description: 'Task scheduling configuration has been updated.',
-          });
-        }
+        // Note: Auto-scheduling is handled by the Smart Schedule button in Calendar
+        // Settings are saved here; the unified scheduler will use them when triggered
+        toast({
+          title: 'Scheduling settings saved',
+          description: 'Task scheduling configuration has been updated.',
+        });
 
         onUpdate();
         return true;
@@ -389,16 +296,7 @@ export function useTaskMutations({
         setSchedulingSaving(false);
       }
     },
-    [
-      isCreateMode,
-      taskId,
-      wsId,
-      queryClient,
-      boardId,
-      toast,
-      onUpdate,
-      onCalendarEventsUpdate,
-    ]
+    [isCreateMode, taskId, queryClient, boardId, toast, onUpdate]
   );
 
   return {

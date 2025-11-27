@@ -102,7 +102,7 @@ export async function POST(
     const eventsCreated =
       result.habits.events.length +
       result.tasks.events.reduce((sum, t) => sum + t.events.length, 0);
-    const bumpedHabits = result.tasks.bumpedHabitEvents.length;
+    const bumpedHabits = result.tasks.bumpedHabits.length;
     const rescheduledHabits = result.rescheduledHabits.length;
 
     // Update scheduling metadata
@@ -167,7 +167,7 @@ export async function POST(
             scheduled_minutes: e.scheduled_minutes,
           })),
         })),
-        bumpedHabits: result.tasks.bumpedHabitEvents.map((b) => ({
+        bumpedHabits: result.tasks.bumpedHabits.map((b) => ({
           habitId: b.habit.id,
           habitName: b.habit.name,
           occurrence: b.occurrence.toISOString().split('T')[0],

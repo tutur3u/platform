@@ -95,7 +95,6 @@ export const CalendarContent = ({
   disabled,
   workspace,
   enableHeader = true,
-  experimentalGoogleToken,
   externalState,
   extras,
 }: {
@@ -426,7 +425,14 @@ export const CalendarContent = ({
       newDate.setHours(0, 0, 0, 0);
       setDates([newDate]);
     }
-  }, [date, locale, view, settings, setDates]);
+  }, [
+    date,
+    locale,
+    view,
+    settings?.appearance?.showWeekends,
+    settings?.appearance?.firstDayOfWeek,
+    setDates,
+  ]);
 
   // Set initial view based on screen size
   useEffect(() => {

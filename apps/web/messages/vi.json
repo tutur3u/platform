@@ -7473,5 +7473,23 @@
     "loading_workspaces": "Đang tải không gian làm việc...",
     "personal": "Cá Nhân",
     "current_theme": "Hiện tại"
+  },
+  "breaks": {
+    "take_a_break_after": "Nghỉ ngơi sau khi hoàn thành",
+    "schedule_break_description": "Lên lịch nghỉ ngơi sau khi hoàn thành",
+    "break_duration": "Thời gian nghỉ",
+    "break_interval_hint": "Thời gian nghỉ được tính theo bội số 15 phút",
+    "scheduled_break": "Giờ nghỉ đã lên lịch",
+    "break_after": "Nghỉ ngơi sau {name}",
+    "options": {
+      "15": "15 phút",
+      "30": "30 phút",
+      "45": "45 phút",
+      "60": "1 giờ",
+      "75": "1 giờ 15 phút",
+      "90": "1 giờ 30 phút",
+      "105": "1 giờ 45 phút",
+      "120": "2 giờ"
+    }
   }
 }

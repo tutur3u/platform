@@ -596,7 +596,6 @@ export function TaskEditDialog({
     schedulingSaving,
   } = useTaskMutations({
     taskId: task?.id,
-    wsId,
     isCreateMode,
     boardId,
     estimationPoints: estimationPoints ?? null,
@@ -609,7 +608,6 @@ export function TaskEditDialog({
     setEndDate,
     setSelectedListId,
     onUpdate,
-    onCalendarEventsUpdate: setLocalCalendarEvents,
   });
 
   const {
@@ -1002,43 +1000,8 @@ export function TaskEditDialog({
           }
         }
 
-        // Auto-schedule the task if autoSchedule is enabled and duration is set
-        if (autoSchedule && totalDuration && totalDuration > 0) {
-          try {
-            const scheduleResponse = await fetch(
-              `/api/v1/workspaces/${wsId}/tasks/${newTask.id}/schedule`,
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-              }
-            );
-            if (scheduleResponse.ok) {
-              const scheduleData = await scheduleResponse.json();
-              toast({
-                title: 'Task scheduled',
-                description:
-                  scheduleData.message ||
-                  `Created ${scheduleData.events?.length || 0} calendar event(s)`,
-              });
-            } else {
-              const errorData = await scheduleResponse.json().catch(() => ({}));
-              console.error('Error scheduling task:', errorData);
-              toast({
-                title: 'Scheduling failed',
-                description:
-                  errorData.error || 'Task created but could not be scheduled',
-                variant: 'destructive',
-              });
-            }
-          } catch (scheduleError) {
-            console.error('Error auto-scheduling task:', scheduleError);
-            toast({
-              title: 'Scheduling failed',
-              description: 'Task created but could not be scheduled',
-              variant: 'destructive',
-            });
-          }
-        }
+        // Note: Auto-scheduling is handled by the Smart Schedule button in Calendar
+        // The autoSchedule flag is saved to the task for the unified scheduler to use
 
         await invalidateTaskCaches(queryClient, boardId);
         toast({ title: 'Task created', description: 'New task added.' });
@@ -1165,7 +1128,6 @@ export function TaskEditDialog({
     selectedProjects,
     queryClient,
     boardId,
-    wsId,
     toast,
     onUpdate,
     createMultiple,
@@ -1191,74 +1153,7 @@ export function TaskEditDialog({
     autoSchedule,
   ]);
 
-  // Handle scheduling task on calendar
-  const handleScheduleTask = useCallback(async () => {
-    if (!task?.id || isCreateMode) return;
-
-    try {
-      // 1. Schedule the task (creates events)
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks/${task.id}/schedule`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to schedule task');
-      }
-
-      // 2. Fetch updated scheduling data with events
-      const scheduleResponse = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks/${task.id}/schedule`
-      );
-      const scheduleData = await scheduleResponse.json();
-
-      // 3. Update local calendar events state
-      if (scheduleData.events && Array.isArray(scheduleData.events)) {
-        setLocalCalendarEvents(
-          scheduleData.events.map(
-            (e: {
-              id: string;
-              title: string;
-              start_at: string;
-              end_at: string;
-              scheduled_minutes: number;
-              completed: boolean;
-            }) => ({
-              id: e.id,
-              title: e.title,
-              start_at: e.start_at,
-              end_at: e.end_at,
-              scheduled_minutes: e.scheduled_minutes,
-              completed: e.completed,
-            })
-          )
-        );
-      }
-
-      toast({
-        title: 'Task scheduled',
-        description:
-          data.message ||
-          `Created ${data.events?.length || 0} calendar event(s)`,
-      });
-
-      // Refresh task data in background
-      await invalidateTaskCaches(queryClient, boardId);
-      onUpdate();
-    } catch (error: any) {
-      console.error('Error scheduling task:', error);
-      toast({
-        title: 'Failed to schedule task',
-        description: error.message || 'Please try again later',
-        variant: 'destructive',
-      });
-    }
-  }, [task?.id, isCreateMode, wsId, boardId, queryClient, toast, onUpdate]);
+  // Note: Manual scheduling removed - handled by Smart Schedule button in Calendar
 
   const handleClose = useCallback(async () => {
     // Check if we're in collaboration mode and not synced - show warning
@@ -2449,7 +2344,6 @@ export function TaskEditDialog({
                   onMaxSplitDurationChange={setMaxSplitDurationMinutes}
                   onCalendarHoursChange={setCalendarHours}
                   onAutoScheduleChange={setAutoSchedule}
-                  onScheduleTask={handleScheduleTask}
                   isCreateMode={isCreateMode}
                   savedSchedulingSettings={
                     task
