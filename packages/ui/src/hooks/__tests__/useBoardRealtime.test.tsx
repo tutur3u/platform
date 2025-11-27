@@ -268,9 +268,10 @@ describe('useBoardRealtime', () => {
 
       const taskListenerCalls = vi
         .mocked(mockChannel.on)
-        .mock.calls.filter(
-          (call) => call[1] && (call[1] as any).table === 'tasks'
-        );
+        .mock.calls.filter((call: unknown[]) => {
+          const config = call[1] as any;
+          return config && config.table === 'tasks';
+        });
       expect(taskListenerCalls).toHaveLength(0);
     });
 
@@ -794,6 +795,262 @@ describe('useBoardRealtime', () => {
       expect(mockChannel.on.mock.calls.length).toBeGreaterThan(
         initialCallCount
       );
+    });
+  });
+
+  describe('workspace_task_labels listener', () => {
+    it('should set up listener for workspace_task_labels table', () => {
+      renderHook(
+        () =>
+          useBoardRealtime('board-1', ['task-1'], ['list-1'], {
+            enabled: true,
+          }),
+        { wrapper }
+      );
+
+      expect(mockChannel.on).toHaveBeenCalledWith(
+        'postgres_changes',
+        expect.objectContaining({
+          event: '*',
+          schema: 'public',
+          table: 'workspace_task_labels',
+        }),
+        expect.any(Function)
+      );
+    });
+
+    it('should invalidate queries when workspace label affects board tasks', async () => {
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+      // Mock task_labels query to return linked tasks
+      mockCreateClient.mockReturnValue({
+        channel: vi.fn(() => mockChannel),
+        removeChannel: mockRemoveChannel,
+        from: vi.fn((table: string) => {
+          if (table === 'task_labels') {
+            return {
+              select: vi.fn(() => ({
+                eq: vi.fn(() => ({
+                  single: vi.fn(),
+                  data: [{ task_id: 'task-1' }],
+                  error: null,
+                })),
+              })),
+            };
+          }
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                single: vi.fn(() =>
+                  Promise.resolve({
+                    data: {
+                      id: 'task-1',
+                      assignees: [],
+                      labels: [],
+                      projects: [],
+                    },
+                    error: null,
+                  })
+                ),
+                data: [],
+                error: null,
+              })),
+            })),
+          };
+        }),
+      });
+
+      renderHook(
+        () =>
+          useBoardRealtime('board-1', ['task-1'], ['list-1'], {
+            enabled: true,
+          }),
+        { wrapper }
+      );
+
+      const labelListener = channelListeners.get(
+        'postgres_changes:workspace_task_labels'
+      );
+
+      await act(async () => {
+        await labelListener({
+          eventType: 'UPDATE',
+          new: { id: 'label-1', name: 'Updated Label' },
+          old: { id: 'label-1', name: 'Old Label' },
+        });
+      });
+
+      // Should invalidate tasks query when workspace label affects board tasks
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['tasks', 'board-1'],
+      });
+    });
+
+    it('should not invalidate queries when workspace label does not affect board tasks', async () => {
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+      // Mock task_labels query to return no linked tasks
+      mockCreateClient.mockReturnValue({
+        channel: vi.fn(() => mockChannel),
+        removeChannel: mockRemoveChannel,
+        from: vi.fn((table: string) => {
+          if (table === 'task_labels') {
+            return {
+              select: vi.fn(() => ({
+                eq: vi.fn(() => ({
+                  single: vi.fn(),
+                  data: [],
+                  error: null,
+                })),
+              })),
+            };
+          }
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                single: vi.fn(() =>
+                  Promise.resolve({
+                    data: {
+                      id: 'task-1',
+                      assignees: [],
+                      labels: [],
+                      projects: [],
+                    },
+                    error: null,
+                  })
+                ),
+                data: [],
+                error: null,
+              })),
+            })),
+          };
+        }),
+      });
+
+      renderHook(
+        () =>
+          useBoardRealtime('board-1', ['task-1'], ['list-1'], {
+            enabled: true,
+          }),
+        { wrapper }
+      );
+
+      const labelListener = channelListeners.get(
+        'postgres_changes:workspace_task_labels'
+      );
+
+      invalidateSpy.mockClear();
+
+      await act(async () => {
+        await labelListener({
+          eventType: 'UPDATE',
+          new: { id: 'label-2', name: 'Unrelated Label' },
+          old: { id: 'label-2', name: 'Old Unrelated' },
+        });
+      });
+
+      // Should not invalidate when no tasks in board use this label
+      expect(invalidateSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('UPDATE event with soft delete', () => {
+    it('should remove task from cache when deleted_at is set', async () => {
+      queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
+
+      renderHook(
+        () =>
+          useBoardRealtime('board-1', ['task-1'], ['list-1'], {
+            enabled: true,
+          }),
+        { wrapper }
+      );
+
+      const taskListener = channelListeners.get('postgres_changes:tasks');
+
+      const softDeletedTask = {
+        ...mockTask,
+        deleted_at: new Date().toISOString(),
+      };
+
+      await act(async () => {
+        await taskListener({
+          eventType: 'UPDATE',
+          new: softDeletedTask,
+          old: mockTask,
+        });
+      });
+
+      const cachedTasks = queryClient.getQueryData<Task[]>([
+        'tasks',
+        'board-1',
+      ]);
+      expect(cachedTasks).toHaveLength(0);
+    });
+  });
+
+  describe('INSERT event with existing task', () => {
+    it('should not duplicate task if already exists in cache', async () => {
+      queryClient.setQueryData(['tasks', 'board-1'], [
+        mockTaskWithEmptyRelations,
+      ]);
+
+      renderHook(
+        () =>
+          useBoardRealtime('board-1', ['task-1'], ['list-1'], {
+            enabled: true,
+          }),
+        { wrapper }
+      );
+
+      const taskListener = channelListeners.get('postgres_changes:tasks');
+
+      await act(async () => {
+        await taskListener({
+          eventType: 'INSERT',
+          new: mockTask,
+          old: null,
+        });
+      });
+
+      const cachedTasks = queryClient.getQueryData<Task[]>([
+        'tasks',
+        'board-1',
+      ]);
+      expect(cachedTasks).toHaveLength(1);
+    });
+  });
+
+  describe('INSERT event with delayed relation fetch', () => {
+    it('should add task to cache immediately on INSERT', async () => {
+      queryClient.setQueryData(['tasks', 'board-1'], []);
+
+      renderHook(
+        () =>
+          useBoardRealtime('board-1', ['task-1'], ['list-1'], {
+            enabled: true,
+          }),
+        { wrapper }
+      );
+
+      const taskListener = channelListeners.get('postgres_changes:tasks');
+
+      await act(async () => {
+        await taskListener({
+          eventType: 'INSERT',
+          new: mockTask,
+          old: null,
+        });
+      });
+
+      // Task should be added to cache with empty relations
+      const cachedTasks = queryClient.getQueryData<Task[]>([
+        'tasks',
+        'board-1',
+      ]);
+      expect(cachedTasks).toHaveLength(1);
+      expect(cachedTasks?.[0]).toHaveProperty('assignees');
+      expect(cachedTasks?.[0]?.assignees).toEqual([]);
     });
   });
 });
