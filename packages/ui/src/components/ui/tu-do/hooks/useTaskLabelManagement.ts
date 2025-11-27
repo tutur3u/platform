@@ -17,6 +17,9 @@ interface UseTaskLabelManagementProps {
   boardId: string;
   workspaceLabels: WorkspaceTaskLabel[];
   workspaceId?: string;
+  selectedTasks?: Set<string>;
+  isMultiSelectMode?: boolean;
+  onClearSelection?: () => void;
 }
 
 export function useTaskLabelManagement({
@@ -24,6 +27,8 @@ export function useTaskLabelManagement({
   boardId,
   workspaceLabels,
   workspaceId,
+  selectedTasks,
+  isMultiSelectMode,
 }: UseTaskLabelManagementProps) {
   const queryClient = useQueryClient();
   const [labelsSaving, setLabelsSaving] = useState<string | null>(null);
@@ -33,67 +38,132 @@ export function useTaskLabelManagement({
 
   // Toggle a label for the task (quick labels submenu)
   async function toggleTaskLabel(labelId: string) {
+    // Check if we're in multi-select mode with multiple tasks selected
+    const shouldBulkUpdate =
+      isMultiSelectMode &&
+      selectedTasks &&
+      selectedTasks.size > 1 &&
+      selectedTasks.has(task.id);
+
+    const tasksToUpdate = shouldBulkUpdate
+      ? Array.from(selectedTasks)
+      : [task.id];
+
     setLabelsSaving(labelId);
-    const supabase = createClient();
-    const active = task.labels?.some((l) => l.id === labelId);
 
     // Cancel any outgoing refetches
     await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
 
-    // Snapshot the previous value
-    const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+    // Snapshot the previous value BEFORE optimistic update
+    const previousTasks = queryClient.getQueryData(['tasks', boardId]) as
+      | Task[]
+      | undefined;
 
-    // Find the label details from workspace labels
+    // Determine action: remove if ALL selected tasks have the label, add otherwise
+    let active = task.labels?.some((l) => l.id === labelId) ?? false;
+
+    if (shouldBulkUpdate && previousTasks) {
+      const selectedTasksData = previousTasks.filter((t) =>
+        selectedTasks?.has(t.id)
+      );
+      // Only mark as active (to remove) if ALL selected tasks have the label
+      active = selectedTasksData.every(
+        (t) => t.labels?.some((l) => l.id === labelId) ?? false
+      );
+    }
+
+    // Pre-calculate which tasks actually need to change
+    const tasksNeedingLabel = !active
+      ? tasksToUpdate.filter((taskId) => {
+          const t = previousTasks?.find((ct) => ct.id === taskId);
+          return !t?.labels?.some((l) => l.id === labelId);
+        })
+      : [];
+
+    const tasksToRemoveFrom = active
+      ? tasksToUpdate.filter((taskId) => {
+          const t = previousTasks?.find((ct) => ct.id === taskId);
+          return t?.labels?.some((l) => l.id === labelId);
+        })
+      : [];
+
+    // Get label details from workspace labels for optimistic update
     const label = workspaceLabels.find((l) => l.id === labelId);
 
-    // Optimistically update the cache
-    queryClient.setQueryData(['tasks', boardId], (old: any[] | undefined) => {
+    // Optimistically update the cache - only update tasks that actually change
+    queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
       if (!old) return old;
       return old.map((t) => {
-        if (t.id === task.id) {
-          if (active) {
-            // Remove the label
-            return {
-              ...t,
-              labels: t.labels?.filter((l: any) => l.id !== labelId) || [],
-            };
-          } else {
-            // Add the label
-            return {
-              ...t,
-              labels: [
-                ...(t.labels || []),
-                label || { id: labelId, name: 'Unknown', color: '#3b82f6' },
-              ],
-            };
-          }
+        if (active && tasksToRemoveFrom.includes(t.id)) {
+          // Remove the label
+          return {
+            ...t,
+            labels: t.labels?.filter((l) => l.id !== labelId) || [],
+          };
+        } else if (!active && tasksNeedingLabel.includes(t.id)) {
+          // Add the label
+          return {
+            ...t,
+            labels: [
+              ...(t.labels || []),
+              label || {
+                id: labelId,
+                name: 'Unknown',
+                color: '#3b82f6',
+                created_at: new Date().toISOString(),
+              },
+            ],
+          };
         }
         return t;
       });
     });
 
     try {
+      const supabase = createClient();
       if (active) {
-        const { error } = await supabase
-          .from('task_labels')
-          .delete()
-          .eq('task_id', task.id)
-          .eq('label_id', labelId);
-        if (error) throw error;
+        // Remove label only from tasks that have it
+        if (tasksToRemoveFrom.length > 0) {
+          const { error } = await supabase
+            .from('task_labels')
+            .delete()
+            .in('task_id', tasksToRemoveFrom)
+            .eq('label_id', labelId);
+          if (error) throw error;
+        }
       } else {
-        const { error } = await supabase
-          .from('task_labels')
-          .insert({ task_id: task.id, label_id: labelId });
-        if (error) throw error;
+        // Add label to selected tasks that don't already have it
+        if (tasksNeedingLabel.length > 0) {
+          const rows = tasksNeedingLabel.map((taskId) => ({
+            task_id: taskId,
+            label_id: labelId,
+          }));
+          const { error } = await supabase.from('task_labels').insert(rows);
+
+          // Ignore duplicate key errors (code '23505' for unique_violation)
+          if (error && error.code !== '23505') {
+            throw error;
+          }
+        }
       }
-      // Success - mark query as needing refetch but don't force it immediately
-      queryClient.setQueryData(['tasks', boardId], (old: any[] | undefined) => {
-        return old; // Return unchanged to signal success without triggering render
+
+      const taskCount = active
+        ? tasksToRemoveFrom.length
+        : tasksNeedingLabel.length;
+      toast.success(active ? 'Label removed' : 'Label added', {
+        description: taskCount > 1 ? `${taskCount} tasks updated` : undefined,
       });
+
+      // Don't auto-clear selection - let user manually clear with "Clear" button
     } catch (e: any) {
       // Rollback on error
-      queryClient.setQueryData(['tasks', boardId], previousTasks);
-      toast.error(e.message || 'Unable to toggle label');
+      if (previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], previousTasks);
+      }
+      console.error('Failed to toggle label:', e);
+      toast.error('Error', {
+        description: 'Failed to update label. Please try again.',
+      });
     } finally {
       setLabelsSaving(null);
     }
@@ -121,6 +191,30 @@ export function useTaskLabelManagement({
       }
 
       const newLabel = await response.json();
+
+      // Optimistically add the new label to ALL workspace labels caches
+      // Note: Two different query keys are used across the codebase
+      queryClient.setQueryData(
+        ['workspace-labels', workspaceId],
+        (old: WorkspaceTaskLabel[] | undefined) => {
+          if (!old) return [newLabel];
+          // Check if label already exists (shouldn't happen, but defensive)
+          if (old.some((l) => l.id === newLabel.id)) return old;
+          // Sort alphabetically like useWorkspaceLabels does
+          const updated = [newLabel, ...old];
+          return updated.sort((a, b) =>
+            a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+          );
+        }
+      );
+      queryClient.setQueryData(
+        ['workspace_task_labels', workspaceId],
+        (old: WorkspaceTaskLabel[] | undefined) => {
+          if (!old) return [newLabel];
+          if (old.some((l) => l.id === newLabel.id)) return old;
+          return [newLabel, ...old]; // Most recent first (created_at desc)
+        }
+      );
 
       // Auto-apply the newly created label to this task
       let linkSucceeded = false;
@@ -154,11 +248,21 @@ export function useTaskLabelManagement({
           .from('task_labels')
           .insert({ task_id: task.id, label_id: newLabel.id });
         if (linkErr) {
-          // Rollback on error
-          queryClient.setQueryData(['tasks', boardId], previousTasks);
-          toast.error(
-            'The label was created but could not be attached to the task. Refresh and try manually.'
-          );
+          // Check error code first for proper duplicate detection
+          if (
+            linkErr.code === '23505' ||
+            (!linkErr.code &&
+              String(linkErr.message).toLowerCase().includes('duplicate'))
+          ) {
+            // Treat duplicates as success - label already exists on task
+            linkSucceeded = true;
+          } else {
+            // Rollback on other errors
+            queryClient.setQueryData(['tasks', boardId], previousTasks);
+            toast.error(
+              'The label was created but could not be attached to the task. Refresh and try manually.'
+            );
+          }
         } else {
           linkSucceeded = true;
         }
@@ -177,10 +281,7 @@ export function useTaskLabelManagement({
         );
       }
 
-      // Invalidate workspace labels cache so all task cards get the new label
-      queryClient.invalidateQueries({
-        queryKey: ['workspace-labels', workspaceId],
-      });
+      // ✅ NO invalidation - workspace labels cache already updated optimistically above
 
       return newLabel;
     } catch (e: any) {

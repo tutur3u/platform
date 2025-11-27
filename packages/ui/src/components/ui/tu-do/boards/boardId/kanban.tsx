@@ -76,7 +76,7 @@ import {
 } from '../../shared/estimation-mapping';
 import { BoardSelector } from '../board-selector';
 import { BoardColumn } from './board-column';
-import { createBulkOperations } from './kanban-bulk-operations';
+import { useBulkOperations } from './kanban-bulk-operations';
 import {
   DRAG_ACTIVATION_DISTANCE,
   MAX_SAFE_INTEGER_SORT,
@@ -647,34 +647,7 @@ export function KanbanBoard({
     enabled: isMultiSelectMode && selectedTasks.size > 0,
   });
 
-  // Create bulk operations using the extracted factory
-  const bulkOperations = useMemo(
-    () =>
-      createBulkOperations({
-        queryClient,
-        supabase,
-        boardId: boardId ?? '',
-        selectedTasks,
-        columns,
-        workspaceLabels,
-        workspaceProjects,
-        setBulkWorking,
-        clearSelection,
-        setBulkDeleteOpen,
-      }),
-    [
-      queryClient,
-      supabase,
-      boardId,
-      selectedTasks,
-      columns,
-      workspaceLabels,
-      workspaceProjects,
-      clearSelection,
-    ]
-  );
-
-  // Destructure bulk operations for easy access
+  // Create bulk operations using TanStack Query mutations hook
   const {
     bulkUpdatePriority,
     bulkUpdateEstimation,
@@ -685,7 +658,18 @@ export function KanbanBoard({
     bulkAddProject,
     bulkRemoveProject,
     bulkDeleteTasks,
-  } = bulkOperations;
+  } = useBulkOperations({
+    queryClient,
+    supabase,
+    boardId: boardId ?? '',
+    selectedTasks,
+    columns,
+    workspaceLabels,
+    workspaceProjects,
+    setBulkWorking,
+    clearSelection,
+    setBulkDeleteOpen,
+  });
 
   // Detect mobile to disable drag sensors
   const [isMobile, setIsMobile] = useState(false);

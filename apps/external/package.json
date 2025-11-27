@@ -23,14 +23,14 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.90.10",
+    "@tanstack/react-query": "^5.90.11",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/masonry": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "next": "^16.0.4",
+    "next": "^16.0.5",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tuturuuu": "^0.1.1",
