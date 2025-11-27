@@ -65,7 +65,9 @@ describe('Sync Token Operations', () => {
       const result = await getWorkspaceTokensByWsId(wsId);
 
       expect(result).toEqual(mockTokens[0]);
-      expect(mockSupabaseAdmin.from).toHaveBeenCalledWith('calendar_auth_tokens');
+      expect(mockSupabaseAdmin.from).toHaveBeenCalledWith(
+        'calendar_auth_tokens'
+      );
     });
 
     it('returns null when workspace has no tokens', async () => {
@@ -143,7 +145,9 @@ describe('Sync Token Operations', () => {
       const result = await getWorkspacesForSync();
 
       expect(result).toEqual(mockWorkspaces);
-      expect(mockSupabaseAdmin.from).toHaveBeenCalledWith('calendar_auth_tokens');
+      expect(mockSupabaseAdmin.from).toHaveBeenCalledWith(
+        'calendar_auth_tokens'
+      );
     });
 
     it('returns empty array when no workspaces found', async () => {
@@ -252,7 +256,9 @@ describe('Sync Token Operations', () => {
         error: { message: 'RPC error' },
       });
 
-      await expect(storeSyncToken(wsId, syncToken, lastSyncedAt)).rejects.toThrow();
+      await expect(
+        storeSyncToken(wsId, syncToken, lastSyncedAt)
+      ).rejects.toThrow();
     });
 
     it('throws error when operation result is not successful', async () => {
@@ -261,9 +267,9 @@ describe('Sync Token Operations', () => {
         error: null,
       });
 
-      await expect(storeSyncToken(wsId, syncToken, lastSyncedAt)).rejects.toThrow(
-        'Token conflict'
-      );
+      await expect(
+        storeSyncToken(wsId, syncToken, lastSyncedAt)
+      ).rejects.toThrow('Token conflict');
     });
 
     it('throws generic error when result has no message', async () => {
@@ -272,9 +278,9 @@ describe('Sync Token Operations', () => {
         error: null,
       });
 
-      await expect(storeSyncToken(wsId, syncToken, lastSyncedAt)).rejects.toThrow(
-        'Failed to store sync token'
-      );
+      await expect(
+        storeSyncToken(wsId, syncToken, lastSyncedAt)
+      ).rejects.toThrow('Failed to store sync token');
     });
 
     it('throws error when data array is empty', async () => {
@@ -283,9 +289,9 @@ describe('Sync Token Operations', () => {
         error: null,
       });
 
-      await expect(storeSyncToken(wsId, syncToken, lastSyncedAt)).rejects.toThrow(
-        'Failed to store sync token'
-      );
+      await expect(
+        storeSyncToken(wsId, syncToken, lastSyncedAt)
+      ).rejects.toThrow('Failed to store sync token');
     });
   });
 
@@ -401,7 +407,9 @@ describe('Sync Token Operations', () => {
         error: null,
       });
 
-      await expect(clearSyncToken(wsId)).rejects.toThrow('Failed to clear sync token');
+      await expect(clearSyncToken(wsId)).rejects.toThrow(
+        'Failed to clear sync token'
+      );
     });
 
     it('throws error when data array is empty', async () => {
@@ -410,7 +418,9 @@ describe('Sync Token Operations', () => {
         error: null,
       });
 
-      await expect(clearSyncToken(wsId)).rejects.toThrow('Failed to clear sync token');
+      await expect(clearSyncToken(wsId)).rejects.toThrow(
+        'Failed to clear sync token'
+      );
     });
   });
 });

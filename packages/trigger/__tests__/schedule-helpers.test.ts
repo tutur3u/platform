@@ -191,8 +191,7 @@ describe('Schedule Helpers', () => {
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () =>
-          Promise.resolve({ summary: {}, warnings: [] }),
+        json: () => Promise.resolve({ summary: {}, warnings: [] }),
       });
 
       await unifiedScheduleHelper(wsId);
@@ -209,8 +208,7 @@ describe('Schedule Helpers', () => {
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () =>
-          Promise.resolve({ summary: {}, warnings: [] }),
+        json: () => Promise.resolve({ summary: {}, warnings: [] }),
       });
 
       await unifiedScheduleHelper(wsId);
@@ -235,8 +233,7 @@ describe('Schedule Helpers', () => {
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () =>
-          Promise.resolve({ summary: {}, warnings: [] }),
+        json: () => Promise.resolve({ summary: {}, warnings: [] }),
       });
 
       await unifiedScheduleHelper(wsId);
@@ -258,8 +255,7 @@ describe('Schedule Helpers', () => {
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () =>
-          Promise.resolve({ summary: {}, warnings: [] }),
+        json: () => Promise.resolve({ summary: {}, warnings: [] }),
       });
 
       await unifiedScheduleHelper(wsId, {
@@ -320,8 +316,7 @@ describe('Schedule Helpers', () => {
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () =>
-          Promise.resolve({ summary: {}, warnings: [] }),
+        json: () => Promise.resolve({ summary: {}, warnings: [] }),
       });
 
       await unifiedScheduleHelper(wsId);
@@ -342,8 +337,7 @@ describe('Schedule Helpers', () => {
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () =>
-          Promise.resolve({ summary: {}, warnings: [] }),
+        json: () => Promise.resolve({ summary: {}, warnings: [] }),
       });
 
       await unifiedScheduleHelper(wsId, { windowDays: 7 });
@@ -364,8 +358,7 @@ describe('Schedule Helpers', () => {
 
       mockFetch.mockResolvedValue({
         ok: true,
-        json: () =>
-          Promise.resolve({ summary: {}, warnings: [] }),
+        json: () => Promise.resolve({ summary: {}, warnings: [] }),
       });
 
       await unifiedScheduleHelper(wsId, { forceReschedule: true });
