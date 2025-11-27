@@ -76,7 +76,7 @@
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
-    "@supabase/supabase-js": "^2.84.0",
+    "@supabase/supabase-js": "^2.86.0",
     "@tuturuuu/types": "workspace:*",
     "next": "^16.0.1",
     "react": "^19.2.0",
@@ -87,7 +87,7 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
-    "next": "^16.0.4",
+    "next": "^16.0.5",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "typescript": "^5.9.3",
