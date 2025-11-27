@@ -83,7 +83,6 @@ async function getWhiteboards(wsId: string): Promise<Whiteboard[]> {
     description: whiteboard.description || undefined,
     dateCreated: new Date(whiteboard.created_at),
     lastModified: new Date(whiteboard.updated_at),
-    thumbnail_url: whiteboard.thumbnail_url || undefined,
-    creatorName: whiteboard.creator.display_name || 'Unknown User',
+    creatorName: whiteboard.creator?.display_name || 'Unknown User',
   }));
 }

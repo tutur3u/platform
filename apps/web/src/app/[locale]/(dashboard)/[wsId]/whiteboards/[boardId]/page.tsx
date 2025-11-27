@@ -2,8 +2,7 @@ import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import type { TLStoreSnapshot } from 'tldraw';
-import { CustomTldraw } from './custom-tldraw';
+import { CustomWhiteboard } from './custom-whiteboard';
 
 export const metadata: Metadata = {
   title: 'Board Details',
@@ -11,11 +10,24 @@ export const metadata: Metadata = {
     'Manage Board Details in the Whiteboards area of your Tuturuuu workspace.',
 };
 
-interface TLDrawPageProps {
+interface WhiteboardPageProps {
   params: Promise<{ wsId: string; boardId: string }>;
 }
 
-export default async function TLDrawPage({ params }: TLDrawPageProps) {
+/**
+ * Checks if the snapshot data is in Excalidraw format.
+ * Excalidraw format has 'elements' array at root.
+ * TLDraw format has 'store' or 'schema' properties.
+ */
+function isExcalidrawFormat(data: unknown): boolean {
+  if (!data || typeof data !== 'object') return false;
+  return (
+    'elements' in data &&
+    Array.isArray((data as Record<string, unknown>).elements)
+  );
+}
+
+export default async function WhiteboardPage({ params }: WhiteboardPageProps) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
@@ -31,20 +43,23 @@ export default async function TLDrawPage({ params }: TLDrawPageProps) {
 
         if (!whiteboard) return notFound();
 
+        // Parse snapshot and check format
+        const parsedSnapshot = whiteboard.snapshot
+          ? JSON.parse(whiteboard.snapshot as string)
+          : undefined;
+
+        // Only use snapshot if it's in Excalidraw format
+        // Legacy TLDraw snapshots will start fresh
+        const initialData = isExcalidrawFormat(parsedSnapshot)
+          ? parsedSnapshot
+          : undefined;
+
         return (
-          <div className="absolute inset-0">
-            <CustomTldraw
-              wsId={wsId}
-              boardId={boardId}
-              initialData={
-                whiteboard.snapshot
-                  ? (JSON.parse(
-                      whiteboard.snapshot as string
-                    ) as TLStoreSnapshot)
-                  : undefined
-              }
-            />
-          </div>
+          <CustomWhiteboard
+            wsId={wsId}
+            boardId={boardId}
+            initialData={initialData}
+          />
         );
       }}
     </WorkspaceWrapper>
