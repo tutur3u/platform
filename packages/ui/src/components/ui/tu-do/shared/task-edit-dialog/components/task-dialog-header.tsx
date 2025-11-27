@@ -151,7 +151,7 @@ export function TaskDialogHeader({
           )}
 
           {/* Online Users */}
-          {collaborationMode && isOpen && !isCreateMode && user && (
+          {collaborationMode && isOpen && !isCreateMode && user && taskId && (
             <UserPresenceAvatarsComponent
               channelName={`task_presence_${taskId}`}
               currentUser={{

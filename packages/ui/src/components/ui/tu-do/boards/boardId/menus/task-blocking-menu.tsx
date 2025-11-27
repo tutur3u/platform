@@ -71,7 +71,7 @@ export function TaskBlockingMenu({
   }, [taskId, blockingTasks, blockedByTasks]);
 
   // Fetch available tasks
-  const { data: tasks = [], isLoading: tasksLoading } = useWorkspaceTasks(
+  const { data: tasks = [], isLoading: tasksLoading, isError: tasksError } = useWorkspaceTasks(
     wsId,
     {
       excludeTaskIds: excludeIds,
@@ -190,6 +190,10 @@ export function TaskBlockingMenu({
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
+            ) : tasksError ? (
+              <CommandEmpty className="py-4 text-center text-muted-foreground text-xs">
+                Error loading tasks
+              </CommandEmpty>
             ) : tasks.length === 0 ? (
               <CommandEmpty className="py-4 text-center text-muted-foreground text-xs">
                 {searchQuery ? (
@@ -223,7 +227,8 @@ export function TaskBlockingMenu({
                       </span>
                       {task.board_name && (
                         <span className="text-muted-foreground text-xs">
-                          {task.board_name} #{task.display_number}
+{task.board_name}
+{typeof task.display_number === 'number' && ` #${task.display_number}`}
                         </span>
                       )}
                     </div>

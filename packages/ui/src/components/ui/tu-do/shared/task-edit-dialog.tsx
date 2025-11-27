@@ -14,6 +14,7 @@ import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import { cn } from '@tuturuuu/utils/format';
 import {
+  createTaskRelationship,
   getTicketIdentifier,
   invalidateTaskCaches,
   useUpdateTask,
@@ -909,11 +910,19 @@ export function TaskEditDialog({
 
         // If this is a subtask, create the parent-child relationship
         if (parentTaskId) {
-          await supabase.from('task_relationships').insert({
-            source_task_id: parentTaskId,
-            target_task_id: newTask.id,
-            type: 'parent_child',
-          });
+          try {
+            await createTaskRelationship(supabase, {
+              source_task_id: parentTaskId,
+              target_task_id: newTask.id,
+              type: 'parent_child',
+            });
+          } catch (relationshipError) {
+            // Log but don't fail task creation if relationship fails
+            console.error(
+              'Failed to create parent-child relationship:',
+              relationshipError
+            );
+          }
           // Invalidate relationship caches
           await queryClient.invalidateQueries({
             queryKey: ['task-relationships', parentTaskId],

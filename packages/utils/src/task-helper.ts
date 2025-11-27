@@ -2646,7 +2646,7 @@ export async function getWorkspaceTasks(
 
   // Exclude specific task IDs
   if (options?.excludeTaskIds?.length) {
-    query = query.not('id', 'in', `(${options.excludeTaskIds.join(',')})`);
+    query = query.not('id', 'in', options.excludeTaskIds);
   }
 
   // Search by name
@@ -2728,7 +2728,8 @@ export interface CreateTaskWithRelationshipInput {
 }
 
 /**
- * Create a new task and establish a relationship with an existing task in one operation
+ * Create a new task and establish a relationship with an existing task in one atomic operation
+ * Uses a Supabase RPC to ensure both operations succeed or both fail
  */
 export async function createTaskWithRelationship(
   supabase: TypedSupabaseClient,
@@ -2737,22 +2738,62 @@ export async function createTaskWithRelationship(
   const { name, listId, currentTaskId, relationshipType, currentTaskIsSource } =
     input;
 
-  // First, create the new task
-  const newTask = await createTask(supabase, listId, { name });
-
-  // Then, create the relationship
-  const relationshipInput: CreateTaskRelationshipInput = {
-    source_task_id: currentTaskIsSource ? currentTaskId : newTask.id,
-    target_task_id: currentTaskIsSource ? newTask.id : currentTaskId,
-    type: relationshipType,
-  };
-
-  const relationship = await createTaskRelationship(
-    supabase,
-    relationshipInput
+  // Call the RPC for atomic transaction
+  const { data, error } = await supabase.rpc(
+    'create_task_with_relationship',
+    {
+      p_name: name,
+      p_list_id: listId,
+      p_current_task_id: currentTaskId,
+      p_relationship_type: relationshipType,
+      p_current_task_is_source: currentTaskIsSource,
+    }
   );
 
-  return { task: newTask, relationship };
+  if (error) {
+    // Handle specific error cases with user-friendly messages
+    if (error.message?.includes('already exists')) {
+      throw new Error('This relationship already exists.');
+    }
+    if (error.message?.includes('single parent')) {
+      throw new Error('A task can only have one parent.');
+    }
+    if (error.message?.includes('circular')) {
+      throw new Error(
+        'This would create a circular relationship, which is not allowed.'
+      );
+    }
+    if (error.message?.includes('not authenticated')) {
+      throw new Error('User not authenticated');
+    }
+    if (error.message?.includes('List not found')) {
+      throw new Error('List not found or access denied');
+    }
+    if (error.message?.includes('Current task not found')) {
+      throw new Error('The task you are trying to relate to was not found');
+    }
+    throw error;
+  }
+
+  // Transform the response to match expected types
+  const result = data as {
+    task: Record<string, unknown>;
+    relationship: Record<string, unknown>;
+  };
+
+  // Transform task record to match Task type
+  const task = transformTaskRecord(result.task) as Task;
+
+  const relationship: TaskRelationship = {
+    id: result.relationship.id as string,
+    source_task_id: result.relationship.source_task_id as string,
+    target_task_id: result.relationship.target_task_id as string,
+    type: result.relationship.type as TaskRelationshipType,
+    created_at: result.relationship.created_at as string,
+    created_by: result.relationship.created_by as string | null,
+  };
+
+  return { task, relationship };
 }
 
 /**

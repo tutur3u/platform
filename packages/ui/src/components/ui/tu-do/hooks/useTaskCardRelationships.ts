@@ -194,6 +194,7 @@ export function useTaskCardRelationships({
   const removeRelatedTask = useCallback(
     (targetTaskId: string) => {
       setSavingTaskId(targetTaskId);
+      // Try the first direction (taskId -> targetTaskId)
       deleteRelationship.mutate(
         {
           sourceTaskId: taskId,
@@ -201,7 +202,20 @@ export function useTaskCardRelationships({
           type: 'related',
         },
         {
-          onSettled: () => setSavingTaskId(null),
+          onError: () => {
+            // First direction failed, try the reverse direction (targetTaskId -> taskId)
+            deleteRelationship.mutate(
+              {
+                sourceTaskId: targetTaskId,
+                targetTaskId: taskId,
+                type: 'related',
+              },
+              {
+                onSettled: () => setSavingTaskId(null),
+              }
+            );
+          },
+          onSuccess: () => setSavingTaskId(null),
         }
       );
     },

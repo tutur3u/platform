@@ -13730,6 +13730,21 @@ export type Database = {
         };
         Returns: string;
       };
+      create_task_with_relationship: {
+        Args: {
+          p_current_task_id: string;
+          p_current_task_is_source: boolean;
+          p_description?: string;
+          p_end_date?: string;
+          p_estimation_points?: number;
+          p_list_id: string;
+          p_name: string;
+          p_priority?: number;
+          p_relationship_type: Database['public']['Enums']['task_relationship_type'];
+          p_start_date?: string;
+        };
+        Returns: Json;
+      };
       create_user_notification: {
         Args: {
           p_action_url?: string;

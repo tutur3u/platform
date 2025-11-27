@@ -36,7 +36,7 @@ export default async function TaskBoardPage({ params }: Props) {
   }
 
   // If board exists but belongs to different workspace, show 404
-  if (board.ws_id !== wsId) {
+  if (board.ws_id !== resolvedWorkspace.id) {
     notFound();
   }
 

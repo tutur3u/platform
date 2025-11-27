@@ -129,6 +129,7 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
   }, [
     state.task?.id,
     state.task?.list_id,
+    state.task?.name,
     state.boardId,
     state.availableLists,
     createSubtask,

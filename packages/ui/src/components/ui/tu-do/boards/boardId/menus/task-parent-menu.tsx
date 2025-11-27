@@ -59,7 +59,7 @@ export function TaskParentMenu({
   }, [taskId, childTaskIds, parentTask]);
 
   // Fetch available tasks
-  const { data: tasks = [], isLoading: tasksLoading } = useWorkspaceTasks(
+  const { data: tasks = [], isLoading: tasksLoading, isError: tasksError} = useWorkspaceTasks(
     wsId,
     {
       excludeTaskIds: excludeIds,
@@ -124,6 +124,10 @@ export function TaskParentMenu({
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
+            ) : tasksError ? (
+              <CommandEmpty className="py-4 text-center text-muted-foreground text-xs">
+                Error loading tasks
+              </CommandEmpty>
             ) : tasks.length === 0 ? (
               <CommandEmpty className="py-4 text-center text-muted-foreground text-xs">
                 {searchQuery ? (
