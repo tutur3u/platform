@@ -231,15 +231,30 @@ export function useTaskMutations({
         return;
       }
 
+      // Optimistically update the cache instead of invalidating
+      // This prevents conflicts with realtime sync
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (oldTasks: any[] | undefined) => {
+          if (!oldTasks) return oldTasks;
+          return oldTasks.map((task) =>
+            task.id === taskId ? { ...task, name: trimmedName } : task
+          );
+        }
+      );
+
       try {
         const { error } = await supabase
           .from('tasks')
           .update({ name: trimmedName })
           .eq('id', taskId);
         if (error) throw error;
-        await invalidateTaskCaches(queryClient, boardId);
+        // Don't invalidate cache - realtime sync will handle updates
+        // and we've already optimistically updated the cache above
       } catch (e: any) {
         console.error('Failed updating task name', e);
+        // Revert optimistic update on error by invalidating to refetch
+        await invalidateTaskCaches(queryClient, boardId);
         toast({
           title: 'Failed to update task name',
           description: e.message || 'Please try again',

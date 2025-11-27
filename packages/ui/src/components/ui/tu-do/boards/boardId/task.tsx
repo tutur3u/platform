@@ -350,7 +350,13 @@ function TaskCardInner({
   const isOverdue = task.end_date && new Date(task.end_date) < now;
   const startDate = task.start_date ? new Date(task.start_date) : null;
   const endDate = task.end_date ? new Date(task.end_date) : null;
-  const descriptionMeta = getDescriptionMetadata(task.description);
+
+  // Memoize description metadata to prevent unnecessary recalculations
+  // This is important because descriptionMeta is used in taskBadges dependency array
+  const descriptionMeta = useMemo(
+    () => getDescriptionMetadata(task.description),
+    [task.description]
+  );
 
   // Helper function to get card color classes
   const getCardColorClasses = () =>
@@ -793,9 +799,15 @@ function TaskCardInner({
 
     return badges;
   }, [
-    task,
-    boardConfig,
-    descriptionMeta,
+    // Only depend on specific task properties that affect badge rendering
+    // to prevent recalculation when unrelated properties (like name) change
+    task.priority,
+    task.projects,
+    task.estimation_points,
+    task.labels,
+    boardConfig?.estimation_type,
+    descriptionMeta.totalCheckboxes,
+    descriptionMeta.checkedCheckboxes,
     parentTask,
     childTasks,
     blockingTasks,
