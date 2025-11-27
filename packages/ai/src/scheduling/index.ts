@@ -16,6 +16,31 @@ export {
 } from './algorithm';
 export { defaultActiveHours, defaultTasks } from './default';
 export {
+  calculateOptimalDuration,
+  findBestSlotForHabit,
+  getEffectiveDurationBounds,
+  getSlotCharacteristics,
+  scoreSlotForHabit,
+  slotMatchesPreference,
+  timeMatchesSlot,
+} from './duration-optimizer';
+export type {
+  HabitDurationConfig,
+  SlotCharacteristics,
+  TimeSlotInfo,
+} from './duration-optimizer';
+export {
+  calculatePriorityScore,
+  canBump,
+  comparePriority,
+  getEffectivePriority,
+  isHigherPriority,
+  isUrgent,
+  PRIORITY_WEIGHTS,
+  sortByPriority,
+} from './priority-calculator';
+export type { PrioritizableItem } from './priority-calculator';
+export {
   calculateOccurrences,
   getNextOccurrence,
   getNextOccurrenceDescription,

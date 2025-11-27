@@ -1,0 +1,197 @@
+---
+title: Duration Optimization
+description: How Smart Scheduling optimizes habit duration based on time slot characteristics
+---
+
+# Duration Optimization
+
+Duration optimization is a key feature that makes habit scheduling intelligent. Instead of always using a fixed duration, the system adapts based on the available time slot and your preferences.
+
+## Flexible Duration Bounds
+
+Each habit can have three duration settings:
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| **Preferred** | The ideal duration for this habit | Required |
+| **Minimum** | Shortest acceptable duration | 50% of preferred (min 15 min) |
+| **Maximum** | Longest beneficial duration | 150% of preferred (max 180 min) |
+
+<Info>
+If you only set the preferred duration, the system calculates sensible defaults for min and max.
+</Info>
+
+## Optimization Strategy
+
+The duration optimizer chooses the optimal duration based on slot characteristics:
+
+### 1. Ideal Time Match
+
+When the slot contains your specified `ideal_time` (e.g., "07:00"):
+
+```
+Duration = Maximum
+```
+
+The system maximizes duration because you're getting your most valuable time slot. This is when you'll get the most benefit from the habit.
+
+### 2. Time Preference Match
+
+When the slot falls within your preferred time-of-day:
+
+| Preference | Time Range |
+|------------|------------|
+| Morning | 6:00 AM - 12:00 PM |
+| Afternoon | 12:00 PM - 5:00 PM |
+| Evening | 5:00 PM - 9:00 PM |
+| Night | 9:00 PM - 12:00 AM |
+
+```
+Duration = Preferred
+```
+
+The system uses your standard preferred duration since this is still a good time for the habit.
+
+### 3. Constrained Slot
+
+When the available slot is smaller than your preferred duration:
+
+```
+Duration = max(Minimum, Available)
+```
+
+The system shrinks to fit while ensuring you still get value from the habit.
+
+### 4. No Special Conditions
+
+When no preferences match:
+
+```
+Duration = Preferred
+```
+
+Falls back to your standard preferred duration.
+
+## Slot Scoring
+
+When multiple time slots are available, the system scores each one to find the best:
+
+```typescript
+function scoreSlotForHabit(habit, slot): number {
+  let score = 0;
+
+  // Ideal time match is best (+1000)
+  if (slotContainsIdealTime(slot, habit.ideal_time)) {
+    score += 1000;
+  }
+
+  // Time preference match is second best (+500)
+  if (slotMatchesPreference(slot, habit.time_preference)) {
+    score += 500;
+  }
+
+  // Prefer slots that fit preferred duration (+200/+100)
+  if (slot.maxAvailable >= habit.preferred) {
+    score += 200;
+  } else if (slot.maxAvailable >= habit.minimum) {
+    score += 100;
+  }
+
+  // Slight preference for earlier slots (tiebreaker)
+  score -= slot.start.getHours() * 0.1;
+
+  return score;
+}
+```
+
+## Examples
+
+### Morning Meditation
+
+```
+Habit: Morning Meditation
+Preferred: 20 minutes
+Minimum: 10 minutes
+Maximum: 30 minutes
+Ideal Time: 06:30
+Preference: Morning
+```
+
+| Slot | Duration | Reason |
+|------|----------|--------|
+| 6:00 AM - 7:00 AM | **30 min** | Contains ideal time, maximize |
+| 8:00 AM - 9:00 AM | 20 min | Morning preference, use preferred |
+| 12:00 PM - 1:00 PM | 20 min | No match, use preferred |
+| 6:00 AM - 6:15 AM | 15 min | Constrained, use minimum |
+
+### Evening Workout
+
+```
+Habit: Evening Workout
+Preferred: 60 minutes
+Minimum: 30 minutes
+Maximum: 90 minutes
+Ideal Time: null
+Preference: Evening
+```
+
+| Slot | Duration | Reason |
+|------|----------|--------|
+| 5:00 PM - 7:00 PM | **60 min** | Evening preference, use preferred |
+| 8:00 PM - 9:00 PM | 60 min | Evening preference, use preferred |
+| 5:00 PM - 5:45 PM | 45 min | Constrained, fit to slot |
+| 10:00 AM - 12:00 PM | 60 min | No match, use preferred |
+
+## Implementation Details
+
+The duration optimizer is implemented in `packages/ai/src/scheduling/duration-optimizer.ts`:
+
+```typescript
+// Key exports
+export function getEffectiveDurationBounds(habit): { preferred, min, max };
+export function calculateOptimalDuration(habit, slot, characteristics): number;
+export function timeMatchesSlot(idealTime: string, slot): boolean;
+export function slotMatchesPreference(preference: TimeOfDayPreference, slot): boolean;
+export function getSlotCharacteristics(habit, slot): SlotCharacteristics;
+export function scoreSlotForHabit(habit, slot): number;
+export function findBestSlotForHabit(habit, slots): TimeSlotInfo | null;
+```
+
+## Configuration in Habit Form
+
+When creating or editing a habit, you can configure duration optimization:
+
+<Steps>
+  <Step title="Set Preferred Duration">
+    The standard duration for this habit (required)
+  </Step>
+  <Step title="Enable Flexible Duration">
+    Toggle to allow min/max bounds
+  </Step>
+  <Step title="Set Minimum Duration">
+    Shortest acceptable duration (optional)
+  </Step>
+  <Step title="Set Maximum Duration">
+    Longest beneficial duration (optional)
+  </Step>
+  <Step title="Set Ideal Time">
+    Specific time of day (optional, format: HH:MM)
+  </Step>
+  <Step title="Set Time Preference">
+    Morning, Afternoon, Evening, or Night (optional)
+  </Step>
+</Steps>
+
+## Testing
+
+The duration optimizer is tested with 54 test cases covering:
+
+- Duration bounds calculation
+- Time matching and preference detection
+- Slot scoring and selection
+- Integration scenarios for real-world habits
+
+Run tests with:
+```bash
+npx vitest run src/scheduling/duration-optimizer.test.ts
+```

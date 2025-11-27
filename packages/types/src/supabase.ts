@@ -11292,6 +11292,66 @@ export type Database = {
           },
         ];
       };
+      workspace_scheduling_metadata: {
+        Row: {
+          bumped_habits: number | null;
+          created_at: string | null;
+          events_created: number | null;
+          habits_scheduled: number | null;
+          id: string;
+          last_message: string | null;
+          last_scheduled_at: string | null;
+          last_status: string | null;
+          tasks_scheduled: number | null;
+          updated_at: string | null;
+          window_days: number | null;
+          ws_id: string;
+        };
+        Insert: {
+          bumped_habits?: number | null;
+          created_at?: string | null;
+          events_created?: number | null;
+          habits_scheduled?: number | null;
+          id?: string;
+          last_message?: string | null;
+          last_scheduled_at?: string | null;
+          last_status?: string | null;
+          tasks_scheduled?: number | null;
+          updated_at?: string | null;
+          window_days?: number | null;
+          ws_id: string;
+        };
+        Update: {
+          bumped_habits?: number | null;
+          created_at?: string | null;
+          events_created?: number | null;
+          habits_scheduled?: number | null;
+          id?: string;
+          last_message?: string | null;
+          last_scheduled_at?: string | null;
+          last_status?: string | null;
+          tasks_scheduled?: number | null;
+          updated_at?: string | null;
+          window_days?: number | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_scheduling_metadata_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: true;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_scheduling_metadata_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: true;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_secrets: {
         Row: {
           created_at: string;
@@ -15213,6 +15273,38 @@ export type Database = {
       upsert_realtime_log_aggregations: {
         Args: { p_logs: Json };
         Returns: undefined;
+      };
+      upsert_scheduling_metadata: {
+        Args: {
+          p_bumped_habits: number;
+          p_events_created: number;
+          p_habits_scheduled: number;
+          p_message: string;
+          p_status: string;
+          p_tasks_scheduled: number;
+          p_window_days?: number;
+          p_ws_id: string;
+        };
+        Returns: {
+          bumped_habits: number | null;
+          created_at: string | null;
+          events_created: number | null;
+          habits_scheduled: number | null;
+          id: string;
+          last_message: string | null;
+          last_scheduled_at: string | null;
+          last_status: string | null;
+          tasks_scheduled: number | null;
+          updated_at: string | null;
+          window_days: number | null;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'workspace_scheduling_metadata';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       user_is_in_channel: {
         Args: { p_channel_id: string; p_user_id: string };

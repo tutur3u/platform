@@ -18,6 +18,7 @@ import {
 import AddEventDialog from './components/add-event-dialog';
 import CalendarConnectionsManager from './components/calendar-connections-manager';
 import QuickCalendarToggle from './components/quick-calendar-toggle';
+import { SmartScheduleButton } from './components/smart-schedule-button';
 import SyncDebugPanel from './components/sync-debug-panel';
 
 export default function CalendarClientPage({
@@ -86,6 +87,7 @@ export default function CalendarClientPage({
 
   const extras = (
     <div className="grid w-full items-center gap-2 md:flex md:w-auto">
+      <SmartScheduleButton wsId={workspace.id} />
       {experimentalGoogleToken && (
         <>
           <QuickCalendarToggle />

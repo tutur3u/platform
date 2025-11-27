@@ -328,7 +328,7 @@ export default function HabitFormDialog({
             {/* Schedule Tab */}
             <TabsContent value="schedule" className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label htmlFor="duration">Duration (minutes) *</Label>
+                <Label htmlFor="duration">Preferred Duration (minutes) *</Label>
                 <Input
                   id="duration"
                   type="number"
@@ -336,6 +336,9 @@ export default function HabitFormDialog({
                   value={durationMinutes}
                   onChange={(e) => setDurationMinutes(Number(e.target.value))}
                 />
+                <p className="text-muted-foreground text-xs">
+                  The scheduler will use this duration in most time slots
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -351,8 +354,11 @@ export default function HabitFormDialog({
                         e.target.value ? Number(e.target.value) : undefined
                       )
                     }
-                    placeholder="None"
+                    placeholder={`~${Math.max(15, Math.floor(durationMinutes * 0.5))} min`}
                   />
+                  <p className="text-muted-foreground text-xs">
+                    Used when time is limited
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="maxDuration">Max Duration (optional)</Label>
@@ -366,8 +372,11 @@ export default function HabitFormDialog({
                         e.target.value ? Number(e.target.value) : undefined
                       )
                     }
-                    placeholder="None"
+                    placeholder={`~${Math.min(180, Math.ceil(durationMinutes * 1.5))} min`}
                   />
+                  <p className="text-muted-foreground text-xs">
+                    Used at ideal times to maximize benefit
+                  </p>
                 </div>
               </div>
 
@@ -624,7 +633,12 @@ export default function HabitFormDialog({
                 <div className="space-y-0.5">
                   <Label>Auto-schedule</Label>
                   <p className="text-muted-foreground text-sm">
-                    Automatically create calendar events
+                    Automatically create calendar events with smart duration
+                    optimization
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    Habits are scheduled before tasks. Urgent tasks may
+                    temporarily bump habits if needed.
                   </p>
                 </div>
                 <Switch

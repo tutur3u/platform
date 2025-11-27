@@ -1,5 +1,5 @@
-import type { CalendarHoursType } from './Task';
 import type { TaskPriority } from './Priority';
+import type { CalendarHoursType } from './Task';
 
 // ============================================================================
 // ENUMS
@@ -144,6 +144,19 @@ export interface HabitWithEvents extends Habit {
     completed: boolean;
   }>;
   streak?: HabitStreak;
+}
+
+/**
+ * Schedulable habit with computed effective priority
+ * Used by the unified scheduler for priority-based scheduling
+ */
+export interface SchedulableHabit extends Habit {
+  /** Computed effective priority (defaults to 'normal' if not set) */
+  effective_priority: TaskPriority;
+  /** Computed minimum duration (defaults to duration_minutes * 0.5 if not set) */
+  effective_min_duration: number;
+  /** Computed maximum duration (defaults to duration_minutes * 1.5 if not set) */
+  effective_max_duration: number;
 }
 
 /**

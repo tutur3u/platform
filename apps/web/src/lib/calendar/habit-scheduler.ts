@@ -3,9 +3,19 @@
  *
  * Schedules habit occurrences on the calendar by creating events.
  * Integrates with the task scheduling system and respects workspace hour settings.
+ *
+ * This module has been updated to use:
+ * - Smart duration optimization (min/max duration with slot-aware sizing)
+ * - Priority-based scheduling via the unified scheduler
+ * - Integration with the unified scheduling system for coordinated habit/task scheduling
  */
 
-import { getOccurrencesInRange } from '@tuturuuu/ai/scheduling';
+import {
+  calculateOptimalDuration,
+  getEffectiveDurationBounds,
+  getOccurrencesInRange,
+  getSlotCharacteristics,
+} from '@tuturuuu/ai/scheduling';
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import type {
   Habit,
@@ -15,6 +25,7 @@ import type {
 } from '@tuturuuu/types/primitives/Habit';
 import { getTimeRangeForPreference } from '@tuturuuu/types/primitives/Habit';
 import { fetchHourSettings } from './task-scheduler';
+import { scheduleWorkspace } from './unified-scheduler';
 
 // ============================================================================
 // TYPES
@@ -422,7 +433,21 @@ export async function fetchHabitStreak(
 // ============================================================================
 
 /**
- * Find an available time slot for a habit occurrence
+ * Smart slot result with optimized duration
+ */
+type SmartTimeSlot = TimeSlot & {
+  duration: number;
+  matchesIdealTime: boolean;
+  matchesPreference: boolean;
+};
+
+/**
+ * Find an available time slot for a habit occurrence with smart duration optimization
+ *
+ * The duration is optimized based on:
+ * - Ideal time match: Use max duration (maximize benefit)
+ * - Time preference match: Use preferred duration
+ * - Constrained slot: Use minimum viable duration
  */
 function findSlotForOccurrence(
   habit: Habit,
@@ -451,7 +476,7 @@ function findSlotForOccurrence(
     >;
   },
   existingEvents: Array<{ start_at: string; end_at: string }>
-): TimeSlot | null {
+): SmartTimeSlot | null {
   const dayOfWeek = occurrenceDate.getDay();
   const dayNames = [
     'sunday',
@@ -465,31 +490,42 @@ function findSlotForOccurrence(
   const dayName = dayNames[dayOfWeek];
 
   // Get the appropriate hour settings based on calendar_hours type
-  let daySettings;
-  switch (habit.calendar_hours) {
-    case 'work_hours':
-      daySettings =
-        hourSettings.workHours[dayName as keyof typeof hourSettings.workHours];
-      break;
-    case 'meeting_hours':
-      daySettings =
-        hourSettings.meetingHours[
-          dayName as keyof typeof hourSettings.meetingHours
-        ];
-      break;
-    case 'personal_hours':
-    default:
-      daySettings =
-        hourSettings.personalHours[
-          dayName as keyof typeof hourSettings.personalHours
-        ];
+  let daySettings:
+    | {
+        enabled: boolean;
+        timeBlocks: Array<{ startTime: string; endTime: string }>;
+      }
+    | undefined;
+
+  if (habit.calendar_hours === 'work_hours') {
+    daySettings =
+      hourSettings.workHours[dayName as keyof typeof hourSettings.workHours];
+  } else if (habit.calendar_hours === 'meeting_hours') {
+    daySettings =
+      hourSettings.meetingHours[
+        dayName as keyof typeof hourSettings.meetingHours
+      ];
+  } else {
+    daySettings =
+      hourSettings.personalHours[
+        dayName as keyof typeof hourSettings.personalHours
+      ];
   }
 
   if (!daySettings?.enabled || !daySettings.timeBlocks?.length) {
     return null;
   }
 
-  const duration = habit.duration_minutes;
+  // Get effective duration bounds using smart defaults
+  const {
+    min: minDuration,
+    preferred,
+    max: maxDuration,
+  } = getEffectiveDurationBounds({
+    duration_minutes: habit.duration_minutes,
+    min_duration_minutes: habit.min_duration_minutes,
+    max_duration_minutes: habit.max_duration_minutes,
+  });
 
   // Get events for this specific day
   const dayStart = new Date(occurrenceDate);
@@ -503,22 +539,71 @@ function findSlotForOccurrence(
     return eventStart < dayEnd && eventEnd > dayStart;
   });
 
-  // If habit has ideal_time, try that first
+  // Helper to check slot availability and calculate optimal duration
+  const evaluateSlot = (
+    slotStart: Date,
+    maxAvailable: number
+  ): SmartTimeSlot | null => {
+    const slotEnd = new Date(slotStart);
+    slotEnd.setMinutes(slotEnd.getMinutes() + maxAvailable);
+
+    const slotInfo = {
+      start: slotStart,
+      end: slotEnd,
+      maxAvailable,
+    };
+
+    // Get slot characteristics
+    const characteristics = getSlotCharacteristics(habit, slotInfo);
+
+    // Calculate optimal duration using smart algorithm
+    const optimalDuration = calculateOptimalDuration(
+      habit,
+      slotInfo,
+      characteristics
+    );
+
+    if (optimalDuration === 0 || optimalDuration < minDuration) {
+      return null;
+    }
+
+    const eventEnd = new Date(slotStart);
+    eventEnd.setMinutes(eventEnd.getMinutes() + optimalDuration);
+
+    return {
+      start: slotStart,
+      end: eventEnd,
+      duration: optimalDuration,
+      matchesIdealTime: characteristics.matchesIdealTime,
+      matchesPreference: characteristics.matchesPreference,
+    };
+  };
+
+  // If habit has ideal_time, try that first with max duration
   if (habit.ideal_time) {
     const [hours, minutes] = habit.ideal_time.split(':').map(Number);
     const idealStart = new Date(occurrenceDate);
     idealStart.setHours(hours || 0, minutes || 0, 0, 0);
-    const idealEnd = new Date(idealStart);
-    idealEnd.setMinutes(idealEnd.getMinutes() + duration);
 
-    if (
-      isSlotAvailable(idealStart, idealEnd, dayEvents, daySettings.timeBlocks)
-    ) {
-      return { start: idealStart, end: idealEnd };
+    // Find available time at ideal slot
+    const availableMinutes = findAvailableMinutesAt(
+      idealStart,
+      dayEvents,
+      daySettings.timeBlocks,
+      maxDuration
+    );
+
+    if (availableMinutes >= minDuration) {
+      const slot = evaluateSlot(idealStart, availableMinutes);
+      if (slot) return slot;
     }
   }
 
-  // If habit has time_preference, narrow down to that range
+  // Collect all candidate slots with their scores
+  type CandidateSlot = SmartTimeSlot & { score: number };
+  const candidates: CandidateSlot[] = [];
+
+  // If habit has time_preference, narrow down to that range first
   let preferredBlocks = daySettings.timeBlocks;
   if (habit.time_preference) {
     const prefRange = getTimeRangeForPreference(
@@ -532,30 +617,116 @@ function findSlotForOccurrence(
       .filter((block) => block.startTime < block.endTime);
   }
 
-  // Find first available slot in preferred blocks
+  // Search preferred blocks first
   for (const block of preferredBlocks) {
-    const slot = findSlotInBlock(occurrenceDate, block, duration, dayEvents);
-    if (slot) return slot;
+    const slots = findAllSlotsInBlock(
+      occurrenceDate,
+      block,
+      minDuration,
+      dayEvents
+    );
+    for (const { start, maxAvailable } of slots) {
+      const slot = evaluateSlot(start, maxAvailable);
+      if (slot) {
+        let score = 0;
+        if (slot.matchesIdealTime) score += 1000;
+        if (slot.matchesPreference) score += 500;
+        if (slot.duration >= preferred) score += 200;
+        score -= start.getHours() * 0.1; // Prefer earlier slots slightly
+        candidates.push({ ...slot, score });
+      }
+    }
   }
 
   // Fall back to any available slot in the day's time blocks
-  for (const block of daySettings.timeBlocks) {
-    const slot = findSlotInBlock(occurrenceDate, block, duration, dayEvents);
-    if (slot) return slot;
+  if (candidates.length === 0) {
+    for (const block of daySettings.timeBlocks) {
+      const slots = findAllSlotsInBlock(
+        occurrenceDate,
+        block,
+        minDuration,
+        dayEvents
+      );
+      for (const { start, maxAvailable } of slots) {
+        const slot = evaluateSlot(start, maxAvailable);
+        if (slot) {
+          let score = 0;
+          if (slot.duration >= preferred) score += 200;
+          score -= start.getHours() * 0.1;
+          candidates.push({ ...slot, score });
+        }
+      }
+    }
   }
 
-  return null;
+  if (candidates.length === 0) return null;
+
+  // Return the best candidate
+  candidates.sort((a, b) => b.score - a.score);
+  return candidates[0] || null;
 }
 
 /**
- * Find an available slot within a time block
+ * Find available minutes at a specific start time
  */
-function findSlotInBlock(
+function findAvailableMinutesAt(
+  start: Date,
+  existingEvents: Array<{ start_at: string; end_at: string }>,
+  timeBlocks: Array<{ startTime: string; endTime: string }>,
+  maxMinutes: number
+): number {
+  const startHour = start.getHours();
+  const startMin = start.getMinutes();
+  const startTimeStr = `${startHour.toString().padStart(2, '0')}:${startMin.toString().padStart(2, '0')}`;
+
+  // Find which time block this falls into
+  const containingBlock = timeBlocks.find(
+    (block) => startTimeStr >= block.startTime && startTimeStr < block.endTime
+  );
+
+  if (!containingBlock) return 0;
+
+  // Calculate max available until block end
+  const [endHour, endMin] = containingBlock.endTime.split(':').map(Number);
+  const blockEnd = new Date(start);
+  blockEnd.setHours(endHour || 23, endMin || 59, 0, 0);
+
+  let available = Math.min(
+    (blockEnd.getTime() - start.getTime()) / 60000,
+    maxMinutes
+  );
+
+  // Check for conflicts with existing events
+  for (const event of existingEvents) {
+    const eventStart = new Date(event.start_at);
+    const eventEnd = new Date(event.end_at);
+
+    if (eventStart <= start && eventEnd > start) {
+      // Slot starts during an existing event
+      return 0;
+    }
+
+    if (eventStart > start && eventStart < blockEnd) {
+      // Event starts during our potential slot - limit available time
+      available = Math.min(
+        available,
+        (eventStart.getTime() - start.getTime()) / 60000
+      );
+    }
+  }
+
+  return available;
+}
+
+/**
+ * Find all available slots within a time block (with their max available minutes)
+ */
+function findAllSlotsInBlock(
   date: Date,
   block: { startTime: string; endTime: string },
-  durationMinutes: number,
+  minDurationMinutes: number,
   existingEvents: Array<{ start_at: string; end_at: string }>
-): TimeSlot | null {
+): Array<{ start: Date; maxAvailable: number }> {
   const [startHour, startMin] = block.startTime.split(':').map(Number);
   const [endHour, endMin] = block.endTime.split(':').map(Number);
 
@@ -565,61 +736,59 @@ function findSlotInBlock(
   const blockEnd = new Date(date);
   blockEnd.setHours(endHour || 23, endMin || 59, 0, 0);
 
-  // Try every 15 minutes
-  let currentTime = new Date(blockStart);
+  const slots: Array<{ start: Date; maxAvailable: number }> = [];
 
-  while (
-    currentTime.getTime() + durationMinutes * 60000 <=
-    blockEnd.getTime()
-  ) {
-    const slotEnd = new Date(currentTime);
-    slotEnd.setMinutes(slotEnd.getMinutes() + durationMinutes);
+  // Get events sorted by start time
+  const dayEvents = existingEvents
+    .map((e) => ({
+      start: new Date(e.start_at),
+      end: new Date(e.end_at),
+    }))
+    .filter((e) => e.start < blockEnd && e.end > blockStart)
+    .sort((a, b) => a.start.getTime() - b.start.getTime());
 
-    const hasConflict = existingEvents.some((event) => {
-      const eventStart = new Date(event.start_at);
-      const eventEnd = new Date(event.end_at);
-      // Check overlap
-      return currentTime < eventEnd && slotEnd > eventStart;
-    });
-
-    if (!hasConflict) {
-      return { start: new Date(currentTime), end: slotEnd };
+  if (dayEvents.length === 0) {
+    // Entire block is available
+    const maxAvailable = (blockEnd.getTime() - blockStart.getTime()) / 60000;
+    if (maxAvailable >= minDurationMinutes) {
+      slots.push({ start: new Date(blockStart), maxAvailable });
     }
-
-    // Move to next 15-minute slot
-    currentTime.setMinutes(currentTime.getMinutes() + 15);
+    return slots;
   }
 
-  return null;
-}
+  // Gap before first event
+  const firstEvent = dayEvents[0];
+  if (firstEvent && firstEvent.start > blockStart) {
+    const maxAvailable =
+      (firstEvent.start.getTime() - blockStart.getTime()) / 60000;
+    if (maxAvailable >= minDurationMinutes) {
+      slots.push({ start: new Date(blockStart), maxAvailable });
+    }
+  }
 
-/**
- * Check if a slot is available
- */
-function isSlotAvailable(
-  start: Date,
-  end: Date,
-  existingEvents: Array<{ start_at: string; end_at: string }>,
-  timeBlocks: Array<{ startTime: string; endTime: string }>
-): boolean {
-  // Check if within allowed time blocks
-  const [startHour, startMin] = [start.getHours(), start.getMinutes()];
-  const [endHour, endMin] = [end.getHours(), end.getMinutes()];
-  const startTimeStr = `${startHour.toString().padStart(2, '0')}:${startMin.toString().padStart(2, '0')}`;
-  const endTimeStr = `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
+  // Gaps between events
+  for (let i = 0; i < dayEvents.length - 1; i++) {
+    const current = dayEvents[i];
+    const next = dayEvents[i + 1];
+    if (current && next && current.end < next.start) {
+      const maxAvailable =
+        (next.start.getTime() - current.end.getTime()) / 60000;
+      if (maxAvailable >= minDurationMinutes) {
+        slots.push({ start: new Date(current.end), maxAvailable });
+      }
+    }
+  }
 
-  const inBlock = timeBlocks.some(
-    (block) => startTimeStr >= block.startTime && endTimeStr <= block.endTime
-  );
+  // Gap after last event
+  const lastEvent = dayEvents[dayEvents.length - 1];
+  if (lastEvent && lastEvent.end < blockEnd) {
+    const maxAvailable = (blockEnd.getTime() - lastEvent.end.getTime()) / 60000;
+    if (maxAvailable >= minDurationMinutes) {
+      slots.push({ start: new Date(lastEvent.end), maxAvailable });
+    }
+  }
 
-  if (!inBlock) return false;
-
-  // Check for conflicts with existing events
-  return !existingEvents.some((event) => {
-    const eventStart = new Date(event.start_at);
-    const eventEnd = new Date(event.end_at);
-    return start < eventEnd && end > eventStart;
-  });
+  return slots;
 }
 
 /**
@@ -634,4 +803,45 @@ function maxTime(a: string, b: string): string {
  */
 function minTime(a: string, b: string): string {
   return a <= b ? a : b;
+}
+
+// ============================================================================
+// UNIFIED SCHEDULER INTEGRATION
+// ============================================================================
+
+/**
+ * Reschedule all habits and tasks in a workspace using the unified scheduler
+ *
+ * This is the recommended way to perform a full calendar re-optimization.
+ * It ensures habits and tasks are scheduled in a coordinated manner with:
+ * - Habits scheduled first by priority
+ * - Tasks scheduled second by deadline + priority
+ * - Smart duration optimization for habits
+ * - Urgent task bumping for lower-priority habits
+ */
+export async function rescheduleWorkspace(
+  supabase: SupabaseClient,
+  wsId: string,
+  options: {
+    windowDays?: number;
+    forceReschedule?: boolean;
+  } = {}
+): Promise<{
+  scheduledHabits: number;
+  scheduledTasks: number;
+  bumpedHabits: number;
+  warnings: string[];
+}> {
+  const result = await scheduleWorkspace(supabase, wsId, options);
+
+  return {
+    scheduledHabits:
+      result.habits.events.length + result.rescheduledHabits.length,
+    scheduledTasks: result.tasks.events.reduce(
+      (sum, t) => sum + t.events.length,
+      0
+    ),
+    bumpedHabits: result.tasks.bumpedHabitEvents.length,
+    warnings: result.warnings,
+  };
 }

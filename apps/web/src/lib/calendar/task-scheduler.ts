@@ -1,11 +1,25 @@
+/**
+ * Task Scheduler
+ *
+ * Schedules tasks on the calendar by creating events.
+ * Integrates with the habit scheduling system via the unified scheduler.
+ *
+ * This module has been updated to use:
+ * - Priority-based scheduling with deadline inference
+ * - Unified scheduling for coordinated habit/task scheduling
+ * - Habit bumping for urgent tasks
+ */
+
 import {
   convertHourSettingsToActiveHours,
   convertWebEventsToLocked,
   convertWebTaskToSchedulerTask,
+  getEffectivePriority,
   scheduleTasks,
 } from '@tuturuuu/ai/scheduling';
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { CalendarHoursType, TaskWithScheduling } from '@tuturuuu/types';
+import { scheduleWorkspace } from './unified-scheduler';
 
 type TimeBlock = {
   startTime: string;
@@ -549,16 +563,78 @@ function getColorForHourType(hourType?: CalendarHoursType | null): string {
 
 /**
  * Reschedule all tasks with auto_schedule enabled in a workspace
- * This performs a full calendar optimization based on deadline priority
  *
- * Key algorithm:
- * 1. Fetch ALL auto-schedule tasks
- * 2. Delete ALL future events from ALL these tasks first
- * 3. Schedule each task in deadline order (earliest deadline first)
+ * This function now uses the unified scheduler which:
+ * 1. Schedules habits FIRST (by priority)
+ * 2. Schedules tasks SECOND (by deadline + priority)
+ * 3. Allows urgent tasks to bump lower-priority habit events
+ * 4. Reschedules bumped habits to next available slots
  *
- * This ensures tasks with earlier deadlines always get the earliest available slots.
+ * This ensures coordinated scheduling between habits and tasks.
  */
 export async function rescheduleAllAutoScheduleTasks(
+  supabase: SupabaseClient,
+  wsId: string,
+  options: {
+    useUnifiedScheduler?: boolean;
+    windowDays?: number;
+  } = {}
+): Promise<{
+  rescheduledCount: number;
+  errors: string[];
+  warnings: string[];
+}> {
+  const { useUnifiedScheduler = true, windowDays = 30 } = options;
+
+  // Use unified scheduler by default for coordinated habit/task scheduling
+  if (useUnifiedScheduler) {
+    try {
+      const result = await scheduleWorkspace(supabase, wsId, {
+        windowDays,
+        forceReschedule: true,
+      });
+
+      const rescheduledCount = result.tasks.events.filter(
+        (t) => t.events.length > 0
+      ).length;
+
+      const warnings = [...result.warnings];
+
+      // Add warnings for tasks that couldn't be scheduled
+      for (const taskResult of result.tasks.events) {
+        if (taskResult.warning) {
+          warnings.push(
+            `${taskResult.task.name || 'Task'}: ${taskResult.warning}`
+          );
+        }
+      }
+
+      return {
+        rescheduledCount,
+        errors: [],
+        warnings,
+      };
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      console.error('Error in unified scheduler:', error);
+      return {
+        rescheduledCount: 0,
+        errors: [errorMessage],
+        warnings: [],
+      };
+    }
+  }
+
+  // Legacy task-only scheduling (deprecated, kept for backward compatibility)
+  return rescheduleTasksOnly(supabase, wsId);
+}
+
+/**
+ * Legacy task-only scheduling function
+ * @deprecated Use rescheduleAllAutoScheduleTasks with useUnifiedScheduler: true instead
+ */
+async function rescheduleTasksOnly(
   supabase: SupabaseClient,
   wsId: string
 ): Promise<{
@@ -593,8 +669,30 @@ export async function rescheduleAllAutoScheduleTasks(
       return { rescheduledCount: 0, errors: [], warnings: [] };
     }
 
-    // 2. Sort by deadline (earliest first, null deadlines last)
+    // 2. Sort by effective priority (inferred from deadline if not set) then deadline
     const sortedTasks = [...autoScheduleTasks].sort((a: any, b: any) => {
+      // Primary: Effective priority (highest first)
+      const aPriority = getEffectivePriority({
+        priority: a.priority,
+        end_date: a.end_date,
+      });
+      const bPriority = getEffectivePriority({
+        priority: b.priority,
+        end_date: b.end_date,
+      });
+
+      const priorityOrder: Record<string, number> = {
+        critical: 0,
+        high: 1,
+        normal: 2,
+        low: 3,
+      };
+
+      const priorityDiff =
+        (priorityOrder[aPriority] ?? 2) - (priorityOrder[bPriority] ?? 2);
+      if (priorityDiff !== 0) return priorityDiff;
+
+      // Secondary: Deadline (earliest first, null deadlines last)
       if (!a.end_date && !b.end_date) return 0;
       if (!a.end_date) return 1;
       if (!b.end_date) return -1;
@@ -631,7 +729,7 @@ export async function rescheduleAllAutoScheduleTasks(
       // Continue with scheduling even if deletion fails
     }
 
-    // 4. Schedule each task in deadline order
+    // 4. Schedule each task in priority + deadline order
     for (const taskData of sortedTasks) {
       try {
         const result = await scheduleTask(
@@ -647,19 +745,23 @@ export async function rescheduleAllAutoScheduleTasks(
         } else {
           errors.push(`${taskData.name || 'Task'}: ${result.message}`);
         }
-      } catch (rescheduleError: any) {
+      } catch (rescheduleError: unknown) {
+        const errorMessage =
+          rescheduleError instanceof Error
+            ? rescheduleError.message
+            : 'Unknown error';
         console.error(
           `Failed to re-schedule task ${taskData.id}:`,
           rescheduleError
         );
-        errors.push(
-          `${taskData.name || taskData.id}: ${rescheduleError.message || 'Unknown error'}`
-        );
+        errors.push(`${taskData.name || taskData.id}: ${errorMessage}`);
       }
     }
-  } catch (error: any) {
-    console.error('Error in rescheduleAllAutoScheduleTasks:', error);
-    errors.push(error.message || 'Unknown error');
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error in rescheduleTasksOnly:', error);
+    errors.push(errorMessage);
   }
 
   return { rescheduledCount, errors, warnings };
