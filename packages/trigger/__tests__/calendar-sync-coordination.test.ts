@@ -245,7 +245,9 @@ describe('Calendar Sync Coordination', () => {
       ];
 
       // Exactly 30 seconds ago - should still block (not yet past cooldown)
-      const exactlyThirtySecondsAgo = new Date(Date.now() - 30000).toISOString();
+      const exactlyThirtySecondsAgo = new Date(
+        Date.now() - 30000
+      ).toISOString();
 
       mockSupabaseClient.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
