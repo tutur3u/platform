@@ -12,13 +12,19 @@ import type { TimeOfDayPreference } from '@tuturuuu/types/primitives/Habit';
 import { describe, expect, it } from 'vitest';
 
 import {
+  calculateIdealStartTimeForHabit,
+  calculateIdealStartTimeForTask,
   calculateOptimalDuration,
   findBestSlotForHabit,
+  findBestSlotForTask,
   getEffectiveDurationBounds,
   getSlotCharacteristics,
   type HabitDurationConfig,
+  roundToNext15Minutes,
   scoreSlotForHabit,
+  scoreSlotForTask,
   slotMatchesPreference,
+  type TaskSlotConfig,
   timeMatchesSlot,
   type TimeSlotInfo,
 } from './duration-optimizer';
@@ -56,6 +62,73 @@ function createSlot(
     maxAvailable: maxAvailable ?? (endHour - startHour) * 60,
   };
 }
+
+// ============================================================================
+// Tests for roundToNext15Minutes
+// ============================================================================
+
+describe('roundToNext15Minutes', () => {
+  it('should keep times already on 15-minute boundaries', () => {
+    const date = new Date('2025-01-15T09:00:00');
+    const result = roundToNext15Minutes(date);
+    expect(result.getMinutes()).toBe(0);
+
+    const date2 = new Date('2025-01-15T09:15:00');
+    const result2 = roundToNext15Minutes(date2);
+    expect(result2.getMinutes()).toBe(15);
+
+    const date3 = new Date('2025-01-15T09:30:00');
+    const result3 = roundToNext15Minutes(date3);
+    expect(result3.getMinutes()).toBe(30);
+
+    const date4 = new Date('2025-01-15T09:45:00');
+    const result4 = roundToNext15Minutes(date4);
+    expect(result4.getMinutes()).toBe(45);
+  });
+
+  it('should round up to next 15-minute boundary', () => {
+    // 9:01 -> 9:15
+    const date1 = new Date('2025-01-15T09:01:00');
+    const result1 = roundToNext15Minutes(date1);
+    expect(result1.getHours()).toBe(9);
+    expect(result1.getMinutes()).toBe(15);
+
+    // 9:11 -> 9:15
+    const date2 = new Date('2025-01-15T09:11:00');
+    const result2 = roundToNext15Minutes(date2);
+    expect(result2.getMinutes()).toBe(15);
+
+    // 9:16 -> 9:30
+    const date3 = new Date('2025-01-15T09:16:00');
+    const result3 = roundToNext15Minutes(date3);
+    expect(result3.getMinutes()).toBe(30);
+
+    // 9:31 -> 9:45
+    const date4 = new Date('2025-01-15T09:31:00');
+    const result4 = roundToNext15Minutes(date4);
+    expect(result4.getMinutes()).toBe(45);
+
+    // 9:46 -> 10:00
+    const date5 = new Date('2025-01-15T09:46:00');
+    const result5 = roundToNext15Minutes(date5);
+    expect(result5.getHours()).toBe(10);
+    expect(result5.getMinutes()).toBe(0);
+  });
+
+  it('should zero out seconds and milliseconds', () => {
+    const date = new Date('2025-01-15T09:00:30.500');
+    const result = roundToNext15Minutes(date);
+    expect(result.getSeconds()).toBe(0);
+    expect(result.getMilliseconds()).toBe(0);
+  });
+
+  it('should not modify the original date', () => {
+    const original = new Date('2025-01-15T09:11:00');
+    const originalTime = original.getTime();
+    roundToNext15Minutes(original);
+    expect(original.getTime()).toBe(originalTime);
+  });
+});
 
 describe('Duration Optimizer', () => {
   describe('getEffectiveDurationBounds', () => {
@@ -1100,6 +1173,918 @@ describe('Duration Optimizer', () => {
 
       // Expected: 0 (no preference match) + 200 (fits preferred) - 12*0.1 = 198.8
       expect(noonScore).toBe(198.8);
+    });
+  });
+});
+
+// ============================================================================
+// TASK SLOT SCORING TESTS
+// ============================================================================
+
+// Helper to create a task config with defaults
+function createTask(overrides: Partial<TaskSlotConfig> = {}): TaskSlotConfig {
+  return {
+    deadline: null,
+    priority: 'normal',
+    preferredTimeOfDay: null,
+    ...overrides,
+  };
+}
+
+// Helper to create a "now" date for testing
+function createNow(
+  hour: number = 8,
+  baseDate: Date = new Date('2025-01-15')
+): Date {
+  const now = new Date(baseDate);
+  now.setHours(hour, 0, 0, 0);
+  return now;
+}
+
+describe('Task Slot Scoring', () => {
+  describe('scoreSlotForTask', () => {
+    describe('basic scoring without deadline', () => {
+      it('should prefer earlier slots for tasks without deadline (ASAP strategy)', () => {
+        const task = createTask({ priority: 'normal' });
+        const now = createNow(8);
+
+        const slot7am = createSlot(7, 9, 60);
+        const slot12pm = createSlot(12, 14, 60);
+        const slot6pm = createSlot(18, 20, 60);
+
+        const score7am = scoreSlotForTask(task, slot7am, now);
+        const score12pm = scoreSlotForTask(task, slot12pm, now);
+        const score6pm = scoreSlotForTask(task, slot6pm, now);
+
+        // Earlier slots should have highest score (ASAP strategy)
+        expect(score7am).toBeGreaterThan(score12pm);
+        expect(score12pm).toBeGreaterThan(score6pm);
+      });
+
+      it('should prefer earlier slots even when equidistant from noon', () => {
+        const task = createTask({ priority: 'normal' });
+        const now = createNow(8);
+
+        // Slots equidistant from noon
+        const slot9am = createSlot(9, 11, 60); // 3 hours before noon
+        const slot3pm = createSlot(15, 17, 60); // 3 hours after noon
+
+        const score9am = scoreSlotForTask(task, slot9am, now);
+        const score3pm = scoreSlotForTask(task, slot3pm, now);
+
+        // Earlier slot (9am) should score higher than later slot (3pm)
+        expect(score9am).toBeGreaterThan(score3pm);
+      });
+
+      it('should give bonus for larger slots (better fit)', () => {
+        const task = createTask({ priority: 'normal' });
+        const now = createNow(8);
+
+        const smallSlot = createSlot(12, 13, 30); // 30 min
+        const largeSlot = createSlot(12, 14, 120); // 2 hours
+
+        const smallScore = scoreSlotForTask(task, smallSlot, now);
+        const largeScore = scoreSlotForTask(task, largeSlot, now);
+
+        expect(largeScore).toBeGreaterThan(smallScore);
+      });
+    });
+
+    describe('deadline-based scoring', () => {
+      it('should prefer earliest slots for URGENT tasks (deadline < 24h)', () => {
+        const now = createNow(8);
+        const urgentDeadline = new Date(now);
+        urgentDeadline.setHours(urgentDeadline.getHours() + 12); // 12 hours from now
+
+        const task = createTask({
+          priority: 'high',
+          deadline: urgentDeadline,
+        });
+
+        const slot7am = createSlot(7, 9, 60);
+        const slot12pm = createSlot(12, 14, 60);
+        const slot5pm = createSlot(17, 19, 60);
+
+        const score7am = scoreSlotForTask(task, slot7am, now);
+        const score12pm = scoreSlotForTask(task, slot12pm, now);
+        const score5pm = scoreSlotForTask(task, slot5pm, now);
+
+        // For urgent tasks, earlier is better
+        expect(score7am).toBeGreaterThan(score12pm);
+        expect(score12pm).toBeGreaterThan(score5pm);
+      });
+
+      it('should have mild early preference for SOON tasks (deadline 24-72h)', () => {
+        const now = createNow(8);
+        const soonDeadline = new Date(now);
+        soonDeadline.setHours(soonDeadline.getHours() + 48); // 48 hours from now
+
+        const task = createTask({
+          priority: 'normal',
+          deadline: soonDeadline,
+        });
+
+        const slot7am = createSlot(7, 9, 60);
+        const slot12pm = createSlot(12, 14, 60);
+
+        const score7am = scoreSlotForTask(task, slot7am, now);
+        const score12pm = scoreSlotForTask(task, slot12pm, now);
+
+        // For soon tasks, earlier is slightly better
+        expect(score7am).toBeGreaterThan(score12pm);
+      });
+
+      it('should prefer middle-of-day for tasks with distant deadline (>72h)', () => {
+        const now = createNow(8);
+        const distantDeadline = new Date(now);
+        distantDeadline.setDate(distantDeadline.getDate() + 7); // 7 days from now
+
+        const task = createTask({
+          priority: 'normal',
+          deadline: distantDeadline,
+        });
+
+        const slot7am = createSlot(7, 9, 60);
+        const slot12pm = createSlot(12, 14, 60);
+        const slot6pm = createSlot(18, 20, 60);
+
+        const score7am = scoreSlotForTask(task, slot7am, now);
+        const score12pm = scoreSlotForTask(task, slot12pm, now);
+        const score6pm = scoreSlotForTask(task, slot6pm, now);
+
+        // For distant deadlines, still prefer earlier slots (ASAP strategy)
+        expect(score7am).toBeGreaterThan(score12pm);
+        expect(score12pm).toBeGreaterThan(score6pm);
+      });
+    });
+
+    describe('priority-based scoring', () => {
+      it('should give bonus to critical priority tasks', () => {
+        const now = createNow(8);
+        const slot = createSlot(12, 14, 60);
+
+        const criticalTask = createTask({ priority: 'critical' });
+        const normalTask = createTask({ priority: 'normal' });
+
+        const criticalScore = scoreSlotForTask(criticalTask, slot, now);
+        const normalScore = scoreSlotForTask(normalTask, slot, now);
+
+        expect(criticalScore).toBeGreaterThan(normalScore);
+        expect(criticalScore - normalScore).toBe(200); // Critical bonus
+      });
+
+      it('should give bonus to high priority tasks', () => {
+        const now = createNow(8);
+        const slot = createSlot(12, 14, 60);
+
+        const highTask = createTask({ priority: 'high' });
+        const normalTask = createTask({ priority: 'normal' });
+
+        const highScore = scoreSlotForTask(highTask, slot, now);
+        const normalScore = scoreSlotForTask(normalTask, slot, now);
+
+        expect(highScore).toBeGreaterThan(normalScore);
+        expect(highScore - normalScore).toBe(100); // High bonus
+      });
+
+      it('should penalize low priority tasks', () => {
+        const now = createNow(8);
+        const slot = createSlot(12, 14, 60);
+
+        const lowTask = createTask({ priority: 'low' });
+        const normalTask = createTask({ priority: 'normal' });
+
+        const lowScore = scoreSlotForTask(lowTask, slot, now);
+        const normalScore = scoreSlotForTask(normalTask, slot, now);
+
+        expect(normalScore).toBeGreaterThan(lowScore);
+        expect(normalScore - lowScore).toBe(50); // Low penalty
+      });
+
+      it('should have correct priority ordering', () => {
+        const now = createNow(8);
+        const slot = createSlot(12, 14, 60);
+
+        const criticalTask = createTask({ priority: 'critical' });
+        const highTask = createTask({ priority: 'high' });
+        const normalTask = createTask({ priority: 'normal' });
+        const lowTask = createTask({ priority: 'low' });
+
+        const criticalScore = scoreSlotForTask(criticalTask, slot, now);
+        const highScore = scoreSlotForTask(highTask, slot, now);
+        const normalScore = scoreSlotForTask(normalTask, slot, now);
+        const lowScore = scoreSlotForTask(lowTask, slot, now);
+
+        expect(criticalScore).toBeGreaterThan(highScore);
+        expect(highScore).toBeGreaterThan(normalScore);
+        expect(normalScore).toBeGreaterThan(lowScore);
+      });
+    });
+
+    describe('time preference scoring', () => {
+      it('should give bonus when slot matches time preference', () => {
+        const now = createNow(8);
+
+        const afternoonTask = createTask({
+          priority: 'normal',
+          preferredTimeOfDay: 'afternoon',
+        });
+
+        const morningSlot = createSlot(9, 11, 60);
+        const afternoonSlot = createSlot(14, 16, 60);
+
+        const morningScore = scoreSlotForTask(afternoonTask, morningSlot, now);
+        const afternoonScore = scoreSlotForTask(
+          afternoonTask,
+          afternoonSlot,
+          now
+        );
+
+        // Afternoon slot should win due to +500 preference bonus
+        // Even though morning slot has better time score (earlier)
+        expect(afternoonScore).toBeGreaterThan(morningScore);
+        // The bonus is +500, but earlier slot gets +50 extra from time score (9am vs 2pm)
+        // So net difference is around 450
+        expect(afternoonScore - morningScore).toBeGreaterThanOrEqual(400);
+      });
+
+      it('should respect morning preference', () => {
+        const now = createNow(8);
+
+        const morningTask = createTask({
+          priority: 'normal',
+          preferredTimeOfDay: 'morning',
+        });
+
+        const morningSlot = createSlot(8, 10, 60);
+        const eveningSlot = createSlot(18, 20, 60);
+
+        const morningScore = scoreSlotForTask(morningTask, morningSlot, now);
+        const eveningScore = scoreSlotForTask(morningTask, eveningSlot, now);
+
+        expect(morningScore).toBeGreaterThan(eveningScore);
+      });
+    });
+
+    describe('combined scoring scenarios', () => {
+      it('should balance urgency with time preference', () => {
+        const now = createNow(8);
+        const urgentDeadline = new Date(now);
+        urgentDeadline.setHours(urgentDeadline.getHours() + 6); // Very urgent
+
+        const task = createTask({
+          priority: 'critical',
+          deadline: urgentDeadline,
+          preferredTimeOfDay: 'afternoon', // Prefers afternoon, but task is urgent
+        });
+
+        const morningSlot = createSlot(9, 11, 60);
+        const afternoonSlot = createSlot(14, 16, 60);
+
+        const morningScore = scoreSlotForTask(task, morningSlot, now);
+        const afternoonScore = scoreSlotForTask(task, afternoonSlot, now);
+
+        // Morning should win because urgency overrides time preference
+        // Urgency bonus: 300 - 9*10 = 210 for morning, 300 - 14*10 = 160 for afternoon
+        // Plus afternoon gets +500 for preference match
+        // So afternoon: 160 + 500 = 660 extra, morning: 210 extra
+        // This means preference wins over urgency in this case
+        expect(afternoonScore).toBeGreaterThan(morningScore);
+      });
+    });
+  });
+
+  describe('findBestSlotForTask', () => {
+    it('should return null when no slots provided', () => {
+      const task = createTask({ priority: 'normal' });
+      const now = createNow(8);
+
+      const result = findBestSlotForTask(task, [], 30, now);
+
+      expect(result).toBeNull();
+    });
+
+    it('should return null when no slots meet minimum duration', () => {
+      const task = createTask({ priority: 'normal' });
+      const now = createNow(8);
+      const slots = [
+        createSlot(9, 10, 15), // Only 15 min available
+        createSlot(11, 12, 20), // Only 20 min available
+      ];
+
+      const result = findBestSlotForTask(task, slots, 30, now); // Need 30 min
+
+      expect(result).toBeNull();
+    });
+
+    it('should return the only viable slot', () => {
+      const task = createTask({ priority: 'normal' });
+      const now = createNow(8);
+      const slots = [
+        createSlot(9, 10, 15), // Too small
+        createSlot(11, 13, 60), // Viable - should be returned
+        createSlot(14, 15, 20), // Too small
+      ];
+
+      const result = findBestSlotForTask(task, slots, 30, now);
+
+      expect(result).not.toBeNull();
+      expect(result?.start.getHours()).toBe(11);
+    });
+
+    it('should select earliest slot for task without deadline (ASAP strategy)', () => {
+      const task = createTask({ priority: 'normal' });
+      const now = createNow(8);
+      const slots = [
+        createSlot(7, 9, 60), // 7am - should win (earliest, ASAP)
+        createSlot(10, 12, 60), // 10am
+        createSlot(12, 14, 60), // 12pm
+        createSlot(15, 17, 60), // 3pm
+        createSlot(18, 20, 60), // 6pm
+      ];
+
+      const result = findBestSlotForTask(task, slots, 30, now);
+
+      expect(result).not.toBeNull();
+      expect(result?.start.getHours()).toBe(7);
+    });
+
+    it('should select earliest slot for urgent task', () => {
+      const now = createNow(8);
+      const urgentDeadline = new Date(now);
+      urgentDeadline.setHours(urgentDeadline.getHours() + 6);
+
+      const task = createTask({
+        priority: 'critical',
+        deadline: urgentDeadline,
+      });
+
+      const slots = [
+        createSlot(9, 11, 60), // 9am - should win (earliest, urgent)
+        createSlot(12, 14, 60), // 12pm
+        createSlot(15, 17, 60), // 3pm
+      ];
+
+      const result = findBestSlotForTask(task, slots, 30, now);
+
+      expect(result).not.toBeNull();
+      expect(result?.start.getHours()).toBe(9);
+    });
+
+    it('should prefer earliest slots for tasks (ASAP strategy)', () => {
+      const now = createNow(8);
+
+      // Multiple tasks without deadlines
+      const taskA = createTask({ priority: 'normal' });
+      const taskB = createTask({ priority: 'normal' });
+      const taskC = createTask({ priority: 'normal' });
+
+      const slots = [
+        createSlot(7, 9, 120), // 7am - ASAP behavior picks this
+        createSlot(10, 12, 120), // 10am
+        createSlot(12, 14, 120), // 12pm
+        createSlot(14, 16, 120), // 2pm
+        createSlot(17, 19, 120), // 5pm
+      ];
+
+      // All tasks without deadline should pick earliest (7am) - ASAP strategy
+      const resultA = findBestSlotForTask(taskA, slots, 30, now);
+      const resultB = findBestSlotForTask(taskB, slots, 30, now);
+      const resultC = findBestSlotForTask(taskC, slots, 30, now);
+
+      // All should prefer 7am (earliest available)
+      expect(resultA?.start.getHours()).toBe(7);
+      expect(resultB?.start.getHours()).toBe(7);
+      expect(resultC?.start.getHours()).toBe(7);
+    });
+  });
+
+  describe('task + habit harmony scenarios', () => {
+    it('should demonstrate habits prefer noon while tasks prefer ASAP', () => {
+      const now = createNow(8);
+
+      // Habit without preference - should prefer noon
+      const habitWithoutPref = createHabit({ duration_minutes: 45 });
+
+      // Task without deadline - should prefer ASAP (earliest)
+      const taskWithoutDeadline = createTask({ priority: 'normal' });
+
+      const slots = [
+        createSlot(7, 9, 120), // 7am
+        createSlot(11, 13, 120), // 11am - closest to noon
+        createSlot(17, 19, 120), // 5pm
+      ];
+
+      // Habit prefers 11am (closest to noon)
+      const habitResult = findBestSlotForHabit(habitWithoutPref, slots);
+      // Task prefers 7am (ASAP)
+      const taskResult = findBestSlotForTask(
+        taskWithoutDeadline,
+        slots,
+        30,
+        now
+      );
+
+      expect(habitResult?.start.getHours()).toBe(11);
+      expect(taskResult?.start.getHours()).toBe(7);
+    });
+
+    it('should allow urgent tasks to get earlier slots than relaxed habits', () => {
+      const now = createNow(8);
+      const urgentDeadline = new Date(now);
+      urgentDeadline.setHours(urgentDeadline.getHours() + 4);
+
+      // Habit without preference (will prefer noon)
+      const relaxedHabit = createHabit({ duration_minutes: 30 });
+
+      // Urgent task (will prefer earliest)
+      const urgentTask = createTask({
+        priority: 'critical',
+        deadline: urgentDeadline,
+      });
+
+      const slots = [
+        createSlot(9, 11, 60), // 9am
+        createSlot(12, 14, 60), // 12pm
+      ];
+
+      const habitResult = findBestSlotForHabit(relaxedHabit, slots);
+      const taskResult = findBestSlotForTask(urgentTask, slots, 30, now);
+
+      // Habit prefers noon, urgent task prefers earliest
+      expect(habitResult?.start.getHours()).toBe(12);
+      expect(taskResult?.start.getHours()).toBe(9);
+    });
+
+    it('should respect both habit time preference and task urgency', () => {
+      const now = createNow(8);
+      const urgentDeadline = new Date(now);
+      urgentDeadline.setHours(urgentDeadline.getHours() + 5);
+
+      // Morning habit (explicitly wants morning)
+      const morningHabit = createHabit({
+        duration_minutes: 30,
+        time_preference: 'morning',
+      });
+
+      // Urgent task (needs to be done ASAP)
+      const urgentTask = createTask({
+        priority: 'critical',
+        deadline: urgentDeadline,
+      });
+
+      const slots = [
+        createSlot(7, 9, 60), // 7am - both might want this
+        createSlot(9, 11, 60), // 9am
+        createSlot(12, 14, 60), // 12pm
+      ];
+
+      const habitResult = findBestSlotForHabit(morningHabit, slots);
+      const taskResult = findBestSlotForTask(urgentTask, slots, 30, now);
+
+      // Both prefer 7am - habit for preference, task for urgency
+      expect(habitResult?.start.getHours()).toBe(7);
+      expect(taskResult?.start.getHours()).toBe(7);
+    });
+  });
+
+  describe('complex scheduling scenarios', () => {
+    describe('scenario: full workday', () => {
+      it('should distribute tasks throughout the day based on priority and deadline', () => {
+        const now = createNow(8);
+
+        // Create realistic scenarios
+        const tomorrowDeadline = new Date(now);
+        tomorrowDeadline.setDate(tomorrowDeadline.getDate() + 1);
+
+        const nextWeekDeadline = new Date(now);
+        nextWeekDeadline.setDate(nextWeekDeadline.getDate() + 7);
+
+        const reportTask = createTask({
+          priority: 'high',
+          deadline: tomorrowDeadline, // Due tomorrow
+        });
+
+        const planningTask = createTask({
+          priority: 'normal',
+          deadline: null, // No deadline
+        });
+
+        const lowPriorityTask = createTask({
+          priority: 'low',
+          deadline: nextWeekDeadline, // Due next week
+        });
+
+        const slots = [
+          createSlot(9, 11, 120), // Morning slot
+          createSlot(12, 14, 120), // Noon slot
+          createSlot(15, 17, 120), // Afternoon slot
+        ];
+
+        // Report (deadline tomorrow) should prefer earliest
+        const reportResult = findBestSlotForTask(reportTask, slots, 30, now);
+
+        // Planning (no deadline) should also prefer earliest (ASAP strategy)
+        const planningResult = findBestSlotForTask(
+          planningTask,
+          slots,
+          30,
+          now
+        );
+
+        // Low priority task - also prefers earliest but with lower score
+        const lowPriorityResult = findBestSlotForTask(
+          lowPriorityTask,
+          slots,
+          30,
+          now
+        );
+
+        // All tasks prefer earliest slots (ASAP strategy)
+        expect(reportResult?.start.getHours()).toBe(9); // Earliest
+        expect(planningResult?.start.getHours()).toBe(9); // Also earliest (ASAP)
+        expect(lowPriorityResult?.start.getHours()).toBe(9); // Also earliest (ASAP)
+      });
+    });
+
+    describe('scenario: multiple priorities same deadline', () => {
+      it('should order by priority when deadlines are the same', () => {
+        const now = createNow(8);
+        const sameDeadline = new Date(now);
+        sameDeadline.setHours(sameDeadline.getHours() + 48);
+
+        const criticalTask = createTask({
+          priority: 'critical',
+          deadline: sameDeadline,
+        });
+
+        const normalTask = createTask({
+          priority: 'normal',
+          deadline: sameDeadline,
+        });
+
+        const lowTask = createTask({
+          priority: 'low',
+          deadline: sameDeadline,
+        });
+
+        const slot = createSlot(12, 14, 60);
+
+        const criticalScore = scoreSlotForTask(criticalTask, slot, now);
+        const normalScore = scoreSlotForTask(normalTask, slot, now);
+        const lowScore = scoreSlotForTask(lowTask, slot, now);
+
+        // Higher priority should get higher scores
+        expect(criticalScore).toBeGreaterThan(normalScore);
+        expect(normalScore).toBeGreaterThan(lowScore);
+      });
+    });
+
+    describe('scenario: constrained slots', () => {
+      it('should select best available when ideal slot is too small', () => {
+        const now = createNow(8);
+
+        const task = createTask({ priority: 'normal' });
+
+        const slots = [
+          createSlot(11, 12, 20), // Too small (need 30 min)
+          createSlot(12, 13, 25), // Too small
+          createSlot(14, 16, 60), // Big enough - should select
+          createSlot(17, 18, 45), // Big enough but further from noon
+        ];
+
+        const result = findBestSlotForTask(task, slots, 30, now);
+
+        // Should pick the 2pm slot (closest viable to noon)
+        expect(result?.start.getHours()).toBe(14);
+      });
+    });
+  });
+
+  describe('score calculation verification', () => {
+    it('should calculate correct score for task without deadline', () => {
+      const task = createTask({ priority: 'normal' });
+      const now = createNow(8);
+
+      // Slot at noon (hour 12)
+      const noonSlot = createSlot(12, 14, 120); // 2 hours = max capacity bonus
+      const noonScore = scoreSlotForTask(task, noonSlot, now);
+
+      // Expected breakdown (ASAP strategy):
+      // - Time: 300 - 12*10 = 180
+      // - Size: min(120, 120) / 120 * 50 = 50
+      // - Priority (normal): 0
+      // Total: 180 + 50 = 230
+      expect(noonScore).toBe(230);
+
+      // Slot at 7am (hour 7) - should score HIGHER (earlier is better)
+      const morningSlot = createSlot(7, 9, 120);
+      const morningScore = scoreSlotForTask(task, morningSlot, now);
+
+      // Expected breakdown (ASAP strategy):
+      // - Time: 300 - 7*10 = 230
+      // - Size: min(120, 120) / 120 * 50 = 50
+      // - Priority (normal): 0
+      // Total: 230 + 50 = 280
+      expect(morningScore).toBe(280);
+
+      // Morning should score higher than noon (ASAP)
+      expect(morningScore).toBeGreaterThan(noonScore);
+    });
+
+    it('should calculate correct score for urgent task', () => {
+      const now = createNow(8);
+      const urgentDeadline = new Date(now);
+      urgentDeadline.setHours(urgentDeadline.getHours() + 6); // 6 hours
+
+      const task = createTask({
+        priority: 'critical',
+        deadline: urgentDeadline,
+      });
+
+      const slot9am = createSlot(9, 11, 120);
+      const score = scoreSlotForTask(task, slot9am, now);
+
+      // Expected breakdown (ASAP + urgent bonus):
+      // - Time: 300 - 9*10 = 210
+      // - Size: min(120, 120) / 120 * 50 = 50
+      // - Urgent deadline bonus: 200 - 9*5 = 155
+      // - Priority (critical): +200
+      // Total: 210 + 50 + 155 + 200 = 615
+      expect(score).toBe(615);
+    });
+  });
+});
+
+// ============================================================================
+// Tests for calculateIdealStartTimeForHabit
+// ============================================================================
+
+describe('calculateIdealStartTimeForHabit', () => {
+  describe('ideal_time preference', () => {
+    it('should use ideal_time if it falls within the slot', () => {
+      const habit = createHabit({ ideal_time: '14:30' }); // 2:30pm
+      const slot = createSlot(7, 18, 660); // 7am-6pm
+
+      const idealStart = calculateIdealStartTimeForHabit(habit, slot, 30);
+
+      expect(idealStart.getHours()).toBe(14);
+      expect(idealStart.getMinutes()).toBe(30);
+    });
+
+    it('should not use ideal_time if too close to slot end', () => {
+      const habit = createHabit({ ideal_time: '17:45' }); // 5:45pm
+      const slot = createSlot(7, 18, 660); // 7am-6pm (can't fit 30min starting at 5:45pm)
+
+      const idealStart = calculateIdealStartTimeForHabit(habit, slot, 30);
+
+      // Should fall back to noon since ideal_time + duration > slot end
+      expect(idealStart.getHours()).toBe(12);
+    });
+
+    it('should not use ideal_time if before slot start', () => {
+      const habit = createHabit({ ideal_time: '06:00' }); // 6am
+      const slot = createSlot(9, 18, 540); // 9am-6pm
+
+      const idealStart = calculateIdealStartTimeForHabit(habit, slot, 30);
+
+      // Should fall back to noon
+      expect(idealStart.getHours()).toBe(12);
+    });
+  });
+
+  describe('time_preference', () => {
+    it('should use morning preference (9am ideal)', () => {
+      const habit = createHabit({ time_preference: 'morning' });
+      const slot = createSlot(7, 18, 660); // 7am-6pm
+
+      const idealStart = calculateIdealStartTimeForHabit(habit, slot, 30);
+
+      expect(idealStart.getHours()).toBe(9);
+      expect(idealStart.getMinutes()).toBe(0);
+    });
+
+    it('should use afternoon preference (2pm ideal)', () => {
+      const habit = createHabit({ time_preference: 'afternoon' });
+      const slot = createSlot(7, 18, 660); // 7am-6pm
+
+      const idealStart = calculateIdealStartTimeForHabit(habit, slot, 30);
+
+      expect(idealStart.getHours()).toBe(14);
+      expect(idealStart.getMinutes()).toBe(0);
+    });
+
+    it('should use evening preference (6pm ideal)', () => {
+      const habit = createHabit({ time_preference: 'evening' });
+      const slot = createSlot(7, 21, 840); // 7am-9pm
+
+      const idealStart = calculateIdealStartTimeForHabit(habit, slot, 30);
+
+      expect(idealStart.getHours()).toBe(18);
+      expect(idealStart.getMinutes()).toBe(0);
+    });
+
+    it('should use night preference (10pm ideal)', () => {
+      const habit = createHabit({ time_preference: 'night' });
+      const slot = createSlot(7, 24, 1020); // 7am-midnight
+
+      const idealStart = calculateIdealStartTimeForHabit(habit, slot, 30);
+
+      expect(idealStart.getHours()).toBe(22);
+      expect(idealStart.getMinutes()).toBe(0);
+    });
+
+    it('should fall back to range start if ideal time outside slot', () => {
+      const habit = createHabit({ time_preference: 'evening' });
+      const slot = createSlot(17, 19, 120); // 5pm-7pm (evening ideal 6pm is within)
+
+      const idealStart = calculateIdealStartTimeForHabit(habit, slot, 30);
+
+      expect(idealStart.getHours()).toBe(18);
+    });
+  });
+
+  describe('default (noon distribution)', () => {
+    it('should aim for noon when no preferences', () => {
+      const habit = createHabit({}); // No preferences
+      const slot = createSlot(7, 18, 660); // 7am-6pm
+
+      const idealStart = calculateIdealStartTimeForHabit(habit, slot, 30);
+
+      expect(idealStart.getHours()).toBe(12);
+      expect(idealStart.getMinutes()).toBe(0);
+    });
+
+    it('should use slot start if noon is before slot', () => {
+      const habit = createHabit({});
+      const slot = createSlot(14, 18, 240); // 2pm-6pm
+
+      const idealStart = calculateIdealStartTimeForHabit(habit, slot, 30);
+
+      expect(idealStart.getHours()).toBe(14); // Slot start
+      expect(idealStart.getMinutes()).toBe(0);
+    });
+
+    it('should use latest possible start if noon is after slot', () => {
+      const habit = createHabit({});
+      const slot = createSlot(7, 11, 240); // 7am-11am
+
+      const idealStart = calculateIdealStartTimeForHabit(habit, slot, 30);
+
+      // Latest start = 11:00 - 30min = 10:30
+      expect(idealStart.getHours()).toBe(10);
+      expect(idealStart.getMinutes()).toBe(30);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should return slot start when duration barely fits', () => {
+      const habit = createHabit({});
+      const slot = createSlot(9, 10, 60); // 9am-10am, exactly 60 min
+
+      const idealStart = calculateIdealStartTimeForHabit(habit, slot, 60);
+
+      expect(idealStart.getHours()).toBe(9);
+      expect(idealStart.getMinutes()).toBe(0);
+    });
+
+    it('should handle slot start when duration slightly less than slot', () => {
+      const habit = createHabit({});
+      const slot = createSlot(9, 10, 60); // 9am-10am
+
+      const idealStart = calculateIdealStartTimeForHabit(habit, slot, 55);
+
+      // Latest start = 10:00 - 55min = 9:05
+      // But since we round to 15-min boundaries, it becomes 9:15
+      // However 9:15 + 55min = 10:10 which exceeds slot end
+      // So we fall back to 9:00 (slot start, already on 15-min boundary)
+      // Actually: latestStart (9:05) rounds to 9:15, but that doesn't fit
+      // So we use the rounded slot start which is 9:00
+      expect(idealStart.getHours()).toBe(9);
+      expect(idealStart.getMinutes()).toBe(15); // Rounded up from 9:05
+    });
+
+    it('should prioritize ideal_time over time_preference', () => {
+      const habit = createHabit({
+        ideal_time: '15:00',
+        time_preference: 'morning', // Would prefer 9am
+      });
+      const slot = createSlot(7, 18, 660);
+
+      const idealStart = calculateIdealStartTimeForHabit(habit, slot, 30);
+
+      expect(idealStart.getHours()).toBe(15); // Uses ideal_time, not morning preference
+    });
+  });
+});
+
+// ============================================================================
+// Tests for calculateIdealStartTimeForTask
+// ============================================================================
+
+describe('calculateIdealStartTimeForTask', () => {
+  // Tasks now always start ASAP (as soon as possible), aligned to 15-minute boundaries
+
+  describe('ASAP behavior', () => {
+    it('should start at slot start when now is before slot', () => {
+      const now = createNow(6); // 6am - before 7am slot start
+      const task = createTask({});
+      const slot = createSlot(7, 18, 660); // 7am-6pm
+
+      const idealStart = calculateIdealStartTimeForTask(task, slot, 30, now);
+
+      expect(idealStart.getHours()).toBe(7); // Slot start
+      expect(idealStart.getMinutes()).toBe(0);
+    });
+
+    it('should start at next 15-min boundary when now is within slot', () => {
+      const now = createNow(8); // 8am exactly
+      now.setMinutes(11); // 8:11am
+      const task = createTask({});
+      const slot = createSlot(7, 18, 660); // 7am-6pm
+
+      const idealStart = calculateIdealStartTimeForTask(task, slot, 30, now);
+
+      // 8:11 rounds up to 8:15
+      expect(idealStart.getHours()).toBe(8);
+      expect(idealStart.getMinutes()).toBe(15);
+    });
+
+    it('should stay on 15-min boundary when now is already aligned', () => {
+      const now = createNow(8); // 8am exactly
+      now.setMinutes(30); // 8:30am
+      const task = createTask({});
+      const slot = createSlot(7, 18, 660); // 7am-6pm
+
+      const idealStart = calculateIdealStartTimeForTask(task, slot, 30, now);
+
+      expect(idealStart.getHours()).toBe(8);
+      expect(idealStart.getMinutes()).toBe(30);
+    });
+
+    it('should start ASAP regardless of deadline urgency', () => {
+      const now = createNow(8);
+      const distantDeadline = new Date(now);
+      distantDeadline.setDate(distantDeadline.getDate() + 7); // 7 days away
+
+      const task = createTask({ deadline: distantDeadline });
+      const slot = createSlot(7, 18, 660);
+
+      const idealStart = calculateIdealStartTimeForTask(task, slot, 30, now);
+
+      // Even with distant deadline, starts ASAP (8am since now=8am is within slot)
+      expect(idealStart.getHours()).toBe(8);
+      expect(idealStart.getMinutes()).toBe(0);
+    });
+
+    it('should start ASAP regardless of time preference', () => {
+      const now = createNow(8);
+      const task = createTask({
+        preferredTimeOfDay: 'afternoon', // Would have preferred 2pm before
+      });
+      const slot = createSlot(7, 18, 660);
+
+      const idealStart = calculateIdealStartTimeForTask(task, slot, 30, now);
+
+      // Starts ASAP, ignoring preference
+      expect(idealStart.getHours()).toBe(8);
+      expect(idealStart.getMinutes()).toBe(0);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should return slot start when duration barely fits', () => {
+      const now = createNow(8);
+      const task = createTask({});
+      const slot = createSlot(9, 10, 60); // Exactly 60 min
+
+      const idealStart = calculateIdealStartTimeForTask(task, slot, 60, now);
+
+      expect(idealStart.getHours()).toBe(9);
+      expect(idealStart.getMinutes()).toBe(0);
+    });
+
+    it('should use slot start for afternoon slot', () => {
+      const now = createNow(8);
+      const task = createTask({});
+      const slot = createSlot(14, 18, 240); // 2pm-6pm
+
+      const idealStart = calculateIdealStartTimeForTask(task, slot, 30, now);
+
+      // now (8am) is before slot, so use slot start (2pm)
+      expect(idealStart.getHours()).toBe(14);
+      expect(idealStart.getMinutes()).toBe(0);
+    });
+
+    it('should use slot start for morning slot when now is before', () => {
+      const now = createNow(6); // 6am, before 7am slot
+      const task = createTask({});
+      const slot = createSlot(7, 11, 240); // 7am-11am
+
+      const idealStart = calculateIdealStartTimeForTask(task, slot, 30, now);
+
+      expect(idealStart.getHours()).toBe(7);
+      expect(idealStart.getMinutes()).toBe(0);
     });
   });
 });

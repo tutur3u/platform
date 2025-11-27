@@ -16,17 +16,23 @@ export {
 } from './algorithm';
 export { defaultActiveHours, defaultTasks } from './default';
 export {
+  calculateIdealStartTimeForHabit,
+  calculateIdealStartTimeForTask,
   calculateOptimalDuration,
   findBestSlotForHabit,
+  findBestSlotForTask,
   getEffectiveDurationBounds,
   getSlotCharacteristics,
+  roundToNext15Minutes,
   scoreSlotForHabit,
+  scoreSlotForTask,
   slotMatchesPreference,
   timeMatchesSlot,
 } from './duration-optimizer';
 export type {
   HabitDurationConfig,
   SlotCharacteristics,
+  TaskSlotConfig,
   TimeSlotInfo,
 } from './duration-optimizer';
 export {

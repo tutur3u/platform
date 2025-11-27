@@ -13,12 +13,18 @@
  * urgent tasks still get handled appropriately.
  */
 
-import type { HabitDurationConfig } from '@tuturuuu/ai/scheduling';
+import type {
+  HabitDurationConfig,
+  TaskSlotConfig,
+} from '@tuturuuu/ai/scheduling';
 import {
+  calculateIdealStartTimeForHabit,
+  calculateIdealStartTimeForTask,
   calculateOptimalDuration,
   calculatePriorityScore,
   comparePriority,
   findBestSlotForHabit as findBestSlotForHabitAI,
+  findBestSlotForTask as findBestSlotForTaskAI,
   getEffectiveDurationBounds,
   getEffectivePriority,
   getOccurrencesInRange,
@@ -522,9 +528,30 @@ async function scheduleHabitsPhase(
         continue;
       }
 
+      // Calculate ideal start time within the slot based on habit preferences
+      // This ensures habits don't all stack at the beginning of available blocks
+      // Pass `now` to ensure we don't schedule before current time
+      const idealStartTime = calculateIdealStartTimeForHabit(
+        convertHabitToConfig(habit),
+        bestSlot,
+        duration,
+        now
+      );
+
       // Calculate event end time
-      const eventEnd = new Date(bestSlot.start);
+      const eventEnd = new Date(idealStartTime);
       eventEnd.setMinutes(eventEnd.getMinutes() + duration);
+
+      // Safety check: Verify no conflict before scheduling
+      if (occupiedSlots.hasConflict(idealStartTime, eventEnd)) {
+        console.warn(
+          `Conflict detected for habit "${habit.name}" at ${idealStartTime.toISOString()}-${eventEnd.toISOString()}, skipping`
+        );
+        warnings.push(
+          `Could not schedule habit "${habit.name}" on ${occurrenceDate} due to conflict`
+        );
+        continue;
+      }
 
       // Create calendar event
       const { data: event, error: eventError } = await supabase
@@ -533,7 +560,7 @@ async function scheduleHabitsPhase(
           ws_id: wsId,
           title: habit.name,
           description: habit.description || '',
-          start_at: bestSlot.start.toISOString(),
+          start_at: idealStartTime.toISOString(),
           end_at: eventEnd.toISOString(),
           color: habit.color || getColorForHourType(habit.calendar_hours),
         })
@@ -567,7 +594,7 @@ async function scheduleHabitsPhase(
       const scheduledEvent: ScheduledEvent = {
         id: event.id,
         title: habit.name,
-        start_at: bestSlot.start.toISOString(),
+        start_at: idealStartTime.toISOString(),
         end_at: eventEnd.toISOString(),
         type: 'habit',
         source_id: habit.id,
@@ -750,14 +777,34 @@ async function scheduleTasksPhase(
         );
       }
 
-      for (const slot of slots) {
-        if (remainingMinutes <= 0) break;
+      // Filter to future slots only (can't schedule in the past)
+      const futureSlots = filterFutureSlots(slots, now);
+
+      // Create task config for smart slot selection
+      const taskConfig: TaskSlotConfig = {
+        deadline: task.end_date ? new Date(task.end_date) : null,
+        priority: taskPriority,
+        preferredTimeOfDay: null, // Can add to task model later
+      };
+
+      // Use smart slot selection instead of sequential iteration
+      // This ensures tasks don't all stack at 7am
+      while (remainingMinutes > 0 && futureSlots.length > 0) {
+        // Find the best slot for this task based on deadline and priority
+        const bestSlot = findBestSlotForTaskAI(
+          taskConfig,
+          futureSlots,
+          minDuration,
+          now
+        );
+
+        if (!bestSlot) break;
 
         // Calculate duration for this event
         let eventDuration = Math.min(
           remainingMinutes,
           maxDuration,
-          slot.maxAvailable
+          bestSlot.maxAvailable
         );
         eventDuration = Math.max(
           eventDuration,
@@ -765,15 +812,37 @@ async function scheduleTasksPhase(
         );
 
         if (eventDuration < minDuration && remainingMinutes >= minDuration) {
-          continue; // Slot too small
+          // Remove this slot as it's too small
+          const slotIndex = futureSlots.indexOf(bestSlot);
+          if (slotIndex > -1) futureSlots.splice(slotIndex, 1);
+          continue;
         }
 
-        const eventEnd = new Date(slot.start);
+        // Calculate ideal start time within the slot based on task deadline and preference
+        // This ensures tasks don't all stack at the beginning of available blocks
+        const idealStartTime = calculateIdealStartTimeForTask(
+          taskConfig,
+          bestSlot,
+          eventDuration,
+          now
+        );
+
+        const eventEnd = new Date(idealStartTime);
         eventEnd.setMinutes(eventEnd.getMinutes() + eventDuration);
 
         // Check if scheduled after deadline
         if (task.end_date && eventEnd > new Date(task.end_date)) {
           scheduledAfterDeadline = true;
+        }
+
+        // Safety check: Verify no conflict before scheduling
+        if (occupiedSlots.hasConflict(idealStartTime, eventEnd)) {
+          console.warn(
+            `Conflict detected for task "${task.name}" at ${idealStartTime.toISOString()}-${eventEnd.toISOString()}, skipping slot`
+          );
+          const slotIndex = futureSlots.indexOf(bestSlot);
+          if (slotIndex > -1) futureSlots.splice(slotIndex, 1);
+          continue;
         }
 
         // Determine event title
@@ -791,7 +860,7 @@ async function scheduleTasksPhase(
             ws_id: wsId,
             title: eventTitle,
             description: task.description || '',
-            start_at: slot.start.toISOString(),
+            start_at: idealStartTime.toISOString(),
             end_at: eventEnd.toISOString(),
             color: getColorForHourType(task.calendar_hours),
           })
@@ -800,6 +869,9 @@ async function scheduleTasksPhase(
 
         if (eventError || !event) {
           console.error('Error creating task event:', eventError);
+          // Remove this slot to avoid infinite loop
+          const slotIndex = futureSlots.indexOf(bestSlot);
+          if (slotIndex > -1) futureSlots.splice(slotIndex, 1);
           continue;
         }
 
@@ -818,7 +890,7 @@ async function scheduleTasksPhase(
         const scheduledEvent: ScheduledEvent = {
           id: event.id,
           title: eventTitle,
-          start_at: slot.start.toISOString(),
+          start_at: idealStartTime.toISOString(),
           end_at: eventEnd.toISOString(),
           type: 'task',
           source_id: task.id,
@@ -829,6 +901,26 @@ async function scheduleTasksPhase(
         taskEvents.push(scheduledEvent);
         scheduledSoFar += eventDuration;
         remainingMinutes -= eventDuration;
+
+        // Update futureSlots to reflect the used portion
+        // Remove the used slot and add back any remaining time after the scheduled event
+        const slotIndex = futureSlots.indexOf(bestSlot);
+        if (slotIndex > -1) {
+          futureSlots.splice(slotIndex, 1);
+
+          // If there's remaining time in the slot after this event, add it back
+          const remainingSlotStart = eventEnd;
+          const remainingSlotDuration =
+            (bestSlot.end.getTime() - remainingSlotStart.getTime()) / 60000;
+
+          if (remainingSlotDuration >= minDuration) {
+            futureSlots.push({
+              start: new Date(remainingSlotStart),
+              end: bestSlot.end,
+              maxAvailable: remainingSlotDuration,
+            });
+          }
+        }
       }
     }
 
@@ -926,8 +1018,25 @@ async function rescheduleBumpedHabits(
 
     if (duration === 0) continue;
 
-    const eventEnd = new Date(bestSlot.start);
+    // Calculate ideal start time within the slot based on habit preferences
+    // Pass `now` to ensure we don't schedule before current time
+    const idealStartTime = calculateIdealStartTimeForHabit(
+      convertHabitToConfig(habit),
+      bestSlot,
+      duration,
+      now
+    );
+
+    const eventEnd = new Date(idealStartTime);
     eventEnd.setMinutes(eventEnd.getMinutes() + duration);
+
+    // Safety check: Verify no conflict before scheduling
+    if (occupiedSlots.hasConflict(idealStartTime, eventEnd)) {
+      console.warn(
+        `Conflict detected for rescheduled habit "${habit.name}" at ${idealStartTime.toISOString()}-${eventEnd.toISOString()}, skipping`
+      );
+      continue;
+    }
 
     const occurrenceDate = occurrence.toISOString().split('T')[0];
 
@@ -938,7 +1047,7 @@ async function rescheduleBumpedHabits(
         ws_id: wsId,
         title: habit.name,
         description: habit.description || '',
-        start_at: bestSlot.start.toISOString(),
+        start_at: idealStartTime.toISOString(),
         end_at: eventEnd.toISOString(),
         color: habit.color || getColorForHourType(habit.calendar_hours),
       })
@@ -961,7 +1070,7 @@ async function rescheduleBumpedHabits(
     const scheduledEvent: ScheduledEvent = {
       id: event.id,
       title: habit.name,
-      start_at: bestSlot.start.toISOString(),
+      start_at: idealStartTime.toISOString(),
       end_at: eventEnd.toISOString(),
       type: 'habit',
       source_id: habit.id,
