@@ -413,7 +413,10 @@ describe('useBoardRealtime', () => {
       const setQueryDataSpy = vi.spyOn(queryClient, 'setQueryData');
 
       // Set up initial task in cache
-      queryClient.setQueryData(['tasks', 'board-1'], [mockTaskWithEmptyRelations]);
+      queryClient.setQueryData(
+        ['tasks', 'board-1'],
+        [mockTaskWithEmptyRelations]
+      );
 
       renderHook(
         () =>
@@ -492,7 +495,10 @@ describe('useBoardRealtime', () => {
       const setQueryDataSpy = vi.spyOn(queryClient, 'setQueryData');
 
       // Set up initial task in cache
-      queryClient.setQueryData(['tasks', 'board-1'], [mockTaskWithEmptyRelations]);
+      queryClient.setQueryData(
+        ['tasks', 'board-1'],
+        [mockTaskWithEmptyRelations]
+      );
 
       renderHook(
         () =>
@@ -571,7 +577,10 @@ describe('useBoardRealtime', () => {
       const setQueryDataSpy = vi.spyOn(queryClient, 'setQueryData');
 
       // Set up initial task in cache
-      queryClient.setQueryData(['tasks', 'board-1'], [mockTaskWithEmptyRelations]);
+      queryClient.setQueryData(
+        ['tasks', 'board-1'],
+        [mockTaskWithEmptyRelations]
+      );
 
       renderHook(
         () =>
@@ -630,7 +639,10 @@ describe('useBoardRealtime', () => {
       const setQueryDataSpy = vi.spyOn(queryClient, 'setQueryData');
 
       // Set up initial task in cache
-      queryClient.setQueryData(['tasks', 'board-1'], [mockTaskWithEmptyRelations]);
+      queryClient.setQueryData(
+        ['tasks', 'board-1'],
+        [mockTaskWithEmptyRelations]
+      );
 
       renderHook(
         () =>
@@ -697,7 +709,10 @@ describe('useBoardRealtime', () => {
     });
 
     it('should not trigger immediate refetch when updating cache directly', async () => {
-      queryClient.setQueryData(['tasks', 'board-1'], [mockTaskWithEmptyRelations]);
+      queryClient.setQueryData(
+        ['tasks', 'board-1'],
+        [mockTaskWithEmptyRelations]
+      );
       const fetchFn = vi.fn().mockResolvedValue([mockTaskWithEmptyRelations]);
 
       // Register a query with a fetch function
