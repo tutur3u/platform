@@ -4,7 +4,7 @@ import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function PATCH(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ subscriptionId: string }> }
 ) {
   const user = await getCurrentSupabaseUser();
@@ -38,13 +38,38 @@ export async function PATCH(
       );
     }
 
+    // Parse request body to check for product update
+    const body = await req.json();
+    const { productId, sandbox } = body;
+
     const polar = createPolarClient({
-      sandbox: process.env.NODE_ENV === 'development',
+      sandbox: sandbox || process.env.NODE_ENV === 'development',
     });
 
     const session = await polar.customerSessions.create({
       externalCustomerId: user.id,
     });
+
+    // Prepare the subscription update payload
+    const customerSubscriptionUpdate: any = {
+      cancelAtPeriodEnd: false,
+    };
+
+    // If productId is provided, update the product
+    if (productId) {
+      // Get the product from Polar to find the correct price ID
+      const polarProduct = await polar.products.get({ id: productId });
+
+      if (!polarProduct || polarProduct.isArchived) {
+        return NextResponse.json(
+          { error: 'No product found' },
+          { status: 400 }
+        );
+      }
+
+      customerSubscriptionUpdate.productId = polarProduct.id;
+      // Note: Proration is automatically handled by Polar based on organization settings.
+    }
 
     const result = await polar.customerPortal.subscriptions.update(
       {
@@ -52,29 +77,45 @@ export async function PATCH(
       },
       {
         id: subscription.polar_subscription_id,
-        customerSubscriptionUpdate: {
-          cancelAtPeriodEnd: false,
-        },
+        customerSubscriptionUpdate,
       }
     );
+
+    // Prepare database update
+    const dbUpdate: any = {
+      status: result.status as any,
+      cancel_at_period_end: result.cancelAtPeriodEnd,
+      current_period_start: result.currentPeriodStart?.toISOString(),
+      current_period_end: result.currentPeriodEnd?.toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    // If product was updated, also update product_id in database
+    if (productId) {
+      const { data: product } = await supabase
+        .from('workspace_subscription_products')
+        .select('*')
+        .eq('id', productId)
+        .single();
+
+      if (product) {
+        dbUpdate.product_id = productId;
+      }
+    }
 
     // Update subscription status in database based on Polar's response
     const { error: updateError } = await supabase
       .from('workspace_subscription')
-      .update({
-        status: result.status as any,
-        cancel_at_period_end: result.cancelAtPeriodEnd,
-        current_period_start: result.currentPeriodStart?.toISOString(),
-        current_period_end: result.currentPeriodEnd?.toISOString(),
-        updated_at: new Date().toISOString(),
-      })
+      .update(dbUpdate)
       .eq('id', subscription.id);
 
     if (updateError) {
       console.error('Error updating subscription status:', updateError);
       return NextResponse.json(
         {
-          error: 'Subscription reactivated but failed to update database',
+          error: productId
+            ? 'Subscription updated but failed to sync database'
+            : 'Subscription reactivated but failed to update database',
           message: updateError.message,
         },
         { status: 500 }
@@ -88,7 +129,7 @@ export async function PATCH(
   } catch (error) {
     return NextResponse.json(
       {
-        error: 'Failed to reactivate subscription',
+        error: 'Failed to update subscription',
         message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }

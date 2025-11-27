@@ -2,6 +2,7 @@
 
 import {
   AlertCircle,
+  ArrowDownCircle,
   ArrowUpCircle,
   Calendar,
   CheckCircle,
@@ -20,12 +21,13 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
-import PurchaseLink from './data-polar-checkout';
+import PurchaseLink from './purchase-link';
 
 // Define types for the props we're passing from the server component
 interface Plan {
   id: string;
   polarSubscriptionId: string;
+  productId: string;
   name: string;
   price: number;
   billingCycle: string | null;
@@ -62,7 +64,7 @@ export function BillingClient({
   const router = useRouter();
 
   const upgradePlans = products
-    .map((product, index) => ({
+    .map((product) => ({
       id: product.id,
       name: product.name,
       price:
@@ -72,7 +74,6 @@ export function BillingClient({
             : 0
           : 0,
       billingCycle: product.recurringInterval,
-      popular: index === 1,
       features: product.description
         ? [
             product.description,
@@ -86,7 +87,46 @@ export function BillingClient({
           ],
       isEnterprise: product.name.toLowerCase().includes('enterprise'),
     }))
-    .sort((a, b) => a.price - b.price);
+    .sort((a, b) => a.price - b.price)
+    .map((plan, index) => ({
+      ...plan,
+      popular: index === 0,
+    }));
+
+  // Helper function to determine button state and text
+  const getPlanButtonConfig = (plan: (typeof upgradePlans)[0]) => {
+    const isCurrentPlan = plan.id === currentPlan.productId;
+
+    if (isCurrentPlan) {
+      return {
+        text: 'Current Plan',
+        icon: CheckCircle,
+        variant: 'outline' as const,
+        disabled: true,
+      };
+    }
+
+    const currentPlanData = upgradePlans.find(
+      (p) => p.id === currentPlan.productId
+    );
+    const isDowngrade = currentPlanData && plan.price < currentPlanData.price;
+
+    if (isDowngrade) {
+      return {
+        text: `Downgrade to ${plan.name}`,
+        icon: ArrowDownCircle,
+        variant: 'outline' as const,
+        disabled: false,
+      };
+    }
+
+    return {
+      text: `Upgrade to ${plan.name}`,
+      icon: ArrowUpCircle,
+      variant: 'default' as const,
+      disabled: false,
+    };
+  };
 
   const handleSyncToProduct = async () => {
     setSyncLoading(true);
@@ -563,7 +603,7 @@ export function BillingClient({
 
                     {/* CTA Button */}
                     {plan.isEnterprise ? (
-                      <div>
+                      <div className="flex flex-col items-center gap-2">
                         <Button
                           className="w-full shadow-lg transition-all hover:scale-105"
                           variant="outline"
@@ -573,32 +613,49 @@ export function BillingClient({
                           <Zap className="mr-2 h-5 w-5" />
                           {t('contact-sales')}
                         </Button>
-                        <p className="mt-3 text-center text-muted-foreground text-sm">
+                        <p className="text-center text-muted-foreground text-sm">
                           {t('contact-sales-desc')}
                         </p>
                       </div>
                     ) : (
-                      <Button
-                        variant={plan.popular ? 'default' : 'outline'}
-                        className={`w-full shadow-lg transition-all hover:scale-105 hover:shadow-xl ${
-                          plan.popular
-                            ? ''
-                            : 'border-2 border-primary bg-transparent text-primary hover:bg-primary/10'
-                        }`}
-                        asChild
-                        size="lg"
-                      >
-                        <PurchaseLink
-                          productId={plan.id}
-                          wsId={wsId}
-                          customerEmail="t@test.com"
-                          theme="auto"
-                          className="flex w-full items-center justify-center gap-2"
-                        >
-                          <ArrowUpCircle className="h-5 w-5" />
-                          Select {plan.name}
-                        </PurchaseLink>
-                      </Button>
+                      (() => {
+                        const buttonConfig = getPlanButtonConfig(plan);
+                        const ButtonIcon = buttonConfig.icon;
+
+                        return buttonConfig.disabled ? (
+                          <Button
+                            variant={buttonConfig.variant}
+                            className="w-full shadow-lg"
+                            disabled
+                            size="lg"
+                          >
+                            <ButtonIcon className="mr-2 h-5 w-5" />
+                            {buttonConfig.text}
+                          </Button>
+                        ) : (
+                          <Button
+                            variant={buttonConfig.variant}
+                            className={`w-full shadow-lg transition-all hover:shadow-xl ${
+                              buttonConfig.variant === 'default'
+                                ? ''
+                                : 'border-2 border-primary bg-transparent text-primary hover:bg-primary/10'
+                            }`}
+                            asChild
+                            size="lg"
+                          >
+                            <PurchaseLink
+                              subscriptionId={currentPlan.id}
+                              productId={plan.id}
+                              wsId={wsId}
+                              theme="auto"
+                              className="flex w-full items-center justify-center gap-2"
+                            >
+                              <ButtonIcon className="h-5 w-5" />
+                              {buttonConfig.text}
+                            </PurchaseLink>
+                          </Button>
+                        );
+                      })()
                     )}
                   </div>
 

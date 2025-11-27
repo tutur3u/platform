@@ -158,18 +158,19 @@ export default async function BillingPage({
 
         const enableSandbox = sandbox === 'true';
         const isTuturuuuAdmin = await checkTuturuuuAdmin();
-        const [products, subscription, isCreator, subscriptionHistory] =
+        const [products, subscription, subscriptionHistory, isCreator] =
           await Promise.all([
             fetchProducts({ wsId, sandbox: enableSandbox }),
             fetchSubscription({ wsId, sandbox: enableSandbox }),
-            checkCreator(wsId),
             fetchWorkspaceSubscriptions(wsId),
+            checkCreator(wsId),
           ]);
 
         const currentPlan = subscription?.product
           ? {
               id: subscription.id,
               polarSubscriptionId: subscription.polarSubscriptionId,
+              productId: subscription.product.id,
               name: subscription.product.name || 'No Plan',
               price:
                 subscription.product.prices.length > 0
@@ -196,6 +197,7 @@ export default async function BillingPage({
           : {
               id: '',
               polarSubscriptionId: '',
+              productId: '',
               name: 'Free Plan',
               price: 0,
               billingCycle: 'month',
