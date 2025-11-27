@@ -42,22 +42,31 @@ export async function GET(req: NextRequest) {
     // Get unique workspace IDs that have either:
     // 1. Habits with auto_schedule = true
     // 2. Tasks with auto_schedule = true
+    const habitsQuery = sbAdmin
+      .from('workspace_habits')
+      .select('ws_id')
+      .eq('auto_schedule', true)
+      .eq('is_active', true);
+
+    const tasksQuery = sbAdmin
+      .from('tasks')
+      .select('task_lists!inner(workspace_boards!inner(ws_id))')
+      .eq('auto_schedule', true)
+      .eq('archived', false);
+
     const [habitsResult, tasksResult] = await Promise.all([
-      sbAdmin
-        .from('user_habits')
-        .select('ws_id')
-        .eq('auto_schedule', true)
-        .eq('is_active', true),
-      sbAdmin
-        .from('workspace_tasks')
-        .select('ws_id')
-        .eq('auto_schedule', true)
-        .eq('archived', false),
+      habitsQuery,
+      tasksQuery,
     ]);
 
     // Combine and deduplicate workspace IDs
     const habitWsIds = habitsResult.data?.map((h) => h.ws_id) ?? [];
-    const taskWsIds = tasksResult.data?.map((t) => t.ws_id) ?? [];
+    const taskWsIds =
+      tasksResult.data?.map(
+        (t) =>
+          (t.task_lists as unknown as { workspace_boards: { ws_id: string } })
+            .workspace_boards.ws_id
+      ) ?? [];
     const allWsIds = [...new Set([...habitWsIds, ...taskWsIds])];
 
     console.log(`Found ${allWsIds.length} workspaces with auto-schedule items`);
