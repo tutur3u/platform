@@ -3,6 +3,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
+  ArrowUpCircle,
+  Ban,
   Box,
   Calendar,
   Check,
@@ -14,6 +16,7 @@ import {
   Image as ImageIcon,
   Link2,
   ListTodo,
+  ListTree,
   MoreHorizontal,
   Play,
   Timer,
@@ -60,6 +63,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { useTaskCardRelationships } from '../../hooks/useTaskCardRelationships';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { useTaskDialogState } from '../../hooks/useTaskDialogState';
 import { useTaskLabelManagement } from '../../hooks/useTaskLabelManagement';
@@ -77,13 +81,16 @@ import {
 import { formatSmartDate } from '../../utils/taskDateUtils';
 import { getPriorityIndicator } from '../../utils/taskPriorityUtils';
 import {
+  TaskBlockingMenu,
   TaskAssigneesMenu,
   TaskDueDateMenu,
   TaskEstimationMenu,
   TaskLabelsMenu,
   TaskMoveMenu,
+  TaskParentMenu,
   TaskPriorityMenu,
   TaskProjectsMenu,
+  TaskRelatedMenu,
 } from './menus';
 import { TaskActions } from './task-actions';
 import { TaskCustomDateDialog } from './task-dialogs/TaskCustomDateDialog';
@@ -132,7 +139,8 @@ function TaskCardInner({
 
   // Use extracted dialog state management hook
   const { state: dialogState, actions: dialogActions } = useTaskDialogState();
-  const { state: dialogStateFromProvider } = useTaskDialogContext();
+  const { state: dialogStateFromProvider, createSubtask } =
+    useTaskDialogContext();
 
   // Use centralized task dialog
   const { openTask } = useTaskDialog();
@@ -232,6 +240,28 @@ function TaskCardInner({
     },
     enabled: !!wsId && !isPersonalWorkspace,
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Use task relationships hook for managing parent/child/blocking/related tasks
+  const {
+    parentTask,
+    childTasks,
+    blocking: blockingTasks,
+    blockedBy: blockedByTasks,
+    relatedTasks,
+    setParentTask,
+    removeParentTask,
+    addBlockingTask,
+    removeBlockingTask,
+    addBlockedByTask,
+    removeBlockedByTask,
+    addRelatedTask,
+    removeRelatedTask,
+    isSaving: relationshipSaving,
+    savingTaskId: relationshipSavingTaskId,
+  } = useTaskCardRelationships({
+    taskId: task.id,
+    boardId,
   });
 
   // Fetch available task lists using React Query (same key as other components)
@@ -470,6 +500,12 @@ function TaskCardInner({
     }
   };
 
+  const handleAddSubtask = () => {
+    setMenuOpen(false);
+    // Open subtask creation dialog - the relationship will be created when the user saves
+    createSubtask(task.id, task.name, boardId, task.list_id, availableLists);
+  };
+
   const taskBadges = useMemo(() => {
     // Collect all badges into an array for overflow handling
     const badges: { id: string; element: React.ReactNode }[] = [];
@@ -594,8 +630,129 @@ function TaskCardInner({
         ),
       });
     }
+
+    // Parent task indicator badge
+    if (parentTask) {
+      badges.push({
+        id: 'parent',
+        element: (
+          <Badge
+            key="parent"
+            variant="secondary"
+            className="h-5 shrink-0 border border-dynamic-purple/30 bg-dynamic-purple/10 px-2 text-[10px] text-dynamic-purple"
+            title={`Sub-task of: ${parentTask.name}`}
+            ref={(el) => {
+              if (el) badgeRefs.current.set('parent', el as any);
+            }}
+          >
+            <ArrowUpCircle className="h-2.5 w-2.5" />
+            {parentTask.name}
+          </Badge>
+        ),
+      });
+    }
+
+    // Child tasks (sub-tasks) count badge
+    if (childTasks.length > 0) {
+      const completedCount = childTasks.filter((t) => t.completed).length;
+      badges.push({
+        id: 'children',
+        element: (
+          <Badge
+            key="children"
+            variant="secondary"
+            className={cn(
+              'h-5 shrink-0 border px-2 text-[10px]',
+              completedCount === childTasks.length
+                ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
+                : 'border-dynamic-gray/30 bg-dynamic-gray/10 text-dynamic-gray'
+            )}
+            title={`${completedCount} of ${childTasks.length} sub-tasks completed`}
+            ref={(el) => {
+              if (el) badgeRefs.current.set('children', el as any);
+            }}
+          >
+            <ListTree className="h-2.5 w-2.5" />
+            {completedCount}/{childTasks.length}
+          </Badge>
+        ),
+      });
+    }
+
+    // Blocked indicator badge (this task is blocked by others)
+    if (blockedByTasks.length > 0) {
+      badges.push({
+        id: 'blocked',
+        element: (
+          <Badge
+            key="blocked"
+            variant="secondary"
+            className="h-5 shrink-0 border border-dynamic-red/30 bg-dynamic-red/10 px-2 text-[10px] text-dynamic-red"
+            title={`Blocked by ${blockedByTasks.length} task${blockedByTasks.length > 1 ? 's' : ''}`}
+            ref={(el) => {
+              if (el) badgeRefs.current.set('blocked', el as any);
+            }}
+          >
+            <Ban className="h-2.5 w-2.5" />
+            Blocked
+          </Badge>
+        ),
+      });
+    }
+
+    // Blocking indicator badge (this task blocks others)
+    if (blockingTasks.length > 0) {
+      badges.push({
+        id: 'blocking',
+        element: (
+          <Badge
+            key="blocking"
+            variant="secondary"
+            className="h-5 shrink-0 border border-dynamic-orange/30 bg-dynamic-orange/10 px-2 text-[10px] text-dynamic-orange"
+            title={`Blocking ${blockingTasks.length} task${blockingTasks.length > 1 ? 's' : ''}`}
+            ref={(el) => {
+              if (el) badgeRefs.current.set('blocking', el as any);
+            }}
+          >
+            <Ban className="h-2.5 w-2.5" />
+            {blockingTasks.length}
+          </Badge>
+        ),
+      });
+    }
+
+    // Related tasks indicator badge
+    if (relatedTasks.length > 0) {
+      badges.push({
+        id: 'related',
+        element: (
+          <Badge
+            key="related"
+            variant="secondary"
+            className="h-5 shrink-0 border border-dynamic-blue/30 bg-dynamic-blue/10 px-2 text-[10px] text-dynamic-blue"
+            title={`${relatedTasks.length} related task${relatedTasks.length > 1 ? 's' : ''}`}
+            ref={(el) => {
+              if (el) badgeRefs.current.set('related', el as any);
+            }}
+          >
+            <Link2 className="h-2.5 w-2.5" />
+            {relatedTasks.length}
+          </Badge>
+        ),
+      });
+    }
+
     return badges;
-  }, [task, boardConfig, descriptionMeta]);
+  }, [
+    task,
+    boardConfig,
+    descriptionMeta,
+    parentTask,
+    childTasks,
+    blockingTasks,
+    blockedByTasks,
+    relatedTasks,
+  ]);
 
   // Calculate visible badges based on available width
   useEffect(() => {
@@ -1002,6 +1159,49 @@ function TaskCardInner({
 
                   <DropdownMenuSeparator />
 
+                  {/* Task Relationships Section */}
+                  {boardConfig?.ws_id && (
+                    <>
+                      {/* Parent Task Menu */}
+                      <TaskParentMenu
+                        wsId={boardConfig.ws_id}
+                        taskId={task.id}
+                        parentTask={parentTask}
+                        childTaskIds={childTasks.map((t) => t.id)}
+                        isSaving={relationshipSaving}
+                        onSetParent={setParentTask}
+                        onRemoveParent={removeParentTask}
+                      />
+
+                      {/* Blocking/Blocked By Menu */}
+                      <TaskBlockingMenu
+                        wsId={boardConfig.ws_id}
+                        taskId={task.id}
+                        blockingTasks={blockingTasks}
+                        blockedByTasks={blockedByTasks}
+                        isSaving={relationshipSaving}
+                        savingTaskId={relationshipSavingTaskId}
+                        onAddBlocking={addBlockingTask}
+                        onRemoveBlocking={removeBlockingTask}
+                        onAddBlockedBy={addBlockedByTask}
+                        onRemoveBlockedBy={removeBlockedByTask}
+                      />
+
+                      {/* Related Tasks Menu */}
+                      <TaskRelatedMenu
+                        wsId={boardConfig.ws_id}
+                        taskId={task.id}
+                        relatedTasks={relatedTasks}
+                        isSaving={relationshipSaving}
+                        savingTaskId={relationshipSavingTaskId}
+                        onAddRelated={addRelatedTask}
+                        onRemoveRelated={removeRelatedTask}
+                      />
+
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+
                   {/* Move Menu */}
                   {availableLists.length > 1 && (
                     <TaskMoveMenu
@@ -1032,6 +1232,13 @@ function TaskCardInner({
                   >
                     <Copy className="h-4 w-4 text-foreground" />
                     Duplicate task
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={handleAddSubtask}
+                    className="cursor-pointer"
+                  >
+                    <ListTree className="h-4 w-4 text-foreground" />
+                    Add sub-task
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={(e) =>

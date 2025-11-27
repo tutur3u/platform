@@ -27,6 +27,7 @@ export * from './sent-email';
 export * from './StorageObject';
 export * from './SupportedColors';
 export * from './TaskBoard';
+export * from './TaskRelationship';
 export * from './Team';
 export * from './Timeblock';
 export * from './Timezone';

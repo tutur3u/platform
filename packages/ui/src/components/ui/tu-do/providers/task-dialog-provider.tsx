@@ -13,6 +13,13 @@ import {
   useRef,
   useState,
 } from 'react';
+import type {
+  PendingRelationship,
+  PendingRelationshipType,
+} from '../shared/task-edit-dialog/types/pending-relationship';
+
+// Re-export for backward compatibility
+export type { PendingRelationship, PendingRelationshipType };
 
 // Type definitions for Supabase join row responses
 // Note: Supabase uses null for optional fields, not undefined
@@ -54,6 +61,9 @@ interface TaskDialogState {
   originalPathname?: string;
   filters?: TaskFilters;
   fakeTaskUrl?: boolean;
+  parentTaskId?: string; // For creating subtasks (legacy, kept for backward compatibility)
+  parentTaskName?: string; // Name of parent task for subtasks (legacy)
+  pendingRelationship?: PendingRelationship; // Generic relationship for new tasks
 }
 
 interface TaskDialogContextValue {
@@ -81,6 +91,25 @@ interface TaskDialogContextValue {
     listId: string,
     availableLists?: TaskList[],
     filters?: TaskFilters
+  ) => void;
+
+  // Open dialog for creating a subtask (child of existing task)
+  createSubtask: (
+    parentTaskId: string,
+    parentTaskName: string,
+    boardId: string,
+    listId: string,
+    availableLists?: TaskList[]
+  ) => void;
+
+  // Open dialog for creating a task with a pending relationship
+  createTaskWithRelationship: (
+    relationshipType: PendingRelationshipType,
+    relatedTaskId: string,
+    relatedTaskName: string,
+    boardId: string,
+    listId: string,
+    availableLists?: TaskList[]
   ) => void;
 
   // Close dialog
@@ -257,6 +286,72 @@ export function TaskDialogProvider({
     []
   );
 
+  const createSubtask = useCallback(
+    (
+      parentTaskId: string,
+      parentTaskName: string,
+      boardId: string,
+      listId: string,
+      availableLists?: TaskList[]
+    ) => {
+      setState({
+        isOpen: true,
+        task: {
+          id: 'new',
+          name: '',
+          list_id: listId,
+          display_number: 1,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          deleted: false,
+          archived: false,
+        } as Task,
+        boardId,
+        mode: 'create',
+        availableLists,
+        collaborationMode: false,
+        parentTaskId,
+        parentTaskName,
+      });
+    },
+    []
+  );
+
+  const createTaskWithRelationship = useCallback(
+    (
+      relationshipType: PendingRelationshipType,
+      relatedTaskId: string,
+      relatedTaskName: string,
+      boardId: string,
+      listId: string,
+      availableLists?: TaskList[]
+    ) => {
+      setState({
+        isOpen: true,
+        task: {
+          id: 'new',
+          name: '',
+          list_id: listId,
+          display_number: 1,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          deleted: false,
+          archived: false,
+        } as Task,
+        boardId,
+        mode: 'create',
+        availableLists,
+        collaborationMode: false,
+        pendingRelationship: {
+          type: relationshipType,
+          relatedTaskId,
+          relatedTaskName,
+        },
+      });
+    },
+    []
+  );
+
   const closeDialog = useCallback(() => {
     setState({
       isOpen: false,
@@ -308,6 +403,8 @@ export function TaskDialogProvider({
       openTask,
       openTaskById,
       createTask,
+      createSubtask,
+      createTaskWithRelationship,
       closeDialog,
       onUpdate,
       onClose,
@@ -320,6 +417,8 @@ export function TaskDialogProvider({
       openTask,
       openTaskById,
       createTask,
+      createSubtask,
+      createTaskWithRelationship,
       closeDialog,
       onUpdate,
       onClose,

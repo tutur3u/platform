@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  ArrowLeft,
   Copy,
   ExternalLink,
   ListTodo,
@@ -16,7 +17,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useState } from 'react';
 
 interface TaskDialogActionsProps {
@@ -30,10 +32,14 @@ interface TaskDialogActionsProps {
   boardId: string;
   pathname?: string | null;
 
+  // Navigate back info (for create mode with pending relationship)
+  navigateBackTaskName?: string | null;
+
   // Callbacks
   onClose: () => void;
   onShowDeleteDialog: () => void;
   onClearDraft: () => void;
+  onNavigateBack?: () => void;
 }
 
 export function TaskDialogActions({
@@ -43,12 +49,16 @@ export function TaskDialogActions({
   wsId,
   boardId,
   pathname,
+  navigateBackTaskName,
   onClose,
   onShowDeleteDialog,
   onClearDraft,
+  onNavigateBack,
 }: TaskDialogActionsProps) {
-  const { toast } = useToast();
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+
+  // Determine if we should show the back button (create mode with a pending relationship)
+  const showBackButton = isCreateMode && onNavigateBack && navigateBackTaskName;
 
   return (
     <>
@@ -81,10 +91,7 @@ export function TaskDialogActions({
             <DropdownMenuItem
               onClick={() => {
                 navigator.clipboard.writeText(taskId);
-                toast({
-                  title: 'Task ID copied',
-                  description: 'Task ID has been copied to clipboard',
-                });
+                toast.success('Task ID copied to clipboard');
                 setIsMoreMenuOpen(false);
               }}
             >
@@ -95,10 +102,7 @@ export function TaskDialogActions({
               onClick={() => {
                 const url = `${window.location.origin}${pathname?.split('/tasks/')[0]}/tasks/${taskId}`;
                 navigator.clipboard.writeText(url);
-                toast({
-                  title: 'Link copied',
-                  description: 'Task link has been copied to clipboard',
-                });
+                toast.success('Task link copied to clipboard');
                 setIsMoreMenuOpen(false);
               }}
             >
@@ -118,6 +122,26 @@ export function TaskDialogActions({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+      )}
+
+      {/* Back to related task button - only in create mode with pending relationship */}
+      {showBackButton && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              onClick={onNavigateBack}
+              title={`Back to "${navigateBackTaskName}"`}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            Back to "{navigateBackTaskName}"
+          </TooltipContent>
+        </Tooltip>
       )}
 
       {/* Close button */}

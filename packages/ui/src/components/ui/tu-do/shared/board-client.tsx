@@ -12,7 +12,7 @@ import {
   getTasks,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { BoardViews } from './board-views';
 
 interface Props {
@@ -31,11 +31,6 @@ export function BoardClient({
   currentUserId,
 }: Props) {
   const boardId = initialBoard.id;
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Use React Query with initial data from SSR
   const { data: board = initialBoard } = useQuery({
@@ -47,7 +42,6 @@ export function BoardClient({
     initialData: initialBoard,
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnMount: false, // Disable initial refetch on mount
-    enabled: mounted, // Only enable after hydration
   });
 
   const { data: tasks = initialTasks } = useQuery({
@@ -57,7 +51,8 @@ export function BoardClient({
       return await getTasks(supabase, boardId);
     },
     initialData: initialTasks,
-    enabled: mounted, // Only enable after hydration
+    refetchOnMount: false, // Disable initial refetch on mount
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const { data: lists = initialLists } = useQuery({
@@ -69,7 +64,6 @@ export function BoardClient({
     initialData: initialLists,
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnMount: false, // Disable initial refetch on mount
-    enabled: mounted, // Only enable after hydration
   });
 
   // Fetch workspace labels once at the board level

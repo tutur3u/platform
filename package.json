@@ -23,6 +23,7 @@
     "dev": "turbo run dev --parallel",
     "dev:docs": "cd apps/docs && mintlify dev",
     "dev:web": "turbo run dev -F @tuturuuu/types -F @tuturuuu/supabase -F @tuturuuu/web",
+    "dev:webns": "turbo run dev -F @tuturuuu/types -F @tuturuuu/supabase",
     "dev:external": "turbo run dev -F @tuturuuu/external",
     "dev:calendar": "turbo run dev -F @tuturuuu/types -F @tuturuuu/calendar -F @tuturuuu/web",
     "dev:rewise": "turbo run dev -F @tuturuuu/types -F @tuturuuu/rewise -F @tuturuuu/web",
