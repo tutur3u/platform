@@ -15506,6 +15506,7 @@ export type Database = {
         | 'documents';
       task_priority: 'low' | 'normal' | 'high' | 'critical';
       task_relationship_type: 'parent_child' | 'blocks' | 'related';
+      time_of_day_preference: 'morning' | 'afternoon' | 'evening' | 'night';
       time_tracking_request_status: 'PENDING' | 'APPROVED' | 'REJECTED';
       workspace_api_key_scope:
         | 'gemini-2.0-flash'
@@ -15775,6 +15776,7 @@ export const Constants = {
       ],
       task_priority: ['low', 'normal', 'high', 'critical'],
       task_relationship_type: ['parent_child', 'blocks', 'related'],
+      time_of_day_preference: ['morning', 'afternoon', 'evening', 'night'],
       time_tracking_request_status: ['PENDING', 'APPROVED', 'REJECTED'],
       workspace_api_key_scope: [
         'gemini-2.0-flash',

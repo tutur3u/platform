@@ -25,8 +25,8 @@ import {
   scoreSlotForTask,
   slotMatchesPreference,
   type TaskSlotConfig,
-  timeMatchesSlot,
   type TimeSlotInfo,
+  timeMatchesSlot,
 } from './duration-optimizer';
 
 // Helper to create a habit config with defaults
@@ -1771,22 +1771,22 @@ describe('Task Slot Scoring', () => {
       const noonScore = scoreSlotForTask(task, noonSlot, now);
 
       // Expected breakdown (ASAP strategy):
-      // - Time: 300 - 12*10 = 180
+      // - Time: 300 - 12*2 = 276
       // - Size: min(120, 120) / 120 * 50 = 50
       // - Priority (normal): 0
-      // Total: 180 + 50 = 230
-      expect(noonScore).toBe(230);
+      // Total: 276 + 50 = 326
+      expect(noonScore).toBe(326);
 
       // Slot at 7am (hour 7) - should score HIGHER (earlier is better)
       const morningSlot = createSlot(7, 9, 120);
       const morningScore = scoreSlotForTask(task, morningSlot, now);
 
       // Expected breakdown (ASAP strategy):
-      // - Time: 300 - 7*10 = 230
+      // - Time: 300 - 7*2 = 286
       // - Size: min(120, 120) / 120 * 50 = 50
       // - Priority (normal): 0
-      // Total: 230 + 50 = 280
-      expect(morningScore).toBe(280);
+      // Total: 286 + 50 = 336
+      expect(morningScore).toBe(336);
 
       // Morning should score higher than noon (ASAP)
       expect(morningScore).toBeGreaterThan(noonScore);
@@ -1806,12 +1806,12 @@ describe('Task Slot Scoring', () => {
       const score = scoreSlotForTask(task, slot9am, now);
 
       // Expected breakdown (ASAP + urgent bonus):
-      // - Time: 300 - 9*10 = 210
+      // - Time: 300 - 9*2 = 282
       // - Size: min(120, 120) / 120 * 50 = 50
       // - Urgent deadline bonus: 200 - 9*5 = 155
       // - Priority (critical): +200
-      // Total: 210 + 50 + 155 + 200 = 615
-      expect(score).toBe(615);
+      // Total: 282 + 50 + 155 + 200 = 687
+      expect(score).toBe(687);
     });
   });
 });
