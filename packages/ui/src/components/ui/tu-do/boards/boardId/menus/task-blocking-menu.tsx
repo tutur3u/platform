@@ -152,15 +152,16 @@ export function TaskBlockingMenu({
                         {task.name}
                       </span>
                       <span className="text-muted-foreground text-xs">
-                        {task.board_name}{typeof task.display_number === 'number' &&
-                            ` #${task.display_number}`}
+                        {task.board_name}
+                        {typeof task.display_number === 'number' &&
+                          ` #${task.display_number}`}
                       </span>
                     </div>
                     <button
                       type="button"
                       onClick={() => handleRemove(task.id)}
                       disabled={isSaving && savingTaskId === task.id}
-                      aria-label='Remove dependency'
+                      aria-label="Remove dependency"
                       className="shrink-0 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                     >
                       {isSaving && savingTaskId === task.id ? (
