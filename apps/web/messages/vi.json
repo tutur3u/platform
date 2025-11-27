@@ -5986,6 +5986,33 @@
     "no_promotion": "Không có khuyến mãi",
     "search_promotions": "Tìm kiếm khuyến mãi"
   },
+  "task-relationships": {
+    "parent_task": "Tác vụ cha",
+    "sub_tasks": "Tác vụ con",
+    "blocking": "Đang chặn",
+    "blocked_by": "Bị chặn bởi",
+    "related": "Liên quan",
+    "search_tasks": "Tìm kiếm tác vụ...",
+    "no_tasks_found": "Không tìm thấy tác vụ nào",
+    "create_new_task": "Tạo tác vụ mới",
+    "create_new_subtask": "Tạo tác vụ con mới",
+    "add_existing_subtask": "Thêm tác vụ con hiện có",
+    "create_parent_task": "Tạo tác vụ cha",
+    "create_blocking_task": "Tạo tác vụ chặn",
+    "create_blocked_by_task": "Tạo tác vụ bị chặn",
+    "create_related_task": "Tạo tác vụ liên quan",
+    "creating_task": "Đang tạo tác vụ...",
+    "task_created": "Tạo tác vụ thành công",
+    "task_creation_failed": "Không thể tạo tác vụ",
+    "relationship_added": "Thêm liên kết thành công",
+    "relationship_removed": "Xóa liên kết thành công",
+    "set_as_parent": "Đặt làm tác vụ cha",
+    "remove_parent": "Xóa tác vụ cha",
+    "add_subtask": "Thêm tác vụ con",
+    "add_blocking": "Thêm tác vụ chặn",
+    "add_blocked_by": "Thêm tác vụ bị chặn",
+    "add_related": "Thêm tác vụ liên quan"
+  },
   "about": {
     "hero": {
       "badge": "Kỷ Nguyên Đối Tác",

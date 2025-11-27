@@ -4,11 +4,7 @@ import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
-import {
-  moveTask,
-  useDeleteTask,
-  useUpdateTask,
-} from '@tuturuuu/utils/task-helper';
+import { moveTask, useUpdateTask } from '@tuturuuu/utils/task-helper';
 import { addDays } from 'date-fns';
 import { useCallback } from 'react';
 
@@ -46,13 +42,15 @@ export function useTaskActions({
 }: UseTaskActionsProps) {
   const queryClient = useQueryClient();
   const updateTaskMutation = useUpdateTask(boardId);
-  const deleteTaskMutation = useDeleteTask(boardId);
 
   const handleArchiveToggle = useCallback(async () => {
     if (!onUpdate) return;
     setIsLoading(true);
 
     const newClosedState = !task.closed_at;
+
+    // Store previous state for rollback
+    const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
 
     if (
       newClosedState &&
@@ -61,6 +59,23 @@ export function useTaskActions({
     ) {
       const supabase = createClient();
       try {
+        // Optimistic update: move task to completion list and set closed_at
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((t) =>
+              t.id === task.id
+                ? {
+                    ...t,
+                    list_id: targetCompletionList.id,
+                    closed_at: new Date().toISOString(),
+                  }
+                : t
+            );
+          }
+        );
+
         // moveTask handles setting archived status based on target list
         await moveTask(supabase, task.id, targetCompletionList.id);
 
@@ -68,8 +83,13 @@ export function useTaskActions({
           description: `Task marked as done and moved to ${targetCompletionList.name}`,
         });
 
-        onUpdate();
+        // NOTE: No invalidation needed - optimistic update already handles the UI
+        // and realtime subscription handles cross-user sync
       } catch (error) {
+        // Rollback on error
+        if (previousTasks) {
+          queryClient.setQueryData(['tasks', boardId], previousTasks);
+        }
         console.error('Failed to complete task:', error);
         toast.error('Error', {
           description: 'Failed to complete task. Please try again.',
@@ -78,6 +98,22 @@ export function useTaskActions({
         setIsLoading(false);
       }
     } else {
+      // Optimistic update for simple toggle
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((t) =>
+            t.id === task.id
+              ? {
+                  ...t,
+                  closed_at: newClosedState ? new Date().toISOString() : null,
+                }
+              : t
+          );
+        }
+      );
+
       updateTaskMutation.mutate(
         {
           taskId: task.id,
@@ -86,24 +122,93 @@ export function useTaskActions({
           },
         },
         {
+          onError: () => {
+            // Rollback on error
+            if (previousTasks) {
+              queryClient.setQueryData(['tasks', boardId], previousTasks);
+            }
+          },
           onSettled: () => {
             setIsLoading(false);
           },
         }
       );
     }
-  }, [task, targetCompletionList, onUpdate, setIsLoading, updateTaskMutation]);
+  }, [
+    task,
+    targetCompletionList,
+    onUpdate,
+    setIsLoading,
+    updateTaskMutation,
+    queryClient,
+    boardId,
+  ]);
 
   const handleMoveToCompletion = useCallback(async () => {
     if (!targetCompletionList || !onUpdate) return;
 
     setIsLoading(true);
 
+    // Check if we're in multi-select mode and have multiple tasks selected
+    const shouldBulkMove =
+      isMultiSelectMode &&
+      selectedTasks &&
+      selectedTasks.size > 1 &&
+      selectedTasks.has(task.id);
+    const tasksToMove = shouldBulkMove ? Array.from(selectedTasks) : [task.id];
+
+    // Store previous state for rollback
+    const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
+
     const supabase = createClient();
     try {
-      await moveTask(supabase, task.id, targetCompletionList.id);
-      onUpdate();
+      // Optimistic update: move tasks to completion list and set closed_at/completed_at
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          const now = new Date().toISOString();
+          return old.map((t) =>
+            tasksToMove.includes(t.id)
+              ? {
+                  ...t,
+                  list_id: targetCompletionList.id,
+                  closed_at: now,
+                  completed_at:
+                    targetCompletionList.status === 'done'
+                      ? now
+                      : t.completed_at,
+                }
+              : t
+          );
+        }
+      );
+
+      // Move all tasks in parallel
+      await Promise.all(
+        tasksToMove.map((taskId) =>
+          moveTask(supabase, taskId, targetCompletionList.id)
+        )
+      );
+
+      const taskCount = tasksToMove.length;
+      toast.success(
+        taskCount > 1 ? `${taskCount} tasks completed` : 'Task completed',
+        {
+          description:
+            taskCount > 1
+              ? `Tasks marked as ${targetCompletionList.status === 'done' ? 'done' : 'closed'}`
+              : `Task marked as ${targetCompletionList.status === 'done' ? 'done' : 'closed'} and moved to ${targetCompletionList.name}`,
+        }
+      );
+
+      // NOTE: No invalidation needed - optimistic update already handles the UI
+      // and realtime subscription handles cross-user sync
     } catch (error) {
+      // Rollback on error
+      if (previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], previousTasks);
+      }
       console.error('Failed to move task to completion:', error);
       toast.error('Error', {
         description: 'Failed to complete task. Please try again.',
@@ -112,21 +217,76 @@ export function useTaskActions({
       setIsLoading(false);
       setMenuOpen(false);
     }
-  }, [targetCompletionList, onUpdate, task.id, setIsLoading, setMenuOpen]);
+  }, [
+    targetCompletionList,
+    onUpdate,
+    task.id,
+    setIsLoading,
+    setMenuOpen,
+    isMultiSelectMode,
+    selectedTasks,
+    queryClient,
+    boardId,
+  ]);
 
   const handleMoveToClose = useCallback(async () => {
     if (!targetClosedList || !onUpdate) return;
 
     setIsLoading(true);
 
+    // Check if we're in multi-select mode and have multiple tasks selected
+    const shouldBulkMove =
+      isMultiSelectMode &&
+      selectedTasks &&
+      selectedTasks.size > 1 &&
+      selectedTasks.has(task.id);
+    const tasksToMove = shouldBulkMove ? Array.from(selectedTasks) : [task.id];
+
+    // Store previous state for rollback
+    const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
+
     const supabase = createClient();
     try {
-      await moveTask(supabase, task.id, targetClosedList.id);
+      // Optimistic update: move tasks to closed list and set closed_at
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          const now = new Date().toISOString();
+          return old.map((t) =>
+            tasksToMove.includes(t.id)
+              ? {
+                  ...t,
+                  list_id: targetClosedList.id,
+                  closed_at: now,
+                }
+              : t
+          );
+        }
+      );
+
+      // Move all tasks in parallel
+      await Promise.all(
+        tasksToMove.map((taskId) =>
+          moveTask(supabase, taskId, targetClosedList.id)
+        )
+      );
+
+      const taskCount = tasksToMove.length;
       toast.success('Success', {
-        description: 'Task marked as closed',
+        description:
+          taskCount > 1
+            ? `${taskCount} tasks marked as closed`
+            : 'Task marked as closed',
       });
-      onUpdate();
+
+      // NOTE: No invalidation needed - optimistic update already handles the UI
+      // and realtime subscription handles cross-user sync
     } catch (error) {
+      // Rollback on error
+      if (previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], previousTasks);
+      }
       console.error('Failed to move task to closed:', error);
       toast.error('Error', {
         description: 'Failed to close task. Please try again.',
@@ -135,19 +295,80 @@ export function useTaskActions({
       setIsLoading(false);
       setMenuOpen(false);
     }
-  }, [targetClosedList, onUpdate, task.id, setIsLoading, setMenuOpen]);
+  }, [
+    targetClosedList,
+    onUpdate,
+    task.id,
+    setIsLoading,
+    setMenuOpen,
+    isMultiSelectMode,
+    selectedTasks,
+    queryClient,
+    boardId,
+  ]);
 
-  const handleDelete = useCallback(() => {
+  const handleDelete = useCallback(async () => {
     setIsLoading(true);
-    deleteTaskMutation.mutate(task.id, {
-      onSuccess: () => {
-        setDeleteDialogOpen?.(false);
-      },
-      onSettled: () => {
-        setIsLoading(false);
-      },
+
+    // Check if we're in multi-select mode and have multiple tasks selected
+    const shouldBulkDelete =
+      isMultiSelectMode &&
+      selectedTasks &&
+      selectedTasks.size > 1 &&
+      selectedTasks.has(task.id);
+    const tasksToDelete = shouldBulkDelete
+      ? Array.from(selectedTasks)
+      : [task.id];
+
+    // Store previous state for rollback
+    const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
+
+    // Optimistic update: remove tasks from cache
+    queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
+      if (!old) return old;
+      return old.filter((t) => !tasksToDelete.includes(t.id));
     });
-  }, [task.id, deleteTaskMutation, setIsLoading, setDeleteDialogOpen]);
+
+    const supabase = createClient();
+    try {
+      // Delete all tasks (soft delete by setting deleted_at)
+      const { error } = await supabase
+        .from('tasks')
+        .update({ deleted_at: new Date().toISOString() })
+        .in('id', tasksToDelete);
+
+      if (error) throw error;
+
+      const taskCount = tasksToDelete.length;
+      toast.success('Success', {
+        description:
+          taskCount > 1
+            ? `${taskCount} tasks deleted`
+            : 'Task deleted successfully',
+      });
+
+      setDeleteDialogOpen?.(false);
+    } catch (error) {
+      // Rollback on error
+      if (previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], previousTasks);
+      }
+      console.error('Failed to delete task(s):', error);
+      toast.error('Error', {
+        description: 'Failed to delete task(s). Please try again.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [
+    task.id,
+    setIsLoading,
+    setDeleteDialogOpen,
+    isMultiSelectMode,
+    selectedTasks,
+    queryClient,
+    boardId,
+  ]);
 
   const handleRemoveAllAssignees = useCallback(async () => {
     if (!task.assignees || task.assignees.length === 0) return;
@@ -270,14 +491,61 @@ export function useTaskActions({
         ? Array.from(selectedTasks)
         : [task.id];
 
+      // Store previous state for rollback
+      const previousTasks = queryClient.getQueryData<Task[]>([
+        'tasks',
+        boardId,
+      ]);
+
+      // Determine if target list is a completion list
+      const targetList = availableLists.find(
+        (list) => list.id === targetListId
+      );
+      const isCompletionList =
+        targetList?.status === 'done' || targetList?.status === 'closed';
+      const now = new Date().toISOString();
+
       try {
+        // Optimistic update: move tasks to target list
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((t) => {
+              if (tasksToMove.includes(t.id)) {
+                // Determine the current list status
+                const currentList = availableLists.find(
+                  (list) => list.id === t.list_id
+                );
+                const wasInCompletionList =
+                  currentList?.status === 'done' ||
+                  currentList?.status === 'closed';
+
+                return {
+                  ...t,
+                  list_id: targetListId,
+                  // Set closed_at based on target list status
+                  closed_at: isCompletionList
+                    ? now
+                    : wasInCompletionList
+                      ? null
+                      : t.closed_at,
+                  completed_at:
+                    targetList?.status === 'done'
+                      ? now
+                      : wasInCompletionList
+                        ? null
+                        : t.completed_at,
+                };
+              }
+              return t;
+            });
+          }
+        );
+
         // Move all tasks in parallel
         await Promise.all(
           tasksToMove.map((taskId) => moveTask(supabase, taskId, targetListId))
-        );
-
-        const targetList = availableLists.find(
-          (list) => list.id === targetListId
         );
 
         const taskCount = tasksToMove.length;
@@ -288,10 +556,13 @@ export function useTaskActions({
               : `Task moved to ${targetList?.name || 'selected list'}`,
         });
 
-        // Don't auto-clear selection - let user manually clear with "Clear" button
-
-        onUpdate();
+        // NOTE: No invalidation needed - optimistic update already handles the UI
+        // and realtime subscription handles cross-user sync
       } catch (error) {
+        // Rollback on error
+        if (previousTasks) {
+          queryClient.setQueryData(['tasks', boardId], previousTasks);
+        }
         console.error('Failed to move task:', error);
         toast.error('Error', {
           description: 'Failed to move task. Please try again.',
@@ -305,11 +576,12 @@ export function useTaskActions({
       task.id,
       task.list_id,
       availableLists,
-      onUpdate,
       setIsLoading,
       setMenuOpen,
       isMultiSelectMode,
       selectedTasks,
+      queryClient,
+      boardId,
     ]
   );
 
@@ -534,17 +806,31 @@ export function useTaskActions({
         selectedTasks &&
         selectedTasks.size > 1 &&
         selectedTasks.has(task.id);
-      const tasksToUpdate = shouldBulkUpdate
+
+      // Get current tasks from cache to filter out ones that already have the target value
+      const currentTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
+
+      // Filter tasks that actually need updating (don't already have the target estimation)
+      const candidateTasks = shouldBulkUpdate
         ? Array.from(selectedTasks)
         : [task.id];
+
+      const tasksToUpdate = currentTasks
+        ? candidateTasks.filter((taskId) => {
+            const taskData = currentTasks.find((t) => t.id === taskId);
+            return taskData?.estimation_points !== points;
+          })
+        : candidateTasks;
+
+      // If no tasks actually need updating, skip
+      if (tasksToUpdate.length === 0) {
+        return;
+      }
 
       setEstimationSaving?.(true);
 
       // Store previous state for rollback
-      const previousTasks = queryClient.getQueryData<Task[]>([
-        'tasks',
-        boardId,
-      ]);
+      const previousTasks = currentTasks;
 
       try {
         // Optimistic update
@@ -561,7 +847,7 @@ export function useTaskActions({
         );
 
         // Use direct Supabase update for bulk operations
-        if (shouldBulkUpdate) {
+        if (tasksToUpdate.length > 1) {
           const supabase = createClient();
           const { error, count } = await supabase
             .from('tasks')
@@ -574,7 +860,7 @@ export function useTaskActions({
         } else {
           // Use mutation for single task
           await updateTaskMutation.mutateAsync({
-            taskId: task.id,
+            taskId: tasksToUpdate[0]!,
             updates: { estimation_points: points },
           });
         }

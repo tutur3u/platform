@@ -5,22 +5,28 @@ import {
   getTasks,
 } from '@tuturuuu/utils/task-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
 import { BoardClient } from '../../shared/board-client';
+import type { Workspace } from '@tuturuuu/types';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 interface Props {
-  params: Promise<{
+  params: {
     wsId: string;
     boardId: string;
-  }>;
+    workspace?: Workspace;
+  };
 }
 
 export default async function TaskBoardPage({ params }: Props) {
-  const { wsId: id, boardId } = await params;
-  const workspace = await getWorkspace(id);
-  const wsId = workspace?.id;
+  const { wsId, boardId, workspace } = params;
+
   const supabase = await createClient();
+
+  let resolvedWorkspace = workspace;
+  if (!resolvedWorkspace) {
+    resolvedWorkspace = await getWorkspace(wsId);
+  }
 
   const board = await getTaskBoard(supabase, boardId);
 
@@ -30,7 +36,7 @@ export default async function TaskBoardPage({ params }: Props) {
   }
 
   // If board exists but belongs to different workspace, show 404
-  if (board.ws_id !== wsId) {
+  if (board.ws_id !== resolvedWorkspace.id) {
     notFound();
   }
 
@@ -40,7 +46,7 @@ export default async function TaskBoardPage({ params }: Props) {
 
   return (
     <BoardClient
-      workspace={workspace}
+      workspace={resolvedWorkspace}
       initialBoard={board}
       initialTasks={tasks}
       initialLists={lists}

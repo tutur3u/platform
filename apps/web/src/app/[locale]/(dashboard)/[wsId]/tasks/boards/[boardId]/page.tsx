@@ -1,3 +1,4 @@
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import TaskBoardPage from '@tuturuuu/ui/tu-do/boards/boardId/task-board-page';
 import type { Metadata } from 'next';
 
@@ -15,5 +16,11 @@ interface Props {
 }
 
 export default async function WorkspaceTaskBoardPage({ params }: Props) {
-  return <TaskBoardPage params={params} />;
+  return (
+    <WorkspaceWrapper params={params}>
+      {({ wsId, boardId, workspace }) => (
+        <TaskBoardPage params={{ wsId, boardId, workspace }} />
+      )}
+    </WorkspaceWrapper>
+  );
 }
