@@ -1,5 +1,9 @@
 // Components
-export { ClickableTaskItem, SubtaskActionButtons, TabButton } from './components';
+export {
+  ClickableTaskItem,
+  SubtaskActionButtons,
+  TabButton,
+} from './components';
 
 // Section components
 export { DependenciesSection } from './dependencies-section';
@@ -8,7 +12,10 @@ export { RelatedSection } from './related-section';
 export { SubtasksSection } from './subtasks-section';
 
 // Search popover
-export { TaskSearchPopover, TaskSearchPopoverContent } from './task-search-popover';
+export {
+  TaskSearchPopover,
+  TaskSearchPopoverContent,
+} from './task-search-popover';
 
 // Types
 export type {

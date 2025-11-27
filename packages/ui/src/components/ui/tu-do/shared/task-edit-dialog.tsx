@@ -60,7 +60,10 @@ import { useTaskDependencies } from './task-edit-dialog/hooks/use-task-dependenc
 import { useTaskFormState } from './task-edit-dialog/hooks/use-task-form-state';
 
 // Re-export relationship types from centralized location
-import type { PendingRelationship, PendingRelationshipType } from './task-edit-dialog/types/pending-relationship';
+import type {
+  PendingRelationship,
+  PendingRelationshipType,
+} from './task-edit-dialog/types/pending-relationship';
 
 export type { PendingRelationship, PendingRelationshipType };
 
@@ -218,11 +221,11 @@ export function TaskEditDialog({
   const [user, setUser] = useState<User | null>(
     propsCurrentUser
       ? {
-        id: propsCurrentUser.id,
-        display_name: propsCurrentUser.display_name || null,
-        avatar_url: propsCurrentUser.avatar_url || null,
-        email: propsCurrentUser.email || null,
-      }
+          id: propsCurrentUser.id,
+          display_name: propsCurrentUser.display_name || null,
+          avatar_url: propsCurrentUser.avatar_url || null,
+          email: propsCurrentUser.email || null,
+        }
       : null
   );
 
@@ -258,10 +261,10 @@ export function TaskEditDialog({
     id: task?.id || '',
     user: user
       ? {
-        id: user.id || '',
-        name: user.display_name || '',
-        color: userColor || '',
-      }
+          id: user.id || '',
+          name: user.display_name || '',
+          color: userColor || '',
+        }
       : null,
     enabled: isOpen && !isCreateMode && collaborationMode && !!task?.id,
   });
@@ -399,11 +402,11 @@ export function TaskEditDialog({
     workspaceMembers,
     currentWorkspace: boardConfig
       ? {
-        id: wsId,
-        name: (boardConfig as any).name || 'Workspace',
-        handle: null,
-        personal: isPersonalWorkspace,
-      }
+          id: wsId,
+          name: (boardConfig as any).name || 'Workspace',
+          handle: null,
+          personal: isPersonalWorkspace,
+        }
       : null,
     taskProjects,
     workspaceTasks,
@@ -461,11 +464,11 @@ export function TaskEditDialog({
   // ============================================================================
   // HANDLER REFS - Stable refs for callbacks used in effects
   // ============================================================================
-  const handleSaveRef = useRef<() => void>(() => { });
-  const handleCloseRef = useRef<() => void>(() => { });
+  const handleSaveRef = useRef<() => void>(() => {});
+  const handleCloseRef = useRef<() => void>(() => {});
   const hasUnsavedChangesRef = useRef<boolean>(false);
-  const quickDueRef = useRef<(days: number | null) => void>(() => { });
-  const updateEstimationRef = useRef<(points: number | null) => void>(() => { });
+  const quickDueRef = useRef<(days: number | null) => void>(() => {});
+  const updateEstimationRef = useRef<(points: number | null) => void>(() => {});
   const handleConvertToTaskRef = useRef<(() => Promise<void>) | null>(null);
   const flushNameUpdateRef = useRef<(() => Promise<void>) | null>(null);
 
@@ -1301,7 +1304,12 @@ export function TaskEditDialog({
 
     // Navigate to the related task
     await onNavigateToTask(taskIdToNavigateTo);
-  }, [pendingRelationship?.relatedTaskId, parentTaskId, onNavigateToTask, onClose]);
+  }, [
+    pendingRelationship?.relatedTaskId,
+    parentTaskId,
+    onNavigateToTask,
+    onClose,
+  ]);
 
   const handleDialogOpenChange = useCallback(
     (open: boolean) => {
@@ -2298,11 +2306,11 @@ export function TaskEditDialog({
               user={
                 user
                   ? {
-                    id: user.id || '',
-                    display_name: user.display_name ?? null,
-                    avatar_url: user.avatar_url ?? null,
-                    email: user.email ?? null,
-                  }
+                      id: user.id || '',
+                      display_name: user.display_name ?? null,
+                      avatar_url: user.avatar_url ?? null,
+                      email: user.email ?? null,
+                    }
                   : null
               }
               createMultiple={createMultiple}

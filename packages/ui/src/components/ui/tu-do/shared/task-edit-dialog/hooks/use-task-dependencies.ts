@@ -97,20 +97,23 @@ export function useTaskDependencies({
   // Mutations
   const createRelationship = useCreateTaskRelationship(boardId);
   const deleteRelationship = useDeleteTaskRelationship(boardId);
-  const createTaskWithRelationship = useCreateTaskWithRelationship(boardId, wsId);
+  const createTaskWithRelationship = useCreateTaskWithRelationship(
+    boardId,
+    wsId
+  );
 
   // Helper to invalidate caches
   const invalidateCaches = useCallback(
     async (otherTaskId?: string) => {
       await Promise.all([
         taskId &&
-        queryClient.invalidateQueries({
-          queryKey: ['task-relationships', taskId],
-        }),
+          queryClient.invalidateQueries({
+            queryKey: ['task-relationships', taskId],
+          }),
         otherTaskId &&
-        queryClient.invalidateQueries({
-          queryKey: ['task-relationships', otherTaskId],
-        }),
+          queryClient.invalidateQueries({
+            queryKey: ['task-relationships', otherTaskId],
+          }),
         queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
       ]);
       onUpdate?.();
@@ -158,10 +161,9 @@ export function useTaskDependencies({
 
         await invalidateCaches(task?.id);
       } catch (e) {
-        const message = e instanceof Error ? e.message : 'Unable to update parent task';
-        toast.error(
-          `Failed to update parent: ${message}`
-        );
+        const message =
+          e instanceof Error ? e.message : 'Unable to update parent task';
+        toast.error(`Failed to update parent: ${message}`);
       } finally {
         setSavingRelationship(null);
       }
@@ -380,9 +382,7 @@ export function useTaskDependencies({
           currentTaskIsSource: true, // Current task blocks the new task
         });
 
-        toast.success(
-          `Blocking task created: This task now blocks "${name}"`
-        );
+        toast.success(`Blocking task created: This task now blocks "${name}"`);
 
         await invalidateCaches(result.task.id);
       } catch (e: any) {
@@ -393,13 +393,7 @@ export function useTaskDependencies({
         setSavingRelationship(null);
       }
     },
-    [
-      isCreateMode,
-      taskId,
-      listId,
-      createTaskWithRelationship,
-      invalidateCaches,
-    ]
+    [isCreateMode, taskId, listId, createTaskWithRelationship, invalidateCaches]
   );
 
   // =========================================================================
@@ -501,13 +495,7 @@ export function useTaskDependencies({
         setSavingRelationship(null);
       }
     },
-    [
-      isCreateMode,
-      taskId,
-      listId,
-      createTaskWithRelationship,
-      invalidateCaches,
-    ]
+    [isCreateMode, taskId, listId, createTaskWithRelationship, invalidateCaches]
   );
 
   // =========================================================================
@@ -615,13 +603,7 @@ export function useTaskDependencies({
         setSavingRelationship(null);
       }
     },
-    [
-      isCreateMode,
-      taskId,
-      listId,
-      createTaskWithRelationship,
-      invalidateCaches,
-    ]
+    [isCreateMode, taskId, listId, createTaskWithRelationship, invalidateCaches]
   );
 
   // =========================================================================

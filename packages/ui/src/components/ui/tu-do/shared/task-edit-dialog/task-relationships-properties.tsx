@@ -86,7 +86,13 @@ export function TaskRelationshipsProperties({
         color: 'blue' as const,
       },
     ],
-    [parentTask, childTasks.length, blockingTasks.length, blockedByTasks.length, relatedTasks.length]
+    [
+      parentTask,
+      childTasks.length,
+      blockingTasks.length,
+      blockedByTasks.length,
+      relatedTasks.length,
+    ]
   );
 
   // Count totals for summary (derived from tabs)

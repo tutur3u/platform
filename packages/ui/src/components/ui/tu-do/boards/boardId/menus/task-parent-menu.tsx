@@ -59,14 +59,15 @@ export function TaskParentMenu({
   }, [taskId, childTaskIds, parentTask]);
 
   // Fetch available tasks
-  const { data: tasks = [], isLoading: tasksLoading, isError: tasksError} = useWorkspaceTasks(
-    wsId,
-    {
-      excludeTaskIds: excludeIds,
-      searchQuery: debouncedSearch || undefined,
-      limit: 30,
-    }
-  );
+  const {
+    data: tasks = [],
+    isLoading: tasksLoading,
+    isError: tasksError,
+  } = useWorkspaceTasks(wsId, {
+    excludeTaskIds: excludeIds,
+    searchQuery: debouncedSearch || undefined,
+    limit: 30,
+  });
 
   // Reset search when menu closes
   const handleSubContentOpenChange = React.useCallback((open: boolean) => {

@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { toast} from '@tuturuuu/ui/sonner';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useState } from 'react';
 
