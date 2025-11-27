@@ -14,6 +14,7 @@ import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import { cn } from '@tuturuuu/utils/format';
 import {
+  createTaskRelationship,
   getTicketIdentifier,
   invalidateTaskCaches,
   useUpdateTask,
@@ -55,12 +56,29 @@ import {
 } from './task-edit-dialog/constants';
 import { useEditorCommands } from './task-edit-dialog/hooks/use-editor-commands';
 import { useTaskData } from './task-edit-dialog/hooks/use-task-data';
+import { useTaskDependencies } from './task-edit-dialog/hooks/use-task-dependencies';
 import { useTaskFormState } from './task-edit-dialog/hooks/use-task-form-state';
+
+// Re-export relationship types from centralized location
+import type {
+  PendingRelationship,
+  PendingRelationshipType,
+} from './task-edit-dialog/types/pending-relationship';
+
+export type { PendingRelationship, PendingRelationshipType };
+
+// Re-export dialog header utilities for external use
+export {
+  getTaskDialogHeaderInfo,
+  type DialogHeaderInfo,
+} from './task-edit-dialog/components/task-dialog-header';
+
 import { useTaskMutations } from './task-edit-dialog/hooks/use-task-mutations';
 import { useTaskRealtimeSync } from './task-edit-dialog/hooks/use-task-realtime-sync';
 import { useTaskRelationships } from './task-edit-dialog/hooks/use-task-relationships';
 import { TaskDeleteDialog } from './task-edit-dialog/task-delete-dialog';
 import { TaskPropertiesSection } from './task-edit-dialog/task-properties-section';
+import { TaskRelationshipsProperties } from './task-edit-dialog/task-relationships-properties';
 import type { WorkspaceTaskLabel } from './task-edit-dialog/types';
 import {
   clearDraft,
@@ -83,6 +101,9 @@ export interface TaskEditDialogProps {
   mode?: 'edit' | 'create';
   collaborationMode?: boolean;
   isPersonalWorkspace?: boolean;
+  parentTaskId?: string; // For creating subtasks - will set parent relationship on save
+  parentTaskName?: string; // Name of parent task when creating subtasks
+  pendingRelationship?: PendingRelationship;
   currentUser?: {
     id: string;
     display_name?: string;
@@ -91,6 +112,12 @@ export interface TaskEditDialogProps {
   };
   onClose: () => void;
   onUpdate: () => void;
+  onNavigateToTask?: (taskId: string) => Promise<void>;
+  onAddSubtask?: () => void;
+  onAddParentTask?: () => void;
+  onAddBlockingTask?: () => void;
+  onAddBlockedByTask?: () => void;
+  onAddRelatedTask?: () => void;
 }
 
 export function TaskEditDialog({
@@ -103,9 +130,18 @@ export function TaskEditDialog({
   mode = 'edit',
   collaborationMode = false,
   isPersonalWorkspace = false,
+  parentTaskId,
+  parentTaskName,
+  pendingRelationship,
   currentUser: propsCurrentUser,
   onClose,
   onUpdate,
+  onNavigateToTask,
+  onAddSubtask,
+  onAddParentTask,
+  onAddBlockingTask,
+  onAddBlockedByTask,
+  onAddRelatedTask,
 }: TaskEditDialogProps) {
   const isCreateMode = mode === 'create';
   const pathname = usePathname();
@@ -144,6 +180,19 @@ export function TaskEditDialog({
     setSelectedProjects,
     hasDraft,
     clearDraftState,
+    // Scheduling fields
+    totalDuration,
+    setTotalDuration,
+    isSplittable,
+    setIsSplittable,
+    minSplitDurationMinutes,
+    setMinSplitDurationMinutes,
+    maxSplitDurationMinutes,
+    setMaxSplitDurationMinutes,
+    calendarHours,
+    setCalendarHours,
+    autoSchedule,
+    setAutoSchedule,
   } = useTaskFormState({
     task,
     boardId,
@@ -418,6 +467,61 @@ export function TaskEditDialog({
   const [createMultiple, setCreateMultiple] = useState(false);
   const [showSyncWarning, setShowSyncWarning] = useState(false);
 
+  // Local state for calendar events (updated after scheduling)
+  const [localCalendarEvents, setLocalCalendarEvents] = useState<
+    Task['calendar_events'] | undefined
+  >(task?.calendar_events);
+
+  // Sync localCalendarEvents when task prop changes
+  // Include task?.id to ensure state resets when switching between tasks
+  useEffect(() => {
+    setLocalCalendarEvents(task?.calendar_events);
+  }, [task?.calendar_events]);
+
+  // Fetch calendar events when dialog opens for existing tasks
+  useEffect(() => {
+    if (!isOpen || isCreateMode || !task?.id || !wsId) return;
+
+    // Only fetch if task has scheduling settings (total_duration set)
+    if (!task.total_duration || task.total_duration <= 0) return;
+
+    const fetchCalendarEvents = async () => {
+      try {
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/tasks/${task.id}/schedule`
+        );
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (data.events && Array.isArray(data.events)) {
+          setLocalCalendarEvents(
+            data.events.map(
+              (e: {
+                id: string;
+                title: string;
+                start_at: string;
+                end_at: string;
+                scheduled_minutes: number;
+                completed: boolean;
+              }) => ({
+                id: e.id,
+                title: e.title,
+                start_at: e.start_at,
+                end_at: e.end_at,
+                scheduled_minutes: e.scheduled_minutes,
+                completed: e.completed,
+              })
+            )
+          );
+        }
+      } catch (error) {
+        console.error('Error fetching calendar events:', error);
+      }
+    };
+
+    fetchCalendarEvents();
+  }, [isOpen, isCreateMode, task?.id, task?.total_duration, wsId]);
+
   // ============================================================================
   // NAME UPDATE & DEBOUNCING
   // ============================================================================
@@ -524,6 +628,8 @@ export function TaskEditDialog({
     updateEndDate,
     updateList,
     saveNameToDatabase,
+    saveSchedulingSettings,
+    schedulingSaving,
   } = useTaskMutations({
     taskId: task?.id,
     isCreateMode,
@@ -568,6 +674,34 @@ export function TaskEditDialog({
     setNewProjectName,
     setShowNewLabelDialog,
     setShowNewProjectDialog,
+    onUpdate,
+  });
+
+  // ============================================================================
+  // TASK DEPENDENCIES - Parent, children, blocking, blocked-by, related tasks
+  // ============================================================================
+  const {
+    isLoading: dependenciesLoading,
+    parentTask,
+    setParentTask,
+    childTasks,
+    addChildTask,
+    blocking: blockingTasks,
+    addBlockingTask,
+    removeBlockingTask,
+    blockedBy: blockedByTasks,
+    addBlockedByTask,
+    removeBlockedByTask,
+    relatedTasks,
+    addRelatedTask,
+    removeRelatedTask,
+    savingRelationship,
+  } = useTaskDependencies({
+    taskId: task?.id,
+    boardId,
+    wsId,
+    listId: task?.list_id,
+    isCreateMode,
     onUpdate,
   });
 
@@ -619,15 +753,8 @@ export function TaskEditDialog({
           { taskId: task?.id, updates: taskUpdates },
           {
             onSuccess: async () => {
-              await invalidateTaskCaches(queryClient, boardId);
-
-              if (boardId) {
-                await queryClient.refetchQueries({
-                  queryKey: ['tasks', boardId],
-                  type: 'active',
-                });
-              }
-
+              // Note: useUpdateTask already has optimistic updates
+              // Realtime handles cross-user sync
               toast({
                 title: 'Due date updated',
                 description: newDate
@@ -648,16 +775,7 @@ export function TaskEditDialog({
           }
         );
     },
-    [
-      isCreateMode,
-      onUpdate,
-      queryClient,
-      task,
-      updateTaskMutation,
-      boardId,
-      toast,
-      setEndDate,
-    ]
+    [isCreateMode, onUpdate, task, updateTaskMutation, toast, setEndDate]
   );
 
   const updateName = useCallback(
@@ -816,7 +934,13 @@ export function TaskEditDialog({
       return;
     }
 
-    await invalidateTaskCaches(queryClient, boardId);
+    // Only invalidate time tracking data since task availability affects it
+    // Note: We intentionally do NOT invalidate the tasks cache here to avoid
+    // conflicts with realtime sync and unnecessary full-board refetches.
+    // The realtime subscription will handle adding the new task to the cache.
+    await queryClient.invalidateQueries({
+      queryKey: ['time-tracking-data'],
+    });
 
     toast({
       title: 'Task created',
@@ -867,38 +991,176 @@ export function TaskEditDialog({
           start_date: startDate ? startDate.toISOString() : undefined,
           end_date: endDate ? endDate.toISOString() : undefined,
           estimation_points: estimationPoints ?? null,
+          // Scheduling fields
+          total_duration: totalDuration,
+          is_splittable: isSplittable,
+          min_split_duration_minutes: minSplitDurationMinutes,
+          max_split_duration_minutes: maxSplitDurationMinutes,
+          calendar_hours: calendarHours,
+          auto_schedule: autoSchedule,
         };
         const newTask = await createTask(supabase, selectedListId, taskData);
 
+        // If this is a subtask, create the parent-child relationship
+        if (parentTaskId) {
+          try {
+            await createTaskRelationship(supabase, {
+              source_task_id: parentTaskId,
+              target_task_id: newTask.id,
+              type: 'parent_child',
+            });
+          } catch (relationshipError) {
+            // Log but don't fail task creation if relationship fails
+            console.error(
+              'Failed to create parent-child relationship:',
+              relationshipError
+            );
+          }
+          // Invalidate relationship caches
+          await queryClient.invalidateQueries({
+            queryKey: ['task-relationships', parentTaskId],
+          });
+        }
+
+        // Handle pending relationships (parent, blocking, blocked-by, related)
+        if (pendingRelationship) {
+          try {
+            const { type, relatedTaskId } = pendingRelationship;
+            let relationshipData:
+              | {
+                  source_task_id: string;
+                  target_task_id: string;
+                  type: 'parent_child' | 'blocks' | 'related';
+                }
+              | undefined;
+
+            switch (type) {
+              case 'parent':
+                // New task is the parent of the related task
+                relationshipData = {
+                  source_task_id: newTask.id,
+                  target_task_id: relatedTaskId,
+                  type: 'parent_child',
+                };
+                break;
+              case 'blocking':
+                // New task blocks the related task (related task is blocked by new task)
+                relationshipData = {
+                  source_task_id: relatedTaskId,
+                  target_task_id: newTask.id,
+                  type: 'blocks',
+                };
+                break;
+              case 'blocked-by':
+                // New task is blocked by the related task (new task blocks related task)
+                relationshipData = {
+                  source_task_id: newTask.id,
+                  target_task_id: relatedTaskId,
+                  type: 'blocks',
+                };
+                break;
+              case 'related':
+                relationshipData = {
+                  source_task_id: relatedTaskId,
+                  target_task_id: newTask.id,
+                  type: 'related',
+                };
+                break;
+            }
+
+            if (relationshipData) {
+              await createTaskRelationship(supabase, relationshipData);
+              // Invalidate relationship caches for both tasks
+              await queryClient.invalidateQueries({
+                queryKey: ['task-relationships', relatedTaskId],
+              });
+              await queryClient.invalidateQueries({
+                queryKey: ['task-relationships', newTask.id],
+              });
+            }
+          } catch (relationshipError) {
+            console.error(
+              'Failed to create pending relationship:',
+              relationshipError
+            );
+          }
+        }
+
         if (selectedLabels.length > 0) {
-          await supabase.from('task_labels').insert(
-            selectedLabels.map((l) => ({
-              task_id: newTask.id,
-              label_id: l.id,
-            }))
-          );
+          const { error: labelsError } = await supabase
+            .from('task_labels')
+            .insert(
+              selectedLabels.map((l) => ({
+                task_id: newTask.id,
+                label_id: l.id,
+              }))
+            );
+          if (labelsError) {
+            console.error('Error adding labels:', labelsError);
+          }
         }
 
         if (selectedAssignees.length > 0) {
-          await supabase.from('task_assignees').insert(
-            selectedAssignees.map((a) => ({
+          // Use user_id if available, fallback to id for compatibility
+          const assigneesToInsert = selectedAssignees
+            .map((a) => ({
               task_id: newTask.id,
-              user_id: a.user_id,
+              user_id: a.user_id || a.id,
             }))
-          );
+            .filter((a) => a.user_id); // Filter out any with null/undefined user_id
+
+          if (assigneesToInsert.length > 0) {
+            const { error: assigneesError } = await supabase
+              .from('task_assignees')
+              .insert(assigneesToInsert);
+            if (assigneesError) {
+              console.error('Error adding assignees:', assigneesError);
+              toast({
+                title: 'Warning',
+                description:
+                  'Task created but some assignees could not be added',
+                variant: 'destructive',
+              });
+            }
+          }
         }
 
         if (selectedProjects.length > 0) {
-          await supabase.from('task_project_tasks').insert(
-            selectedProjects.map((p) => ({
-              task_id: newTask.id,
-              project_id: p.id,
-            }))
-          );
+          const { error: projectsError } = await supabase
+            .from('task_project_tasks')
+            .insert(
+              selectedProjects.map((p) => ({
+                task_id: newTask.id,
+                project_id: p.id,
+              }))
+            );
+          if (projectsError) {
+            console.error('Error adding projects:', projectsError);
+          }
         }
 
-        await invalidateTaskCaches(queryClient, boardId);
-        toast({ title: 'Task created', description: 'New task added.' });
+        // Note: Auto-scheduling is handled by the Smart Schedule button in Calendar
+        // The autoSchedule flag is saved to the task for the unified scheduler to use
+
+        // Add the new task to the cache directly instead of invalidating
+        // This avoids full-board refetch flickering and conflicts with realtime sync
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return [newTask];
+            // Check if task already exists (from realtime), if so don't duplicate
+            if (old.some((t) => t.id === newTask.id)) return old;
+            return [...old, newTask];
+          }
+        );
+        // Only invalidate time tracking data since task availability affects it
+        await queryClient.invalidateQueries({
+          queryKey: ['time-tracking-data'],
+        });
+        toast({
+          title: parentTaskId ? 'Sub-task created' : 'Task created',
+          description: parentTaskId ? 'New sub-task added.' : 'New task added.',
+        });
         onUpdate();
         if (createMultiple) {
           setName('');
@@ -917,6 +1179,8 @@ export function TaskEditDialog({
           setEndDate(undefined);
           setEstimationPoints(null);
           setSelectedLabels([]);
+          setSelectedAssignees([]);
+          setSelectedProjects([]);
           onClose();
         }
       } catch (error: any) {
@@ -941,6 +1205,13 @@ export function TaskEditDialog({
       end_date: endDate ? endDate.toISOString() : null,
       list_id: selectedListId,
       estimation_points: estimationPoints ?? null,
+      // Scheduling fields
+      total_duration: totalDuration,
+      is_splittable: isSplittable,
+      min_split_duration_minutes: minSplitDurationMinutes,
+      max_split_duration_minutes: maxSplitDurationMinutes,
+      calendar_hours: calendarHours,
+      auto_schedule: autoSchedule,
     };
 
     // Always update description field for embeddings and calculations
@@ -966,15 +1237,9 @@ export function TaskEditDialog({
         },
         {
           onSuccess: async () => {
-            console.log('Task update successful, refreshing data...');
-
-            // Update caches and refetch in background
-            invalidateTaskCaches(queryClient, boardId);
-            queryClient.refetchQueries({
-              queryKey: ['tasks', boardId],
-              type: 'active',
-            });
-
+            // Note: useUpdateTask already has optimistic updates in onMutate
+            // and proper cache updates in onSuccess, so no need to invalidate
+            // or refetch here. Realtime handles cross-user sync.
             toast({
               title: 'Task updated',
               description: 'The task has been successfully updated.',
@@ -1027,7 +1292,20 @@ export function TaskEditDialog({
     setEndDate,
     setEstimationPoints,
     setSelectedLabels,
+    setSelectedAssignees,
+    setSelectedProjects,
+    // Scheduling fields
+    totalDuration,
+    isSplittable,
+    minSplitDurationMinutes,
+    maxSplitDurationMinutes,
+    calendarHours,
+    autoSchedule,
+    parentTaskId,
+    pendingRelationship,
   ]);
+
+  // Note: Manual scheduling removed - handled by Smart Schedule button in Calendar
 
   const handleClose = useCallback(async () => {
     // Check if we're in collaboration mode and not synced - show warning
@@ -1137,6 +1415,27 @@ export function TaskEditDialog({
     task?.id,
     boardId,
     queryClient,
+  ]);
+
+  // Navigate back to the related task (for create mode with pending relationship)
+  const handleNavigateBack = useCallback(async () => {
+    // Get the task ID to navigate back to
+    const taskIdToNavigateTo =
+      pendingRelationship?.relatedTaskId ?? parentTaskId;
+
+    if (!taskIdToNavigateTo || !onNavigateToTask) {
+      // If no related task or navigation function, just close
+      onClose();
+      return;
+    }
+
+    // Navigate to the related task
+    await onNavigateToTask(taskIdToNavigateTo);
+  }, [
+    pendingRelationship?.relatedTaskId,
+    parentTaskId,
+    onNavigateToTask,
+    onClose,
   ]);
 
   const handleDialogOpenChange = useCallback(
@@ -2128,6 +2427,9 @@ export function TaskEditDialog({
               synced={synced}
               connected={connected}
               taskId={task?.id}
+              parentTaskId={parentTaskId}
+              parentTaskName={parentTaskName}
+              pendingRelationship={pendingRelationship}
               user={
                 user
                   ? {
@@ -2150,6 +2452,11 @@ export function TaskEditDialog({
               setShowDeleteConfirm={setShowDeleteConfirm}
               clearDraftState={clearDraftState}
               handleSave={handleSave}
+              onNavigateBack={
+                isCreateMode && (pendingRelationship || parentTaskId)
+                  ? handleNavigateBack
+                  : undefined
+              }
             />
 
             {/* Main editing area with improved spacing */}
@@ -2173,6 +2480,8 @@ export function TaskEditDialog({
 
                 {/* Task Properties Section */}
                 <TaskPropertiesSection
+                  wsId={wsId}
+                  taskId={task?.id}
                   priority={priority}
                   startDate={startDate}
                   endDate={endDate}
@@ -2183,6 +2492,13 @@ export function TaskEditDialog({
                   selectedAssignees={selectedAssignees}
                   isLoading={isLoading}
                   isPersonalWorkspace={isPersonalWorkspace}
+                  // Scheduling state
+                  totalDuration={totalDuration}
+                  isSplittable={isSplittable}
+                  minSplitDurationMinutes={minSplitDurationMinutes}
+                  maxSplitDurationMinutes={maxSplitDurationMinutes}
+                  calendarHours={calendarHours}
+                  autoSchedule={autoSchedule}
                   availableLists={availableLists}
                   availableLabels={availableLabels}
                   taskProjects={taskProjects}
@@ -2202,6 +2518,67 @@ export function TaskEditDialog({
                   onShowEstimationConfigDialog={() =>
                     setShowEstimationConfigDialog(true)
                   }
+                  // Scheduling handlers
+                  onTotalDurationChange={setTotalDuration}
+                  onIsSplittableChange={setIsSplittable}
+                  onMinSplitDurationChange={setMinSplitDurationMinutes}
+                  onMaxSplitDurationChange={setMaxSplitDurationMinutes}
+                  onCalendarHoursChange={setCalendarHours}
+                  onAutoScheduleChange={setAutoSchedule}
+                  isCreateMode={isCreateMode}
+                  savedSchedulingSettings={
+                    task
+                      ? {
+                          totalDuration: task.total_duration ?? null,
+                          isSplittable: task.is_splittable ?? false,
+                          minSplitDurationMinutes:
+                            task.min_split_duration_minutes ?? null,
+                          maxSplitDurationMinutes:
+                            task.max_split_duration_minutes ?? null,
+                          calendarHours: task.calendar_hours ?? null,
+                          autoSchedule: task.auto_schedule ?? false,
+                        }
+                      : undefined
+                  }
+                  onSaveSchedulingSettings={saveSchedulingSettings}
+                  schedulingSaving={schedulingSaving}
+                  scheduledEvents={localCalendarEvents}
+                />
+
+                {/* Task Relationships Properties - Parent, Sub-tasks, Dependencies, Related */}
+                <TaskRelationshipsProperties
+                  wsId={wsId}
+                  taskId={task?.id}
+                  boardId={boardId}
+                  listId={task?.list_id}
+                  isCreateMode={isCreateMode}
+                  parentTask={parentTask}
+                  childTasks={childTasks}
+                  blockingTasks={blockingTasks}
+                  blockedByTasks={blockedByTasks}
+                  relatedTasks={relatedTasks}
+                  isLoading={dependenciesLoading}
+                  onSetParent={setParentTask}
+                  onRemoveParent={() => setParentTask(null)}
+                  onAddBlockingTask={addBlockingTask}
+                  onRemoveBlockingTask={removeBlockingTask}
+                  onAddBlockedByTask={addBlockedByTask}
+                  onRemoveBlockedByTask={removeBlockedByTask}
+                  onAddRelatedTask={addRelatedTask}
+                  onRemoveRelatedTask={removeRelatedTask}
+                  onNavigateToTask={async (taskId) => {
+                    if (onNavigateToTask) {
+                      await onNavigateToTask(taskId);
+                    }
+                  }}
+                  onAddSubtask={onAddSubtask}
+                  onAddParentTask={onAddParentTask}
+                  onAddBlockingTaskDialog={onAddBlockingTask}
+                  onAddBlockedByTaskDialog={onAddBlockedByTask}
+                  onAddRelatedTaskDialog={onAddRelatedTask}
+                  onAddExistingAsSubtask={addChildTask}
+                  isSaving={!!savingRelationship}
+                  savingTaskId={savingRelationship}
                 />
 
                 {/* Task Description - Full editor experience with subtle border */}
@@ -2314,6 +2691,7 @@ export function TaskEditDialog({
         onOpenChange={setShowDeleteConfirm}
         taskId={task?.id}
         boardId={boardId}
+        wsId={wsId}
         isLoading={isLoading}
         onSuccess={onUpdate}
         onClose={onClose}

@@ -1,3 +1,4 @@
+import { SessionWithRelations } from '@/app/[locale]/(dashboard)/[wsId]/time-tracker/types';
 import {
   createAdminClient,
   createClient,
@@ -27,8 +28,11 @@ export interface PaginatedResult<T> {
 // Type definitions for time tracking data
 export interface GroupedSession {
   title: string;
-  category: null;
-  sessions: TimeTrackingSession[];
+  category: {
+    name: string;
+    color: string;
+  } | null;
+  sessions: SessionWithRelations[];
   totalDuration: number;
   firstStartTime: string;
   lastEndTime: string | null;
@@ -38,21 +42,21 @@ export interface GroupedSession {
     avatarUrl: string | null;
   };
   period: string;
-  sessionCount: number;
-  sessionTitles: string[];
+  sessionCount?: number;
+  sessionTitles?: string[];
 }
 
 export interface TimeTrackingStats {
-  totalSessions: number;
-  activeSessions: number;
-  activeUsers: number;
-  todayTime: number;
-  weekTime: number;
-  monthTime: number;
-  todaySessions: number;
-  weekSessions: number;
-  monthSessions: number;
-  streak: number;
+  total_sessions: number;
+  active_sessions: number;
+  active_users: number;
+  today_time: number;
+  week_time: number;
+  month_time: number;
+  today_sessions: number;
+  week_sessions: number;
+  month_sessions: number;
+  current_streak: number;
 }
 
 export interface PeriodSummary {
@@ -215,31 +219,31 @@ export const getTimeTrackingStats = async (
 
     return (
       (data as unknown as TimeTrackingStats) || {
-        totalSessions: 0,
-        activeSessions: 0,
-        activeUsers: 0,
-        todayTime: 0,
-        weekTime: 0,
-        monthTime: 0,
-        todaySessions: 0,
-        weekSessions: 0,
-        monthSessions: 0,
-        streak: 0,
+        total_sessions: 0,
+        active_sessions: 0,
+        active_users: 0,
+        today_time: 0,
+        week_time: 0,
+        month_time: 0,
+        today_sessions: 0,
+        week_sessions: 0,
+        month_sessions: 0,
+        current_streak: 0,
       }
     );
   } catch (error) {
     console.error('RPC not available for stats, returning defaults:', error);
     return {
-      totalSessions: 0,
-      activeSessions: 0,
-      activeUsers: 0,
-      todayTime: 0,
-      weekTime: 0,
-      monthTime: 0,
-      todaySessions: 0,
-      weekSessions: 0,
-      monthSessions: 0,
-      streak: 0,
+      total_sessions: 0,
+      active_sessions: 0,
+      active_users: 0,
+      today_time: 0,
+      week_time: 0,
+      month_time: 0,
+      today_sessions: 0,
+      week_sessions: 0,
+      month_sessions: 0,
+      current_streak: 0,
     };
   }
 };

@@ -92,7 +92,8 @@ export function useTaskData({
       const transformedMembers = members
         .filter((m: any) => m.user_id && m.users) // Filter out invalid entries
         .map((m: any) => ({
-          user_id: m.user_id,
+          id: m.user_id, // Include id for compatibility with assignee-select.tsx
+          user_id: m.user_id, // Include user_id for task creation
           display_name: m.users?.display_name || 'Unknown User',
           avatar_url: m.users?.avatar_url,
         }));

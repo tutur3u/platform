@@ -122,27 +122,35 @@ export const MonthCalendar = ({
     setCurrDate(date);
   }, [date]);
 
-  // Get first day of week from settings
+  // Get first day of week from settings or infer from visibleDates
   const firstDayOfWeek = useMemo(() => {
     const settingValue = settings?.appearance?.firstDayOfWeek;
-    console.log('Month calendar first day setting:', settingValue);
-    return settingValue === 'sunday' ? 0 : settingValue === 'saturday' ? 6 : 1; // 0 = Sunday, 1 = Monday, 6 = Saturday
-  }, [settings?.appearance?.firstDayOfWeek]);
+
+    // If we have visibleDates, infer first day from the first date (most reliable)
+    // The visibleDates from calendar-content are already calculated with the correct first day
+    if (visibleDates && visibleDates.length > 0 && visibleDates[0]) {
+      return visibleDates[0].getDay();
+    }
+
+    // Fallback to settings
+    if (settingValue === 'sunday') return 0;
+    if (settingValue === 'saturday') return 6;
+    if (settingValue === 'monday') return 1;
+
+    // 'auto' or undefined - default to Monday (locale detection happens in calendar-content)
+    return 1;
+  }, [settings?.appearance?.firstDayOfWeek, visibleDates]);
 
   // Get weekday labels based on first day of week
   const weekdayLabels = useMemo(() => {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const reorderedDays = [...days];
 
-    console.log('Reordering days with first day:', firstDayOfWeek);
-
     // Reorder days based on first day of week
     for (let i = 0; i < firstDayOfWeek; i++) {
       const day = reorderedDays.shift();
       if (day) reorderedDays.push(day);
     }
-
-    console.log('Reordered days:', reorderedDays);
 
     return reorderedDays;
   }, [firstDayOfWeek]);

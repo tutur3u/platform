@@ -1,5 +1,3 @@
-import type { NavLink } from '@/components/navigation';
-import { DEV_MODE } from '@/constants/common';
 import {
   Archive,
   Banknote,
@@ -52,6 +50,7 @@ import {
   QrCodeIcon,
   Radio,
   ReceiptText,
+  Repeat,
   RotateCcw,
   RulerDimensionLine,
   ScanSearch,
@@ -85,8 +84,8 @@ import {
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
-  resolveWorkspaceId,
   ROOT_WORKSPACE_ID,
+  resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
@@ -94,6 +93,8 @@ import {
   getSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
+import type { NavLink } from '@/components/navigation';
+import { DEV_MODE } from '@/constants/common';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -175,7 +176,7 @@ export async function WorkspaceNavigationLinks({
     {
       title: t('sidebar_tabs.tasks'),
       href: `/${personalOrWsId}/tasks/my-tasks`,
-      aliases: [`/${personalOrWsId}/tasks`],
+      aliases: [`/${personalOrWsId}/tasks`, `/${personalOrWsId}/tasks/habits`],
       icon: <CircleCheck className="h-5 w-5" />,
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
       experimental: 'beta',
@@ -187,10 +188,17 @@ export async function WorkspaceNavigationLinks({
           matchExact: true,
         },
         {
+          title: t('sidebar_tabs.habits'),
+          href: `/${personalOrWsId}/tasks/habits`,
+          icon: <Repeat className="h-4 w-4" />,
+          requireRootMember: true,
+        },
+        {
           title: t('sidebar_tabs.notes'),
           href: `/${personalOrWsId}/tasks/notes`,
           icon: <StickyNote className="h-4 w-4" />,
         },
+        null,
         {
           title: t('sidebar_tabs.all_boards'),
           href: `/${personalOrWsId}/tasks/boards`,
@@ -287,6 +295,7 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/time-tracker/goals`,
           icon: <Goal className="h-5 w-5" />,
         },
+        null,
         {
           title: t('sidebar_tabs.time_tracker_management'),
           href: `/${personalOrWsId}/time-tracker/management`,
@@ -300,6 +309,7 @@ export async function WorkspaceNavigationLinks({
           icon: <MessageCircleIcon className="h-5 w-5" />,
           disabled: withoutPermission('manage_time_tracking_requests'),
         },
+        null,
         {
           title: t('sidebar_tabs.settings'),
           href: `/${personalOrWsId}/time-tracker/settings`,
@@ -338,6 +348,7 @@ export async function WorkspaceNavigationLinks({
           matchExact: true,
           disabled: withoutPermission('manage_finance'),
         },
+        null,
         {
           title: t('workspace-finance-tabs.transactions'),
           href: `/${personalOrWsId}/finance/transactions`,
@@ -346,15 +357,22 @@ export async function WorkspaceNavigationLinks({
           disabled: withoutPermission('view_transactions'),
         },
         {
-          title: t('workspace-finance-tabs.recurring'),
-          href: `/${personalOrWsId}/finance/recurring`,
-          icon: <RotateCcw className="h-5 w-5" />,
-          disabled: withoutPermission('manage_finance'),
-        },
-        {
           title: t('workspace-finance-tabs.wallets'),
           href: `/${personalOrWsId}/finance/wallets`,
           icon: <Wallet className="h-5 w-5" />,
+          disabled: withoutPermission('manage_finance'),
+        },
+        {
+          title: t('workspace-finance-tabs.invoices'),
+          href: `/${personalOrWsId}/finance/invoices`,
+          icon: <ReceiptText className="h-5 w-5" />,
+          disabled: withoutPermission('manage_finance'),
+        },
+        null,
+        {
+          title: t('workspace-finance-tabs.recurring'),
+          href: `/${personalOrWsId}/finance/recurring`,
+          icon: <RotateCcw className="h-5 w-5" />,
           disabled: withoutPermission('manage_finance'),
         },
         {
@@ -369,6 +387,7 @@ export async function WorkspaceNavigationLinks({
           icon: <ChartArea className="h-5 w-5" />,
           disabled: withoutPermission('manage_finance'),
         },
+        null,
         {
           title: t('workspace-finance-tabs.categories'),
           href: `/${personalOrWsId}/finance/transactions/categories`,
@@ -381,12 +400,7 @@ export async function WorkspaceNavigationLinks({
           icon: <Tags className="h-5 w-5" />,
           disabled: withoutPermission('manage_finance'),
         },
-        {
-          title: t('workspace-finance-tabs.invoices'),
-          href: `/${personalOrWsId}/finance/invoices`,
-          icon: <ReceiptText className="h-5 w-5" />,
-          disabled: withoutPermission('manage_finance'),
-        },
+        null,
         {
           title: t('workspace-finance-tabs.settings'),
           href: `/${personalOrWsId}/finance/settings`,
@@ -417,6 +431,7 @@ export async function WorkspaceNavigationLinks({
           matchExact: true,
           disabled: withoutPermission('manage_users'),
         },
+        null,
         {
           title: t('workspace-users-tabs.attendance'),
           href: `/${personalOrWsId}/users/attendance`,
@@ -450,6 +465,7 @@ export async function WorkspaceNavigationLinks({
             withoutPermission('manage_users') &&
             withoutPermission('view_user_groups'),
         },
+        null,
         {
           title: t('workspace-users-tabs.reports'),
           href: `/${personalOrWsId}/users/reports`,
@@ -467,12 +483,14 @@ export async function WorkspaceNavigationLinks({
                 withoutPermission('send_user_group_post_emails'))),
           experimental: 'beta',
         },
+        null,
         {
           title: t('workspace-users-tabs.guest_leads'),
           href: `/${personalOrWsId}/users/guest-leads`,
           icon: <Mails className="h-5 w-5" />,
           disabled: withoutPermission('manage_users'),
         },
+        null,
         {
           title: t('sidebar_tabs.structure'),
           aliases: [`/${personalOrWsId}/users/structure`],
@@ -503,6 +521,7 @@ export async function WorkspaceNavigationLinks({
           matchExact: true,
           disabled: withoutPermission('view_inventory'),
         },
+        null,
         {
           title: t('workspace-inventory-tabs.products'),
           href: `/${personalOrWsId}/inventory/products`,
@@ -539,6 +558,7 @@ export async function WorkspaceNavigationLinks({
           icon: <Boxes className="h-5 w-5" />,
           disabled: withoutPermission('view_inventory'),
         },
+        null,
         {
           title: t('workspace-inventory-tabs.promotions'),
           href: `/${personalOrWsId}/inventory/promotions`,
@@ -865,6 +885,7 @@ export async function WorkspaceNavigationLinks({
           icon: <Bolt className="h-5 w-5" />,
           matchExact: true,
         },
+        null,
         ...(!isPersonal
           ? [
               {
@@ -884,6 +905,7 @@ export async function WorkspaceNavigationLinks({
               },
             ]
           : []),
+        null,
         {
           title: t('workspace-settings-layout.reports'),
           href: `/${personalOrWsId}/settings/reports`,
@@ -909,6 +931,7 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/usage`,
           icon: <ChartColumnStacked className="h-5 w-5" />,
         },
+        null,
         allowDiscordIntegrations
           ? {
               title: t('sidebar_tabs.integrations'),
@@ -943,6 +966,7 @@ export async function WorkspaceNavigationLinks({
           disabled: withoutRootPermission('manage_workspace_secrets'),
           requireRootMember: true,
         },
+        null,
         {
           title: t('workspace-settings-layout.infrastructure'),
           href: `/${personalOrWsId}/infrastructure`,

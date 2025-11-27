@@ -1,0 +1,151 @@
+---
+title: Priority System
+description: How Smart Scheduling calculates and uses priority for scheduling decisions
+---
+
+# Priority System
+
+The priority system is the foundation of Smart Scheduling. It determines which items get scheduled first and which items can bump others.
+
+## Priority Levels
+
+Smart Scheduling uses four priority levels:
+
+| Level | Weight | Description |
+|-------|--------|-------------|
+| **Critical** | 4 | Must be done immediately, can bump other events |
+| **High** | 3 | Important, scheduled before normal items |
+| **Normal** | 2 | Standard priority, default for most items |
+| **Low** | 1 | Can be deferred, scheduled when convenient |
+
+## Priority Inference
+
+When an item doesn't have an explicit priority set, the system infers it from the deadline:
+
+```typescript
+function inferPriority(deadline: Date | null): Priority {
+  if (!deadline) return 'low';
+
+  const hoursUntilDeadline = (deadline - now) / (1000 * 60 * 60);
+
+  if (hoursUntilDeadline <= 0) return 'critical';  // Overdue
+  if (hoursUntilDeadline <= 24) return 'critical'; // Due today
+  if (hoursUntilDeadline <= 48) return 'high';     // Due tomorrow
+  return 'normal';                                  // Due later
+}
+```
+
+<Note>
+Explicit priorities always override inferred priorities. If you set a task as "Low" priority, it stays low even if it's overdue.
+</Note>
+
+## Priority Score Calculation
+
+For more granular sorting, the system calculates a numeric priority score:
+
+```typescript
+// Base score from priority level
+const baseScores = {
+  critical: 4000,
+  high: 3000,
+  normal: 2000,
+  low: 1000
+};
+
+// Urgency bonus from deadline proximity
+function getUrgencyBonus(deadline: Date | null): number {
+  if (!deadline) return 0;
+
+  const hoursUntil = (deadline - now) / (1000 * 60 * 60);
+
+  if (hoursUntil <= 0) return 5000;    // Overdue - highest urgency
+  if (hoursUntil <= 24) return 2000;   // Due within 24h
+  if (hoursUntil <= 48) return 1000;   // Due within 48h
+  if (hoursUntil <= 72) return 500;    // Due within 3 days
+  if (hoursUntil <= 168) return 200;   // Due within 7 days
+  return 0;                             // Due later
+}
+```
+
+This scoring system ensures that:
+- Overdue items are scheduled first (score up to 9000)
+- Items due soon are prioritized even within the same priority level
+- Low priority items with urgent deadlines can outrank high priority items due later
+
+## Sorting Algorithm
+
+Items are sorted using a multi-level comparison:
+
+<Steps>
+  <Step title="Primary: Priority">
+    Higher priority items come first (critical > high > normal > low)
+  </Step>
+  <Step title="Secondary: Deadline">
+    Among same priority, earlier deadlines come first
+  </Step>
+  <Step title="Tertiary: Creation Date">
+    Among same priority and deadline, older items come first (FIFO)
+  </Step>
+</Steps>
+
+## Bumping Rules
+
+Only **critical priority** items can bump other events:
+
+| Bumper Priority | Can Bump |
+|-----------------|----------|
+| Critical | High, Normal, Low |
+| High | Nothing |
+| Normal | Nothing |
+| Low | Nothing |
+
+<Warning>
+Critical items cannot bump other critical items. This prevents infinite bumping loops and ensures all critical work gets done.
+</Warning>
+
+### Bumping Process
+
+When a critical task needs a time slot occupied by a lower-priority habit:
+
+1. The habit event is marked for rescheduling
+2. The task is scheduled in the freed slot
+3. The bumped habit is rescheduled to the next available slot
+4. If no suitable slot exists, a warning is generated
+
+## Implementation Details
+
+The priority calculator is implemented in `packages/ai/src/scheduling/priority-calculator.ts`:
+
+```typescript
+// Key exports
+export const PRIORITY_WEIGHTS = {
+  critical: 4,
+  high: 3,
+  normal: 2,
+  low: 1,
+};
+
+export function getEffectivePriority(item: PrioritizableItem): Priority;
+export function comparePriority(a: Priority, b: Priority): number;
+export function isHigherPriority(a: Priority, b: Priority): boolean;
+export function canBump(bumper: PrioritizableItem, target: PrioritizableItem): boolean;
+export function sortByPriority<T extends PrioritizableItem>(items: T[]): T[];
+export function calculatePriorityScore(item: PrioritizableItem): number;
+```
+
+## Testing
+
+The priority system is thoroughly tested with 61 test cases covering:
+
+- Priority weight ordering
+- Explicit priority handling
+- Deadline-based inference
+- Priority comparison functions
+- Bumping rules
+- Multi-level sorting
+- Score calculation with urgency bonuses
+
+Run tests with:
+```bash
+npx vitest run src/scheduling/priority-calculator.test.ts
+```

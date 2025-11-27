@@ -8,6 +8,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import { isTaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task, TaskAssignee } from '@tuturuuu/types/primitives/Task';
 import type {
@@ -15,8 +16,16 @@ import type {
   TaskBoardStatusTemplate,
 } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import type {
+  CreateTaskRelationshipInput,
+  CreateTaskWithRelationshipInput,
+  CreateTaskWithRelationshipResult,
+  RelatedTaskInfo,
+  TaskRelationship,
+  TaskRelationshipsResponse,
+  TaskRelationshipType,
+} from '@tuturuuu/types/primitives/TaskRelationship';
 import type { User } from '@tuturuuu/types/primitives/User';
-
 /**
  * Generate a human-readable ticket identifier from prefix and display number
  * @param prefix - Board's ticket prefix (e.g., "DEV", "BUG")
@@ -218,6 +227,13 @@ export async function createTask(
     estimation_points: task.estimation_points ?? null,
     sort_key: newSortKey,
     created_at: new Date().toISOString(),
+    // Scheduling fields
+    total_duration: task.total_duration ?? null,
+    is_splittable: task.is_splittable ?? false,
+    min_split_duration_minutes: task.min_split_duration_minutes ?? null,
+    max_split_duration_minutes: task.max_split_duration_minutes ?? null,
+    calendar_hours: task.calendar_hours ?? null,
+    auto_schedule: task.auto_schedule ?? false,
   };
 
   // Now try the normal insert with the fixed database
@@ -328,15 +344,19 @@ export async function updateTask(
 }
 
 // Utility function to transform and deduplicate assignees
+// Returns user objects with user_id included for consistency with workspace members
 export function transformAssignees(
   assignees: (TaskAssignee & { user: User })[]
-): User[] {
+): (User & { user_id: string })[] {
   return (
     assignees
-      ?.map((a) => a.user)
+      ?.map((a) => ({
+        ...a.user,
+        user_id: a.user?.id || '', // Include user_id for consistency with workspace members structure
+      }))
       .filter(
-        (user: User, index: number, self: User[]) =>
-          user?.id && self.findIndex((u: User) => u.id === user.id) === index
+        (user, index: number, self) =>
+          user?.id && self.findIndex((u) => u.id === user.id) === index
       ) || []
   );
 }
@@ -2289,6 +2309,536 @@ export function useReorderTask(boardId: string) {
           );
         }
       );
+    },
+  });
+}
+
+// =============================================================================
+// TASK RELATIONSHIPS
+// =============================================================================
+
+/**
+ * Nested task shape returned from relationship queries.
+ * Used to replace `as any` with proper typing.
+ */
+interface NestedRelatedTask {
+  id: string;
+  name: string;
+  display_number: number | null;
+  completed: boolean | null;
+  priority: string | null;
+  board_id: string | null;
+  deleted_at: string | null;
+  list: {
+    board: {
+      name: string;
+    } | null;
+  } | null;
+}
+
+/**
+ * Fetch all relationships for a given task
+ */
+export async function getTaskRelationships(
+  supabase: TypedSupabaseClient,
+  taskId: string
+): Promise<TaskRelationshipsResponse> {
+  // Fetch relationships where this task is the source
+  const { data: sourceRelationships, error: sourceError } = await supabase
+    .from('task_relationships')
+    .select(
+      `
+      id,
+      source_task_id,
+      target_task_id,
+      type,
+      created_at,
+      created_by,
+      target_task:tasks!task_relationships_target_task_id_fkey(
+        id,
+        name,
+        display_number,
+        completed,
+        priority,
+        board_id,
+        deleted_at,
+        list:task_lists(
+          board:workspace_boards(
+            name
+          )
+        )
+      )
+    `
+    )
+    .eq('source_task_id', taskId);
+
+  if (sourceError) throw sourceError;
+
+  // Fetch relationships where this task is the target
+  const { data: targetRelationships, error: targetError } = await supabase
+    .from('task_relationships')
+    .select(
+      `
+      id,
+      source_task_id,
+      target_task_id,
+      type,
+      created_at,
+      created_by,
+      source_task:tasks!task_relationships_source_task_id_fkey(
+        id,
+        name,
+        display_number,
+        completed,
+        priority,
+        board_id,
+        deleted_at,
+        list:task_lists(
+          board:workspace_boards(
+            name
+          )
+        )
+      )
+    `
+    )
+    .eq('target_task_id', taskId);
+
+  if (targetError) throw targetError;
+
+  // Process relationships into categorized response
+  const result: TaskRelationshipsResponse = {
+    parentTask: null,
+    childTasks: [],
+    blockedBy: [],
+    blocking: [],
+    relatedTasks: [],
+  };
+
+  // Process source relationships (this task is the source)
+  for (const rel of sourceRelationships || []) {
+    const targetTask = rel.target_task as NestedRelatedTask | null;
+    // Skip if task is missing or soft-deleted
+    if (!targetTask || targetTask.deleted_at !== null) continue;
+
+    const taskInfo: RelatedTaskInfo = {
+      id: targetTask.id,
+      name: targetTask.name,
+      display_number: targetTask.display_number,
+      completed: targetTask.completed,
+      priority: (isTaskPriority(targetTask.priority)
+        ? targetTask.priority
+        : null) as 'low' | 'normal' | 'high' | 'critical' | null,
+      board_id: targetTask.board_id,
+      board_name: targetTask.list?.board?.name,
+    };
+
+    switch (rel.type) {
+      case 'parent_child':
+        // Source is parent, target is child - so this task's children
+        result.childTasks.push(taskInfo);
+        break;
+      case 'blocks':
+        // Source blocks target - so this task is blocking the target
+        result.blocking.push(taskInfo);
+        break;
+      case 'related':
+        result.relatedTasks.push(taskInfo);
+        break;
+    }
+  }
+
+  // Process target relationships (this task is the target)
+  for (const rel of targetRelationships || []) {
+    const sourceTask = rel.source_task as NestedRelatedTask | null;
+    // Skip if task is missing or soft-deleted
+    if (!sourceTask || sourceTask.deleted_at !== null) continue;
+
+    const taskInfo: RelatedTaskInfo = {
+      id: sourceTask.id,
+      name: sourceTask.name,
+      display_number: sourceTask.display_number,
+      completed: sourceTask.completed,
+      priority: (isTaskPriority(sourceTask.priority)
+        ? sourceTask.priority
+        : null) as 'low' | 'normal' | 'high' | 'critical' | null,
+      board_id: sourceTask.board_id,
+      board_name: sourceTask.list?.board?.name,
+    };
+
+    switch (rel.type) {
+      case 'parent_child':
+        // Source is parent, target is child - so this task's parent
+        result.parentTask = taskInfo;
+        break;
+      case 'blocks':
+        // Source blocks target - so this task is blocked by source
+        result.blockedBy.push(taskInfo);
+        break;
+      case 'related':
+        // Avoid duplicates for bidirectional related relationships
+        if (!result.relatedTasks.some((t) => t.id === taskInfo.id)) {
+          result.relatedTasks.push(taskInfo);
+        }
+        break;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Create a new task relationship
+ */
+export async function createTaskRelationship(
+  supabase: TypedSupabaseClient,
+  input: CreateTaskRelationshipInput
+): Promise<TaskRelationship> {
+  const { data, error } = await supabase
+    .from('task_relationships')
+    .insert({
+      source_task_id: input.source_task_id,
+      target_task_id: input.target_task_id,
+      type: input.type,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    // Handle specific error cases with user-friendly messages
+    if (error.code === '23505') {
+      throw new Error('This relationship already exists.');
+    }
+    if (error.message?.includes('single parent')) {
+      throw new Error('A task can only have one parent.');
+    }
+    if (error.message?.includes('circular')) {
+      throw new Error(
+        'This would create a circular relationship, which is not allowed.'
+      );
+    }
+    throw error;
+  }
+
+  return data as TaskRelationship;
+}
+
+/**
+ * Delete a task relationship
+ */
+export async function deleteTaskRelationship(
+  supabase: TypedSupabaseClient,
+  relationshipId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('task_relationships')
+    .delete()
+    .eq('id', relationshipId);
+
+  if (error) throw error;
+}
+
+/**
+ * Delete a task relationship by source, target, and type
+ */
+export async function deleteTaskRelationshipByDetails(
+  supabase: TypedSupabaseClient,
+  sourceTaskId: string,
+  targetTaskId: string,
+  type: TaskRelationshipType
+): Promise<void> {
+  const { error } = await supabase
+    .from('task_relationships')
+    .delete()
+    .eq('source_task_id', sourceTaskId)
+    .eq('target_task_id', targetTaskId)
+    .eq('type', type);
+
+  if (error) throw error;
+}
+
+/**
+ * React Query hook for fetching task relationships
+ */
+export function useTaskRelationships(taskId: string | undefined) {
+  return useQuery({
+    queryKey: ['task-relationships', taskId],
+    queryFn: async () => {
+      if (!taskId) return null;
+      const supabase = createClient();
+      return getTaskRelationships(supabase, taskId);
+    },
+    enabled: !!taskId,
+    staleTime: 30000, // 30 seconds
+  });
+}
+
+/**
+ * React Query mutation hook for creating task relationships
+ */
+export function useCreateTaskRelationship(_boardId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: CreateTaskRelationshipInput) => {
+      const supabase = createClient();
+      return createTaskRelationship(supabase, input);
+    },
+    onSuccess: async (_, variables) => {
+      // Invalidate relationships for both tasks involved
+      // Note: We intentionally do NOT invalidate the tasks cache here to avoid
+      // conflicts with realtime sync and unnecessary full-board refetches.
+      // The task card badges read from ['task-relationships', taskId] cache directly.
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['task-relationships', variables.source_task_id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['task-relationships', variables.target_task_id],
+        }),
+      ]);
+    },
+  });
+}
+
+/**
+ * React Query mutation hook for deleting task relationships
+ */
+export function useDeleteTaskRelationship(_boardId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      sourceTaskId,
+      targetTaskId,
+      type,
+    }: {
+      sourceTaskId: string;
+      targetTaskId: string;
+      type: TaskRelationshipType;
+    }) => {
+      const supabase = createClient();
+      return deleteTaskRelationshipByDetails(
+        supabase,
+        sourceTaskId,
+        targetTaskId,
+        type
+      );
+    },
+    onSuccess: async (_, variables) => {
+      // Invalidate relationships for both tasks involved
+      // Note: We intentionally do NOT invalidate the tasks cache here to avoid
+      // conflicts with realtime sync and unnecessary full-board refetches.
+      // The task card badges read from ['task-relationships', taskId] cache directly.
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['task-relationships', variables.sourceTaskId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['task-relationships', variables.targetTaskId],
+        }),
+      ]);
+    },
+  });
+}
+
+/**
+ * Fetch tasks for a workspace (for task picker across all boards)
+ */
+export async function getWorkspaceTasks(
+  supabase: TypedSupabaseClient,
+  wsId: string,
+  options?: {
+    excludeTaskIds?: string[];
+    searchQuery?: string;
+    limit?: number;
+  }
+): Promise<RelatedTaskInfo[]> {
+  let query = supabase
+    .from('tasks')
+    .select(
+      `
+      id,
+      name,
+      display_number,
+      completed,
+      priority,
+      board_id,
+      list:task_lists!inner(
+        board:workspace_boards!inner(
+          id,
+          name,
+          ws_id
+        )
+      )
+    `
+    )
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false });
+
+  // Filter by workspace through the board
+  query = query.eq('list.board.ws_id', wsId);
+
+  // Exclude specific task IDs
+  if (options?.excludeTaskIds?.length) {
+    query = query.filter(
+      'id',
+      'not.in',
+      `(${options.excludeTaskIds.join(',')})`
+    );
+  }
+
+  // Search by name
+  if (options?.searchQuery) {
+    query = query.ilike('name', `%${options.searchQuery}%`);
+  }
+
+  // Limit results
+  if (options?.limit) {
+    query = query.limit(options.limit);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw error;
+
+  return (data || []).map((task) => ({
+    id: task.id,
+    name: task.name,
+    display_number: task.display_number,
+    completed: task.completed,
+    priority: task.priority,
+    board_id: task.board_id,
+    board_name: task.list?.board?.name ?? undefined,
+  }));
+}
+
+/**
+ * React Query hook for fetching workspace tasks (for task picker)
+ */
+export function useWorkspaceTasks(
+  wsId: string | undefined,
+  options?: {
+    excludeTaskIds?: string[];
+    searchQuery?: string;
+    limit?: number;
+    enabled?: boolean;
+  }
+) {
+  return useQuery({
+    queryKey: [
+      'workspace-tasks',
+      wsId,
+      options?.excludeTaskIds,
+      options?.searchQuery,
+      options?.limit,
+    ],
+    queryFn: async () => {
+      if (!wsId) return [];
+      const supabase = createClient();
+      return getWorkspaceTasks(supabase, wsId, options);
+    },
+    enabled: !!wsId && (options?.enabled ?? true),
+    staleTime: 30000, // 30 seconds
+  });
+}
+
+/**
+ * Create a new task and establish a relationship with an existing task in one atomic operation
+ * Uses a Supabase RPC to ensure both operations succeed or both fail
+ */
+export async function createTaskWithRelationship(
+  supabase: TypedSupabaseClient,
+  input: CreateTaskWithRelationshipInput
+): Promise<{ task: Task; relationship: TaskRelationship }> {
+  const { name, listId, currentTaskId, relationshipType, currentTaskIsSource } =
+    input;
+
+  // Call the RPC for atomic transaction
+  const { data, error } = await supabase.rpc('create_task_with_relationship', {
+    p_name: name,
+    p_list_id: listId,
+    p_current_task_id: currentTaskId,
+    p_relationship_type: relationshipType,
+    p_current_task_is_source: currentTaskIsSource,
+  });
+
+  if (error) {
+    // Handle specific error cases with user-friendly messages
+    if (error.message?.includes('already exists')) {
+      throw new Error('This relationship already exists.');
+    }
+    if (error.message?.includes('single parent')) {
+      throw new Error('A task can only have one parent.');
+    }
+    if (error.message?.includes('circular')) {
+      throw new Error(
+        'This would create a circular relationship, which is not allowed.'
+      );
+    }
+    if (error.message?.includes('not authenticated')) {
+      throw new Error('User not authenticated');
+    }
+    if (error.message?.includes('List not found')) {
+      throw new Error('List not found or access denied');
+    }
+    if (error.message?.includes('Current task not found')) {
+      throw new Error('The task you are trying to relate to was not found');
+    }
+    throw error;
+  }
+
+  // Strongly typed response from RPC
+  const result = data as unknown as CreateTaskWithRelationshipResult;
+
+  // Transform task record to match Task type
+  const task = transformTaskRecord(result.task) as Task;
+
+  // Relationship is already strongly typed, use directly
+  const relationship: TaskRelationship = result.relationship;
+
+  return { task, relationship };
+}
+
+/**
+ * React Query mutation hook for creating a task with a relationship
+ */
+export function useCreateTaskWithRelationship(boardId: string, wsId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: CreateTaskWithRelationshipInput) => {
+      const supabase = createClient();
+      return createTaskWithRelationship(supabase, input);
+    },
+    onSuccess: async (result, variables) => {
+      // Add the new task to the cache directly instead of invalidating
+      // This avoids full-board refetch flickering and conflicts with realtime sync
+      if (boardId) {
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return [result.task];
+            // Check if task already exists (from realtime), if so don't duplicate
+            if (old.some((t) => t.id === result.task.id)) return old;
+            return [...old, result.task];
+          }
+        );
+      }
+
+      // Invalidate relationship caches for both tasks involved
+      // Note: We do NOT invalidate the tasks cache to avoid conflicts with realtime sync
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['task-relationships', variables.currentTaskId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['task-relationships', result.task.id],
+        }),
+        // Invalidate workspace tasks (for task picker) - scoped to specific workspace
+        queryClient.invalidateQueries({
+          queryKey: ['workspace-tasks', wsId],
+        }),
+      ]);
     },
   });
 }

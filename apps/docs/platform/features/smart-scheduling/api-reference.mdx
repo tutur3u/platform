@@ -1,0 +1,237 @@
+---
+title: API Reference
+description: REST API endpoints for Smart Scheduling
+---
+
+# Smart Scheduling API
+
+The Smart Scheduling API allows you to programmatically trigger scheduling and retrieve scheduling status.
+
+## Endpoints
+
+### Trigger Scheduling
+
+<Endpoint method="POST" url="/api/v1/workspaces/{wsId}/calendar/schedule" />
+
+Triggers the unified scheduler for a workspace, scheduling both habits and tasks.
+
+#### Path Parameters
+
+<ParamField path="wsId" type="string" required>
+  The workspace ID (UUID format)
+</ParamField>
+
+#### Request Body
+
+<ParamField body="windowDays" type="number" default={30}>
+  How many days into the future to schedule events (7-90)
+</ParamField>
+
+<ParamField body="forceReschedule" type="boolean" default={false}>
+  If true, deletes existing auto-generated events and creates new ones
+</ParamField>
+
+#### Response
+
+```json
+{
+  "success": true,
+  "summary": {
+    "habitsScheduled": 5,
+    "tasksScheduled": 3,
+    "eventsCreated": 12,
+    "bumpedHabits": 1,
+    "rescheduledHabits": 1,
+    "windowDays": 30
+  },
+  "habits": {
+    "events": [
+      {
+        "habitId": "uuid",
+        "habitName": "Morning Meditation",
+        "occurrence": "2024-01-15",
+        "duration": 20,
+        "event": {
+          "id": "uuid",
+          "start_at": "2024-01-15T07:00:00Z",
+          "end_at": "2024-01-15T07:20:00Z"
+        }
+      }
+    ],
+    "warnings": []
+  },
+  "tasks": {
+    "events": [
+      {
+        "taskId": "uuid",
+        "taskName": "Complete report",
+        "scheduledMinutes": 120,
+        "warning": null,
+        "events": [
+          {
+            "id": "uuid",
+            "start_at": "2024-01-15T09:00:00Z",
+            "end_at": "2024-01-15T11:00:00Z",
+            "scheduled_minutes": 120
+          }
+        ]
+      }
+    ],
+    "bumpedHabits": [
+      {
+        "habitId": "uuid",
+        "habitName": "Reading",
+        "occurrence": "2024-01-15",
+        "originalEventId": "uuid"
+      }
+    ],
+    "warnings": []
+  },
+  "rescheduledHabits": [
+    {
+      "habitId": "uuid",
+      "habitName": "Reading",
+      "occurrence": "2024-01-15",
+      "duration": 30,
+      "event": {
+        "id": "uuid",
+        "start_at": "2024-01-15T19:00:00Z",
+        "end_at": "2024-01-15T19:30:00Z"
+      }
+    }
+  ],
+  "warnings": []
+}
+```
+
+#### Example
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://tuturuuu.com/api/v1/workspaces/{wsId}/calendar/schedule" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: your-session-cookie" \
+  -d '{"windowDays": 30, "forceReschedule": false}'
+```
+
+```typescript TypeScript
+const response = await fetch(
+  `/api/v1/workspaces/${wsId}/calendar/schedule`,
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ windowDays: 30, forceReschedule: false }),
+  }
+);
+
+const result = await response.json();
+console.log(`Created ${result.summary.eventsCreated} events`);
+```
+</CodeGroup>
+
+---
+
+### Get Scheduling Status
+
+<Endpoint method="GET" url="/api/v1/workspaces/{wsId}/calendar/schedule" />
+
+Retrieves the current scheduling status and statistics for a workspace.
+
+#### Path Parameters
+
+<ParamField path="wsId" type="string" required>
+  The workspace ID (UUID format)
+</ParamField>
+
+#### Response
+
+```json
+{
+  "lastScheduledAt": "2024-01-15T10:30:00Z",
+  "lastStatus": "success",
+  "lastMessage": "Scheduled 5 habits and 3 tasks",
+  "statistics": {
+    "habitsScheduled": 5,
+    "tasksScheduled": 3,
+    "eventsCreated": 12,
+    "bumpedHabits": 1,
+    "windowDays": 30
+  },
+  "schedulableItems": {
+    "activeHabits": 7,
+    "autoScheduleTasks": 4
+  }
+}
+```
+
+#### Example
+
+<CodeGroup>
+```bash cURL
+curl "https://tuturuuu.com/api/v1/workspaces/{wsId}/calendar/schedule" \
+  -H "Cookie: your-session-cookie"
+```
+
+```typescript TypeScript
+const response = await fetch(
+  `/api/v1/workspaces/${wsId}/calendar/schedule`
+);
+
+const status = await response.json();
+console.log(`Last scheduled: ${status.lastScheduledAt}`);
+```
+</CodeGroup>
+
+---
+
+## Authentication
+
+### User Authentication
+
+Standard user authentication via session cookie. The user must be a member of the workspace.
+
+### Cron Authentication
+
+For background jobs, the API accepts a Bearer token with the cron secret:
+
+```http
+Authorization: Bearer {CRON_SECRET}
+```
+
+This is used by the Vercel cron job that runs scheduling hourly.
+
+## Error Responses
+
+| Status | Description |
+|--------|-------------|
+| 400 | Invalid workspace ID |
+| 401 | Not authenticated |
+| 403 | Not a workspace member |
+| 500 | Internal server error |
+
+## Rate Limiting
+
+The scheduling endpoint is rate-limited to prevent abuse:
+
+- **Manual triggers**: Limited by standard API rate limits
+- **Cron triggers**: Runs once per hour per workspace
+
+## Cron Job
+
+Smart Scheduling runs automatically every hour via Vercel Cron:
+
+```json
+{
+  "path": "/api/cron/calendar/smart-schedule",
+  "schedule": "0 * * * *"
+}
+```
+
+The cron job:
+1. Finds all workspaces with auto-schedule enabled habits or tasks
+2. Calls the scheduling API for each workspace
+3. Logs results and any errors
+
+<Info>
+The cron job uses `forceReschedule: false` to avoid disrupting existing schedules. Only new items are scheduled.
+</Info>

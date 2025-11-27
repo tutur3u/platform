@@ -23,6 +23,34 @@ export type WorkspaceTaskList = Tables<'task_lists'> & {
 };
 export type WorkspaceTask = Tables<'tasks'>;
 export type TaskProject = Tables<'task_projects'>;
+export type TaskCalendarEvent = Tables<'task_calendar_events'>;
+export type WorkspaceHabit = Tables<'workspace_habits'>;
+export type HabitCalendarEventRow = Tables<'habit_calendar_events'>;
+export type HabitCompletionRow = Tables<'habit_completions'>;
+
+/**
+ * Calendar hours type for task scheduling
+ */
+export type CalendarHoursType =
+  | 'work_hours'
+  | 'personal_hours'
+  | 'meeting_hours';
+
+/**
+ * Task with scheduling-related fields for auto-scheduling
+ */
+export type TaskWithScheduling = WorkspaceTask & {
+  total_duration?: number | null;
+  is_splittable?: boolean | null;
+  min_split_duration_minutes?: number | null;
+  max_split_duration_minutes?: number | null;
+  calendar_hours?: CalendarHoursType | null;
+  auto_schedule?: boolean | null;
+  scheduled_events?: TaskCalendarEvent[];
+  // Computed fields for progress tracking
+  scheduled_minutes?: number;
+  completed_minutes?: number;
+};
 
 /**
  * Minimal user information for relations

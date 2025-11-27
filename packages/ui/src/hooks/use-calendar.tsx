@@ -325,7 +325,7 @@ export const CalendarProvider = ({
           color: eventColor as SupportedColor,
           location: event.location || '',
           ws_id: ws?.id ?? '',
-          locked: false,
+          locked: true,
         })
         .select()
         .single();
@@ -589,6 +589,12 @@ export const CalendarProvider = ({
           new Date(cleanedUpdates.end_at)
         );
         cleanedUpdates.end_at = endDate.toISOString();
+      }
+
+      // If times were changed (moved/resized), mark as locked to preserve user preference
+      // This ensures manually moved events won't be rescheduled by Smart Schedule
+      if (cleanedUpdates.start_at || cleanedUpdates.end_at) {
+        cleanedUpdates.locked = true;
       }
 
       // If this is a newly created event that hasn't been saved to the database yet

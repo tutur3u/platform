@@ -343,7 +343,7 @@ export function SettingsDialog({
             ))}
           </SidebarContent>
         </Sidebar>
-        <main className="flex h-[calc(100%-5rem)] flex-1 flex-col overflow-hidden bg-background">
+        <main className="flex h-[calc(100%-5rem)] flex-1 flex-col overflow-hidden bg-background 2xl:h-[calc(100%-10rem)]">
           <header className="flex h-20 shrink-0 flex-col items-start justify-center gap-1 overflow-hidden border-b bg-background/80 px-4 py-2 backdrop-blur-md">
             <h2 className="font-semibold text-lg tracking-tight">
               {activeItem?.label}

@@ -49,3 +49,59 @@ export interface TemplateScenario {
   tasks: Task[];
   activeHours?: Partial<ActiveHours>;
 }
+
+// ============================================================================
+// Web Integration Types
+// These types bridge the web app task format to the scheduling algorithm
+// ============================================================================
+
+export type CalendarHoursType =
+  | 'work_hours'
+  | 'personal_hours'
+  | 'meeting_hours';
+
+/**
+ * Input format for scheduling tasks from the web app
+ */
+export interface WebTaskInput {
+  id: string;
+  name?: string | null;
+  description?: string | null;
+  total_duration?: number | null; // hours
+  is_splittable?: boolean | null;
+  min_split_duration_minutes?: number | null;
+  max_split_duration_minutes?: number | null;
+  calendar_hours?: CalendarHoursType | null;
+  priority?: TaskPriority | null;
+  start_date?: string | null;
+  end_date?: string | null; // deadline
+}
+
+/**
+ * Existing calendar event from the web app
+ */
+export interface WebCalendarEvent {
+  id?: string;
+  start_at: string;
+  end_at: string;
+}
+
+/**
+ * Result of scheduling with web-friendly format
+ */
+export interface WebScheduleResult {
+  success: boolean;
+  events: Array<{
+    id: string;
+    title: string;
+    start_at: string;
+    end_at: string;
+    task_id: string;
+    partNumber?: number;
+    totalParts?: number;
+  }>;
+  totalScheduledMinutes: number;
+  message: string;
+  warning?: string;
+  logs: Log[];
+}

@@ -198,6 +198,7 @@ bun trigger:deploy
 13. **Always** apply best practices to both old and new code - code quality is never optional
 14. **Always** break down components following single responsibility principle and extract complex logic to utilities/hooks
 15. **Always** use TanStack Query for ALL client-side data fetching - raw fetch/useEffect patterns are forbidden
+16. **Always** implement new settings within `apps/web/src/components/settings/settings-dialog.tsx` - never create separate settings pages
 
 ### Escalate When
 
@@ -545,6 +546,35 @@ import { CheckCircle, Lock, Clipboard } from '@tuturuuu/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 ```
 
+#### Centralized Settings Architecture
+
+**Location**: `apps/web/src/components/settings/settings-dialog.tsx`
+
+ALL application settings MUST be implemented within the centralized settings dialog. This single component handles:
+
+- **User Profile Settings** - Avatar, display name, email
+- **User Account Settings** - Security, sessions, devices
+- **Preferences** - Appearance, theme, notifications
+- **Workspace Settings** - General info, members, billing
+- **Product-Specific Settings** - Calendar hours, colors, integrations, smart features
+
+**Rules:**
+
+- ❌ **NEVER** create separate settings pages outside this dialog
+- ❌ **NEVER** create standalone modals for settings that belong here
+- ✅ **ALWAYS** add new settings as tabs within `settings-dialog.tsx`
+- ✅ **ALWAYS** group settings logically (user, preferences, workspace, product-specific)
+- ✅ **ALWAYS** pass `workspace` prop to child components (not raw `wsId`)
+
+**Adding New Settings:**
+
+1. Create settings component in `apps/web/src/components/settings/`
+2. Add navigation item to `navItems` array with `name`, `label`, `icon`, `description`
+3. Add conditional rendering block for the new tab
+4. Use TanStack Query for data fetching; pass `workspace.id` for DB queries
+
+**Rationale**: Centralizing settings improves discoverability, ensures consistent UX, and prevents fragmentation across the codebase.
+
 #### Error Handling
 
 - Validate inputs early; return 400/401/403 for bad requests
@@ -701,6 +731,7 @@ Before requesting review:
 14. ✅ Edge runtime export added where required
 15. ✅ All external inputs validated with Zod
 16. ✅ All user-facing strings have both English and Vietnamese translations
+17. ✅ **New settings implemented within centralized `settings-dialog.tsx` (not separate pages)**
 
 ## Reference
 
