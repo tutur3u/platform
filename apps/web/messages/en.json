@@ -1108,47 +1108,19 @@
     "trends": "Usage Trends"
   },
   "tasks": {
-    "ticket": {
-      "ticket_id": "Ticket ID",
-      "ticket_prefix": "Ticket Prefix",
-      "ticket_prefix_description": "Custom prefix for task identifiers (e.g., DEV, BUG, SPRINT)",
-      "ticket_prefix_placeholder": "Enter prefix (e.g., DEV)",
-      "ticket_number": "Ticket Number"
-    },
-    "statuses": {
-      "not_started": "Backlog",
-      "active": "Active",
-      "done": "Done",
-      "closed": "Closed",
-      "documents": "Documents",
-      "not_started_description": "Ideas and planned work",
-      "active_description": "Work in progress",
-      "done_description": "Completed work",
-      "closed_description": "Archived or cancelled",
-      "documents_description": "Reference materials and documentation"
-    },
-    "history": {
-      "error": "Failed to load task history",
-      "empty": "No history available for this task",
-      "unknown_user": "Unknown user",
-      "field_updated": {
-        "name": "Updated title",
-        "description": "Updated description",
-        "priority": "Changed priority",
-        "end_date": "Changed due date",
-        "start_date": "Changed start date",
-        "estimation_points": "Updated estimation",
-        "list_id": "Moved task",
-        "completed": "Changed completion status"
-      },
-      "assignee_added": "Assigned user",
-      "assignee_removed": "Removed assignee",
-      "label_added": "Added label",
-      "label_removed": "Removed label",
-      "project_linked": "Linked project",
-      "project_unlinked": "Unlinked project",
-      "unknown_change": "Made a change"
-    }
+    "priority_urgent": "Urgent",
+    "priority_high": "High",
+    "priority_medium": "Medium",
+    "priority_low": "Low",
+    "date_today": "Today",
+    "date_tomorrow": "Tomorrow",
+    "date_yesterday": "Yesterday",
+    "overdue": "OVERDUE",
+    "personal": "Personal",
+    "board": "Board",
+    "starts": "Starts",
+    "show_less": "Show Less",
+    "show_more_tasks": "Show {count} more"
   },
   "link-shortener": {
     "title": "Link Shortener",
@@ -5781,6 +5753,17 @@
     "no_data_title": "Ready to boost your productivity?",
     "no_data_description": "Start tracking your time to unlock detailed insights about your work patterns, productivity trends, and goal progress.",
     "start_your_first_timer": "Start your first timer",
+    "day_singular": "day",
+    "days": "days",
+    "tomorrow": "Tomorrow",
+    "upcoming": "upcoming",
+    "untitled_event": "Untitled Event",
+    "in_minutes": "in {count}m",
+    "in_hours": "in {count}h",
+    "in_days": "in {count}d",
+    "show_less": "Show less",
+    "show_more_events": "Show {count} more events",
+    "recent": "recent",
     "tu_meet_plans": "TuMeet Plans",
     "untitled_plan": "Untitled Plan",
     "no_recent_plans_title": "No recent plans",
@@ -5970,7 +5953,16 @@
       },
       "restricted_title": "Bucket Dump Restricted",
       "restricted_description": "You don't have permission to use the Bucket Dump feature."
-    }
+    },
+    "no_tasks_assigned": "No tasks assigned yet",
+    "one_task_attention": "1 task needs your attention",
+    "multiple_tasks_attention": "{count} tasks need your attention",
+    "stat_overdue": "Overdue",
+    "stat_due_today": "Due Today",
+    "stat_tomorrow": "Tomorrow",
+    "stat_high_priority": "High Priority",
+    "quick_tip": "Quick Tip",
+    "quick_tip_description": "Tasks assigned to you will appear here. You can view all your tasks, create new ones, or browse available boards to get started."
   },
   "ws-groups": {
     "select_warehouse": "Select Warehouse",
@@ -7713,13 +7705,11 @@
           "until": "Until {endDate}"
         }
       },
-
       "status": {
         "active": "Active",
         "paused": "Paused",
         "completed": "Completed"
       },
-
       "export": {
         "title": "Exporting {type} File",
         "exportingFile": "Exporting {type} File",

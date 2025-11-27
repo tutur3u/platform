@@ -1,9 +1,22 @@
-import { User, UserRoundCheck, UserStar } from '@tuturuuu/icons';
+import {
+  AlertCircle,
+  ArrowRight,
+  Calendar,
+  CheckCircle2,
+  Flame,
+  Sparkles,
+  TrendingUp,
+  UserRoundCheck,
+  UserStar,
+  Zap,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import Link from 'next/link';
+import { isPast, isToday, isTomorrow } from 'date-fns';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 import ExpandableTaskList from './expandable-task-list';
 
 interface TasksAssignedToMeProps {
@@ -146,57 +159,218 @@ export default async function TasksAssignedToMe({
       return 0;
     });
 
+  // Calculate task statistics
+  const stats = {
+    total: assignedTasks?.length || 0,
+    overdue: 0,
+    dueToday: 0,
+    dueTomorrow: 0,
+    upcoming: 0,
+    critical: 0,
+    high: 0,
+  };
+
+  assignedTasks?.forEach((task) => {
+    if (task.end_date) {
+      const endDate = new Date(task.end_date);
+      if (isPast(endDate) && !isToday(endDate)) {
+        stats.overdue++;
+      } else if (isToday(endDate)) {
+        stats.dueToday++;
+      } else if (isTomorrow(endDate)) {
+        stats.dueTomorrow++;
+      }
+    }
+    if (task.priority === 'critical') stats.critical++;
+    if (task.priority === 'high') stats.high++;
+  });
+
   return (
-    <Card className="group overflow-hidden border-dynamic-orange/20 transition-all duration-300 hover:border-dynamic-orange/30 hover:shadow-lg">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-orange/20 border-b bg-linear-to-r from-dynamic-orange/5 via-dynamic-orange/3 to-dynamic-red/5 p-4">
-        <CardTitle className="flex items-center gap-3 font-semibold text-base">
-          <div className="rounded-xl bg-linear-to-br from-dynamic-orange/20 to-dynamic-orange/10 p-2 text-dynamic-orange shadow-sm ring-1 ring-dynamic-orange/20">
-            <UserStar className="h-4 w-4" />
-          </div>
-          <div className="line-clamp-1">{t('my_tasks')}</div>
-        </CardTitle>
-        <Link href={`/${wsId}/tasks/my-tasks`}>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-3 transition-all duration-200 hover:scale-105 hover:bg-dynamic-orange/10 hover:text-dynamic-orange"
-          >
-            <UserRoundCheck className="mr-1.5 h-3.5 w-3.5" />
-            {t('view_all')}
-          </Button>
-        </Link>
-      </CardHeader>
-      <CardContent className="h-full space-y-6 p-6">
-        {assignedTasks && assignedTasks.length > 0 ? (
-          <ExpandableTaskList
-            tasks={assignedTasks as any}
-            isPersonal={isPersonal}
-            initialLimit={5}
-          />
-        ) : (
-          <div className="py-12 text-center">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-dynamic-gray/20 bg-linear-to-br from-dynamic-gray/10 via-dynamic-gray/5 to-dynamic-slate/10 shadow-sm ring-1 ring-dynamic-gray/10">
-              <User className="h-10 w-10 text-dynamic-gray/60" />
+    <Card className="group overflow-hidden border-dynamic-orange/20 bg-linear-to-br from-card via-card to-dynamic-orange/5 shadow-lg ring-1 ring-dynamic-orange/10 transition-all duration-300 hover:border-dynamic-orange/30 hover:shadow-xl hover:ring-dynamic-orange/20">
+      {/* Enhanced Header with Stats */}
+      <CardHeader className="space-y-0 border-dynamic-orange/20 border-b bg-linear-to-br from-dynamic-orange/10 via-dynamic-orange/5 to-transparent p-6 backdrop-blur-sm">
+        {/* Title Row */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="absolute inset-0 animate-pulse rounded-2xl bg-dynamic-orange/20 blur-xl" />
+              <div className="relative flex items-center justify-center rounded-2xl bg-linear-to-br from-dynamic-orange via-dynamic-orange/90 to-dynamic-red p-3 shadow-lg ring-2 ring-dynamic-orange/30">
+                <UserStar className="h-5 w-5 text-white" />
+              </div>
             </div>
-            <div className="space-y-3">
-              <h3 className="font-bold text-dynamic-gray text-lg">
-                {t('no_tasks_personal')}
-              </h3>
-              <p className="mx-auto max-w-sm text-dynamic-gray/70 text-sm leading-relaxed">
-                {t('no_tasks_assigned_personal')}
+            <div className="flex flex-col">
+              <CardTitle className="flex items-center gap-2 font-bold text-xl">
+                <span className="bg-linear-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                  {t('my_tasks')}
+                </span>
+                {stats.total > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="fade-in slide-in-from-left-2 ml-1 animate-in bg-dynamic-orange/15 font-bold text-dynamic-orange ring-1 ring-dynamic-orange/30"
+                  >
+                    {stats.total}
+                  </Badge>
+                )}
+              </CardTitle>
+              <p className="mt-1 text-muted-foreground text-xs">
+                {stats.total === 0
+                  ? t('no_tasks_assigned')
+                  : stats.total === 1
+                    ? t('one_task_attention')
+                    : t('multiple_tasks_attention', { count: stats.total })}
               </p>
             </div>
-            <div className="mt-8">
-              <Link href={`/${wsId}/tasks/my-tasks`}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-dynamic-orange/30 bg-linear-to-r from-dynamic-orange/5 to-dynamic-orange/10 text-dynamic-orange transition-all duration-200 hover:scale-105 hover:border-dynamic-orange/40 hover:bg-dynamic-orange/20 hover:shadow-md"
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  {t('view_tasks')}
-                </Button>
-              </Link>
+          </div>
+
+          <Link href={`/${wsId}/tasks/my-tasks`}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="group/btn h-9 border-dynamic-orange/30 bg-background/50 backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:border-dynamic-orange hover:bg-dynamic-orange/10 hover:text-dynamic-orange hover:shadow-md"
+            >
+              <UserRoundCheck className="mr-2 h-4 w-4 transition-transform group-hover/btn:scale-110" />
+              {t('view_all')}
+              <ArrowRight className="ml-1.5 h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
+            </Button>
+          </Link>
+        </div>
+
+        {/* Quick Stats - Only show if there are tasks */}
+        {stats.total > 0 && (
+          <div className="mt-4 grid grid-cols-3 gap-2 lg:gap-3">
+            {/* Overdue */}
+            {stats.overdue > 0 && (
+              <div className="group/stat flex items-center gap-2 rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-2.5 transition-all hover:border-dynamic-red/30 hover:bg-dynamic-red/10 hover:shadow-md lg:p-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-red/20 ring-1 ring-dynamic-red/30 transition-all group-hover/stat:scale-110 lg:h-9 lg:w-9">
+                  <AlertCircle className="h-4 w-4 text-dynamic-red lg:h-4.5 lg:w-4.5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-bold text-dynamic-red text-lg lg:text-xl">
+                    {stats.overdue}
+                  </div>
+                  <div className="truncate font-medium text-[10px] text-dynamic-red/70 uppercase tracking-wide lg:text-xs">
+                    {t('stat_overdue')}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Due Today */}
+            {stats.dueToday > 0 && (
+              <div className="group/stat flex items-center gap-2 rounded-lg border border-dynamic-orange/20 bg-dynamic-orange/5 p-2.5 transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/10 hover:shadow-md lg:p-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/20 ring-1 ring-dynamic-orange/30 transition-all group-hover/stat:scale-110 lg:h-9 lg:w-9">
+                  <Flame className="h-4 w-4 text-dynamic-orange lg:h-4.5 lg:w-4.5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-bold text-dynamic-orange text-lg lg:text-xl">
+                    {stats.dueToday}
+                  </div>
+                  <div className="truncate font-medium text-[10px] text-dynamic-orange/70 uppercase tracking-wide lg:text-xs">
+                    {t('stat_due_today')}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Due Tomorrow */}
+            {stats.dueTomorrow > 0 && (
+              <div className="group/stat flex items-center gap-2 rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-2.5 transition-all hover:border-dynamic-blue/30 hover:bg-dynamic-blue/10 hover:shadow-md lg:p-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-blue/20 ring-1 ring-dynamic-blue/30 transition-all group-hover/stat:scale-110 lg:h-9 lg:w-9">
+                  <Calendar className="h-4 w-4 text-dynamic-blue lg:h-4.5 lg:w-4.5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-bold text-dynamic-blue text-lg lg:text-xl">
+                    {stats.dueTomorrow}
+                  </div>
+                  <div className="truncate font-medium text-[10px] text-dynamic-blue/70 uppercase tracking-wide lg:text-xs">
+                    {t('stat_tomorrow')}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* High Priority */}
+            {(stats.critical > 0 || stats.high > 0) && (
+              <div className="group/stat flex items-center gap-2 rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/5 p-2.5 transition-all hover:border-dynamic-purple/30 hover:bg-dynamic-purple/10 hover:shadow-md lg:p-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-purple/20 ring-1 ring-dynamic-purple/30 transition-all group-hover/stat:scale-110 lg:h-9 lg:w-9">
+                  <Zap className="h-4 w-4 text-dynamic-purple lg:h-4.5 lg:w-4.5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-bold text-dynamic-purple text-lg lg:text-xl">
+                    {stats.critical + stats.high}
+                  </div>
+                  <div className="truncate font-medium text-[10px] text-dynamic-purple/70 uppercase tracking-wide lg:text-xs">
+                    {t('stat_high_priority')}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </CardHeader>
+
+      {/* Content Section */}
+      <CardContent className="p-6">
+        {assignedTasks && assignedTasks.length > 0 ? (
+          <div className="space-y-4">
+            <ExpandableTaskList
+              tasks={assignedTasks as any}
+              isPersonal={isPersonal}
+            />
+          </div>
+        ) : (
+          /* Enhanced Empty State */
+          <div className="py-16 text-center">
+            {/* Illustration */}
+            <div className="relative mx-auto mb-8 w-fit">
+              <div className="absolute inset-0 animate-pulse rounded-full bg-dynamic-orange/20 blur-2xl" />
+              <div className="relative flex h-32 w-32 items-center justify-center rounded-full border-4 border-dynamic-orange/20 bg-linear-to-br from-dynamic-orange/10 via-dynamic-orange/5 to-transparent shadow-xl ring-4 ring-dynamic-orange/10">
+                <div className="absolute inset-0 animate-spin-slow rounded-full border-dynamic-orange/30 border-t-4" />
+                <CheckCircle2 className="h-16 w-16 text-dynamic-orange/40" />
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-center gap-2">
+                  <Sparkles className="h-5 w-5 text-dynamic-orange" />
+                  <h3 className="bg-linear-to-r from-foreground to-foreground/70 bg-clip-text font-bold text-transparent text-xl">
+                    {t('no_tasks_personal')}
+                  </h3>
+                </div>
+                <p className="mx-auto max-w-md text-muted-foreground text-sm leading-relaxed">
+                  {t('no_tasks_assigned_personal')}
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <Link href={`/${wsId}/tasks/my-tasks`}>
+                  <Button
+                    variant="default"
+                    size="default"
+                    className="group/btn h-10 bg-linear-to-r from-dynamic-orange to-dynamic-orange/90 shadow-lg transition-all duration-200 hover:scale-105 hover:from-dynamic-orange hover:to-dynamic-red hover:shadow-xl"
+                  >
+                    <TrendingUp className="mr-2 h-4 w-4 transition-transform group-hover/btn:scale-110" />
+                    {t('view_tasks')}
+                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
+                  </Button>
+                </Link>
+              </div>
+
+              {/* Quick Tips */}
+              <div className="mx-auto mt-8 max-w-lg space-y-2 rounded-xl border border-dynamic-orange/20 bg-dynamic-orange/5 p-4 text-left">
+                <div className="mb-2 flex items-center gap-2 text-dynamic-orange">
+                  <Sparkles className="h-4 w-4" />
+                  <span className="font-semibold text-sm">
+                    {t('quick_tip')}
+                  </span>
+                </div>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  {t('quick_tip_description')}
+                </p>
+              </div>
             </div>
           </div>
         )}

@@ -35,7 +35,7 @@ interface TaskListWithCompletionProps {
 
 export default function TaskListWithCompletion({
   tasks,
-  initialLimit = 5,
+  initialLimit = 3,
   onTaskUpdate,
 }: TaskListWithCompletionProps) {
   const { openTask } = useTaskDialog();
