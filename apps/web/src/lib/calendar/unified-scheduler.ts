@@ -13,10 +13,12 @@
  * urgent tasks still get handled appropriately.
  */
 
+import type { HabitDurationConfig } from '@tuturuuu/ai/scheduling';
 import {
   calculateOptimalDuration,
   calculatePriorityScore,
   comparePriority,
+  findBestSlotForHabit as findBestSlotForHabitAI,
   getEffectiveDurationBounds,
   getEffectivePriority,
   getOccurrencesInRange,
@@ -376,6 +378,29 @@ function findAvailableSlotsInDay(
 }
 
 /**
+ * Convert Habit to HabitDurationConfig for the AI scheduling package
+ */
+function convertHabitToConfig(habit: Habit): HabitDurationConfig {
+  return {
+    duration_minutes: habit.duration_minutes,
+    min_duration_minutes: habit.min_duration_minutes,
+    max_duration_minutes: habit.max_duration_minutes,
+    ideal_time: habit.ideal_time,
+    time_preference: habit.time_preference,
+  };
+}
+
+/**
+ * Filter out slots that are in the past
+ */
+function filterFutureSlots(
+  slots: Array<{ start: Date; end: Date; maxAvailable: number }>,
+  now: Date
+): Array<{ start: Date; end: Date; maxAvailable: number }> {
+  return slots.filter((slot) => slot.end > now);
+}
+
+/**
  * Get color for calendar event based on hour type
  */
 function getColorForHourType(hourType?: string | null): string {
@@ -461,33 +486,18 @@ async function scheduleHabitsPhase(
         minDuration
       );
 
-      if (slots.length === 0) {
+      // Filter out past slots and find best slot based on habit time preferences
+      const futureSlots = filterFutureSlots(slots, now);
+      const bestSlot = findBestSlotForHabitAI(
+        convertHabitToConfig(habit),
+        futureSlots
+      );
+
+      if (!bestSlot) {
         warnings.push(
           `No available slot for habit "${habit.name}" on ${occurrenceDate}`
         );
         continue;
-      }
-
-      // Find best slot based on ideal_time and time_preference
-      let bestSlot = slots[0]!;
-      let bestScore = -Infinity;
-
-      for (const slot of slots) {
-        const characteristics = getSlotCharacteristics(habit, {
-          start: slot.start,
-          end: slot.end,
-          maxAvailable: slot.maxAvailable,
-        });
-
-        let score = 0;
-        if (characteristics.matchesIdealTime) score += 1000;
-        if (characteristics.matchesPreference) score += 500;
-        score -= slot.start.getHours(); // Prefer earlier slots
-
-        if (score > bestScore) {
-          bestScore = score;
-          bestSlot = slot;
-        }
       }
 
       // Calculate optimal duration
@@ -856,6 +866,7 @@ async function rescheduleBumpedHabits(
   occupiedSlots: OccupiedSlotTracker
 ): Promise<HabitScheduleResult[]> {
   const results: HabitScheduleResult[] = [];
+  const now = new Date();
 
   for (const bumped of bumpedEvents) {
     const { habit, occurrence } = bumped;
@@ -866,39 +877,37 @@ async function rescheduleBumpedHabits(
       max_duration_minutes: habit.max_duration_minutes,
     });
 
-    // Try to find a slot on the same day first
-    let slots = findAvailableSlotsInDay(
-      occurrence,
-      hourSettings,
-      habit.calendar_hours,
-      occupiedSlots,
-      minDuration
-    );
+    // Collect slots from occurrence day and nearby days to find best preference match
+    const allSlots: Array<{ start: Date; end: Date; maxAvailable: number }> =
+      [];
 
-    // If no slot on same day, try next few days
-    if (slots.length === 0) {
-      for (let dayOffset = 1; dayOffset <= 3; dayOffset++) {
-        const nextDay = new Date(occurrence);
-        nextDay.setDate(nextDay.getDate() + dayOffset);
+    for (let dayOffset = 0; dayOffset <= 7; dayOffset++) {
+      const searchDay = new Date(occurrence);
+      searchDay.setDate(searchDay.getDate() + dayOffset);
 
-        slots = findAvailableSlotsInDay(
-          nextDay,
-          hourSettings,
-          habit.calendar_hours,
-          occupiedSlots,
-          minDuration
-        );
+      const daySlots = findAvailableSlotsInDay(
+        searchDay,
+        hourSettings,
+        habit.calendar_hours,
+        occupiedSlots,
+        minDuration
+      );
 
-        if (slots.length > 0) break;
-      }
+      allSlots.push(...daySlots);
     }
 
-    if (slots.length === 0) {
+    // Filter out past slots and find best slot based on habit time preferences
+    const futureSlots = filterFutureSlots(allSlots, now);
+    const bestSlot = findBestSlotForHabitAI(
+      convertHabitToConfig(habit),
+      futureSlots
+    );
+
+    if (!bestSlot) {
       console.warn(`Could not reschedule bumped habit "${habit.name}"`);
       continue;
     }
 
-    const bestSlot = slots[0]!;
     const characteristics = getSlotCharacteristics(habit, {
       start: bestSlot.start,
       end: bestSlot.end,
@@ -1005,17 +1014,17 @@ export async function scheduleWorkspace(
   // 2. Build occupied slots from locked events
   const occupiedSlots = new OccupiedSlotTracker(lockedEvents);
 
-  // 3. If force reschedule, delete all future auto-scheduled events first
+  // 3. If force reschedule, delete auto-scheduled events that haven't ended yet
   if (forceReschedule) {
     const now = new Date();
 
-    // Delete future habit events
+    // Delete habit events that haven't ended (including today's past-start events)
     for (const habit of habits) {
       const { data: futureLinks } = await supabase
         .from('habit_calendar_events')
-        .select('event_id, workspace_calendar_events!inner(start_at)')
+        .select('event_id, workspace_calendar_events!inner(end_at)')
         .eq('habit_id', habit.id)
-        .gt('workspace_calendar_events.start_at', now.toISOString());
+        .gt('workspace_calendar_events.end_at', now.toISOString());
 
       if (futureLinks && futureLinks.length > 0) {
         const eventIds = futureLinks.map((l) => l.event_id);
@@ -1026,13 +1035,13 @@ export async function scheduleWorkspace(
       }
     }
 
-    // Delete future task events
+    // Delete task events that haven't ended (including today's past-start events)
     for (const task of tasks) {
       const { data: futureLinks } = await supabase
         .from('task_calendar_events')
-        .select('event_id, workspace_calendar_events!inner(start_at)')
+        .select('event_id, workspace_calendar_events!inner(end_at)')
         .eq('task_id', task.id)
-        .gt('workspace_calendar_events.start_at', now.toISOString());
+        .gt('workspace_calendar_events.end_at', now.toISOString());
 
       if (futureLinks && futureLinks.length > 0) {
         const eventIds = futureLinks.map((l) => l.event_id);

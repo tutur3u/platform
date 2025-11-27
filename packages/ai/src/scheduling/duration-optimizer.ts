@@ -210,9 +210,16 @@ export function scoreSlotForHabit(
     score += 100;
   }
 
-  // Slight preference for earlier slots (all else being equal)
-  // Subtract a small amount based on hours since midnight
-  score -= slot.start.getHours() * 0.1;
+  // Apply time-based scoring
+  if (habit.time_preference || habit.ideal_time) {
+    // When user has set a preference, slightly prefer earlier slots as tiebreaker
+    score -= slot.start.getHours() * 0.1;
+  } else {
+    // When no preference set, prefer middle-of-day (closer to noon)
+    // This prevents habits from always stacking at 7am
+    const distanceFromNoon = Math.abs(slot.start.getHours() - 12);
+    score -= distanceFromNoon * 0.5;
+  }
 
   return score;
 }

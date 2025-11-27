@@ -448,16 +448,36 @@ describe('Duration Optimizer', () => {
       expect(largeScore).toBeGreaterThan(smallScore);
     });
 
-    it('should prefer earlier slots (tiebreaker)', () => {
-      const habit = createHabit({ duration_minutes: 30 });
-      const earlySlot = createSlot(8, 10, 60);
-      const lateSlot = createSlot(16, 18, 60);
+    it('should prefer earlier slots as tiebreaker when preference IS set', () => {
+      // When a habit HAS a time preference, earlier slots should win as tiebreaker
+      const habit = createHabit({
+        duration_minutes: 30,
+        time_preference: 'morning',
+      });
+      const earlySlot = createSlot(7, 9, 60); // 7am - morning
+      const lateSlot = createSlot(10, 12, 60); // 10am - also morning
 
       const earlyScore = scoreSlotForHabit(habit, earlySlot);
       const lateScore = scoreSlotForHabit(habit, lateSlot);
 
-      // Both have same base score (can fit preferred), but early is slightly better
+      // Both match morning preference, but 7am is earlier so wins
       expect(earlyScore).toBeGreaterThan(lateScore);
+    });
+
+    it('should prefer middle-of-day slots when NO preference is set', () => {
+      // When a habit has NO time preference, noon slots should win
+      const habit = createHabit({ duration_minutes: 30 });
+      const morningSlot = createSlot(7, 9, 60); // 7am - far from noon
+      const noonSlot = createSlot(11, 13, 60); // 11am - close to noon
+      const eveningSlot = createSlot(17, 19, 60); // 5pm - far from noon
+
+      const morningScore = scoreSlotForHabit(habit, morningSlot);
+      const noonScore = scoreSlotForHabit(habit, noonSlot);
+      const eveningScore = scoreSlotForHabit(habit, eveningSlot);
+
+      // Noon slot should have highest score
+      expect(noonScore).toBeGreaterThan(morningScore);
+      expect(noonScore).toBeGreaterThan(eveningScore);
     });
 
     it('should combine multiple bonuses correctly', () => {
@@ -533,18 +553,37 @@ describe('Duration Optimizer', () => {
       expect(result?.start.getHours()).toBe(9); // The one with ideal time
     });
 
-    it('should prefer earlier slot when scores are similar', () => {
+    it('should prefer middle-of-day slot when habit has NO preference', () => {
+      // Without preference, slots closer to noon should win
       const habit = createHabit({ duration_minutes: 30 });
       const slots = [
-        createSlot(14, 16, 60),
-        createSlot(10, 12, 60),
-        createSlot(8, 10, 60), // Earliest - should win
+        createSlot(7, 9, 60), // 7am - far from noon
+        createSlot(11, 13, 60), // 11am - closest to noon, should win
+        createSlot(16, 18, 60), // 4pm - far from noon
       ];
 
       const result = findBestSlotForHabit(habit, slots);
 
       expect(result).not.toBeNull();
-      expect(result?.start.getHours()).toBe(8);
+      expect(result?.start.getHours()).toBe(11); // Closest to noon wins
+    });
+
+    it('should prefer earlier slot when habit HAS preference and scores are similar', () => {
+      // With preference set, earlier slots should win as tiebreaker
+      const habit = createHabit({
+        duration_minutes: 30,
+        time_preference: 'afternoon',
+      });
+      const slots = [
+        createSlot(14, 16, 60), // 2pm - afternoon
+        createSlot(12, 14, 60), // 12pm - afternoon, earlier so wins
+        createSlot(15, 17, 60), // 3pm - afternoon
+      ];
+
+      const result = findBestSlotForHabit(habit, slots);
+
+      expect(result).not.toBeNull();
+      expect(result?.start.getHours()).toBe(12); // Earliest afternoon slot wins
     });
 
     it('should prefer slot that fits preferred over one that only fits min', () => {
@@ -683,6 +722,384 @@ describe('Duration Optimizer', () => {
       const characteristics = getSlotCharacteristics(habit, bestSlot!);
       expect(characteristics.matchesIdealTime).toBe(false);
       expect(characteristics.matchesPreference).toBe(true);
+    });
+  });
+
+  describe('middle-of-day preference (no time_preference set)', () => {
+    describe('scoreSlotForHabit without preferences', () => {
+      it('should give highest score to noon slot when no preference', () => {
+        const habit = createHabit({ duration_minutes: 30 });
+
+        // Slots at different times of day
+        const slot6am = createSlot(6, 8, 60);
+        const slot9am = createSlot(9, 11, 60);
+        const slot12pm = createSlot(12, 14, 60); // Noon - should be best
+        const slot3pm = createSlot(15, 17, 60);
+        const slot6pm = createSlot(18, 20, 60);
+
+        const scores = {
+          '6am': scoreSlotForHabit(habit, slot6am),
+          '9am': scoreSlotForHabit(habit, slot9am),
+          '12pm': scoreSlotForHabit(habit, slot12pm),
+          '3pm': scoreSlotForHabit(habit, slot3pm),
+          '6pm': scoreSlotForHabit(habit, slot6pm),
+        };
+
+        // Noon should have the highest score
+        expect(scores['12pm']).toBeGreaterThan(scores['6am']);
+        expect(scores['12pm']).toBeGreaterThan(scores['9am']);
+        expect(scores['12pm']).toBeGreaterThan(scores['3pm']);
+        expect(scores['12pm']).toBeGreaterThan(scores['6pm']);
+      });
+
+      it('should score slots symmetrically around noon', () => {
+        const habit = createHabit({ duration_minutes: 30 });
+
+        // Slots equidistant from noon should have equal scores
+        const slot9am = createSlot(9, 11, 60); // 3 hours before noon
+        const slot3pm = createSlot(15, 17, 60); // 3 hours after noon
+
+        const score9am = scoreSlotForHabit(habit, slot9am);
+        const score3pm = scoreSlotForHabit(habit, slot3pm);
+
+        expect(score9am).toBe(score3pm);
+      });
+
+      it('should NOT apply middle-of-day preference when time_preference IS set', () => {
+        const habit = createHabit({
+          duration_minutes: 30,
+          time_preference: 'morning',
+        });
+
+        // With morning preference, 7am should beat noon
+        const slot7am = createSlot(7, 9, 60); // Morning
+        const slot12pm = createSlot(12, 14, 60); // Noon - not morning
+
+        const score7am = scoreSlotForHabit(habit, slot7am);
+        const score12pm = scoreSlotForHabit(habit, slot12pm);
+
+        // Morning slot should win because it matches preference (+500)
+        expect(score7am).toBeGreaterThan(score12pm);
+      });
+
+      it('should NOT apply middle-of-day preference when ideal_time IS set', () => {
+        const habit = createHabit({
+          duration_minutes: 30,
+          ideal_time: '07:30',
+        });
+
+        // With ideal_time at 7:30, the 7am slot should beat noon
+        const slot7am = createSlot(7, 9, 60); // Contains ideal_time
+        const slot12pm = createSlot(12, 14, 60); // Noon
+
+        const score7am = scoreSlotForHabit(habit, slot7am);
+        const score12pm = scoreSlotForHabit(habit, slot12pm);
+
+        // 7am slot should win because it contains ideal_time (+1000)
+        expect(score7am).toBeGreaterThan(score12pm);
+      });
+    });
+
+    describe('findBestSlotForHabit without preferences', () => {
+      it('should select noon slot for habit without preferences', () => {
+        const habit = createHabit({ duration_minutes: 45 });
+
+        const slots = [
+          createSlot(7, 9, 60), // 7am
+          createSlot(10, 12, 60), // 10am
+          createSlot(12, 14, 60), // 12pm - should win
+          createSlot(14, 16, 60), // 2pm
+          createSlot(17, 19, 60), // 5pm
+        ];
+
+        const result = findBestSlotForHabit(habit, slots);
+
+        expect(result).not.toBeNull();
+        expect(result?.start.getHours()).toBe(12);
+      });
+
+      it('should not stack multiple habits at 7am', () => {
+        // This tests the actual bug that was reported:
+        // Habits without preferences were all landing at 7am
+        const lunchHabit = createHabit({ duration_minutes: 45 });
+        const dinnerHabit = createHabit({ duration_minutes: 60 });
+        const genericHabit = createHabit({ duration_minutes: 30 });
+
+        const morningSlots = [
+          createSlot(7, 8, 60), // 7am
+          createSlot(8, 9, 60), // 8am
+          createSlot(9, 10, 60), // 9am
+        ];
+
+        const allDaySlots = [
+          createSlot(7, 9, 60), // 7am - far from noon
+          createSlot(11, 13, 60), // 11am - closest to noon
+          createSlot(17, 19, 60), // 5pm - far from noon
+        ];
+
+        // All habits should prefer the 11am slot (closest to noon), not 7am
+        expect(
+          findBestSlotForHabit(lunchHabit, allDaySlots)?.start.getHours()
+        ).toBe(11);
+        expect(
+          findBestSlotForHabit(dinnerHabit, allDaySlots)?.start.getHours()
+        ).toBe(11);
+        expect(
+          findBestSlotForHabit(genericHabit, allDaySlots)?.start.getHours()
+        ).toBe(11);
+
+        // Even when only morning slots available, should prefer 9am (closest to noon)
+        expect(
+          findBestSlotForHabit(genericHabit, morningSlots)?.start.getHours()
+        ).toBe(9);
+      });
+
+      it('should handle edge case: only early morning slots available', () => {
+        const habit = createHabit({ duration_minutes: 30 });
+
+        // Only slots available are in early morning
+        const slots = [
+          createSlot(6, 7, 60), // 6am
+          createSlot(7, 8, 60), // 7am - slightly closer to noon, should win
+        ];
+
+        const result = findBestSlotForHabit(habit, slots);
+
+        expect(result).not.toBeNull();
+        // 7am is closer to noon than 6am, so it should win
+        expect(result?.start.getHours()).toBe(7);
+      });
+
+      it('should handle edge case: only evening slots available', () => {
+        const habit = createHabit({ duration_minutes: 30 });
+
+        // Only slots available are in evening
+        const slots = [
+          createSlot(18, 19, 60), // 6pm - closer to noon, should win
+          createSlot(20, 21, 60), // 8pm
+          createSlot(22, 23, 60), // 10pm
+        ];
+
+        const result = findBestSlotForHabit(habit, slots);
+
+        expect(result).not.toBeNull();
+        // 6pm is closest to noon, so it should win
+        expect(result?.start.getHours()).toBe(18);
+      });
+    });
+
+    describe('real-world habit scheduling scenarios', () => {
+      it('should schedule "Lunch" habit around noon even without explicit preference', () => {
+        // Simulating a user who creates a "Lunch" habit but forgets to set time_preference
+        const lunchHabit = createHabit({
+          duration_minutes: 45,
+          // No time_preference set - simulating user oversight
+        });
+
+        const workdaySlots = [
+          createSlot(7, 8, 60), // Before work
+          createSlot(9, 11, 60), // Morning work
+          createSlot(11, 13, 120), // Lunch time - should be selected
+          createSlot(14, 17, 180), // Afternoon work
+          createSlot(18, 20, 120), // Evening
+        ];
+
+        const result = findBestSlotForHabit(lunchHabit, workdaySlots);
+
+        expect(result).not.toBeNull();
+        expect(result?.start.getHours()).toBe(11); // Gets scheduled around noon
+      });
+
+      it('should schedule "Dinner" habit in evening when preference IS set', () => {
+        // Simulating correct usage with preference set
+        const dinnerHabit = createHabit({
+          duration_minutes: 60,
+          time_preference: 'evening', // User correctly sets evening
+        });
+
+        const workdaySlots = [
+          createSlot(7, 8, 60), // Morning
+          createSlot(11, 13, 120), // Noon
+          createSlot(17, 20, 180), // Evening - should be selected due to preference
+        ];
+
+        const result = findBestSlotForHabit(dinnerHabit, workdaySlots);
+
+        expect(result).not.toBeNull();
+        expect(result?.start.getHours()).toBe(17); // Gets scheduled in evening
+      });
+
+      it('should demonstrate the fix: habits no longer stack at 7am', () => {
+        // This is the key test that demonstrates the bug fix
+        // Previously, all these habits would end up at 7am
+
+        const habitA = createHabit({ duration_minutes: 30 });
+        const habitB = createHabit({ duration_minutes: 45 });
+        const habitC = createHabit({ duration_minutes: 60 });
+
+        // All slots are equally viable (can fit any habit)
+        const slots = [
+          createSlot(7, 9, 120), // 7am - OLD behavior would pick this
+          createSlot(10, 12, 120), // 10am
+          createSlot(12, 14, 120), // 12pm - NEW behavior picks this (closest to noon)
+          createSlot(14, 16, 120), // 2pm
+          createSlot(17, 19, 120), // 5pm
+        ];
+
+        // All habits without preference should pick 12pm slot
+        const resultA = findBestSlotForHabit(habitA, slots);
+        const resultB = findBestSlotForHabit(habitB, slots);
+        const resultC = findBestSlotForHabit(habitC, slots);
+
+        // None should be at 7am
+        expect(resultA?.start.getHours()).not.toBe(7);
+        expect(resultB?.start.getHours()).not.toBe(7);
+        expect(resultC?.start.getHours()).not.toBe(7);
+
+        // All should prefer 12pm
+        expect(resultA?.start.getHours()).toBe(12);
+        expect(resultB?.start.getHours()).toBe(12);
+        expect(resultC?.start.getHours()).toBe(12);
+      });
+    });
+  });
+
+  describe('time preference override behavior', () => {
+    it('should override middle-of-day default when morning preference set', () => {
+      const morningHabit = createHabit({
+        duration_minutes: 30,
+        time_preference: 'morning',
+      });
+
+      const slots = [
+        createSlot(7, 9, 60), // Morning - should win due to preference
+        createSlot(12, 14, 60), // Noon - would win without preference
+        createSlot(18, 20, 60), // Evening
+      ];
+
+      const result = findBestSlotForHabit(morningHabit, slots);
+
+      expect(result?.start.getHours()).toBe(7);
+    });
+
+    it('should override middle-of-day default when evening preference set', () => {
+      const eveningHabit = createHabit({
+        duration_minutes: 30,
+        time_preference: 'evening',
+      });
+
+      const slots = [
+        createSlot(7, 9, 60), // Morning
+        createSlot(12, 14, 60), // Noon - would win without preference
+        createSlot(18, 20, 60), // Evening - should win due to preference
+      ];
+
+      const result = findBestSlotForHabit(eveningHabit, slots);
+
+      expect(result?.start.getHours()).toBe(18);
+    });
+
+    it('should override middle-of-day default when ideal_time set', () => {
+      const habitWithIdealTime = createHabit({
+        duration_minutes: 30,
+        ideal_time: '07:30',
+      });
+
+      const slots = [
+        createSlot(7, 9, 60), // Contains ideal_time - should win
+        createSlot(12, 14, 60), // Noon - would win without preference
+        createSlot(18, 20, 60), // Evening
+      ];
+
+      const result = findBestSlotForHabit(habitWithIdealTime, slots);
+
+      expect(result?.start.getHours()).toBe(7);
+    });
+
+    it('should prioritize ideal_time > time_preference > middle-of-day', () => {
+      // Test the full hierarchy of preferences
+
+      // Habit with ideal_time - should pick slot containing it
+      const habitWithIdeal = createHabit({
+        duration_minutes: 30,
+        ideal_time: '08:00',
+        time_preference: 'evening', // Even with evening preference, ideal_time wins
+      });
+
+      // Habit with only preference - should pick matching slot
+      const habitWithPref = createHabit({
+        duration_minutes: 30,
+        time_preference: 'evening',
+      });
+
+      // Habit with nothing - should pick noon
+      const habitWithNothing = createHabit({
+        duration_minutes: 30,
+      });
+
+      const slots = [
+        createSlot(7, 9, 60), // Morning, contains 08:00
+        createSlot(12, 14, 60), // Noon
+        createSlot(18, 20, 60), // Evening
+      ];
+
+      expect(
+        findBestSlotForHabit(habitWithIdeal, slots)?.start.getHours()
+      ).toBe(7); // ideal_time
+      expect(findBestSlotForHabit(habitWithPref, slots)?.start.getHours()).toBe(
+        18
+      ); // preference
+      expect(
+        findBestSlotForHabit(habitWithNothing, slots)?.start.getHours()
+      ).toBe(12); // noon default
+    });
+  });
+
+  describe('score calculation verification', () => {
+    it('should calculate correct score for habit without preferences', () => {
+      const habit = createHabit({ duration_minutes: 30 });
+
+      // Slot at noon (hour 12) - distance from noon is 0
+      const noonSlot = createSlot(12, 14, 60);
+      const noonScore = scoreSlotForHabit(habit, noonSlot);
+
+      // Expected: 200 (fits preferred) - 0*0.5 (distance from noon) = 200
+      expect(noonScore).toBe(200);
+
+      // Slot at 7am (hour 7) - distance from noon is 5
+      const morningSlot = createSlot(7, 9, 60);
+      const morningScore = scoreSlotForHabit(habit, morningSlot);
+
+      // Expected: 200 (fits preferred) - 5*0.5 (distance from noon) = 197.5
+      expect(morningScore).toBe(197.5);
+
+      // Slot at 5pm (hour 17) - distance from noon is 5
+      const eveningSlot = createSlot(17, 19, 60);
+      const eveningScore = scoreSlotForHabit(habit, eveningSlot);
+
+      // Expected: 200 (fits preferred) - 5*0.5 (distance from noon) = 197.5
+      expect(eveningScore).toBe(197.5);
+    });
+
+    it('should calculate correct score for habit WITH preferences', () => {
+      const habit = createHabit({
+        duration_minutes: 30,
+        time_preference: 'morning',
+      });
+
+      // Slot at 8am - morning preference matches
+      const morningSlot = createSlot(8, 10, 60);
+      const morningScore = scoreSlotForHabit(habit, morningSlot);
+
+      // Expected: 500 (preference) + 200 (fits preferred) - 8*0.1 (early tiebreaker) = 699.2
+      expect(morningScore).toBe(699.2);
+
+      // Slot at noon - morning preference does NOT match
+      const noonSlot = createSlot(12, 14, 60);
+      const noonScore = scoreSlotForHabit(habit, noonSlot);
+
+      // Expected: 0 (no preference match) + 200 (fits preferred) - 12*0.1 = 198.8
+      expect(noonScore).toBe(198.8);
     });
   });
 });
