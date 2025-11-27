@@ -69,9 +69,10 @@ export type { PendingRelationship, PendingRelationshipType };
 
 // Re-export dialog header utilities for external use
 export {
-  type DialogHeaderInfo,
   getTaskDialogHeaderInfo,
+  type DialogHeaderInfo,
 } from './task-edit-dialog/components/task-dialog-header';
+
 import { useTaskMutations } from './task-edit-dialog/hooks/use-task-mutations';
 import { useTaskRealtimeSync } from './task-edit-dialog/hooks/use-task-realtime-sync';
 import { useTaskRelationships } from './task-edit-dialog/hooks/use-task-relationships';
@@ -1280,6 +1281,8 @@ export function TaskEditDialog({
     maxSplitDurationMinutes,
     calendarHours,
     autoSchedule,
+    parentTaskId,
+    pendingRelationship,
   ]);
 
   // Note: Manual scheduling removed - handled by Smart Schedule button in Calendar
@@ -2668,6 +2671,7 @@ export function TaskEditDialog({
         onOpenChange={setShowDeleteConfirm}
         taskId={task?.id}
         boardId={boardId}
+        wsId={wsId}
         isLoading={isLoading}
         onSuccess={onUpdate}
         onClose={onClose}
