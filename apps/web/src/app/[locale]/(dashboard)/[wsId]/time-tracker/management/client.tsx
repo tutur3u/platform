@@ -11,9 +11,10 @@ import SessionsTable from './components/sessions-table';
 import StatsOverview from './components/stats-overview';
 import { ErrorDisplay, LoadingOverlay } from './components/status-displays';
 import { useExportData } from './hooks/use-export-data';
-import type { TimeTrackingStats , GroupedSession } from '@/lib/time-tracking-helper';
-
-
+import type {
+  TimeTrackingStats,
+  GroupedSession,
+} from '@/lib/time-tracking-helper';
 
 interface PaginationInfo {
   page: number;
@@ -21,8 +22,6 @@ interface PaginationInfo {
   total: number;
   pages: number;
 }
-
-
 
 export default function TimeTrackerManagementClient({
   wsId,
@@ -171,7 +170,8 @@ export default function TimeTrackerManagementClient({
   // Use provided stats or calculate from grouped sessions
   const displayStats = stats || {
     total_sessions: groupedSessions.length,
-    active_sessions: groupedSessions.filter((s) => s.status === 'active').length,
+    active_sessions: groupedSessions.filter((s) => s.status === 'active')
+      .length,
     active_users: Array.from(
       new Set(groupedSessions.map((s) => s.user.displayName))
     ).length,

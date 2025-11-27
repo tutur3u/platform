@@ -91,7 +91,9 @@ export default function ExportProgressDialog({
                 <span className="text-dynamic-blue text-xs">💡</span>
               </div>
               <div className="flex-1 text-xs">
-                <p className="font-medium text-dynamic-blue">{t('tipsTitle')}</p>
+                <p className="font-medium text-dynamic-blue">
+                  {t('tipsTitle')}
+                </p>
                 <p className="mt-1 text-dynamic-blue/80">
                   {t('tipsDescription')}
                 </p>

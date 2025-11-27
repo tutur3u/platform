@@ -10,7 +10,6 @@ import { useTranslations } from 'next-intl';
 // Extend dayjs with duration plugin
 dayjs.extend(duration);
 
-
 interface StatsOverviewProps {
   stats: TimeTrackingStats;
   period: 'day' | 'week' | 'month';
@@ -181,7 +180,12 @@ export default function StatsOverview({
           <p className="text-dynamic-muted text-sm">
             {period === 'day'
               ? t('perSessionAverage')
-              : t('currentPeriodTotal', { period: period === 'week' ? t('weekly').toLowerCase() : t('monthly').toLowerCase() })}
+              : t('currentPeriodTotal', {
+                  period:
+                    period === 'week'
+                      ? t('weekly').toLowerCase()
+                      : t('monthly').toLowerCase(),
+                })}
           </p>
           <div className="mt-4 h-1 rounded-full bg-dynamic-purple/20">
             <div

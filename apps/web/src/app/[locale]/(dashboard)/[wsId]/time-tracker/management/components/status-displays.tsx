@@ -40,9 +40,7 @@ export function LoadingOverlay() {
           <span className="font-medium text-base text-dynamic-blue">
             {t('applyingFilters')}
           </span>
-          <p className="mt-1 text-dynamic-blue/80 text-sm">
-            {t('pleaseWait')}
-          </p>
+          <p className="mt-1 text-dynamic-blue/80 text-sm">{t('pleaseWait')}</p>
         </div>
       </div>
     </div>
