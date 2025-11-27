@@ -48,7 +48,6 @@ import { cn } from '@tuturuuu/utils/format';
 import {
   createTask,
   getTicketIdentifier,
-  invalidateTaskCaches,
   useBoardConfig,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
@@ -446,54 +445,103 @@ function TaskCardInner({
   const [visibleBadgeCount, setVisibleBadgeCount] = useState(0);
 
   const handleDuplicateTask = async () => {
+    setIsLoading(true);
+    setMenuOpen(false);
+
+    // Check if we're in multi-select mode and have multiple tasks selected
+    const shouldBulkDuplicate =
+      isMultiSelectMode &&
+      selectedTasks &&
+      selectedTasks.size > 1 &&
+      selectedTasks.has(task.id);
+
+    // Get all tasks data from cache for bulk operations
+    const allTasks =
+      (queryClient.getQueryData<Task[]>(['tasks', boardId]) as Task[]) || [];
+    const tasksToDuplicate = shouldBulkDuplicate
+      ? allTasks.filter((t) => selectedTasks?.has(t.id))
+      : [task];
+
     try {
       const supabase = createClient();
+      const duplicatedTasks: Task[] = [];
 
-      const taskData: Partial<Task> = {
-        name: task.name.trim(),
-        description: task.description,
-        priority: task.priority,
-        start_date: startDate ? startDate.toISOString() : undefined,
-        end_date: endDate ? endDate.toISOString() : undefined,
-        estimation_points: task.estimation_points ?? null,
-      };
-      const newTask = await createTask(supabase, task.list_id, taskData);
+      // Duplicate all tasks
+      for (const sourceTask of tasksToDuplicate) {
+        const taskData: Partial<Task> = {
+          name: sourceTask.name.trim(),
+          description: sourceTask.description,
+          priority: sourceTask.priority,
+          start_date: sourceTask.start_date,
+          end_date: sourceTask.end_date,
+          estimation_points: sourceTask.estimation_points ?? null,
+        };
 
-      // Link existing labels to duplicated task
-      if (task.labels && task.labels.length > 0) {
-        await supabase.from('task_labels').insert(
-          task.labels.map((label) => ({
-            task_id: newTask.id,
-            label_id: label.id,
-          }))
+        const newTask = await createTask(
+          supabase,
+          sourceTask.list_id,
+          taskData
         );
+
+        // Link existing labels to duplicated task
+        if (sourceTask.labels && sourceTask.labels.length > 0) {
+          await supabase.from('task_labels').insert(
+            sourceTask.labels.map((label) => ({
+              task_id: newTask.id,
+              label_id: label.id,
+            }))
+          );
+        }
+
+        // Link existing assignees to duplicated task
+        if (sourceTask.assignees && sourceTask.assignees.length > 0) {
+          await supabase.from('task_assignees').insert(
+            sourceTask.assignees.map((assignee) => ({
+              task_id: newTask.id,
+              user_id: assignee.id,
+            }))
+          );
+        }
+
+        // Link existing projects to duplicated task
+        if (sourceTask.projects && sourceTask.projects.length > 0) {
+          await supabase.from('task_project_tasks').insert(
+            sourceTask.projects.map((project) => ({
+              task_id: newTask.id,
+              project_id: project.id,
+            }))
+          );
+        }
+
+        duplicatedTasks.push({
+          ...newTask,
+          assignees: sourceTask.assignees,
+          labels: sourceTask.labels,
+          projects: sourceTask.projects,
+        });
       }
 
-      // Link existing assignees to duplicated task
-      if (task.assignees && task.assignees.length > 0) {
-        await supabase.from('task_assignees').insert(
-          task.assignees.map((assignee) => ({
-            task_id: newTask.id,
-            user_id: assignee.id,
-          }))
-        );
-      }
+      // Add all duplicated tasks to cache at once
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return duplicatedTasks;
+          // Filter out any tasks that already exist (in case realtime already added them)
+          const newTasks = duplicatedTasks.filter(
+            (newTask) => !old.some((t) => t.id === newTask.id)
+          );
+          return [...old, ...newTasks];
+        }
+      );
 
-      // Link existing projects to duplicated task
-      if (task.projects && task.projects.length > 0) {
-        await supabase.from('task_project_tasks').insert(
-          task.projects.map((project) => ({
-            task_id: newTask.id,
-            project_id: project.id,
-          }))
-        );
-      }
-
-      await invalidateTaskCaches(queryClient, boardId);
-      toast.success('Task duplicated successfully');
-      onUpdate();
+      const taskCount = duplicatedTasks.length;
+      toast.success(
+        taskCount > 1
+          ? `${taskCount} tasks duplicated successfully`
+          : 'Task duplicated successfully'
+      );
     } catch (error: any) {
-      console.error('Error creating task:', error);
+      console.error('Error duplicating task(s):', error);
       toast.error(error.message || 'Please try again later');
     } finally {
       setIsLoading(false);
@@ -817,7 +865,12 @@ function TaskCardInner({
   });
 
   // Compute collective attributes for bulk operations
-  const { displayLabels, displayProjects, displayAssignees } = useMemo(() => {
+  const {
+    displayLabels,
+    displayProjects,
+    displayAssignees,
+    displayEstimation,
+  } = useMemo(() => {
     const shouldUseBulkMode =
       isMultiSelectMode &&
       selectedTasks &&
@@ -829,6 +882,7 @@ function TaskCardInner({
         displayLabels: task.labels || [],
         displayProjects: task.projects || [],
         displayAssignees: task.assignees || [],
+        displayEstimation: task.estimation_points,
       };
     }
 
@@ -841,6 +895,7 @@ function TaskCardInner({
         displayLabels: task.labels || [],
         displayProjects: task.projects || [],
         displayAssignees: task.assignees || [],
+        displayEstimation: task.estimation_points,
       };
     }
 
@@ -880,10 +935,18 @@ function TaskCardInner({
         )
     );
 
+    // Check if ALL selected tasks have the same estimation
+    const firstEstimation = selectedTasksData[0]?.estimation_points;
+    const allSameEstimation = selectedTasksData.every(
+      (t) => t.estimation_points === firstEstimation
+    );
+    const commonEstimation = allSameEstimation ? firstEstimation : undefined;
+
     return {
       displayLabels: commonLabels,
       displayProjects: commonProjects,
       displayAssignees: commonAssignees,
+      displayEstimation: commonEstimation,
     };
   }, [
     isMultiSelectMode,
@@ -892,6 +955,7 @@ function TaskCardInner({
     task.labels,
     task.projects,
     task.assignees,
+    task.estimation_points,
     allTasksFromQuery,
   ]);
 
@@ -1119,7 +1183,7 @@ function TaskCardInner({
                   {/* Estimation Menu */}
                   {boardConfig?.estimation_type && (
                     <TaskEstimationMenu
-                      currentPoints={task.estimation_points}
+                      currentPoints={displayEstimation}
                       estimationType={boardConfig?.estimation_type}
                       extendedEstimation={boardConfig?.extended_estimation}
                       allowZeroEstimates={boardConfig?.allow_zero_estimates}
