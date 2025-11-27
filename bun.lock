@@ -768,6 +768,7 @@
       "devDependencies": {
         "@trigger.dev/build": "^4.1.2",
         "@tuturuuu/typescript-config": "workspace:*",
+        "vitest": "^4.0.14",
       },
     },
     "packages/types": {
