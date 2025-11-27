@@ -75,13 +75,14 @@ import { TaskViewerAvatarsComponent } from '../../shared/user-presence-avatars';
 import {
   getCardColorClasses as getCardColorClassesUtil,
   getListColorClasses,
+  getListTextColorClass,
   getTicketBadgeColorClasses,
 } from '../../utils/taskColorUtils';
 import { formatSmartDate } from '../../utils/taskDateUtils';
 import { getPriorityIndicator } from '../../utils/taskPriorityUtils';
 import {
-  TaskBlockingMenu,
   TaskAssigneesMenu,
+  TaskBlockingMenu,
   TaskDueDateMenu,
   TaskEstimationMenu,
   TaskLabelsMenu,
@@ -1304,6 +1305,7 @@ function TaskCardInner({
                     <ListTree className="h-4 w-4 text-foreground" />
                     Add sub-task
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onSelect={(e) =>
                       handleMenuItemSelect(e as unknown as Event, () => {
@@ -1379,7 +1381,12 @@ function TaskCardInner({
           */
           <div className="mb-1 space-y-0.5 text-[10px] leading-snug">
             {taskList?.status === 'done' && task.completed_at && (
-              <div className="flex items-center gap-1 text-dynamic-green">
+              <div
+                className={cn(
+                  'flex items-center gap-1',
+                  getListTextColorClass(taskList?.color)
+                )}
+              >
                 <CheckCircle2 className="h-2.5 w-2.5 shrink-0" />
                 <span className="truncate">
                   Completed{' '}
@@ -1393,7 +1400,12 @@ function TaskCardInner({
               </div>
             )}
             {taskList?.status === 'closed' && task.closed_at && (
-              <div className="flex items-center gap-1 text-dynamic-purple">
+              <div
+                className={cn(
+                  'flex items-center gap-1',
+                  getListTextColorClass(taskList?.color)
+                )}
+              >
                 <CircleSlash className="h-2.5 w-2.5 shrink-0" />
                 <span className="truncate">
                   Closed{' '}

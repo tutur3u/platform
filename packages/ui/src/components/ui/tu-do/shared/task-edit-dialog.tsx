@@ -934,7 +934,13 @@ export function TaskEditDialog({
       return;
     }
 
-    await invalidateTaskCaches(queryClient, boardId);
+    // Only invalidate time tracking data since task availability affects it
+    // Note: We intentionally do NOT invalidate the tasks cache here to avoid
+    // conflicts with realtime sync and unnecessary full-board refetches.
+    // The realtime subscription will handle adding the new task to the cache.
+    await queryClient.invalidateQueries({
+      queryKey: ['time-tracking-data'],
+    });
 
     toast({
       title: 'Task created',
@@ -1136,7 +1142,21 @@ export function TaskEditDialog({
         // Note: Auto-scheduling is handled by the Smart Schedule button in Calendar
         // The autoSchedule flag is saved to the task for the unified scheduler to use
 
-        await invalidateTaskCaches(queryClient, boardId);
+        // Add the new task to the cache directly instead of invalidating
+        // This avoids full-board refetch flickering and conflicts with realtime sync
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return [newTask];
+            // Check if task already exists (from realtime), if so don't duplicate
+            if (old.some((t) => t.id === newTask.id)) return old;
+            return [...old, newTask];
+          }
+        );
+        // Only invalidate time tracking data since task availability affects it
+        await queryClient.invalidateQueries({
+          queryKey: ['time-tracking-data'],
+        });
         toast({
           title: parentTaskId ? 'Sub-task created' : 'Task created',
           description: parentTaskId ? 'New sub-task added.' : 'New task added.',

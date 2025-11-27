@@ -311,7 +311,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
     schedulingSaving,
   } = props;
 
-  const [isMetadataExpanded, setIsMetadataExpanded] = useState(true);
+  const [isMetadataExpanded, setIsMetadataExpanded] = useState(false);
   const [isPriorityPopoverOpen, setIsPriorityPopoverOpen] = useState(false);
   const [isDueDatePopoverOpen, setIsDueDatePopoverOpen] = useState(false);
   const [isEstimationPopoverOpen, setIsEstimationPopoverOpen] = useState(false);
@@ -585,78 +585,97 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     PRIORITY_BADGE_COLORS[priority]
                   )}
                 >
-                  <Flag className="h-2.5 w-2.5" />
+                  {getPriorityIcon(priority, 'h-2.5 w-2.5')}
                   {getPriorityLabel(priority)}
-                </Badge>
-              )}
-              {(startDate || endDate) && (
-                <Badge
-                  variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-orange/30 bg-dynamic-orange/10 px-2 font-medium text-[10px] text-dynamic-orange"
-                >
-                  <Calendar className="h-2.5 w-2.5" />
-                  {startDate && endDate
-                    ? 'Scheduled'
-                    : endDate
-                      ? 'Due'
-                      : 'Start'}
-                </Badge>
-              )}
-              {estimationPoints != null && (
-                <Badge
-                  variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-purple/30 bg-dynamic-purple/10 px-2 font-medium text-[10px] text-dynamic-purple"
-                >
-                  <Timer className="h-2.5 w-2.5" />
-                  Est.
-                </Badge>
-              )}
-              {selectedLabels.length > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-indigo/30 bg-dynamic-indigo/10 px-2 font-medium text-[10px] text-dynamic-indigo"
-                >
-                  <Tag className="h-2.5 w-2.5" />
-                  {selectedLabels.length}
-                </Badge>
-              )}
-              {selectedProjects.length > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-sky/30 bg-dynamic-sky/10 px-2 font-medium text-[10px] text-dynamic-sky"
-                >
-                  <Box className="h-2.5 w-2.5" />
-                  {selectedProjects.length === 1
-                    ? selectedProjects[0]?.name
-                    : selectedProjects.length}
                 </Badge>
               )}
               {selectedListId && (
                 <Badge
                   variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-green/30 bg-dynamic-green/10 px-2 font-medium text-[10px] text-dynamic-green"
+                  className="h-5 shrink-0 gap-1 border border-dynamic-green/30 bg-dynamic-green/15 px-2 font-medium text-[10px] text-dynamic-green"
                 >
                   <ListTodo className="h-2.5 w-2.5" />
                   {availableLists?.find((l) => l.id === selectedListId)?.name ||
                     'List'}
                 </Badge>
               )}
+              {(startDate || endDate) && (
+                <Badge
+                  variant="secondary"
+                  className="h-5 shrink-0 gap-1 border border-dynamic-orange/30 bg-dynamic-orange/15 px-2 font-medium text-[10px] text-dynamic-orange"
+                >
+                  <Calendar className="h-2.5 w-2.5" />
+                  {startDate || endDate
+                    ? `${startDate ? new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No start'} → ${endDate ? new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No due'}`
+                    : 'Dates'}
+                </Badge>
+              )}
+              {estimationPoints != null && (
+                <Badge
+                  variant="secondary"
+                  className="h-5 shrink-0 gap-1 border border-dynamic-purple/30 bg-dynamic-purple/15 px-2 font-medium text-[10px] text-dynamic-purple"
+                >
+                  <Timer className="h-2.5 w-2.5" />
+                  {boardConfig?.estimation_type
+                    ? mapEstimationPoints(
+                        estimationPoints,
+                        boardConfig.estimation_type
+                      )
+                    : 'Est.'}
+                </Badge>
+              )}
+              {selectedLabels.length > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="h-5 shrink-0 gap-1 border border-dynamic-indigo/30 bg-dynamic-indigo/15 px-2 font-medium text-[10px] text-dynamic-indigo"
+                >
+                  <Tag className="h-2.5 w-2.5" />
+                  {selectedLabels.length === 1
+                    ? selectedLabels[0]?.name
+                    : `${selectedLabels.length} labels`}
+                </Badge>
+              )}
+              {selectedProjects.length > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="h-5 shrink-0 gap-1 border border-dynamic-sky/30 bg-dynamic-sky/15 px-2 font-medium text-[10px] text-dynamic-sky"
+                >
+                  <Box className="h-2.5 w-2.5" />
+                  {selectedProjects.length === 1
+                    ? selectedProjects[0]?.name
+                    : `${selectedProjects.length} projects`}
+                </Badge>
+              )}
               {selectedAssignees.length > 0 && !isPersonalWorkspace && (
                 <Badge
                   variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-cyan/30 bg-dynamic-cyan/10 px-2 font-medium text-[10px] text-dynamic-cyan"
+                  className="h-5 shrink-0 gap-1 border border-dynamic-cyan/30 bg-dynamic-cyan/15 px-2 font-medium text-[10px] text-dynamic-cyan"
                 >
                   <Users className="h-2.5 w-2.5" />
-                  {selectedAssignees.length}
+                  {selectedAssignees.length === 1
+                    ? selectedAssignees[0]?.display_name || 'Unknown'
+                    : `${selectedAssignees.length} assignees`}
                 </Badge>
               )}
               {totalMinutes > 0 && (
                 <Badge
                   variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-teal/30 bg-dynamic-teal/10 px-2 font-medium text-[10px] text-dynamic-teal"
+                  className={cn(
+                    'h-5 shrink-0 gap-1 border px-2 font-medium text-[10px]',
+                    hasUnsavedSchedulingChanges
+                      ? 'border-dynamic-yellow/50 border-dashed bg-dynamic-yellow/15 text-dynamic-yellow'
+                      : 'border-dynamic-teal/30 bg-dynamic-teal/15 text-dynamic-teal'
+                  )}
                 >
-                  <CalendarClock className="h-2.5 w-2.5" />
+                  {hasUnsavedSchedulingChanges ? (
+                    <AlertCircle className="h-2.5 w-2.5" />
+                  ) : (
+                    <CalendarClock className="h-2.5 w-2.5" />
+                  )}
                   {formatDuration(totalMinutes)}
+                  {hasUnsavedSchedulingChanges && (
+                    <span className="text-[8px] opacity-75">unsaved</span>
+                  )}
                 </Badge>
               )}
             </div>

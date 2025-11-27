@@ -16,16 +16,16 @@ import type {
   TaskBoardStatusTemplate,
 } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import type { User } from '@tuturuuu/types/primitives/User';
 import type {
   CreateTaskRelationshipInput,
   CreateTaskWithRelationshipInput,
   CreateTaskWithRelationshipResult,
   RelatedTaskInfo,
   TaskRelationship,
-  TaskRelationshipType,
   TaskRelationshipsResponse,
+  TaskRelationshipType,
 } from '@tuturuuu/types/primitives/TaskRelationship';
+import type { User } from '@tuturuuu/types/primitives/User';
 /**
  * Generate a human-readable ticket identifier from prefix and display number
  * @param prefix - Board's ticket prefix (e.g., "DEV", "BUG")
@@ -2575,7 +2575,7 @@ export function useTaskRelationships(taskId: string | undefined) {
 /**
  * React Query mutation hook for creating task relationships
  */
-export function useCreateTaskRelationship(boardId?: string) {
+export function useCreateTaskRelationship(_boardId?: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -2584,7 +2584,10 @@ export function useCreateTaskRelationship(boardId?: string) {
       return createTaskRelationship(supabase, input);
     },
     onSuccess: async (_, variables) => {
-      // Invalidate relationships for both tasks
+      // Invalidate relationships for both tasks involved
+      // Note: We intentionally do NOT invalidate the tasks cache here to avoid
+      // conflicts with realtime sync and unnecessary full-board refetches.
+      // The task card badges read from ['task-relationships', taskId] cache directly.
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ['task-relationships', variables.source_task_id],
@@ -2592,9 +2595,6 @@ export function useCreateTaskRelationship(boardId?: string) {
         queryClient.invalidateQueries({
           queryKey: ['task-relationships', variables.target_task_id],
         }),
-        // Also invalidate tasks cache to refresh relationship badges
-        boardId &&
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
       ]);
     },
   });
@@ -2603,7 +2603,7 @@ export function useCreateTaskRelationship(boardId?: string) {
 /**
  * React Query mutation hook for deleting task relationships
  */
-export function useDeleteTaskRelationship(boardId?: string) {
+export function useDeleteTaskRelationship(_boardId?: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -2625,7 +2625,10 @@ export function useDeleteTaskRelationship(boardId?: string) {
       );
     },
     onSuccess: async (_, variables) => {
-      // Invalidate relationships for both tasks
+      // Invalidate relationships for both tasks involved
+      // Note: We intentionally do NOT invalidate the tasks cache here to avoid
+      // conflicts with realtime sync and unnecessary full-board refetches.
+      // The task card badges read from ['task-relationships', taskId] cache directly.
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ['task-relationships', variables.sourceTaskId],
@@ -2633,9 +2636,6 @@ export function useDeleteTaskRelationship(boardId?: string) {
         queryClient.invalidateQueries({
           queryKey: ['task-relationships', variables.targetTaskId],
         }),
-        // Also invalidate tasks cache to refresh relationship badges
-        boardId &&
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
       ]);
     },
   });
@@ -2811,12 +2811,23 @@ export function useCreateTaskWithRelationship(boardId: string, wsId: string) {
       return createTaskWithRelationship(supabase, input);
     },
     onSuccess: async (result, variables) => {
-      // Invalidate all relevant caches
+      // Add the new task to the cache directly instead of invalidating
+      // This avoids full-board refetch flickering and conflicts with realtime sync
+      if (boardId) {
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return [result.task];
+            // Check if task already exists (from realtime), if so don't duplicate
+            if (old.some((t) => t.id === result.task.id)) return old;
+            return [...old, result.task];
+          }
+        );
+      }
+
+      // Invalidate relationship caches for both tasks involved
+      // Note: We do NOT invalidate the tasks cache to avoid conflicts with realtime sync
       await Promise.all([
-        // Invalidate tasks cache for the board
-        boardId &&
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
-        // Invalidate relationships for both tasks
         queryClient.invalidateQueries({
           queryKey: ['task-relationships', variables.currentTaskId],
         }),

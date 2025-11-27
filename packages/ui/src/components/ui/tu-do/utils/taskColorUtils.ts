@@ -72,6 +72,30 @@ export function getTicketBadgeColorClasses(
 }
 
 /**
+ * Text color classes for each supported color
+ */
+const LIST_TEXT_COLOR_CLASSES: Record<SupportedColor, string> = {
+  GRAY: 'text-dynamic-gray',
+  RED: 'text-dynamic-red',
+  BLUE: 'text-dynamic-blue',
+  GREEN: 'text-dynamic-green',
+  YELLOW: 'text-dynamic-yellow',
+  ORANGE: 'text-dynamic-orange',
+  PURPLE: 'text-dynamic-purple',
+  PINK: 'text-dynamic-pink',
+  INDIGO: 'text-dynamic-indigo',
+  CYAN: 'text-dynamic-cyan',
+};
+
+/**
+ * Get text color class for a task list (for completion/closed text)
+ */
+export function getListTextColorClass(color?: SupportedColor | null): string {
+  if (!color) return 'text-muted-foreground';
+  return LIST_TEXT_COLOR_CLASSES[color] || 'text-muted-foreground';
+}
+
+/**
  * Get initials from name or email for avatar
  */
 export function getAssigneeInitials(
