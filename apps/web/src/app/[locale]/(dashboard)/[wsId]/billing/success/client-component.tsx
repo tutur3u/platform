@@ -1,16 +1,9 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import {
-  ArrowLeft,
-  CheckCircle,
-  Clock,
-  CreditCard,
-  Download,
-} from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { ArrowLeft, CheckCircle, CreditCard, Download } from '@tuturuuu/icons';
+import type { Checkout } from '@tuturuuu/payment/polar';
 import { Button } from '@tuturuuu/ui/button';
-import { addHours, format, isAfter } from 'date-fns';
+import { format } from 'date-fns';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { centToDollar } from '@/utils/price-helper';
@@ -18,93 +11,30 @@ import { centToDollar } from '@/utils/price-helper';
 interface PaymentDetails {
   planName?: string;
   amount?: string;
-  invoiceId?: string;
+  checkoutId?: string;
   date?: string;
   paymentMethod?: string;
 }
 
 interface ClientComponentProps {
   wsId: string;
+  checkout: Checkout;
 }
 
-interface WorkspaceSubscription {
-  id: string;
-  ws_id: string;
-  created_at: string;
-  product_id: string | null;
-  status: string | null;
-  current_period_start: string | null;
-  current_period_end: string | null;
-  workspace_subscription_products: {
-    id: string;
-    name: string | null;
-    description: string | null;
-    price: number | null;
-    recurring_interval: string | null;
-  } | null;
-}
-
-export default function ClientComponent({ wsId }: ClientComponentProps) {
+export default function ClientComponent({
+  wsId,
+  checkout,
+}: ClientComponentProps) {
   const t = useTranslations('billing');
 
-  const { data: subscription, isLoading: loading } = useQuery({
-    queryKey: ['workspace-subscription', wsId],
-    queryFn: async () => {
-      const supabase = createClient();
-
-      const { data, error } = await supabase
-        .from('workspace_subscription')
-        .select('*, workspace_subscription_products(*)')
-        .eq('ws_id', wsId)
-        .single();
-
-      if (error) {
-        console.error('Failed to fetch workspace subscription:', error);
-        return null;
-      }
-
-      return data as WorkspaceSubscription;
-    },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-
-  const createdAt = subscription?.created_at
-    ? new Date(subscription.created_at)
-    : new Date();
-  const expiresAt = addHours(createdAt, 24);
-  const isLinkExpired = isAfter(new Date(), expiresAt);
-
-  const paymentDetails: PaymentDetails = subscription
-    ? {
-        planName:
-          subscription.workspace_subscription_products?.name || 'Pro Plan',
-        amount: subscription.workspace_subscription_products?.price
-          ? `${centToDollar(subscription.workspace_subscription_products.price)}`
-          : '--',
-        invoiceId: subscription.id || 'N/A',
-        date: subscription.created_at
-          ? format(new Date(subscription.created_at), 'MMMM d, yyyy')
-          : format(new Date(), 'MMMM d, yyyy'),
-        paymentMethod: 'Card',
-      }
-    : {
-        planName: 'Subscription Confirmed',
-        amount: '--',
-        invoiceId: 'N/A',
-        date: format(new Date(), 'MMMM d, yyyy'),
-        paymentMethod: '--',
-      };
-
-  if (loading) {
-    return (
-      <div className="container mx-auto max-w-6xl px-4 py-8">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600"></div>
-          <p>Loading</p>
-        </div>
-      </div>
-    );
-  }
+  // Use order data if available, otherwise fall back to subscription
+  const paymentDetails: PaymentDetails = {
+    planName: checkout.product?.name || 'Unknown Plan',
+    amount: `$${centToDollar(checkout.amount)}`,
+    checkoutId: checkout.id,
+    date: format(new Date(checkout.createdAt), 'MMMM d, yyyy'),
+    paymentMethod: 'Card',
+  };
 
   return (
     <div className="fade-in container mx-auto max-w-6xl animate-in px-4 py-8 duration-700">
@@ -146,7 +76,7 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
                 {t('success.invoice-id')}
               </span>
               <span className="font-medium text-card-foreground">
-                {paymentDetails.invoiceId}
+                {paymentDetails.checkoutId}
               </span>
             </div>
           </div>
@@ -175,27 +105,6 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Download Link Expiration Notice */}
-      <div className="fade-in mb-8 animate-in rounded-lg border border-amber-200 bg-amber-50 p-6 text-center transition-all delay-900 duration-300 dark:border-amber-800 dark:bg-amber-900/20">
-        <div className="mb-2 flex items-center justify-center gap-2">
-          <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-          <p className="font-medium text-amber-800 dark:text-amber-200">
-            {t('success.download-receipt-availability')}
-          </p>
-        </div>
-        {isLinkExpired ? (
-          <p className="text-amber-700 text-sm dark:text-amber-300">
-            {t('success.download-invoice-desc')}
-          </p>
-        ) : (
-          <p className="text-amber-700 text-sm dark:text-amber-300">
-            {t('success.expired-on', {
-              date: format(expiresAt, "MMMM d, yyyy 'at' h:mm a"),
-            })}
-          </p>
-        )}
       </div>
 
       {/* What's Next Card */}
@@ -251,27 +160,16 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
             {t('success.back-to-billing')}
           </Link>
         </Button>
-        {isLinkExpired ? (
-          <Button
-            variant="outline"
-            disabled
-            className="group flex cursor-not-allowed items-center gap-2 opacity-50"
-          >
-            <Download className="h-4 w-4" />
-            {t('success.download-receipt')}(Expired)
-          </Button>
-        ) : (
-          <Button
-            variant="outline"
-            asChild
-            className="group hover:-translate-y-1 flex items-center gap-2 transition-all duration-300 hover:scale-110 hover:shadow-xl"
-          >
-            <Link href={`/api/billing/${wsId}/invoice`} target="_blank">
-              <Download className="h-4 w-4 transition-transform duration-300 group-hover:translate-y-2 group-hover:scale-125" />
-              {t('success.download-receipt')}
-            </Link>
-          </Button>
-        )}
+        <Button
+          variant="outline"
+          asChild
+          className="group hover:-translate-y-1 flex items-center gap-2 transition-all duration-300 hover:scale-110 hover:shadow-xl"
+        >
+          <Link href={`/api/billing/${wsId}/invoice`} target="_blank">
+            <Download className="h-4 w-4 transition-transform duration-300 group-hover:translate-y-2 group-hover:scale-125" />
+            {t('success.download-receipt')}
+          </Link>
+        </Button>
         <Button
           variant="outline"
           asChild

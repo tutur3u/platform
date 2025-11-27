@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
 
     const checkoutSession = await polar.checkouts.create({
       products: [productId],
-      successUrl: `${BASE_URL}/${wsId}/billing/success`,
+      successUrl: `${BASE_URL}/${wsId}/billing/success?checkoutId={CHECKOUT_ID}`,
       externalCustomerId: user?.id || '',
       metadata: { wsId },
       customerName: userData.display_name,
