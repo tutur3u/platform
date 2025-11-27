@@ -858,7 +858,90 @@ Guardrail Enforcement:
 
 Cross-Reference: See 5.2 (TypeScript) for type safety, 5.12 (Data Fetching & React Query) for state management patterns, 4.7 (Testing) for verification strategies.
 
-### 5.20 Third-Party UI Library Integration & Theme Synchronization
+### 5.20 Centralized Settings Architecture
+
+All application settings MUST be implemented within the centralized settings dialog located at `apps/web/src/components/settings/settings-dialog.tsx`. This component serves as the single source of truth for:
+
+1. **User Profile Settings** - Avatar, display name, email
+2. **User Account Settings** - Security, sessions, devices
+3. **Preferences** - Appearance, theme, notifications
+4. **Workspace Settings** - General info, members, billing
+5. **Product-Specific Settings** - Calendar hours, colors, integrations, smart features
+
+**Architecture Pattern:**
+
+The settings dialog uses a sidebar navigation pattern with grouped sections:
+
+```typescript
+const navItems = [
+  {
+    label: 'User Settings',
+    items: [
+      { name: 'profile', label: 'Profile', icon: User },
+      { name: 'security', label: 'Security', icon: Shield },
+      { name: 'sessions', label: 'Sessions & Devices', icon: Laptop },
+    ],
+  },
+  {
+    label: 'Preferences',
+    items: [
+      { name: 'appearance', label: 'Appearance & Theme', icon: Paintbrush },
+      { name: 'notifications', label: 'Notifications', icon: Bell },
+    ],
+  },
+  // ... workspace and product-specific sections
+];
+```
+
+**Adding New Settings:**
+
+1. **Create Settings Component**: Build the settings UI in `apps/web/src/components/settings/` following existing patterns
+2. **Add Navigation Item**: Add entry to `navItems` array with appropriate `name`, `label`, `icon`, and `description`
+3. **Register Tab Content**: Add conditional rendering block for the new tab in the dialog's content area
+4. **Pass Required Props**: Ensure workspace data and other dependencies are passed via props (use `workspace.id`, not raw `wsId`)
+
+**Rules:**
+
+- ❌ **NEVER** create separate settings pages outside this dialog
+- ❌ **NEVER** create standalone modals for settings that belong in this centralized location
+- ✅ **ALWAYS** add new settings categories as tabs within the settings dialog
+- ✅ **ALWAYS** group related settings logically (user, preferences, workspace, product-specific)
+- ✅ **ALWAYS** use TanStack Query for data fetching within settings components (see 5.12)
+- ✅ **ALWAYS** pass `workspace` prop to child components instead of raw `wsId` (see 5.16)
+
+**Conditional Sections:**
+
+Product-specific settings (like Calendar) should only appear when relevant:
+
+```typescript
+// Calendar settings only show when wsId is available
+...(wsId
+  ? [
+      {
+        label: 'Calendar',
+        items: [
+          { name: 'calendar_hours', label: 'Hours & Timezone', ... },
+          { name: 'calendar_colors', label: 'Category Colors', ... },
+        ],
+      },
+    ]
+  : []),
+```
+
+**Rationale:**
+
+- Single location for all settings improves discoverability
+- Consistent UX across user, workspace, and product settings
+- Easier maintenance and testing
+- Prevents settings fragmentation across the codebase
+- Ensures proper workspace ID resolution pattern is followed
+
+**Quality Gate:**
+
+- PRs adding new settings outside `settings-dialog.tsx` should be flagged
+- Review checklist: "Are new settings integrated into the centralized settings dialog?"
+
+### 5.21 Third-Party UI Library Integration & Theme Synchronization
 
 When integrating third-party UI libraries (e.g., Mantine, Radix, Material-UI) that have their own theming systems, **theme synchronization is mandatory** to maintain visual consistency.
 
@@ -867,6 +950,7 @@ When integrating third-party UI libraries (e.g., Mantine, Radix, Material-UI) th
 Mantine is integrated application-wide and available in any component:
 
 1. **Global CSS Loading**: Mantine CSS is imported in root layout (`apps/web/src/app/[locale]/layout.tsx`).
+
    ```typescript
    // In apps/web/src/app/[locale]/layout.tsx
    import '@mantine/core/styles.css';
@@ -901,6 +985,7 @@ Mantine is integrated application-wide and available in any component:
    - Verify no visual discontinuities
 
 7. **Usage Example**:
+
    ```typescript
    'use client';
    
@@ -911,6 +996,7 @@ Mantine is integrated application-wide and available in any component:
      return <Heatmap data={data} classNames={classes} />;
    }
    ```
+
    No provider setup or CSS imports needed in components.
 
 #### Other Third-Party Libraries (Route-Scoped Pattern)
@@ -918,6 +1004,7 @@ Mantine is integrated application-wide and available in any component:
 For libraries not yet centralized, use route-scoped integration:
 
 1. **Route-Scoped CSS Loading**: Import third-party CSS in route-specific `layout.tsx` files.
+
    ```typescript
    // In apps/web/src/app/[locale]/(dashboard)/[wsId]/some-route/layout.tsx
    import '@third-party/core/styles.css';
@@ -930,7 +1017,7 @@ For libraries not yet centralized, use route-scoped integration:
 
 3. **Consider Centralization**: If the library is used in multiple routes, consider centralizing like Mantine.
 
-#### Pattern Template (for new route-scoped libraries):
+#### Pattern Template (for new route-scoped libraries)
 
 ```css
 /* third-party-theme-override.css */
@@ -1132,9 +1219,10 @@ Tick ALL before requesting review:
 10. **Code quality maintained; files >400 LOC and components >200 LOC refactored** ✅
 11. **Components follow single responsibility principle; complex logic extracted** ✅
 12. **ALL client-side data fetching uses TanStack Query (ZERO `useEffect` for data fetching; no raw fetch)** ✅
-13. No secrets, tokens, or API keys committed ✅
-14. Added edge runtime export where required ✅
-15. All new external inputs validated (Zod / guard logic) ✅
+13. **New settings implemented within centralized `settings-dialog.tsx` (not separate pages)** ✅
+14. No secrets, tokens, or API keys committed ✅
+15. Added edge runtime export where required ✅
+16. All new external inputs validated (Zod / guard logic) ✅
 
 ### 8.2 Quality Gates
 
@@ -1271,7 +1359,8 @@ Agent Responsibilities:
 | Add API route | Create `app/api/.../route.ts` | Validate input early |
 | Add AI endpoint | See 4.4 | Use schema + auth + feature flag |
 | Add docs page | Create `.mdx` in `apps/docs/` + add to `mint.json` | **CRITICAL: Add to navigation or won't be visible** |
-| Integrate 3rd-party UI lib | See 5.20 workflow | Route-scoped CSS + theme override + sync docs |
+| Add new settings | Add tab in `apps/web/src/components/settings/settings-dialog.tsx` | **CRITICAL: Never create separate settings pages** |
+| Integrate 3rd-party UI lib | See 5.21 workflow | Route-scoped CSS + theme override + sync docs |
 | Update app theme colors | Edit `packages/ui/src/globals.css` | **MUST** update all `*-theme-override.css` files |
 | Edge runtime | `export const runtime = 'edge'` | Only if required |
 | Supabase admin client | Import from `@tuturuuu/supabase` | Avoid direct REST calls |
@@ -1291,7 +1380,8 @@ Top Failure Causes → Fix Fast:
 6. **New routes not in navigation** → update `navigation.tsx` with aliases and children.
 7. **Missing Vietnamese translations** → add entries to both `en.json` AND `vi.json`.
 8. Release workflow skipped → ensure PR title `chore(@tuturuuu/<pkg>): ...`.
-9. **Third-party UI colors mismatched** → update theme override file + sync documentation (see 5.20).
+9. **Third-party UI colors mismatched** → update theme override file + sync documentation (see 5.21).
+10. **Settings created outside centralized dialog** → move to `settings-dialog.tsx` (see 5.20).
 
 Escalate if: multi-app breaking refactor, destructive schema change, data backfill >30 LOC, new external service, auth/token contract change.
 

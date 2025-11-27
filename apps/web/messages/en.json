@@ -1082,6 +1082,7 @@
     "time_tracker_management": "Management",
     "all_boards": "All Boards",
     "my_tasks": "My tasks",
+    "habits": "Habits",
     "initiatives": "Initiatives",
     "teams": "Teams",
     "members": "Members",
@@ -7710,5 +7711,23 @@
     "loading_workspaces": "Loading workspaces...",
     "personal": "Personal",
     "current_theme": "Current"
+  },
+  "breaks": {
+    "take_a_break_after": "Take a break after",
+    "schedule_break_description": "Schedule a break after completing this",
+    "break_duration": "Break Duration",
+    "break_interval_hint": "Breaks are scheduled in 15-minute intervals",
+    "scheduled_break": "Scheduled break",
+    "break_after": "Break after {name}",
+    "options": {
+      "15": "15 minutes",
+      "30": "30 minutes",
+      "45": "45 minutes",
+      "60": "1 hour",
+      "75": "1 hour 15 minutes",
+      "90": "1 hour 30 minutes",
+      "105": "1 hour 45 minutes",
+      "120": "2 hours"
+    }
   }
 }

@@ -20,6 +20,8 @@ export const SmartCalendar = ({
   experimentalGoogleToken,
   externalState,
   extras,
+  initialSettings,
+  onSaveSettings,
 }: {
   t: any;
   locale: string;
@@ -37,9 +39,13 @@ export const SmartCalendar = ({
     availableViews: { value: string; label: string; disabled?: boolean }[];
   };
   extras?: React.ReactNode;
+  initialSettings?: Partial<CalendarSettings>;
+  onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
 }) => {
   const handleSaveSettings = async (newSettings: CalendarSettings) => {
-    console.log('Saving settings:', newSettings);
+    if (onSaveSettings) {
+      await onSaveSettings(newSettings);
+    }
   };
 
   return (
@@ -49,7 +55,10 @@ export const SmartCalendar = ({
       useQueryClient={useQueryClient}
       experimentalGoogleToken={experimentalGoogleToken}
     >
-      <CalendarSettingsProvider onSave={handleSaveSettings}>
+      <CalendarSettingsProvider
+        initialSettings={initialSettings}
+        onSave={handleSaveSettings}
+      >
         <CalendarContent
           t={t}
           locale={locale}

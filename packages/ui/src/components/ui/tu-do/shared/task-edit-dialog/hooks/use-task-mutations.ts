@@ -1,9 +1,19 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import type { CalendarHoursType } from '@tuturuuu/types/primitives/Task';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
 import { useCallback, useState } from 'react';
+
+export interface SchedulingSettings {
+  totalDuration: number | null;
+  isSplittable: boolean;
+  minSplitDurationMinutes: number | null;
+  maxSplitDurationMinutes: number | null;
+  calendarHours: CalendarHoursType | null;
+  autoSchedule: boolean;
+}
 
 export interface UseTaskMutationsProps {
   taskId?: string;
@@ -28,7 +38,9 @@ export interface UseTaskMutationsReturn {
   updateEndDate: (newDate: Date | undefined) => Promise<void>;
   updateList: (newListId: string) => Promise<void>;
   saveNameToDatabase: (newName: string) => Promise<void>;
+  saveSchedulingSettings: (settings: SchedulingSettings) => Promise<boolean>;
   estimationSaving: boolean;
+  schedulingSaving: boolean;
 }
 
 const supabase = createClient();
@@ -55,6 +67,7 @@ export function useTaskMutations({
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [estimationSaving, setEstimationSaving] = useState(false);
+  const [schedulingSaving, setSchedulingSaving] = useState(false);
 
   const updateEstimation = useCallback(
     async (points: number | null) => {
@@ -237,6 +250,55 @@ export function useTaskMutations({
     [taskName, taskId, isCreateMode, queryClient, boardId, toast]
   );
 
+  const saveSchedulingSettings = useCallback(
+    async (settings: SchedulingSettings): Promise<boolean> => {
+      if (isCreateMode || !taskId || taskId === 'new') {
+        // In create mode, settings will be saved when the task is created
+        return true;
+      }
+
+      setSchedulingSaving(true);
+      try {
+        const { error } = await supabase
+          .from('tasks')
+          .update({
+            total_duration: settings.totalDuration,
+            is_splittable: settings.isSplittable,
+            min_split_duration_minutes: settings.minSplitDurationMinutes,
+            max_split_duration_minutes: settings.maxSplitDurationMinutes,
+            calendar_hours: settings.calendarHours,
+            auto_schedule: settings.autoSchedule,
+          })
+          .eq('id', taskId);
+
+        if (error) throw error;
+
+        await invalidateTaskCaches(queryClient, boardId);
+
+        // Note: Auto-scheduling is handled by the Smart Schedule button in Calendar
+        // Settings are saved here; the unified scheduler will use them when triggered
+        toast({
+          title: 'Scheduling settings saved',
+          description: 'Task scheduling configuration has been updated.',
+        });
+
+        onUpdate();
+        return true;
+      } catch (e: any) {
+        console.error('Failed updating scheduling settings', e);
+        toast({
+          title: 'Failed to save scheduling settings',
+          description: e.message || 'Please try again',
+          variant: 'destructive',
+        });
+        return false;
+      } finally {
+        setSchedulingSaving(false);
+      }
+    },
+    [isCreateMode, taskId, queryClient, boardId, toast, onUpdate]
+  );
+
   return {
     updateEstimation,
     updatePriority,
@@ -244,6 +306,8 @@ export function useTaskMutations({
     updateEndDate,
     updateList,
     saveNameToDatabase,
+    saveSchedulingSettings,
     estimationSaving,
+    schedulingSaving,
   };
 }

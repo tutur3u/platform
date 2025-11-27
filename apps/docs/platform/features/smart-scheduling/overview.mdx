@@ -1,0 +1,139 @@
+---
+title: Smart Scheduling Overview
+description: Intelligent, unified scheduling for habits and tasks with priority-aware event placement
+---
+
+# Smart Scheduling
+
+Smart Scheduling is an intelligent system that automatically schedules your habits and tasks on your calendar, respecting priorities, deadlines, and your preferences.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Unified Scheduling" icon="calendar-check">
+    Habits and tasks are scheduled together in a coordinated manner, ensuring they don't conflict
+  </Card>
+  <Card title="Priority-Aware" icon="arrow-up-1-9">
+    Items are scheduled based on priority, with urgent tasks able to bump lower-priority habits
+  </Card>
+  <Card title="Deadline Intelligence" icon="clock">
+    Automatically infers priority from deadlines - items due soon get scheduled first
+  </Card>
+  <Card title="Flexible Duration" icon="arrows-left-right">
+    Habits can have min/max duration bounds, optimizing time based on slot availability
+  </Card>
+</CardGroup>
+
+## How It Works
+
+### 1. Priority Calculation
+
+Every habit and task has an **effective priority** that determines scheduling order:
+
+| Priority | Weight | Deadline Inference |
+|----------|--------|-------------------|
+| Critical | 4 | Overdue or due within 24 hours |
+| High | 3 | Due within 24-48 hours |
+| Normal | 2 | Due beyond 48 hours |
+| Low | 1 | No deadline set |
+
+<Note>
+Explicit priorities always take precedence over inferred priorities. If you manually set a task as "Critical", it stays critical regardless of deadline.
+</Note>
+
+### 2. Scheduling Order
+
+Smart Scheduling processes items in this order:
+
+1. **Habits First** - Sorted by priority, then by ideal time preference
+2. **Tasks Second** - Sorted by priority, then by deadline proximity
+3. **Bumping** - Urgent (critical) tasks can bump lower-priority habit events
+4. **Rescheduling** - Bumped habits are rescheduled to the next available slot
+
+### 3. Duration Optimization
+
+For habits with flexible duration (min/max bounds), the system optimizes duration based on slot characteristics:
+
+```
+Ideal Time Match → Maximum duration (get most value from preferred time)
+Preference Match → Preferred duration (morning/afternoon/evening/night)
+Constrained Slot → Minimum viable duration (still complete the habit)
+No Match → Preferred duration (default behavior)
+```
+
+## Using Smart Schedule
+
+### From the Calendar
+
+Click the **Smart Schedule** button in the calendar toolbar to run scheduling for your workspace:
+
+<Steps>
+  <Step title="Click Smart Schedule">
+    Find the button in the calendar toolbar with the sparkle icon
+  </Step>
+  <Step title="Wait for Processing">
+    The system analyzes your habits, tasks, and existing events
+  </Step>
+  <Step title="View Results">
+    New calendar events appear automatically, with a toast notification showing the summary
+  </Step>
+</Steps>
+
+### Automatic Scheduling
+
+Smart Scheduling runs automatically every hour via a background cron job. This ensures your calendar stays up-to-date as you add new habits and tasks.
+
+<Info>
+The cron job only schedules items with `auto_schedule` enabled. You can enable/disable auto-scheduling per habit or task.
+</Info>
+
+## Configuration Options
+
+### Window Days
+
+Controls how far into the future to schedule events (default: 30 days, max: 90 days).
+
+### Force Reschedule
+
+When enabled, existing scheduled events are deleted and recreated. Use this to completely refresh your schedule.
+
+<Warning>
+Force reschedule will delete all auto-generated calendar events and create new ones. Manual events are not affected.
+</Warning>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Set Explicit Priorities for Important Items">
+    While the system infers priority from deadlines, setting explicit priorities ensures your most important work is scheduled first.
+  </Accordion>
+
+  <Accordion title="Use Flexible Duration for Habits">
+    Set min/max duration bounds instead of fixed durations. This allows the system to optimize scheduling - using more time in ideal slots and less in constrained ones.
+  </Accordion>
+
+  <Accordion title="Set Ideal Times for Habits">
+    Specify your preferred time (e.g., "07:00" for morning meditation). The system will prioritize these slots and allocate maximum duration when they're available.
+  </Accordion>
+
+  <Accordion title="Keep Deadlines Updated">
+    The system uses deadlines to infer priority. Keep your task deadlines accurate for optimal scheduling.
+  </Accordion>
+</AccordionGroup>
+
+## API Reference
+
+Smart Scheduling is available via the REST API:
+
+```bash
+# Trigger scheduling for a workspace
+POST /api/v1/workspaces/{wsId}/calendar/schedule
+Content-Type: application/json
+
+{
+  "windowDays": 30,
+  "forceReschedule": false
+}
+```
+
+See [API Reference](/reference/api-reference/smart-schedule) for full details.
