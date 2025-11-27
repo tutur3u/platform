@@ -641,14 +641,7 @@ export function TaskEditDialog({
           }
         );
     },
-    [
-      isCreateMode,
-      onUpdate,
-      task,
-      updateTaskMutation,
-      toast,
-      setEndDate,
-    ]
+    [isCreateMode, onUpdate, task, updateTaskMutation, toast, setEndDate]
   );
 
   const updateName = useCallback(
