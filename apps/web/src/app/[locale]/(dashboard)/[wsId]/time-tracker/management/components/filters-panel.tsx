@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import dayjs from 'dayjs';
+import { useTranslations } from 'next-intl';
 
 interface FiltersPanelProps {
   searchQuery: string;
@@ -41,6 +42,8 @@ export default function FiltersPanel({
   isLoading = false,
   onDateRangeChange,
 }: FiltersPanelProps) {
+  const t = useTranslations('time-tracker.management.filters');
+
   const hasActiveFilters = searchQuery || startDate || endDate;
 
   const clearAllFilters = () => {
@@ -58,18 +61,18 @@ export default function FiltersPanel({
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-3">
-                Filters & Search
+                {t('title')}
                 {hasActiveFilters && (
                   <Badge
                     variant="outline"
                     className="border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple"
                   >
-                    Active
+                    {t('active')}
                   </Badge>
                 )}
               </div>
               <p className="font-normal text-dynamic-muted text-sm">
-                Refine your view with search and date filters
+                {t('description')}
               </p>
             </div>
           </CardTitle>
@@ -82,7 +85,7 @@ export default function FiltersPanel({
               className="text-dynamic-muted transition-all hover:bg-dynamic-purple/10 hover:text-dynamic-purple"
             >
               <X className="mr-1 size-4" />
-              Clear All
+              {t('clearAll')}
             </Button>
           )}
         </div>
@@ -93,7 +96,7 @@ export default function FiltersPanel({
           <div className="relative max-w-sm flex-1">
             <Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 transform text-dynamic-muted" />
             <Input
-              placeholder="Search by user or session title..."
+              placeholder={t('searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className={`border-dynamic-border/20 bg-dynamic-muted/5 pl-10 transition-all duration-200 focus:border-dynamic-purple/40 focus:bg-dynamic-purple/5 ${
@@ -107,7 +110,7 @@ export default function FiltersPanel({
 
           <div className="flex items-center gap-3">
             <label className="whitespace-nowrap font-medium text-dynamic-muted text-sm">
-              View by:
+              {t('viewBy')}
             </label>
             <Select
               value={period}
@@ -118,9 +121,9 @@ export default function FiltersPanel({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="day">Daily View</SelectItem>
-                <SelectItem value="week">Weekly View</SelectItem>
-                <SelectItem value="month">Monthly View</SelectItem>
+                <SelectItem value="day">{t('dailyView')}</SelectItem>
+                <SelectItem value="week">{t('weeklyView')}</SelectItem>
+                <SelectItem value="month">{t('monthlyView')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -132,7 +135,7 @@ export default function FiltersPanel({
             <div className="flex items-center gap-2">
               <Calendar className="size-4 text-dynamic-muted" />
               <span className="font-medium text-dynamic-muted text-sm">
-                Date Range
+                {t('dateRange')}
               </span>
               {(startDate || endDate) && (
                 <Badge
@@ -140,7 +143,7 @@ export default function FiltersPanel({
                   className="border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple text-xs"
                 >
                   <Calendar className="mr-1 size-3" />
-                  Active
+                  {t('active')}
                 </Badge>
               )}
             </div>
@@ -153,7 +156,7 @@ export default function FiltersPanel({
                 className="text-dynamic-muted transition-all hover:bg-dynamic-purple/10 hover:text-dynamic-purple"
               >
                 <X className="mr-1 size-3" />
-                Clear
+                {t('clear')}
               </Button>
             )}
           </div>
@@ -165,7 +168,7 @@ export default function FiltersPanel({
                   htmlFor="start-date"
                   className="whitespace-nowrap font-medium text-dynamic-muted text-sm"
                 >
-                  From:
+                  {t('from')}
                 </label>
                 <Input
                   id="start-date"
@@ -186,7 +189,7 @@ export default function FiltersPanel({
                   htmlFor="end-date"
                   className="whitespace-nowrap font-medium text-dynamic-muted text-sm"
                 >
-                  To:
+                  {t('to')}
                 </label>
                 <Input
                   id="end-date"
@@ -207,7 +210,7 @@ export default function FiltersPanel({
           {/* Quick Date Presets */}
           <div className="space-y-3">
             <span className="font-medium text-dynamic-muted text-sm">
-              Quick Presets:
+              {t('quickPresets')}
             </span>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <Button
@@ -220,7 +223,7 @@ export default function FiltersPanel({
                 disabled={isLoading}
                 className="h-9 border-dynamic-border/20 text-xs transition-all duration-200 hover:border-dynamic-purple/30 hover:bg-dynamic-purple/10"
               >
-                Today
+                {t('today')}
               </Button>
               <Button
                 variant="outline"
@@ -239,7 +242,7 @@ export default function FiltersPanel({
                 disabled={isLoading}
                 className="h-9 border-dynamic-border/20 text-xs transition-all duration-200 hover:border-dynamic-purple/30 hover:bg-dynamic-purple/10"
               >
-                This Week
+                {t('thisWeek')}
               </Button>
               <Button
                 variant="outline"
@@ -256,7 +259,7 @@ export default function FiltersPanel({
                 disabled={isLoading}
                 className="h-9 border-dynamic-border/20 text-xs transition-all duration-200 hover:border-dynamic-purple/30 hover:bg-dynamic-purple/10"
               >
-                This Month
+                {t('thisMonth')}
               </Button>
               <Button
                 variant="outline"
@@ -271,7 +274,7 @@ export default function FiltersPanel({
                 disabled={isLoading}
                 className="h-9 border-dynamic-border/20 text-xs transition-all duration-200 hover:border-dynamic-purple/30 hover:bg-dynamic-purple/10"
               >
-                Last 7 Days
+                {t('last7Days')}
               </Button>
             </div>
           </div>
@@ -283,10 +286,17 @@ export default function FiltersPanel({
                 <Calendar className="size-4 text-dynamic-blue" />
                 <span className="text-dynamic-blue text-sm">
                   {startDate && endDate
-                    ? `${dayjs(startDate).format('MMM D, YYYY')} to ${dayjs(endDate).format('MMM D, YYYY')}`
+                    ? t('dateRangeDisplay.both', {
+                        startDate: dayjs(startDate).format('MMM D, YYYY'),
+                        endDate: dayjs(endDate).format('MMM D, YYYY'),
+                      })
                     : startDate
-                      ? `From ${dayjs(startDate).format('MMM D, YYYY')} onwards`
-                      : `Until ${dayjs(endDate).format('MMM D, YYYY')}`}
+                      ? t('dateRangeDisplay.from', {
+                          startDate: dayjs(startDate).format('MMM D, YYYY'),
+                        })
+                      : t('dateRangeDisplay.until', {
+                          endDate: dayjs(endDate).format('MMM D, YYYY'),
+                        })}
                 </span>
               </div>
             </div>
