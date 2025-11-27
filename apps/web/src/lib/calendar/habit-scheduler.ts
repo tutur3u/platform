@@ -841,7 +841,7 @@ export async function rescheduleWorkspace(
       (sum, t) => sum + t.events.length,
       0
     ),
-    bumpedHabits: result.tasks.bumpedHabitEvents.length,
+    bumpedHabits: result.tasks.bumpedHabits.length,
     warnings: result.warnings,
   };
 }

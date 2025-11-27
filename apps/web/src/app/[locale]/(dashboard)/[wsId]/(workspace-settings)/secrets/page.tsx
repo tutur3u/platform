@@ -3,6 +3,7 @@ import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
@@ -36,7 +37,7 @@ export default async function WorkspaceSecretsPage({
 
   // Enforce permission check - only users with manage_workspace_secrets can access
   const { withoutPermission } = await getPermissions({
-    wsId,
+    wsId: ROOT_WORKSPACE_ID,
     enableNotFound: true,
   });
 
