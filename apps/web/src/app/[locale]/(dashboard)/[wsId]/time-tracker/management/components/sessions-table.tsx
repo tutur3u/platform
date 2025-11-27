@@ -124,7 +124,8 @@ export default function SessionsTable({
       if (daysDiff === 0) return tPeriod('today');
       if (daysDiff === 1) return tPeriod('yesterday');
       if (daysDiff === -1) return tPeriod('tomorrow');
-      if (daysDiff > 0 && daysDiff <= 7) return tPeriod('daysAgo', { count: daysDiff });
+      if (daysDiff > 0 && daysDiff <= 7)
+        return tPeriod('daysAgo', { count: daysDiff });
       if (daysDiff < 0 && daysDiff >= -7)
         return tPeriod('inDays', { count: Math.abs(daysDiff) });
 
@@ -137,7 +138,10 @@ export default function SessionsTable({
         now.isAfter(weekStart.subtract(1, 'day')) &&
         now.isBefore(weekEnd.add(1, 'day'))
       ) {
-        return tPeriod('thisWeek', { start: weekStart.format('DD MMM'), end: weekEnd.format('DD MMM') });
+        return tPeriod('thisWeek', {
+          start: weekStart.format('DD MMM'),
+          end: weekEnd.format('DD MMM'),
+        });
       }
 
       const weeksDiff = now
@@ -145,9 +149,15 @@ export default function SessionsTable({
         .add(1, 'day')
         .diff(weekStart, 'weeks');
       if (weeksDiff === 1)
-        return tPeriod('lastWeek', { start: weekStart.format('DD MMM'), end: weekEnd.format('DD MMM') });
+        return tPeriod('lastWeek', {
+          start: weekStart.format('DD MMM'),
+          end: weekEnd.format('DD MMM'),
+        });
       if (weeksDiff === -1)
-        return tPeriod('nextWeek', { start: weekStart.format('DD MMM'), end: weekEnd.format('DD MMM') });
+        return tPeriod('nextWeek', {
+          start: weekStart.format('DD MMM'),
+          end: weekEnd.format('DD MMM'),
+        });
 
       return `${weekStart.format('DD MMM')} - ${weekEnd.format('DD MMM YYYY')}`;
     } else {
@@ -305,9 +315,7 @@ export default function SessionsTable({
 
             <div className="space-y-3">
               <h3 className="font-semibold text-base text-dynamic-foreground">
-                {hasActiveFilters
-                  ? t('noMatchingSessions')
-                  : t('noSessions')}
+                {hasActiveFilters ? t('noMatchingSessions') : t('noSessions')}
               </h3>
               <p className="mx-auto max-w-md text-dynamic-muted text-sm">
                 {hasActiveFilters

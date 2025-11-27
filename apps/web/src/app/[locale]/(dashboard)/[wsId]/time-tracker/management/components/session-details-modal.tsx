@@ -1,7 +1,7 @@
 'use client';
 
-import type { SessionWithRelations } from "../../types"
-import type {GroupedSession} from '@/lib/time-tracking-helper';
+import type { SessionWithRelations } from '../../types';
+import type { GroupedSession } from '@/lib/time-tracking-helper';
 import {
   Dialog,
   DialogContent,
@@ -17,8 +17,6 @@ import { useTranslations } from 'next-intl';
 
 // Extend dayjs with duration plugin
 dayjs.extend(duration);
-
-
 
 interface SessionDetailsModalProps {
   isOpen: boolean;
@@ -149,7 +147,10 @@ interface StatCardProps {
 }
 
 function StatCard({ icon, value, label, colorClass }: StatCardProps) {
-  const colorMap: Record<string, { bg: string; text: string; icon: string; iconBg: string }> = {
+  const colorMap: Record<
+    string,
+    { bg: string; text: string; icon: string; iconBg: string }
+  > = {
     'dynamic-blue': {
       bg: 'bg-dynamic-blue/5 border-dynamic-blue/30',
       text: 'text-dynamic-blue',
@@ -187,11 +188,15 @@ function StatCard({ icon, value, label, colorClass }: StatCardProps) {
     >
       <div className="absolute inset-0 bg-linear-to-br from-white/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
       <div className="relative flex items-start gap-3">
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${colorsOrDefault.iconBg}`}>
+        <div
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${colorsOrDefault.iconBg}`}
+        >
           <div className={colorsOrDefault.icon}>{icon}</div>
         </div>
         <div className="flex-1">
-          <div className={`font-bold text-2xl ${colorsOrDefault.text}`}>{value}</div>
+          <div className={`font-bold text-2xl ${colorsOrDefault.text}`}>
+            {value}
+          </div>
           <div className="text-dynamic-muted text-xs font-medium">{label}</div>
         </div>
       </div>
@@ -268,7 +273,9 @@ function SessionListItem({ session, index }: SessionListItemProps) {
           <div className="flex shrink-0 flex-col items-end gap-2">
             <div className="font-mono font-bold text-dynamic-foreground text-lg">
               {session.duration_seconds
-                ? dayjs.duration(session.duration_seconds, 'seconds').format('H:mm:ss')
+                ? dayjs
+                    .duration(session.duration_seconds, 'seconds')
+                    .format('H:mm:ss')
                 : '0:00:00'}
             </div>
             {isActive && (
