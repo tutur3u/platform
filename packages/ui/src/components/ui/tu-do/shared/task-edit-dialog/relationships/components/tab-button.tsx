@@ -1,7 +1,10 @@
 'use client';
 
 import { cn } from '@tuturuuu/utils/format';
-import type { TabButtonProps, TabColorVariant } from '../types/task-relationships.types';
+import type {
+  TabButtonProps,
+  TabColorVariant,
+} from '../types/task-relationships.types';
 
 const colorClasses: Record<
   TabColorVariant,

@@ -254,7 +254,7 @@ export function TaskPickerPopover({
                             className={cn(
                               'truncate font-medium',
                               task.completed &&
-                              'text-muted-foreground line-through'
+                                'text-muted-foreground line-through'
                             )}
                           >
                             {task.name}

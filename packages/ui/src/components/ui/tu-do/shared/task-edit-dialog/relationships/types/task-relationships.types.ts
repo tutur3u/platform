@@ -4,7 +4,11 @@ import type { RelatedTaskInfo } from '@tuturuuu/types/primitives/TaskRelationshi
 export type TabColorVariant = 'purple' | 'green' | 'red' | 'blue';
 
 // Tab types for relationship sections
-export type RelationshipTab = 'parent' | 'subtasks' | 'dependencies' | 'related';
+export type RelationshipTab =
+  | 'parent'
+  | 'subtasks'
+  | 'dependencies'
+  | 'related';
 export type DependencySubTab = 'blocks' | 'blocked-by';
 
 // Props for the main TaskRelationshipsProperties component

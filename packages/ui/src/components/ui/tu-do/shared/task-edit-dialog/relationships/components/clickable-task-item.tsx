@@ -45,7 +45,9 @@ export function ClickableTaskItem({
                   {task.name}
                 </span>
                 <span className="text-muted-foreground text-xs">
-{task.board_name} {typeof task.display_number === 'number' && ` #${task.display_number}`}
+                  {task.board_name}{' '}
+                  {typeof task.display_number === 'number' &&
+                    ` #${task.display_number}`}
                 </span>
               </div>
               <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />

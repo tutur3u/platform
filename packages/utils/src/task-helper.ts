@@ -2306,8 +2306,6 @@ export function useReorderTask(boardId: string) {
 // TASK RELATIONSHIPS
 // =============================================================================
 
-
-
 /**
  * Nested task shape returned from relationship queries.
  * Used to replace `as any` with proper typing.
@@ -2585,7 +2583,7 @@ export function useCreateTaskRelationship(boardId?: string) {
         }),
         // Also invalidate tasks cache to refresh relationship badges
         boardId &&
-        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
       ]);
     },
   });
@@ -2626,7 +2624,7 @@ export function useDeleteTaskRelationship(boardId?: string) {
         }),
         // Also invalidate tasks cache to refresh relationship badges
         boardId &&
-        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
       ]);
     },
   });
@@ -2671,7 +2669,11 @@ export async function getWorkspaceTasks(
 
   // Exclude specific task IDs
   if (options?.excludeTaskIds?.length) {
-    query = query.filter('id', 'not.in', `(${options.excludeTaskIds.join(',')})`);
+    query = query.filter(
+      'id',
+      'not.in',
+      `(${options.excludeTaskIds.join(',')})`
+    );
   }
 
   // Search by name
@@ -2741,16 +2743,13 @@ export async function createTaskWithRelationship(
     input;
 
   // Call the RPC for atomic transaction
-  const { data, error } = await supabase.rpc(
-    'create_task_with_relationship',
-    {
-      p_name: name,
-      p_list_id: listId,
-      p_current_task_id: currentTaskId,
-      p_relationship_type: relationshipType,
-      p_current_task_is_source: currentTaskIsSource,
-    }
-  );
+  const { data, error } = await supabase.rpc('create_task_with_relationship', {
+    p_name: name,
+    p_list_id: listId,
+    p_current_task_id: currentTaskId,
+    p_relationship_type: relationshipType,
+    p_current_task_is_source: currentTaskIsSource,
+  });
 
   if (error) {
     // Handle specific error cases with user-friendly messages
@@ -2778,7 +2777,7 @@ export async function createTaskWithRelationship(
   }
 
   // Strongly typed response from RPC
-  const result = (data as unknown) as CreateTaskWithRelationshipResult;
+  const result = data as unknown as CreateTaskWithRelationshipResult;
 
   // Transform task record to match Task type
   const task = transformTaskRecord(result.task) as Task;
@@ -2805,7 +2804,7 @@ export function useCreateTaskWithRelationship(boardId: string, wsId: string) {
       await Promise.all([
         // Invalidate tasks cache for the board
         boardId &&
-        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
         // Invalidate relationships for both tasks
         queryClient.invalidateQueries({
           queryKey: ['task-relationships', variables.currentTaskId],

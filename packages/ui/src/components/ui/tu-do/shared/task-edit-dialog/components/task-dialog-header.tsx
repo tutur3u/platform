@@ -217,12 +217,14 @@ export function TaskDialogHeader({
   onNavigateBack,
 }: TaskDialogHeaderProps) {
   // Use custom headerInfo if provided, otherwise generate from task context
-  const resolvedHeaderInfo = headerInfo ?? getTaskDialogHeaderInfo({
-    isCreateMode,
-    parentTaskId,
-    parentTaskName,
-    pendingRelationship,
-  });
+  const resolvedHeaderInfo =
+    headerInfo ??
+    getTaskDialogHeaderInfo({
+      isCreateMode,
+      parentTaskId,
+      parentTaskName,
+      pendingRelationship,
+    });
 
   // Determine the task name to navigate back to (from pending relationship or parent task)
   const navigateBackTaskName =
@@ -241,11 +243,13 @@ export function TaskDialogHeader({
     <>
       <div className="flex items-center justify-between border-b px-4 py-2 md:px-8">
         <div className="flex items-center gap-2">
-          <div className={cn(
-            'flex h-7 w-7 items-center justify-center rounded-lg ring-1',
-            iconBgClass,
-            iconRingClass
-          )}>
+          <div
+            className={cn(
+              'flex h-7 w-7 items-center justify-center rounded-lg ring-1',
+              iconBgClass,
+              iconRingClass
+            )}
+          >
             {icon ?? <ListTodo className={cn('h-4 w-4', iconColorClass)} />}
           </div>
           <div className="flex min-w-0 flex-col gap-0.5">

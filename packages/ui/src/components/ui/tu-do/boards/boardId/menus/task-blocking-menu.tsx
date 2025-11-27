@@ -71,14 +71,15 @@ export function TaskBlockingMenu({
   }, [taskId, blockingTasks, blockedByTasks]);
 
   // Fetch available tasks
-  const { data: tasks = [], isLoading: tasksLoading, isError: tasksError } = useWorkspaceTasks(
-    wsId,
-    {
-      excludeTaskIds: excludeIds,
-      searchQuery: debouncedSearch || undefined,
-      limit: 30,
-    }
-  );
+  const {
+    data: tasks = [],
+    isLoading: tasksLoading,
+    isError: tasksError,
+  } = useWorkspaceTasks(wsId, {
+    excludeTaskIds: excludeIds,
+    searchQuery: debouncedSearch || undefined,
+    limit: 30,
+  });
 
   // Reset search when tab changes
   React.useEffect(() => {
@@ -227,8 +228,9 @@ export function TaskBlockingMenu({
                       </span>
                       {task.board_name && (
                         <span className="text-muted-foreground text-xs">
-{task.board_name}
-{typeof task.display_number === 'number' && ` #${task.display_number}`}
+                          {task.board_name}
+                          {typeof task.display_number === 'number' &&
+                            ` #${task.display_number}`}
                         </span>
                       )}
                     </div>
