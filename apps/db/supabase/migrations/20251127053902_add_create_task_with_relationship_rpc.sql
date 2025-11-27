@@ -17,7 +17,7 @@ CREATE OR REPLACE FUNCTION public.create_task_with_relationship(
 )
 RETURNS JSONB
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path = public
 AS $$
 DECLARE
@@ -30,7 +30,6 @@ DECLARE
   v_highest_sort_key BIGINT;
   v_new_sort_key BIGINT;
   v_user_id UUID;
-  v_board_id UUID;
   v_list_exists BOOLEAN;
   v_current_task_exists BOOLEAN;
 BEGIN

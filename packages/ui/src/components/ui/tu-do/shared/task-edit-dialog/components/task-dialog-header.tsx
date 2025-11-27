@@ -13,22 +13,15 @@ import { DialogDescription, DialogTitle } from '@tuturuuu/ui/dialog';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import type {
+  PendingRelationship,
+  PendingRelationshipType,
+} from '../types/pending-relationship';
 import { UserPresenceAvatarsComponent } from '../../user-presence-avatars';
 import { TaskDialogActions } from '../task-dialog-actions';
 
-/** Relationship types for creating tasks with relationships */
-export type PendingRelationshipType =
-  | 'subtask'
-  | 'parent'
-  | 'blocking'
-  | 'blocked-by'
-  | 'related';
-
-export interface PendingRelationship {
-  type: PendingRelationshipType;
-  relatedTaskId: string;
-  relatedTaskName: string;
-}
+// Re-export for external use
+export type { PendingRelationship, PendingRelationshipType };
 
 /**
  * Reusable dialog header info configuration

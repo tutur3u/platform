@@ -19,6 +19,8 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { User } from '@tuturuuu/types/primitives/User';
 import type {
   CreateTaskRelationshipInput,
+  CreateTaskWithRelationshipInput,
+  CreateTaskWithRelationshipResult,
   RelatedTaskInfo,
   TaskRelationship,
   TaskRelationshipType,
@@ -2307,6 +2309,25 @@ export function useReorderTask(boardId: string) {
 
 
 /**
+ * Nested task shape returned from relationship queries.
+ * Used to replace `as any` with proper typing.
+ */
+interface NestedRelatedTask {
+  id: string;
+  name: string;
+  display_number: number | null;
+  completed: boolean | null;
+  priority: string | null;
+  board_id: string | null;
+  deleted_at: string | null;
+  list: {
+    board: {
+      name: string;
+    } | null;
+  } | null;
+}
+
+/**
  * Fetch all relationships for a given task
  */
 export async function getTaskRelationships(
@@ -2331,6 +2352,7 @@ export async function getTaskRelationships(
         completed,
         priority,
         board_id,
+        deleted_at,
         list:task_lists(
           board:workspace_boards(
             name
@@ -2361,6 +2383,7 @@ export async function getTaskRelationships(
         completed,
         priority,
         board_id,
+        deleted_at,
         list:task_lists(
           board:workspace_boards(
             name
@@ -2384,8 +2407,9 @@ export async function getTaskRelationships(
 
   // Process source relationships (this task is the source)
   for (const rel of sourceRelationships || []) {
-    const targetTask = rel.target_task as any;
-    if (!targetTask) continue;
+    const targetTask = rel.target_task as NestedRelatedTask | null;
+    // Skip if task is missing or soft-deleted
+    if (!targetTask || targetTask.deleted_at !== null) continue;
 
     const taskInfo: RelatedTaskInfo = {
       id: targetTask.id,
@@ -2416,8 +2440,9 @@ export async function getTaskRelationships(
 
   // Process target relationships (this task is the target)
   for (const rel of targetRelationships || []) {
-    const sourceTask = rel.source_task as any;
-    if (!sourceTask) continue;
+    const sourceTask = rel.source_task as NestedRelatedTask | null;
+    // Skip if task is missing or soft-deleted
+    if (!sourceTask || sourceTask.deleted_at !== null) continue;
 
     const taskInfo: RelatedTaskInfo = {
       id: sourceTask.id,
@@ -2705,29 +2730,6 @@ export function useWorkspaceTasks(
 }
 
 /**
- * Input for creating a task with a relationship in one operation
- */
-export interface CreateTaskWithRelationshipInput {
-  /** Name of the new task to create */
-  name: string;
-  /** List ID where the task will be created */
-  listId: string;
-  /** The current task ID that the new task will be related to */
-  currentTaskId: string;
-  /** Type of relationship to create */
-  relationshipType: TaskRelationshipType;
-  /**
-   * Whether the current task is the source of the relationship.
-   * - For parent: false (new task is parent, current is child)
-   * - For child/subtask: true (current task is parent, new is child)
-   * - For blocks: true (current task blocks new task)
-   * - For blocked-by: false (new task blocks current task)
-   * - For related: true (direction doesn't matter for related)
-   */
-  currentTaskIsSource: boolean;
-}
-
-/**
  * Create a new task and establish a relationship with an existing task in one atomic operation
  * Uses a Supabase RPC to ensure both operations succeed or both fail
  */
@@ -2775,23 +2777,14 @@ export async function createTaskWithRelationship(
     throw error;
   }
 
-  // Transform the response to match expected types
-  const result = data as {
-    task: Record<string, unknown>;
-    relationship: Record<string, unknown>;
-  };
+  // Strongly typed response from RPC
+  const result = (data as unknown) as CreateTaskWithRelationshipResult;
 
   // Transform task record to match Task type
   const task = transformTaskRecord(result.task) as Task;
 
-  const relationship: TaskRelationship = {
-    id: result.relationship.id as string,
-    source_task_id: result.relationship.source_task_id as string,
-    target_task_id: result.relationship.target_task_id as string,
-    type: result.relationship.type as TaskRelationshipType,
-    created_at: result.relationship.created_at as string,
-    created_by: result.relationship.created_by as string | null,
-  };
+  // Relationship is already strongly typed, use directly
+  const relationship: TaskRelationship = result.relationship;
 
   return { task, relationship };
 }

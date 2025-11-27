@@ -59,11 +59,14 @@ import { useTaskData } from './task-edit-dialog/hooks/use-task-data';
 import { useTaskDependencies } from './task-edit-dialog/hooks/use-task-dependencies';
 import { useTaskFormState } from './task-edit-dialog/hooks/use-task-form-state';
 
+// Re-export relationship types from centralized location
+import type { PendingRelationship, PendingRelationshipType } from './task-edit-dialog/types/pending-relationship';
+
+export type { PendingRelationship, PendingRelationshipType };
+
 // Re-export dialog header utilities for external use
 export {
   type DialogHeaderInfo,
-  type PendingRelationship,
-  type PendingRelationshipType,
   getTaskDialogHeaderInfo,
 } from './task-edit-dialog/components/task-dialog-header';
 import { useTaskMutations } from './task-edit-dialog/hooks/use-task-mutations';
@@ -96,11 +99,7 @@ export interface TaskEditDialogProps {
   isPersonalWorkspace?: boolean;
   parentTaskId?: string; // For creating subtasks - will set parent relationship on save
   parentTaskName?: string; // Name of parent task when creating subtasks
-  pendingRelationship?: {
-    type: 'subtask' | 'parent' | 'blocking' | 'blocked-by' | 'related';
-    relatedTaskId: string;
-    relatedTaskName: string;
-  };
+  pendingRelationship?: PendingRelationship;
   currentUser?: {
     id: string;
     display_name?: string;

@@ -51,7 +51,7 @@ export function TaskRelationshipsProperties({
   isSaving,
   savingTaskId,
 }: TaskRelationshipsPropertiesProps) {
-  const [isExpanded, setIsExpanded] = React.useState(true);
+  const [isExpanded, setIsExpanded] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<RelationshipTab>('parent');
 
   // Tab configuration

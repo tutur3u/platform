@@ -136,89 +136,35 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
     createSubtask,
   ]);
 
-  // Open dialog to create a new task that will be the parent of the current task
-  const handleAddParentTask = useCallback(() => {
-    if (!state.task?.id || !state.boardId || !state.task?.list_id) return;
+  // Parameterized handler factory for relationship creation
+  const handleAddRelationship = useCallback(
+    (relationshipType: 'parent' | 'blocking' | 'blocked-by' | 'related') => {
+      if (!state.task?.id || !state.boardId || !state.task?.list_id) return;
 
-    createTaskWithRelationship(
-      'parent',
-      state.task.id,
-      state.task.name,
+      createTaskWithRelationship(
+        relationshipType,
+        state.task.id,
+        state.task.name,
+        state.boardId,
+        state.task.list_id,
+        state.availableLists
+      );
+    },
+    [
+      state.task?.id,
+      state.task?.list_id,
+      state.task?.name,
       state.boardId,
-      state.task.list_id,
-      state.availableLists
-    );
-  }, [
-    state.task?.id,
-    state.task?.list_id,
-    state.task?.name,
-    state.boardId,
-    state.availableLists,
-    createTaskWithRelationship,
-  ]);
+      state.availableLists,
+      createTaskWithRelationship,
+    ]
+  );
 
-  // Open dialog to create a new task that the current task will block
-  const handleAddBlockingTask = useCallback(() => {
-    if (!state.task?.id || !state.boardId || !state.task?.list_id) return;
-
-    createTaskWithRelationship(
-      'blocking',
-      state.task.id,
-      state.task.name,
-      state.boardId,
-      state.task.list_id,
-      state.availableLists
-    );
-  }, [
-    state.task?.id,
-    state.task?.list_id,
-    state.task?.name,
-    state.boardId,
-    state.availableLists,
-    createTaskWithRelationship,
-  ]);
-
-  // Open dialog to create a new task that will block the current task
-  const handleAddBlockedByTask = useCallback(() => {
-    if (!state.task?.id || !state.boardId || !state.task?.list_id) return;
-
-    createTaskWithRelationship(
-      'blocked-by',
-      state.task.id,
-      state.task.name,
-      state.boardId,
-      state.task.list_id,
-      state.availableLists
-    );
-  }, [
-    state.task?.id,
-    state.task?.list_id,
-    state.task?.name,
-    state.boardId,
-    state.availableLists,
-    createTaskWithRelationship,
-  ]);
-
-  // Open dialog to create a new task that will be related to the current task
-  const handleAddRelatedTask = useCallback(() => {
-    if (!state.task?.id || !state.boardId || !state.task?.list_id) return;
-
-    createTaskWithRelationship(
-      'related',
-      state.task.id,
-      state.task.name,
-      state.boardId,
-      state.task.list_id,
-      state.availableLists
-    );
-  }, [
-    state.task?.id,
-    state.task?.list_id,
-    state.task?.name,
-    state.boardId,
-    state.availableLists,
-    createTaskWithRelationship,
-  ]);
+  // Bound handlers for each relationship type
+  const handleAddParentTask = () => handleAddRelationship('parent');
+  const handleAddBlockingTask = () => handleAddRelationship('blocking');
+  const handleAddBlockedByTask = () => handleAddRelationship('blocked-by');
+  const handleAddRelatedTask = () => handleAddRelationship('related');
 
   if (!state.isOpen || !state.task) {
     return null;

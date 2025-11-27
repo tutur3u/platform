@@ -13,6 +13,13 @@ import {
   useRef,
   useState,
 } from 'react';
+import type {
+  PendingRelationship,
+  PendingRelationshipType,
+} from '../shared/task-edit-dialog/types/pending-relationship';
+
+// Re-export for backward compatibility
+export type { PendingRelationship, PendingRelationshipType };
 
 // Type definitions for Supabase join row responses
 // Note: Supabase uses null for optional fields, not undefined
@@ -42,20 +49,6 @@ interface TaskProjectJoinRow {
     name: string;
     status: string | null;
   } | null;
-}
-
-// Relationship types for creating tasks with relationships
-export type PendingRelationshipType =
-  | 'subtask' // New task will be a subtask of relatedTaskId
-  | 'parent' // New task will be the parent of relatedTaskId
-  | 'blocking' // New task will be blocked by relatedTaskId (relatedTask blocks newTask)
-  | 'blocked-by' // New task will block relatedTaskId (newTask blocks relatedTask)
-  | 'related'; // New task will be related to relatedTaskId
-
-export interface PendingRelationship {
-  type: PendingRelationshipType;
-  relatedTaskId: string;
-  relatedTaskName: string;
 }
 
 interface TaskDialogState {
