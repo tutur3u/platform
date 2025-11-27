@@ -1120,7 +1120,30 @@
     "board": "Board",
     "starts": "Starts",
     "show_less": "Show Less",
-    "show_more_tasks": "Show {count} more"
+    "show_more_tasks": "Show {count} more",
+    "history": {
+      "error": "Failed to load task history",
+      "empty": "No history available for this task",
+      "unknown_user": "Unknown user",
+      "unknown_change": "Made a change",
+      "assignee_added": "Assigned user",
+      "assignee_removed": "Removed assignee",
+      "label_added": "Added label",
+      "label_removed": "Removed label",
+      "project_linked": "Linked project",
+      "project_unlinked": "Unlinked project",
+      "field_updated": {
+        "name": "Updated name",
+        "description": "Updated description",
+        "priority": "Changed priority",
+        "end_date": "Changed due date",
+        "start_date": "Changed start date",
+        "estimation_points": "Updated estimation",
+        "list_id": "Moved to list",
+        "completed": "Changed status",
+        "unknown": "Updated field"
+      }
+    }
   },
   "link-shortener": {
     "title": "Link Shortener",

@@ -1210,7 +1210,30 @@
     "board": "Bảng",
     "starts": "Bắt đầu",
     "show_less": "Thu Gọn",
-    "show_more_tasks": "Hiển thị thêm {count}"
+    "show_more_tasks": "Hiển thị thêm {count}",
+    "history": {
+      "error": "Không thể tải lịch sử công việc",
+      "empty": "Chưa có lịch sử cho công việc này",
+      "unknown_user": "Người dùng không xác định",
+      "unknown_change": "Đã thực hiện thay đổi",
+      "assignee_added": "Đã giao cho người dùng",
+      "assignee_removed": "Đã xóa người được giao",
+      "label_added": "Đã thêm nhãn",
+      "label_removed": "Đã xóa nhãn",
+      "project_linked": "Đã liên kết dự án",
+      "project_unlinked": "Đã hủy liên kết dự án",
+      "field_updated": {
+        "name": "Đã cập nhật tên",
+        "description": "Đã cập nhật mô tả",
+        "priority": "Đã thay đổi mức độ ưu tiên",
+        "end_date": "Đã thay đổi ngày đến hạn",
+        "start_date": "Đã thay đổi ngày bắt đầu",
+        "estimation_points": "Đã cập nhật ước tính",
+        "list_id": "Đã chuyển đến danh sách",
+        "completed": "Đã thay đổi trạng thái",
+        "unknown": "Đã cập nhật trường"
+      }
+    }
   },
   "link-shortener": {
     "title": "Rút ngắn liên kết",
