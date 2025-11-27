@@ -5,7 +5,6 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
 import {
   buildEstimationIndices,
@@ -45,7 +44,7 @@ export function TaskEstimationMenu({
         Estimation
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent className="max-h-[400px] w-40 overflow-hidden p-0">
-        <ScrollArea className="h-[300px]">
+        <div className="max-h-[200px] overflow-auto">
           <div className="p-1">
             {indices.map((idx) => {
               const disabledByExtended = !extendedEstimation && idx > 5;
@@ -56,7 +55,10 @@ export function TaskEstimationMenu({
                 <DropdownMenuItem
                   key={idx}
                   onSelect={(e) =>
-                    onMenuItemSelect(e, () => onEstimationChange(idx))
+                    onMenuItemSelect(e, () =>
+                      // Toggle: if already active, remove estimation; otherwise set it
+                      onEstimationChange(isActive ? null : idx)
+                    )
                   }
                   className={cn(
                     'flex cursor-pointer items-center justify-between',
@@ -80,7 +82,7 @@ export function TaskEstimationMenu({
               );
             })}
           </div>
-        </ScrollArea>
+        </div>
         <div className="border-t bg-background">
           <DropdownMenuItem
             onSelect={(e) =>

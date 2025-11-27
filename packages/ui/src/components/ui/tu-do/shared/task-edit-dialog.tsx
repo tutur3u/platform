@@ -619,15 +619,8 @@ export function TaskEditDialog({
           { taskId: task?.id, updates: taskUpdates },
           {
             onSuccess: async () => {
-              await invalidateTaskCaches(queryClient, boardId);
-
-              if (boardId) {
-                await queryClient.refetchQueries({
-                  queryKey: ['tasks', boardId],
-                  type: 'active',
-                });
-              }
-
+              // Note: useUpdateTask already has optimistic updates
+              // Realtime handles cross-user sync
               toast({
                 title: 'Due date updated',
                 description: newDate
@@ -651,10 +644,8 @@ export function TaskEditDialog({
     [
       isCreateMode,
       onUpdate,
-      queryClient,
       task,
       updateTaskMutation,
-      boardId,
       toast,
       setEndDate,
     ]
@@ -966,15 +957,9 @@ export function TaskEditDialog({
         },
         {
           onSuccess: async () => {
-            console.log('Task update successful, refreshing data...');
-
-            // Update caches and refetch in background
-            invalidateTaskCaches(queryClient, boardId);
-            queryClient.refetchQueries({
-              queryKey: ['tasks', boardId],
-              type: 'active',
-            });
-
+            // Note: useUpdateTask already has optimistic updates in onMutate
+            // and proper cache updates in onSuccess, so no need to invalidate
+            // or refetch here. Realtime handles cross-user sync.
             toast({
               title: 'Task updated',
               description: 'The task has been successfully updated.',

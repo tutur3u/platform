@@ -6,7 +6,6 @@ import {
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Input } from '@tuturuuu/ui/input';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 
@@ -50,7 +49,7 @@ export function TaskLabelsMenu({
         <Tag className="h-4 w-4 text-dynamic-cyan" />
         Labels
       </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent className="w-80 overflow-hidden p-0">
+      <DropdownMenuSubContent className="w-80 p-0">
         {/* Search Input */}
         <div className="border-b p-2">
           <div className="relative">
@@ -75,7 +74,7 @@ export function TaskLabelsMenu({
             {searchQuery ? 'No labels found' : 'No labels available'}
           </div>
         ) : (
-          <ScrollArea className="max-h-[200px]">
+          <div className="max-h-[200px] overflow-auto">
             <div className="flex flex-col gap-1 p-1">
               {filteredLabels.map((label) => {
                 const active = taskLabels.some((l) => l.id === label.id);
@@ -112,7 +111,7 @@ export function TaskLabelsMenu({
                 );
               })}
             </div>
-          </ScrollArea>
+          </div>
         )}
 
         {/* Footer with count */}

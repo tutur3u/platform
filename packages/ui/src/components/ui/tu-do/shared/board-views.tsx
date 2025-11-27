@@ -1,6 +1,5 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
 import type { Workspace, WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -49,7 +48,6 @@ export function BoardViews({
   const [taskOverrides, setTaskOverrides] = useState<
     Record<string, Partial<Task>>
   >({});
-  const queryClient = useQueryClient();
   const { createTask } = useTaskDialog();
 
   // Semantic search hook
@@ -332,11 +330,10 @@ export function BoardViews({
   };
 
   const handleUpdate = async () => {
-    // Refresh both tasks and lists
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['tasks', board.id] }),
-      queryClient.invalidateQueries({ queryKey: ['task_lists', board.id] }),
-    ]);
+    // Note: We intentionally do NOT invalidate queries here.
+    // Optimistic updates handle immediate UI feedback, and realtime
+    // subscription handles cross-user sync. Invalidating would cause
+    // all tasks to flicker (disappear then reappear).
   };
 
   // Global keyboard shortcuts for all views
