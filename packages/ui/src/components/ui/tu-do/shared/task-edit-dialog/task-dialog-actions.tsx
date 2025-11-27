@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  ArrowLeft,
   Copy,
   ExternalLink,
   ListTodo,
@@ -17,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useState } from 'react';
 
 interface TaskDialogActionsProps {
@@ -30,10 +32,14 @@ interface TaskDialogActionsProps {
   boardId: string;
   pathname?: string | null;
 
+  // Navigate back info (for create mode with pending relationship)
+  navigateBackTaskName?: string | null;
+
   // Callbacks
   onClose: () => void;
   onShowDeleteDialog: () => void;
   onClearDraft: () => void;
+  onNavigateBack?: () => void;
 }
 
 export function TaskDialogActions({
@@ -43,12 +49,17 @@ export function TaskDialogActions({
   wsId,
   boardId,
   pathname,
+  navigateBackTaskName,
   onClose,
   onShowDeleteDialog,
   onClearDraft,
+  onNavigateBack,
 }: TaskDialogActionsProps) {
   const { toast } = useToast();
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+
+  // Determine if we should show the back button (create mode with a pending relationship)
+  const showBackButton = isCreateMode && onNavigateBack && navigateBackTaskName;
 
   return (
     <>
@@ -118,6 +129,26 @@ export function TaskDialogActions({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+      )}
+
+      {/* Back to related task button - only in create mode with pending relationship */}
+      {showBackButton && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              onClick={onNavigateBack}
+              title={`Back to "${navigateBackTaskName}"`}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            Back to "{navigateBackTaskName}"
+          </TooltipContent>
+        </Tooltip>
       )}
 
       {/* Close button */}

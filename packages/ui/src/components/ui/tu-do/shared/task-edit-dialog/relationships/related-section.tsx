@@ -3,7 +3,7 @@
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import * as React from 'react';
 import { ClickableTaskItem } from './components/clickable-task-item';
-import { TaskSearchPopover } from './task-search-popover';
+import { TaskRelationshipActionButtons } from './components/task-relationship-action-buttons';
 import type { RelatedSectionProps } from './types/task-relationships.types';
 
 export function RelatedSection({
@@ -15,7 +15,7 @@ export function RelatedSection({
   onAddRelated,
   onRemoveRelated,
   onNavigateToTask,
-  onCreateRelatedTask,
+  onAddRelatedTaskDialog,
 }: RelatedSectionProps) {
   const [searchOpen, setSearchOpen] = React.useState(false);
 
@@ -45,27 +45,22 @@ export function RelatedSection({
         </ScrollArea>
       )}
 
-      {/* Add related task */}
-      <TaskSearchPopover
+      {/* Add related task with dropdown */}
+      <TaskRelationshipActionButtons
         wsId={wsId}
-        excludeTaskIds={excludeIds}
-        open={searchOpen}
-        onOpenChange={setSearchOpen}
-        onSelect={(task) => {
+        excludeIds={excludeIds}
+        searchOpen={searchOpen}
+        onSearchOpenChange={setSearchOpen}
+        onAddExisting={(task) => {
           onAddRelated(task);
           setSearchOpen(false);
         }}
-        onCreateNew={
-          onCreateRelatedTask
-            ? async (name) => {
-                await onCreateRelatedTask(name);
-                setSearchOpen(false);
-              }
-            : undefined
-        }
-        placeholder="Link related task..."
-        emptyText="No available tasks"
+        onCreateNew={onAddRelatedTaskDialog}
         isSaving={isSaving}
+        buttonLabel="Link related task"
+        createNewLabel="Create new related task"
+        addExistingLabel="Add existing related task"
+        emptyText="No available tasks"
       />
 
       <p className="text-muted-foreground text-xs">

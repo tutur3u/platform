@@ -36,14 +36,16 @@ export interface TaskRelationshipsPropertiesProps {
   // Navigation
   onNavigateToTask: (taskId: string) => void;
 
-  // Subtask creation
+  // Subtask creation (opens dialog)
   onAddSubtask?: () => void;
 
-  // Task creation handlers (create new task + relationship)
-  onCreateParent?: (name: string) => Promise<void>;
-  onCreateBlockingTask?: (name: string) => Promise<void>;
-  onCreateBlockedByTask?: (name: string) => Promise<void>;
-  onCreateRelatedTask?: (name: string) => Promise<void>;
+  // Dialog-based task creation handlers (opens task creation dialog with pending relationship)
+  onAddParentTask?: () => void;
+  onAddBlockingTaskDialog?: () => void;
+  onAddBlockedByTaskDialog?: () => void;
+  onAddRelatedTaskDialog?: () => void;
+
+  // Add existing task as relationship
   onAddExistingAsSubtask?: (task: RelatedTaskInfo) => Promise<void>;
 
   // Saving state
@@ -109,7 +111,7 @@ export interface ParentSectionProps {
   onSetParent: (task: RelatedTaskInfo) => void;
   onRemoveParent: () => void;
   onNavigateToTask: (taskId: string) => void;
-  onCreateParent?: (name: string) => Promise<void>;
+  onAddParentTask?: () => void; // Opens dialog to create new parent task
 }
 
 // Props for SubtasksSection component
@@ -149,8 +151,8 @@ export interface DependenciesSectionProps {
   onAddBlockedBy: (task: RelatedTaskInfo) => void;
   onRemoveBlockedBy: (taskId: string) => void;
   onNavigateToTask: (taskId: string) => void;
-  onCreateBlockingTask?: (name: string) => Promise<void>;
-  onCreateBlockedByTask?: (name: string) => Promise<void>;
+  onAddBlockingTaskDialog?: () => void; // Opens dialog to create new blocking task
+  onAddBlockedByTaskDialog?: () => void; // Opens dialog to create new blocked-by task
 }
 
 // Props for RelatedSection component
@@ -163,5 +165,5 @@ export interface RelatedSectionProps {
   onAddRelated: (task: RelatedTaskInfo) => void;
   onRemoveRelated: (taskId: string) => void;
   onNavigateToTask: (taskId: string) => void;
-  onCreateRelatedTask?: (name: string) => Promise<void>;
+  onAddRelatedTaskDialog?: () => void; // Opens dialog to create new related task;
 }

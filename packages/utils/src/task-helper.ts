@@ -2646,7 +2646,7 @@ export async function getWorkspaceTasks(
 
   // Exclude specific task IDs
   if (options?.excludeTaskIds?.length) {
-    query = query.not('id', 'in', options.excludeTaskIds);
+    query = query.filter('id', 'not.in', `(${options.excludeTaskIds.join(',')})`);
   }
 
   // Search by name
@@ -2663,14 +2663,14 @@ export async function getWorkspaceTasks(
 
   if (error) throw error;
 
-  return (data || []).map((task: any) => ({
+  return (data || []).map((task) => ({
     id: task.id,
     name: task.name,
     display_number: task.display_number,
     completed: task.completed,
     priority: task.priority,
     board_id: task.board_id,
-    board_name: task.list?.board?.name,
+    board_name: task.list?.board?.name ?? undefined,
   }));
 }
 

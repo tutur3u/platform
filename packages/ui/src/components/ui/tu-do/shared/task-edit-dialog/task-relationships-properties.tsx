@@ -43,10 +43,10 @@ export function TaskRelationshipsProperties({
   onRemoveRelatedTask,
   onNavigateToTask,
   onAddSubtask,
-  onCreateParent,
-  onCreateBlockingTask,
-  onCreateBlockedByTask,
-  onCreateRelatedTask,
+  onAddParentTask,
+  onAddBlockingTaskDialog,
+  onAddBlockedByTaskDialog,
+  onAddRelatedTaskDialog,
   onAddExistingAsSubtask,
   isSaving,
   savingTaskId,
@@ -196,7 +196,7 @@ export function TaskRelationshipsProperties({
                 onSetParent={onSetParent}
                 onRemoveParent={onRemoveParent}
                 onNavigateToTask={onNavigateToTask}
-                onCreateParent={onCreateParent}
+                onAddParentTask={onAddParentTask}
               />
             )}
 
@@ -227,8 +227,8 @@ export function TaskRelationshipsProperties({
                 onAddBlockedBy={onAddBlockedByTask}
                 onRemoveBlockedBy={onRemoveBlockedByTask}
                 onNavigateToTask={onNavigateToTask}
-                onCreateBlockingTask={onCreateBlockingTask}
-                onCreateBlockedByTask={onCreateBlockedByTask}
+                onAddBlockingTaskDialog={onAddBlockingTaskDialog}
+                onAddBlockedByTaskDialog={onAddBlockedByTaskDialog}
               />
             )}
 
@@ -242,7 +242,7 @@ export function TaskRelationshipsProperties({
                 onAddRelated={onAddRelatedTask}
                 onRemoveRelated={onRemoveRelatedTask}
                 onNavigateToTask={onNavigateToTask}
-                onCreateRelatedTask={onCreateRelatedTask}
+                onAddRelatedTaskDialog={onAddRelatedTaskDialog}
               />
             )}
           </div>

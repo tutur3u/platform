@@ -24,6 +24,7 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
     triggerUpdate,
     openTaskById,
     createSubtask,
+    createTaskWithRelationship,
   } = useTaskDialogContext();
 
   // Store the original pathname before URL manipulation
@@ -135,6 +136,90 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
     createSubtask,
   ]);
 
+  // Open dialog to create a new task that will be the parent of the current task
+  const handleAddParentTask = useCallback(() => {
+    if (!state.task?.id || !state.boardId || !state.task?.list_id) return;
+
+    createTaskWithRelationship(
+      'parent',
+      state.task.id,
+      state.task.name,
+      state.boardId,
+      state.task.list_id,
+      state.availableLists
+    );
+  }, [
+    state.task?.id,
+    state.task?.list_id,
+    state.task?.name,
+    state.boardId,
+    state.availableLists,
+    createTaskWithRelationship,
+  ]);
+
+  // Open dialog to create a new task that the current task will block
+  const handleAddBlockingTask = useCallback(() => {
+    if (!state.task?.id || !state.boardId || !state.task?.list_id) return;
+
+    createTaskWithRelationship(
+      'blocking',
+      state.task.id,
+      state.task.name,
+      state.boardId,
+      state.task.list_id,
+      state.availableLists
+    );
+  }, [
+    state.task?.id,
+    state.task?.list_id,
+    state.task?.name,
+    state.boardId,
+    state.availableLists,
+    createTaskWithRelationship,
+  ]);
+
+  // Open dialog to create a new task that will block the current task
+  const handleAddBlockedByTask = useCallback(() => {
+    if (!state.task?.id || !state.boardId || !state.task?.list_id) return;
+
+    createTaskWithRelationship(
+      'blocked-by',
+      state.task.id,
+      state.task.name,
+      state.boardId,
+      state.task.list_id,
+      state.availableLists
+    );
+  }, [
+    state.task?.id,
+    state.task?.list_id,
+    state.task?.name,
+    state.boardId,
+    state.availableLists,
+    createTaskWithRelationship,
+  ]);
+
+  // Open dialog to create a new task that will be related to the current task
+  const handleAddRelatedTask = useCallback(() => {
+    if (!state.task?.id || !state.boardId || !state.task?.list_id) return;
+
+    createTaskWithRelationship(
+      'related',
+      state.task.id,
+      state.task.name,
+      state.boardId,
+      state.task.list_id,
+      state.availableLists
+    );
+  }, [
+    state.task?.id,
+    state.task?.list_id,
+    state.task?.name,
+    state.boardId,
+    state.availableLists,
+    createTaskWithRelationship,
+  ]);
+
   if (!state.isOpen || !state.task) {
     return null;
   }
@@ -152,11 +237,16 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       isPersonalWorkspace={isPersonalWorkspace}
       parentTaskId={state.parentTaskId}
       parentTaskName={state.parentTaskName}
+      pendingRelationship={state.pendingRelationship}
       currentUser={currentUser || undefined}
       onClose={handleClose}
       onUpdate={triggerUpdate}
       onNavigateToTask={handleNavigateToTask}
       onAddSubtask={handleAddSubtask}
+      onAddParentTask={handleAddParentTask}
+      onAddBlockingTask={handleAddBlockingTask}
+      onAddBlockedByTask={handleAddBlockedByTask}
+      onAddRelatedTask={handleAddRelatedTask}
     />
   );
 }

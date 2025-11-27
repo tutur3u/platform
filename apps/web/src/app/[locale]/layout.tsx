@@ -1,10 +1,9 @@
 import { Providers } from '@/components/providers';
 import { siteConfig } from '@/constants/configs';
 import { type Locale, routing, supportedLocales } from '@/i18n/routing';
-import '@mantine/core/styles.css';
-import '@mantine/charts/styles.css';
+import '@mantine/core/styles.layer.css';
+import '@mantine/charts/styles.layer.css';
 import '@/style/prosemirror.css';
-import '@/style/mantine-theme-override.css';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';

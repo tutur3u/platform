@@ -1,14 +1,17 @@
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { TaskFilters } from '@tuturuuu/ui/tu-do/boards/boardId/task-filter';
-import { useTaskDialogContext } from '../providers/task-dialog-provider';
+import {
+  type PendingRelationshipType,
+  useTaskDialogContext,
+} from '../providers/task-dialog-provider';
 
 /**
  * Hook to open and manage the centralized task dialog
  *
  * Usage:
  * ```tsx
- * const { openTask, createTask, createSubtask, closeDialog, onUpdate, onClose } = useTaskDialog();
+ * const { openTask, createTask, createSubtask, createTaskWithRelationship, closeDialog, onUpdate, onClose } = useTaskDialog();
  *
  * // Open existing task for editing
  * openTask(task, boardId, availableLists);
@@ -18,6 +21,9 @@ import { useTaskDialogContext } from '../providers/task-dialog-provider';
  *
  * // Create subtask (child of existing task)
  * createSubtask(parentTaskId, boardId, listId, availableLists);
+ *
+ * // Create task with any relationship type
+ * createTaskWithRelationship('parent', relatedTaskId, relatedTaskName, boardId, listId, availableLists);
  *
  * // Register an update callback
  * onUpdate(() => {
@@ -51,6 +57,14 @@ export function useTaskDialog(): {
     listId: string,
     availableLists?: TaskList[]
   ) => void;
+  createTaskWithRelationship: (
+    relationshipType: PendingRelationshipType,
+    relatedTaskId: string,
+    relatedTaskName: string,
+    boardId: string,
+    listId: string,
+    availableLists?: TaskList[]
+  ) => void;
   closeDialog: () => void;
   onUpdate: (callback: () => void) => void;
   onClose: (callback: () => void) => void;
@@ -60,6 +74,7 @@ export function useTaskDialog(): {
     openTaskById,
     createTask,
     createSubtask,
+    createTaskWithRelationship,
     closeDialog,
     onUpdate,
     onClose,
@@ -70,6 +85,7 @@ export function useTaskDialog(): {
     openTaskById,
     createTask,
     createSubtask,
+    createTaskWithRelationship,
     closeDialog,
     onUpdate,
     onClose,

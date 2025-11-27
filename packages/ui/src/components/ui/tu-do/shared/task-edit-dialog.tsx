@@ -58,6 +58,14 @@ import { useEditorCommands } from './task-edit-dialog/hooks/use-editor-commands'
 import { useTaskData } from './task-edit-dialog/hooks/use-task-data';
 import { useTaskDependencies } from './task-edit-dialog/hooks/use-task-dependencies';
 import { useTaskFormState } from './task-edit-dialog/hooks/use-task-form-state';
+
+// Re-export dialog header utilities for external use
+export {
+  type DialogHeaderInfo,
+  type PendingRelationship,
+  type PendingRelationshipType,
+  getTaskDialogHeaderInfo,
+} from './task-edit-dialog/components/task-dialog-header';
 import { useTaskMutations } from './task-edit-dialog/hooks/use-task-mutations';
 import { useTaskRealtimeSync } from './task-edit-dialog/hooks/use-task-realtime-sync';
 import { useTaskRelationships } from './task-edit-dialog/hooks/use-task-relationships';
@@ -88,6 +96,11 @@ export interface TaskEditDialogProps {
   isPersonalWorkspace?: boolean;
   parentTaskId?: string; // For creating subtasks - will set parent relationship on save
   parentTaskName?: string; // Name of parent task when creating subtasks
+  pendingRelationship?: {
+    type: 'subtask' | 'parent' | 'blocking' | 'blocked-by' | 'related';
+    relatedTaskId: string;
+    relatedTaskName: string;
+  };
   currentUser?: {
     id: string;
     display_name?: string;
@@ -98,6 +111,10 @@ export interface TaskEditDialogProps {
   onUpdate: () => void;
   onNavigateToTask?: (taskId: string) => Promise<void>;
   onAddSubtask?: () => void;
+  onAddParentTask?: () => void;
+  onAddBlockingTask?: () => void;
+  onAddBlockedByTask?: () => void;
+  onAddRelatedTask?: () => void;
 }
 
 export function TaskEditDialog({
@@ -112,11 +129,16 @@ export function TaskEditDialog({
   isPersonalWorkspace = false,
   parentTaskId,
   parentTaskName,
+  pendingRelationship,
   currentUser: propsCurrentUser,
   onClose,
   onUpdate,
   onNavigateToTask,
   onAddSubtask,
+  onAddParentTask,
+  onAddBlockingTask,
+  onAddBlockedByTask,
+  onAddRelatedTask,
 }: TaskEditDialogProps) {
   const isCreateMode = mode === 'create';
   const pathname = usePathname();
@@ -605,6 +627,7 @@ export function TaskEditDialog({
     taskId: task?.id,
     boardId,
     wsId,
+    listId: task?.list_id,
     isCreateMode,
     onUpdate,
   });
@@ -929,6 +952,70 @@ export function TaskEditDialog({
           });
         }
 
+        // Handle pending relationships (parent, blocking, blocked-by, related)
+        if (pendingRelationship) {
+          try {
+            const { type, relatedTaskId } = pendingRelationship;
+            let relationshipData:
+              | {
+                  source_task_id: string;
+                  target_task_id: string;
+                  type: 'parent_child' | 'blocks' | 'related';
+                }
+              | undefined;
+
+            switch (type) {
+              case 'parent':
+                // New task is the parent of the related task
+                relationshipData = {
+                  source_task_id: newTask.id,
+                  target_task_id: relatedTaskId,
+                  type: 'parent_child',
+                };
+                break;
+              case 'blocking':
+                // New task blocks the related task (related task is blocked by new task)
+                relationshipData = {
+                  source_task_id: relatedTaskId,
+                  target_task_id: newTask.id,
+                  type: 'blocks',
+                };
+                break;
+              case 'blocked-by':
+                // New task is blocked by the related task (new task blocks related task)
+                relationshipData = {
+                  source_task_id: newTask.id,
+                  target_task_id: relatedTaskId,
+                  type: 'blocks',
+                };
+                break;
+              case 'related':
+                relationshipData = {
+                  source_task_id: relatedTaskId,
+                  target_task_id: newTask.id,
+                  type: 'related',
+                };
+                break;
+            }
+
+            if (relationshipData) {
+              await createTaskRelationship(supabase, relationshipData);
+              // Invalidate relationship caches for both tasks
+              await queryClient.invalidateQueries({
+                queryKey: ['task-relationships', relatedTaskId],
+              });
+              await queryClient.invalidateQueries({
+                queryKey: ['task-relationships', newTask.id],
+              });
+            }
+          } catch (relationshipError) {
+            console.error(
+              'Failed to create pending relationship:',
+              relationshipError
+            );
+          }
+        }
+
         if (selectedLabels.length > 0) {
           await supabase.from('task_labels').insert(
             selectedLabels.map((l) => ({
@@ -1200,6 +1287,22 @@ export function TaskEditDialog({
     boardId,
     queryClient,
   ]);
+
+  // Navigate back to the related task (for create mode with pending relationship)
+  const handleNavigateBack = useCallback(async () => {
+    // Get the task ID to navigate back to
+    const taskIdToNavigateTo =
+      pendingRelationship?.relatedTaskId ?? parentTaskId;
+
+    if (!taskIdToNavigateTo || !onNavigateToTask) {
+      // If no related task or navigation function, just close
+      onClose();
+      return;
+    }
+
+    // Navigate to the related task
+    await onNavigateToTask(taskIdToNavigateTo);
+  }, [pendingRelationship?.relatedTaskId, parentTaskId, onNavigateToTask, onClose]);
 
   const handleDialogOpenChange = useCallback(
     (open: boolean) => {
@@ -2192,6 +2295,7 @@ export function TaskEditDialog({
               taskId={task?.id}
               parentTaskId={parentTaskId}
               parentTaskName={parentTaskName}
+              pendingRelationship={pendingRelationship}
               user={
                 user
                   ? {
@@ -2214,6 +2318,11 @@ export function TaskEditDialog({
               setShowDeleteConfirm={setShowDeleteConfirm}
               clearDraftState={clearDraftState}
               handleSave={handleSave}
+              onNavigateBack={
+                isCreateMode && (pendingRelationship || parentTaskId)
+                  ? handleNavigateBack
+                  : undefined
+              }
             />
 
             {/* Main editing area with improved spacing */}
@@ -2295,6 +2404,10 @@ export function TaskEditDialog({
                     }
                   }}
                   onAddSubtask={onAddSubtask}
+                  onAddParentTask={onAddParentTask}
+                  onAddBlockingTaskDialog={onAddBlockingTask}
+                  onAddBlockedByTaskDialog={onAddBlockedByTask}
+                  onAddRelatedTaskDialog={onAddRelatedTask}
                   onAddExistingAsSubtask={addChildTask}
                   isSaving={!!savingRelationship}
                   savingTaskId={savingRelationship}

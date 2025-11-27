@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { ClickableTaskItem } from './components/clickable-task-item';
-import { TaskSearchPopover } from './task-search-popover';
+import { TaskRelationshipActionButtons } from './components/task-relationship-action-buttons';
 import type { ParentSectionProps } from './types/task-relationships.types';
 
 export function ParentSection({
@@ -15,9 +15,14 @@ export function ParentSection({
   onSetParent,
   onRemoveParent,
   onNavigateToTask,
-  onCreateParent,
+  onAddParentTask,
 }: ParentSectionProps) {
   const [searchOpen, setSearchOpen] = React.useState(false);
+
+  const excludeIds = React.useMemo(() => {
+    const ids = taskId ? [taskId, ...childTaskIds] : childTaskIds;
+    return ids;
+  }, [taskId, childTaskIds]);
 
   return (
     <div className="space-y-3">
@@ -30,26 +35,21 @@ export function ParentSection({
           isRemoving={isSaving && savingTaskId === parentTask.id}
         />
       ) : (
-        <TaskSearchPopover
+        <TaskRelationshipActionButtons
           wsId={wsId}
-          excludeTaskIds={taskId ? [taskId, ...childTaskIds] : childTaskIds}
-          open={searchOpen}
-          onOpenChange={setSearchOpen}
-          onSelect={(task) => {
+          excludeIds={excludeIds}
+          searchOpen={searchOpen}
+          onSearchOpenChange={setSearchOpen}
+          onAddExisting={(task) => {
             onSetParent(task);
             setSearchOpen(false);
           }}
-          onCreateNew={
-            onCreateParent
-              ? async (name) => {
-                  await onCreateParent(name);
-                  setSearchOpen(false);
-                }
-              : undefined
-          }
-          placeholder="Set parent task..."
-          emptyText="No available parent tasks"
+          onCreateNew={onAddParentTask}
           isSaving={isSaving}
+          buttonLabel="Set parent task"
+          createNewLabel="Create new parent task"
+          addExistingLabel="Add existing task as parent"
+          emptyText="No available parent tasks"
         />
       )}
 

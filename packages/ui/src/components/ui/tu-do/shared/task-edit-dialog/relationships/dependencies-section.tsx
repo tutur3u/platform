@@ -4,7 +4,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import * as React from 'react';
 import { ClickableTaskItem } from './components/clickable-task-item';
-import { TaskSearchPopover } from './task-search-popover';
+import { TaskRelationshipActionButtons } from './components/task-relationship-action-buttons';
 import type {
   DependenciesSectionProps,
   DependencySubTab,
@@ -22,8 +22,8 @@ export function DependenciesSection({
   onAddBlockedBy,
   onRemoveBlockedBy,
   onNavigateToTask,
-  onCreateBlockingTask,
-  onCreateBlockedByTask,
+  onAddBlockingTaskDialog,
+  onAddBlockedByTaskDialog,
 }: DependenciesSectionProps) {
   const [subTab, setSubTab] = React.useState<DependencySubTab>('blocks');
   const [searchOpen, setSearchOpen] = React.useState(false);
@@ -41,7 +41,7 @@ export function DependenciesSection({
   const handleRemove =
     subTab === 'blocks' ? onRemoveBlocking : onRemoveBlockedBy;
   const handleCreateNew =
-    subTab === 'blocks' ? onCreateBlockingTask : onCreateBlockedByTask;
+    subTab === 'blocks' ? onAddBlockingTaskDialog : onAddBlockedByTaskDialog;
 
   return (
     <div className="space-y-3">
@@ -83,31 +83,32 @@ export function DependenciesSection({
         </ScrollArea>
       )}
 
-      {/* Add task */}
-      <TaskSearchPopover
+      {/* Add task with dropdown */}
+      <TaskRelationshipActionButtons
         wsId={wsId}
-        excludeTaskIds={allExcludeIds}
-        open={searchOpen}
-        onOpenChange={setSearchOpen}
-        onSelect={(task) => {
+        excludeIds={allExcludeIds}
+        searchOpen={searchOpen}
+        onSearchOpenChange={setSearchOpen}
+        onAddExisting={(task) => {
           handleAdd(task);
           setSearchOpen(false);
         }}
-        onCreateNew={
-          handleCreateNew
-            ? async (name) => {
-                await handleCreateNew(name);
-                setSearchOpen(false);
-              }
-            : undefined
+        onCreateNew={handleCreateNew}
+        isSaving={isSaving}
+        buttonLabel={
+          subTab === 'blocks' ? 'Add task this blocks' : 'Add blocking task'
         }
-        placeholder={
+        createNewLabel={
           subTab === 'blocks'
-            ? 'Add task this blocks...'
-            : 'Add blocking task...'
+            ? 'Create new task this blocks'
+            : 'Create new blocking task'
+        }
+        addExistingLabel={
+          subTab === 'blocks'
+            ? 'Add existing task this blocks'
+            : 'Add existing blocking task'
         }
         emptyText="No available tasks"
-        isSaving={isSaving}
       />
 
       <p className="text-muted-foreground text-xs">
