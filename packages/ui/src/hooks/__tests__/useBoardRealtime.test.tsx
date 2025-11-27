@@ -991,9 +991,10 @@ describe('useBoardRealtime', () => {
 
   describe('INSERT event with existing task', () => {
     it('should not duplicate task if already exists in cache', async () => {
-      queryClient.setQueryData(['tasks', 'board-1'], [
-        mockTaskWithEmptyRelations,
-      ]);
+      queryClient.setQueryData(
+        ['tasks', 'board-1'],
+        [mockTaskWithEmptyRelations]
+      );
 
       renderHook(
         () =>
