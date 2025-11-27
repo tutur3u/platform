@@ -128,7 +128,9 @@ describe('TaskEstimationMenu Utilities', () => {
         extended: false,
         allowZero: false,
       });
-      const labels = indices.map((idx) => mapEstimationPoints(idx, 'fibonacci'));
+      const labels = indices.map((idx) =>
+        mapEstimationPoints(idx, 'fibonacci')
+      );
       expect(labels).toEqual(['1', '2', '3', '5', '8']);
     });
 
