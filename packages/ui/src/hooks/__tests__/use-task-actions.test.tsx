@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTaskActions } from '../use-task-actions';
 
@@ -47,6 +47,7 @@ describe('useTaskActions', () => {
     priority: null,
     estimation_points: null,
     end_date: null,
+    display_number: 1,
   } as Task;
 
   const mockCompletionList: TaskList = {
@@ -72,6 +73,11 @@ describe('useTaskActions', () => {
       board_id: 'board-1',
       status: 'open',
       created_at: '2025-01-01T00:00:00Z',
+      archived: false,
+      deleted: false,
+      creator_id: 'user-1',
+      color: null,
+      position: 0,
     } as TaskList,
     mockCompletionList,
     mockClosedList,
@@ -89,14 +95,14 @@ describe('useTaskActions', () => {
       },
     });
 
-    // Setup mock Supabase client
+    // Setup mock Supabase client with consistent chaining
     mockSupabase = {
       from: vi.fn(() => mockSupabase),
       update: vi.fn(() => mockSupabase),
       delete: vi.fn(() => mockSupabase),
       select: vi.fn(() => mockSupabase),
       eq: vi.fn(() => mockSupabase),
-      in: vi.fn(() => Promise.resolve({ error: null, data: [], count: 0 })),
+      in: vi.fn(() => mockSupabase),
     };
 
     const { createClient } = await import('@tuturuuu/supabase/next/client');
@@ -380,7 +386,10 @@ describe('useTaskActions', () => {
   describe('handleDelete', () => {
     it('should soft delete single task', async () => {
       queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
-      mockSupabase.in.mockResolvedValueOnce({ error: null });
+      // Configure the .in() call to resolve to a success response
+      mockSupabase.in = vi.fn(() =>
+        Promise.resolve({ error: null, data: [], count: 1 })
+      );
 
       const setIsLoading = vi.fn();
       const setDeleteDialogOpen = vi.fn();
@@ -418,7 +427,10 @@ describe('useTaskActions', () => {
     it('should handle bulk delete of multiple tasks', async () => {
       const task2: Task = { ...mockTask, id: 'task-2', name: 'Task 2' };
       queryClient.setQueryData(['tasks', 'board-1'], [mockTask, task2]);
-      mockSupabase.in.mockResolvedValueOnce({ error: null });
+      // Configure the .in() call to resolve to a success response
+      mockSupabase.in = vi.fn(() =>
+        Promise.resolve({ error: null, data: [], count: 2 })
+      );
 
       const selectedTasks = new Set(['task-1', 'task-2']);
       const setIsLoading = vi.fn();
@@ -490,7 +502,10 @@ describe('useTaskActions', () => {
     it('should handle bulk due date update', async () => {
       const task2: Task = { ...mockTask, id: 'task-2', name: 'Task 2' };
       queryClient.setQueryData(['tasks', 'board-1'], [mockTask, task2]);
-      mockSupabase.in.mockResolvedValueOnce({ error: null, count: 2 });
+      // Configure the .in() call to resolve to a success response
+      mockSupabase.in = vi.fn(() =>
+        Promise.resolve({ error: null, data: [], count: 2 })
+      );
 
       const selectedTasks = new Set(['task-1', 'task-2']);
       const setIsLoading = vi.fn();
@@ -591,7 +606,10 @@ describe('useTaskActions', () => {
     it('should handle bulk priority update', async () => {
       const task2: Task = { ...mockTask, id: 'task-2', name: 'Task 2' };
       queryClient.setQueryData(['tasks', 'board-1'], [mockTask, task2]);
-      mockSupabase.in.mockResolvedValueOnce({ error: null, count: 2 });
+      // Configure the .in() call to resolve to a success response
+      mockSupabase.in = vi.fn(() =>
+        Promise.resolve({ error: null, data: [], count: 2 })
+      );
 
       const selectedTasks = new Set(['task-1', 'task-2']);
       const setIsLoading = vi.fn();
@@ -693,7 +711,10 @@ describe('useTaskActions', () => {
     it('should handle bulk estimation update', async () => {
       const task2: Task = { ...mockTask, id: 'task-2', name: 'Task 2' };
       queryClient.setQueryData(['tasks', 'board-1'], [mockTask, task2]);
-      mockSupabase.in.mockResolvedValueOnce({ error: null, count: 2 });
+      // Configure the .in() call to resolve to a success response
+      mockSupabase.in = vi.fn(() =>
+        Promise.resolve({ error: null, data: [], count: 2 })
+      );
 
       const selectedTasks = new Set(['task-1', 'task-2']);
       const setEstimationSaving = vi.fn();
@@ -726,12 +747,66 @@ describe('useTaskActions', () => {
         { count: 'exact' }
       );
     });
+
+    it('should rollback estimation points on update failure', async () => {
+      const taskWithEstimation = { ...mockTask, estimation_points: 3 };
+      queryClient.setQueryData(['tasks', 'board-1'], [taskWithEstimation]);
+
+      // Mock the mutation to fail
+      mockUpdateTaskMutation.mutateAsync = vi
+        .fn()
+        .mockRejectedValueOnce(new Error('Database connection failed'));
+
+      const setEstimationSaving = vi.fn();
+
+      const { result } = renderHook(
+        () =>
+          useTaskActions({
+            task: taskWithEstimation,
+            boardId: 'board-1',
+            targetCompletionList: mockCompletionList,
+            targetClosedList: mockClosedList,
+            availableLists: mockAvailableLists,
+            onUpdate: vi.fn(),
+            setIsLoading: vi.fn(),
+            setMenuOpen: vi.fn(),
+            setEstimationSaving,
+          }),
+        { wrapper }
+      );
+
+      await act(async () => {
+        await result.current.updateEstimationPoints(8);
+      });
+
+      // Verify the cache was rolled back to original value
+      await waitFor(() => {
+        const cachedTasks = queryClient.getQueryData<Task[]>([
+          'tasks',
+          'board-1',
+        ]);
+        expect(cachedTasks).toBeDefined();
+        expect(cachedTasks?.[0]?.estimation_points).toBe(3);
+      });
+
+      // Verify error toast was shown
+      expect(mockToast.error).toHaveBeenCalledWith('Failed to update estimation', {
+        description: 'Database connection failed',
+      });
+
+      // Verify loading states were called correctly
+      expect(setEstimationSaving).toHaveBeenCalledWith(true);
+      expect(setEstimationSaving).toHaveBeenCalledWith(false);
+    });
   });
 
   describe('handleToggleAssignee', () => {
     it('should add assignee to task', async () => {
       queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
-      mockSupabase.in.mockResolvedValueOnce({ error: null });
+      // Configure the .in() call to resolve to a success response
+      mockSupabase.in = vi.fn(() =>
+        Promise.resolve({ error: null, data: [], count: 1 })
+      );
 
       const setIsLoading = vi.fn();
 
@@ -795,6 +870,115 @@ describe('useTaskActions', () => {
       await waitFor(() => {
         expect(mockSupabase.delete).toHaveBeenCalled();
       });
+    });
+
+    it('should rollback on error when adding assignee fails', async () => {
+      queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
+
+      // Mock insert to fail (simulating add assignee flow)
+      mockSupabase.insert = vi.fn(() =>
+        Promise.resolve({ error: new Error('Database write failed'), data: null })
+      );
+
+      const setIsLoading = vi.fn();
+      const setMenuOpen = vi.fn();
+      const onUpdate = vi.fn();
+
+      const { result } = renderHook(
+        () =>
+          useTaskActions({
+            task: mockTask,
+            boardId: 'board-1',
+            targetCompletionList: mockCompletionList,
+            targetClosedList: mockClosedList,
+            availableLists: mockAvailableLists,
+            onUpdate,
+            setIsLoading,
+            setMenuOpen,
+          }),
+        { wrapper }
+      );
+
+      await act(async () => {
+        await result.current.handleToggleAssignee('user-1');
+      });
+
+      // Verify error toast was shown
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith('Error', {
+          description: 'Failed to update assignee. Please try again.',
+        });
+      });
+
+      // Verify cache was rolled back to original state
+      const cachedTasks = queryClient.getQueryData<Task[]>([
+        'tasks',
+        'board-1',
+      ]);
+      expect(cachedTasks).toEqual([mockTask]);
+      expect(cachedTasks?.[0]?.assignees).toEqual([]);
+
+      // Verify loading state was managed correctly
+      expect(setIsLoading).toHaveBeenCalledWith(true);
+      expect(setIsLoading).toHaveBeenCalledWith(false);
+    });
+
+    it('should rollback on error when removing assignee fails', async () => {
+      const taskWithAssignee = {
+        ...mockTask,
+        assignees: [
+          { id: 'user-1', display_name: 'User 1', email: 'user1@test.com' },
+        ],
+      };
+      queryClient.setQueryData(['tasks', 'board-1'], [taskWithAssignee]);
+
+      // Mock delete to fail (simulating remove assignee flow)
+      mockSupabase.in = vi.fn(() =>
+        Promise.resolve({ error: new Error('Database delete failed'), data: null })
+      );
+
+      const setIsLoading = vi.fn();
+      const setMenuOpen = vi.fn();
+      const onUpdate = vi.fn();
+
+      const { result } = renderHook(
+        () =>
+          useTaskActions({
+            task: taskWithAssignee,
+            boardId: 'board-1',
+            targetCompletionList: mockCompletionList,
+            targetClosedList: mockClosedList,
+            availableLists: mockAvailableLists,
+            onUpdate,
+            setIsLoading,
+            setMenuOpen,
+          }),
+        { wrapper }
+      );
+
+      await act(async () => {
+        await result.current.handleToggleAssignee('user-1');
+      });
+
+      // Verify error toast was shown
+      await waitFor(() => {
+        expect(mockToast.error).toHaveBeenCalledWith('Error', {
+          description: 'Failed to update assignee. Please try again.',
+        });
+      });
+
+      // Verify cache was rolled back to original state with assignee still present
+      const cachedTasks = queryClient.getQueryData<Task[]>([
+        'tasks',
+        'board-1',
+      ]);
+      expect(cachedTasks).toEqual([taskWithAssignee]);
+      expect(cachedTasks?.[0]?.assignees).toHaveLength(1);
+      expect(cachedTasks?.[0]?.assignees?.[0]?.id).toBe('user-1');
+
+      // Verify loading state was managed correctly
+      expect(setIsLoading).toHaveBeenCalledWith(true);
+      expect(setIsLoading).toHaveBeenCalledWith(false);
     });
   });
 
