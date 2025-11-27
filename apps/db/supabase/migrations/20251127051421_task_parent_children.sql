@@ -7,7 +7,7 @@
 -- 4. related: Related tasks (bidirectional relationship)
 
 -- Create enum for relationship types
-CREATE TYPE IF NOT EXISTS task_relationship_type AS ENUM (
+CREATE TYPE task_relationship_type AS ENUM (
   'parent_child',  -- Source is parent, target is child (sub-task)
   'blocks',        -- Source blocks target (source must complete first)
   'related'        -- Source and target are related (informational)
