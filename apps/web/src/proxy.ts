@@ -1,56 +1,14 @@
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
-import { DEV_MODE } from './constants/common';
 import { Locale, defaultLocale, supportedLocales } from './i18n/routing';
 import { match } from '@formatjs/intl-localematcher';
 import { updateSession } from '@ncthub/supabase/next/proxy';
 import { SupabaseUser } from '@ncthub/supabase/next/user';
-import { Ratelimit } from '@upstash/ratelimit';
-import { ipAddress } from '@vercel/edge';
-import { kv } from '@vercel/kv';
 import Negotiator from 'negotiator';
 import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-// Strict limit for the OTP endpoint
-const otpRateLimit = new Ratelimit({
-  redis: kv,
-  limiter: Ratelimit.slidingWindow(3, '60 s'), // 2 requests per 60 seconds
-});
-
-// A limit for all other API routes
-const apiRateLimit = new Ratelimit({
-  redis: kv,
-  limiter: Ratelimit.slidingWindow(5, '10 s'),
-});
-
 export async function proxy(req: NextRequest): Promise<NextResponse> {
-  const pathname = req.nextUrl.pathname;
-
-  // Apply the correct rate limiter based on the path
-  if (!DEV_MODE && pathname.startsWith('/api/')) {
-    const ip = ipAddress(req) || '127.0.0.1';
-    let rateResult;
-    if (pathname.startsWith('/api/auth/otp/send')) {
-      rateResult = await otpRateLimit.limit(ip);
-    } else {
-      rateResult = await apiRateLimit.limit(ip);
-    }
-
-    const { success, limit, reset, remaining } = rateResult;
-
-    if (!success) {
-      return new NextResponse('Too many requests. Please try again later.', {
-        status: 429,
-        headers: {
-          'X-RateLimit-Limit': limit.toString(),
-          'X-RateLimit-Remaining': remaining.toString(),
-          'X-RateLimit-Reset': reset.toString(),
-        },
-      });
-    }
-  }
-
   // Make sure user session is always refreshed
   const { res, user } = await updateSession(req);
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { guestLogin } from './actions';
 import AvailabilityPlanner from './availability-planner';
 import { useTimeBlocking } from './time-blocking-provider';
 import { BASE_URL } from '@/constants/common';
@@ -30,9 +31,10 @@ import { useForm } from '@ncthub/ui/hooks/use-form';
 import { Input } from '@ncthub/ui/input';
 import { zodResolver } from '@ncthub/ui/resolvers';
 import { Separator } from '@ncthub/ui/separator';
+import { useMutation } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { z } from 'zod';
 
 const formSchema = z.object({
@@ -59,7 +61,50 @@ export default function PlanLogin({
 
   const { user, displayMode, setUser, setDisplayMode } = useTimeBlocking();
 
-  const [loading, setLoading] = useState(false);
+  const loginMutation = useMutation({
+    mutationFn: async (values: z.infer<typeof formSchema>) => {
+      if (!plan.id) throw new Error('Plan ID is required');
+      return guestLogin(plan.id, values.guestName, values.guestPassword || '');
+    },
+    onSuccess: (data, values) => {
+      if (!plan.id) return;
+
+      // Save credentials to localStorage if checkbox is checked
+      if (values.saveCredentials) {
+        try {
+          localStorage.setItem(
+            `${GUEST_CREDENTIALS_KEY_PREFIX}${plan.id}`,
+            JSON.stringify({
+              name: values.guestName,
+              password: values.guestPassword,
+            })
+          );
+        } catch (error) {
+          console.error('Failed to save credentials', error);
+        }
+      } else {
+        // If checkbox is unchecked, clear any previously saved credentials
+        try {
+          localStorage.removeItem(`${GUEST_CREDENTIALS_KEY_PREFIX}${plan.id}`);
+        } catch (error) {
+          console.error('Failed to remove credentials', error);
+        }
+      }
+
+      setUser(plan.id, data.user);
+      setDisplayMode();
+    },
+    onError: (error) => {
+      console.error('Login error:', error);
+      form.setValue('guestPassword', '');
+      form.setError('guestPassword', {
+        message:
+          error instanceof Error
+            ? error.message
+            : 'An error occurred during login',
+      });
+    },
+  });
 
   // Try to load saved credentials from localStorage on component mount
   useEffect(() => {
@@ -99,54 +144,7 @@ export default function PlanLogin({
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!plan.id) return;
-
-    setLoading(true);
-
-    const res = await fetch(`/api/meet-together/plans/${plan.id}/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: values.guestName,
-        password: values.guestPassword,
-      }),
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-
-      // Save credentials to localStorage if checkbox is checked
-      if (values.saveCredentials) {
-        try {
-          localStorage.setItem(
-            `${GUEST_CREDENTIALS_KEY_PREFIX}${plan.id}`,
-            JSON.stringify({
-              name: values.guestName,
-              password: values.guestPassword,
-            })
-          );
-        } catch (error) {
-          console.error('Failed to save credentials', error);
-        }
-      } else {
-        // If checkbox is unchecked, clear any previously saved credentials
-        try {
-          localStorage.removeItem(`${GUEST_CREDENTIALS_KEY_PREFIX}${plan.id}`);
-        } catch (error) {
-          console.error('Failed to remove credentials', error);
-        }
-      }
-
-      setUser(plan.id, data.user);
-      setLoading(false);
-      setDisplayMode();
-    } else {
-      const data = await res.json();
-      form.setValue('guestPassword', '');
-      form.setError('guestPassword', { message: data.message });
-      setLoading(false);
-    }
+    loginMutation.mutate(values);
   }
 
   const handleLogout = () => {
@@ -171,7 +169,7 @@ export default function PlanLogin({
       open={!!displayMode}
       onOpenChange={(open) => {
         form.reset();
-        setLoading(false);
+        loginMutation.reset();
         setDisplayMode((prevMode) =>
           open ? prevMode || 'account-switcher' : undefined
         );
@@ -206,9 +204,9 @@ export default function PlanLogin({
           <div className="grid gap-2">
             {user?.is_guest ? (
               <>
-                <div className="mb-2 text-sm text-muted-foreground">
+                <div className="text-muted-foreground mb-2 text-sm">
                   {t('meet-together-plan-details.logged_in_as')}{' '}
-                  <span className="font-semibold text-foreground">
+                  <span className="text-foreground font-semibold">
                     {user.display_name}
                   </span>
                   .
@@ -273,7 +271,7 @@ export default function PlanLogin({
                     <FormControl>
                       <Input
                         placeholder="Tuturuuu"
-                        disabled={loading}
+                        disabled={loginMutation.isPending}
                         autoComplete="off"
                         autoCorrect="off"
                         autoFocus
@@ -299,7 +297,7 @@ export default function PlanLogin({
                       <Input
                         placeholder="••••••••"
                         type="password"
-                        disabled={missingFields || loading}
+                        disabled={missingFields || loginMutation.isPending}
                         autoComplete="off"
                         autoCorrect="off"
                         {...field}
@@ -317,12 +315,12 @@ export default function PlanLogin({
                 control={form.control}
                 name="saveCredentials"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-y-0 space-x-3">
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                     <FormControl>
                       <Checkbox
                         checked={field.value}
                         onCheckedChange={field.onChange}
-                        disabled={loading}
+                        disabled={loginMutation.isPending}
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
@@ -341,9 +339,11 @@ export default function PlanLogin({
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={missingFields || loading}
+                  disabled={missingFields || loginMutation.isPending}
                 >
-                  {loading ? t('common.processing') : t('common.continue')}
+                  {loginMutation.isPending
+                    ? t('common.processing')
+                    : t('common.continue')}
                 </Button>
               </DialogFooter>
             </form>
