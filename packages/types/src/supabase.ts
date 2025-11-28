@@ -11601,6 +11601,7 @@ export type Database = {
           name: string | null;
           price: number | null;
           recurring_interval: string | null;
+          tier: Database['public']['Enums']['workspace_product_tier'] | null;
         };
         Insert: {
           created_at?: string;
@@ -11609,6 +11610,7 @@ export type Database = {
           name?: string | null;
           price?: number | null;
           recurring_interval?: string | null;
+          tier?: Database['public']['Enums']['workspace_product_tier'] | null;
         };
         Update: {
           created_at?: string;
@@ -11617,6 +11619,7 @@ export type Database = {
           name?: string | null;
           price?: number | null;
           recurring_interval?: string | null;
+          tier?: Database['public']['Enums']['workspace_product_tier'] | null;
         };
         Relationships: [];
       };
@@ -15522,6 +15525,7 @@ export type Database = {
         | 'gemini-2.5-pro'
         | 'gemini-2.0-flash-lite'
         | 'gemini-2.5-flash-lite';
+      workspace_product_tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
       workspace_role_permission:
         | 'view_infrastructure'
         | 'manage_workspace_secrets'
@@ -15801,6 +15805,7 @@ export const Constants = {
         'gemini-2.0-flash-lite',
         'gemini-2.5-flash-lite',
       ],
+      workspace_product_tier: ['FREE', 'PLUS', 'PRO', 'ENTERPRISE'],
       workspace_role_permission: [
         'view_infrastructure',
         'manage_workspace_secrets',

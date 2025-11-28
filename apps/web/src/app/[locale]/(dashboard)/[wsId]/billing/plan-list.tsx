@@ -11,6 +11,7 @@ import {
 } from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/payment/polar';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import { Constants, type WorkspaceProductTier } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -112,6 +113,20 @@ export function PlanList({
 
       await Promise.allSettled(
         products.map(async (product) => {
+          // Extract product_tier from metadata
+          const validTiers = Constants.public.Enums.workspace_product_tier;
+          const metadataProductTier = product.metadata?.product_tier;
+
+          // Only set tier if it matches valid enum values
+          const tier =
+            metadataProductTier &&
+            typeof metadataProductTier === 'string' &&
+            validTiers.includes(
+              metadataProductTier.toUpperCase() as WorkspaceProductTier
+            )
+              ? (metadataProductTier.toUpperCase() as WorkspaceProductTier)
+              : null;
+
           const { data, error } = await supabase
             .from('workspace_subscription_products')
             .upsert(
@@ -126,6 +141,7 @@ export function PlanList({
                       : 0
                     : 0,
                 recurring_interval: product.recurringInterval,
+                tier,
               },
               {
                 onConflict: 'id',

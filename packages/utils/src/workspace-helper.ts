@@ -2,7 +2,11 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { PermissionId, Workspace } from '@tuturuuu/types';
+import type {
+  PermissionId,
+  Workspace,
+  WorkspaceProductTier,
+} from '@tuturuuu/types';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { notFound, redirect } from 'next/navigation';
@@ -500,4 +504,41 @@ export async function isPersonalWorkspace(
   }
 
   return data?.personal === true;
+}
+
+/**
+ * Get the subscription tier for a workspace
+ * @param workspaceId - The workspace ID to get the tier for
+ * @returns The workspace tier ('FREE', 'PLUS', 'PRO', 'ENTERPRISE') or null if no subscription exists
+ */
+export async function getWorkspaceTier(
+  workspaceId: string
+): Promise<WorkspaceProductTier | null> {
+  const supabase = await createClient();
+
+  const resolvedWorkspaceId = resolveWorkspaceId(workspaceId);
+
+  const { data, error } = await supabase
+    .from('workspace_subscription')
+    .select('workspace_subscription_products(tier)')
+    .eq('ws_id', resolvedWorkspaceId)
+    .maybeSingle();
+
+  if (error) {
+    logWorkspaceError('Error fetching workspace tier', error, {
+      workspaceId,
+      resolvedWorkspaceId,
+    });
+    return null;
+  }
+
+  if (!data?.workspace_subscription_products) {
+    logWorkspaceError('No subscription found for workspace', null, {
+      workspaceId,
+      resolvedWorkspaceId,
+    });
+    return null;
+  }
+
+  return data.workspace_subscription_products.tier;
 }
