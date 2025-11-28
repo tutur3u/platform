@@ -8550,6 +8550,7 @@ export type Database = {
           handle: string | null;
           id: string;
           services: Database['public']['Enums']['platform_service'][];
+          task_auto_assign_to_self: boolean | null;
           timezone: string | null;
         };
         Insert: {
@@ -8562,6 +8563,7 @@ export type Database = {
           handle?: string | null;
           id?: string;
           services?: Database['public']['Enums']['platform_service'][];
+          task_auto_assign_to_self?: boolean | null;
           timezone?: string | null;
         };
         Update: {
@@ -8574,6 +8576,7 @@ export type Database = {
           handle?: string | null;
           id?: string;
           services?: Database['public']['Enums']['platform_service'][];
+          task_auto_assign_to_self?: boolean | null;
           timezone?: string | null;
         };
         Relationships: [

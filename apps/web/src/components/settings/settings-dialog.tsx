@@ -5,6 +5,7 @@ import {
   Bell,
   Building,
   CalendarDays,
+  CheckSquare,
   Clock,
   CreditCard,
   Laptop,
@@ -52,6 +53,7 @@ import SessionSettings from './account/session-settings';
 import AppearanceSettings from './appearance-settings';
 import { CalendarSettingsContent } from './calendar/calendar-settings-content';
 import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
+import { TaskSettings } from './tasks/task-settings';
 import MembersSettings from './workspace/members-settings';
 
 interface SettingsDialogProps {
@@ -222,6 +224,17 @@ export function SettingsDialog({
           description: wsId
             ? 'Manage your notification preferences including calendar notifications'
             : 'Manage your notification preferences',
+        },
+      ],
+    },
+    {
+      label: t('settings.tasks.title'),
+      items: [
+        {
+          name: 'tasks_general',
+          label: t('settings.tasks.general'),
+          icon: CheckSquare,
+          description: t('settings.tasks.general_description'),
         },
       ],
     },
@@ -421,6 +434,12 @@ export function SettingsDialog({
                 {activeTab === 'notifications' && (
                   <div className="h-full">
                     <NotificationSettings />
+                  </div>
+                )}
+
+                {activeTab === 'tasks_general' && (
+                  <div className="h-full">
+                    <TaskSettings workspace={workspace} />
                   </div>
                 )}
 

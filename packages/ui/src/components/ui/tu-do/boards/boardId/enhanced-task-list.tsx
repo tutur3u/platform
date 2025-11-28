@@ -140,9 +140,20 @@ export function EnhancedTaskList({
         .eq('id', list.id);
 
       if (error) throw error;
+      return newName;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
+    onSuccess: (newName) => {
+      // Use setQueryData for immediate UI update without flicker
+      // Realtime subscription handles cross-user sync
+      queryClient.setQueryData(
+        ['task_lists', boardId],
+        (old: TaskList[] | undefined) => {
+          if (!old) return old;
+          return old.map((l) =>
+            l.id === list.id ? { ...l, name: newName } : l
+          );
+        }
+      );
       toast.success('List name updated');
       onUpdate();
     },
@@ -161,9 +172,20 @@ export function EnhancedTaskList({
         .eq('id', list.id);
 
       if (error) throw error;
+      return newColor;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
+    onSuccess: (newColor) => {
+      // Use setQueryData for immediate UI update without flicker
+      // Realtime subscription handles cross-user sync
+      queryClient.setQueryData(
+        ['task_lists', boardId],
+        (old: TaskList[] | undefined) => {
+          if (!old) return old;
+          return old.map((l) =>
+            l.id === list.id ? { ...l, color: newColor } : l
+          );
+        }
+      );
       toast.success('List color updated');
       onUpdate();
     },
@@ -195,8 +217,22 @@ export function EnhancedTaskList({
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+      // Use setQueryData for immediate UI update without flicker
+      // Realtime subscription handles cross-user sync
+      queryClient.setQueryData(
+        ['task_lists', boardId],
+        (old: TaskList[] | undefined) => {
+          if (!old) return old;
+          return old.filter((l) => l.id !== list.id);
+        }
+      );
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.filter((t) => t.list_id !== list.id);
+        }
+      );
       toast.success(
         tasks.length > 0
           ? `List and ${tasks.length} task${tasks.length > 1 ? 's' : ''} deleted`

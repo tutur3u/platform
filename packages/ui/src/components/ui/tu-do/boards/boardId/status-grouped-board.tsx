@@ -209,9 +209,9 @@ export function StatusGroupedBoard({
     setActiveList(null);
 
     if (!over) {
-      // Reset optimistic updates
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-      queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
+      // No valid drop target - no action needed
+      // Note: We intentionally do NOT invalidate queries here.
+      // If there was no drop target, no mutation occurred.
       return;
     }
 

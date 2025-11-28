@@ -3867,6 +3867,18 @@
     "workspaces": "Workspaces",
     "workspaces-description": "Workspaces that you have access to will be listed here."
   },
+  "settings": {
+    "tasks": {
+      "title": "Tasks",
+      "general": "General",
+      "general_description": "Task creation and management preferences",
+      "auto_assign_to_self": "Auto-assign to self",
+      "auto_assign_to_self_description": "Automatically assign yourself to tasks you create when no other assignees are selected",
+      "always_enabled_personal": "This is always enabled for personal workspaces",
+      "settings_updated": "Task settings updated",
+      "settings_update_failed": "Failed to update task settings"
+    }
+  },
   "workspace-ai-layout": {
     "overview": "Overview",
     "test_generation": "Test Generation",

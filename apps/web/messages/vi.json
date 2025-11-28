@@ -4020,6 +4020,18 @@
     "workspaces": "Không gian làm việc",
     "workspaces-description": "Không gian làm việc mà bạn có quyền truy cập sẽ được liệt kê ở đây."
   },
+  "settings": {
+    "tasks": {
+      "title": "Nhiệm vụ",
+      "general": "Chung",
+      "general_description": "Tuỳ chọn tạo và quản lý nhiệm vụ",
+      "auto_assign_to_self": "Tự động gán cho bản thân",
+      "auto_assign_to_self_description": "Tự động gán bạn vào các nhiệm vụ bạn tạo khi không có người được gán nào khác được chọn",
+      "always_enabled_personal": "Tính năng này luôn được bật cho không gian làm việc cá nhân",
+      "settings_updated": "Đã cập nhật cài đặt nhiệm vụ",
+      "settings_update_failed": "Không thể cập nhật cài đặt nhiệm vụ"
+    }
+  },
   "workspace-ai-layout": {
     "overview": "Tổng quan",
     "test_generation": "Tạo test case tự động",
