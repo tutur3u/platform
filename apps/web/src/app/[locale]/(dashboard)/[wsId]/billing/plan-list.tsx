@@ -19,7 +19,7 @@ import { useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
 import PurchaseLink from './purchase-link';
 
-interface Plan {
+export interface Plan {
   id: string;
   polarSubscriptionId: string;
   productId: string;
@@ -341,6 +341,26 @@ export function PlanList({
                           wsId={wsId}
                           theme="auto"
                           className="flex w-full items-center justify-center gap-2"
+                          currentPlanDetails={{
+                            id: currentPlan.productId,
+                            name: currentPlan.name,
+                            price: currentPlan.price,
+                            billingCycle: currentPlan.billingCycle,
+                            features: currentPlan.features?.slice(0, 4) || [],
+                          }}
+                          newPlanDetails={{
+                            id: plan.id,
+                            name: plan.name,
+                            price: plan.price,
+                            billingCycle: plan.billingCycle,
+                            features: plan.features.slice(0, 4),
+                          }}
+                          nextBillingDate={currentPlan.nextBillingDate}
+                          isUpgrade={
+                            !buttonConfig.text
+                              .toLowerCase()
+                              .includes('downgrade')
+                          }
                         >
                           <ButtonIcon className="h-5 w-5" />
                           {buttonConfig.text}

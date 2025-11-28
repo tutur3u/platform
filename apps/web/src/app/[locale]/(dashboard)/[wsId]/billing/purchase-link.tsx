@@ -4,6 +4,16 @@ import { useMutation } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
 import { useRouter } from 'next/navigation';
 import type { PropsWithChildren } from 'react';
+import { useEffect, useState } from 'react';
+import { PlanChangeConfirmationDialog } from './plan-change-confirmation-dialog';
+
+interface PlanDetails {
+  id: string;
+  name: string;
+  price: number;
+  billingCycle: string | null;
+  features: string[];
+}
 
 interface PurchaseLinkProps {
   subscriptionId?: string;
@@ -13,6 +23,10 @@ interface PurchaseLinkProps {
   theme?: 'light' | 'dark' | 'auto';
   className?: string;
   sandbox?: boolean;
+  currentPlanDetails?: PlanDetails;
+  newPlanDetails?: PlanDetails;
+  nextBillingDate?: string;
+  isUpgrade?: boolean;
 }
 
 export default function PurchaseLink({
@@ -23,8 +37,26 @@ export default function PurchaseLink({
   className,
   children,
   sandbox = false,
+  currentPlanDetails,
+  newPlanDetails,
+  nextBillingDate,
+  isUpgrade = true,
 }: PropsWithChildren<PurchaseLinkProps>) {
   const router = useRouter();
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [planDetails, setPlanDetails] = useState<{
+    current: PlanDetails;
+    new: PlanDetails;
+  } | null>(null);
+
+  useEffect(() => {
+    if (currentPlanDetails && newPlanDetails) {
+      setPlanDetails({
+        current: currentPlanDetails,
+        new: newPlanDetails,
+      });
+    }
+  }, [currentPlanDetails, newPlanDetails]);
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -92,18 +124,45 @@ export default function PurchaseLink({
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
+
+    // If plan change (has subscriptionId and planDetails), show confirmation dialog
+    if (subscriptionId && planDetails) {
+      setShowConfirmDialog(true);
+    } else {
+      // Direct checkout for new subscriptions
+      mutation.mutate();
+    }
+  };
+
+  const handleConfirm = () => {
+    setShowConfirmDialog(false);
     mutation.mutate();
   };
 
   return (
-    <Button
-      onClick={handleClick}
-      data-polar-checkout
-      data-polar-checkout-theme={theme}
-      className={className}
-      disabled={mutation.isPending}
-    >
-      {mutation.isPending ? 'Proceeding...' : children}
-    </Button>
+    <>
+      <Button
+        onClick={handleClick}
+        data-polar-checkout
+        data-polar-checkout-theme={theme}
+        className={className}
+        disabled={mutation.isPending}
+      >
+        {mutation.isPending ? 'Proceeding...' : children}
+      </Button>
+
+      {planDetails && (
+        <PlanChangeConfirmationDialog
+          open={showConfirmDialog}
+          onOpenChange={setShowConfirmDialog}
+          currentPlan={planDetails.current}
+          newPlan={planDetails.new}
+          isUpgrade={isUpgrade}
+          nextBillingDate={nextBillingDate ?? ''}
+          onConfirm={handleConfirm}
+          isLoading={mutation.isPending}
+        />
+      )}
+    </>
   );
 }
