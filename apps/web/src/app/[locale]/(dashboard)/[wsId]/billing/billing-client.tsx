@@ -128,18 +128,23 @@ export function BillingClient({
         products.map(async (product) => {
           const { data, error } = await supabase
             .from('workspace_subscription_products')
-            .insert({
-              id: product.id,
-              name: product.name,
-              description: product.description || '',
-              price:
-                product.prices.length > 0
-                  ? product.prices[0] && 'priceAmount' in product.prices[0]
-                    ? product.prices[0].priceAmount
-                    : 0
-                  : 0,
-              recurring_interval: product.recurringInterval,
-            })
+            .upsert(
+              {
+                id: product.id,
+                name: product.name,
+                description: product.description || '',
+                price:
+                  product.prices.length > 0
+                    ? product.prices[0] && 'priceAmount' in product.prices[0]
+                      ? product.prices[0].priceAmount
+                      : 0
+                    : 0,
+                recurring_interval: product.recurringInterval,
+              },
+              {
+                onConflict: 'id',
+              }
+            )
             .select();
 
           if (error) {
