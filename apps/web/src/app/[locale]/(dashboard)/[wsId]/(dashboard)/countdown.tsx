@@ -47,7 +47,7 @@ const CountdownDD = () => {
 
   if (!timeLeft) {
     return (
-      <Card className="group relative mb-4 overflow-hidden border-dynamic-cyan/30 bg-linear-to-br from-dynamic-cyan/5 via-dynamic-blue/10 to-dynamic-teal/5 shadow-xl transition-all duration-300 hover:shadow-2xl">
+      <Card className="group relative mb-4 h-full overflow-hidden border-dynamic-cyan/30 bg-linear-to-br from-dynamic-cyan/5 via-dynamic-blue/10 to-dynamic-teal/5 shadow-xl transition-all duration-300 hover:shadow-2xl">
         {/* Animated wave decoration */}
         <div className="pointer-events-none absolute inset-0 opacity-10">
           <div className="absolute bottom-0 left-0 h-32 w-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0wLDY0IEMxNjAsNjQgMTYwLDMyIDMyMCwzMiBTNDgwLDY0IDY0MCw2NCBTODU2LDMyIDk2MCwzMiBWMTI4IEgwIFoiIGZpbGw9IiMwMGJjZDQiLz48L3N2Zz4=')] bg-repeat-x opacity-50"></div>
@@ -137,12 +137,7 @@ const CountdownDD = () => {
   );
 
   return (
-    <Card className="group relative mb-4 overflow-hidden border-dynamic-cyan/30 bg-linear-to-br from-dynamic-cyan/5 via-dynamic-blue/10 to-dynamic-teal/5 shadow-xl transition-all duration-300 hover:shadow-2xl">
-      {/* Animated wave decoration */}
-      <div className="pointer-events-none absolute inset-0 opacity-5">
-        <div className="absolute bottom-0 left-0 h-48 w-full animate-pulse bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0wLDY0IEMxNjAsNjQgMTYwLDMyIDMyMCwzMiBTNDgwLDY0IDY0MCw2NCBTODE2LDMyIDk2MCwzMiBWMTI4IEgwIFoiIGZpbGw9IiMwMGJjZDQiLz48L3N2Zz4=')] bg-repeat-x"></div>
-      </div>
-
+    <Card className="group relative mb-4 h-full overflow-hidden border-dynamic-cyan/30 bg-linear-to-br from-dynamic-cyan/5 via-dynamic-blue/10 to-dynamic-teal/5 shadow-xl transition-all duration-300 hover:shadow-2xl">
       <CardHeader className="relative flex flex-row items-center space-y-0 border-dynamic-cyan/30 border-b bg-linear-to-r from-dynamic-cyan/10 via-dynamic-blue/10 to-dynamic-teal/10 p-4 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <div className="rounded-xl bg-linear-to-br from-dynamic-cyan/20 to-dynamic-blue/20 p-2 shadow-lg ring-2 ring-dynamic-cyan/30">
@@ -310,7 +305,7 @@ const CountdownJT26 = () => {
 
   if (!timeLeft) {
     return (
-      <Card className="group relative mb-4 overflow-hidden border-dynamic-pink/30 bg-linear-to-br from-dynamic-pink/5 via-dynamic-rose/10 to-dynamic-red/5 shadow-xl transition-all duration-300 hover:shadow-2xl">
+      <Card className="group relative mb-4 h-full overflow-hidden border-dynamic-pink/30 bg-linear-to-br from-dynamic-pink/5 via-dynamic-rose/10 to-dynamic-red/5 shadow-xl transition-all duration-300 hover:shadow-2xl">
         {/* Cherry blossom petals decoration */}
         <div className="pointer-events-none absolute inset-0 opacity-10">
           <div className="absolute top-0 right-0 h-full w-full">
@@ -425,7 +420,7 @@ const CountdownJT26 = () => {
   );
 
   return (
-    <Card className="group relative mb-4 overflow-hidden border-dynamic-pink/30 bg-linear-to-br from-dynamic-pink/5 via-dynamic-rose/10 to-dynamic-red/5 shadow-xl transition-all duration-300 hover:shadow-2xl">
+    <Card className="group relative mb-4 h-full overflow-hidden border-dynamic-pink/30 bg-linear-to-br from-dynamic-pink/5 via-dynamic-rose/10 to-dynamic-red/5 shadow-xl transition-all duration-300 hover:shadow-2xl">
       {/* Cherry blossom petals decoration */}
       <div className="pointer-events-none absolute inset-0 opacity-5">
         <div className="absolute top-0 right-0 h-full w-full">
@@ -568,10 +563,10 @@ const CountdownJT26 = () => {
 
 const Countdown = () => {
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <>
       <CountdownDD />
       <CountdownJT26 />
-    </div>
+    </>
   );
 };
 
