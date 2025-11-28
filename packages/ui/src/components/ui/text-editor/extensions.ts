@@ -1,3 +1,4 @@
+import { InputRule } from '@tiptap/core';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import Highlight from '@tiptap/extension-highlight';
@@ -75,7 +76,7 @@ export function getEditorExtensions({
     HorizontalRule.extend({
       addInputRules() {
         return [
-          {
+          new InputRule({
             find: /^---$/,
             handler: ({ state, range: _, chain }) => {
               const { $from } = state.selection;
@@ -91,7 +92,7 @@ export function getEditorExtensions({
                 .insertContentAt(paragraphPos, { type: 'horizontalRule' })
                 .run();
             },
-          },
+          }),
         ];
       },
     }),
