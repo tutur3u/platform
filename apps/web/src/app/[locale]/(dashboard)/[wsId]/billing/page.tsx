@@ -3,6 +3,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { checkTuturuuuAdmin } from '@tuturuuu/utils/workspace-helper';
+import { format } from 'date-fns';
 import type { Metadata } from 'next';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { BillingClient } from './billing-client';
@@ -181,10 +182,10 @@ export default async function BillingPage({
                   : 0,
               billingCycle: subscription.product.recurringInterval,
               startDate: subscription.currentPeriodStart
-                ? new Date(subscription.currentPeriodStart).toLocaleDateString()
+                ? format(new Date(subscription.currentPeriodStart), 'MMM d, yyyy')
                 : '-',
               nextBillingDate: subscription.currentPeriodEnd
-                ? new Date(subscription.currentPeriodEnd).toLocaleDateString()
+                ? format(new Date(subscription.currentPeriodEnd), 'MMM d, yyyy')
                 : '-',
               cancelAtPeriodEnd: subscription.cancelAtPeriodEnd ?? false,
               status: subscription.status || 'unknown',

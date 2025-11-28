@@ -1,4 +1,5 @@
 import { Receipt } from '@tuturuuu/icons';
+import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { centToDollar } from '@/utils/price-helper';
 
@@ -40,7 +41,7 @@ export default function BillingHistory({
   };
 
   const getDisplayDate = (item: BillingHistoryItem) => {
-    const createdDate = new Date(item.created_at).toLocaleDateString();
+    const createdDate = format(new Date(item.created_at), 'MMM d, yyyy');
 
     switch (item.status) {
       case 'active':
