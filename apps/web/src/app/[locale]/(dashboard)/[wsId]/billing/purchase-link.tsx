@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
 import { useRouter } from 'next/navigation';
 import type { PropsWithChildren } from 'react';
@@ -25,10 +26,8 @@ export default function PurchaseLink({
 }: PropsWithChildren<PurchaseLinkProps>) {
   const router = useRouter();
 
-  const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-
-    try {
+  const mutation = useMutation({
+    mutationFn: async () => {
       if (subscriptionId) {
         // Update existing subscription with new product
         const response = await fetch(
@@ -45,19 +44,17 @@ export default function PurchaseLink({
           }
         );
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            // Reload the page to reflect the updated subscription
-            router.refresh();
-          }
-        } else {
+        if (!response.ok) {
           const errorData = await response.json();
-          console.error(
-            'Failed to update subscription:',
-            errorData.message || errorData.error
+          throw new Error(
+            errorData.message ||
+              errorData.error ||
+              'Failed to update subscription'
           );
         }
+
+        const data = await response.json();
+        return { type: 'update' as const, data };
       } else {
         // Create new checkout session
         const response = await fetch('/api/payment/checkouts', {
@@ -72,18 +69,30 @@ export default function PurchaseLink({
           }),
         });
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.url) {
-            window.open(data.url, '_blank', 'noopener,noreferrer');
-          }
-        } else {
-          console.error('Failed to create checkout session');
+        if (!response.ok) {
+          throw new Error('Failed to create checkout session');
         }
+
+        const data = await response.json();
+        return { type: 'checkout' as const, data };
       }
-    } catch (error) {
+    },
+    onSuccess: (result) => {
+      if (result.type === 'update' && result.data.success) {
+        // Reload the page to reflect the updated subscription
+        router.refresh();
+      } else if (result.type === 'checkout' && result.data.url) {
+        window.open(result.data.url, '_blank', 'noopener,noreferrer');
+      }
+    },
+    onError: (error) => {
       console.error('Error processing request:', error);
-    }
+    },
+  });
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    mutation.mutate();
   };
 
   return (
@@ -92,8 +101,9 @@ export default function PurchaseLink({
       data-polar-checkout
       data-polar-checkout-theme={theme}
       className={className}
+      disabled={mutation.isPending}
     >
-      {children}
+      {mutation.isPending ? 'Proceeding...' : children}
     </Button>
   );
 }
