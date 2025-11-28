@@ -104,8 +104,5 @@
     "supabase",
     "unrs-resolver"
   ],
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ]
+  "workspaces": ["apps/*", "packages/*"]
 }
