@@ -74,17 +74,7 @@ export function BillingClient({
             : 0
           : 0,
       billingCycle: product.recurringInterval,
-      features: product.description
-        ? [
-            product.description,
-            'Customer support',
-            'Access to platform features',
-          ]
-        : [
-            'Standard features',
-            'Customer support',
-            'Access to platform features',
-          ],
+      features: product.benefits.map((benefit) => benefit.description),
       isEnterprise: product.name.toLowerCase().includes('enterprise'),
     }))
     .sort((a, b) => a.price - b.price)

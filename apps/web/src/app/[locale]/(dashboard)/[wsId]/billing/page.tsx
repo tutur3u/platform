@@ -188,11 +188,9 @@ export default async function BillingPage({
                 : '-',
               cancelAtPeriodEnd: subscription.cancelAtPeriodEnd ?? false,
               status: subscription.status || 'unknown',
-              features: [
-                subscription.product.description || 'Standard features',
-                'Customer support',
-                'Access to platform features',
-              ],
+              features: subscription.product.benefits.map(
+                (benefit) => benefit.description
+              ),
             }
           : {
               id: '',
@@ -205,11 +203,7 @@ export default async function BillingPage({
               nextBillingDate: '-',
               cancelAtPeriodEnd: false,
               status: 'active',
-              features: [
-                'Basic features',
-                'Limited usage',
-                'Community support',
-              ],
+              features: ['Basic features', 'Limited usage'],
             };
 
         const billingHistory = subscriptionHistory.map((sub, index) => ({
