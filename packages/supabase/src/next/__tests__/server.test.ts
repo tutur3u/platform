@@ -1,15 +1,18 @@
-import { createServerClient } from '@supabase/ssr';
+import { createBrowserClient, createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createAdminClient,
+  createAnonClient,
   createClient,
+  createDynamicAdminClient,
   createDynamicClient,
 } from '../server';
 
 // Mock dependencies
 vi.mock('@supabase/ssr', () => ({
   createServerClient: vi.fn(),
+  createBrowserClient: vi.fn(),
 }));
 
 vi.mock('next/headers', () => ({
@@ -77,6 +80,16 @@ describe('Supabase Server Client', () => {
         .cookies;
       expect(cookieHandler.getAll()).toEqual([]);
     });
+
+    it('should create a browser admin client when noCookie is true', () => {
+      createAdminClient({ noCookie: true });
+
+      expect(createBrowserClient).toHaveBeenCalledWith(
+        'https://test.supabase.co',
+        'test-secret-key'
+      );
+      expect(createServerClient).not.toHaveBeenCalled();
+    });
   });
 
   describe('createDynamicClient', () => {
@@ -90,6 +103,73 @@ describe('Supabase Server Client', () => {
           cookies: expect.any(Object),
         })
       );
+    });
+  });
+
+  describe('createAnonClient', () => {
+    it('should create an anonymous client without session persistence', () => {
+      createAnonClient();
+
+      expect(createBrowserClient).toHaveBeenCalledWith(
+        'https://test.supabase.co',
+        'test-publishable-key',
+        expect.objectContaining({
+          global: {
+            headers: {
+              Authorization: 'Bearer test-publishable-key',
+            },
+          },
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+            detectSessionInUrl: false,
+          },
+        })
+      );
+    });
+
+    it('should use publishable key for authorization header', () => {
+      createAnonClient();
+
+      const callArgs = (createBrowserClient as any).mock.calls[0];
+      expect(callArgs[2].global.headers.Authorization).toBe(
+        'Bearer test-publishable-key'
+      );
+    });
+  });
+
+  describe('createDynamicAdminClient', () => {
+    it('should create a dynamic admin client with no-op cookie handling', async () => {
+      await createDynamicAdminClient();
+
+      expect(createServerClient).toHaveBeenCalledWith(
+        'https://test.supabase.co',
+        'test-secret-key',
+        expect.objectContaining({
+          cookies: expect.objectContaining({
+            getAll: expect.any(Function),
+            setAll: expect.any(Function),
+          }),
+        })
+      );
+
+      // Verify admin client uses no-op cookie handler
+      const cookieHandler = (createServerClient as any).mock.calls[0][2]
+        .cookies;
+      expect(cookieHandler.getAll()).toEqual([]);
+    });
+
+    it('should not modify cookies', async () => {
+      await createDynamicAdminClient();
+
+      const cookieHandler = (createServerClient as any).mock.calls[0][2]
+        .cookies;
+
+      // setAll should be a no-op
+      const result = cookieHandler.setAll([
+        { name: 'test', value: 'test', options: {} },
+      ]);
+      expect(result).toBeUndefined();
     });
   });
 });

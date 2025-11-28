@@ -68,7 +68,7 @@ The frontend is built with React, Next.js, and Tailwind CSS, with a component li
 - **Package Management:** All packages are managed with `bun` workspaces.
 - **UI Components:** The `packages/ui` directory contains the shared UI component library. New components can be added using the `bun ui:add` command.
 - **Code Style:** The project uses Biome for linting and formatting. Use `bun format-and-lint:fix` to automatically fix any issues.
-- **Testing:** Tests are written with Vitest. Run all tests with `bun test`.
+- **Testing:** Tests are written with Vitest. Run all tests with `bun test`. **CRITICAL**: Always add test cases after implementing new features and run them using `bun --filter @tuturuuu/<package> test` or `bun run test` to verify functionality.
 - **Commits:** Commits should follow the Conventional Commits specification.
 - **Environment Variables:** Global environment variables are defined in `turbo.json`. Each application can also have its own `.env.local` file for local development.
 - **Internationalization:** The project supports multiple languages via `next-intl`. **CRITICAL**: Always provide translations for both English (`en.json`) AND Vietnamese (`vi.json`) when adding user-facing strings to `apps/web/messages/{locale}.json`. Never add translations only for English - Vietnamese translations are mandatory.
@@ -85,7 +85,8 @@ This section summarizes the key operating procedures for AI agents working in th
 - **Idempotency:** Scripts and migrations should be safe to re-run.
 - **Determinism:** Generated artifacts (like types) must come from scripts, not manual edits.
 - **Security:** Never output or commit secrets. Reference environment variables by name only.
-- **User Intent:** Do not run long-running commands (`bun dev`, `bun build`) unless explicitly asked. The user is responsible for running commands like `bun sb:push`, `bun lint`, and `bun format`.
+- **User Intent:** Do not run long-running commands (`bun dev`) or build commands (`bun build`, `bun run build`, `bun run buildx`) unless the user **explicitly asks**. The user is responsible for running commands like `bun sb:push`, `bun lint`, and `bun format`.
+- **Testing After Features:** Always add test cases after implementing new features and run them to verify functionality. Tests CAN and SHOULD be run by agents.
 - **Code Quality First:** Proactively refactor long files (>400 LOC) and components (>200 LOC); maintain high DX standards for ALL code, both old and new. Code quality is never optional.
 
 ### Prohibited Actions
@@ -94,6 +95,7 @@ This section summarizes the key operating procedures for AI agents working in th
 - Disabling linting, formatting, or type-checking.
 - Executing destructive database commands without a reversible strategy.
 - Running `bun sb:push`, `bun sb:linkpush`, `bun lint:fix`, or `bun format:fix`. Prepare the changes and ask the user to run these commands.
+- **Running `bun run build`, `bun build`, or `bun run buildx` unless the user explicitly requests it.** Build commands are USER-ONLY unless explicitly requested.
 - **🚫 USING `useEffect` FOR DATA FETCHING - THIS IS THE #1 MOST CRITICAL VIOLATION 🚫**
 - **Using raw `fetch()` without TanStack Query wrapper in client components.**
 - **Manual state management (useState + useEffect) for API calls - ABSOLUTELY FORBIDDEN.**

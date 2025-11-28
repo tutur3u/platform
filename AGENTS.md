@@ -40,17 +40,19 @@ Mandatory guardrails:
 4. Reproducibility: Provide succinct steps (bun install → bun dev/build/test) if novel.
 5. Security: Never output secret values; reference env var names only.
 6. Observability: Add log / comment only where materially aids debugging—avoid noisy console logs committed.
-7. Explicit User Intent: Do NOT run `bun dev`, `bun run build`, or equivalent long-running / build commands unless the user explicitly requests it.
+7. Explicit User Intent: Do NOT run `bun dev`, `bun run build`, `bun build`, `bun run buildx`, or equivalent long-running / build commands unless the user **explicitly requests** it. Build commands are USER-ONLY.
 8. User-Only Supabase Apply: NEVER run `bun sb:push` or `bun sb:linkpush`. Prepare migrations & instructions; the user applies them.
-9. User-Only Biome: NEVER run `bun lint`, `bun lint:fix`, `bun format`, or `bun format:fix`. Surface needed changes; ask user to run.
-10. Bilingual Translations: ALWAYS provide translations for both English (`en.json`) AND Vietnamese (`vi.json`) when adding user-facing strings. Never add translations only for English.
+9. Testing After Features: ALWAYS add test cases after implementing new features and run them using `bun --filter @tuturuuu/<package> test` or `bun run test`. Testing is encouraged and expected from agents.
+10. User-Only Biome: NEVER run `bun lint`, `bun lint:fix`, `bun format`, or `bun format:fix`. Surface needed changes; ask user to run.
+11. Bilingual Translations: ALWAYS provide translations for both English (`en.json`) AND Vietnamese (`vi.json`) when adding user-facing strings. Never add translations only for English.
 
-Prohibited actions (HARD STOP):
+Prohibited actions (HARD STOP - agents must NEVER do these):
 
 - Committing secrets, API keys, tokens, URLs containing credentials.
 - Writing binary blobs not required (e.g., screenshots) outside designated `public/` folders.
 - Removing or disabling linting, formatting, type checking to "make it pass".
 - Executing destructive DB commands in migrations without `-- reversible` strategy or clear comment.
+- **Running `bun run build`, `bun build`, or `bun run buildx` unless the user explicitly requests it.** Build commands are USER-ONLY.
 - **USING `useEffect` FOR DATA FETCHING - THIS IS ABSOLUTELY FORBIDDEN. Use TanStack Query instead.**
 
 Escalate (ask for human input) when:
@@ -188,9 +190,13 @@ Use Biome (user-run only; agent must not execute commands directly).
 
 ### 4.7 Testing
 
+**CRITICAL**: Agents SHOULD add test cases after implementing new features and run them to verify functionality.
+
 1. `bun run test` (Vitest across workspaces) or filter: `bun --filter @tuturuuu/<pkg> test`.
 2. Add at least: happy path + failure/edge case.
 3. For new util: prefer pure function structure → easy unit test.
+4. **After implementing a feature**: Create test cases and run them immediately to verify the implementation works as expected.
+5. **Agents CAN and SHOULD run tests** - unlike build commands, running tests is encouraged and expected.
 
 ### 4.8 Performance / Profiling
 
@@ -1345,8 +1351,8 @@ Agent Responsibilities:
 | Dev (all apps) | `bun dev` | No DB required if gated |
 | Full stack dev | `bun devx` | Starts Supabase + apps |
 | Reset + seed | `bun devrs` | Destructive local DB reset |
-| Build all | `bun run build` | Uses Turbo cache |
-| Test all | `bun run test` | Vitest workspaces |
+| Build all | `bun run build` | USER-ONLY; uses Turbo cache |
+| Test all | `bun run test` | Agents CAN run; Vitest workspaces |
 | Scoped test | `bun --filter @tuturuuu/ui test` | Add `...` suffix to include dependents |
 | Lint | `bun lint` | Use `lint:fix` to auto-fix |
 | Format | `bun format` | Use `format:fix` to write |
@@ -1365,7 +1371,8 @@ Agent Responsibilities:
 | Edge runtime | `export const runtime = 'edge'` | Only if required |
 | Supabase admin client | Import from `@tuturuuu/supabase` | Avoid direct REST calls |
 | Escape hatch escalation | Open issue `policy-gap` | Provide context & proposal |
-| (DO NOT auto run build/dev) | (Requires explicit user request) | Safeguard against unintended resource use |
+| (DO NOT auto run build/dev) | (Requires explicit user request) | Build commands are USER-ONLY unless explicitly requested |
+| (DO run tests after features) | `bun --filter @tuturuuu/<pkg> test` | Agents SHOULD add and run tests after implementing features |
 | (DO NOT run sb:push/linkpush) | User-only | Agent prepares migration & instructions |
 | (DO NOT run biome commands) | User-only | Agent suggests fixes; user executes |
 | (DO NOT run modal commands) | User-only | Agent prepares Modal code; user runs `modal run/deploy` |
