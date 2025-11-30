@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     const polar = createPolarClient({
       sandbox: sandbox || process.env.NODE_ENV === 'development',
     });
-    console.log('Polar client:', polar);
+
     // Create customer session to get portal URL
     const session = await polar.customerSessions.create({
       externalCustomerId: user.id,
