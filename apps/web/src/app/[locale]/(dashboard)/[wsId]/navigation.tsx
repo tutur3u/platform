@@ -18,7 +18,6 @@ import {
   ChartArea,
   ChartColumnStacked,
   ChartGantt,
-  CircleCheck,
   CircleDollarSign,
   ClipboardClock,
   ClipboardList,
@@ -78,7 +77,6 @@ import {
   Truck,
   UserCheck,
   UserLock,
-  UserRound,
   Users,
   VectorSquare,
   Vote,
@@ -96,6 +94,7 @@ import {
   getSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
+import Image from 'next/image';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -178,14 +177,30 @@ export async function WorkspaceNavigationLinks({
       title: t('sidebar_tabs.tasks'),
       href: `/${personalOrWsId}/tasks/my-tasks`,
       aliases: [`/${personalOrWsId}/tasks`, `/${personalOrWsId}/tasks/habits`],
-      icon: <CircleCheck className="h-5 w-5" />,
+      icon: (
+        <Image
+          src="/media/logos/tudo.svg"
+          alt="Tudo"
+          width={20}
+          height={20}
+          className="h-5 w-5"
+        />
+      ),
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
       experimental: 'beta',
       children: [
         {
           title: t('sidebar_tabs.my_tasks'),
           href: `/${personalOrWsId}/tasks/my-tasks`,
-          icon: <UserRound className="h-4 w-4" />,
+          icon: (
+            <Image
+              src="/media/logos/tudo.svg"
+              alt="Tudo"
+              width={16}
+              height={16}
+              className="h-4 w-4"
+            />
+          ),
           matchExact: true,
         },
         {
