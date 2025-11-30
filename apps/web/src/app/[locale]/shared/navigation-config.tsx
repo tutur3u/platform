@@ -11,6 +11,7 @@ import {
   GraduationCap,
   HardHat,
   HeartHandshake,
+  History,
   Hotel,
   MessageSquare,
   Paintbrush,
@@ -166,6 +167,12 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       label: t('common.blog'),
       description: t('common.blog-description'),
       icon: <BookText className="h-4 w-4" />,
+    },
+    {
+      href: '/changelog',
+      label: t('common.changelog'),
+      description: t('common.changelog-description'),
+      icon: <History className="h-4 w-4" />,
     },
     {
       href: '/careers',

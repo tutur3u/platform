@@ -301,7 +301,7 @@ export default async function TimeTrackingMetrics({
         )}
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3">
           {/* Today */}
           <div className="group/stat rounded-xl border border-dynamic-blue/20 bg-linear-to-br from-dynamic-blue/5 to-transparent p-3 transition-all hover:border-dynamic-blue/30 hover:shadow-md">
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
@@ -475,8 +475,8 @@ export default async function TimeTrackingMetrics({
 
         {/* CTA for new users */}
         {hasNoSessions && (
-          <div className="flex items-center justify-between rounded-xl border border-dynamic-purple/20 bg-linear-to-r from-dynamic-purple/5 via-transparent to-transparent p-4">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col items-center justify-between gap-2 rounded-xl border border-dynamic-purple/20 bg-linear-to-r from-dynamic-purple/5 via-transparent to-transparent p-4">
+            <div className="flex flex-col items-center gap-3">
               <Sparkles className="h-5 w-5 text-dynamic-purple" />
               <div>
                 <p className="font-medium text-sm">{t('no_data_title')}</p>
