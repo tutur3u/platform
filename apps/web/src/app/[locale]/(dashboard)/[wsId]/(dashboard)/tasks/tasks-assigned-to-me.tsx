@@ -16,8 +16,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { isPast, isToday, isTomorrow } from 'date-fns';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 import ExpandableTaskList from './expandable-task-list';
 
 interface TasksAssignedToMeProps {
@@ -236,92 +236,124 @@ export default async function TasksAssignedToMe({
           </Link>
         </div>
 
-        {/* Quick Stats - Only show if there are tasks */}
-        {stats.total > 0 && (
-          <div className="mt-4 grid grid-cols-2 gap-2 lg:gap-3 2xl:grid-cols-4">
-            {/* Overdue */}
-            <div
-              className={cn(
-                'group/stat flex items-center gap-2 rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-2.5 transition-all hover:border-dynamic-red/30 hover:bg-dynamic-red/10 hover:shadow-md lg:p-3',
-                stats.overdue > 0 ? 'opacity-100' : 'opacity-30'
-              )}
-            >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-red/20 ring-1 ring-dynamic-red/30 transition-all group-hover/stat:scale-110 lg:h-9 lg:w-9">
+        {/* Quick Stats - Only show items with values > 0 */}
+        {(() => {
+          const statItems = [
+            stats.overdue > 0 && {
+              key: 'overdue',
+              value: stats.overdue,
+              label: t('stat_overdue'),
+              color: 'red',
+              icon: (
                 <AlertCircle className="h-4 w-4 text-dynamic-red lg:h-4.5 lg:w-4.5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="truncate font-bold text-dynamic-red text-lg lg:text-xl">
-                  {stats.overdue}
-                </div>
-                <div className="truncate font-medium text-[10px] text-dynamic-red/70 uppercase tracking-wide lg:text-xs">
-                  {t('stat_overdue')}
-                </div>
-              </div>
-            </div>
-
-            {/* Due Today */}
-            <div
-              className={cn(
-                'group/stat flex items-center gap-2 rounded-lg border border-dynamic-orange/20 bg-dynamic-orange/5 p-2.5 transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/10 hover:shadow-md lg:p-3',
-                stats.dueToday > 0 ? 'opacity-100' : 'opacity-30'
-              )}
-            >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/20 ring-1 ring-dynamic-orange/30 transition-all group-hover/stat:scale-110 lg:h-9 lg:w-9">
+              ),
+            },
+            stats.dueToday > 0 && {
+              key: 'dueToday',
+              value: stats.dueToday,
+              label: t('stat_due_today'),
+              color: 'orange',
+              icon: (
                 <Flame className="h-4 w-4 text-dynamic-orange lg:h-4.5 lg:w-4.5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="truncate font-bold text-dynamic-orange text-lg lg:text-xl">
-                  {stats.dueToday}
-                </div>
-                <div className="truncate font-medium text-[10px] text-dynamic-orange/70 uppercase tracking-wide lg:text-xs">
-                  {t('stat_due_today')}
-                </div>
-              </div>
-            </div>
-
-            {/* Due Tomorrow */}
-            <div
-              className={cn(
-                'group/stat flex items-center gap-2 rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-2.5 transition-all hover:border-dynamic-blue/30 hover:bg-dynamic-blue/10 hover:shadow-md lg:p-3',
-                stats.dueTomorrow > 0 ? 'opacity-100' : 'opacity-30'
-              )}
-            >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-blue/20 ring-1 ring-dynamic-blue/30 transition-all group-hover/stat:scale-110 lg:h-9 lg:w-9">
+              ),
+            },
+            stats.dueTomorrow > 0 && {
+              key: 'dueTomorrow',
+              value: stats.dueTomorrow,
+              label: t('stat_tomorrow'),
+              color: 'blue',
+              icon: (
                 <Calendar className="h-4 w-4 text-dynamic-blue lg:h-4.5 lg:w-4.5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="truncate font-bold text-dynamic-blue text-lg lg:text-xl">
-                  {stats.dueTomorrow}
-                </div>
-                <div className="truncate font-medium text-[10px] text-dynamic-blue/70 uppercase tracking-wide lg:text-xs">
-                  {t('stat_tomorrow')}
-                </div>
-              </div>
-            </div>
+              ),
+            },
+            (stats.critical > 0 || stats.high > 0) && {
+              key: 'highPriority',
+              value: stats.critical + stats.high,
+              label: t('stat_high_priority'),
+              color: 'purple',
+              icon: (
+                <Zap className="h-4 w-4 text-dynamic-purple lg:h-4.5 lg:w-4.5" />
+              ),
+            },
+          ].filter(Boolean) as {
+            key: string;
+            value: number;
+            label: string;
+            color: string;
+            icon: React.ReactNode;
+          }[];
 
-            {/* High Priority */}
+          if (statItems.length === 0) return null;
+
+          return (
             <div
               className={cn(
-                'group/stat flex items-center gap-2 rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/5 p-2.5 transition-all hover:border-dynamic-purple/30 hover:bg-dynamic-purple/10 hover:shadow-md lg:p-3',
-                stats.critical > 0 || stats.high > 0
-                  ? 'opacity-100'
-                  : 'opacity-30'
+                'mt-4 grid gap-2 lg:gap-3',
+                statItems.length === 1 && 'grid-cols-1',
+                statItems.length === 2 && 'grid-cols-2',
+                statItems.length === 3 && 'grid-cols-3',
+                statItems.length === 4 && 'grid-cols-2 2xl:grid-cols-4'
               )}
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-purple/20 ring-1 ring-dynamic-purple/30 transition-all group-hover/stat:scale-110 lg:h-9 lg:w-9">
-                <Zap className="h-4 w-4 text-dynamic-purple lg:h-4.5 lg:w-4.5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="truncate font-bold text-dynamic-purple text-lg lg:text-xl">
-                  {stats.critical + stats.high}
+              {statItems.map((stat) => (
+                <div
+                  key={stat.key}
+                  className={cn(
+                    'group/stat flex items-center gap-2 rounded-lg border p-2.5 transition-all hover:shadow-md lg:p-3',
+                    stat.color === 'red' &&
+                      'border-dynamic-red/20 bg-dynamic-red/5 hover:border-dynamic-red/30 hover:bg-dynamic-red/10',
+                    stat.color === 'orange' &&
+                      'border-dynamic-orange/20 bg-dynamic-orange/5 hover:border-dynamic-orange/30 hover:bg-dynamic-orange/10',
+                    stat.color === 'blue' &&
+                      'border-dynamic-blue/20 bg-dynamic-blue/5 hover:border-dynamic-blue/30 hover:bg-dynamic-blue/10',
+                    stat.color === 'purple' &&
+                      'border-dynamic-purple/20 bg-dynamic-purple/5 hover:border-dynamic-purple/30 hover:bg-dynamic-purple/10'
+                  )}
+                >
+                  <div
+                    className={cn(
+                      'flex h-8 w-8 items-center justify-center rounded-lg ring-1 transition-all group-hover/stat:scale-110 lg:h-9 lg:w-9',
+                      stat.color === 'red' &&
+                        'bg-dynamic-red/20 ring-dynamic-red/30',
+                      stat.color === 'orange' &&
+                        'bg-dynamic-orange/20 ring-dynamic-orange/30',
+                      stat.color === 'blue' &&
+                        'bg-dynamic-blue/20 ring-dynamic-blue/30',
+                      stat.color === 'purple' &&
+                        'bg-dynamic-purple/20 ring-dynamic-purple/30'
+                    )}
+                  >
+                    {stat.icon}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div
+                      className={cn(
+                        'truncate font-bold text-lg lg:text-xl',
+                        stat.color === 'red' && 'text-dynamic-red',
+                        stat.color === 'orange' && 'text-dynamic-orange',
+                        stat.color === 'blue' && 'text-dynamic-blue',
+                        stat.color === 'purple' && 'text-dynamic-purple'
+                      )}
+                    >
+                      {stat.value}
+                    </div>
+                    <div
+                      className={cn(
+                        'truncate font-medium text-[10px] uppercase tracking-wide lg:text-xs',
+                        stat.color === 'red' && 'text-dynamic-red/70',
+                        stat.color === 'orange' && 'text-dynamic-orange/70',
+                        stat.color === 'blue' && 'text-dynamic-blue/70',
+                        stat.color === 'purple' && 'text-dynamic-purple/70'
+                      )}
+                    >
+                      {stat.label}
+                    </div>
+                  </div>
                 </div>
-                <div className="truncate font-medium text-[10px] text-dynamic-purple/70 uppercase tracking-wide lg:text-xs">
-                  {t('stat_high_priority')}
-                </div>
-              </div>
+              ))}
             </div>
-          </div>
-        )}
+          );
+        })()}
       </CardHeader>
 
       {/* Content Section */}

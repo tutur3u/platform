@@ -305,6 +305,8 @@
     "realestate": "Real Estate",
     "blog": "Blog",
     "blog-description": "Read our latest articles and updates.",
+    "changelog": "Changelog",
+    "changelog-description": "See what's new and what's changed.",
     "documentation-description": "Find detailed documentation and guides.",
     "education-description": "Solutions tailored for educational institutions.",
     "retail-description": "Solutions tailored for retail businesses.",
@@ -1442,7 +1444,8 @@
     "ai_whitelisted_emails": "AI Whitelisted Emails",
     "translations": "Translations",
     "email_blacklist": "Email Blacklist",
-    "realtime": "Realtime"
+    "realtime": "Realtime",
+    "changelog": "Changelog"
   },
   "infrastructure-analytics": {
     "page-description": "Monitor and manage your platform infrastructure, users, and resources with comprehensive analytics.",
@@ -3090,6 +3093,8 @@
     "manage_workspace_security_description": "Allows members to manage API keys and delete the workspace.",
     "manage_workspace_audit_logs": "Manage workspace audit logs",
     "manage_workspace_audit_logs_description": "Allows members to view all activities in the workspace.",
+    "manage_changelog": "Manage Changelog",
+    "manage_changelog_description": "Create, edit, publish, and delete platform changelog entries.",
     "manage_workspace_billing": "Manage workspace billing",
     "manage_workspace_billing_description": "Allows members to view and update billing information.",
     "ai": "Artificial Intelligence",
@@ -5997,7 +6002,37 @@
     "stat_tomorrow": "Tomorrow",
     "stat_high_priority": "High Priority",
     "quick_tip": "Quick Tip",
-    "quick_tip_description": "Tasks assigned to you will appear here. You can view all your tasks, create new ones, or browse available boards to get started."
+    "quick_tip_description": "Tasks assigned to you will appear here. You can view all your tasks, create new ones, or browse available boards to get started.",
+    "recent_updates": "Recent Updates",
+    "no_updates": "No Updates Yet",
+    "no_updates_description": "Check back later for the latest updates and features.",
+    "show_more_updates": "Show more",
+    "view_changelog": "View Changelog"
+  },
+  "changelog-data-table": {
+    "id": "ID",
+    "title": "Title",
+    "slug": "Slug",
+    "category": "Category",
+    "version": "Version",
+    "is_published": "Published",
+    "published_at": "Published At",
+    "created_at": "Created At",
+    "updated_at": "Updated At",
+    "creator_id": "Creator"
+  },
+  "changelog-page": {
+    "badge": "Platform Updates",
+    "hero_title": "What's New in",
+    "hero_description": "Stay up to date with the latest features, improvements, and updates to make your workflow even better.",
+    "no_updates": "No updates yet",
+    "no_updates_description": "We're working on exciting new features. Check back soon!",
+    "update": "update",
+    "updates": "updates",
+    "read_more": "Read more",
+    "cta_title": "Never miss an update",
+    "cta_description": "Follow our GitHub repository to stay informed about the latest developments and contribute to the project.",
+    "cta_button": "Follow on GitHub"
   },
   "ws-groups": {
     "select_warehouse": "Select Warehouse",

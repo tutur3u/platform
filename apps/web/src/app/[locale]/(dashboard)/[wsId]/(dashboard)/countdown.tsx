@@ -47,7 +47,7 @@ const CountdownDD = () => {
 
   if (!timeLeft) {
     return (
-      <Card className="group relative mb-4 h-full overflow-hidden border-dynamic-cyan/30 bg-linear-to-br from-dynamic-cyan/5 via-dynamic-blue/10 to-dynamic-teal/5 shadow-xl transition-all duration-300 hover:shadow-2xl">
+      <Card className="group relative h-full overflow-hidden border-dynamic-cyan/30 bg-linear-to-br from-dynamic-cyan/5 via-dynamic-blue/10 to-dynamic-teal/5 shadow-xl transition-all duration-300 hover:shadow-2xl">
         {/* Animated wave decoration */}
         <div className="pointer-events-none absolute inset-0 opacity-10">
           <div className="absolute bottom-0 left-0 h-32 w-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0wLDY0IEMxNjAsNjQgMTYwLDMyIDMyMCwzMiBTNDgwLDY0IDY0MCw2NCBTODU2LDMyIDk2MCwzMiBWMTI4IEgwIFoiIGZpbGw9IiMwMGJjZDQiLz48L3N2Zz4=')] bg-repeat-x opacity-50"></div>
@@ -68,7 +68,7 @@ const CountdownDD = () => {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="relative h-full space-y-6 p-6">
+        <CardContent className="relative h-full space-y-4 p-4">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="text-4xl">🌊</div>
@@ -126,7 +126,7 @@ const CountdownDD = () => {
     <div className="group/slot flex flex-col items-center space-y-1 sm:space-y-2">
       <div className="relative rounded-lg border-2 border-dynamic-cyan/30 bg-linear-to-br from-dynamic-cyan/15 via-dynamic-blue/10 to-dynamic-teal/15 px-2 py-1.5 shadow-lg transition-all duration-300 hover:scale-105 hover:border-dynamic-cyan/50 hover:shadow-xl sm:rounded-xl sm:px-4 sm:py-3">
         <div className="absolute inset-0 rounded-lg bg-linear-to-br from-dynamic-cyan/20 to-transparent opacity-0 transition-opacity duration-300 group-hover/slot:opacity-100 sm:rounded-xl"></div>
-        <div className="relative font-black text-2xl text-dynamic-cyan tabular-nums drop-shadow-md transition-all duration-200 sm:text-3xl md:text-4xl">
+        <div className="relative font-black text-2xl text-dynamic-cyan tabular-nums drop-shadow-md transition-all duration-200">
           {String(value).padStart(2, '0')}
         </div>
       </div>
@@ -137,7 +137,7 @@ const CountdownDD = () => {
   );
 
   return (
-    <Card className="group relative mb-4 h-full overflow-hidden border-dynamic-cyan/30 bg-linear-to-br from-dynamic-cyan/5 via-dynamic-blue/10 to-dynamic-teal/5 shadow-xl transition-all duration-300 hover:shadow-2xl">
+    <Card className="group relative h-full overflow-hidden border-dynamic-cyan/30 bg-linear-to-br from-dynamic-cyan/5 via-dynamic-blue/10 to-dynamic-teal/5 shadow-xl transition-all duration-300 hover:shadow-2xl">
       <CardHeader className="relative flex flex-row items-center space-y-0 border-dynamic-cyan/30 border-b bg-linear-to-r from-dynamic-cyan/10 via-dynamic-blue/10 to-dynamic-teal/10 p-4 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <div className="rounded-xl bg-linear-to-br from-dynamic-cyan/20 to-dynamic-blue/20 p-2 shadow-lg ring-2 ring-dynamic-cyan/30">
@@ -153,20 +153,20 @@ const CountdownDD = () => {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="relative h-full space-y-6 p-6">
-        <div className="space-y-5">
+      <CardContent className="relative h-full space-y-4 p-4">
+        <div className="space-y-4">
           <div className="text-center">
-            <div className="mb-4 flex justify-center gap-1.5 sm:mb-6 sm:gap-3">
+            <div className="mb-4 flex justify-center gap-1.5 sm:mb-4 sm:gap-3">
               <TimeSlot value={timeLeft.days} unit="Days" />
-              <div className="flex items-center font-black text-dynamic-cyan/40 text-xl sm:text-2xl md:text-3xl">
+              <div className="flex items-center font-black text-dynamic-cyan/40 text-lg">
                 :
               </div>
               <TimeSlot value={timeLeft.hours} unit="Hours" />
-              <div className="flex items-center font-black text-dynamic-cyan/40 text-xl sm:text-2xl md:text-3xl">
+              <div className="flex items-center font-black text-dynamic-cyan/40 text-lg">
                 :
               </div>
               <TimeSlot value={timeLeft.minutes} unit="Minutes" />
-              <div className="flex items-center font-black text-dynamic-cyan/40 text-xl sm:text-2xl md:text-3xl">
+              <div className="flex items-center font-black text-dynamic-cyan/40 text-lg">
                 :
               </div>
               <TimeSlot value={timeLeft.seconds} unit="Seconds" />
@@ -176,7 +176,7 @@ const CountdownDD = () => {
           <div className="space-y-3 rounded-xl border-2 border-dynamic-cyan/20 bg-linear-to-br from-dynamic-cyan/10 via-dynamic-blue/5 to-dynamic-teal/10 p-3 shadow-lg backdrop-blur-sm sm:space-y-4 sm:p-5">
             <div className="flex flex-col gap-2 border-dynamic-cyan/20 border-b pb-2 sm:flex-row sm:items-center sm:pb-3">
               <div className="flex items-center gap-2">
-                <span className="text-xl sm:text-2xl">📢</span>
+                <span className="text-xl">📢</span>
                 <h3 className="font-black text-dynamic-cyan text-sm uppercase tracking-wide sm:text-base">
                   SPARK Hub Demo Day
                 </h3>
@@ -305,7 +305,7 @@ const CountdownJT26 = () => {
 
   if (!timeLeft) {
     return (
-      <Card className="group relative mb-4 h-full overflow-hidden border-dynamic-pink/30 bg-linear-to-br from-dynamic-pink/5 via-dynamic-rose/10 to-dynamic-red/5 shadow-xl transition-all duration-300 hover:shadow-2xl">
+      <Card className="group relative h-full overflow-hidden border-dynamic-pink/30 bg-linear-to-br from-dynamic-pink/5 via-dynamic-rose/10 to-dynamic-red/5 shadow-xl transition-all duration-300 hover:shadow-2xl">
         {/* Cherry blossom petals decoration */}
         <div className="pointer-events-none absolute inset-0 opacity-10">
           <div className="absolute top-0 right-0 h-full w-full">
@@ -336,7 +336,7 @@ const CountdownJT26 = () => {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="relative h-full space-y-6 p-6">
+        <CardContent className="relative h-full space-y-4 p-4">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="text-4xl">🌸</div>
@@ -404,7 +404,7 @@ const CountdownJT26 = () => {
     <div className="group/slot flex flex-col items-center space-y-1 sm:space-y-2">
       <div className="relative rounded-lg border-2 border-dynamic-pink/30 bg-linear-to-br from-dynamic-pink/15 via-dynamic-rose/10 to-dynamic-red/15 px-2 py-1.5 shadow-lg transition-all duration-300 hover:scale-105 hover:border-dynamic-pink/50 hover:shadow-xl sm:rounded-xl sm:px-4 sm:py-3">
         <div className="absolute inset-0 rounded-lg bg-linear-to-br from-dynamic-pink/20 to-transparent opacity-0 transition-opacity duration-300 group-hover/slot:opacity-100 sm:rounded-xl"></div>
-        <div className="relative font-black text-2xl text-dynamic-pink tabular-nums drop-shadow-md transition-all duration-200 sm:text-3xl md:text-4xl">
+        <div className="relative font-black text-2xl text-dynamic-pink tabular-nums drop-shadow-md transition-all duration-200">
           {String(value).padStart(2, '0')}
         </div>
       </div>
@@ -420,7 +420,7 @@ const CountdownJT26 = () => {
   );
 
   return (
-    <Card className="group relative mb-4 h-full overflow-hidden border-dynamic-pink/30 bg-linear-to-br from-dynamic-pink/5 via-dynamic-rose/10 to-dynamic-red/5 shadow-xl transition-all duration-300 hover:shadow-2xl">
+    <Card className="group relative h-full overflow-hidden border-dynamic-pink/30 bg-linear-to-br from-dynamic-pink/5 via-dynamic-rose/10 to-dynamic-red/5 shadow-xl transition-all duration-300 hover:shadow-2xl">
       {/* Cherry blossom petals decoration */}
       <div className="pointer-events-none absolute inset-0 opacity-5">
         <div className="absolute top-0 right-0 h-full w-full">
@@ -451,20 +451,20 @@ const CountdownJT26 = () => {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="relative h-full space-y-6 p-6">
-        <div className="space-y-5">
+      <CardContent className="relative h-full space-y-4 p-4">
+        <div className="space-y-4">
           <div className="text-center">
-            <div className="mb-4 flex justify-center gap-1.5 sm:mb-6 sm:gap-3">
+            <div className="mb-4 flex justify-center gap-1.5 sm:mb-4 sm:gap-3">
               <TimeSlot value={timeLeft.days} unit="Days" kanji="日" />
-              <div className="flex items-center font-black text-dynamic-pink/40 text-xl sm:text-2xl md:text-3xl">
+              <div className="flex items-center font-black text-dynamic-pink/40 text-lg">
                 :
               </div>
               <TimeSlot value={timeLeft.hours} unit="Hours" kanji="時" />
-              <div className="flex items-center font-black text-dynamic-pink/40 text-xl sm:text-2xl md:text-3xl">
+              <div className="flex items-center font-black text-dynamic-pink/40 text-lg">
                 :
               </div>
               <TimeSlot value={timeLeft.minutes} unit="Minutes" kanji="分" />
-              <div className="flex items-center font-black text-dynamic-pink/40 text-xl sm:text-2xl md:text-3xl">
+              <div className="flex items-center font-black text-dynamic-pink/40 text-lg">
                 :
               </div>
               <TimeSlot value={timeLeft.seconds} unit="Seconds" kanji="秒" />
@@ -474,7 +474,7 @@ const CountdownJT26 = () => {
           <div className="space-y-3 rounded-xl border-2 border-dynamic-pink/20 bg-linear-to-br from-dynamic-pink/10 via-dynamic-rose/5 to-dynamic-red/10 p-3 shadow-lg backdrop-blur-sm sm:space-y-4 sm:p-5">
             <div className="flex flex-col gap-2 border-dynamic-pink/20 border-b pb-2 sm:flex-row sm:items-center sm:pb-3">
               <div className="flex items-center gap-2">
-                <span className="text-xl sm:text-2xl">🎌</span>
+                <span className="text-xl">🎌</span>
                 <h3 className="font-black text-dynamic-pink text-sm uppercase tracking-wide sm:text-base">
                   日本への旅
                 </h3>

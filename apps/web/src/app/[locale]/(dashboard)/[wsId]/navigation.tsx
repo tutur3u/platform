@@ -1,3 +1,5 @@
+import type { NavLink } from '@/components/navigation';
+import { DEV_MODE } from '@/constants/common';
 import {
   Archive,
   Banknote,
@@ -16,7 +18,6 @@ import {
   ChartArea,
   ChartColumnStacked,
   ChartGantt,
-  CircleCheck,
   CircleDollarSign,
   ClipboardClock,
   ClipboardList,
@@ -43,6 +44,7 @@ import {
   Mail,
   Mails,
   MailX,
+  Megaphone,
   MessageCircleIcon,
   Package,
   PencilLine,
@@ -75,7 +77,6 @@ import {
   Truck,
   UserCheck,
   UserLock,
-  UserRound,
   Users,
   VectorSquare,
   Vote,
@@ -84,8 +85,8 @@ import {
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
-  ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
+  ROOT_WORKSPACE_ID,
 } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
@@ -93,8 +94,7 @@ import {
   getSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
-import type { NavLink } from '@/components/navigation';
-import { DEV_MODE } from '@/constants/common';
+import Image from 'next/image';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -177,14 +177,30 @@ export async function WorkspaceNavigationLinks({
       title: t('sidebar_tabs.tasks'),
       href: `/${personalOrWsId}/tasks/my-tasks`,
       aliases: [`/${personalOrWsId}/tasks`, `/${personalOrWsId}/tasks/habits`],
-      icon: <CircleCheck className="h-5 w-5" />,
+      icon: (
+        <Image
+          src="/media/logos/tudo.svg"
+          alt="Tudo"
+          width={20}
+          height={20}
+          className="h-5 w-5"
+        />
+      ),
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
       experimental: 'beta',
       children: [
         {
           title: t('sidebar_tabs.my_tasks'),
           href: `/${personalOrWsId}/tasks/my-tasks`,
-          icon: <UserRound className="h-4 w-4" />,
+          icon: (
+            <Image
+              src="/media/logos/tudo.svg"
+              alt="Tudo"
+              width={16}
+              height={16}
+              className="h-4 w-4"
+            />
+          ),
           matchExact: true,
         },
         {
@@ -1025,6 +1041,12 @@ export async function WorkspaceNavigationLinks({
               title: t('infrastructure-tabs.realtime'),
               href: `/${personalOrWsId}/infrastructure/realtime`,
               icon: <Radio className="h-5 w-5" />,
+            },
+            {
+              title: t('infrastructure-tabs.changelog'),
+              href: `/${personalOrWsId}/infrastructure/changelog`,
+              icon: <Megaphone className="h-5 w-5" />,
+              disabled: withoutPermission('manage_changelog'),
             },
           ],
         },

@@ -6,7 +6,6 @@ import {
   Users,
 } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
@@ -77,58 +76,55 @@ export default async function UserGroupQuickActions({
   }
 
   return (
-    <>
-      <div className="mb-6">
-        <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dynamic-blue/10">
-            <Users className="h-5 w-5 text-dynamic-blue" />
-          </div>
-          <div>
-            <h2 className="font-semibold text-lg">
-              {t('dashboard.user_group_quick_actions')}
-            </h2>
-            <p className="text-muted-foreground text-sm">
-              {t('dashboard.user_group_quick_actions_desc')}
-            </p>
-          </div>
+    <div className="col-span-full">
+      <div className="mb-4 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dynamic-blue/10">
+          <Users className="h-5 w-5 text-dynamic-blue" />
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {quickActions.map((action) => (
-            <Link key={action.href} href={action.href} className="group">
-              <div
-                className={cn(
-                  'h-full rounded-lg border p-4 transition-all hover:shadow-md',
-                  `border-dynamic-${action.color}/20 bg-dynamic-${action.color}/5 hover:bg-dynamic-${action.color}/10`
-                )}
-              >
-                <div className="mb-3 flex items-center gap-3">
-                  <div
-                    className={cn(
-                      'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
-                      `bg-dynamic-${action.color}/10 text-dynamic-${action.color} group-hover:bg-dynamic-${action.color}/20`
-                    )}
-                  >
-                    <action.icon className="h-5 w-5" />
-                  </div>
-                </div>
-                <h3
-                  className={cn(
-                    'mb-1 font-semibold',
-                    `text-dynamic-${action.color}`
-                  )}
-                >
-                  {action.label}
-                </h3>
-                <p className="text-muted-foreground text-xs leading-relaxed">
-                  {action.description}
-                </p>
-              </div>
-            </Link>
-          ))}
+        <div>
+          <h2 className="font-semibold text-lg">
+            {t('dashboard.user_group_quick_actions')}
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            {t('dashboard.user_group_quick_actions_desc')}
+          </p>
         </div>
       </div>
-      <Separator className="mb-6" />
-    </>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {quickActions.map((action) => (
+          <Link key={action.href} href={action.href} className="group">
+            <div
+              className={cn(
+                'h-full rounded-lg border p-4 transition-all hover:shadow-md',
+                `border-dynamic-${action.color}/20 bg-dynamic-${action.color}/5 hover:bg-dynamic-${action.color}/10`
+              )}
+            >
+              <div className="mb-3 flex items-center gap-3">
+                <div
+                  className={cn(
+                    'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
+                    `bg-dynamic-${action.color}/10 text-dynamic-${action.color} group-hover:bg-dynamic-${action.color}/20`
+                  )}
+                >
+                  <action.icon className="h-5 w-5" />
+                </div>
+              </div>
+              <h3
+                className={cn(
+                  'mb-1 font-semibold',
+                  `text-dynamic-${action.color}`
+                )}
+              >
+                {action.label}
+              </h3>
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                {action.description}
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }
 

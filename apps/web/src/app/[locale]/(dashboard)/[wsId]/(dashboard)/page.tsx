@@ -10,6 +10,7 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import UpcomingCalendarEvents from './calendar/upcoming-events';
+import RecentChangelog from './changelog/recent-changelog';
 import Countdown from './countdown';
 import DashboardCardSkeleton from './dashboard-card-skeleton';
 import TasksAssignedToMe from './tasks/tasks-assigned-to-me';
@@ -53,31 +54,38 @@ export default async function WorkspaceHomePage({ params }: Props) {
         const disableCalendar = withoutPermission('manage_calendar');
 
         return (
-          <div
-            className={cn(
-              'grid h-full gap-4 pb-4 lg:grid-cols-2',
-              isInternalUser && wsId === ROOT_WORKSPACE_ID && '2xl:grid-cols-3'
-            )}
-          >
-            {isInternalUser && wsId === ROOT_WORKSPACE_ID && <Countdown />}
-            {currentUser && (
-              <>
-                <Suspense fallback={null}>
-                  <UserGroupQuickActions wsId={wsId} />
-                </Suspense>
-                <Suspense fallback={<DashboardCardSkeleton />}>
-                  <TasksAssignedToMe
-                    wsId={wsId}
-                    userId={currentUser.id}
-                    isPersonal={workspace.personal}
-                  />
-                </Suspense>
+          <div className="flex flex-col gap-4 pb-4 xl:flex-row">
+            {/* Main content area - 2 column grid */}
+            <div className={cn('grid h-fit flex-1 gap-4 lg:grid-cols-2')}>
+              {isInternalUser && wsId === ROOT_WORKSPACE_ID && <Countdown />}
+              {currentUser && (
+                <>
+                  <Suspense fallback={null}>
+                    <UserGroupQuickActions wsId={wsId} />
+                  </Suspense>
+                  <Suspense fallback={<DashboardCardSkeleton />}>
+                    <TasksAssignedToMe
+                      wsId={wsId}
+                      userId={currentUser.id}
+                      isPersonal={workspace.personal}
+                    />
+                  </Suspense>
 
+                  <Suspense fallback={<DashboardCardSkeleton />}>
+                    <UpcomingCalendarEvents
+                      wsId={wsId}
+                      showNavigation={!disableCalendar}
+                    />
+                  </Suspense>
+                </>
+              )}
+            </div>
+
+            {/* Sidebar - smaller widgets */}
+            {currentUser && (
+              <div className="w-full shrink-0 space-y-4 xl:max-w-sm 2xl:max-w-md">
                 <Suspense fallback={<DashboardCardSkeleton />}>
-                  <UpcomingCalendarEvents
-                    wsId={wsId}
-                    showNavigation={!disableCalendar}
-                  />
+                  <RecentChangelog />
                 </Suspense>
 
                 <Suspense fallback={<DashboardCardSkeleton />}>
@@ -91,7 +99,7 @@ export default async function WorkspaceHomePage({ params }: Props) {
                 <Suspense fallback={<DashboardCardSkeleton />}>
                   <RecentTumeetPlans />
                 </Suspense>
-              </>
+              </div>
             )}
           </div>
         );

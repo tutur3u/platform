@@ -27,6 +27,18 @@ function createTestHabit(overrides: Partial<Habit>): Habit {
   };
 }
 
+/**
+ * Helper to compare dates by their local date components (year, month, day)
+ * This makes tests timezone-independent
+ */
+function toLocalDateString(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function expectDateEquals(actual: Date, expectedDateStr: string) {
+  expect(toLocalDateString(actual)).toBe(expectedDateStr);
+}
+
 describe('Recurrence Calculator', () => {
   describe('Daily Recurrence', () => {
     it('should return every day for daily habit', () => {
@@ -43,11 +55,11 @@ describe('Recurrence Calculator', () => {
       );
 
       expect(occurrences).toHaveLength(5);
-      expect(occurrences[0]).toEqual(new Date('2024-01-01T00:00:00.000Z'));
-      expect(occurrences[1]).toEqual(new Date('2024-01-02T00:00:00.000Z'));
-      expect(occurrences[2]).toEqual(new Date('2024-01-03T00:00:00.000Z'));
-      expect(occurrences[3]).toEqual(new Date('2024-01-04T00:00:00.000Z'));
-      expect(occurrences[4]).toEqual(new Date('2024-01-05T00:00:00.000Z'));
+      expectDateEquals(occurrences[0]!, '2024-01-01');
+      expectDateEquals(occurrences[1]!, '2024-01-02');
+      expectDateEquals(occurrences[2]!, '2024-01-03');
+      expectDateEquals(occurrences[3]!, '2024-01-04');
+      expectDateEquals(occurrences[4]!, '2024-01-05');
     });
 
     it('should return every 3 days for interval of 3', () => {
@@ -64,10 +76,10 @@ describe('Recurrence Calculator', () => {
       );
 
       expect(occurrences).toHaveLength(4);
-      expect(occurrences[0]).toEqual(new Date('2024-01-01T00:00:00.000Z'));
-      expect(occurrences[1]).toEqual(new Date('2024-01-04T00:00:00.000Z'));
-      expect(occurrences[2]).toEqual(new Date('2024-01-07T00:00:00.000Z'));
-      expect(occurrences[3]).toEqual(new Date('2024-01-10T00:00:00.000Z'));
+      expectDateEquals(occurrences[0]!, '2024-01-01');
+      expectDateEquals(occurrences[1]!, '2024-01-04');
+      expectDateEquals(occurrences[2]!, '2024-01-07');
+      expectDateEquals(occurrences[3]!, '2024-01-10');
     });
 
     it('should respect end date', () => {
@@ -103,10 +115,10 @@ describe('Recurrence Calculator', () => {
       );
 
       expect(occurrences).toHaveLength(4);
-      expect(occurrences[0]).toEqual(new Date('2024-01-01T00:00:00.000Z'));
-      expect(occurrences[1]).toEqual(new Date('2024-01-08T00:00:00.000Z'));
-      expect(occurrences[2]).toEqual(new Date('2024-01-15T00:00:00.000Z'));
-      expect(occurrences[3]).toEqual(new Date('2024-01-22T00:00:00.000Z'));
+      expectDateEquals(occurrences[0]!, '2024-01-01');
+      expectDateEquals(occurrences[1]!, '2024-01-08');
+      expectDateEquals(occurrences[2]!, '2024-01-15');
+      expectDateEquals(occurrences[3]!, '2024-01-22');
     });
 
     it('should return specific days of week', () => {
@@ -125,13 +137,13 @@ describe('Recurrence Calculator', () => {
 
       expect(occurrences).toHaveLength(6);
       // Week 1: Mon Jan 1, Wed Jan 3, Fri Jan 5
-      expect(occurrences[0]).toEqual(new Date('2024-01-01T00:00:00.000Z')); // Mon
-      expect(occurrences[1]).toEqual(new Date('2024-01-03T00:00:00.000Z')); // Wed
-      expect(occurrences[2]).toEqual(new Date('2024-01-05T00:00:00.000Z')); // Fri
+      expectDateEquals(occurrences[0]!, '2024-01-01'); // Mon
+      expectDateEquals(occurrences[1]!, '2024-01-03'); // Wed
+      expectDateEquals(occurrences[2]!, '2024-01-05'); // Fri
       // Week 2: Mon Jan 8, Wed Jan 10, Fri Jan 12
-      expect(occurrences[3]).toEqual(new Date('2024-01-08T00:00:00.000Z')); // Mon
-      expect(occurrences[4]).toEqual(new Date('2024-01-10T00:00:00.000Z')); // Wed
-      expect(occurrences[5]).toEqual(new Date('2024-01-12T00:00:00.000Z')); // Fri
+      expectDateEquals(occurrences[3]!, '2024-01-08'); // Mon
+      expectDateEquals(occurrences[4]!, '2024-01-10'); // Wed
+      expectDateEquals(occurrences[5]!, '2024-01-12'); // Fri
     });
 
     it('should handle every 2 weeks', () => {
@@ -149,9 +161,9 @@ describe('Recurrence Calculator', () => {
       );
 
       expect(occurrences).toHaveLength(3);
-      expect(occurrences[0]).toEqual(new Date('2024-01-01T00:00:00.000Z'));
-      expect(occurrences[1]).toEqual(new Date('2024-01-15T00:00:00.000Z')); // 2 weeks later
-      expect(occurrences[2]).toEqual(new Date('2024-01-29T00:00:00.000Z')); // 4 weeks later
+      expectDateEquals(occurrences[0]!, '2024-01-01');
+      expectDateEquals(occurrences[1]!, '2024-01-15'); // 2 weeks later
+      expectDateEquals(occurrences[2]!, '2024-01-29'); // 4 weeks later
     });
   });
 
@@ -172,9 +184,9 @@ describe('Recurrence Calculator', () => {
       );
 
       expect(occurrences).toHaveLength(3);
-      expect(occurrences[0]).toEqual(new Date('2024-01-15T00:00:00.000Z'));
-      expect(occurrences[1]).toEqual(new Date('2024-02-15T00:00:00.000Z'));
-      expect(occurrences[2]).toEqual(new Date('2024-03-15T00:00:00.000Z'));
+      expectDateEquals(occurrences[0]!, '2024-01-15');
+      expectDateEquals(occurrences[1]!, '2024-02-15');
+      expectDateEquals(occurrences[2]!, '2024-03-15');
     });
 
     it('should handle end of month edge case (31st)', () => {
@@ -193,9 +205,9 @@ describe('Recurrence Calculator', () => {
       );
 
       expect(occurrences).toHaveLength(3);
-      expect(occurrences[0]).toEqual(new Date('2024-01-31T00:00:00.000Z'));
-      expect(occurrences[1]).toEqual(new Date('2024-02-29T00:00:00.000Z')); // Feb 29 (2024 is leap year)
-      expect(occurrences[2]).toEqual(new Date('2024-03-31T00:00:00.000Z'));
+      expectDateEquals(occurrences[0]!, '2024-01-31');
+      expectDateEquals(occurrences[1]!, '2024-02-29'); // Feb 29 (2024 is leap year)
+      expectDateEquals(occurrences[2]!, '2024-03-31');
     });
 
     it('should return nth weekday of month (2nd Tuesday)', () => {
@@ -215,9 +227,9 @@ describe('Recurrence Calculator', () => {
       );
 
       expect(occurrences).toHaveLength(3);
-      expect(occurrences[0]).toEqual(new Date('2024-01-09T00:00:00.000Z')); // 2nd Tue of Jan
-      expect(occurrences[1]).toEqual(new Date('2024-02-13T00:00:00.000Z')); // 2nd Tue of Feb
-      expect(occurrences[2]).toEqual(new Date('2024-03-12T00:00:00.000Z')); // 2nd Tue of Mar
+      expectDateEquals(occurrences[0]!, '2024-01-09'); // 2nd Tue of Jan
+      expectDateEquals(occurrences[1]!, '2024-02-13'); // 2nd Tue of Feb
+      expectDateEquals(occurrences[2]!, '2024-03-12'); // 2nd Tue of Mar
     });
 
     it('should handle last weekday of month', () => {
@@ -237,9 +249,9 @@ describe('Recurrence Calculator', () => {
       );
 
       expect(occurrences).toHaveLength(3);
-      expect(occurrences[0]).toEqual(new Date('2024-01-26T00:00:00.000Z')); // Last Fri of Jan
-      expect(occurrences[1]).toEqual(new Date('2024-02-23T00:00:00.000Z')); // Last Fri of Feb
-      expect(occurrences[2]).toEqual(new Date('2024-03-29T00:00:00.000Z')); // Last Fri of Mar
+      expectDateEquals(occurrences[0]!, '2024-01-26'); // Last Fri of Jan
+      expectDateEquals(occurrences[1]!, '2024-02-23'); // Last Fri of Feb
+      expectDateEquals(occurrences[2]!, '2024-03-29'); // Last Fri of Mar
     });
   });
 
@@ -258,9 +270,9 @@ describe('Recurrence Calculator', () => {
       );
 
       expect(occurrences).toHaveLength(3);
-      expect(occurrences[0]).toEqual(new Date('2024-03-15T00:00:00.000Z'));
-      expect(occurrences[1]).toEqual(new Date('2025-03-15T00:00:00.000Z'));
-      expect(occurrences[2]).toEqual(new Date('2026-03-15T00:00:00.000Z'));
+      expectDateEquals(occurrences[0]!, '2024-03-15');
+      expectDateEquals(occurrences[1]!, '2025-03-15');
+      expectDateEquals(occurrences[2]!, '2026-03-15');
     });
 
     it('should handle leap year birthday (Feb 29)', () => {
@@ -277,8 +289,8 @@ describe('Recurrence Calculator', () => {
       );
 
       expect(occurrences).toHaveLength(2);
-      expect(occurrences[0]).toEqual(new Date('2024-02-29T00:00:00.000Z'));
-      expect(occurrences[1]).toEqual(new Date('2028-02-29T00:00:00.000Z')); // Next leap year
+      expectDateEquals(occurrences[0]!, '2024-02-29');
+      expectDateEquals(occurrences[1]!, '2028-02-29'); // Next leap year
     });
   });
 
@@ -343,7 +355,8 @@ describe('Recurrence Calculator', () => {
 
       const next = getNextOccurrence(habit, new Date('2024-01-02'));
 
-      expect(next).toEqual(new Date('2024-01-08T00:00:00.000Z'));
+      expect(next).not.toBeNull();
+      expectDateEquals(next!, '2024-01-08');
     });
 
     it('should return null if no more occurrences', () => {
@@ -375,8 +388,8 @@ describe('Recurrence Calculator', () => {
       );
 
       expect(occurrences).toHaveLength(6);
-      expect(occurrences[0]).toEqual(new Date('2024-01-05T00:00:00.000Z'));
-      expect(occurrences[5]).toEqual(new Date('2024-01-10T00:00:00.000Z'));
+      expectDateEquals(occurrences[0]!, '2024-01-05');
+      expectDateEquals(occurrences[5]!, '2024-01-10');
     });
 
     it('should handle habit start date within range', () => {
@@ -393,7 +406,7 @@ describe('Recurrence Calculator', () => {
       );
 
       expect(occurrences).toHaveLength(6); // Jan 5-10
-      expect(occurrences[0]).toEqual(new Date('2024-01-05T00:00:00.000Z'));
+      expectDateEquals(occurrences[0]!, '2024-01-05');
     });
 
     it('should handle habit end date within range', () => {
