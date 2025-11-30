@@ -56,7 +56,7 @@ export default async function WorkspaceHomePage({ params }: Props) {
         return (
           <div className="flex flex-col gap-4 pb-4 xl:flex-row">
             {/* Main content area - 2 column grid */}
-            <div className={cn('grid flex-1 gap-4 lg:grid-cols-2')}>
+            <div className={cn('grid h-fit flex-1 gap-4 lg:grid-cols-2')}>
               {isInternalUser && wsId === ROOT_WORKSPACE_ID && <Countdown />}
               {currentUser && (
                 <>
