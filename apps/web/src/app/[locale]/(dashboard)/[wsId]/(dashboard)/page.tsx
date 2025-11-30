@@ -1,13 +1,14 @@
+import LoadingStatisticCard from '@/components/loading-statistic-card';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { AuroraForecast } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
+import { cn } from '@tuturuuu/utils/format';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import LoadingStatisticCard from '@/components/loading-statistic-card';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import UpcomingCalendarEvents from './calendar/upcoming-events';
 import Countdown from './countdown';
 import DashboardCardSkeleton from './dashboard-card-skeleton';
@@ -52,44 +53,47 @@ export default async function WorkspaceHomePage({ params }: Props) {
         const disableCalendar = withoutPermission('manage_calendar');
 
         return (
-          <>
+          <div
+            className={cn(
+              'grid h-full gap-4 pb-4 lg:grid-cols-2',
+              isInternalUser && wsId === ROOT_WORKSPACE_ID && '2xl:grid-cols-3'
+            )}
+          >
             {isInternalUser && wsId === ROOT_WORKSPACE_ID && <Countdown />}
             {currentUser && (
               <>
                 <Suspense fallback={null}>
                   <UserGroupQuickActions wsId={wsId} />
                 </Suspense>
-                <div className="grid gap-4 pb-4 md:grid-cols-2">
-                  <Suspense fallback={<DashboardCardSkeleton />}>
-                    <TasksAssignedToMe
-                      wsId={wsId}
-                      userId={currentUser.id}
-                      isPersonal={workspace.personal}
-                    />
-                  </Suspense>
+                <Suspense fallback={<DashboardCardSkeleton />}>
+                  <TasksAssignedToMe
+                    wsId={wsId}
+                    userId={currentUser.id}
+                    isPersonal={workspace.personal}
+                  />
+                </Suspense>
 
-                  <Suspense fallback={<DashboardCardSkeleton />}>
-                    <UpcomingCalendarEvents
-                      wsId={wsId}
-                      showNavigation={!disableCalendar}
-                    />
-                  </Suspense>
+                <Suspense fallback={<DashboardCardSkeleton />}>
+                  <UpcomingCalendarEvents
+                    wsId={wsId}
+                    showNavigation={!disableCalendar}
+                  />
+                </Suspense>
 
-                  <Suspense fallback={<DashboardCardSkeleton />}>
-                    <TimeTrackingMetrics
-                      wsId={wsId}
-                      userId={currentUser.id}
-                      isPersonal={workspace.personal}
-                    />
-                  </Suspense>
+                <Suspense fallback={<DashboardCardSkeleton />}>
+                  <TimeTrackingMetrics
+                    wsId={wsId}
+                    userId={currentUser.id}
+                    isPersonal={workspace.personal}
+                  />
+                </Suspense>
 
-                  <Suspense fallback={<DashboardCardSkeleton />}>
-                    <RecentTumeetPlans />
-                  </Suspense>
-                </div>
+                <Suspense fallback={<DashboardCardSkeleton />}>
+                  <RecentTumeetPlans />
+                </Suspense>
               </>
             )}
-          </>
+          </div>
         );
       }}
     </WorkspaceWrapper>

@@ -172,10 +172,57 @@ export function useBoardRealtime(
           handleListChange((oldRecord || newRecord) as TaskList, eventType);
         }
 
-        queryClient.invalidateQueries({
-          queryKey: ['task_lists', boardId],
-        });
-        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+        // Handle realtime list changes with setQueryData (avoids flicker)
+        // Task changes come through the tasks listener, not here
+        switch (eventType) {
+          case 'INSERT':
+            queryClient.setQueryData(
+              ['task_lists', boardId],
+              (old: TaskList[] | undefined) => {
+                const insertedList = newRecord as TaskList;
+                if (!old) return [insertedList];
+                // Check if already exists (from optimistic update)
+                if (old.some((l) => l.id === insertedList.id)) return old;
+                return [...old, insertedList];
+              }
+            );
+            break;
+
+          case 'UPDATE':
+            queryClient.setQueryData(
+              ['task_lists', boardId],
+              (old: TaskList[] | undefined) => {
+                if (!old) return old;
+                const updatedList = newRecord as TaskList;
+                return old.map((list) =>
+                  list.id === updatedList.id
+                    ? { ...list, ...updatedList }
+                    : list
+                );
+              }
+            );
+            break;
+
+          case 'DELETE':
+            queryClient.setQueryData(
+              ['task_lists', boardId],
+              (old: TaskList[] | undefined) => {
+                if (!old) return old;
+                const deletedList = oldRecord as TaskList;
+                return old.filter((list) => list.id !== deletedList.id);
+              }
+            );
+            // Also remove tasks from deleted list
+            queryClient.setQueryData(
+              ['tasks', boardId],
+              (old: Task[] | undefined) => {
+                if (!old) return old;
+                const deletedList = oldRecord as TaskList;
+                return old.filter((task) => task.list_id !== deletedList.id);
+              }
+            );
+            break;
+        }
       }
     );
 

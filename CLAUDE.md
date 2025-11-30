@@ -112,19 +112,23 @@ bun sb:linkpush      # Link and push (USER-ONLY, NEVER agents)
 ### Building & Testing
 
 ```bash
-# Build all apps and packages (USER runs, agent requests)
+# Build all apps and packages (USER-ONLY - NEVER run unless explicitly requested)
 bun run build
 
-# Build with linting and testing
+# Build with linting and testing (USER-ONLY - NEVER run unless explicitly requested)
 bun run buildx
 
-# Run tests (USER runs, agent requests)
+# Run tests (agents CAN and SHOULD run after implementing features)
 bun run test         # Run all tests
 bun run test:watch   # Watch mode
 
-# Run tests for specific package
+# Run tests for specific package (RECOMMENDED for agents)
 bun --filter @tuturuuu/utils test
 ```
+
+**CRITICAL for Agents**:
+- **BUILD**: NEVER run `bun run build`, `bun build`, or `bun run buildx` unless the user explicitly requests it
+- **TEST**: ALWAYS add test cases after implementing new features and run them to verify functionality
 
 ### Code Quality (USER-ONLY)
 
@@ -168,7 +172,7 @@ bun trigger:deploy
 
 ### Hard Boundaries (NEVER)
 
-1. **NEVER** run `bun dev`, `bun run build`, or equivalent long-running commands unless explicitly requested
+1. **NEVER** run `bun dev`, `bun run build`, `bun build`, or equivalent long-running/build commands unless the user **explicitly requests** it - this includes any build, compile, or bundling operations
 2. **NEVER** run `bun sb:push` or `bun sb:linkpush` - prepare migrations; user applies
 3. **NEVER** run `bun lint`, `bun lint:fix`, `bun format`, or `bun format:fix` - suggest fixes; user runs
 4. **NEVER** run Modal commands (`modal run`, `modal deploy`) - prepare code; user executes
@@ -186,7 +190,7 @@ bun trigger:deploy
 1. **Touch ONLY** files required for the change (Least Privilege)
 2. **Always** run `bun sb:typegen` after schema changes
 3. **Always** validate external inputs with Zod schemas
-4. **Always** add tests for new functionality
+4. **Always** add tests for new functionality - after implementing a feature, create test cases and run them using `bun --filter @tuturuuu/<package> test` or `bun run test` for the affected scope
 5. **Always** update documentation when changing public APIs
 6. **Always** use Server Components by default; add `'use client'` only when necessary
 7. **Always** reference environment variables by name only (never echo values)

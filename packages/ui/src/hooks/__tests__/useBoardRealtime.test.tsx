@@ -180,7 +180,7 @@ describe('useBoardRealtime', () => {
       );
     });
 
-    it('should invalidate queries when task list changes', async () => {
+    it('should not invalidate queries when task list changes (realtime sync engine handles updates)', async () => {
       const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
       renderHook(
@@ -201,12 +201,8 @@ describe('useBoardRealtime', () => {
         });
       });
 
-      expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: ['task_lists', 'board-1'],
-      });
-      expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: ['tasks', 'board-1'],
-      });
+      // Realtime sync engine handles updates directly, no query invalidation needed
+      expect(invalidateSpy).not.toHaveBeenCalled();
     });
 
     it('should call onListChange callback when provided', async () => {

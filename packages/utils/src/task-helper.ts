@@ -1286,13 +1286,10 @@ export function useMoveTaskToBoard(currentBoardId: string) {
           }
         );
 
-        // Invalidate both boards to ensure consistency
-        queryClient.invalidateQueries({
-          queryKey: ['tasks', result.sourceBoardId],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ['tasks', result.targetBoardId],
-        });
+        // Note: We intentionally do NOT invalidate queries here.
+        // setQueryData handles immediate UI feedback, and realtime
+        // subscription handles cross-user sync. Invalidating would cause
+        // tasks to flicker (disappear then reappear).
       } else {
         // Same board - just update the task
         queryClient.setQueryData(

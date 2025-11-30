@@ -1,6 +1,6 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
 import { Loader2 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -267,6 +267,18 @@ export function TaskEditDialog({
     const index = Math.abs(hashCode(userId)) % colors.length;
     return colors[index] || colors[0];
   }, [user?.id]);
+
+  // Fetch user task settings for auto-assign feature
+  const { data: userTaskSettings } = useQuery({
+    queryKey: ['user-task-settings'],
+    queryFn: async () => {
+      const res = await fetch('/api/v1/users/task-settings');
+      if (!res.ok) return { task_auto_assign_to_self: false };
+      return res.json() as Promise<{ task_auto_assign_to_self: boolean }>;
+    },
+    enabled: isCreateMode && !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const { doc, provider, synced, connected } = useYjsCollaboration({
     channel: `task-editor-${task?.id || 'new'}`,
@@ -1100,9 +1112,27 @@ export function TaskEditDialog({
           }
         }
 
-        if (selectedAssignees.length > 0) {
+        // Determine final assignees - auto-assign to self if enabled and no assignees selected
+        let finalAssignees = [...selectedAssignees];
+        if (
+          finalAssignees.length === 0 &&
+          userTaskSettings?.task_auto_assign_to_self &&
+          user?.id &&
+          !isPersonalWorkspace
+        ) {
+          finalAssignees = [
+            {
+              id: user.id,
+              user_id: user.id,
+              display_name: user.display_name,
+              avatar_url: user.avatar_url,
+            },
+          ];
+        }
+
+        if (finalAssignees.length > 0) {
           // Use user_id if available, fallback to id for compatibility
-          const assigneesToInsert = selectedAssignees
+          const assigneesToInsert = finalAssignees
             .map((a) => ({
               task_id: newTask.id,
               user_id: a.user_id || a.id,
