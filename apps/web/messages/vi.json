@@ -296,6 +296,8 @@
     "realestate": "Bất động sản",
     "blog": "Blog",
     "blog-description": "Đọc các bài viết và cập nhật mới nhất của chúng tôi.",
+    "changelog": "Nhật ký thay đổi",
+    "changelog-description": "Xem những gì mới và những gì đã thay đổi.",
     "documentation-description": "Tìm tài liệu và hướng dẫn chi tiết.",
     "education-description": "Giải pháp dành riêng cho các tổ chức giáo dục.",
     "retail-description": "Giải pháp dành riêng cho các doanh nghiệp bán lẻ.",
@@ -1532,7 +1534,8 @@
     "ai_whitelisted_emails": "Email nằm trong danh sách trắng của AI",
     "email_blacklist": "Danh sách đen email",
     "translations": "Bản dịch",
-    "realtime": "Thời gian thực"
+    "realtime": "Thời gian thực",
+    "changelog": "Nhật ký thay đổi"
   },
   "infrastructure-analytics": {
     "page-description": "Giám sát và quản lý cơ sở hạ tầng, người dùng và tài nguyên nền tảng với phân tích toàn diện.",
@@ -3202,6 +3205,8 @@
     "manage_workspace_security_description": "Cho phép các thành viên quản lý khoá API và khả năng xóa không gian làm việc.",
     "manage_workspace_audit_logs": "Quản lý nhật ký kiểm toán",
     "manage_workspace_audit_logs_description": "Cho phép các thành viên xem tất cả các hoạt động trong không gian làm việc.",
+    "manage_changelog": "Quản lý Nhật ký thay đổi",
+    "manage_changelog_description": "Tạo, chỉnh sửa, xuất bản và xóa các mục nhật ký thay đổi của nền tảng.",
     "manage_workspace_billing": "Quản lý thanh toán",
     "manage_workspace_billing_description": "Cho phép các thành viên xem và cập nhật thông tin thanh toán.",
     "ai": "Trí tuệ nhân tạo",
@@ -5893,7 +5898,37 @@
     "stat_tomorrow": "Ngày Mai",
     "stat_high_priority": "Ưu Tiên Cao",
     "quick_tip": "Mẹo Nhanh",
-    "quick_tip_description": "Các nhiệm vụ được giao cho bạn sẽ xuất hiện ở đây. Bạn có thể xem tất cả nhiệm vụ, tạo mới hoặc duyệt các bảng có sẵn để bắt đầu."
+    "quick_tip_description": "Các nhiệm vụ được giao cho bạn sẽ xuất hiện ở đây. Bạn có thể xem tất cả nhiệm vụ, tạo mới hoặc duyệt các bảng có sẵn để bắt đầu.",
+    "recent_updates": "Cập Nhật Gần Đây",
+    "no_updates": "Chưa Có Cập Nhật",
+    "no_updates_description": "Quay lại sau để xem các cập nhật và tính năng mới nhất.",
+    "show_more_updates": "Xem thêm",
+    "view_changelog": "Xem Nhật Ký"
+  },
+  "changelog-data-table": {
+    "id": "ID",
+    "title": "Tiêu đề",
+    "slug": "Đường dẫn",
+    "category": "Danh mục",
+    "version": "Phiên bản",
+    "is_published": "Đã xuất bản",
+    "published_at": "Ngày xuất bản",
+    "created_at": "Ngày tạo",
+    "updated_at": "Ngày cập nhật",
+    "creator_id": "Người tạo"
+  },
+  "changelog-page": {
+    "badge": "Cập Nhật Nền Tảng",
+    "hero_title": "Có Gì Mới Tại",
+    "hero_description": "Cập nhật những tính năng, cải tiến và thay đổi mới nhất để nâng cao hiệu suất làm việc của bạn.",
+    "no_updates": "Chưa có cập nhật nào",
+    "no_updates_description": "Chúng tôi đang phát triển các tính năng mới thú vị. Hãy quay lại sau!",
+    "update": "cập nhật",
+    "updates": "cập nhật",
+    "read_more": "Xem thêm",
+    "cta_title": "Không bỏ lỡ cập nhật nào",
+    "cta_description": "Theo dõi kho GitHub của chúng tôi để cập nhật những phát triển mới nhất và đóng góp cho dự án.",
+    "cta_button": "Theo dõi trên GitHub"
   },
   "ws-groups": {
     "select_warehouse": "Chọn kho hàng",

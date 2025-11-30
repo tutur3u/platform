@@ -1083,6 +1083,83 @@ export type Database = {
           },
         ];
       };
+      changelog_entries: {
+        Row: {
+          category: string;
+          content: Json;
+          cover_image_url: string | null;
+          created_at: string | null;
+          creator_id: string;
+          id: string;
+          is_published: boolean | null;
+          published_at: string | null;
+          slug: string;
+          summary: string | null;
+          title: string;
+          updated_at: string | null;
+          version: string | null;
+        };
+        Insert: {
+          category: string;
+          content: Json;
+          cover_image_url?: string | null;
+          created_at?: string | null;
+          creator_id?: string;
+          id?: string;
+          is_published?: boolean | null;
+          published_at?: string | null;
+          slug: string;
+          summary?: string | null;
+          title: string;
+          updated_at?: string | null;
+          version?: string | null;
+        };
+        Update: {
+          category?: string;
+          content?: Json;
+          cover_image_url?: string | null;
+          created_at?: string | null;
+          creator_id?: string;
+          id?: string;
+          is_published?: boolean | null;
+          published_at?: string | null;
+          slug?: string;
+          summary?: string | null;
+          title?: string;
+          updated_at?: string | null;
+          version?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'changelog_entries_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'changelog_entries_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'changelog_entries_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'changelog_entries_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       course_certificates: {
         Row: {
           completed_date: string;
@@ -15582,7 +15659,8 @@ export type Database = {
         | 'update_confidential_transactions'
         | 'delete_confidential_transactions'
         | 'manage_time_tracking_requests'
-        | 'bypass_time_tracking_request_approval';
+        | 'bypass_time_tracking_request_approval'
+        | 'manage_changelog';
     };
     CompositeTypes: {
       email_block_status: {
@@ -15854,6 +15932,7 @@ export const Constants = {
         'delete_confidential_transactions',
         'manage_time_tracking_requests',
         'bypass_time_tracking_request_approval',
+        'manage_changelog',
       ],
     },
   },
