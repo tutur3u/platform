@@ -11,7 +11,6 @@ interface PurchaseLinkProps {
   customerEmail?: string;
   theme?: 'light' | 'dark' | 'auto';
   className?: string;
-  sandbox?: boolean;
 }
 
 export default function PurchaseLink({
@@ -21,7 +20,6 @@ export default function PurchaseLink({
   theme = 'auto',
   className,
   children,
-  sandbox = false,
 }: PropsWithChildren<PurchaseLinkProps>) {
   const mutation = useMutation({
     mutationFn: async () => {
@@ -33,9 +31,6 @@ export default function PurchaseLink({
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            sandbox,
-          }),
         });
 
         if (!response.ok) {
@@ -59,7 +54,6 @@ export default function PurchaseLink({
           body: JSON.stringify({
             wsId,
             productId,
-            sandbox,
           }),
         });
 

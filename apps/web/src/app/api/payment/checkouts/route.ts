@@ -1,6 +1,5 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { PORT } from '@/constants/common';
@@ -11,7 +10,7 @@ export async function POST(request: NextRequest) {
       ? `http://localhost:${PORT}`
       : 'https://tuturuuu.com';
 
-  const { wsId, productId, sandbox } = await request.json();
+  const { wsId, productId } = await request.json();
 
   // Validate that you have the info you need
   if (!productId || !wsId) {
@@ -66,14 +65,7 @@ export async function POST(request: NextRequest) {
 
   // HERE is where you add the metadata
   try {
-    const polar = createPolarClient({
-      sandbox:
-        // Always use sandbox for development
-        process.env.NODE_ENV === 'development'
-          ? true
-          : // If the workspace is the root workspace and the sandbox is true, use sandbox
-            !!(wsId === ROOT_WORKSPACE_ID && sandbox), // Otherwise, use production
-    });
+    const polar = createPolarClient();
 
     const checkoutSession = await polar.checkouts.create({
       products: [productId],

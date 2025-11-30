@@ -22,9 +22,7 @@ export default async function SuccessPage({
     return notFound();
   }
 
-  const polar = createPolarClient({
-    sandbox: process.env.NODE_ENV === 'development',
-  });
+  const polar = createPolarClient();
 
   const checkout = await polar.checkouts.get({ id: checkoutId });
 

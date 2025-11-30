@@ -1,7 +1,6 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Separator } from '@tuturuuu/ui/separator';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { format } from 'date-fns';
 import type { Metadata } from 'next';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
@@ -13,22 +12,9 @@ export const metadata: Metadata = {
   description: 'Manage Billing in your Tuturuuu workspace.',
 };
 
-const fetchProducts = async ({
-  wsId,
-  sandbox,
-}: {
-  wsId: string;
-  sandbox: boolean;
-}) => {
+const fetchProducts = async () => {
   try {
-    const polar = createPolarClient({
-      sandbox:
-        // Always use sandbox for development
-        process.env.NODE_ENV === 'development'
-          ? true
-          : // If the workspace is the root workspace and the sandbox is true, use sandbox
-            !!(wsId === ROOT_WORKSPACE_ID && sandbox),
-    });
+    const polar = createPolarClient();
 
     const res = await polar.products.list({ isArchived: false });
     return res.result.items ?? [];
@@ -65,13 +51,7 @@ const checkCreator = async (wsId: string) => {
   return data.creator_id === user?.id;
 };
 
-const fetchSubscription = async ({
-  wsId,
-  sandbox,
-}: {
-  wsId: string;
-  sandbox: boolean;
-}) => {
+const fetchSubscription = async ({ wsId }: { wsId: string }) => {
   const sbAdmin = await createClient();
 
   const { data: dbSub, error } = await sbAdmin
@@ -86,14 +66,7 @@ const fetchSubscription = async ({
     return null;
   }
 
-  const polar = createPolarClient({
-    sandbox:
-      // Always use sandbox for development
-      process.env.NODE_ENV === 'development'
-        ? true
-        : // If the workspace is the root workspace and the sandbox is true, use sandbox
-          !!(wsId === ROOT_WORKSPACE_ID && sandbox), // Otherwise, use production
-  });
+  const polar = createPolarClient();
 
   const polarProduct = await polar.products.get({
     id: dbSub.product_id || '',
@@ -146,21 +119,16 @@ const fetchWorkspaceSubscriptions = async (wsId: string) => {
 
 export default async function BillingPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ wsId: string }>;
-  searchParams: Promise<{ sandbox: string }>;
 }) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-        const { sandbox } = await searchParams;
-
-        const enableSandbox = sandbox === 'true';
         const [products, subscription, subscriptionHistory, isCreator] =
           await Promise.all([
-            fetchProducts({ wsId, sandbox: enableSandbox }),
-            fetchSubscription({ wsId, sandbox: enableSandbox }),
+            fetchProducts(),
+            fetchSubscription({ wsId }),
             fetchWorkspaceSubscriptions(wsId),
             checkCreator(wsId),
           ]);

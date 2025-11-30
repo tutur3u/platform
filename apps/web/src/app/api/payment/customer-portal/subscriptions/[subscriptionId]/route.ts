@@ -39,9 +39,7 @@ export async function PATCH(
       );
     }
 
-    const polar = createPolarClient({
-      sandbox: process.env.NODE_ENV === 'development',
-    });
+    const polar = createPolarClient();
 
     const session = await polar.customerSessions.create({
       externalCustomerId: user.id,
@@ -110,9 +108,7 @@ export async function DELETE(
       );
     }
 
-    const polar = createPolarClient({
-      sandbox: process.env.NODE_ENV === 'development',
-    });
+    const polar = createPolarClient();
 
     const session = await polar.customerSessions.create({
       externalCustomerId: user.id,

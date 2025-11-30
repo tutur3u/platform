@@ -3,7 +3,6 @@ import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { Webhooks } from '@tuturuuu/payment/polar/next';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Constants, type WorkspaceProductTier } from '@tuturuuu/types';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 
 // Helper function to sync subscription data from Polar to DB
 async function syncSubscriptionToDatabase(subscription: Subscription) {
@@ -48,11 +47,7 @@ async function syncSubscriptionToDatabase(subscription: Subscription) {
 }
 
 // Helper function to report initial seat usage to Polar
-async function reportInitialUsage(
-  ws_id: string,
-  customerId: string,
-  metadata?: Record<string, unknown>
-) {
+async function reportInitialUsage(ws_id: string, customerId: string) {
   const sbAdmin = await createAdminClient();
 
   const { count: initialUserCount, error: countError } = await sbAdmin
@@ -62,15 +57,7 @@ async function reportInitialUsage(
 
   if (countError) throw countError;
 
-  const sandbox =
-    metadata?.sandbox === 'true' || process.env.NODE_ENV === 'development';
-
-  const polar = createPolarClient({
-    sandbox:
-      process.env.NODE_ENV === 'development'
-        ? true
-        : !!(ws_id === ROOT_WORKSPACE_ID && sandbox),
-  });
+  const polar = createPolarClient();
 
   await polar.events.ingest({
     events: [
@@ -101,11 +88,7 @@ export const POST = Webhooks({
       // Report initial usage for new subscriptions
       if (payload.data.status === 'active') {
         try {
-          await reportInitialUsage(
-            ws_id,
-            payload.data.customer.id,
-            payload.data.metadata
-          );
+          await reportInitialUsage(ws_id, payload.data.customer.id);
         } catch (e) {
           // Log but don't fail - subscription is already saved
           console.error('Webhook: Failed to report initial usage', e);
@@ -131,11 +114,7 @@ export const POST = Webhooks({
       // If subscription just became active, report usage
       if (payload.data.status === 'active') {
         try {
-          await reportInitialUsage(
-            ws_id,
-            payload.data.customer.id,
-            payload.data.metadata
-          );
+          await reportInitialUsage(ws_id, payload.data.customer.id);
         } catch (e) {
           console.error('Webhook: Failed to report usage on activation', e);
         }
