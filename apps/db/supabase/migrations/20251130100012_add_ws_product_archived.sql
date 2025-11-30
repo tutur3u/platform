@@ -1,0 +1,1 @@
+alter table "public"."workspace_subscription_products" add column "archived" boolean not null default false;

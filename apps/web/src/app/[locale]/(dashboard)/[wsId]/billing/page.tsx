@@ -2,7 +2,6 @@ import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { checkTuturuuuAdmin } from '@tuturuuu/utils/workspace-helper';
 import { format } from 'date-fns';
 import type { Metadata } from 'next';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
@@ -158,7 +157,6 @@ export default async function BillingPage({
         const { sandbox } = await searchParams;
 
         const enableSandbox = sandbox === 'true';
-        const isTuturuuuAdmin = await checkTuturuuuAdmin();
         const [products, subscription, subscriptionHistory, isCreator] =
           await Promise.all([
             fetchProducts({ wsId, sandbox: enableSandbox }),
@@ -233,7 +231,6 @@ export default async function BillingPage({
           <div className="container mx-auto max-w-6xl px-4 py-8">
             <BillingClient
               currentPlan={currentPlan}
-              isAdmin={isTuturuuuAdmin}
               products={products}
               product_id={subscription?.product.id || ''}
               wsId={wsId}

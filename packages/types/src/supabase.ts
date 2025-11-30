@@ -11598,6 +11598,7 @@ export type Database = {
       };
       workspace_subscription_products: {
         Row: {
+          archived: boolean;
           created_at: string;
           description: string | null;
           id: string;
@@ -11607,6 +11608,7 @@ export type Database = {
           tier: Database['public']['Enums']['workspace_product_tier'] | null;
         };
         Insert: {
+          archived?: boolean;
           created_at?: string;
           description?: string | null;
           id: string;
@@ -11616,6 +11618,7 @@ export type Database = {
           tier?: Database['public']['Enums']['workspace_product_tier'] | null;
         };
         Update: {
+          archived?: boolean;
           created_at?: string;
           description?: string | null;
           id?: string;

@@ -37,16 +37,14 @@ interface Plan {
 interface BillingClientProps {
   currentPlan: Plan;
   wsId: string;
-  products: Product[]; // Keep for admin sync functionality
+  products: Product[];
   product_id: string;
   isCreator: boolean;
-  isAdmin?: boolean;
   activeSubscriptionId?: string;
 }
 
 export function BillingClient({
   currentPlan,
-  isAdmin = false,
   products,
   wsId,
   isCreator,
@@ -370,12 +368,7 @@ export function BillingClient({
 
       {/* Upgrade Options */}
       {showUpgradeOptions && (
-        <PlanList
-          currentPlan={currentPlan}
-          products={products}
-          wsId={wsId}
-          isAdmin={isAdmin}
-        />
+        <PlanList currentPlan={currentPlan} products={products} wsId={wsId} />
       )}
     </div>
   );

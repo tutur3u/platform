@@ -10,12 +10,9 @@ import {
   Zap,
 } from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/payment/polar';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { Constants, type WorkspaceProductTier } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
 import PurchaseLink from './purchase-link';
 
@@ -37,17 +34,9 @@ interface PlanListProps {
   currentPlan: Plan;
   products: Product[];
   wsId: string;
-  isAdmin?: boolean;
 }
 
-export function PlanList({
-  currentPlan,
-  products,
-  wsId,
-  isAdmin = false,
-}: PlanListProps) {
-  const [syncCompleted, setSyncCompleted] = useState(false);
-  const [syncLoading, setSyncLoading] = useState(false);
+export function PlanList({ currentPlan, products, wsId }: PlanListProps) {
   const t = useTranslations('billing');
 
   const upgradePlans = products
@@ -105,66 +94,6 @@ export function PlanList({
     };
   };
 
-  const handleSyncToProduct = async () => {
-    setSyncLoading(true);
-    setSyncCompleted(false);
-    try {
-      const supabase = createClient();
-
-      await Promise.allSettled(
-        products.map(async (product) => {
-          // Extract product_tier from metadata
-          const validTiers = Constants.public.Enums.workspace_product_tier;
-          const metadataProductTier = product.metadata?.product_tier;
-
-          // Only set tier if it matches valid enum values
-          const tier =
-            metadataProductTier &&
-            typeof metadataProductTier === 'string' &&
-            validTiers.includes(
-              metadataProductTier.toUpperCase() as WorkspaceProductTier
-            )
-              ? (metadataProductTier.toUpperCase() as WorkspaceProductTier)
-              : null;
-
-          const { data, error } = await supabase
-            .from('workspace_subscription_products')
-            .upsert(
-              {
-                id: product.id,
-                name: product.name,
-                description: product.description || '',
-                price:
-                  product.prices.length > 0
-                    ? product.prices[0] && 'priceAmount' in product.prices[0]
-                      ? product.prices[0].priceAmount
-                      : 0
-                    : 0,
-                recurring_interval: product.recurringInterval,
-                tier,
-              },
-              {
-                onConflict: 'id',
-              }
-            )
-            .select();
-
-          if (error) {
-            console.error('Error inserting product:', error);
-            return null;
-          }
-          return data;
-        })
-      );
-
-      setSyncCompleted(true);
-    } catch (error) {
-      console.error('Sync failed:', error);
-    } finally {
-      setSyncLoading(false);
-    }
-  };
-
   return (
     <div className="relative overflow-hidden rounded-2xl border-2 border-primary/30 bg-linear-to-br from-card via-card to-primary/5 p-8 shadow-2xl dark:from-card/80">
       {/* Decorative Background */}
@@ -180,37 +109,6 @@ export function PlanList({
             {t('upgrade-plan')}
           </h2>
         </div>
-
-        {/* Admin Sync Section */}
-        {isAdmin && (
-          <div className="mb-8 rounded-xl border border-border bg-background/50 p-6 backdrop-blur-sm">
-            <div className="mb-3 flex items-center gap-2">
-              <Info className="h-5 w-5 text-muted-foreground" />
-              <p className="font-medium text-muted-foreground text-sm">
-                Admin Controls
-              </p>
-            </div>
-            {!syncCompleted ? (
-              <Button
-                onClick={handleSyncToProduct}
-                disabled={syncLoading}
-                className="shadow-lg transition-all hover:scale-105"
-                size="lg"
-              >
-                {syncLoading ? 'Syncing...' : 'Sync Products to Database'}
-              </Button>
-            ) : (
-              <Button
-                disabled
-                className="bg-dynamic-green shadow-lg hover:bg-dynamic-green"
-                size="lg"
-              >
-                <CheckCircle className="mr-2 h-5 w-5" />
-                Sync Completed
-              </Button>
-            )}
-          </div>
-        )}
 
         {/* Pricing Cards Grid */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

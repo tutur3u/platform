@@ -14,36 +14,6 @@ import { ROOT_WORKSPACE_ID, resolveWorkspaceId } from './constants';
 import { isValidTuturuuuEmail } from './email/client';
 import { permissions as rolePermissions } from './permissions';
 
-export { toWorkspaceSlug } from './constants';
-
-export async function checkTuturuuuAdmin() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect('/login');
-
-  // Check if user is a member of root workspace
-  const { error } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', ROOT_WORKSPACE_ID)
-    .eq('user_id', user.id)
-    .single();
-
-  if (error) {
-    console.error('Error checking Tuturuuu admin status:', error);
-    throw error;
-  }
-
-  if (user.email && isValidTuturuuuEmail(user.email)) {
-    return true;
-  }
-  return false;
-}
-
 // Structured logging utility
 const logWorkspaceError = (
   context: string,

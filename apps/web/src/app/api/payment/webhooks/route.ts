@@ -1,6 +1,7 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { Webhooks } from '@tuturuuu/payment/polar/next';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { Constants, type WorkspaceProductTier } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 
 export const POST = Webhooks({
@@ -167,6 +168,116 @@ export const POST = Webhooks({
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       console.error(
         'An unexpected error occurred in the revoked webhook handler:',
+        errorMessage
+      );
+      throw new Response('Internal Server Error', { status: 500 });
+    }
+  },
+  onProductCreated: async (payload) => {
+    console.log('Product created:', payload);
+
+    try {
+      const sbAdmin = await createAdminClient();
+      const product = payload.data;
+
+      // Extract product_tier from metadata
+      const validTiers = Constants.public.Enums.workspace_product_tier;
+      const metadataProductTier = product.metadata?.product_tier;
+
+      // Only set tier if it matches valid enum values
+      const tier =
+        metadataProductTier &&
+        typeof metadataProductTier === 'string' &&
+        validTiers.includes(
+          metadataProductTier.toUpperCase() as WorkspaceProductTier
+        )
+          ? (metadataProductTier.toUpperCase() as WorkspaceProductTier)
+          : null;
+
+      const { error: dbError } = await sbAdmin
+        .from('workspace_subscription_products')
+        .insert({
+          id: product.id,
+          name: product.name,
+          description: product.description || '',
+          price:
+            product.prices.length > 0
+              ? product.prices[0] && 'priceAmount' in product.prices[0]
+                ? product.prices[0].priceAmount
+                : 0
+              : 0,
+          recurring_interval: product.recurringInterval,
+          tier,
+          archived: product.isArchived,
+        });
+
+      if (dbError) {
+        console.error('Webhook: Product insert error:', dbError.message);
+        throw new Response(`Database Error: ${dbError.message}`, {
+          status: 500,
+        });
+      }
+
+      console.log(`Webhook: Product created successfully: ${product.id}`);
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+      console.error(
+        'An unexpected error occurred in the product created webhook handler:',
+        errorMessage
+      );
+      throw new Response('Internal Server Error', { status: 500 });
+    }
+  },
+  onProductUpdated: async (payload) => {
+    console.log('Product updated:', payload);
+
+    try {
+      const sbAdmin = await createAdminClient();
+      const product = payload.data;
+
+      // Extract product_tier from metadata
+      const validTiers = Constants.public.Enums.workspace_product_tier;
+      const metadataProductTier = product.metadata?.product_tier;
+
+      // Only set tier if it matches valid enum values
+      const tier =
+        metadataProductTier &&
+        typeof metadataProductTier === 'string' &&
+        validTiers.includes(
+          metadataProductTier.toUpperCase() as WorkspaceProductTier
+        )
+          ? (metadataProductTier.toUpperCase() as WorkspaceProductTier)
+          : null;
+
+      const { error: dbError } = await sbAdmin
+        .from('workspace_subscription_products')
+        .update({
+          name: product.name,
+          description: product.description || '',
+          price:
+            product.prices.length > 0
+              ? product.prices[0] && 'priceAmount' in product.prices[0]
+                ? product.prices[0].priceAmount
+                : 0
+              : 0,
+          recurring_interval: product.recurringInterval,
+          tier,
+          archived: product.isArchived,
+        })
+        .eq('id', product.id);
+
+      if (dbError) {
+        console.error('Webhook: Product upsert error:', dbError.message);
+        throw new Response(`Database Error: ${dbError.message}`, {
+          status: 500,
+        });
+      }
+
+      console.log(`Webhook: Product updated successfully: ${product.id}`);
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+      console.error(
+        'An unexpected error occurred in the product updated webhook handler:',
         errorMessage
       );
       throw new Response('Internal Server Error', { status: 500 });
