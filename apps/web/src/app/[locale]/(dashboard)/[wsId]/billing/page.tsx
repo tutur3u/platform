@@ -182,7 +182,10 @@ export default async function BillingPage({
                   : 0,
               billingCycle: subscription.product.recurringInterval,
               startDate: subscription.currentPeriodStart
-                ? format(new Date(subscription.currentPeriodStart), 'MMM d, yyyy')
+                ? format(
+                    new Date(subscription.currentPeriodStart),
+                    'MMM d, yyyy'
+                  )
                 : '-',
               nextBillingDate: subscription.currentPeriodEnd
                 ? format(new Date(subscription.currentPeriodEnd), 'MMM d, yyyy')
