@@ -83,7 +83,7 @@ export default async function WorkspaceHomePage({ params }: Props) {
 
             {/* Sidebar - smaller widgets */}
             {currentUser && (
-              <div className="w-full shrink-0 space-y-4 xl:max-w-sm">
+              <div className="w-full shrink-0 space-y-4 xl:max-w-sm 2xl:max-w-md">
                 <Suspense fallback={<DashboardCardSkeleton />}>
                   <RecentChangelog />
                 </Suspense>

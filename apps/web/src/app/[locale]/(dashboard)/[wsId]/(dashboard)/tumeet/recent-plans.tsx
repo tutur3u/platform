@@ -164,7 +164,7 @@ export default async function RecentTumeetPlans({
       </CardHeader>
       <CardContent className="p-4">
         {plans && plans.length > 0 ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 2xl:grid-cols-2">
             {plans.map((plan: MeetTogetherPlan, index) => {
               const participants =
                 planIdToParticipants.get(plan.id || '') || [];
@@ -191,14 +191,14 @@ export default async function RecentTumeetPlans({
                       <div className="absolute top-0 bottom-0 left-0 w-1.5 bg-dynamic-pink" />
                     )}
 
-                    <div className={cn(isFirst && 'pl-2')}>
+                    <div className={cn(isFirst && 'pl-2', 'text-center')}>
                       {/* Title */}
                       <h4 className="line-clamp-1 font-semibold text-sm transition-colors group-hover/plan:text-dynamic-pink">
                         {plan.name || t('untitled_plan')}
                       </h4>
 
                       {/* Meta row */}
-                      <div className="mt-3 flex items-center justify-between">
+                      <div className="mt-1 flex flex-col items-center justify-between gap-1">
                         <span className="text-muted-foreground text-xs">
                           {plan.created_at &&
                             formatDistanceToNow(new Date(plan.created_at), {
