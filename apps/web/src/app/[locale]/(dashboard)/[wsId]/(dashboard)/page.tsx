@@ -10,11 +10,11 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import UpcomingCalendarEvents from './calendar/upcoming-events';
+import RecentChangelog from './changelog/recent-changelog';
 import Countdown from './countdown';
 import DashboardCardSkeleton from './dashboard-card-skeleton';
 import TasksAssignedToMe from './tasks/tasks-assigned-to-me';
 import TimeTrackingMetrics from './time-tracker/time-tracking-metrics';
-import RecentChangelog from './changelog/recent-changelog';
 import RecentTumeetPlans from './tumeet/recent-plans';
 import UserGroupQuickActions from './user-groups/quick-actions';
 
@@ -56,14 +56,7 @@ export default async function WorkspaceHomePage({ params }: Props) {
         return (
           <div className="flex flex-col gap-4 pb-4 xl:flex-row">
             {/* Main content area - 2 column grid */}
-            <div
-              className={cn(
-                'grid flex-1 gap-4 lg:grid-cols-2',
-                isInternalUser &&
-                  wsId === ROOT_WORKSPACE_ID &&
-                  '2xl:grid-cols-3'
-              )}
-            >
+            <div className={cn('grid flex-1 gap-4 lg:grid-cols-2')}>
               {isInternalUser && wsId === ROOT_WORKSPACE_ID && <Countdown />}
               {currentUser && (
                 <>

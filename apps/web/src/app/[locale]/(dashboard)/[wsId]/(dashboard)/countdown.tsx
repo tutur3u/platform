@@ -126,7 +126,7 @@ const CountdownDD = () => {
     <div className="group/slot flex flex-col items-center space-y-1 sm:space-y-2">
       <div className="relative rounded-lg border-2 border-dynamic-cyan/30 bg-linear-to-br from-dynamic-cyan/15 via-dynamic-blue/10 to-dynamic-teal/15 px-2 py-1.5 shadow-lg transition-all duration-300 hover:scale-105 hover:border-dynamic-cyan/50 hover:shadow-xl sm:rounded-xl sm:px-4 sm:py-3">
         <div className="absolute inset-0 rounded-lg bg-linear-to-br from-dynamic-cyan/20 to-transparent opacity-0 transition-opacity duration-300 group-hover/slot:opacity-100 sm:rounded-xl"></div>
-        <div className="relative font-black text-2xl text-dynamic-cyan tabular-nums drop-shadow-md transition-all duration-200 sm:text-3xl md:text-4xl">
+        <div className="relative font-black text-2xl text-dynamic-cyan tabular-nums drop-shadow-md transition-all duration-200">
           {String(value).padStart(2, '0')}
         </div>
       </div>
@@ -158,15 +158,15 @@ const CountdownDD = () => {
           <div className="text-center">
             <div className="mb-4 flex justify-center gap-1.5 sm:mb-4 sm:gap-3">
               <TimeSlot value={timeLeft.days} unit="Days" />
-              <div className="flex items-center font-black text-dynamic-cyan/40 text-xl">
+              <div className="flex items-center font-black text-dynamic-cyan/40 text-lg">
                 :
               </div>
               <TimeSlot value={timeLeft.hours} unit="Hours" />
-              <div className="flex items-center font-black text-dynamic-cyan/40 text-xl">
+              <div className="flex items-center font-black text-dynamic-cyan/40 text-lg">
                 :
               </div>
               <TimeSlot value={timeLeft.minutes} unit="Minutes" />
-              <div className="flex items-center font-black text-dynamic-cyan/40 text-xl">
+              <div className="flex items-center font-black text-dynamic-cyan/40 text-lg">
                 :
               </div>
               <TimeSlot value={timeLeft.seconds} unit="Seconds" />
@@ -404,7 +404,7 @@ const CountdownJT26 = () => {
     <div className="group/slot flex flex-col items-center space-y-1 sm:space-y-2">
       <div className="relative rounded-lg border-2 border-dynamic-pink/30 bg-linear-to-br from-dynamic-pink/15 via-dynamic-rose/10 to-dynamic-red/15 px-2 py-1.5 shadow-lg transition-all duration-300 hover:scale-105 hover:border-dynamic-pink/50 hover:shadow-xl sm:rounded-xl sm:px-4 sm:py-3">
         <div className="absolute inset-0 rounded-lg bg-linear-to-br from-dynamic-pink/20 to-transparent opacity-0 transition-opacity duration-300 group-hover/slot:opacity-100 sm:rounded-xl"></div>
-        <div className="relative font-black text-2xl text-dynamic-pink tabular-nums drop-shadow-md transition-all duration-200 sm:text-3xl md:text-4xl">
+        <div className="relative font-black text-2xl text-dynamic-pink tabular-nums drop-shadow-md transition-all duration-200">
           {String(value).padStart(2, '0')}
         </div>
       </div>
@@ -456,15 +456,15 @@ const CountdownJT26 = () => {
           <div className="text-center">
             <div className="mb-4 flex justify-center gap-1.5 sm:mb-4 sm:gap-3">
               <TimeSlot value={timeLeft.days} unit="Days" kanji="日" />
-              <div className="flex items-center font-black text-dynamic-pink/40 text-xl">
+              <div className="flex items-center font-black text-dynamic-pink/40 text-lg">
                 :
               </div>
               <TimeSlot value={timeLeft.hours} unit="Hours" kanji="時" />
-              <div className="flex items-center font-black text-dynamic-pink/40 text-xl">
+              <div className="flex items-center font-black text-dynamic-pink/40 text-lg">
                 :
               </div>
               <TimeSlot value={timeLeft.minutes} unit="Minutes" kanji="分" />
-              <div className="flex items-center font-black text-dynamic-pink/40 text-xl">
+              <div className="flex items-center font-black text-dynamic-pink/40 text-lg">
                 :
               </div>
               <TimeSlot value={timeLeft.seconds} unit="Seconds" kanji="秒" />
