@@ -119,8 +119,8 @@ export default async function ChangelogPage() {
     <main className="relative mx-auto w-full overflow-x-hidden">
       {/* Background effects */}
       <div className="-z-10 pointer-events-none fixed inset-0">
-        <div className="-left-32 absolute top-0 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/20 via-dynamic-pink/10 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]" />
-        <div className="-right-32 absolute top-[30%] h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/20 via-dynamic-cyan/10 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]" />
+        <div className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/20 via-dynamic-pink/10 to-transparent blur-3xl sm:h-160 sm:w-160" />
+        <div className="-right-32 sm:-right-64 absolute top-[30%] h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/20 via-dynamic-cyan/10 to-transparent blur-3xl sm:h-140 sm:w-140" />
       </div>
 
       {/* Hero Section */}
@@ -189,13 +189,13 @@ export default async function ChangelogPage() {
                         <Card className="overflow-hidden transition-all hover:border-dynamic-purple/30 hover:shadow-xl">
                           <div className="grid gap-0 md:grid-cols-2">
                             {/* Cover Image */}
-                            <div className="relative aspect-video bg-muted md:aspect-auto md:min-h-[280px]">
+                            <div className="relative aspect-video bg-muted">
                               {featuredEntry.cover_image_url ? (
                                 <Image
                                   src={featuredEntry.cover_image_url}
                                   alt={featuredEntry.title}
                                   fill
-                                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                  className="object-cover transition-transform duration-300"
                                   unoptimized
                                 />
                               ) : (
@@ -232,7 +232,7 @@ export default async function ChangelogPage() {
                                     variant="secondary"
                                     className="font-mono"
                                   >
-                                    v{featuredEntry.version}
+                                    {featuredEntry.version}
                                   </Badge>
                                 )}
                               </div>
@@ -307,7 +307,7 @@ export default async function ChangelogPage() {
                                         variant="secondary"
                                         className="font-mono text-xs"
                                       >
-                                        v{entry.version}
+                                        {entry.version}
                                       </Badge>
                                     )}
                                   </div>

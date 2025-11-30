@@ -160,7 +160,7 @@ export default async function DashboardChangelogPage({ params }: Props) {
                             variant="secondary"
                             className="font-mono text-xs"
                           >
-                            v{entry.version}
+                            {entry.version}
                           </Badge>
                         )}
                         <span className="text-muted-foreground text-xs">

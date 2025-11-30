@@ -15,6 +15,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChangelogContentRenderer } from './content-renderer';
@@ -168,8 +169,8 @@ export default async function ChangelogEntryPage({ params }: Props) {
     <main className="relative mx-auto w-full overflow-x-hidden">
       {/* Background effects */}
       <div className="-z-10 pointer-events-none fixed inset-0">
-        <div className="-left-32 absolute top-0 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/20 via-dynamic-pink/10 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]" />
-        <div className="-right-32 absolute top-[30%] h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/20 via-dynamic-cyan/10 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]" />
+        <div className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/20 via-dynamic-pink/10 to-transparent blur-3xl sm:h-160 sm:w-160" />
+        <div className="-right-32 sm:-right-64 absolute top-[30%] h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/20 via-dynamic-cyan/10 to-transparent blur-3xl sm:h-140 sm:w-140" />
       </div>
 
       <article className="relative px-4 pt-24 pb-16 sm:px-6 sm:pt-32 lg:px-8">
@@ -195,7 +196,7 @@ export default async function ChangelogEntryPage({ params }: Props) {
               </Badge>
               {changelog.version && (
                 <Badge variant="secondary" className="font-mono">
-                  v{changelog.version}
+                  {changelog.version}
                 </Badge>
               )}
             </div>
@@ -215,10 +216,12 @@ export default async function ChangelogEntryPage({ params }: Props) {
           {/* Cover Image */}
           {changelog.cover_image_url && (
             <div className="mb-8 overflow-hidden rounded-lg">
-              <img
+              <Image
                 src={changelog.cover_image_url}
                 alt={changelog.title}
                 className="w-full object-cover"
+                width={1200}
+                height={600}
               />
             </div>
           )}
@@ -235,7 +238,7 @@ export default async function ChangelogEntryPage({ params }: Props) {
                 <Link href={`/changelog/${previous.slug}`} className="group">
                   <Card className="p-4 transition-all hover:border-dynamic-purple/30 hover:shadow-md">
                     <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                      <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                      <ArrowLeft className="group-hover:-translate-x-1 h-4 w-4 transition-transform" />
                       Previous
                     </div>
                     <div className="mt-1 font-medium group-hover:text-dynamic-purple">

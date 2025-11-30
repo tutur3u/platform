@@ -142,7 +142,7 @@ export default function ExpandableChangelogList({
                   </Badge>
                   {entry.version && (
                     <span className="text-muted-foreground text-xs">
-                      v{entry.version}
+                      {entry.version}
                     </span>
                   )}
                 </div>

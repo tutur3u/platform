@@ -172,7 +172,7 @@ export default async function Image({ params }: Props) {
                 fontFamily: 'monospace',
               }}
             >
-              v{changelog.version}
+              {changelog.version}
             </div>
           )}
         </div>

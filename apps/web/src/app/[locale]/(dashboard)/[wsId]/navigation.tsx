@@ -1,3 +1,5 @@
+import type { NavLink } from '@/components/navigation';
+import { DEV_MODE } from '@/constants/common';
 import {
   Archive,
   Banknote,
@@ -85,8 +87,8 @@ import {
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
-  ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
+  ROOT_WORKSPACE_ID,
 } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
@@ -94,8 +96,6 @@ import {
   getSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
-import type { NavLink } from '@/components/navigation';
-import { DEV_MODE } from '@/constants/common';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -1031,6 +1031,7 @@ export async function WorkspaceNavigationLinks({
               title: t('infrastructure-tabs.changelog'),
               href: `/${personalOrWsId}/infrastructure/changelog`,
               icon: <Megaphone className="h-5 w-5" />,
+              disabled: withoutPermission('manage_changelog'),
             },
           ],
         },

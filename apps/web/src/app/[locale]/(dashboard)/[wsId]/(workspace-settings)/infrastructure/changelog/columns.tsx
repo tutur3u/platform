@@ -147,7 +147,7 @@ export const changelogColumns = (
       const version = row.getValue('version') as string | null;
       return version ? (
         <Badge variant="secondary" className="font-mono">
-          v{version}
+          {version}
         </Badge>
       ) : (
         <span className="text-muted-foreground">-</span>
