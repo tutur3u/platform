@@ -127,7 +127,9 @@ export default function BillingHistory({
                       >
                         {subscription.status.charAt(0).toUpperCase() +
                           subscription.status.slice(1)}
-                        {(subscription.status === 'active' && subscription.cancel_at_period_end) && ' (Ending)'}
+                        {subscription.status === 'active' &&
+                          subscription.cancel_at_period_end &&
+                          ' (Ending)'}
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">
