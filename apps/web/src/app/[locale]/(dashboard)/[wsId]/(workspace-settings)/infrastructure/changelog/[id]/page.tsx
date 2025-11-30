@@ -1,3 +1,4 @@
+import type { JSONContent } from '@tiptap/react';
 import { ArrowLeft } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
@@ -20,6 +21,11 @@ interface Props {
   }>;
 }
 
+const defaultContent: JSONContent = {
+  type: 'doc',
+  content: [{ type: 'paragraph', content: [] }],
+};
+
 export default async function EditChangelogPage({ params }: Props) {
   const { wsId, id } = await params;
 
@@ -34,6 +40,13 @@ export default async function EditChangelogPage({ params }: Props) {
   if (!changelog) {
     notFound();
   }
+
+  // Transform database content to JSONContent, falling back to default if null
+  const transformedChangelog = {
+    ...changelog,
+    content: (changelog.content as JSONContent | null) ?? defaultContent,
+    is_published: changelog.is_published ?? false,
+  };
 
   return (
     <>
@@ -55,7 +68,7 @@ export default async function EditChangelogPage({ params }: Props) {
 
       <Separator className="my-4" />
 
-      <ChangelogForm wsId={wsId} initialData={changelog} isEditing />
+      <ChangelogForm wsId={wsId} initialData={transformedChangelog} isEditing />
     </>
   );
 }

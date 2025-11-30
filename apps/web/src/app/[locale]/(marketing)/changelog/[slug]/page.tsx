@@ -296,6 +296,11 @@ export default async function ChangelogEntryPage({ params }: Props) {
   );
 }
 
+const defaultContent: JSONContent = {
+  type: 'doc',
+  content: [{ type: 'paragraph', content: [] }],
+};
+
 async function getChangelog(slug: string): Promise<ChangelogEntry | null> {
   const supabase = await createClient();
 
@@ -312,7 +317,17 @@ async function getChangelog(slug: string): Promise<ChangelogEntry | null> {
     return null;
   }
 
-  return data;
+  if (!data || !data.published_at || !data.created_at) {
+    return null;
+  }
+
+  // Transform database types to component types
+  return {
+    ...data,
+    content: (data.content as JSONContent | null) ?? defaultContent,
+    published_at: data.published_at,
+    created_at: data.created_at,
+  };
 }
 
 async function getAdjacentChangelogs(publishedAt: string): Promise<{

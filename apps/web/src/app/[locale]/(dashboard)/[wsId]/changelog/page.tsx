@@ -15,7 +15,6 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
@@ -92,8 +91,7 @@ function formatDate(dateString: string): string {
 }
 
 export default async function DashboardChangelogPage({ params }: Props) {
-  const { wsId } = await params;
-  const t = await getTranslations();
+  await params; // Await params for Next.js dynamic route handling
   const changelogs = await getChangelogs();
 
   return (
@@ -209,5 +207,8 @@ async function getChangelogs(): Promise<ChangelogEntry[]> {
     return [];
   }
 
-  return data || [];
+  // Filter ensures published_at is non-null; cast for TypeScript
+  return (data || []).filter(
+    (entry): entry is ChangelogEntry => entry.published_at !== null
+  );
 }
