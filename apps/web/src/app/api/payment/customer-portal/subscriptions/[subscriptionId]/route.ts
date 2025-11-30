@@ -39,11 +39,11 @@ export async function PATCH(
     }
 
     // Parse request body to check for product update
-    const body = await req.json();
-    const { productId, sandbox } = body;
+    const body = await req.json().catch(() => ({}));
+    const { productId } = body;
 
     const polar = createPolarClient({
-      sandbox: sandbox || process.env.NODE_ENV === 'development',
+      sandbox: process.env.NODE_ENV === 'development',
     });
 
     const session = await polar.customerSessions.create({
@@ -80,47 +80,6 @@ export async function PATCH(
         customerSubscriptionUpdate,
       }
     );
-
-    // Prepare database update
-    const dbUpdate: any = {
-      status: result.status as any,
-      cancel_at_period_end: result.cancelAtPeriodEnd,
-      current_period_start: result.currentPeriodStart?.toISOString(),
-      current_period_end: result.currentPeriodEnd?.toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    // If product was updated, also update product_id in database
-    if (productId) {
-      const { data: product } = await supabase
-        .from('workspace_subscription_products')
-        .select('*')
-        .eq('id', productId)
-        .single();
-
-      if (product) {
-        dbUpdate.product_id = productId;
-      }
-    }
-
-    // Update subscription status in database based on Polar's response
-    const { error: updateError } = await supabase
-      .from('workspace_subscription')
-      .update(dbUpdate)
-      .eq('id', subscription.id);
-
-    if (updateError) {
-      console.error('Error updating subscription status:', updateError);
-      return NextResponse.json(
-        {
-          error: productId
-            ? 'Subscription updated but failed to sync database'
-            : 'Subscription reactivated but failed to update database',
-          message: updateError.message,
-        },
-        { status: 500 }
-      );
-    }
 
     return NextResponse.json({
       success: true,
@@ -188,29 +147,6 @@ export async function DELETE(
         id: subscription.polar_subscription_id,
       }
     );
-
-    // Update subscription status in database based on Polar's response
-    const { error: updateError } = await supabase
-      .from('workspace_subscription')
-      .update({
-        status: result.status as any,
-        cancel_at_period_end: result.cancelAtPeriodEnd,
-        current_period_start: result.currentPeriodStart?.toISOString(),
-        current_period_end: result.currentPeriodEnd?.toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', subscription.id);
-
-    if (updateError) {
-      console.error('Error updating subscription status:', updateError);
-      return NextResponse.json(
-        {
-          error: 'Subscription canceled but failed to update database',
-          message: updateError.message,
-        },
-        { status: 500 }
-      );
-    }
 
     return NextResponse.json({
       success: true,

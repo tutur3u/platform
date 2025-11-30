@@ -1,175 +1,152 @@
+import type { Subscription } from '@tuturuuu/payment/polar';
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { Webhooks } from '@tuturuuu/payment/polar/next';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Constants, type WorkspaceProductTier } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 
+// Helper function to sync subscription data from Polar to DB
+async function syncSubscriptionToDatabase(subscription: Subscription) {
+  const sbAdmin = await createAdminClient();
+  const ws_id = subscription.metadata?.wsId;
+
+  if (!ws_id || typeof ws_id !== 'string') {
+    console.error('Webhook Error: Workspace ID (wsId) not found in metadata.');
+    throw new Response('Webhook Error: Missing wsId in metadata', {
+      status: 400,
+    });
+  }
+
+  const subscriptionData = {
+    ws_id: ws_id,
+    status: subscription.status,
+    polar_subscription_id: subscription.id,
+    product_id: subscription.product.id,
+    current_period_start: subscription.currentPeriodStart.toISOString(),
+    current_period_end: subscription.currentPeriodEnd
+      ? subscription.currentPeriodEnd.toISOString()
+      : null,
+    cancel_at_period_end: subscription.cancelAtPeriodEnd,
+    updated_at: new Date().toISOString(),
+  };
+
+  // Update existing subscription
+  const { error: dbError } = await sbAdmin
+    .from('workspace_subscription')
+    .upsert(subscriptionData, {
+      onConflict: 'polar_subscription_id',
+      ignoreDuplicates: false,
+    })
+    .eq('polar_subscription_id', subscription.id);
+
+  if (dbError) {
+    console.error('Webhook: Supabase error:', dbError.message);
+    throw new Error(`Database Error: ${dbError.message}`);
+  }
+
+  return { ws_id, subscriptionData };
+}
+
+// Helper function to report initial seat usage to Polar
+async function reportInitialUsage(
+  ws_id: string,
+  customerId: string,
+  metadata?: Record<string, unknown>
+) {
+  const sbAdmin = await createAdminClient();
+
+  const { count: initialUserCount, error: countError } = await sbAdmin
+    .from('workspace_users')
+    .select('*', { count: 'exact', head: true })
+    .eq('ws_id', ws_id);
+
+  if (countError) throw countError;
+
+  const sandbox =
+    metadata?.sandbox === 'true' || process.env.NODE_ENV === 'development';
+
+  const polar = createPolarClient({
+    sandbox:
+      process.env.NODE_ENV === 'development'
+        ? true
+        : !!(ws_id === ROOT_WORKSPACE_ID && sandbox),
+  });
+
+  await polar.events.ingest({
+    events: [
+      {
+        name: 'workspace.seats.sync',
+        customerId: customerId,
+        metadata: {
+          seat_count: initialUserCount ?? 0,
+        },
+      },
+    ],
+  });
+
+  console.log(
+    `Webhook: Successfully reported initial usage of ${initialUserCount} seats.`
+  );
+}
+
 export const POST = Webhooks({
   webhookSecret: process.env.POLAR_WEBHOOK_SECRET || '',
 
-  onSubscriptionActive: async (payload) => {
-    console.log(payload, 'Received subscription active webhook payload');
+  // Handle new subscription creation
+  onSubscriptionCreated: async (payload) => {
     try {
-      const sbAdmin = await createAdminClient();
-      const subscriptionPayload = payload.data;
+      const { ws_id } = await syncSubscriptionToDatabase(payload.data);
+      console.log('Webhook: Subscription created:', payload.data.id);
 
-      if (subscriptionPayload.status !== 'active') {
-        console.log(
-          `Ignoring subscription with status: '${subscriptionPayload.status}'.`
-        );
-
-        throw new Response('Webhook handled: Status not active.', {
-          status: 200,
-        });
+      // Report initial usage for new subscriptions
+      if (payload.data.status === 'active') {
+        try {
+          await reportInitialUsage(
+            ws_id,
+            payload.data.customer.id,
+            payload.data.metadata
+          );
+        } catch (e) {
+          // Log but don't fail - subscription is already saved
+          console.error('Webhook: Failed to report initial usage', e);
+        }
       }
 
-      const ws_id = subscriptionPayload.metadata?.wsId;
-      const sandbox =
-        subscriptionPayload.metadata?.sandbox === 'true' ||
-        process.env.NODE_ENV === 'development';
-
-      if (!ws_id || typeof ws_id !== 'string') {
-        console.error(
-          'Webhook Error: Workspace ID (wsId) not found in metadata.'
-        );
-        throw new Response('Webhook Error: Missing wsId in metadata', {
-          status: 400,
-        });
-      }
-
-      // --- 1. SAVE THE SUBSCRIPTION TO YOUR DATABASE ---
-      const subscriptionData = {
-        ws_id: ws_id,
-        status: subscriptionPayload.status,
-        polar_subscription_id: subscriptionPayload.id,
-        product_id: subscriptionPayload.product.id,
-        current_period_start:
-          subscriptionPayload.currentPeriodStart.toISOString(),
-        current_period_end: subscriptionPayload.currentPeriodEnd
-          ? subscriptionPayload.currentPeriodEnd.toISOString()
-          : null,
-      };
-
-      const { data: dbResult, error: dbError } = await sbAdmin
-        .from('workspace_subscription')
-        .upsert([subscriptionData])
-        .select()
-        .single();
-
-      if (dbError) {
-        console.error('Webhook: Supabase upsert error:', dbError.message);
-        throw new Response(`Database Error: ${dbError.message}`, {
-          status: 500,
-        });
-      }
-      console.log('Successfully upserted subscription in DB:', dbResult);
-
-      // --- 2. REPORT INITIAL USAGE (The fix to make the meter work) ---
-      try {
-        const { count: initialUserCount, error: countError } = await sbAdmin
-          .from('workspace_users')
-          .select('*', { count: 'exact', head: true })
-          .eq('ws_id', ws_id);
-
-        if (countError) throw countError;
-
-        const polar = createPolarClient({
-          sandbox:
-            // Always use sandbox for development
-            process.env.NODE_ENV === 'development'
-              ? true
-              : // If the workspace is the root workspace and the sandbox is true, use sandbox
-                !!(ws_id === ROOT_WORKSPACE_ID && sandbox), // Otherwise, use production
-        });
-
-        await polar.events.ingest({
-          events: [
-            {
-              name: 'workspace.seats.sync',
-              customerId: payload.data.customer.id,
-              metadata: {
-                seat_count: initialUserCount ?? 0,
-              },
-            },
-          ],
-        });
-        console.log(
-          `Webhook: Successfully reported initial usage of ${initialUserCount} seats.`
-        );
-      } catch (e) {
-        // Log the error but don't fail the entire webhook, as the subscription is already saved
-        console.error('Webhook: Failed to report initial usage', e);
-      }
-
-      console.log(`Webhook: Subscription active for workspace ${ws_id}.`);
+      console.log(`Webhook: Subscription created for workspace ${ws_id}.`);
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-      console.error(
-        'An unexpected error occurred in the webhook handler:',
-        errorMessage
-      );
+      console.error('Webhook: Subscription created error:', errorMessage);
       throw new Response('Internal Server Error', { status: 500 });
     }
   },
-  onSubscriptionRevoked: async (payload) => {
-    console.log('Subscription revoked:', payload);
 
+  // Handle ALL subscription updates (status changes, plan changes, cancellations, etc.)
+  onSubscriptionUpdated: async (payload) => {
     try {
-      const sbAdmin = await createAdminClient();
-      const subscriptionPayload = payload.data;
-      const ws_id = subscriptionPayload.metadata?.wsId;
+      const { ws_id } = await syncSubscriptionToDatabase(payload.data);
+      console.log(
+        `Webhook: Subscription updated: ${payload.data.id}, status: ${payload.data.status}`
+      );
 
-      if (subscriptionPayload.status !== 'incomplete') {
-        console.log(
-          `Ignoring subscription with status: '${subscriptionPayload.status}'.`
-        );
-        throw new Response('Webhook handled: Status not revoked.', {
-          status: 200,
-        });
+      // If subscription just became active, report usage
+      if (payload.data.status === 'active') {
+        try {
+          await reportInitialUsage(
+            ws_id,
+            payload.data.customer.id,
+            payload.data.metadata
+          );
+        } catch (e) {
+          console.error('Webhook: Failed to report usage on activation', e);
+        }
       }
 
-      // const sandbox =
-      //   subscriptionPayload.metadata?.sandbox === 'true' ||
-      //   process.env.NODE_ENV === 'development';
-
-      if (!ws_id || typeof ws_id !== 'string') {
-        console.error(
-          'Webhook Error: Workspace ID (wsId) not found in metadata.'
-        );
-        throw new Response('Webhook Error: Missing wsId in metadata', {
-          status: 400,
-        });
-      }
-
-      const { error: dbError } = await sbAdmin
-        .from('workspace_subscription')
-        .update({
-          status: 'past_due',
-          polar_subscription_id: subscriptionPayload.id,
-        })
-        .eq('ws_id', ws_id)
-        .select()
-        .single();
-
-      if (dbError) {
-        console.error('Webhook: Supabase upsert error:', dbError.message);
-        throw new Response(`Database Error: ${dbError.message}`, {
-          status: 500,
-        });
-      }
-
-      // console.log('Successfully updated subscription in DB:', dbResult);
-
-      console.log(`Webhook: Subscription revoked for workspace ${ws_id}.`);
-      throw new Response('Revoked webhook handled successfully.', {
-        status: 200,
-      });
+      console.log(
+        `Webhook: Subscription updated for workspace ${ws_id}, status: ${payload.data.status}`
+      );
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-      console.error(
-        'An unexpected error occurred in the revoked webhook handler:',
-        errorMessage
-      );
+      console.error('Webhook: Subscription updated error:', errorMessage);
       throw new Response('Internal Server Error', { status: 500 });
     }
   },
