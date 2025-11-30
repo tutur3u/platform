@@ -2,18 +2,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
-import { useRouter } from 'next/navigation';
 import type { PropsWithChildren } from 'react';
-import { useEffect, useState } from 'react';
-import { PlanChangeConfirmationDialog } from './plan-change-confirmation-dialog';
-
-interface PlanDetails {
-  id: string;
-  name: string;
-  price: number;
-  billingCycle: string | null;
-  features: string[];
-}
 
 interface PurchaseLinkProps {
   subscriptionId?: string;
@@ -23,10 +12,6 @@ interface PurchaseLinkProps {
   theme?: 'light' | 'dark' | 'auto';
   className?: string;
   sandbox?: boolean;
-  currentPlanDetails?: PlanDetails;
-  newPlanDetails?: PlanDetails;
-  nextBillingDate?: string;
-  isUpgrade?: boolean;
 }
 
 export default function PurchaseLink({
@@ -37,58 +22,35 @@ export default function PurchaseLink({
   className,
   children,
   sandbox = false,
-  currentPlanDetails,
-  newPlanDetails,
-  nextBillingDate,
-  isUpgrade = true,
 }: PropsWithChildren<PurchaseLinkProps>) {
-  const router = useRouter();
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [planDetails, setPlanDetails] = useState<{
-    current: PlanDetails;
-    new: PlanDetails;
-  } | null>(null);
-
-  useEffect(() => {
-    if (currentPlanDetails && newPlanDetails) {
-      setPlanDetails({
-        current: currentPlanDetails,
-        new: newPlanDetails,
-      });
-    }
-  }, [currentPlanDetails, newPlanDetails]);
-
   const mutation = useMutation({
     mutationFn: async () => {
       if (subscriptionId) {
-        // Update existing subscription with new product
-        const response = await fetch(
-          `/api/payment/customer-portal/subscriptions/${subscriptionId}`,
-          {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              productId,
-              sandbox,
-            }),
-          }
-        );
+        // For existing subscriptions, redirect to Customer Portal
+        // where users can see proration and confirm plan changes
+        const response = await fetch('/api/payment/customer-sessions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            sandbox,
+          }),
+        });
 
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(
             errorData.message ||
               errorData.error ||
-              'Failed to update subscription'
+              'Failed to get customer portal URL'
           );
         }
 
         const data = await response.json();
-        return { type: 'update' as const, data };
+        return { type: 'portal' as const, data };
       } else {
-        // Create new checkout session
+        // Create new checkout session for new subscriptions
         const response = await fetch('/api/payment/checkouts', {
           method: 'POST',
           headers: {
@@ -110,10 +72,16 @@ export default function PurchaseLink({
       }
     },
     onSuccess: (result) => {
-      if (result.type === 'update' && result.data.success) {
-        // Reload the page to reflect the updated subscription
-        router.refresh();
+      if (result.type === 'portal' && result.data.customerPortalUrl) {
+        // Open Polar Customer Portal in new tab for plan changes
+        // Users can see proration details and confirm the change there
+        window.open(
+          result.data.customerPortalUrl,
+          '_blank',
+          'noopener,noreferrer'
+        );
       } else if (result.type === 'checkout' && result.data.url) {
+        // Open checkout for new subscriptions
         window.open(result.data.url, '_blank', 'noopener,noreferrer');
       }
     },
@@ -124,45 +92,18 @@ export default function PurchaseLink({
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-
-    // If plan change (has subscriptionId and planDetails), show confirmation dialog
-    if (subscriptionId && planDetails) {
-      setShowConfirmDialog(true);
-    } else {
-      // Direct checkout for new subscriptions
-      mutation.mutate();
-    }
-  };
-
-  const handleConfirm = () => {
-    setShowConfirmDialog(false);
     mutation.mutate();
   };
 
   return (
-    <>
-      <Button
-        onClick={handleClick}
-        data-polar-checkout
-        data-polar-checkout-theme={theme}
-        className={className}
-        disabled={mutation.isPending}
-      >
-        {mutation.isPending ? 'Proceeding...' : children}
-      </Button>
-
-      {planDetails && (
-        <PlanChangeConfirmationDialog
-          open={showConfirmDialog}
-          onOpenChange={setShowConfirmDialog}
-          currentPlan={planDetails.current}
-          newPlan={planDetails.new}
-          isUpgrade={isUpgrade}
-          nextBillingDate={nextBillingDate ?? ''}
-          onConfirm={handleConfirm}
-          isLoading={mutation.isPending}
-        />
-      )}
-    </>
+    <Button
+      onClick={handleClick}
+      data-polar-checkout
+      data-polar-checkout-theme={theme}
+      className={className}
+      disabled={mutation.isPending}
+    >
+      {mutation.isPending ? 'Proceeding...' : children}
+    </Button>
   );
 }

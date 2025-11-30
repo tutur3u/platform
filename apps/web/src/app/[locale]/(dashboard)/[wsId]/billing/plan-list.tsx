@@ -223,47 +223,19 @@ export function PlanList({ currentPlan, products, wsId }: PlanListProps) {
                         {buttonConfig.text}
                       </Button>
                     ) : (
-                      <Button
-                        variant={buttonConfig.variant}
-                        className={`w-full shadow-lg transition-all hover:shadow-xl ${
+                      <PurchaseLink
+                        subscriptionId={currentPlan.id}
+                        productId={plan.id}
+                        wsId={wsId}
+                        className={`flex w-full items-center justify-center gap-2 shadow-lg transition-all hover:shadow-xl ${
                           buttonConfig.variant === 'default'
-                            ? ''
+                            ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                             : 'border-2 border-primary bg-transparent text-primary hover:bg-primary/10'
                         }`}
-                        asChild
-                        size="lg"
                       >
-                        <PurchaseLink
-                          subscriptionId={currentPlan.id}
-                          productId={plan.id}
-                          wsId={wsId}
-                          theme="auto"
-                          className="flex w-full items-center justify-center gap-2"
-                          currentPlanDetails={{
-                            id: currentPlan.productId,
-                            name: currentPlan.name,
-                            price: currentPlan.price,
-                            billingCycle: currentPlan.billingCycle,
-                            features: currentPlan.features?.slice(0, 4) || [],
-                          }}
-                          newPlanDetails={{
-                            id: plan.id,
-                            name: plan.name,
-                            price: plan.price,
-                            billingCycle: plan.billingCycle,
-                            features: plan.features.slice(0, 4),
-                          }}
-                          nextBillingDate={currentPlan.nextBillingDate}
-                          isUpgrade={
-                            !buttonConfig.text
-                              .toLowerCase()
-                              .includes('downgrade')
-                          }
-                        >
-                          <ButtonIcon className="h-5 w-5" />
-                          {buttonConfig.text}
-                        </PurchaseLink>
-                      </Button>
+                        <ButtonIcon className="h-5 w-5" />
+                        {buttonConfig.text}
+                      </PurchaseLink>
                     );
                   })()
                 )}

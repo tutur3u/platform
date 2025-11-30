@@ -3,8 +3,9 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
+// PATCH: Reactivate subscription (cancel_at_period_end = false)
 export async function PATCH(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ subscriptionId: string }> }
 ) {
   const user = await getCurrentSupabaseUser();
@@ -38,10 +39,6 @@ export async function PATCH(
       );
     }
 
-    // Parse request body to check for product update
-    const body = await req.json().catch(() => ({}));
-    const { productId } = body;
-
     const polar = createPolarClient({
       sandbox: process.env.NODE_ENV === 'development',
     });
@@ -50,34 +47,16 @@ export async function PATCH(
       externalCustomerId: user.id,
     });
 
-    // Prepare the subscription update payload
-    const customerSubscriptionUpdate: any = {
-      cancelAtPeriodEnd: false,
-    };
-
-    // If productId is provided, update the product
-    if (productId) {
-      // Get the product from Polar to find the correct price ID
-      const polarProduct = await polar.products.get({ id: productId });
-
-      if (!polarProduct || polarProduct.isArchived) {
-        return NextResponse.json(
-          { error: 'No product found' },
-          { status: 400 }
-        );
-      }
-
-      customerSubscriptionUpdate.productId = polarProduct.id;
-      // Note: Proration is automatically handled by Polar based on organization settings.
-    }
-
+    // Only allow reactivation (cancel_at_period_end = false)
     const result = await polar.customerPortal.subscriptions.update(
       {
         customerSession: session.token,
       },
       {
         id: subscription.polar_subscription_id,
-        customerSubscriptionUpdate,
+        customerSubscriptionUpdate: {
+          cancelAtPeriodEnd: false,
+        },
       }
     );
 
@@ -88,7 +67,7 @@ export async function PATCH(
   } catch (error) {
     return NextResponse.json(
       {
-        error: 'Failed to update subscription',
+        error: 'Failed to reactivate subscription',
         message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
