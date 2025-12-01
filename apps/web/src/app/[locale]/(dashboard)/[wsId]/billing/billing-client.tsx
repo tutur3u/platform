@@ -331,12 +331,12 @@ export function BillingClient({
           <div className="flex flex-wrap gap-4">
             <Button
               disabled={!isCreator}
-              onClick={() => setShowUpgradeOptions(!showUpgradeOptions)}
+              onClick={() => setShowUpgradeOptions(true)}
               className="flex-1 shadow-lg transition-all hover:scale-105 hover:shadow-xl sm:flex-none"
               size="lg"
             >
               <ArrowUpCircle className="mr-2 h-5 w-5" />
-              {showUpgradeOptions ? t('hide-upgrade') : t('upgrade-plan')}
+              {t('upgrade-plan')}
             </Button>
             {currentPlan.id &&
               (currentPlan.cancelAtPeriodEnd ? (
@@ -366,10 +366,14 @@ export function BillingClient({
         </div>
       </div>
 
-      {/* Upgrade Options */}
-      {showUpgradeOptions && (
-        <PlanList currentPlan={currentPlan} products={products} wsId={wsId} />
-      )}
+      {/* Upgrade Options Dialog */}
+      <PlanList
+        currentPlan={currentPlan}
+        products={products}
+        wsId={wsId}
+        open={showUpgradeOptions}
+        onOpenChange={setShowUpgradeOptions}
+      />
     </div>
   );
 }
