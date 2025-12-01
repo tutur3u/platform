@@ -213,7 +213,6 @@ export default function SimpleTimeTrackerContent({
       <SimpleTimerControls
         wsId={wsId}
         currentSession={currentSession}
-        setCurrentSession={setCurrentSession}
         elapsedTime={elapsedTime}
         setElapsedTime={setElapsedTime}
         isRunning={isRunning}
