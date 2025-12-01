@@ -19,7 +19,10 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
+import { useSessionExceedsThreshold } from '@/hooks/useSessionExceedsThreshold';
+import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import type { ExtendedWorkspaceTask, SessionWithRelations } from '../types';
+import MissedEntryDialog from './missed-entry-dialog';
 
 interface SimpleTimerControlsProps {
   wsId: string;
@@ -50,6 +53,7 @@ export function SimpleTimerControls({
   isRunning,
   setIsRunning,
   categories,
+  tasks,
   onSessionUpdate,
   formatTime,
   formatDuration,
@@ -69,6 +73,21 @@ export function SimpleTimerControls({
   const [pausedSession, setPausedSession] =
     useState<SessionWithRelations | null>(null);
   const [pausedElapsedTime, setPausedElapsedTime] = useState(0);
+
+  // State for exceeded threshold session dialog
+  const [showExceededThresholdDialog, setShowExceededThresholdDialog] =
+    useState(false);
+
+  // Fetch workspace threshold setting
+  const { data: thresholdDays, isLoading: isLoadingThreshold } =
+    useWorkspaceTimeThreshold(wsId);
+
+  // Check if current session exceeds the threshold
+  const { exceeds: sessionExceedsThreshold } = useSessionExceedsThreshold(
+    currentSession,
+    thresholdDays,
+    isLoadingThreshold
+  );
 
   // Auto-suggest work category
   const workCategory = categories.find(
@@ -146,6 +165,12 @@ export function SimpleTimerControls({
     const sessionToStop = currentSession || pausedSession;
     if (!sessionToStop) return;
 
+    // Check if session exceeds threshold - show dialog instead of stopping directly
+    if (sessionExceedsThreshold && currentSession) {
+      setShowExceededThresholdDialog(true);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const response = await apiCall(
@@ -192,6 +217,7 @@ export function SimpleTimerControls({
   }, [
     currentSession,
     pausedSession,
+    sessionExceedsThreshold,
     apiCall,
     wsId,
     queryClient,
@@ -202,6 +228,34 @@ export function SimpleTimerControls({
     setElapsedTime,
     setIsRunning,
   ]);
+
+  // Handle session discarded from exceeded threshold dialog
+  const handleSessionDiscarded = useCallback(() => {
+    setCurrentSession(null);
+    setPausedSession(null);
+    setIsRunning(false);
+    setElapsedTime(0);
+    setPausedElapsedTime(0);
+    setSessionTitle('');
+    setSessionDescription('');
+    setSelectedTaskId('none');
+    setSelectedCategoryId(workCategory?.id || 'none');
+    onSessionUpdate();
+  }, [workCategory, onSessionUpdate, setCurrentSession, setElapsedTime, setIsRunning]);
+
+  // Handle missed entry created from exceeded threshold dialog
+  const handleMissedEntryCreated = useCallback(() => {
+    setCurrentSession(null);
+    setPausedSession(null);
+    setIsRunning(false);
+    setElapsedTime(0);
+    setPausedElapsedTime(0);
+    setSessionTitle('');
+    setSessionDescription('');
+    setSelectedTaskId('none');
+    setSelectedCategoryId(workCategory?.id || 'none');
+    onSessionUpdate();
+  }, [workCategory, onSessionUpdate, setCurrentSession, setElapsedTime, setIsRunning]);
 
   // Pause timer
   const pauseTimer = useCallback(async () => {
@@ -526,6 +580,22 @@ export function SimpleTimerControls({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Exceeded Threshold Session Dialog */}
+      {currentSession && (
+        <MissedEntryDialog
+          mode="exceeded-session"
+          open={showExceededThresholdDialog}
+          onOpenChange={setShowExceededThresholdDialog}
+          session={currentSession}
+          categories={categories}
+          tasks={tasks}
+          wsId={wsId}
+          thresholdDays={thresholdDays ?? null}
+          onSessionDiscarded={handleSessionDiscarded}
+          onMissedEntryCreated={handleMissedEntryCreated}
+        />
       )}
     </Card>
   );
