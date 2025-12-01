@@ -51,13 +51,19 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
     // Parse and validate the threshold value
     const body = await req.json();
-    const threshold = Number.parseInt(body.threshold, 10);
+    const rawThreshold = body.threshold;
 
-    if (Number.isNaN(threshold) || threshold < 0) {
-      return NextResponse.json(
-        { error: 'Invalid threshold value. Must be a non-negative integer.' },
-        { status: 400 }
-      );
+    // Allow null to clear the threshold (means no approval needed)
+    let threshold: number | null = null;
+    if (rawThreshold !== null && rawThreshold !== undefined) {
+      threshold = Number.parseInt(rawThreshold, 10);
+
+      if (Number.isNaN(threshold) || threshold < 0) {
+        return NextResponse.json(
+          { error: 'Invalid threshold value. Must be a non-negative integer or null.' },
+          { status: 400 }
+        );
+      }
     }
 
     // Update workspace settings

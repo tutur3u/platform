@@ -7007,6 +7007,8 @@
         "button": "Settings",
         "title": "Missed Entry Threshold Settings",
         "description": "Configure how far back users can add missed time entries without requiring approval.",
+        "noApprovalNeeded": "No approval needed (allow all entries)",
+        "noApprovalHint": "Users can add time entries for any date without requiring approval. This is the default setting.",
         "label": "Threshold (days)",
         "help": "Set the number of days users can go back to add time entries. Set to 0 to require approval for all missed entries.",
         "examples": {

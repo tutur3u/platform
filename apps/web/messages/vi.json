@@ -6803,6 +6803,8 @@
         "button": "Cài Đặt",
         "title": "Cài Đặt Ngưỡng Nhập Thiếu",
         "description": "Cấu hình khoảng thời gian người dùng có thể thêm mục thời gian bị thiếu mà không cần phê duyệt.",
+        "noApprovalNeeded": "Không cần phê duyệt (cho phép tất cả các mục)",
+        "noApprovalHint": "Người dùng có thể thêm mục thời gian cho bất kỳ ngày nào mà không cần phê duyệt. Đây là cài đặt mặc định.",
         "label": "Ngưỡng (ngày)",
         "help": "Đặt số ngày người dùng có thể quay lại để thêm mục thời gian. Đặt về 0 để yêu cầu phê duyệt cho tất cả các mục bị thiếu.",
         "examples": {

@@ -885,11 +885,14 @@ const StackedSessionItem = ({
 };
 
 // Helper function to check if a session is older than the workspace threshold
+// null threshold means no approval needed (any entry can be edited directly)
 const isSessionOlderThanThreshold = (
   session: SessionWithRelations,
-  thresholdDays: number | undefined
+  thresholdDays: number | null | undefined
 ): boolean => {
-  // If threshold is undefined, treat as requiring approval (safer default)
+  // If threshold is null, no approval needed - any session can be edited directly
+  if (thresholdDays === null) return false;
+  // If threshold is undefined (loading), treat as requiring approval (safer default)
   if (thresholdDays === undefined) return true;
   if (thresholdDays === 0) {
     // When threshold is 0, all entries require approval
@@ -901,13 +904,16 @@ const isSessionOlderThanThreshold = (
 };
 
 // Helper function to check if a datetime string is more than threshold days ago
+// null threshold means no approval needed (any datetime is allowed)
 const isDatetimeMoreThanThresholdAgo = (
   datetimeString: string,
   timezone: string,
-  thresholdDays: number | undefined
+  thresholdDays: number | null | undefined
 ): boolean => {
   if (!datetimeString) return false;
-  // If threshold is undefined, treat as requiring approval (safer default)
+  // If threshold is null, no approval needed - any datetime is allowed
+  if (thresholdDays === null) return false;
+  // If threshold is undefined (loading), treat as requiring approval (safer default)
   if (thresholdDays === undefined) return true;
   if (thresholdDays === 0) return true; // All entries require approval when threshold is 0
   const datetime = dayjs.tz(datetimeString, timezone).utc();

@@ -406,13 +406,15 @@ export default function MissedEntryDialog({
   };
 
   // Check if start time is older than threshold days
+  // When threshold is null, no approval is needed (any entry can be added directly)
   // When threshold is 0, all entries require approval
-  // Treat as requiring approval if threshold is still loading/error to prevent invalid submissions
+  // Otherwise, entries older than threshold days require approval
   const isStartTimeOlderThanThreshold = useMemo(() => {
     if (!missedEntryStartTime) return false;
-    // If threshold is loading, errored, or undefined, treat as requiring approval (safer default)
-    if (isLoadingThreshold || isErrorThreshold || thresholdDays === undefined)
-      return true;
+    // If threshold is loading or errored, treat as requiring approval (safer default)
+    if (isLoadingThreshold || isErrorThreshold) return true;
+    // If threshold is null, no approval needed - any entry can be added directly
+    if (thresholdDays === null) return false;
     if (thresholdDays === 0) return true; // All entries require approval when threshold is 0
     const startTime = dayjs(missedEntryStartTime);
     const thresholdAgo = dayjs().subtract(thresholdDays, 'day');
