@@ -56,7 +56,7 @@ export function SimpleTimerControls({
   const [sessionTitle, setSessionTitle] = useState('');
   const [sessionDescription, setSessionDescription] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('none');
-const [selectedTaskId, setSelectedTaskId] = useState<string>('none');
+  const [selectedTaskId, setSelectedTaskId] = useState<string>('none');
   const [justCompleted, setJustCompleted] =
     useState<SessionWithRelations | null>(null);
 
@@ -106,19 +106,15 @@ const [selectedTaskId, setSelectedTaskId] = useState<string>('none');
 
     setIsLoading(true);
     try {
-      await apiCall(
-        `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            title: sessionTitle,
-            description: sessionDescription || null,
-            categoryId:
-              selectedCategoryId === 'none' ? null : selectedCategoryId,
-            taskId: selectedTaskId === 'none' ? null : selectedTaskId,
-          }),
-        }
-      );
+      await apiCall(`/api/v1/workspaces/${wsId}/time-tracking/sessions`, {
+        method: 'POST',
+        body: JSON.stringify({
+          title: sessionTitle,
+          description: sessionDescription || null,
+          categoryId: selectedCategoryId === 'none' ? null : selectedCategoryId,
+          taskId: selectedTaskId === 'none' ? null : selectedTaskId,
+        }),
+      });
 
       // Invalidate query to refetch running session - single source of truth
       queryClient.invalidateQueries({
@@ -204,16 +200,14 @@ const [selectedTaskId, setSelectedTaskId] = useState<string>('none');
     t,
   ]);
 
-const resetFormState = useCallback(() => {
+  const resetFormState = useCallback(() => {
     setPausedSession(null);
     setPausedElapsedTime(0);
     setSessionTitle('');
     setSessionDescription('');
     setSelectedTaskId('none');
     setSelectedCategoryId(workCategory?.id || 'none');
-  }, [
-    workCategory
-  ]);
+  }, [workCategory]);
 
   // Handle session discarded from exceeded threshold dialog
   const handleSessionDiscarded = useCallback(() => {

@@ -10,18 +10,16 @@ interface Params {
 }
 
 const UpdateThresholdSchema = z.object({
-  threshold: z
-    .union([z.number().int().nonnegative(), z.null()])
-    .refine(
-      (value) => {
-        if (value === null) return true;
-        // Ensure it's a valid integer (not a decimal that was coerced)
-        return Number.isInteger(value) && value >= 0;
-      },
-      {
-        message: 'Threshold must be a non-negative integer or null',
-      }
-    ),
+  threshold: z.union([z.number().int().nonnegative(), z.null()]).refine(
+    (value) => {
+      if (value === null) return true;
+      // Ensure it's a valid integer (not a decimal that was coerced)
+      return Number.isInteger(value) && value >= 0;
+    },
+    {
+      message: 'Threshold must be a non-negative integer or null',
+    }
+  ),
 });
 
 export async function PUT(req: NextRequest, { params }: Params) {
@@ -73,7 +71,8 @@ export async function PUT(req: NextRequest, { params }: Params) {
     if (!validationResult.success) {
       return NextResponse.json(
         {
-          error: 'Invalid threshold value. Must be a non-negative integer or null.',
+          error:
+            'Invalid threshold value. Must be a non-negative integer or null.',
         },
         { status: 400 }
       );

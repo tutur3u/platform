@@ -409,9 +409,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
               <Upload
                 className={cn(
                   'h-5 w-5',
-                  isDragOver
-                    ? 'text-dynamic-orange'
-                    : 'text-muted-foreground'
+                  isDragOver ? 'text-dynamic-orange' : 'text-muted-foreground'
                 )}
               />
             </div>
@@ -442,11 +440,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
             <div key={preview} className="group relative">
               <div className="aspect-square overflow-hidden rounded-lg border-2 border-border bg-muted">
                 <Image
-                  src={
-                    isValidBlobUrl(preview)
-                      ? preview
-                      : '/placeholder.svg'
-                  }
+                  src={isValidBlobUrl(preview) ? preview : '/placeholder.svg'}
                   alt={t('approval.proofImageAlt', {
                     number: index + 1,
                   })}

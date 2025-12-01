@@ -1,7 +1,5 @@
 import { Calendar, Clock, TrendingUp, Zap } from '@tuturuuu/icons';
-import {
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   Card,
   CardContent,
