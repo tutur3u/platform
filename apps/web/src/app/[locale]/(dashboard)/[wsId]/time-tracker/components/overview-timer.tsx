@@ -6,7 +6,8 @@ import type { TimeTrackingCategory } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { formatTime } from '@/lib/time-format';
 import type { ExtendedWorkspaceTask, SessionWithRelations } from '../types';
 import { SimpleTimerControls } from './simple-timer-controls';
 
@@ -25,8 +26,8 @@ export default function OverviewTimer({
 }: OverviewTimerProps) {
   const tModes = useTranslations('time-tracker.modes');
 
-  // Use React Query for running session to sync with other components
-  const { data: runningSessionFromQuery } = useQuery({
+  // Use React Query for running session - single source of truth
+  const { data: currentSession } = useQuery<SessionWithRelations | null>({
     queryKey: ['running-time-session', wsId],
     queryFn: async () => {
       const response = await fetch(
@@ -34,16 +35,16 @@ export default function OverviewTimer({
       );
       if (!response.ok) throw new Error('Failed to fetch running session');
       const data = await response.json();
-      return data.session;
+      return data.session ?? null;
     },
     refetchInterval: 30000,
     initialData: initialRunningSession,
   });
 
-  const [currentSession, setCurrentSession] =
-    useState<SessionWithRelations | null>(initialRunningSession);
+  // Derive isRunning from query data
+  const isRunning = useMemo(() => !!currentSession, [currentSession]);
 
-  // Timer state
+  // Timer state - derived from currentSession, updated locally for smooth display
   const [elapsedTime, setElapsedTime] = useState(() => {
     if (!initialRunningSession) return 0;
     const elapsed = Math.floor(
@@ -51,28 +52,21 @@ export default function OverviewTimer({
     );
     return Math.max(0, elapsed);
   });
-  const [isRunning, setIsRunning] = useState(!!initialRunningSession);
 
-  // Sync React Query data with local state
+  // Sync elapsed time when currentSession changes from query
   useEffect(() => {
-    if (runningSessionFromQuery !== undefined) {
-      setCurrentSession(runningSessionFromQuery);
-      setIsRunning(!!runningSessionFromQuery);
-      if (runningSessionFromQuery) {
-        const elapsed = Math.max(
-          0,
-          Math.floor(
-            (Date.now() -
-              new Date(runningSessionFromQuery.start_time).getTime()) /
-              1000
-          )
-        );
-        setElapsedTime(elapsed);
-      } else {
-        setElapsedTime(0);
-      }
+    if (currentSession) {
+      const elapsed = Math.max(
+        0,
+        Math.floor(
+          (Date.now() - new Date(currentSession.start_time).getTime()) / 1000
+        )
+      );
+      setElapsedTime(elapsed);
+    } else {
+      setElapsedTime(0);
     }
-  }, [runningSessionFromQuery]);
+  }, [currentSession]);
 
   // Timer effect
   useEffect(() => {
@@ -117,47 +111,7 @@ export default function OverviewTimer({
     []
   );
 
-  // Fetch session data
-  const fetchData = useCallback(async () => {
-    try {
-      const response = await apiCall(
-        `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=running`
-      );
-
-      if (response.session) {
-        setCurrentSession(response.session);
-        setIsRunning(true);
-        const elapsed = Math.max(
-          0,
-          Math.floor(
-            (Date.now() - new Date(response.session.start_time).getTime()) /
-              1000
-          )
-        );
-        setElapsedTime(elapsed);
-      } else {
-        setCurrentSession(null);
-        setIsRunning(false);
-        setElapsedTime(0);
-      }
-    } catch (error) {
-      console.error('Error fetching session data:', error);
-    }
-  }, [wsId, apiCall]);
-
-  // Format time helpers
-  const formatTime = useCallback((seconds: number): string => {
-    const safeSeconds = Math.max(0, Math.floor(seconds));
-    const hours = Math.floor(safeSeconds / 3600);
-    const minutes = Math.floor((safeSeconds % 3600) / 60);
-    const secs = safeSeconds % 60;
-
-    if (hours > 0) {
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }, []);
-
+  // Format duration for display (short format: 2h 30m)
   const formatDuration = useCallback((seconds: number): string => {
     const safeSeconds = Math.max(0, Math.floor(seconds));
     const hours = Math.floor(safeSeconds / 3600);
@@ -173,14 +127,10 @@ export default function OverviewTimer({
     <SimpleTimerControls
       wsId={wsId}
       currentSession={currentSession}
-      setCurrentSession={setCurrentSession}
       elapsedTime={elapsedTime}
-      setElapsedTime={setElapsedTime}
       isRunning={isRunning}
-      setIsRunning={setIsRunning}
       categories={categories}
       tasks={tasks}
-      onSessionUpdate={fetchData}
       formatTime={formatTime}
       formatDuration={formatDuration}
       apiCall={apiCall}

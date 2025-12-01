@@ -1,6 +1,5 @@
 import { Calendar, Clock, TrendingUp, Zap } from '@tuturuuu/icons';
 import {
-  createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import {
@@ -16,6 +15,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { formatDuration } from '@/lib/time-format';
 import type { DailyActivity } from '@/lib/time-tracking-helper';
 import { ActivityHeatmap } from './components/activity-heatmap';
 import OverviewTimer from './components/overview-timer';
@@ -29,18 +29,6 @@ export async function generateMetadata(): Promise<Metadata> {
     description: t('metadata.description'),
   };
 }
-
-const formatDuration = (seconds: number | undefined): string => {
-  const safeSeconds = Math.max(0, Math.floor(seconds || 0));
-  const hours = Math.floor(safeSeconds / 3600);
-  const minutes = Math.floor((safeSeconds % 3600) / 60);
-  const secs = safeSeconds % 60;
-
-  if (hours > 0) {
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }
-  return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-};
 
 async function fetchTimeTrackingStats(
   userId: string,
@@ -90,7 +78,7 @@ async function fetchTimeTrackingStats(
 }
 
 async function fetchTimerData(userId: string, wsId: string) {
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createClient();
 
   const [categoriesResult, runningSessionResult, tasksResult] =
     await Promise.all([

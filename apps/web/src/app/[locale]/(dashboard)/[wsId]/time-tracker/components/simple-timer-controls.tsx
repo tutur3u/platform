@@ -27,14 +27,10 @@ import MissedEntryDialog from './missed-entry-dialog';
 interface SimpleTimerControlsProps {
   wsId: string;
   currentSession: SessionWithRelations | null;
-  setCurrentSession: (session: SessionWithRelations | null) => void;
   elapsedTime: number;
-  setElapsedTime: (time: number) => void;
   isRunning: boolean;
-  setIsRunning: (running: boolean) => void;
   categories: TimeTrackingCategory[];
   tasks: ExtendedWorkspaceTask[];
-  onSessionUpdate: () => void;
   formatTime: (seconds: number) => string;
   formatDuration: (seconds: number) => string;
   apiCall: (
@@ -48,14 +44,10 @@ interface SimpleTimerControlsProps {
 export function SimpleTimerControls({
   wsId,
   currentSession,
-  setCurrentSession,
   elapsedTime,
-  setElapsedTime,
   isRunning,
-  setIsRunning,
   categories,
   tasks,
-  onSessionUpdate,
   formatTime,
   formatDuration,
   apiCall,
@@ -67,7 +59,7 @@ export function SimpleTimerControls({
   const [sessionTitle, setSessionTitle] = useState('');
   const [sessionDescription, setSessionDescription] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('none');
-  const [selectedTaskId, setSelectedTaskId] = useState<string>('none');
+const [selectedTaskId, setSelectedTaskId] = useState<string>('none');
   const [justCompleted, setJustCompleted] =
     useState<SessionWithRelations | null>(null);
 
@@ -117,7 +109,7 @@ export function SimpleTimerControls({
 
     setIsLoading(true);
     try {
-      const response = await apiCall(
+      await apiCall(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
         {
           method: 'POST',
@@ -131,16 +123,11 @@ export function SimpleTimerControls({
         }
       );
 
-      setCurrentSession(response.session || null);
-      setIsRunning(true);
-      setElapsedTime(0);
-
-      // Invalidate the running session query to update sidebar
+      // Invalidate query to refetch running session - single source of truth
       queryClient.invalidateQueries({
         queryKey: ['running-time-session', wsId],
       });
 
-      onSessionUpdate();
       toast.success(t('timerStarted'));
     } catch (error) {
       console.error('Error starting timer:', error);
@@ -156,10 +143,7 @@ export function SimpleTimerControls({
     apiCall,
     wsId,
     queryClient,
-    setCurrentSession,
-    setIsRunning,
-    setElapsedTime,
-    onSessionUpdate,
+    t,
   ]);
 
   // Stop timer
@@ -184,10 +168,7 @@ export function SimpleTimerControls({
       );
 
       setJustCompleted(response.session || null);
-      setCurrentSession(null);
       setPausedSession(null);
-      setIsRunning(false);
-      setElapsedTime(0);
       setPausedElapsedTime(0);
 
       // Clear form for next session
@@ -198,12 +179,10 @@ export function SimpleTimerControls({
 
       setTimeout(() => setJustCompleted(null), 3000);
 
-      // Invalidate the running session query to update sidebar
+      // Invalidate query to refetch running session - single source of truth
       queryClient.invalidateQueries({
         queryKey: ['running-time-session', wsId],
       });
-
-      onSessionUpdate();
 
       toast.success(
         t('sessionCompleted', {
@@ -224,52 +203,38 @@ export function SimpleTimerControls({
     wsId,
     queryClient,
     workCategory,
-    onSessionUpdate,
     formatDuration,
-    setCurrentSession,
-    setElapsedTime,
-    setIsRunning,
+    t,
+  ]);
+
+const resetFormState = useCallback(() => {
+    setPausedSession(null);
+    setPausedElapsedTime(0);
+    setSessionTitle('');
+    setSessionDescription('');
+    setSelectedTaskId('none');
+    setSelectedCategoryId(workCategory?.id || 'none');
+  }, [
+    workCategory
   ]);
 
   // Handle session discarded from exceeded threshold dialog
   const handleSessionDiscarded = useCallback(() => {
-    setCurrentSession(null);
-    setPausedSession(null);
-    setIsRunning(false);
-    setElapsedTime(0);
-    setPausedElapsedTime(0);
-    setSessionTitle('');
-    setSessionDescription('');
-    setSelectedTaskId('none');
-    setSelectedCategoryId(workCategory?.id || 'none');
-    onSessionUpdate();
-  }, [
-    workCategory,
-    onSessionUpdate,
-    setCurrentSession,
-    setElapsedTime,
-    setIsRunning,
-  ]);
+    resetFormState();
+    // Invalidate query to refetch running session - single source of truth
+    queryClient.invalidateQueries({
+      queryKey: ['running-time-session', wsId],
+    });
+  }, [workCategory, queryClient, wsId]);
 
   // Handle missed entry created from exceeded threshold dialog
   const handleMissedEntryCreated = useCallback(() => {
-    setCurrentSession(null);
-    setPausedSession(null);
-    setIsRunning(false);
-    setElapsedTime(0);
-    setPausedElapsedTime(0);
-    setSessionTitle('');
-    setSessionDescription('');
-    setSelectedTaskId('none');
-    setSelectedCategoryId(workCategory?.id || 'none');
-    onSessionUpdate();
-  }, [
-    workCategory,
-    onSessionUpdate,
-    setCurrentSession,
-    setElapsedTime,
-    setIsRunning,
-  ]);
+    resetFormState();
+    // Invalidate query to refetch running session - single source of truth
+    queryClient.invalidateQueries({
+      queryKey: ['running-time-session', wsId],
+    });
+  }, [workCategory, queryClient, wsId]);
 
   // Pause timer
   const pauseTimer = useCallback(async () => {
@@ -285,13 +250,15 @@ export function SimpleTimerControls({
         }
       );
 
+      // Store paused session state locally (paused sessions are not "running")
       setPausedSession(currentSession);
       setPausedElapsedTime(elapsedTime);
-      setCurrentSession(null);
-      setIsRunning(false);
-      setElapsedTime(0);
 
-      onSessionUpdate();
+      // Invalidate query to refetch running session - single source of truth
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId],
+      });
+
       toast.success(t('timerPaused'));
     } catch (error) {
       console.error('Error pausing timer:', error);
@@ -299,16 +266,7 @@ export function SimpleTimerControls({
     } finally {
       setIsLoading(false);
     }
-  }, [
-    currentSession,
-    apiCall,
-    wsId,
-    elapsedTime,
-    onSessionUpdate,
-    setCurrentSession,
-    setElapsedTime,
-    setIsRunning,
-  ]);
+  }, [currentSession, apiCall, wsId, elapsedTime, queryClient, t]);
 
   // Resume timer
   const resumeTimer = useCallback(async () => {
@@ -316,7 +274,7 @@ export function SimpleTimerControls({
 
     setIsLoading(true);
     try {
-      const response = await apiCall(
+      await apiCall(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${pausedSession.id}`,
         {
           method: 'PATCH',
@@ -324,18 +282,15 @@ export function SimpleTimerControls({
         }
       );
 
-      setCurrentSession(response.session || pausedSession);
-      setElapsedTime(pausedElapsedTime);
-      setIsRunning(true);
+      // Clear local paused state - query will provide the running session
       setPausedSession(null);
       setPausedElapsedTime(0);
 
-      // Invalidate the running session query to update sidebar
+      // Invalidate query to refetch running session - single source of truth
       queryClient.invalidateQueries({
         queryKey: ['running-time-session', wsId],
       });
 
-      onSessionUpdate();
       toast.success(t('timerResumed'));
     } catch (error) {
       console.error('Error resuming timer:', error);
@@ -343,17 +298,7 @@ export function SimpleTimerControls({
     } finally {
       setIsLoading(false);
     }
-  }, [
-    pausedSession,
-    apiCall,
-    wsId,
-    queryClient,
-    pausedElapsedTime,
-    onSessionUpdate,
-    setCurrentSession,
-    setElapsedTime,
-    setIsRunning,
-  ]);
+  }, [pausedSession, apiCall, wsId, queryClient, t]);
 
   // Keyboard shortcuts
   useEffect(() => {

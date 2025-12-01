@@ -39,7 +39,8 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
-import { formatDuration, getCategoryColor } from './session-history';
+import { formatDuration } from '@/lib/time-format';
+import { getCategoryColor } from './session-history';
 import type { SessionWithRelations } from '../types';
 
 dayjs.extend(utc);
@@ -362,6 +363,114 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     setImagePreviews(newPreviews);
     imagePreviewsRef.current = newPreviews;
   };
+
+  // Shared Image Upload Section component to reduce code duplication
+  const ImageUploadSection = ({ disabled }: { disabled: boolean }) => (
+    <div className="space-y-3">
+      <Label className="font-medium text-sm">
+        {t('approval.proofOfWork', {
+          current: images.length,
+          max: MAX_IMAGES,
+        })}
+      </Label>
+
+      {images.length < MAX_IMAGES && (
+        <button
+          type="button"
+          className={cn(
+            'relative w-full rounded-lg border-2 border-dashed transition-all duration-200',
+            isDragOver
+              ? 'border-dynamic-orange bg-dynamic-orange/10'
+              : 'border-border hover:border-border/80',
+            (isCompressing || disabled) && 'pointer-events-none opacity-50'
+          )}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          aria-label="Click to upload or drag and drop images"
+          disabled={isCompressing || disabled}
+        >
+          <Input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            multiple
+            onChange={handleImageUpload}
+            disabled={disabled || isCompressing}
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          />
+          <div className="flex flex-col items-center justify-center px-4 py-6 text-center">
+            <div
+              className={cn(
+                'mb-2 flex h-10 w-10 items-center justify-center rounded-full transition-colors',
+                isDragOver ? 'bg-dynamic-orange/20' : 'bg-muted'
+              )}
+            >
+              <Upload
+                className={cn(
+                  'h-5 w-5',
+                  isDragOver
+                    ? 'text-dynamic-orange'
+                    : 'text-muted-foreground'
+                )}
+              />
+            </div>
+            <p className="mb-1 font-medium text-sm">
+              {isCompressing
+                ? t('approval.compressing')
+                : isDragOver
+                  ? t('approval.dropImages')
+                  : t('approval.clickToUpload')}
+            </p>
+            <p className="text-muted-foreground text-xs">
+              {t('approval.imageFormats')}
+            </p>
+          </div>
+        </button>
+      )}
+
+      {imageError && (
+        <div className="flex items-center gap-1 text-dynamic-red text-sm">
+          <AlertCircle className="h-3 w-3" />
+          {imageError}
+        </div>
+      )}
+
+      {imagePreviews.length > 0 && (
+        <div className="grid grid-cols-3 gap-2">
+          {imagePreviews.map((preview, index) => (
+            <div key={preview} className="group relative">
+              <div className="aspect-square overflow-hidden rounded-lg border-2 border-border bg-muted">
+                <Image
+                  src={
+                    isValidBlobUrl(preview)
+                      ? preview
+                      : '/placeholder.svg'
+                  }
+                  alt={t('approval.proofImageAlt', {
+                    number: index + 1,
+                  })}
+                  className="h-full w-full object-cover"
+                  width={100}
+                  height={100}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="destructive"
+                size="icon"
+                className="-top-2 -right-2 absolute h-6 w-6 rounded-full opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
+                onClick={() => removeImage(index)}
+                disabled={disabled}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   const createMissedEntry = async () => {
     if (!missedEntryTitle.trim()) {
@@ -768,220 +877,12 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
               </div>
 
               {/* Image upload section */}
-              <div className="space-y-3">
-                <Label className="font-medium text-sm">
-                  {t('approval.proofOfWork', {
-                    current: images.length,
-                    max: MAX_IMAGES,
-                  })}
-                </Label>
-
-                {images.length < MAX_IMAGES && (
-                  <button
-                    type="button"
-                    className={cn(
-                      'relative w-full rounded-lg border-2 border-dashed transition-all duration-200',
-                      isDragOver
-                        ? 'border-dynamic-orange bg-dynamic-orange/10'
-                        : 'border-border hover:border-border/80',
-                      isCompressing && 'pointer-events-none opacity-50'
-                    )}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    aria-label="Click to upload or drag and drop images"
-                    disabled={isCompressing}
-                  >
-                    <Input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp,image/gif"
-                      multiple
-                      onChange={handleImageUpload}
-                      disabled={isCreatingMissedEntry || isCompressing}
-                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                    />
-                    <div className="flex flex-col items-center justify-center px-4 py-6 text-center">
-                      <div
-                        className={cn(
-                          'mb-2 flex h-10 w-10 items-center justify-center rounded-full transition-colors',
-                          isDragOver ? 'bg-dynamic-orange/20' : 'bg-muted'
-                        )}
-                      >
-                        <Upload
-                          className={cn(
-                            'h-5 w-5',
-                            isDragOver
-                              ? 'text-dynamic-orange'
-                              : 'text-muted-foreground'
-                          )}
-                        />
-                      </div>
-                      <p className="mb-1 font-medium text-sm">
-                        {isCompressing
-                          ? t('approval.compressing')
-                          : isDragOver
-                            ? t('approval.dropImages')
-                            : t('approval.clickToUpload')}
-                      </p>
-                      <p className="text-muted-foreground text-xs">
-                        {t('approval.imageFormats')}
-                      </p>
-                    </div>
-                  </button>
-                )}
-
-                {imageError && (
-                  <div className="flex items-center gap-1 text-dynamic-red text-sm">
-                    <AlertCircle className="h-3 w-3" />
-                    {imageError}
-                  </div>
-                )}
-
-                {imagePreviews.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2">
-                    {imagePreviews.map((preview, index) => (
-                      <div key={preview} className="group relative">
-                        <div className="aspect-square overflow-hidden rounded-lg border-2 border-border bg-muted">
-                          <Image
-                            src={
-                              isValidBlobUrl(preview)
-                                ? preview
-                                : '/placeholder.svg'
-                            }
-                            alt={t('approval.proofImageAlt', {
-                              number: index + 1,
-                            })}
-                            className="h-full w-full object-cover"
-                            width={100}
-                            height={100}
-                          />
-                        </div>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="-top-2 -right-2 absolute h-6 w-6 rounded-full opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
-                          onClick={() => removeImage(index)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <ImageUploadSection disabled={isCreatingMissedEntry} />
             </div>
           )}
 
           {/* Image upload section for exceeded mode (always required) */}
-          {isExceededMode && (
-            <div className="space-y-3">
-              <Label className="font-medium text-sm">
-                {t('approval.proofOfWork', {
-                  current: images.length,
-                  max: MAX_IMAGES,
-                })}
-              </Label>
-
-              {images.length < MAX_IMAGES && (
-                <button
-                  type="button"
-                  className={cn(
-                    'relative w-full rounded-lg border-2 border-dashed transition-all duration-200',
-                    isDragOver
-                      ? 'border-dynamic-orange bg-dynamic-orange/10'
-                      : 'border-border hover:border-border/80',
-                    (isCompressing || isLoading) &&
-                      'pointer-events-none opacity-50'
-                  )}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  aria-label="Click to upload or drag and drop images"
-                  disabled={isCompressing || isLoading}
-                >
-                  <Input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp,image/gif"
-                    multiple
-                    onChange={handleImageUpload}
-                    disabled={isLoading || isCompressing}
-                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                  />
-                  <div className="flex flex-col items-center justify-center px-4 py-6 text-center">
-                    <div
-                      className={cn(
-                        'mb-2 flex h-10 w-10 items-center justify-center rounded-full transition-colors',
-                        isDragOver ? 'bg-dynamic-orange/20' : 'bg-muted'
-                      )}
-                    >
-                      <Upload
-                        className={cn(
-                          'h-5 w-5',
-                          isDragOver
-                            ? 'text-dynamic-orange'
-                            : 'text-muted-foreground'
-                        )}
-                      />
-                    </div>
-                    <p className="mb-1 font-medium text-sm">
-                      {isCompressing
-                        ? t('approval.compressing')
-                        : isDragOver
-                          ? t('approval.dropImages')
-                          : t('approval.clickToUpload')}
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      {t('approval.imageFormats')}
-                    </p>
-                  </div>
-                </button>
-              )}
-
-              {imageError && (
-                <div className="flex items-center gap-1 text-dynamic-red text-sm">
-                  <AlertCircle className="h-3 w-3" />
-                  {imageError}
-                </div>
-              )}
-
-              {imagePreviews.length > 0 && (
-                <div className="grid grid-cols-3 gap-2">
-                  {imagePreviews.map((preview, index) => (
-                    <div key={preview} className="group relative">
-                      <div className="aspect-square overflow-hidden rounded-lg border-2 border-border bg-muted">
-                        <Image
-                          src={
-                            isValidBlobUrl(preview)
-                              ? preview
-                              : '/placeholder.svg'
-                          }
-                          alt={t('approval.proofImageAlt', {
-                            number: index + 1,
-                          })}
-                          className="h-full w-full object-cover"
-                          width={100}
-                          height={100}
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="-top-2 -right-2 absolute h-6 w-6 rounded-full opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
-                        onClick={() => removeImage(index)}
-                        disabled={isLoading}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          {isExceededMode && <ImageUploadSection disabled={isLoading} />}
 
           {/* Quick time presets - hidden in exceeded mode */}
           {!isExceededMode && (
