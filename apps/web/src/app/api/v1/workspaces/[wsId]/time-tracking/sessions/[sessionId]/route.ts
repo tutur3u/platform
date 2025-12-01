@@ -174,55 +174,67 @@ export async function PATCH(
         const isEditingTime = startTime !== undefined || endTime !== undefined;
 
         if (isEditingTime) {
-          // Fetch workspace threshold setting
-          const { data: workspaceSettings } = await sbAdmin
-            .from('workspace_settings')
-            .select('missed_entry_date_threshold')
-            .eq('ws_id', wsId)
+          // Check if workspace is personal - skip all threshold restrictions for personal workspaces
+          const { data: workspace } = await sbAdmin
+            .from('workspaces')
+            .select('personal')
+            .eq('id', wsId)
             .maybeSingle();
 
-          // null/undefined means no approval needed - skip all threshold checks
-          const thresholdDays =
-            workspaceSettings?.missed_entry_date_threshold;
+          const isPersonalWorkspace = workspace?.personal === true;
 
-          // Only apply restrictions if threshold is explicitly set (not null)
-          if (thresholdDays !== null && thresholdDays !== undefined) {
-            // Check if threshold is 0 (all edits require approval)
-            if (thresholdDays === 0) {
-              return NextResponse.json(
-                {
-                  error:
-                    'All time edits must be submitted as requests for approval',
-                },
-                { status: 400 }
-              );
-            }
+          // Only apply threshold restrictions for non-personal workspaces
+          if (!isPersonalWorkspace) {
+            // Fetch workspace threshold setting
+            const { data: workspaceSettings } = await sbAdmin
+              .from('workspace_settings')
+              .select('missed_entry_date_threshold')
+              .eq('ws_id', wsId)
+              .maybeSingle();
 
-            // Check if more than threshold days have passed since the session start time
-            const sessionStartTime = new Date(session.start_time);
-            const thresholdAgo = new Date();
-            thresholdAgo.setDate(thresholdAgo.getDate() - thresholdDays);
+            // null/undefined means no approval needed - skip all threshold checks
+            const thresholdDays =
+              workspaceSettings?.missed_entry_date_threshold;
 
-            if (sessionStartTime < thresholdAgo) {
-              return NextResponse.json(
-                {
-                  error: `Cannot edit start time or end time for sessions older than ${thresholdDays} day${thresholdDays !== 1 ? 's' : ''}`,
-                },
-                { status: 400 }
-              );
-            }
-
-            // NEW CHECK: Prevent backdating sessions to more than threshold days ago
-            // This prevents the vulnerability of creating a session for today and moving it back to a month ago
-            if (startTime) {
-              const newStartTime = new Date(startTime);
-              if (newStartTime < thresholdAgo) {
+            // Only apply restrictions if threshold is explicitly set (not null)
+            if (thresholdDays !== null && thresholdDays !== undefined) {
+              // Check if threshold is 0 (all edits require approval)
+              if (thresholdDays === 0) {
                 return NextResponse.json(
                   {
-                    error: `Cannot update session to a start time more than ${thresholdDays} day${thresholdDays !== 1 ? 's' : ''} ago`,
+                    error:
+                      'All time edits must be submitted as requests for approval',
                   },
                   { status: 400 }
                 );
+              }
+
+              // Check if more than threshold days have passed since the session start time
+              const sessionStartTime = new Date(session.start_time);
+              const thresholdAgo = new Date();
+              thresholdAgo.setDate(thresholdAgo.getDate() - thresholdDays);
+
+              if (sessionStartTime < thresholdAgo) {
+                return NextResponse.json(
+                  {
+                    error: `Cannot edit start time or end time for sessions older than ${thresholdDays} day${thresholdDays !== 1 ? 's' : ''}`,
+                  },
+                  { status: 400 }
+                );
+              }
+
+              // NEW CHECK: Prevent backdating sessions to more than threshold days ago
+              // This prevents the vulnerability of creating a session for today and moving it back to a month ago
+              if (startTime) {
+                const newStartTime = new Date(startTime);
+                if (newStartTime < thresholdAgo) {
+                  return NextResponse.json(
+                    {
+                      error: `Cannot update session to a start time more than ${thresholdDays} day${thresholdDays !== 1 ? 's' : ''} ago`,
+                    },
+                    { status: 400 }
+                  );
+                }
               }
             }
           }
