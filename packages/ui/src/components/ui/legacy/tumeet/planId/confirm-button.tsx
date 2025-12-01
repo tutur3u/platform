@@ -1,3 +1,4 @@
+import { togglePlanLock } from '@tuturuuu/apis/tumeet/actions';
 import { Check, Edit, Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useRouter } from 'next/navigation';
@@ -18,20 +19,10 @@ export function ConfirmButton({
       onClick={async () => {
         if (isLoading) return;
         setIsLoading(true);
-        const res = await fetch(
-          `/api/meet-together/plans/${planId}/edit-lock`,
-          {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              isConfirm: !isConfirmed,
-            }),
-          }
-        );
-        if (!res.ok) {
+        const result = await togglePlanLock(planId, !isConfirmed);
+        if (result.error) {
           console.error('Failed to update plan confirmation status');
+          setIsLoading(false);
           return;
         }
         setConfirmed(!isConfirmed);

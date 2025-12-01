@@ -1,5 +1,6 @@
 'use client';
 
+import { removeUserFromPlan } from '@tuturuuu/apis/tumeet/actions';
 import { ShieldCheck, Trash2 } from '@tuturuuu/icons';
 import type { PlanUser } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { User } from '@tuturuuu/types/primitives/User';
@@ -121,14 +122,9 @@ export default function PlanUserFilterAccordion({
 
       setDeletingUserId(userId);
       try {
-        const response = await fetch(
-          `/api/meet-together/plans/${planId}/users/${userId}`,
-          {
-            method: 'DELETE',
-          }
-        );
+        const result = await removeUserFromPlan(planId, userId);
 
-        if (response.ok) {
+        if (result.data) {
           // Find the user to get their name for the toast message
           const userToDelete = users.find((user) => user.id === userId);
           const userName = userToDelete?.display_name || 'User';
@@ -139,7 +135,7 @@ export default function PlanUserFilterAccordion({
           });
           router.refresh();
         }
-      } catch (error) {
+      } catch {
         // Silent fail - user will see changes on refresh
       } finally {
         setDeletingUserId(null);

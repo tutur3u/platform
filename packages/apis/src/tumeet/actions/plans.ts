@@ -1,15 +1,11 @@
+'use server';
+
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { parseTimeFromTimetz } from '@tuturuuu/utils/time-helper';
-import { NextResponse } from 'next/server';
-
-interface Params {
-  params: Promise<{
-    planId: string;
-  }>;
-}
+import { revalidatePath } from 'next/cache';
 
 // Types for batched operations
 interface BatchDeleteOperation {
@@ -28,19 +24,16 @@ interface BatchUpdateOperation {
 type BatchOperation = BatchDeleteOperation | BatchUpdateOperation;
 
 // Helper function to execute batched operations
-
 async function executeBatchOperations(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sbAdmin: any,
   operations: BatchOperation[]
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Group operations by table name and type
     const deleteOperations: { [tableName: string]: string[] } = {};
     const updateOperations: { [tableName: string]: BatchUpdateOperation[] } =
       {};
 
-    // Categorize operations
     for (const operation of operations) {
       if (operation.type === 'delete') {
         if (!deleteOperations[operation.tableName]) {
@@ -55,11 +48,9 @@ async function executeBatchOperations(
       }
     }
 
-    // Execute delete operations in batches (these can be truly batched)
     for (const [tableName, ids] of Object.entries(deleteOperations)) {
       if (ids && ids.length > 0) {
         const result = await sbAdmin.from(tableName).delete().in('id', ids);
-
         if (result.error) {
           return {
             success: false,
@@ -69,17 +60,13 @@ async function executeBatchOperations(
       }
     }
 
-    // Execute update operations (these need to be individual due to different data)
-    // But we can still optimize by grouping them by table and using Promise.all
     for (const [tableName, updates] of Object.entries(updateOperations)) {
       if (updates && updates.length > 0) {
-        // Use Promise.all to execute all updates for this table concurrently
         const updatePromises = updates.map(async (update) => {
           const result = await sbAdmin
             .from(tableName)
             .update(update.data)
             .eq('id', update.id);
-
           if (result.error) {
             throw new Error(
               `Error updating ${tableName}: ${result.error.message || 'Unknown error'}`
@@ -114,30 +101,6 @@ async function executeBatchOperations(
   }
 }
 
-// Helper function to check if plan is confirmed and deny actions
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function checkPlanConfirmation(planId: string, sbAdmin: any) {
-  const { data: plan, error } = await sbAdmin
-    .from('meet_together_plans')
-    .select('is_confirmed')
-    .eq('id', planId)
-    .single();
-
-  if (error || !plan) {
-    console.error(error);
-    return NextResponse.json({ message: 'Plan not found' }, { status: 404 });
-  }
-
-  if (plan.is_confirmed) {
-    return NextResponse.json(
-      { message: 'Plan is confirmed. No modifications allowed.' },
-      { status: 403 }
-    );
-  }
-
-  return null; // Continue with the request
-}
-
 // Helper function to check if a timeblock is valid within the plan's time range
 function isTimeblockValid(
   timeblockDate: string,
@@ -147,12 +110,10 @@ function isTimeblockValid(
   planStartTime: string,
   planEndTime: string
 ): boolean {
-  // Check if the timeblock date is in the plan's dates
   if (!planDates.includes(timeblockDate)) {
     return false;
   }
 
-  // Parse times for comparison
   const timeblockStartHour = parseTimeFromTimetz(timeblockStartTime);
   const timeblockEndHour = parseTimeFromTimetz(timeblockEndTime);
   const planStartHour = parseTimeFromTimetz(planStartTime);
@@ -167,7 +128,6 @@ function isTimeblockValid(
     return false;
   }
 
-  // Check if timeblock is within plan's time range
   return timeblockStartHour >= planStartHour && timeblockEndHour <= planEndHour;
 }
 
@@ -200,19 +160,16 @@ function adjustTimeblockTimes(
   let newStartTime = timeblockStartTime;
   let newEndTime = timeblockEndTime;
 
-  // If timeblock starts before plan start time, adjust to plan start time
   if (timeblockStartHour < planStartHour) {
     newStartTime = planStartTime;
     needsAdjustment = true;
   }
 
-  // If timeblock ends after plan end time, adjust to plan end time
   if (timeblockEndHour > planEndHour) {
     newEndTime = planEndTime;
     needsAdjustment = true;
   }
 
-  // Ensure the adjusted timeblock has a valid duration (at least 1 hour)
   const adjustedStartHour = parseTimeFromTimetz(newStartTime);
   const adjustedEndHour = parseTimeFromTimetz(newEndTime);
 
@@ -221,7 +178,6 @@ function adjustTimeblockTimes(
     adjustedEndHour !== undefined &&
     adjustedEndHour <= adjustedStartHour
   ) {
-    // If adjustment would result in invalid timeblock, return original
     return {
       startTime: timeblockStartTime,
       endTime: timeblockEndTime,
@@ -232,42 +188,22 @@ function adjustTimeblockTimes(
   return { startTime: newStartTime, endTime: newEndTime, needsAdjustment };
 }
 
-export async function PATCH(req: Request, { params }: Params) {
+export interface CreatePlanInput {
+  name?: string;
+  dates?: string[];
+  start_time?: string;
+  end_time?: string;
+  where_to_meet?: boolean;
+  description?: string;
+}
+
+export async function createPlan(data: CreatePlanInput) {
+  const sbAdmin = await createAdminClient();
   const supabase = await createClient();
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
-  }
-  const sbAdmin = await createAdminClient();
-  const { planId: id } = await params;
-
-  // Check if user is the creator of the plan
-  const { data: plan } = await sbAdmin
-    .from('meet_together_plans')
-    .select('creator_id')
-    .eq('id', id)
-    .single();
-
-  if (!plan) {
-    return NextResponse.json({ message: 'Plan not found' }, { status: 404 });
-  }
-
-  if (plan.creator_id !== user.id) {
-    return NextResponse.json(
-      { message: 'You are not the creator of this plan' },
-      { status: 403 }
-    );
-  }
-
-  // Check if plan is confirmed and deny modifications
-  const confirmationCheck = await checkPlanConfirmation(id, sbAdmin);
-  if (confirmationCheck) {
-    return confirmationCheck;
-  }
-
-  const data = await req.json();
 
   // Backend validation: ensure end_time is after start_time
   if (data.start_time && data.end_time) {
@@ -279,29 +215,132 @@ export async function PATCH(req: Request, { params }: Params) {
       endHour !== undefined &&
       endHour <= startHour
     ) {
-      return NextResponse.json(
-        { message: 'End time must be after start time' },
-        { status: 400 }
-      );
+      return { error: 'End time must be after start time' };
     }
   }
 
-  // Check if we need to validate timeblocks (if date, start_time, end_time, or timezone changed)
+  const { data: plan, error } = await sbAdmin
+    .from('meet_together_plans')
+    .insert({
+      name: data.name,
+      dates: data.dates || [],
+      start_time: data.start_time || '00:00:00',
+      end_time: data.end_time || '23:59:59',
+      where_to_meet: data.where_to_meet ?? false,
+      description: data.description,
+      creator_id: user?.id,
+      is_confirmed: false,
+    })
+    .select('id, where_to_meet')
+    .single();
+
+  if (error) {
+    return { error: 'Error creating meet together plan' };
+  }
+
+  if (plan.where_to_meet && typeof plan.id === 'string' && user?.id) {
+    const { error: pollError } = await sbAdmin.from('polls').insert({
+      plan_id: plan.id,
+      creator_id: user?.id,
+      name: 'Where to Meet?',
+    });
+
+    if (pollError) {
+      return {
+        data: { id: plan.id },
+        warning: 'Plan created, but failed to create "where" poll',
+      };
+    }
+  }
+
+  revalidatePath('/meet-together');
+  return { data: { id: plan.id } };
+}
+
+export async function getPlans() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('meet_together_plans')
+    .select('*');
+
+  if (error) {
+    return { error: 'Error fetching meet together plans' };
+  }
+
+  return { data };
+}
+
+export interface UpdatePlanInput {
+  name?: string;
+  dates?: string[];
+  start_time?: string;
+  end_time?: string;
+  where_to_meet?: boolean;
+  description?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  agenda_content?: any;
+}
+
+export async function updatePlan(planId: string, data: UpdatePlanInput) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: 'Not authenticated' };
+  }
+
+  const sbAdmin = await createAdminClient();
+
+  // Check if user is the creator of the plan
+  const { data: plan } = await sbAdmin
+    .from('meet_together_plans')
+    .select('creator_id, is_confirmed')
+    .eq('id', planId)
+    .single();
+
+  if (!plan) {
+    return { error: 'Plan not found' };
+  }
+
+  if (plan.creator_id !== user.id) {
+    return { error: 'You are not the creator of this plan' };
+  }
+
+  if (plan.is_confirmed) {
+    return { error: 'Plan is confirmed. No modifications allowed.' };
+  }
+
+  // Backend validation: ensure end_time is after start_time
+  if (data.start_time && data.end_time) {
+    const startHour = parseTimeFromTimetz(data.start_time);
+    const endHour = parseTimeFromTimetz(data.end_time);
+
+    if (
+      startHour !== undefined &&
+      endHour !== undefined &&
+      endHour <= startHour
+    ) {
+      return { error: 'End time must be after start time' };
+    }
+  }
+
+  // Check if we need to validate timeblocks
   const needsTimeblockValidation =
     data.dates !== undefined ||
     data.start_time !== undefined ||
     data.end_time !== undefined;
 
   if (needsTimeblockValidation) {
-    // Get current plan data to compare with new data
     const { data: currentPlan } = await sbAdmin
       .from('meet_together_plans')
       .select('dates, start_time, end_time')
-      .eq('id', id)
+      .eq('id', planId)
       .single();
 
     if (currentPlan) {
-      // Use new data from request, not fallback to current data
       const newDates =
         data.dates !== undefined ? data.dates : currentPlan.dates;
       const newStartTime =
@@ -311,25 +350,23 @@ export async function PATCH(req: Request, { params }: Params) {
       const newEndTime =
         data.end_time !== undefined ? data.end_time : currentPlan.end_time;
 
-      // Get all timeblocks for this plan
       const { data: userTimeblocks } = await sbAdmin
         .from('meet_together_user_timeblocks')
         .select('*')
-        .eq('plan_id', id);
+        .eq('plan_id', planId);
 
       const { data: guestTimeblocks } = await sbAdmin
         .from('meet_together_guest_timeblocks')
         .select('*')
-        .eq('plan_id', id);
+        .eq('plan_id', planId);
+
       const allTimeblocks = [
         ...(userTimeblocks || []),
         ...(guestTimeblocks || []),
       ];
 
-      // Collect batch operations instead of executing them immediately
       const batchOperations: BatchOperation[] = [];
 
-      // Process each timeblock
       for (const timeblock of allTimeblocks) {
         const isValid = isTimeblockValid(
           timeblock.date,
@@ -341,9 +378,7 @@ export async function PATCH(req: Request, { params }: Params) {
         );
 
         if (!isValid) {
-          // Check if the timeblock date is still in the plan's dates
           if (!newDates.includes(timeblock.date)) {
-            // Date is no longer in plan, delete the timeblock
             const isUserTimeblock = userTimeblocks?.some(
               (tb) => tb.id === timeblock.id
             );
@@ -357,7 +392,6 @@ export async function PATCH(req: Request, { params }: Params) {
               id: timeblock.id,
             });
           } else {
-            // Date is still in plan, try to adjust the timeblock times
             const adjustment = adjustTimeblockTimes(
               timeblock.start_time,
               timeblock.end_time,
@@ -366,7 +400,6 @@ export async function PATCH(req: Request, { params }: Params) {
             );
 
             if (adjustment.needsAdjustment) {
-              // Update the timeblock with adjusted times
               const isUserTimeblock = userTimeblocks?.some(
                 (tb) => tb.id === timeblock.id
               );
@@ -384,7 +417,6 @@ export async function PATCH(req: Request, { params }: Params) {
                 },
               });
             } else {
-              // Timeblock cannot be adjusted to fit within new time range, delete it
               const isUserTimeblock = userTimeblocks?.some(
                 (tb) => tb.id === timeblock.id
               );
@@ -402,26 +434,16 @@ export async function PATCH(req: Request, { params }: Params) {
         }
       }
 
-      // Execute all batch operations at once
       if (batchOperations.length > 0) {
-        console.log(
-          `Processing ${batchOperations.length} timeblock operations in batch`
-        );
         const batchResult = await executeBatchOperations(
           sbAdmin,
           batchOperations
         );
         if (!batchResult.success) {
-          console.error('Batch operation failed:', batchResult.error);
-          return NextResponse.json(
-            {
-              message:
-                batchResult.error || 'Error processing timeblock updates',
-            },
-            { status: 500 }
-          );
+          return {
+            error: batchResult.error || 'Error processing timeblock updates',
+          };
         }
-        console.log('Batch operations completed successfully');
       }
     }
   }
@@ -429,64 +451,94 @@ export async function PATCH(req: Request, { params }: Params) {
   const { error } = await sbAdmin
     .from('meet_together_plans')
     .update(data)
-    .eq('id', id);
+    .eq('id', planId);
 
   if (error) {
-    return NextResponse.json(
-      { message: 'Error updating meet together plan' },
-      { status: 500 }
-    );
+    return { error: 'Error updating meet together plan' };
   }
 
-  return NextResponse.json({ message: 'success' });
+  revalidatePath('/meet-together');
+  revalidatePath(`/meet-together/plans/${planId}`);
+  return { data: { success: true } };
 }
 
-export async function DELETE(_: Request, { params }: Params) {
+export async function deletePlan(planId: string) {
   const sbAdmin = await createAdminClient();
   const supabase = await createClient();
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
-  }
 
-  const { planId: id } = await params;
+  if (!user) {
+    return { error: 'Not authenticated' };
+  }
 
   const { data: plan } = await sbAdmin
     .from('meet_together_plans')
-    .select('creator_id')
-    .eq('id', id)
+    .select('creator_id, is_confirmed')
+    .eq('id', planId)
     .single();
 
   if (!plan) {
-    return NextResponse.json({ message: 'Plan not found' }, { status: 404 });
+    return { error: 'Plan not found' };
   }
 
   if (plan.creator_id !== user.id) {
-    return NextResponse.json(
-      { message: 'You are not the creator of this plan' },
-      { status: 403 }
-    );
+    return { error: 'You are not the creator of this plan' };
   }
 
-  // Check if plan is confirmed and deny deletion
-  const confirmationCheck = await checkPlanConfirmation(id, sbAdmin);
-  if (confirmationCheck) {
-    return confirmationCheck;
+  if (plan.is_confirmed) {
+    return { error: 'Plan is confirmed. No modifications allowed.' };
   }
 
   const { error } = await sbAdmin
     .from('meet_together_plans')
     .delete()
-    .eq('id', id);
+    .eq('id', planId);
 
   if (error) {
-    return NextResponse.json(
-      { message: 'Error deleting meet together plan' },
-      { status: 500 }
-    );
+    return { error: 'Error deleting meet together plan' };
   }
 
-  return NextResponse.json({ message: 'success' });
+  revalidatePath('/meet-together');
+  return { data: { success: true } };
+}
+
+export async function togglePlanLock(planId: string, isConfirm: boolean) {
+  const sbAdmin = await createAdminClient();
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return { error: 'Unauthorized' };
+  }
+
+  // Check creator
+  const { data: plan } = await sbAdmin
+    .from('meet_together_plans')
+    .select('creator_id')
+    .eq('id', planId)
+    .single();
+
+  if (!plan || plan.creator_id !== user.id) {
+    return { error: 'Forbidden' };
+  }
+
+  const { error } = await sbAdmin
+    .from('meet_together_plans')
+    .update({
+      ...(typeof isConfirm === 'boolean' && { is_confirmed: isConfirm }),
+    })
+    .eq('id', planId);
+
+  if (error) {
+    return { error: 'Update failed' };
+  }
+
+  revalidatePath(`/meet-together/plans/${planId}`);
+  return { data: { success: true } };
 }

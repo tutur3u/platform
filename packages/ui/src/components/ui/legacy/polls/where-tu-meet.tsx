@@ -1,3 +1,4 @@
+import { toggleWherePoll } from '@tuturuuu/apis/tumeet/actions';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type {
   GetPollsForPlanResult,
@@ -37,22 +38,13 @@ export function DefaultWherePollContent({
   const wherePoll = polls?.polls?.[0]; // Assuming the first poll is the "where to meet" poll
 
   const onToggleWhereToMeet = async (enable: boolean) => {
-    const res = await fetch(
-      `/api/meet-together/plans/${plan.id}/poll/where-poll`,
-      {
-        method: 'PATCH',
-        body: JSON.stringify({
-          planId: plan.id,
-          whereToMeet: enable,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    if (!plan.id) return;
+    const result = await toggleWherePoll(plan.id, enable);
 
-    if (!res.ok) {
+    if (result.error) {
       toast({
         title: 'Failed to toggle where to meet',
-        description: 'Please try again',
+        description: result.error,
       });
     }
   };
@@ -76,6 +68,7 @@ export function DefaultWherePollContent({
       <div className="flex flex-col gap-4">
         <p className="text-gray-500 text-sm">{t('enable_where_poll_desc')}</p>
         <button
+          type="button"
           className="rounded border border-dynamic-purple bg-dynamic-purple/20 px-4 py-2 font-medium text-foreground shadow transition hover:bg-dynamic-purple/40"
           onClick={async () => await onToggleWhereToMeet(true)}
         >

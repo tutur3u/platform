@@ -1,5 +1,6 @@
 'use client';
 
+import { updatePlan } from '@tuturuuu/apis/tumeet/actions';
 import { ClipboardList, Pencil, Plus } from '@tuturuuu/icons';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
@@ -39,20 +40,16 @@ export default function AgendaDetails({ plan }: AgendaDetailsProps) {
 
     setIsLoading(true);
     try {
-      const data = {
-        agenda_content: editContent,
-      };
-
-      const res = await fetch(`/api/meet-together/plans/${plan.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(data),
+      const result = await updatePlan(plan.id, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        agenda_content: editContent as any,
       });
 
-      if (res.ok) {
+      if (result.data) {
         setIsEditing(false);
         router.refresh();
       } else {
-        console.error('Failed to save agenda');
+        console.error('Failed to save agenda:', result.error);
       }
     } catch (error) {
       console.error('Error saving agenda:', error);

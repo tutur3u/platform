@@ -1,28 +1,22 @@
+'use server';
+
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 
-interface Params {
-  params: Promise<{
-    planId: string;
-    userId: string;
-  }>;
-}
-
-export async function DELETE(_: Request, { params }: Params) {
+export async function removeUserFromPlan(planId: string, userId: string) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
+    return { error: 'Not authenticated' };
   }
 
   const sbAdmin = await createAdminClient();
-  const { planId, userId } = await params;
 
   // Check if the current user is the plan creator
   const { data: plan, error: planError } = await sbAdmin
@@ -32,22 +26,16 @@ export async function DELETE(_: Request, { params }: Params) {
     .single();
 
   if (planError || !plan) {
-    return NextResponse.json({ message: 'Plan not found' }, { status: 404 });
+    return { error: 'Plan not found' };
   }
 
   if (plan.creator_id !== user.id) {
-    return NextResponse.json(
-      { message: 'Only the plan creator can remove users' },
-      { status: 403 }
-    );
+    return { error: 'Only the plan creator can remove users' };
   }
 
   // Prevent the creator from removing themselves
   if (userId === user.id) {
-    return NextResponse.json(
-      { message: 'Cannot remove yourself from the plan' },
-      { status: 400 }
-    );
+    return { error: 'Cannot remove yourself from the plan' };
   }
 
   try {
@@ -59,10 +47,7 @@ export async function DELETE(_: Request, { params }: Params) {
       .eq('user_id', userId);
 
     if (timeblockError) {
-      return NextResponse.json(
-        { message: 'Error removing user from plan' },
-        { status: 500 }
-      );
+      return { error: 'Error removing user from plan' };
     }
 
     // Delete guest timeblocks for this user
@@ -73,10 +58,7 @@ export async function DELETE(_: Request, { params }: Params) {
       .eq('user_id', userId);
 
     if (guestTimeblockError) {
-      return NextResponse.json(
-        { message: 'Error removing user from plan' },
-        { status: 500 }
-      );
+      return { error: 'Error removing user from plan' };
     }
 
     // Delete guest votes from polls for this user
@@ -86,19 +68,14 @@ export async function DELETE(_: Request, { params }: Params) {
       .eq('guest_id', userId);
 
     if (guestVoteError) {
-      return NextResponse.json(
-        { message: 'Error removing user from plan' },
-        { status: 500 }
-      );
+      return { error: 'Error removing user from plan' };
     }
 
-    return NextResponse.json({
-      message: 'User removed from plan successfully',
-    });
-  } catch (error) {
-    return NextResponse.json(
-      { message: 'Error removing user from plan' },
-      { status: 500 }
-    );
+    revalidatePath(`/meet-together/plans/${planId}`);
+    return {
+      data: { success: true, message: 'User removed from plan successfully' },
+    };
+  } catch {
+    return { error: 'Error removing user from plan' };
   }
 }
