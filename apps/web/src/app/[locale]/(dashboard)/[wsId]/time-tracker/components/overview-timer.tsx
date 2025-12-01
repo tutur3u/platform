@@ -110,8 +110,6 @@ export default function OverviewTimer({
     []
   );
 
-
-
   return (
     <SimpleTimerControls
       wsId={wsId}
@@ -120,7 +118,6 @@ export default function OverviewTimer({
       isRunning={isRunning}
       categories={categories}
       tasks={tasks}
-
       apiCall={apiCall}
       headerAction={
         <Link href={`/${wsId}/time-tracker/timer?mode=advanced`}>
