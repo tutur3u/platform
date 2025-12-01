@@ -42,6 +42,7 @@ interface SimpleTimerControlsProps {
     options?: RequestInit
   ) => Promise<{ session?: SessionWithRelations; [key: string]: unknown }>;
   currentUserId?: string;
+  headerAction?: React.ReactNode;
 }
 
 export function SimpleTimerControls({
@@ -58,6 +59,7 @@ export function SimpleTimerControls({
   formatTime,
   formatDuration,
   apiCall,
+  headerAction,
 }: SimpleTimerControlsProps) {
   const queryClient = useQueryClient();
   const t = useTranslations('time-tracker.simple');
@@ -392,9 +394,12 @@ export function SimpleTimerControls({
   return (
     <Card className="relative">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Timer className="h-5 w-5" />
-          {t('title')}
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Timer className="h-5 w-5" />
+            {t('title')}
+          </div>
+          {headerAction}
         </CardTitle>
       </CardHeader>
 

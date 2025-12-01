@@ -6834,6 +6834,10 @@
       "advancedToastDescription": "Truy cập bộ hẹn giờ Pomodoro, cài đặt nâng cao và nhiều tính năng hơn",
       "simpleToastDescription": "Trải nghiệm theo dõi thời gian sạch sẽ, tập trung"
     },
+    "overview": {
+      "quickTimerTitle": "Hẹn giờ nhanh",
+      "quickTimer": "Bắt đầu theo dõi thời gian nhanh chóng. Cần thêm tính năng? Chuyển sang chế độ nâng cao."
+    },
     "stats": {
       "title": "Tiến độ của bạn",
       "description": "Theo dõi các chỉ số năng suất ⚡",

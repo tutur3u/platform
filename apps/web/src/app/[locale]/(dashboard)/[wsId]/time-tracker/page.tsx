@@ -1,5 +1,8 @@
 import { Calendar, Clock, TrendingUp, Zap } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   Card,
   CardContent,
@@ -15,6 +18,8 @@ import { Suspense } from 'react';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import type { DailyActivity } from '@/lib/time-tracking-helper';
 import { ActivityHeatmap } from './components/activity-heatmap';
+import OverviewTimer from './components/overview-timer';
+import type { ExtendedWorkspaceTask, SessionWithRelations } from './types';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('time-tracker');
@@ -81,6 +86,61 @@ async function fetchTimeTrackingStats(
     monthTime: stats.month_time || 0,
     streak: stats.streak || 0,
     dailyActivity: (stats.daily_activity || []) as unknown as DailyActivity[],
+  };
+}
+
+async function fetchTimerData(userId: string, wsId: string) {
+  const sbAdmin = await createAdminClient();
+
+  const [categoriesResult, runningSessionResult, tasksResult] = await Promise.all([
+    sbAdmin.from('time_tracking_categories').select('*').eq('ws_id', wsId),
+    sbAdmin
+      .from('time_tracking_sessions')
+      .select('*, category:time_tracking_categories(*), task:tasks(*)')
+      .eq('ws_id', wsId)
+      .eq('user_id', userId)
+      .is('duration_seconds', null)
+      .single(),
+    sbAdmin
+      .from('tasks')
+      .select(`
+        *,
+        list:task_lists!inner(
+          id,
+          name,
+          status,
+          board:workspace_boards!inner(
+            id,
+            name,
+            ws_id
+          )
+        )
+      `)
+      .eq('list.board.ws_id', wsId)
+      .is('deleted_at', null)
+      .is('closed_at', null)
+      .in('list.status', ['not_started', 'active'])
+      .eq('list.deleted', false)
+      .order('created_at', { ascending: false })
+      .limit(100),
+  ]);
+
+  // Transform tasks to match ExtendedWorkspaceTask interface
+  const tasks = (tasksResult.data || []).map((task) => ({
+    ...task,
+    board_id: task.list?.board?.id,
+    board_name: task.list?.board?.name,
+    list_id: task.list?.id,
+    list_name: task.list?.name,
+  })) as ExtendedWorkspaceTask[];
+
+  return {
+    categories: categoriesResult.data || [],
+    tasks,
+    runningSession:
+      runningSessionResult.error?.code === 'PGRST116'
+        ? null
+        : (runningSessionResult.data as SessionWithRelations | null),
   };
 }
 
@@ -283,6 +343,27 @@ function HeatmapCardSkeleton() {
   );
 }
 
+function TimerCardSkeleton() {
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="h-6 w-32 animate-pulse rounded bg-muted" />
+          <div className="h-8 w-40 animate-pulse rounded bg-muted" />
+        </div>
+        <div className="h-4 w-48 animate-pulse rounded bg-muted" />
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="h-10 animate-pulse rounded bg-muted" />
+        <div className="flex gap-2">
+          <div className="h-10 flex-1 animate-pulse rounded bg-muted" />
+          <div className="h-10 w-32 animate-pulse rounded bg-muted" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default async function TimeTrackerPage({
   params,
 }: {
@@ -294,16 +375,27 @@ export default async function TimeTrackerPage({
         const user = await getCurrentSupabaseUser();
         if (!user) return notFound();
 
-        // Fetch stats in parallel with Suspense boundaries
-        const statsPromise = fetchTimeTrackingStats(user.id, wsId, isPersonal);
+        // Fetch stats and timer data in parallel
+        const [statsPromise, timerDataPromise] = [
+          fetchTimeTrackingStats(user.id, wsId, isPersonal),
+          fetchTimerData(user.id, wsId),
+        ];
+
         return (
           <div className="grid gap-4 pb-4">
+            {/* Stats */}
             <Suspense fallback={<StatsCardSkeleton />}>
               <StatsCardWrapper statsPromise={statsPromise} locale={locale} />
             </Suspense>
 
+            {/* Heatmap */}
             <Suspense fallback={<HeatmapCardSkeleton />}>
               <HeatmapCardWrapper statsPromise={statsPromise} />
+            </Suspense>
+
+            {/* Quick Timer */}
+            <Suspense fallback={<TimerCardSkeleton />}>
+              <TimerCardWrapper timerDataPromise={timerDataPromise} wsId={wsId} />
             </Suspense>
           </div>
         );
@@ -334,4 +426,22 @@ async function HeatmapCardWrapper({
   //   return null;
   // }
   return <HeatmapCard dailyActivity={stats.dailyActivity} />;
+}
+
+async function TimerCardWrapper({
+  timerDataPromise,
+  wsId,
+}: {
+  timerDataPromise: Promise<Awaited<ReturnType<typeof fetchTimerData>>>;
+  wsId: string;
+}) {
+  const timerData = await timerDataPromise;
+  return (
+    <OverviewTimer
+      wsId={wsId}
+      categories={timerData.categories}
+      tasks={timerData.tasks}
+      initialRunningSession={timerData.runningSession}
+    />
+  );
 }

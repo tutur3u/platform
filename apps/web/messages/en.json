@@ -7045,6 +7045,10 @@
       "advancedToastDescription": "Access to Pomodoro timer, advanced settings, and more features",
       "simpleToastDescription": "Clean, focused time tracking experience"
     },
+    "overview": {
+      "quickTimerTitle": "Quick Timer",
+      "quickTimer": "Start tracking time quickly. Need more features? Switch to advanced mode."
+    },
     "stats": {
       "title": "Your Progress",
       "description": "Track your productivity metrics ⚡",
