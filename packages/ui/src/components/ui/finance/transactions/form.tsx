@@ -262,7 +262,7 @@ export function TransactionForm({
                       }
                       label={walletsLoading ? 'Loading...' : undefined}
                       placeholder={t('transaction-data-table.select_wallet')}
-                      selected={field.value}
+                      selected={field.value ?? ''}
                       onChange={field.onChange}
                       onCreate={(name) => {
                         setNewContentType('wallet');
@@ -300,7 +300,7 @@ export function TransactionForm({
                       }
                       label={categoriesLoading ? 'Loading...' : undefined}
                       placeholder={t('transaction-data-table.select_category')}
-                      selected={field.value}
+                      selected={field.value ?? ''}
                       onChange={field.onChange}
                       onCreate={(name) => {
                         setNewContentType('transaction-category');
