@@ -19,41 +19,36 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
+import { useSessionExceedsThreshold } from '@/hooks/useSessionExceedsThreshold';
+import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import type { ExtendedWorkspaceTask, SessionWithRelations } from '../types';
+import MissedEntryDialog from './missed-entry-dialog';
+import { formatDuration, formatTime } from '@/lib/time-format';
 
 interface SimpleTimerControlsProps {
   wsId: string;
   currentSession: SessionWithRelations | null;
-  setCurrentSession: (session: SessionWithRelations | null) => void;
   elapsedTime: number;
-  setElapsedTime: (time: number) => void;
   isRunning: boolean;
-  setIsRunning: (running: boolean) => void;
   categories: TimeTrackingCategory[];
   tasks: ExtendedWorkspaceTask[];
-  onSessionUpdate: () => void;
-  formatTime: (seconds: number) => string;
-  formatDuration: (seconds: number) => string;
   apiCall: (
     url: string,
     options?: RequestInit
   ) => Promise<{ session?: SessionWithRelations; [key: string]: unknown }>;
   currentUserId?: string;
+  headerAction?: React.ReactNode;
 }
 
 export function SimpleTimerControls({
   wsId,
   currentSession,
-  setCurrentSession,
   elapsedTime,
-  setElapsedTime,
   isRunning,
-  setIsRunning,
   categories,
-  onSessionUpdate,
-  formatTime,
-  formatDuration,
+  tasks,
   apiCall,
+  headerAction,
 }: SimpleTimerControlsProps) {
   const queryClient = useQueryClient();
   const t = useTranslations('time-tracker.simple');
@@ -69,6 +64,21 @@ export function SimpleTimerControls({
   const [pausedSession, setPausedSession] =
     useState<SessionWithRelations | null>(null);
   const [pausedElapsedTime, setPausedElapsedTime] = useState(0);
+
+  // State for exceeded threshold session dialog
+  const [showExceededThresholdDialog, setShowExceededThresholdDialog] =
+    useState(false);
+
+  // Fetch workspace threshold setting
+  const { data: thresholdDays, isLoading: isLoadingThreshold } =
+    useWorkspaceTimeThreshold(wsId);
+
+  // Check if current session exceeds the threshold
+  const { exceeds: sessionExceedsThreshold } = useSessionExceedsThreshold(
+    currentSession,
+    thresholdDays,
+    isLoadingThreshold
+  );
 
   // Auto-suggest work category
   const workCategory = categories.find(
@@ -96,30 +106,21 @@ export function SimpleTimerControls({
 
     setIsLoading(true);
     try {
-      const response = await apiCall(
-        `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            title: sessionTitle,
-            description: sessionDescription || null,
-            categoryId:
-              selectedCategoryId === 'none' ? null : selectedCategoryId,
-            taskId: selectedTaskId === 'none' ? null : selectedTaskId,
-          }),
-        }
-      );
+      await apiCall(`/api/v1/workspaces/${wsId}/time-tracking/sessions`, {
+        method: 'POST',
+        body: JSON.stringify({
+          title: sessionTitle,
+          description: sessionDescription || null,
+          categoryId: selectedCategoryId === 'none' ? null : selectedCategoryId,
+          taskId: selectedTaskId === 'none' ? null : selectedTaskId,
+        }),
+      });
 
-      setCurrentSession(response.session || null);
-      setIsRunning(true);
-      setElapsedTime(0);
-
-      // Invalidate the running session query to update sidebar
+      // Invalidate query to refetch running session - single source of truth
       queryClient.invalidateQueries({
         queryKey: ['running-time-session', wsId],
       });
 
-      onSessionUpdate();
       toast.success(t('timerStarted'));
     } catch (error) {
       console.error('Error starting timer:', error);
@@ -135,16 +136,19 @@ export function SimpleTimerControls({
     apiCall,
     wsId,
     queryClient,
-    setCurrentSession,
-    setIsRunning,
-    setElapsedTime,
-    onSessionUpdate,
+    t,
   ]);
 
   // Stop timer
   const stopTimer = useCallback(async () => {
     const sessionToStop = currentSession || pausedSession;
     if (!sessionToStop) return;
+
+    // Check if session exceeds threshold - show dialog instead of stopping directly
+    if (sessionExceedsThreshold && currentSession) {
+      setShowExceededThresholdDialog(true);
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -157,10 +161,7 @@ export function SimpleTimerControls({
       );
 
       setJustCompleted(response.session || null);
-      setCurrentSession(null);
       setPausedSession(null);
-      setIsRunning(false);
-      setElapsedTime(0);
       setPausedElapsedTime(0);
 
       // Clear form for next session
@@ -171,12 +172,10 @@ export function SimpleTimerControls({
 
       setTimeout(() => setJustCompleted(null), 3000);
 
-      // Invalidate the running session query to update sidebar
+      // Invalidate query to refetch running session - single source of truth
       queryClient.invalidateQueries({
         queryKey: ['running-time-session', wsId],
       });
-
-      onSessionUpdate();
 
       toast.success(
         t('sessionCompleted', {
@@ -192,16 +191,41 @@ export function SimpleTimerControls({
   }, [
     currentSession,
     pausedSession,
+    sessionExceedsThreshold,
     apiCall,
     wsId,
     queryClient,
     workCategory,
-    onSessionUpdate,
     formatDuration,
-    setCurrentSession,
-    setElapsedTime,
-    setIsRunning,
+    t,
   ]);
+
+  const resetFormState = useCallback(() => {
+    setPausedSession(null);
+    setPausedElapsedTime(0);
+    setSessionTitle('');
+    setSessionDescription('');
+    setSelectedTaskId('none');
+    setSelectedCategoryId(workCategory?.id || 'none');
+  }, [workCategory]);
+
+  // Handle session discarded from exceeded threshold dialog
+  const handleSessionDiscarded = useCallback(() => {
+    resetFormState();
+    // Invalidate query to refetch running session - single source of truth
+    queryClient.invalidateQueries({
+      queryKey: ['running-time-session', wsId],
+    });
+  }, [resetFormState, queryClient, wsId]);
+
+  // Handle missed entry created from exceeded threshold dialog
+  const handleMissedEntryCreated = useCallback(() => {
+    resetFormState();
+    // Invalidate query to refetch running session - single source of truth
+    queryClient.invalidateQueries({
+      queryKey: ['running-time-session', wsId],
+    });
+  }, [resetFormState, queryClient, wsId]);
 
   // Pause timer
   const pauseTimer = useCallback(async () => {
@@ -217,13 +241,15 @@ export function SimpleTimerControls({
         }
       );
 
+      // Store paused session state locally (paused sessions are not "running")
       setPausedSession(currentSession);
       setPausedElapsedTime(elapsedTime);
-      setCurrentSession(null);
-      setIsRunning(false);
-      setElapsedTime(0);
 
-      onSessionUpdate();
+      // Invalidate query to refetch running session - single source of truth
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId],
+      });
+
       toast.success(t('timerPaused'));
     } catch (error) {
       console.error('Error pausing timer:', error);
@@ -231,16 +257,7 @@ export function SimpleTimerControls({
     } finally {
       setIsLoading(false);
     }
-  }, [
-    currentSession,
-    apiCall,
-    wsId,
-    elapsedTime,
-    onSessionUpdate,
-    setCurrentSession,
-    setElapsedTime,
-    setIsRunning,
-  ]);
+  }, [currentSession, apiCall, wsId, elapsedTime, queryClient, t]);
 
   // Resume timer
   const resumeTimer = useCallback(async () => {
@@ -248,7 +265,7 @@ export function SimpleTimerControls({
 
     setIsLoading(true);
     try {
-      const response = await apiCall(
+      await apiCall(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${pausedSession.id}`,
         {
           method: 'PATCH',
@@ -256,18 +273,15 @@ export function SimpleTimerControls({
         }
       );
 
-      setCurrentSession(response.session || pausedSession);
-      setElapsedTime(pausedElapsedTime);
-      setIsRunning(true);
+      // Clear local paused state - query will provide the running session
       setPausedSession(null);
       setPausedElapsedTime(0);
 
-      // Invalidate the running session query to update sidebar
+      // Invalidate query to refetch running session - single source of truth
       queryClient.invalidateQueries({
         queryKey: ['running-time-session', wsId],
       });
 
-      onSessionUpdate();
       toast.success(t('timerResumed'));
     } catch (error) {
       console.error('Error resuming timer:', error);
@@ -275,17 +289,7 @@ export function SimpleTimerControls({
     } finally {
       setIsLoading(false);
     }
-  }, [
-    pausedSession,
-    apiCall,
-    wsId,
-    queryClient,
-    pausedElapsedTime,
-    onSessionUpdate,
-    setCurrentSession,
-    setElapsedTime,
-    setIsRunning,
-  ]);
+  }, [pausedSession, apiCall, wsId, queryClient, t]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -338,9 +342,12 @@ export function SimpleTimerControls({
   return (
     <Card className="relative">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Timer className="h-5 w-5" />
-          {t('title')}
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Timer className="h-5 w-5" />
+            {t('title')}
+          </div>
+          {headerAction}
         </CardTitle>
       </CardHeader>
 
@@ -526,6 +533,22 @@ export function SimpleTimerControls({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Exceeded Threshold Session Dialog */}
+      {currentSession && (
+        <MissedEntryDialog
+          mode="exceeded-session"
+          open={showExceededThresholdDialog}
+          onOpenChange={setShowExceededThresholdDialog}
+          session={currentSession}
+          categories={categories}
+          tasks={tasks}
+          wsId={wsId}
+          thresholdDays={thresholdDays ?? null}
+          onSessionDiscarded={handleSessionDiscarded}
+          onMissedEntryCreated={handleMissedEntryCreated}
+        />
       )}
     </Card>
   );

@@ -7006,6 +7006,8 @@
         "button": "Settings",
         "title": "Missed Entry Threshold Settings",
         "description": "Configure how far back users can add missed time entries without requiring approval.",
+        "noApprovalNeeded": "No approval needed (allow all entries)",
+        "noApprovalHint": "Users can add time entries for any date without requiring approval. This is the default setting.",
         "label": "Threshold (days)",
         "help": "Set the number of days users can go back to add time entries. Set to 0 to require approval for all missed entries.",
         "examples": {
@@ -7041,6 +7043,10 @@
       "simpleDescription": "You're using the simplified timer focused on easy, quick time tracking. Switch to advanced mode for Pomodoro timers, break reminders, drag-and-drop, and detailed features.",
       "advancedToastDescription": "Access to Pomodoro timer, advanced settings, and more features",
       "simpleToastDescription": "Clean, focused time tracking experience"
+    },
+    "overview": {
+      "quickTimerTitle": "Quick Timer",
+      "quickTimer": "Start tracking time quickly. Need more features? Switch to advanced mode."
     },
     "stats": {
       "title": "Your Progress",
@@ -7318,6 +7324,19 @@
       "success": {
         "requestSubmitted": "Time tracking request submitted for approval",
         "entryAdded": "Missed entry added successfully"
+      },
+      "exceeded": {
+        "title": "Session Exceeds Time Limit",
+        "description": "This session has been running for longer than the allowed threshold. You can either discard it or create a missed entry request for approval.",
+        "untitledSession": "Untitled Session",
+        "startedAt": "Started at {time}",
+        "runningFor": "Running for {duration}",
+        "allEntriesRequireApproval": "All time entries in this workspace require approval. Please provide accurate start and end times along with proof of work.",
+        "exceedsThreshold": "This session has been running for more than {days, plural, one {# day} other {# days}}. Please provide accurate start and end times along with proof of work.",
+        "discardSession": "Discard Session",
+        "discarding": "Discarding...",
+        "sessionDiscarded": "Session discarded successfully",
+        "discardFailed": "Failed to discard session"
       }
     },
     "workspace_select_dialog": {

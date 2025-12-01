@@ -6802,6 +6802,8 @@
         "button": "Cài Đặt",
         "title": "Cài Đặt Ngưỡng Nhập Thiếu",
         "description": "Cấu hình khoảng thời gian người dùng có thể thêm mục thời gian bị thiếu mà không cần phê duyệt.",
+        "noApprovalNeeded": "Không cần phê duyệt (cho phép tất cả các mục)",
+        "noApprovalHint": "Người dùng có thể thêm mục thời gian cho bất kỳ ngày nào mà không cần phê duyệt. Đây là cài đặt mặc định.",
         "label": "Ngưỡng (ngày)",
         "help": "Đặt số ngày người dùng có thể quay lại để thêm mục thời gian. Đặt về 0 để yêu cầu phê duyệt cho tất cả các mục bị thiếu.",
         "examples": {
@@ -6830,6 +6832,10 @@
       "simpleDescription": "Bạn đang sử dụng bộ hẹn giờ đơn giản tập trung vào việc theo dõi thời gian dễ dàng và nhanh chóng. Chuyển sang chế độ nâng cao để có bộ hẹn giờ Pomodoro, lời nhắc nghỉ ngơi, kéo thả và các tính năng chi tiết.",
       "advancedToastDescription": "Truy cập bộ hẹn giờ Pomodoro, cài đặt nâng cao và nhiều tính năng hơn",
       "simpleToastDescription": "Trải nghiệm theo dõi thời gian sạch sẽ, tập trung"
+    },
+    "overview": {
+      "quickTimerTitle": "Hẹn giờ nhanh",
+      "quickTimer": "Bắt đầu theo dõi thời gian nhanh chóng. Cần thêm tính năng? Chuyển sang chế độ nâng cao."
     },
     "stats": {
       "title": "Tiến độ của bạn",
@@ -7107,6 +7113,19 @@
       "success": {
         "requestSubmitted": "Yêu cầu theo dõi thời gian đã được gửi để phê duyệt",
         "entryAdded": "Đã thêm mục bị thiếu thành công"
+      },
+      "exceeded": {
+        "title": "Phiên vượt quá giới hạn thời gian",
+        "description": "Phiên này đã chạy lâu hơn ngưỡng cho phép. Bạn có thể hủy phiên hoặc tạo yêu cầu thêm mục bị thiếu để phê duyệt.",
+        "untitledSession": "Phiên không có tiêu đề",
+        "startedAt": "Bắt đầu lúc {time}",
+        "runningFor": "Đã chạy {duration}",
+        "allEntriesRequireApproval": "Tất cả các mục thời gian trong không gian làm việc này đều cần phê duyệt. Vui lòng cung cấp thời gian bắt đầu và kết thúc chính xác cùng với bằng chứng công việc.",
+        "exceedsThreshold": "Phiên này đã chạy hơn {days} ngày. Vui lòng cung cấp thời gian bắt đầu và kết thúc chính xác cùng với bằng chứng công việc.",
+        "discardSession": "Hủy phiên",
+        "discarding": "Đang hủy...",
+        "sessionDiscarded": "Đã hủy phiên thành công",
+        "discardFailed": "Không thể hủy phiên"
       }
     },
     "workspace_select_dialog": {
