@@ -125,22 +125,59 @@ async function fetchTimerData(userId: string, wsId: string) {
       .limit(100),
   ]);
 
-  // Transform tasks to match ExtendedWorkspaceTask interface
-  const tasks = (tasksResult.data || []).map((task) => ({
-    ...task,
-    board_id: task.list?.board?.id,
-    board_name: task.list?.board?.name,
-    list_id: task.list?.id,
-    list_name: task.list?.name,
-  })) as ExtendedWorkspaceTask[];
+  // Handle categories result
+  let categories: typeof categoriesResult.data = [];
+  if (categoriesResult.error) {
+    if (categoriesResult.error.code !== 'PGRST116') {
+      console.error(
+        '[time-tracker] Error fetching categories:',
+        categoriesResult.error.code,
+        categoriesResult.error.message
+      );
+    }
+  } else if (categoriesResult.data) {
+    categories = categoriesResult.data;
+  }
+
+  // Handle running session result
+  let runningSession: SessionWithRelations | null = null;
+  if (runningSessionResult.error) {
+    if (runningSessionResult.error.code !== 'PGRST116') {
+      console.error(
+        '[time-tracker] Error fetching running session:',
+        runningSessionResult.error.code,
+        runningSessionResult.error.message
+      );
+    }
+  } else if (runningSessionResult.data) {
+    runningSession = runningSessionResult.data as SessionWithRelations;
+  }
+
+  // Handle tasks result
+  let tasks: ExtendedWorkspaceTask[] = [];
+  if (tasksResult.error) {
+    if (tasksResult.error.code !== 'PGRST116') {
+      console.error(
+        '[time-tracker] Error fetching tasks:',
+        tasksResult.error.code,
+        tasksResult.error.message
+      );
+    }
+  } else if (tasksResult.data) {
+    // Transform tasks to match ExtendedWorkspaceTask interface
+    tasks = tasksResult.data.map((task) => ({
+      ...task,
+      board_id: task.list?.board?.id,
+      board_name: task.list?.board?.name,
+      list_id: task.list?.id,
+      list_name: task.list?.name,
+    })) as ExtendedWorkspaceTask[];
+  }
 
   return {
-    categories: categoriesResult.data || [],
+    categories,
     tasks,
-    runningSession:
-      runningSessionResult.error?.code === 'PGRST116'
-        ? null
-        : (runningSessionResult.data as SessionWithRelations | null),
+    runningSession,
   };
 }
 

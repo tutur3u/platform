@@ -397,15 +397,16 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
       // If older than threshold (or threshold is 0), create a time tracking request instead
       if (isStartTimeOlderThanThreshold) {
         // In exceeded mode, first delete the running session
-        if (isExceededMode && session) {
-          await fetch(
-            `/api/v1/workspaces/${wsId}/time-tracking/sessions/${session.id}`,
-            {
-              method: 'DELETE',
-            }
-          );
-        }
-
+if (isExceededMode && session) {
+   const deleteRes = await fetch(
+     `/api/v1/workspaces/${wsId}/time-tracking/sessions/${session.id}`,
+     { method: 'DELETE' },
+   );
+   if (!deleteRes.ok) {
+     const err = await deleteRes.json().catch(() => null);
+     throw new Error(err?.error ?? 'Failed to discard session before creating request');
+   }
+ }
         const formData = new FormData();
         formData.append('title', missedEntryTitle);
         formData.append('description', missedEntryDescription || '');

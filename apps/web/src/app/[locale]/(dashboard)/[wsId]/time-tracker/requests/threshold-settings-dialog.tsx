@@ -47,13 +47,9 @@ export function ThresholdSettingsDialog({
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Validate using Zod only when approval is needed
-  const validation = noApprovalNeeded || thresholdSchema.safeParse(inputValue);
-  const isSubmitDisabled =
-    (!noApprovalNeeded &&
-      typeof validation === 'object' &&
-      !validation.success) ||
-    isLoading;
+  // Always parse the input value to maintain clear typing
+  const parsed = thresholdSchema.safeParse(inputValue);
+  const isSubmitDisabled = isLoading || (!noApprovalNeeded && !parsed.success);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -94,13 +94,17 @@ export default function OverviewTimer({
   // API call helper
   const apiCall = useCallback(
     async (url: string, options: RequestInit = {}) => {
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
       const response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
           ...options.headers,
         },
         ...options,
-      });
+        signal: controller.signal,
+      }).finally(() => clearTimeout(timeoutId));
 
       if (!response.ok) {
         const error = await response
