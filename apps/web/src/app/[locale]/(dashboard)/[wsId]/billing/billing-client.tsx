@@ -18,9 +18,10 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
 import { PlanList } from './plan-list';
+import { SubscriptionConfirmationDialog } from './subscription-confirmation-dialog';
 
 // Define types for the props we're passing from the server component
-interface Plan {
+export interface Plan {
   id: string;
   polarSubscriptionId: string;
   productId: string;
@@ -50,79 +51,50 @@ export function BillingClient({
   isCreator,
 }: BillingClientProps) {
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
   const t = useTranslations('billing');
   const router = useRouter();
 
   const handleCancelSubscription = async (subscriptionId: string) => {
     if (!subscriptionId) return;
 
-    setIsLoading(true);
-    setMessage('');
-
-    try {
-      const response = await fetch(
-        `/api/payment/customer-portal/subscriptions/${subscriptionId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to cancel subscription');
+    const response = await fetch(
+      `/api/payment/customer-portal/subscriptions/${subscriptionId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       }
+    );
 
-      setMessage(
-        'Your subscription will be canceled at the end of your billing period.'
-      );
-      router.refresh();
-    } catch (error) {
-      console.error('Error canceling subscription:', error);
-      setMessage(
-        `Error: ${error instanceof Error ? error.message : 'Network error occurred. Please try again.'}`
-      );
-    } finally {
-      setIsLoading(false);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to cancel subscription');
     }
+
+    router.refresh();
   };
 
   const handleContinueSubscription = async (subscriptionId: string) => {
     if (!subscriptionId) return;
 
-    setIsLoading(true);
-    setMessage('');
-
-    try {
-      const response = await fetch(
-        `/api/payment/customer-portal/subscriptions/${subscriptionId}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to continue subscription');
+    const response = await fetch(
+      `/api/payment/customer-portal/subscriptions/${subscriptionId}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       }
+    );
 
-      setMessage('Your subscription will continue at the next billing period.');
-      router.refresh();
-    } catch (error) {
-      console.error('Error continuing subscription:', error);
-      setMessage(
-        `Error: ${error instanceof Error ? error.message : 'Network error occurred. Please try again.'}`
-      );
-    } finally {
-      setIsLoading(false);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to continue subscription');
     }
+
+    router.refresh();
   };
 
   return (
@@ -285,48 +257,6 @@ export function BillingClient({
             </ul>
           </div>
 
-          {/* Messages */}
-          {message && (
-            <div
-              className={`mb-6 flex items-start gap-3 rounded-xl border-2 p-4 shadow-lg ${
-                message.includes('Error')
-                  ? 'border-dynamic-red/50 bg-dynamic-red/10 dark:bg-dynamic-red/20'
-                  : 'border-dynamic-green/50 bg-dynamic-green/10 dark:bg-dynamic-green/20'
-              }`}
-            >
-              <div
-                className={`rounded-full p-1.5 ${
-                  message.includes('Error')
-                    ? 'bg-dynamic-red/20'
-                    : 'bg-dynamic-green/20'
-                }`}
-              >
-                {message.includes('Error') ? (
-                  <AlertCircle
-                    className={`h-5 w-5 ${
-                      message.includes('Error')
-                        ? 'text-dynamic-red'
-                        : 'text-dynamic-green'
-                    }`}
-                  />
-                ) : (
-                  <CheckCircle className="h-5 w-5 text-dynamic-green" />
-                )}
-              </div>
-              <div className="flex-1">
-                <p
-                  className={`font-medium text-sm leading-relaxed ${
-                    message.includes('Error')
-                      ? 'text-dynamic-red'
-                      : 'text-dynamic-green'
-                  }`}
-                >
-                  {message}
-                </p>
-              </div>
-            </div>
-          )}
-
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-4">
             <Button
@@ -338,30 +268,30 @@ export function BillingClient({
               <ArrowUpCircle className="mr-2 h-5 w-5" />
               {t('upgrade-plan')}
             </Button>
-            {currentPlan.id &&
-              (currentPlan.cancelAtPeriodEnd ? (
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="border-2 border-dynamic-green text-dynamic-green shadow-lg transition-all hover:scale-105 hover:bg-dynamic-green/10 hover:shadow-xl"
-                  onClick={() => handleContinueSubscription(currentPlan.id)}
-                  disabled={isLoading}
-                >
-                  <CheckCircle className="mr-2 h-5 w-5" />
-                  {isLoading ? 'Continuing...' : 'Continue Subscription'}
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="border-2 border-dynamic-red text-dynamic-red shadow-lg transition-all hover:scale-105 hover:bg-dynamic-red/10 hover:shadow-xl"
-                  onClick={() => handleCancelSubscription(currentPlan.id)}
-                  disabled={isLoading}
-                >
-                  <X className="mr-2 h-5 w-5" />
-                  {isLoading ? 'Cancelling...' : 'Cancel Subscription'}
-                </Button>
-              ))}
+            {currentPlan.id && (
+              <Button
+                variant="outline"
+                size="lg"
+                className={`border-2 shadow-lg transition-all hover:scale-105 hover:shadow-xl ${
+                  currentPlan.cancelAtPeriodEnd
+                    ? 'border-dynamic-green text-dynamic-green hover:bg-dynamic-green/10'
+                    : 'border-dynamic-red text-dynamic-red hover:bg-dynamic-red/10'
+                }`}
+                onClick={() => setShowConfirmationDialog(true)}
+              >
+                {currentPlan.cancelAtPeriodEnd ? (
+                  <>
+                    <CheckCircle className="mr-2 h-5 w-5" />
+                    Continue Subscription
+                  </>
+                ) : (
+                  <>
+                    <X className="mr-2 h-5 w-5" />
+                    Cancel Subscription
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -374,6 +304,20 @@ export function BillingClient({
         open={showUpgradeOptions}
         onOpenChange={setShowUpgradeOptions}
       />
+
+      {/* Subscription Confirmation Dialog */}
+      {currentPlan.id && (
+        <SubscriptionConfirmationDialog
+          open={showConfirmationDialog}
+          onOpenChange={setShowConfirmationDialog}
+          currentPlan={currentPlan}
+          onConfirm={
+            currentPlan.cancelAtPeriodEnd
+              ? handleContinueSubscription
+              : handleCancelSubscription
+          }
+        />
+      )}
     </div>
   );
 }

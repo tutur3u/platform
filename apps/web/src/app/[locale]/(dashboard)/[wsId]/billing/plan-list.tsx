@@ -20,21 +20,8 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { centToDollar } from '@/utils/price-helper';
+import type { Plan } from './billing-client';
 import PurchaseLink from './purchase-link';
-
-export interface Plan {
-  id: string;
-  polarSubscriptionId: string;
-  productId: string;
-  name: string;
-  price: number;
-  billingCycle: string | null;
-  startDate: string;
-  nextBillingDate: string;
-  cancelAtPeriodEnd: boolean;
-  status: string;
-  features?: string[];
-}
 
 interface PlanListProps {
   currentPlan: Plan;
