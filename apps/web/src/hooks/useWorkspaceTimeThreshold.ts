@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 
 /**
  * Hook to fetch workspace time tracking threshold setting.
- * 
+ *
  * Returns:
  * - null: No approval needed (any entry can be added directly)
  * - 0: All entries require approval

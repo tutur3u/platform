@@ -107,25 +107,33 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
   // Mode-specific props
   const isExceededMode = mode === 'exceeded-session';
   const session = isExceededMode ? props.session : undefined;
-  const providedThresholdDays = isExceededMode ? props.thresholdDays : undefined;
-  const onSessionDiscarded = isExceededMode ? props.onSessionDiscarded : undefined;
-  const onMissedEntryCreated = isExceededMode ? props.onMissedEntryCreated : undefined;
+  const providedThresholdDays = isExceededMode
+    ? props.thresholdDays
+    : undefined;
+  const onSessionDiscarded = isExceededMode
+    ? props.onSessionDiscarded
+    : undefined;
+  const onMissedEntryCreated = isExceededMode
+    ? props.onMissedEntryCreated
+    : undefined;
   const prefillStartTime = !isExceededMode ? props.prefillStartTime : undefined;
   const prefillEndTime = !isExceededMode ? props.prefillEndTime : undefined;
 
   const router = useRouter();
   const queryClient = useQueryClient();
-  
+
   // Only fetch threshold in normal mode (exceeded mode provides it)
   const {
     data: fetchedThresholdDays,
     isLoading: isLoadingThreshold,
     isError: isErrorThreshold,
   } = useWorkspaceTimeThreshold(isExceededMode ? null : wsId);
-  
+
   // Use provided threshold in exceeded mode, fetched in normal mode
-  const thresholdDays = isExceededMode ? providedThresholdDays : fetchedThresholdDays;
-  
+  const thresholdDays = isExceededMode
+    ? providedThresholdDays
+    : fetchedThresholdDays;
+
   const t = useTranslations('time-tracker.missed_entry_dialog');
 
   // State for missed entry form
@@ -397,16 +405,18 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
       // If older than threshold (or threshold is 0), create a time tracking request instead
       if (isStartTimeOlderThanThreshold) {
         // In exceeded mode, first delete the running session
-if (isExceededMode && session) {
-   const deleteRes = await fetch(
-     `/api/v1/workspaces/${wsId}/time-tracking/sessions/${session.id}`,
-     { method: 'DELETE' },
-   );
-   if (!deleteRes.ok) {
-     const err = await deleteRes.json().catch(() => null);
-     throw new Error(err?.error ?? 'Failed to discard session before creating request');
-   }
- }
+        if (isExceededMode && session) {
+          const deleteRes = await fetch(
+            `/api/v1/workspaces/${wsId}/time-tracking/sessions/${session.id}`,
+            { method: 'DELETE' }
+          );
+          if (!deleteRes.ok) {
+            const err = await deleteRes.json().catch(() => null);
+            throw new Error(
+              err?.error ?? 'Failed to discard session before creating request'
+            );
+          }
+        }
         const formData = new FormData();
         formData.append('title', missedEntryTitle);
         formData.append('description', missedEntryDescription || '');
@@ -457,7 +467,7 @@ if (isExceededMode && session) {
         router.refresh();
         closeMissedEntryDialog();
         toast.success(t('success.requestSubmitted'));
-        
+
         // Call callback for exceeded mode
         if (isExceededMode) {
           onMissedEntryCreated?.();
@@ -598,10 +608,14 @@ if (isExceededMode && session) {
               <div className="flex items-start gap-3">
                 <Clock className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-orange" />
                 <div className="flex-1 space-y-1">
-                  <p className="font-medium">{session.title || t('exceeded.untitledSession')}</p>
+                  <p className="font-medium">
+                    {session.title || t('exceeded.untitledSession')}
+                  </p>
                   <p className="text-muted-foreground text-sm">
                     {t('exceeded.startedAt', {
-                      time: sessionStartTime?.format('MMM D, YYYY [at] h:mm A') || '',
+                      time:
+                        sessionStartTime?.format('MMM D, YYYY [at] h:mm A') ||
+                        '',
                     })}
                   </p>
                   <p className="font-mono text-dynamic-orange text-sm">
@@ -620,7 +634,9 @@ if (isExceededMode && session) {
               <p className="text-muted-foreground text-sm">
                 {thresholdDays === 0
                   ? t('exceeded.allEntriesRequireApproval')
-                  : t('exceeded.exceedsThreshold', { days: thresholdDays ?? 1 })}
+                  : t('exceeded.exceedsThreshold', {
+                      days: thresholdDays ?? 1,
+                    })}
               </p>
             </div>
           )}
@@ -876,7 +892,8 @@ if (isExceededMode && session) {
                     isDragOver
                       ? 'border-dynamic-orange bg-dynamic-orange/10'
                       : 'border-border hover:border-border/80',
-                    (isCompressing || isLoading) && 'pointer-events-none opacity-50'
+                    (isCompressing || isLoading) &&
+                      'pointer-events-none opacity-50'
                   )}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
@@ -968,92 +985,97 @@ if (isExceededMode && session) {
 
           {/* Quick time presets - hidden in exceeded mode */}
           {!isExceededMode && (
-          <div className="rounded-lg border p-3">
-            <Label className="text-muted-foreground text-xs">
-              {t('presets.title')}
-            </Label>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {[
-                { label: t('presets.lastHour'), minutes: 60 },
-                { label: t('presets.last2Hours'), minutes: 120 },
-                {
-                  label: t('presets.morning'),
-                  isCustom: true,
-                  start: '09:00',
-                  end: '12:00',
-                },
-                {
-                  label: t('presets.afternoon'),
-                  isCustom: true,
-                  start: '13:00',
-                  end: '17:00',
-                },
-                {
-                  label: t('presets.yesterday'),
-                  isCustom: true,
-                  start: 'yesterday-9',
-                  end: 'yesterday-17',
-                },
-              ].map((preset) => (
-                <Button
-                  key={preset.label}
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs"
-                  type="button"
-                  onClick={() => {
-                    const now = dayjs();
-                    if (preset.isCustom) {
-                      if (preset.start === 'yesterday-9') {
-                        const yesterday = now.subtract(1, 'day');
+            <div className="rounded-lg border p-3">
+              <Label className="text-muted-foreground text-xs">
+                {t('presets.title')}
+              </Label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {[
+                  { label: t('presets.lastHour'), minutes: 60 },
+                  { label: t('presets.last2Hours'), minutes: 120 },
+                  {
+                    label: t('presets.morning'),
+                    isCustom: true,
+                    start: '09:00',
+                    end: '12:00',
+                  },
+                  {
+                    label: t('presets.afternoon'),
+                    isCustom: true,
+                    start: '13:00',
+                    end: '17:00',
+                  },
+                  {
+                    label: t('presets.yesterday'),
+                    isCustom: true,
+                    start: 'yesterday-9',
+                    end: 'yesterday-17',
+                  },
+                ].map((preset) => (
+                  <Button
+                    key={preset.label}
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    type="button"
+                    onClick={() => {
+                      const now = dayjs();
+                      if (preset.isCustom) {
+                        if (preset.start === 'yesterday-9') {
+                          const yesterday = now.subtract(1, 'day');
+                          setMissedEntryStartTime(
+                            yesterday
+                              .hour(9)
+                              .minute(0)
+                              .format('YYYY-MM-DDTHH:mm')
+                          );
+                          setMissedEntryEndTime(
+                            yesterday
+                              .hour(17)
+                              .minute(0)
+                              .format('YYYY-MM-DDTHH:mm')
+                          );
+                        } else if (preset.start && preset.end) {
+                          const today = now.startOf('day');
+                          const startParts = preset.start.split(':');
+                          const endParts = preset.end.split(':');
+                          const startHour = parseInt(startParts[0] || '9', 10);
+                          const startMin = parseInt(startParts[1] || '0', 10);
+                          const endHour = parseInt(endParts[0] || '17', 10);
+                          const endMin = parseInt(endParts[1] || '0', 10);
+                          setMissedEntryStartTime(
+                            today
+                              .hour(startHour)
+                              .minute(startMin)
+                              .format('YYYY-MM-DDTHH:mm')
+                          );
+                          setMissedEntryEndTime(
+                            today
+                              .hour(endHour)
+                              .minute(endMin)
+                              .format('YYYY-MM-DDTHH:mm')
+                          );
+                        }
+                      } else if (preset.minutes) {
+                        const endTime = now;
+                        const startTime = endTime.subtract(
+                          preset.minutes,
+                          'minutes'
+                        );
                         setMissedEntryStartTime(
-                          yesterday.hour(9).minute(0).format('YYYY-MM-DDTHH:mm')
+                          startTime.format('YYYY-MM-DDTHH:mm')
                         );
                         setMissedEntryEndTime(
-                          yesterday
-                            .hour(17)
-                            .minute(0)
-                            .format('YYYY-MM-DDTHH:mm')
-                        );
-                      } else if (preset.start && preset.end) {
-                        const today = now.startOf('day');
-                        const startParts = preset.start.split(':');
-                        const endParts = preset.end.split(':');
-                        const startHour = parseInt(startParts[0] || '9', 10);
-                        const startMin = parseInt(startParts[1] || '0', 10);
-                        const endHour = parseInt(endParts[0] || '17', 10);
-                        const endMin = parseInt(endParts[1] || '0', 10);
-                        setMissedEntryStartTime(
-                          today
-                            .hour(startHour)
-                            .minute(startMin)
-                            .format('YYYY-MM-DDTHH:mm')
-                        );
-                        setMissedEntryEndTime(
-                          today
-                            .hour(endHour)
-                            .minute(endMin)
-                            .format('YYYY-MM-DDTHH:mm')
+                          endTime.format('YYYY-MM-DDTHH:mm')
                         );
                       }
-                    } else if (preset.minutes) {
-                      const endTime = now;
-                      const startTime = endTime.subtract(
-                        preset.minutes,
-                        'minutes'
-                      );
-                      setMissedEntryStartTime(
-                        startTime.format('YYYY-MM-DDTHH:mm')
-                      );
-                      setMissedEntryEndTime(endTime.format('YYYY-MM-DDTHH:mm'));
-                    }
-                  }}
-                >
-                  {preset.label}
-                </Button>
-              ))}
+                    }}
+                  >
+                    {preset.label}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
           )}
 
           {/* Show calculated duration */}
@@ -1076,7 +1098,7 @@ if (isExceededMode && session) {
             </div>
           )}
         </div>
-        
+
         {/* Actions - different layout for exceeded mode */}
         {isExceededMode ? (
           <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:justify-between">
@@ -1110,7 +1132,9 @@ if (isExceededMode && session) {
               </Button>
               <Button
                 onClick={createMissedEntry}
-                disabled={isLoading || images.length === 0 || !missedEntryTitle.trim()}
+                disabled={
+                  isLoading || images.length === 0 || !missedEntryTitle.trim()
+                }
                 className="w-full sm:w-auto"
               >
                 {isCreatingMissedEntry ? (

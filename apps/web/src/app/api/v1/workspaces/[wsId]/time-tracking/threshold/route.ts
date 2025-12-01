@@ -60,7 +60,10 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
       if (Number.isNaN(threshold) || threshold < 0) {
         return NextResponse.json(
-          { error: 'Invalid threshold value. Must be a non-negative integer or null.' },
+          {
+            error:
+              'Invalid threshold value. Must be a non-negative integer or null.',
+          },
           { status: 400 }
         );
       }

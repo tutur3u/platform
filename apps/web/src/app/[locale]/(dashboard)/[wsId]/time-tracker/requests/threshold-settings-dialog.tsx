@@ -204,7 +204,8 @@ export function ThresholdSettingsDialog({
                       {t('examples.zero')}
                     </li>
                     <li>
-                      <strong>1 {t('examples.day')}:</strong> {t('examples.one')}
+                      <strong>1 {t('examples.day')}:</strong>{' '}
+                      {t('examples.one')}
                     </li>
                     <li>
                       <strong>7 {t('examples.days')}:</strong>{' '}
