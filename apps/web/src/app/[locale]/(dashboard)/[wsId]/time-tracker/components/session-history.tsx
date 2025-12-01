@@ -81,6 +81,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
+import { formatDuration } from '@/lib/time-format';
 import type { SessionWithRelations } from '../types';
 import MissedEntryDialog from './missed-entry-dialog';
 import { WorkspaceSelectDialog } from './workspace-select-dialog';
@@ -163,17 +164,8 @@ const stackSessions = (
   return stacks;
 };
 
-export const formatDuration = (seconds: number | undefined): string => {
-  const safeSeconds = Math.max(0, Math.floor(seconds || 0));
-  const hours = Math.floor(safeSeconds / 3600);
-  const minutes = Math.floor((safeSeconds % 3600) / 60);
-  const secs = safeSeconds % 60;
-
-  if (hours > 0) {
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }
-  return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-};
+// Re-export for backward compatibility - import from shared utility
+export { formatDuration } from '@/lib/time-format';
 
 // Helper function to create a stacked session object
 const createStackedSession = (

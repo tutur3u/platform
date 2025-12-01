@@ -115,48 +115,6 @@ export default function SimpleTimeTrackerContent({
     []
   );
 
-  // Fetch session data
-  const fetchData = useCallback(async () => {
-    if (!currentUser) return;
-
-    try {
-      const response = await apiCall(
-        `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=running`
-      );
-
-      if (response.session) {
-        setCurrentSession(response.session);
-        setIsRunning(true);
-        const elapsed = Math.max(
-          0,
-          Math.floor(
-            (Date.now() - new Date(response.session.start_time).getTime()) /
-              1000
-          )
-        );
-        setElapsedTime(elapsed);
-      } else {
-        setCurrentSession(null);
-        setIsRunning(false);
-        setElapsedTime(0);
-      }
-    } catch (error) {
-      console.error('Error fetching session data:', error);
-    }
-  }, [wsId, apiCall, currentUser]);
-
-  // Format time helpers
-  const formatTime = useCallback((seconds: number): string => {
-    const safeSeconds = Math.max(0, Math.floor(seconds));
-    const hours = Math.floor(safeSeconds / 3600);
-    const minutes = Math.floor((safeSeconds % 3600) / 60);
-    const secs = safeSeconds % 60;
-
-    if (hours > 0) {
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }, []);
 
   const formatDuration = useCallback((seconds: number): string => {
     const safeSeconds = Math.max(0, Math.floor(seconds));
@@ -213,16 +171,10 @@ export default function SimpleTimeTrackerContent({
       <SimpleTimerControls
         wsId={wsId}
         currentSession={currentSession}
-        setCurrentSession={setCurrentSession}
         elapsedTime={elapsedTime}
-        setElapsedTime={setElapsedTime}
         isRunning={isRunning}
-        setIsRunning={setIsRunning}
         categories={categories}
         tasks={tasks}
-        onSessionUpdate={fetchData}
-        formatTime={formatTime}
-        formatDuration={formatDuration}
         apiCall={apiCall}
       />
 

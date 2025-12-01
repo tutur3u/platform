@@ -34,6 +34,7 @@ import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { formatDuration } from '@/lib/time-format';
 import classes from '@/style/mantine-heatmap.module.css';
 import {
   DEFAULT_SETTINGS,
@@ -54,18 +55,6 @@ interface ActivityHeatmapProps {
     sessions: number;
   }>;
 }
-
-const formatDuration = (seconds: number | undefined): string => {
-  const safeSeconds = Math.max(0, Math.floor(seconds || 0));
-  const hours = Math.floor(safeSeconds / 3600);
-  const minutes = Math.floor((safeSeconds % 3600) / 60);
-  const secs = safeSeconds % 60;
-
-  if (hours > 0) {
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }
-  return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-};
 
 // Get intensity level (0-4) based on duration - still used by other view modes
 const getIntensity = (duration: number): number => {

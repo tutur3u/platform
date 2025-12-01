@@ -39,7 +39,8 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
-import { formatDuration, getCategoryColor } from './session-history';
+import { formatDuration } from '@/lib/time-format';
+import { getCategoryColor } from './session-history';
 import type { SessionWithRelations } from '../types';
 
 dayjs.extend(utc);
@@ -107,25 +108,33 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
   // Mode-specific props
   const isExceededMode = mode === 'exceeded-session';
   const session = isExceededMode ? props.session : undefined;
-  const providedThresholdDays = isExceededMode ? props.thresholdDays : undefined;
-  const onSessionDiscarded = isExceededMode ? props.onSessionDiscarded : undefined;
-  const onMissedEntryCreated = isExceededMode ? props.onMissedEntryCreated : undefined;
+  const providedThresholdDays = isExceededMode
+    ? props.thresholdDays
+    : undefined;
+  const onSessionDiscarded = isExceededMode
+    ? props.onSessionDiscarded
+    : undefined;
+  const onMissedEntryCreated = isExceededMode
+    ? props.onMissedEntryCreated
+    : undefined;
   const prefillStartTime = !isExceededMode ? props.prefillStartTime : undefined;
   const prefillEndTime = !isExceededMode ? props.prefillEndTime : undefined;
 
   const router = useRouter();
   const queryClient = useQueryClient();
-  
+
   // Only fetch threshold in normal mode (exceeded mode provides it)
   const {
     data: fetchedThresholdDays,
     isLoading: isLoadingThreshold,
     isError: isErrorThreshold,
   } = useWorkspaceTimeThreshold(isExceededMode ? null : wsId);
-  
+
   // Use provided threshold in exceeded mode, fetched in normal mode
-  const thresholdDays = isExceededMode ? providedThresholdDays : fetchedThresholdDays;
-  
+  const thresholdDays = isExceededMode
+    ? providedThresholdDays
+    : fetchedThresholdDays;
+
   const t = useTranslations('time-tracker.missed_entry_dialog');
 
   // State for missed entry form
@@ -355,6 +364,114 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     imagePreviewsRef.current = newPreviews;
   };
 
+  // Shared Image Upload Section component to reduce code duplication
+  const ImageUploadSection = ({ disabled }: { disabled: boolean }) => (
+    <div className="space-y-3">
+      <Label className="font-medium text-sm">
+        {t('approval.proofOfWork', {
+          current: images.length,
+          max: MAX_IMAGES,
+        })}
+      </Label>
+
+      {images.length < MAX_IMAGES && (
+        <button
+          type="button"
+          className={cn(
+            'relative w-full rounded-lg border-2 border-dashed transition-all duration-200',
+            isDragOver
+              ? 'border-dynamic-orange bg-dynamic-orange/10'
+              : 'border-border hover:border-border/80',
+            (isCompressing || disabled) && 'pointer-events-none opacity-50'
+          )}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          aria-label="Click to upload or drag and drop images"
+          disabled={isCompressing || disabled}
+        >
+          <Input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            multiple
+            onChange={handleImageUpload}
+            disabled={disabled || isCompressing}
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          />
+          <div className="flex flex-col items-center justify-center px-4 py-6 text-center">
+            <div
+              className={cn(
+                'mb-2 flex h-10 w-10 items-center justify-center rounded-full transition-colors',
+                isDragOver ? 'bg-dynamic-orange/20' : 'bg-muted'
+              )}
+            >
+              <Upload
+                className={cn(
+                  'h-5 w-5',
+                  isDragOver
+                    ? 'text-dynamic-orange'
+                    : 'text-muted-foreground'
+                )}
+              />
+            </div>
+            <p className="mb-1 font-medium text-sm">
+              {isCompressing
+                ? t('approval.compressing')
+                : isDragOver
+                  ? t('approval.dropImages')
+                  : t('approval.clickToUpload')}
+            </p>
+            <p className="text-muted-foreground text-xs">
+              {t('approval.imageFormats')}
+            </p>
+          </div>
+        </button>
+      )}
+
+      {imageError && (
+        <div className="flex items-center gap-1 text-dynamic-red text-sm">
+          <AlertCircle className="h-3 w-3" />
+          {imageError}
+        </div>
+      )}
+
+      {imagePreviews.length > 0 && (
+        <div className="grid grid-cols-3 gap-2">
+          {imagePreviews.map((preview, index) => (
+            <div key={preview} className="group relative">
+              <div className="aspect-square overflow-hidden rounded-lg border-2 border-border bg-muted">
+                <Image
+                  src={
+                    isValidBlobUrl(preview)
+                      ? preview
+                      : '/placeholder.svg'
+                  }
+                  alt={t('approval.proofImageAlt', {
+                    number: index + 1,
+                  })}
+                  className="h-full w-full object-cover"
+                  width={100}
+                  height={100}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="destructive"
+                size="icon"
+                className="-top-2 -right-2 absolute h-6 w-6 rounded-full opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
+                onClick={() => removeImage(index)}
+                disabled={disabled}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   const createMissedEntry = async () => {
     if (!missedEntryTitle.trim()) {
       toast.error(t('errors.titleRequired'));
@@ -398,14 +515,17 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
       if (isStartTimeOlderThanThreshold) {
         // In exceeded mode, first delete the running session
         if (isExceededMode && session) {
-          await fetch(
+          const deleteRes = await fetch(
             `/api/v1/workspaces/${wsId}/time-tracking/sessions/${session.id}`,
-            {
-              method: 'DELETE',
-            }
+            { method: 'DELETE' }
           );
+          if (!deleteRes.ok) {
+            const err = await deleteRes.json().catch(() => null);
+            throw new Error(
+              err?.error ?? 'Failed to discard session before creating request'
+            );
+          }
         }
-
         const formData = new FormData();
         formData.append('title', missedEntryTitle);
         formData.append('description', missedEntryDescription || '');
@@ -456,7 +576,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
         router.refresh();
         closeMissedEntryDialog();
         toast.success(t('success.requestSubmitted'));
-        
+
         // Call callback for exceeded mode
         if (isExceededMode) {
           onMissedEntryCreated?.();
@@ -597,10 +717,14 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
               <div className="flex items-start gap-3">
                 <Clock className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-orange" />
                 <div className="flex-1 space-y-1">
-                  <p className="font-medium">{session.title || t('exceeded.untitledSession')}</p>
+                  <p className="font-medium">
+                    {session.title || t('exceeded.untitledSession')}
+                  </p>
                   <p className="text-muted-foreground text-sm">
                     {t('exceeded.startedAt', {
-                      time: sessionStartTime?.format('MMM D, YYYY [at] h:mm A') || '',
+                      time:
+                        sessionStartTime?.format('MMM D, YYYY [at] h:mm A') ||
+                        '',
                     })}
                   </p>
                   <p className="font-mono text-dynamic-orange text-sm">
@@ -619,7 +743,9 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
               <p className="text-muted-foreground text-sm">
                 {thresholdDays === 0
                   ? t('exceeded.allEntriesRequireApproval')
-                  : t('exceeded.exceedsThreshold', { days: thresholdDays ?? 1 })}
+                  : t('exceeded.exceedsThreshold', {
+                      days: thresholdDays ?? 1,
+                    })}
               </p>
             </div>
           )}
@@ -751,308 +877,106 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
               </div>
 
               {/* Image upload section */}
-              <div className="space-y-3">
-                <Label className="font-medium text-sm">
-                  {t('approval.proofOfWork', {
-                    current: images.length,
-                    max: MAX_IMAGES,
-                  })}
-                </Label>
-
-                {images.length < MAX_IMAGES && (
-                  <button
-                    type="button"
-                    className={cn(
-                      'relative w-full rounded-lg border-2 border-dashed transition-all duration-200',
-                      isDragOver
-                        ? 'border-dynamic-orange bg-dynamic-orange/10'
-                        : 'border-border hover:border-border/80',
-                      isCompressing && 'pointer-events-none opacity-50'
-                    )}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    aria-label="Click to upload or drag and drop images"
-                    disabled={isCompressing}
-                  >
-                    <Input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp,image/gif"
-                      multiple
-                      onChange={handleImageUpload}
-                      disabled={isCreatingMissedEntry || isCompressing}
-                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                    />
-                    <div className="flex flex-col items-center justify-center px-4 py-6 text-center">
-                      <div
-                        className={cn(
-                          'mb-2 flex h-10 w-10 items-center justify-center rounded-full transition-colors',
-                          isDragOver ? 'bg-dynamic-orange/20' : 'bg-muted'
-                        )}
-                      >
-                        <Upload
-                          className={cn(
-                            'h-5 w-5',
-                            isDragOver
-                              ? 'text-dynamic-orange'
-                              : 'text-muted-foreground'
-                          )}
-                        />
-                      </div>
-                      <p className="mb-1 font-medium text-sm">
-                        {isCompressing
-                          ? t('approval.compressing')
-                          : isDragOver
-                            ? t('approval.dropImages')
-                            : t('approval.clickToUpload')}
-                      </p>
-                      <p className="text-muted-foreground text-xs">
-                        {t('approval.imageFormats')}
-                      </p>
-                    </div>
-                  </button>
-                )}
-
-                {imageError && (
-                  <div className="flex items-center gap-1 text-dynamic-red text-sm">
-                    <AlertCircle className="h-3 w-3" />
-                    {imageError}
-                  </div>
-                )}
-
-                {imagePreviews.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2">
-                    {imagePreviews.map((preview, index) => (
-                      <div key={preview} className="group relative">
-                        <div className="aspect-square overflow-hidden rounded-lg border-2 border-border bg-muted">
-                          <Image
-                            src={
-                              isValidBlobUrl(preview)
-                                ? preview
-                                : '/placeholder.svg'
-                            }
-                            alt={t('approval.proofImageAlt', {
-                              number: index + 1,
-                            })}
-                            className="h-full w-full object-cover"
-                            width={100}
-                            height={100}
-                          />
-                        </div>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="-top-2 -right-2 absolute h-6 w-6 rounded-full opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
-                          onClick={() => removeImage(index)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <ImageUploadSection disabled={isCreatingMissedEntry} />
             </div>
           )}
 
           {/* Image upload section for exceeded mode (always required) */}
-          {isExceededMode && (
-            <div className="space-y-3">
-              <Label className="font-medium text-sm">
-                {t('approval.proofOfWork', {
-                  current: images.length,
-                  max: MAX_IMAGES,
-                })}
-              </Label>
-
-              {images.length < MAX_IMAGES && (
-                <button
-                  type="button"
-                  className={cn(
-                    'relative w-full rounded-lg border-2 border-dashed transition-all duration-200',
-                    isDragOver
-                      ? 'border-dynamic-orange bg-dynamic-orange/10'
-                      : 'border-border hover:border-border/80',
-                    (isCompressing || isLoading) && 'pointer-events-none opacity-50'
-                  )}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  aria-label="Click to upload or drag and drop images"
-                  disabled={isCompressing || isLoading}
-                >
-                  <Input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp,image/gif"
-                    multiple
-                    onChange={handleImageUpload}
-                    disabled={isLoading || isCompressing}
-                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                  />
-                  <div className="flex flex-col items-center justify-center px-4 py-6 text-center">
-                    <div
-                      className={cn(
-                        'mb-2 flex h-10 w-10 items-center justify-center rounded-full transition-colors',
-                        isDragOver ? 'bg-dynamic-orange/20' : 'bg-muted'
-                      )}
-                    >
-                      <Upload
-                        className={cn(
-                          'h-5 w-5',
-                          isDragOver
-                            ? 'text-dynamic-orange'
-                            : 'text-muted-foreground'
-                        )}
-                      />
-                    </div>
-                    <p className="mb-1 font-medium text-sm">
-                      {isCompressing
-                        ? t('approval.compressing')
-                        : isDragOver
-                          ? t('approval.dropImages')
-                          : t('approval.clickToUpload')}
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      {t('approval.imageFormats')}
-                    </p>
-                  </div>
-                </button>
-              )}
-
-              {imageError && (
-                <div className="flex items-center gap-1 text-dynamic-red text-sm">
-                  <AlertCircle className="h-3 w-3" />
-                  {imageError}
-                </div>
-              )}
-
-              {imagePreviews.length > 0 && (
-                <div className="grid grid-cols-3 gap-2">
-                  {imagePreviews.map((preview, index) => (
-                    <div key={preview} className="group relative">
-                      <div className="aspect-square overflow-hidden rounded-lg border-2 border-border bg-muted">
-                        <Image
-                          src={
-                            isValidBlobUrl(preview)
-                              ? preview
-                              : '/placeholder.svg'
-                          }
-                          alt={t('approval.proofImageAlt', {
-                            number: index + 1,
-                          })}
-                          className="h-full w-full object-cover"
-                          width={100}
-                          height={100}
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="-top-2 -right-2 absolute h-6 w-6 rounded-full opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
-                        onClick={() => removeImage(index)}
-                        disabled={isLoading}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          {isExceededMode && <ImageUploadSection disabled={isLoading} />}
 
           {/* Quick time presets - hidden in exceeded mode */}
           {!isExceededMode && (
-          <div className="rounded-lg border p-3">
-            <Label className="text-muted-foreground text-xs">
-              {t('presets.title')}
-            </Label>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {[
-                { label: t('presets.lastHour'), minutes: 60 },
-                { label: t('presets.last2Hours'), minutes: 120 },
-                {
-                  label: t('presets.morning'),
-                  isCustom: true,
-                  start: '09:00',
-                  end: '12:00',
-                },
-                {
-                  label: t('presets.afternoon'),
-                  isCustom: true,
-                  start: '13:00',
-                  end: '17:00',
-                },
-                {
-                  label: t('presets.yesterday'),
-                  isCustom: true,
-                  start: 'yesterday-9',
-                  end: 'yesterday-17',
-                },
-              ].map((preset) => (
-                <Button
-                  key={preset.label}
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs"
-                  type="button"
-                  onClick={() => {
-                    const now = dayjs();
-                    if (preset.isCustom) {
-                      if (preset.start === 'yesterday-9') {
-                        const yesterday = now.subtract(1, 'day');
+            <div className="rounded-lg border p-3">
+              <Label className="text-muted-foreground text-xs">
+                {t('presets.title')}
+              </Label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {[
+                  { label: t('presets.lastHour'), minutes: 60 },
+                  { label: t('presets.last2Hours'), minutes: 120 },
+                  {
+                    label: t('presets.morning'),
+                    isCustom: true,
+                    start: '09:00',
+                    end: '12:00',
+                  },
+                  {
+                    label: t('presets.afternoon'),
+                    isCustom: true,
+                    start: '13:00',
+                    end: '17:00',
+                  },
+                  {
+                    label: t('presets.yesterday'),
+                    isCustom: true,
+                    start: 'yesterday-9',
+                    end: 'yesterday-17',
+                  },
+                ].map((preset) => (
+                  <Button
+                    key={preset.label}
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    type="button"
+                    onClick={() => {
+                      const now = dayjs();
+                      if (preset.isCustom) {
+                        if (preset.start === 'yesterday-9') {
+                          const yesterday = now.subtract(1, 'day');
+                          setMissedEntryStartTime(
+                            yesterday
+                              .hour(9)
+                              .minute(0)
+                              .format('YYYY-MM-DDTHH:mm')
+                          );
+                          setMissedEntryEndTime(
+                            yesterday
+                              .hour(17)
+                              .minute(0)
+                              .format('YYYY-MM-DDTHH:mm')
+                          );
+                        } else if (preset.start && preset.end) {
+                          const today = now.startOf('day');
+                          const startParts = preset.start.split(':');
+                          const endParts = preset.end.split(':');
+                          const startHour = parseInt(startParts[0] || '9', 10);
+                          const startMin = parseInt(startParts[1] || '0', 10);
+                          const endHour = parseInt(endParts[0] || '17', 10);
+                          const endMin = parseInt(endParts[1] || '0', 10);
+                          setMissedEntryStartTime(
+                            today
+                              .hour(startHour)
+                              .minute(startMin)
+                              .format('YYYY-MM-DDTHH:mm')
+                          );
+                          setMissedEntryEndTime(
+                            today
+                              .hour(endHour)
+                              .minute(endMin)
+                              .format('YYYY-MM-DDTHH:mm')
+                          );
+                        }
+                      } else if (preset.minutes) {
+                        const endTime = now;
+                        const startTime = endTime.subtract(
+                          preset.minutes,
+                          'minutes'
+                        );
                         setMissedEntryStartTime(
-                          yesterday.hour(9).minute(0).format('YYYY-MM-DDTHH:mm')
+                          startTime.format('YYYY-MM-DDTHH:mm')
                         );
                         setMissedEntryEndTime(
-                          yesterday
-                            .hour(17)
-                            .minute(0)
-                            .format('YYYY-MM-DDTHH:mm')
-                        );
-                      } else if (preset.start && preset.end) {
-                        const today = now.startOf('day');
-                        const startParts = preset.start.split(':');
-                        const endParts = preset.end.split(':');
-                        const startHour = parseInt(startParts[0] || '9', 10);
-                        const startMin = parseInt(startParts[1] || '0', 10);
-                        const endHour = parseInt(endParts[0] || '17', 10);
-                        const endMin = parseInt(endParts[1] || '0', 10);
-                        setMissedEntryStartTime(
-                          today
-                            .hour(startHour)
-                            .minute(startMin)
-                            .format('YYYY-MM-DDTHH:mm')
-                        );
-                        setMissedEntryEndTime(
-                          today
-                            .hour(endHour)
-                            .minute(endMin)
-                            .format('YYYY-MM-DDTHH:mm')
+                          endTime.format('YYYY-MM-DDTHH:mm')
                         );
                       }
-                    } else if (preset.minutes) {
-                      const endTime = now;
-                      const startTime = endTime.subtract(
-                        preset.minutes,
-                        'minutes'
-                      );
-                      setMissedEntryStartTime(
-                        startTime.format('YYYY-MM-DDTHH:mm')
-                      );
-                      setMissedEntryEndTime(endTime.format('YYYY-MM-DDTHH:mm'));
-                    }
-                  }}
-                >
-                  {preset.label}
-                </Button>
-              ))}
+                    }}
+                  >
+                    {preset.label}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
           )}
 
           {/* Show calculated duration */}
@@ -1075,7 +999,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
             </div>
           )}
         </div>
-        
+
         {/* Actions - different layout for exceeded mode */}
         {isExceededMode ? (
           <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:justify-between">
@@ -1109,7 +1033,9 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
               </Button>
               <Button
                 onClick={createMissedEntry}
-                disabled={isLoading || images.length === 0 || !missedEntryTitle.trim()}
+                disabled={
+                  isLoading || images.length === 0 || !missedEntryTitle.trim()
+                }
                 className="w-full sm:w-auto"
               >
                 {isCreatingMissedEntry ? (

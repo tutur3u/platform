@@ -312,10 +312,8 @@ export function TimerControls({
     useState(false);
 
   // Fetch workspace threshold setting
-  const {
-    data: thresholdDays,
-    isLoading: isLoadingThreshold,
-  } = useWorkspaceTimeThreshold(wsId);
+  const { data: thresholdDays, isLoading: isLoadingThreshold } =
+    useWorkspaceTimeThreshold(wsId);
 
   // Check if current session exceeds the threshold
   const { exceeds: sessionExceedsThreshold } = useSessionExceedsThreshold(

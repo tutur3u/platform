@@ -7045,6 +7045,10 @@
       "advancedToastDescription": "Access to Pomodoro timer, advanced settings, and more features",
       "simpleToastDescription": "Clean, focused time tracking experience"
     },
+    "overview": {
+      "quickTimerTitle": "Quick Timer",
+      "quickTimer": "Start tracking time quickly. Need more features? Switch to advanced mode."
+    },
     "stats": {
       "title": "Your Progress",
       "description": "Track your productivity metrics ⚡",
@@ -7329,7 +7333,7 @@
         "startedAt": "Started at {time}",
         "runningFor": "Running for {duration}",
         "allEntriesRequireApproval": "All time entries in this workspace require approval. Please provide accurate start and end times along with proof of work.",
-        "exceedsThreshold": "This session has been running for more than {days} day(s). Please provide accurate start and end times along with proof of work.",
+        "exceedsThreshold": "This session has been running for more than {days, plural, one {# day} other {# days}}. Please provide accurate start and end times along with proof of work.",
         "discardSession": "Discard Session",
         "discarding": "Discarding...",
         "sessionDiscarded": "Session discarded successfully",

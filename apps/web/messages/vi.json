@@ -6834,6 +6834,10 @@
       "advancedToastDescription": "Truy cập bộ hẹn giờ Pomodoro, cài đặt nâng cao và nhiều tính năng hơn",
       "simpleToastDescription": "Trải nghiệm theo dõi thời gian sạch sẽ, tập trung"
     },
+    "overview": {
+      "quickTimerTitle": "Hẹn giờ nhanh",
+      "quickTimer": "Bắt đầu theo dõi thời gian nhanh chóng. Cần thêm tính năng? Chuyển sang chế độ nâng cao."
+    },
     "stats": {
       "title": "Tiến độ của bạn",
       "description": "Theo dõi các chỉ số năng suất ⚡",
@@ -7112,17 +7116,17 @@
         "entryAdded": "Đã thêm mục bị thiếu thành công"
       },
       "exceeded": {
-        "title": "Phiên Vượt Quá Giới Hạn Thời Gian",
-        "description": "Phiên này đã chạy lâu hơn ngưỡng cho phép. Bạn có thể hủy bỏ nó hoặc tạo yêu cầu mục bị thiếu để phê duyệt.",
-        "untitledSession": "Phiên Không Có Tiêu Đề",
+        "title": "Phiên vượt quá giới hạn thời gian",
+        "description": "Phiên này đã chạy lâu hơn ngưỡng cho phép. Bạn có thể hủy phiên hoặc tạo yêu cầu thêm mục bị thiếu để phê duyệt.",
+        "untitledSession": "Phiên không có tiêu đề",
         "startedAt": "Bắt đầu lúc {time}",
         "runningFor": "Đã chạy {duration}",
         "allEntriesRequireApproval": "Tất cả các mục thời gian trong không gian làm việc này đều cần phê duyệt. Vui lòng cung cấp thời gian bắt đầu và kết thúc chính xác cùng với bằng chứng công việc.",
         "exceedsThreshold": "Phiên này đã chạy hơn {days} ngày. Vui lòng cung cấp thời gian bắt đầu và kết thúc chính xác cùng với bằng chứng công việc.",
-        "discardSession": "Hủy Bỏ Phiên",
-        "discarding": "Đang hủy bỏ...",
-        "sessionDiscarded": "Đã hủy bỏ phiên thành công",
-        "discardFailed": "Không thể hủy bỏ phiên"
+        "discardSession": "Hủy phiên",
+        "discarding": "Đang hủy...",
+        "sessionDiscarded": "Đã hủy phiên thành công",
+        "discardFailed": "Không thể hủy phiên"
       }
     },
     "workspace_select_dialog": {
