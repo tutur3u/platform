@@ -222,7 +222,7 @@ const resetFormState = useCallback(() => {
     queryClient.invalidateQueries({
       queryKey: ['running-time-session', wsId],
     });
-  }, [workCategory, queryClient, wsId]);
+  }, [resetFormState, queryClient, wsId]);
 
   // Handle missed entry created from exceeded threshold dialog
   const handleMissedEntryCreated = useCallback(() => {
@@ -231,7 +231,7 @@ const resetFormState = useCallback(() => {
     queryClient.invalidateQueries({
       queryKey: ['running-time-session', wsId],
     });
-  }, [workCategory, queryClient, wsId]);
+  }, [resetFormState, queryClient, wsId]);
 
   // Pause timer
   const pauseTimer = useCallback(async () => {
