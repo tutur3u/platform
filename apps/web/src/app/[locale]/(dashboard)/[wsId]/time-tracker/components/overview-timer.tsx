@@ -7,7 +7,6 @@ import { Button } from '@tuturuuu/ui/button';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { formatTime } from '@/lib/time-format';
 import type { ExtendedWorkspaceTask, SessionWithRelations } from '../types';
 import { SimpleTimerControls } from './simple-timer-controls';
 
@@ -111,17 +110,7 @@ export default function OverviewTimer({
     []
   );
 
-  // Format duration for display (short format: 2h 30m)
-  const formatDuration = useCallback((seconds: number): string => {
-    const safeSeconds = Math.max(0, Math.floor(seconds));
-    const hours = Math.floor(safeSeconds / 3600);
-    const minutes = Math.floor((safeSeconds % 3600) / 60);
 
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    return `${minutes}m`;
-  }, []);
 
   return (
     <SimpleTimerControls
@@ -131,8 +120,7 @@ export default function OverviewTimer({
       isRunning={isRunning}
       categories={categories}
       tasks={tasks}
-      formatTime={formatTime}
-      formatDuration={formatDuration}
+
       apiCall={apiCall}
       headerAction={
         <Link href={`/${wsId}/time-tracker/timer?mode=advanced`}>

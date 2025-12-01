@@ -23,6 +23,7 @@ import { useSessionExceedsThreshold } from '@/hooks/useSessionExceedsThreshold';
 import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import type { ExtendedWorkspaceTask, SessionWithRelations } from '../types';
 import MissedEntryDialog from './missed-entry-dialog';
+import { formatDuration, formatTime } from '@/lib/time-format';
 
 interface SimpleTimerControlsProps {
   wsId: string;
@@ -31,8 +32,6 @@ interface SimpleTimerControlsProps {
   isRunning: boolean;
   categories: TimeTrackingCategory[];
   tasks: ExtendedWorkspaceTask[];
-  formatTime: (seconds: number) => string;
-  formatDuration: (seconds: number) => string;
   apiCall: (
     url: string,
     options?: RequestInit
@@ -48,8 +47,6 @@ export function SimpleTimerControls({
   isRunning,
   categories,
   tasks,
-  formatTime,
-  formatDuration,
   apiCall,
   headerAction,
 }: SimpleTimerControlsProps) {
