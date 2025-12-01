@@ -18,6 +18,7 @@ import {
   ChartArea,
   ChartColumnStacked,
   ChartGantt,
+  CheckCircle2,
   CircleDollarSign,
   ClipboardClock,
   ClipboardList,
@@ -46,6 +47,7 @@ import {
   MailX,
   Megaphone,
   MessageCircleIcon,
+  NotepadText,
   Package,
   PencilLine,
   Play,
@@ -63,10 +65,10 @@ import {
   Sparkle,
   Sparkles,
   SquareChevronRight,
+  SquareKanban,
   SquaresIntersect,
   SquareUserRound,
   Star,
-  StickyNote,
   SwatchBook,
   Tags,
   TextSelect,
@@ -78,6 +80,7 @@ import {
   UserCheck,
   UserLock,
   Users,
+  UserStar,
   VectorSquare,
   Vote,
   Wallet,
@@ -94,7 +97,6 @@ import {
   getSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
-import Image from 'next/image';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -175,32 +177,16 @@ export async function WorkspaceNavigationLinks({
     null,
     {
       title: t('sidebar_tabs.tasks'),
-      href: `/${personalOrWsId}/tasks/my-tasks`,
+      href: `/${personalOrWsId}/tasks`,
       aliases: [`/${personalOrWsId}/tasks`, `/${personalOrWsId}/tasks/habits`],
-      icon: (
-        <Image
-          src="/media/logos/tudo.svg"
-          alt="Tudo"
-          width={20}
-          height={20}
-          className="h-5 w-5"
-        />
-      ),
+      icon: <CheckCircle2 className="h-5 w-5" />,
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
       experimental: 'beta',
       children: [
         {
-          title: t('sidebar_tabs.my_tasks'),
-          href: `/${personalOrWsId}/tasks/my-tasks`,
-          icon: (
-            <Image
-              src="/media/logos/tudo.svg"
-              alt="Tudo"
-              width={16}
-              height={16}
-              className="h-4 w-4"
-            />
-          ),
+          title: t('sidebar_tabs.tasks'),
+          href: `/${personalOrWsId}/tasks`,
+          icon: <UserStar className="h-4 w-4" />,
           matchExact: true,
         },
         {
@@ -212,13 +198,13 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('sidebar_tabs.notes'),
           href: `/${personalOrWsId}/tasks/notes`,
-          icon: <StickyNote className="h-4 w-4" />,
+          icon: <NotepadText className="h-4 w-4" />,
         },
         null,
         {
-          title: t('sidebar_tabs.all_boards'),
+          title: t('sidebar_tabs.boards'),
           href: `/${personalOrWsId}/tasks/boards`,
-          icon: <ListTodo className="h-4 w-4" />,
+          icon: <SquareKanban className="h-4 w-4" />,
         },
         null,
         {

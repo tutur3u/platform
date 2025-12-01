@@ -206,9 +206,9 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
           description: `Failed to update assignees: ${errorMessage}`,
         });
       },
-      onSettled: () => {
-        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-      },
+      // Note: Removed onSettled invalidation to prevent flicker
+      // Optimistic updates handle immediate UI feedback
+      // Realtime subscription handles cross-user sync
     });
 
     const handleSelect = (memberId: string) => {

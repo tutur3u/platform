@@ -297,7 +297,7 @@
     "blog": "Blog",
     "blog-description": "Đọc các bài viết và cập nhật mới nhất của chúng tôi.",
     "changelog": "Nhật ký thay đổi",
-    "changelog-description": "Xem những gì mới và những gì đã thay đổi.",
+    "changelog-description": "Cập nhật những thay đổi mới nhất về sản phẩm và cải tiến.",
     "documentation-description": "Tìm tài liệu và hướng dẫn chi tiết.",
     "education-description": "Giải pháp dành riêng cho các tổ chức giáo dục.",
     "retail-description": "Giải pháp dành riêng cho các doanh nghiệp bán lẻ.",
@@ -342,8 +342,6 @@
     "manufacturing": "Chế tạo",
     "hospitality": "Du lịch & Khách sạn",
     "construction": "Thi công",
-    "changelog": "Nhật ký thay đổi",
-    "changelog-description": "Cập nhật những thay đổi mới nhất về sản phẩm và cải tiến.",
     "about-description": "Tìm hiểu thêm về Tuturuuu và sứ mệnh của chúng tôi.",
     "careers-description": "Tham gia cùng chúng tôi và giúp chúng tôi xây dựng tương lai của Tuturuuu.",
     "contributors": "Người đóng góp",
@@ -1189,7 +1187,8 @@
     "realtime_chat": "Trò chuyện thời gian thực",
     "track": "Theo dõi",
     "time_tracker_requests": "Yêu cầu",
-    "time-tracker": "Theo dõi thời gian"
+    "time-tracker": "Theo dõi thời gian",
+    "boards": "Bảng nhiệm vụ"
   },
   "usage": {
     "description": "Theo dõi hoạt động workspace, sử dụng tính năng và các số liệu hệ thống trong tổ chức của bạn",

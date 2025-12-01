@@ -306,7 +306,7 @@
     "blog": "Blog",
     "blog-description": "Read our latest articles and updates.",
     "changelog": "Changelog",
-    "changelog-description": "See what's new and what's changed.",
+    "changelog-description": "Stay up to date with our latest product updates and improvements.",
     "documentation-description": "Find detailed documentation and guides.",
     "education-description": "Solutions tailored for educational institutions.",
     "retail-description": "Solutions tailored for retail businesses.",
@@ -348,8 +348,6 @@
     "manufacturing": "Manufacturing",
     "hospitality": "Hospitality",
     "construction": "Construction",
-    "changelog": "Changelog",
-    "changelog-description": "Stay up to date with our latest product updates and improvements.",
     "about-description": "Learn more about Tuturuuu and our mission.",
     "careers-description": "Join our team and help us build the future of Tuturuuu.",
     "partners-description": "Explore partnership opportunities with Tuturuuu.",
@@ -1099,7 +1097,8 @@
     "realtime_chat": "Realtime Chat",
     "track": "Track",
     "time_tracker_requests": "Requests",
-    "time-tracker": "Time Tracker"
+    "time-tracker": "Time Tracker",
+    "boards": "Boards"
   },
   "usage": {
     "description": "Monitor workspace activity, feature usage, and system metrics across your organization",

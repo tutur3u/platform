@@ -223,7 +223,7 @@ export default async function TasksAssignedToMe({
             </div>
           </div>
 
-          <Link href={`/${wsId}/tasks/my-tasks`}>
+          <Link href={`/${wsId}/tasks`}>
             <Button
               variant="outline"
               size="sm"
@@ -393,7 +393,7 @@ export default async function TasksAssignedToMe({
 
               {/* Action Buttons */}
               <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Link href={`/${wsId}/tasks/my-tasks`}>
+                <Link href={`/${wsId}/tasks`}>
                   <Button
                     variant="default"
                     size="default"

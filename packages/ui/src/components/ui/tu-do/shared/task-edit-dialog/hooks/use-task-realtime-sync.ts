@@ -1,6 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { WorkspaceTaskLabel } from '../types';
 
 export interface UseTaskRealtimeSyncProps {
@@ -57,6 +57,35 @@ export function useTaskRealtimeSync({
   setSelectedAssignees,
   setSelectedProjects,
 }: UseTaskRealtimeSyncProps): void {
+  // Use refs to track current state values without triggering effect re-runs
+  // This prevents subscription recreation on every state change
+  const nameRef = useRef(name);
+  const priorityRef = useRef(priority);
+  const startDateRef = useRef(startDate);
+  const endDateRef = useRef(endDate);
+  const estimationPointsRef = useRef(estimationPoints);
+  const selectedListIdRef = useRef(selectedListId);
+
+  // Keep refs in sync with props
+  useEffect(() => {
+    nameRef.current = name;
+  }, [name]);
+  useEffect(() => {
+    priorityRef.current = priority;
+  }, [priority]);
+  useEffect(() => {
+    startDateRef.current = startDate;
+  }, [startDate]);
+  useEffect(() => {
+    endDateRef.current = endDate;
+  }, [endDate]);
+  useEffect(() => {
+    estimationPointsRef.current = estimationPoints;
+  }, [estimationPoints]);
+  useEffect(() => {
+    selectedListIdRef.current = selectedListId;
+  }, [selectedListId]);
+
   useEffect(() => {
     // Only subscribe in edit mode when dialog is open and we have a task ID
     if (isCreateMode || !isOpen || !taskId) return;
@@ -218,7 +247,8 @@ export function useTaskRealtimeSync({
 
           // Update local state with changes from other users
           // Only update if no pending name update (avoid conflicts with debounced saves)
-          if (!pendingNameRef.current && updatedTask.name !== name) {
+          // Use refs to get current values without triggering effect re-runs
+          if (!pendingNameRef.current && updatedTask.name !== nameRef.current) {
             console.log(
               '📝 Updating task name from realtime:',
               updatedTask.name
@@ -227,7 +257,7 @@ export function useTaskRealtimeSync({
           }
 
           // Update priority if changed
-          if (updatedTask.priority !== priority) {
+          if (updatedTask.priority !== priorityRef.current) {
             console.log(
               '🚩 Updating priority from realtime:',
               updatedTask.priority
@@ -239,7 +269,7 @@ export function useTaskRealtimeSync({
           const updatedStartDate = updatedTask.start_date
             ? new Date(updatedTask.start_date)
             : undefined;
-          const currentStartDate = startDate?.toISOString();
+          const currentStartDate = startDateRef.current?.toISOString();
           const newStartDate = updatedStartDate?.toISOString();
           if (currentStartDate !== newStartDate) {
             console.log(
@@ -253,7 +283,7 @@ export function useTaskRealtimeSync({
           const updatedEndDate = updatedTask.end_date
             ? new Date(updatedTask.end_date)
             : undefined;
-          const currentEndDate = endDate?.toISOString();
+          const currentEndDate = endDateRef.current?.toISOString();
           const newEndDate = updatedEndDate?.toISOString();
           if (currentEndDate !== newEndDate) {
             console.log('📅 Updating end date from realtime:', updatedEndDate);
@@ -261,7 +291,7 @@ export function useTaskRealtimeSync({
           }
 
           // Update estimation points if changed
-          if (updatedTask.estimation_points !== estimationPoints) {
+          if (updatedTask.estimation_points !== estimationPointsRef.current) {
             console.log(
               '⏱️ Updating estimation points from realtime:',
               updatedTask.estimation_points
@@ -270,7 +300,7 @@ export function useTaskRealtimeSync({
           }
 
           // Update list assignment if changed
-          if (updatedTask.list_id !== selectedListId) {
+          if (updatedTask.list_id !== selectedListIdRef.current) {
             console.log('📋 Updating list from realtime:', updatedTask.list_id);
             setSelectedListId(updatedTask.list_id);
           }
@@ -354,25 +384,23 @@ export function useTaskRealtimeSync({
       supabase.removeChannel(assigneeChannel);
       supabase.removeChannel(projectChannel);
     };
+    // Only depend on values that should trigger subscription recreation
+    // State values are accessed via refs to prevent unnecessary re-subscriptions
+    // Setters are stable (from useState) and don't need to be in deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isCreateMode,
     isOpen,
     taskId,
-    name,
-    priority,
-    startDate,
-    endDate,
-    estimationPoints,
-    selectedListId,
-    pendingNameRef,
-    setName,
-    setPriority,
-    setStartDate,
+    pendingNameRef.current,
     setEndDate,
     setEstimationPoints,
-    setSelectedListId,
-    setSelectedLabels,
+    setName,
+    setPriority,
     setSelectedAssignees,
+    setSelectedLabels,
+    setSelectedListId,
     setSelectedProjects,
+    setStartDate,
   ]);
 }
