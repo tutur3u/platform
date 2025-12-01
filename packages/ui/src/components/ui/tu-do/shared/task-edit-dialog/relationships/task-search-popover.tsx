@@ -25,7 +25,6 @@ export function TaskSearchPopoverContent({
   wsId,
   excludeTaskIds,
   open,
-  onOpenChange,
   onSelect,
   onCreateNew,
   emptyText,
