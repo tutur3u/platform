@@ -117,7 +117,9 @@ export function sessionExceedsThreshold(
 
   if (thresholdDays === 0) {
     // For threshold 0, check if running more than 24 hours
-    return now.diff(start, 'second') > DEFAULT_RUNNING_SESSION_LIMIT_HOURS * 60 * 60;
+    return (
+      now.diff(start, 'second') > DEFAULT_RUNNING_SESSION_LIMIT_HOURS * 60 * 60
+    );
   }
 
   const thresholdAgo = now.subtract(thresholdDays, 'day');
