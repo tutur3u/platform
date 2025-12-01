@@ -182,8 +182,7 @@ export async function PATCH(
             .maybeSingle();
 
           // null/undefined means no approval needed - skip all threshold checks
-          const thresholdDays =
-            workspaceSettings?.missed_entry_date_threshold;
+          const thresholdDays = workspaceSettings?.missed_entry_date_threshold;
 
           // Only apply restrictions if threshold is explicitly set (not null)
           if (thresholdDays !== null && thresholdDays !== undefined) {

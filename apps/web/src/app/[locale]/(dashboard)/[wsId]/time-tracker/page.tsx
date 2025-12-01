@@ -92,18 +92,19 @@ async function fetchTimeTrackingStats(
 async function fetchTimerData(userId: string, wsId: string) {
   const sbAdmin = await createAdminClient();
 
-  const [categoriesResult, runningSessionResult, tasksResult] = await Promise.all([
-    sbAdmin.from('time_tracking_categories').select('*').eq('ws_id', wsId),
-    sbAdmin
-      .from('time_tracking_sessions')
-      .select('*, category:time_tracking_categories(*), task:tasks(*)')
-      .eq('ws_id', wsId)
-      .eq('user_id', userId)
-      .is('duration_seconds', null)
-      .single(),
-    sbAdmin
-      .from('tasks')
-      .select(`
+  const [categoriesResult, runningSessionResult, tasksResult] =
+    await Promise.all([
+      sbAdmin.from('time_tracking_categories').select('*').eq('ws_id', wsId),
+      sbAdmin
+        .from('time_tracking_sessions')
+        .select('*, category:time_tracking_categories(*), task:tasks(*)')
+        .eq('ws_id', wsId)
+        .eq('user_id', userId)
+        .is('duration_seconds', null)
+        .single(),
+      sbAdmin
+        .from('tasks')
+        .select(`
         *,
         list:task_lists!inner(
           id,
@@ -116,14 +117,14 @@ async function fetchTimerData(userId: string, wsId: string) {
           )
         )
       `)
-      .eq('list.board.ws_id', wsId)
-      .is('deleted_at', null)
-      .is('closed_at', null)
-      .in('list.status', ['not_started', 'active'])
-      .eq('list.deleted', false)
-      .order('created_at', { ascending: false })
-      .limit(100),
-  ]);
+        .eq('list.board.ws_id', wsId)
+        .is('deleted_at', null)
+        .is('closed_at', null)
+        .in('list.status', ['not_started', 'active'])
+        .eq('list.deleted', false)
+        .order('created_at', { ascending: false })
+        .limit(100),
+    ]);
 
   // Handle categories result
   let categories: typeof categoriesResult.data = [];
@@ -432,7 +433,10 @@ export default async function TimeTrackerPage({
 
             {/* Quick Timer */}
             <Suspense fallback={<TimerCardSkeleton />}>
-              <TimerCardWrapper timerDataPromise={timerDataPromise} wsId={wsId} />
+              <TimerCardWrapper
+                timerDataPromise={timerDataPromise}
+                wsId={wsId}
+              />
             </Suspense>
           </div>
         );

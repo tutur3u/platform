@@ -243,7 +243,13 @@ export function SimpleTimerControls({
     setSelectedTaskId('none');
     setSelectedCategoryId(workCategory?.id || 'none');
     onSessionUpdate();
-  }, [workCategory, onSessionUpdate, setCurrentSession, setElapsedTime, setIsRunning]);
+  }, [
+    workCategory,
+    onSessionUpdate,
+    setCurrentSession,
+    setElapsedTime,
+    setIsRunning,
+  ]);
 
   // Handle missed entry created from exceeded threshold dialog
   const handleMissedEntryCreated = useCallback(() => {
@@ -257,7 +263,13 @@ export function SimpleTimerControls({
     setSelectedTaskId('none');
     setSelectedCategoryId(workCategory?.id || 'none');
     onSessionUpdate();
-  }, [workCategory, onSessionUpdate, setCurrentSession, setElapsedTime, setIsRunning]);
+  }, [
+    workCategory,
+    onSessionUpdate,
+    setCurrentSession,
+    setElapsedTime,
+    setIsRunning,
+  ]);
 
   // Pause timer
   const pauseTimer = useCallback(async () => {
