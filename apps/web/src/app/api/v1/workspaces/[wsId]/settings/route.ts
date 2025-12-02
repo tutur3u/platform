@@ -36,6 +36,13 @@ export async function GET(_: NextRequest, { params }: Params) {
       );
     }
 
+    // Fetch workspace info to check if it's personal
+    const { data: workspace } = await supabase
+      .from('workspaces')
+      .select('personal')
+      .eq('id', wsId)
+      .maybeSingle();
+
     // Fetch workspace settings
     const { data: settings, error } = await supabase
       .from('workspace_settings')
@@ -50,6 +57,16 @@ export async function GET(_: NextRequest, { params }: Params) {
         { status: 500 }
       );
     }
+
+    // For personal workspaces, always return null for missed_entry_date_threshold
+    // This disables all time tracking request/threshold flows for personal workspaces
+    if (workspace?.personal) {
+      return NextResponse.json({
+        ...settings,
+        missed_entry_date_threshold: null,
+      });
+    }
+
     return NextResponse.json(settings);
   } catch (error) {
     console.error('Error in workspace settings API:', error);

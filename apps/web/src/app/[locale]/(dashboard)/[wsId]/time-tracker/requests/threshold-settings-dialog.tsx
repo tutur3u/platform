@@ -49,7 +49,14 @@ export function ThresholdSettingsDialog({
 
   // Always parse the input value to maintain clear typing
   const parsed = thresholdSchema.safeParse(inputValue);
-  const isSubmitDisabled = isLoading || (!noApprovalNeeded && !parsed.success);
+
+  // Check if values have changed from initial state
+  const hasChanged =
+    noApprovalNeeded !== (currentThreshold === null) ||
+    (!noApprovalNeeded && parsed.success && parsed.data !== currentThreshold);
+
+  const isSubmitDisabled =
+    isLoading || (!noApprovalNeeded && !parsed.success) || !hasChanged;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

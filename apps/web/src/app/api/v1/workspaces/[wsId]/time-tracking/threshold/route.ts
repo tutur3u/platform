@@ -63,6 +63,23 @@ export async function PUT(req: NextRequest, { params }: Params) {
       );
     }
 
+    // Check if workspace is personal - threshold settings are not allowed for personal workspaces
+    const { data: workspace } = await supabase
+      .from('workspaces')
+      .select('personal')
+      .eq('id', wsId)
+      .maybeSingle();
+
+    if (workspace?.personal) {
+      return NextResponse.json(
+        {
+          error:
+            'Time tracking threshold settings are not available for personal workspaces',
+        },
+        { status: 400 }
+      );
+    }
+
     // Parse and validate the threshold value
     const body = await req.json();
 
