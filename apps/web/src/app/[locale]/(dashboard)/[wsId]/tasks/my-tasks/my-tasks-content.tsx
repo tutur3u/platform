@@ -49,8 +49,8 @@ import { useBoardConfig } from '@tuturuuu/utils/task-helper';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CommandBar, type TaskOptions } from './command-bar';
 import { LabelProjectFilter } from './label-project-filter';
@@ -177,17 +177,13 @@ export default function MyTasksContent({
       console.log('🔄 Current path:', currentPath);
 
       // Check if we're on My Tasks page or elsewhere
-      if (currentPath.endsWith('/my-tasks')) {
-        // Already on my-tasks, just refresh
-        console.log('🔄 Refreshing current page...');
-        router.refresh();
-      } else if (
+      if (
         currentPath.includes('/tasks/') &&
         currentPath.match(/\/tasks\/[^/]+$/)
       ) {
-        // On a task detail page - navigate back to my-tasks
-        console.log('🔄 Navigating back to My Tasks...');
-        router.push(`/${wsId}/tasks/my-tasks`);
+        // On a task detail page - navigate back to tasks
+        console.log('🔄 Navigating back to Tasks...');
+        router.push(`/${wsId}/tasks`);
       } else {
         // Fallback: just refresh
         console.log('🔄 Fallback refresh...');

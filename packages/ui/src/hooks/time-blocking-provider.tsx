@@ -1,5 +1,10 @@
 'use client';
 
+import {
+  createTimeblocks,
+  deleteTimeblock,
+  getTimeblocks,
+} from '@tuturuuu/apis/tumeet/actions';
 import type {
   GuestUser,
   MeetTogetherPlan,
@@ -562,11 +567,10 @@ const TimeBlockingProvider = ({
 
   const fetchCurrentTimeBlocks = useCallback(
     async (planId: string) => {
-      const res = await fetch(`/api/meet-together/plans/${planId}/timeblocks`);
-      if (!res.ok) return [];
-      const timeblocks = (await res.json()) as Timeblock[];
-      return timeblocks
-        ?.flat()
+      const result = await getTimeblocks(planId);
+      if (result.error || !result.data) return [];
+      return result.data
+        .flat()
         .filter(
           (tb: Timeblock) =>
             tb.user_id === user?.id && tb.is_guest === (user?.is_guest ?? false)
@@ -588,33 +592,27 @@ const TimeBlockingProvider = ({
   const syncTimeBlocks = useCallback(async () => {
     if (!plan.id || !user?.id) return;
 
-    const addTimeBlocks = async (timeblocks: Timeblock[]) => {
-      if (plan.id !== selectedTimeBlocks.planId || timeblocks.length === 0)
+    // Capture values after check to ensure they're not undefined
+    const planId = plan.id;
+    const userId = user.id;
+    const passwordHash = user.password_hash;
+
+    const addTimeBlocksBatch = async (timeblocksToAdd: Timeblock[]) => {
+      if (planId !== selectedTimeBlocks.planId || timeblocksToAdd.length === 0)
         return;
-      const data = {
-        user_id: user?.id,
-        password_hash: user?.password_hash,
-        timeblocks,
-      };
-      await fetch(`/api/meet-together/plans/${plan.id}/timeblocks`, {
-        method: 'POST',
-        body: JSON.stringify(data),
+      await createTimeblocks(planId, {
+        user_id: userId,
+        password_hash: passwordHash,
+        timeblocks: timeblocksToAdd,
       });
     };
 
     const removeTimeBlock = async (timeblock: Timeblock) => {
-      if (plan.id !== selectedTimeBlocks.planId) return;
-      const data = {
-        user_id: user?.id,
-        password_hash: user?.password_hash,
-      };
-      await fetch(
-        `/api/meet-together/plans/${plan.id}/timeblocks/${timeblock.id}`,
-        {
-          method: 'DELETE',
-          body: JSON.stringify(data),
-        }
-      );
+      if (planId !== selectedTimeBlocks.planId || !timeblock.id) return;
+      await deleteTimeblock(planId, timeblock.id, {
+        user_id: userId,
+        password_hash: passwordHash,
+      });
     };
 
     const serverTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
@@ -626,7 +624,7 @@ const TimeBlockingProvider = ({
       return;
     }
     if (serverTimeblocks.length === 0 && localTimeblocks.length > 0) {
-      await addTimeBlocks(localTimeblocks);
+      await addTimeBlocksBatch(localTimeblocks);
       const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
       setSelectedTimeBlocks({
         planId: plan.id,
@@ -637,7 +635,9 @@ const TimeBlockingProvider = ({
     }
     if (serverTimeblocks.length > 0 && localTimeblocks.length === 0) {
       await Promise.all(
-        serverTimeblocks.map((timeblock) => removeTimeBlock(timeblock))
+        serverTimeblocks.map((timeblock: Timeblock) =>
+          removeTimeBlock(timeblock)
+        )
       );
       const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
       setSelectedTimeBlocks({
@@ -671,7 +671,7 @@ const TimeBlockingProvider = ({
           timeblock.id ? removeTimeBlock(timeblock) : null
         )
       );
-    if (timeblocksToAdd.length > 0) await addTimeBlocks(timeblocksToAdd);
+    if (timeblocksToAdd.length > 0) await addTimeBlocksBatch(timeblocksToAdd);
     const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
     setSelectedTimeBlocks({
       planId: plan.id,

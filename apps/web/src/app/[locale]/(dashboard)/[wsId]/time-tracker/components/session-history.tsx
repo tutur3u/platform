@@ -81,6 +81,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
+import { formatDuration } from '@/lib/time-format';
 import type { SessionWithRelations } from '../types';
 import MissedEntryDialog from './missed-entry-dialog';
 import { WorkspaceSelectDialog } from './workspace-select-dialog';
@@ -163,17 +164,8 @@ const stackSessions = (
   return stacks;
 };
 
-export const formatDuration = (seconds: number | undefined): string => {
-  const safeSeconds = Math.max(0, Math.floor(seconds || 0));
-  const hours = Math.floor(safeSeconds / 3600);
-  const minutes = Math.floor((safeSeconds % 3600) / 60);
-  const secs = safeSeconds % 60;
-
-  if (hours > 0) {
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }
-  return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-};
+// Re-export for backward compatibility - import from shared utility
+export { formatDuration } from '@/lib/time-format';
 
 // Helper function to create a stacked session object
 const createStackedSession = (
@@ -885,11 +877,14 @@ const StackedSessionItem = ({
 };
 
 // Helper function to check if a session is older than the workspace threshold
+// null threshold means no approval needed (any entry can be edited directly)
 const isSessionOlderThanThreshold = (
   session: SessionWithRelations,
-  thresholdDays: number | undefined
+  thresholdDays: number | null | undefined
 ): boolean => {
-  // If threshold is undefined, treat as requiring approval (safer default)
+  // If threshold is null, no approval needed - any session can be edited directly
+  if (thresholdDays === null) return false;
+  // If threshold is undefined (loading), treat as requiring approval (safer default)
   if (thresholdDays === undefined) return true;
   if (thresholdDays === 0) {
     // When threshold is 0, all entries require approval
@@ -901,13 +896,16 @@ const isSessionOlderThanThreshold = (
 };
 
 // Helper function to check if a datetime string is more than threshold days ago
+// null threshold means no approval needed (any datetime is allowed)
 const isDatetimeMoreThanThresholdAgo = (
   datetimeString: string,
   timezone: string,
-  thresholdDays: number | undefined
+  thresholdDays: number | null | undefined
 ): boolean => {
   if (!datetimeString) return false;
-  // If threshold is undefined, treat as requiring approval (safer default)
+  // If threshold is null, no approval needed - any datetime is allowed
+  if (thresholdDays === null) return false;
+  // If threshold is undefined (loading), treat as requiring approval (safer default)
   if (thresholdDays === undefined) return true;
   if (thresholdDays === 0) return true; // All entries require approval when threshold is 0
   const datetime = dayjs.tz(datetimeString, timezone).utc();

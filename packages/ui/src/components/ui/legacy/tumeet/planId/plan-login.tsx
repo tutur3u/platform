@@ -1,5 +1,6 @@
 'use client';
 
+import { guestLogin } from '@tuturuuu/apis/tumeet/actions';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
@@ -70,20 +71,12 @@ export default function PlanLogin({
 
       setLoading(true);
 
-      const res = await fetch(`/api/meet-together/plans/${plan.id}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: values.guestName,
-          password: values.guestPassword,
-        }),
+      const result = await guestLogin(plan.id, {
+        name: values.guestName,
+        password: values.guestPassword || '',
       });
 
-      if (res.ok) {
-        const data = await res.json();
-
+      if (result.data) {
         // Save credentials to localStorage if checkbox is checked
         if (values.saveCredentials) {
           try {
@@ -108,13 +101,12 @@ export default function PlanLogin({
           }
         }
 
-        setUser(plan.id, data.user);
+        setUser(plan.id, result.data.user);
         setLoading(false);
         setDisplayMode();
       } else {
-        const data = await res.json();
         form.setValue('guestPassword', '');
-        form.setError('guestPassword', { message: data.message });
+        form.setError('guestPassword', { message: result.error });
         setLoading(false);
       }
     },

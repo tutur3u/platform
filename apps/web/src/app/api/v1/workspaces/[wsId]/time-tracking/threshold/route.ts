@@ -1,12 +1,26 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import * as z from 'zod';
 
 interface Params {
   params: Promise<{
     wsId: string;
   }>;
 }
+
+const UpdateThresholdSchema = z.object({
+  threshold: z.union([z.number().int().nonnegative(), z.null()]).refine(
+    (value) => {
+      if (value === null) return true;
+      // Ensure it's a valid integer (not a decimal that was coerced)
+      return Number.isInteger(value) && value >= 0;
+    },
+    {
+      message: 'Threshold must be a non-negative integer or null',
+    }
+  ),
+});
 
 export async function PUT(req: NextRequest, { params }: Params) {
   try {
@@ -49,16 +63,39 @@ export async function PUT(req: NextRequest, { params }: Params) {
       );
     }
 
-    // Parse and validate the threshold value
-    const body = await req.json();
-    const threshold = Number.parseInt(body.threshold, 10);
+    // Check if workspace is personal - threshold settings are not allowed for personal workspaces
+    const { data: workspace } = await supabase
+      .from('workspaces')
+      .select('personal')
+      .eq('id', wsId)
+      .maybeSingle();
 
-    if (Number.isNaN(threshold) || threshold < 0) {
+    if (workspace?.personal) {
       return NextResponse.json(
-        { error: 'Invalid threshold value. Must be a non-negative integer.' },
+        {
+          error:
+            'Time tracking threshold settings are not available for personal workspaces',
+        },
         { status: 400 }
       );
     }
+
+    // Parse and validate the threshold value
+    const body = await req.json();
+
+    // Validate request body using Zod schema
+    const validationResult = UpdateThresholdSchema.safeParse(body);
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          error:
+            'Invalid threshold value. Must be a non-negative integer or null.',
+        },
+        { status: 400 }
+      );
+    }
+
+    const threshold = validationResult.data.threshold;
 
     // Update workspace settings
     const { error: updateError } = await supabase

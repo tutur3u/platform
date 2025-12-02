@@ -1,5 +1,6 @@
 'use client';
 
+import { createPlan } from '@tuturuuu/apis/tumeet/actions';
 import {
   ClipboardList,
   MapPin as MapPinIcon,
@@ -147,23 +148,17 @@ export default function CreatePlanDialog({ plan }: Props) {
 
     const { agenda_enabled: _, ...rest } = data;
 
-    const res = await fetch('/api/meet-together/plans', {
-      method: 'POST',
-      body: JSON.stringify({
-        ...rest,
-      }),
-    });
+    const result = await createPlan(rest);
 
-    if (res.ok) {
-      const { id } = await res.json();
-      const normalizedId = id.replace(/-/g, '');
+    if (result.data) {
+      const normalizedId = result.data.id.replace(/-/g, '');
       router.push(`/meet-together/plans/${normalizedId}`);
       router.refresh();
     } else {
       setCreating(false);
       toast({
         title: t('something_went_wrong'),
-        description: t('cant_create_plan_right_now'),
+        description: result.error || t('cant_create_plan_right_now'),
       });
     }
   };

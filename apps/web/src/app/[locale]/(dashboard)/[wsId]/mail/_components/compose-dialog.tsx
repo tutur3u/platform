@@ -486,7 +486,7 @@ export function ComposeDialog({
                           <FormControl>
                             <EmailChips
                               label={t('mail.to')}
-                              value={field.value}
+                              value={field.value ?? []}
                               onChange={field.onChange}
                               disabled={isLoading}
                               placeholder={t('mail.recipient_placeholder')}

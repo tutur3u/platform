@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Trash } from '@tuturuuu/icons';
+import type { Task } from '@tuturuuu/types/primitives/Task';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -10,7 +11,6 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
-import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
 
 interface TaskDeleteDialogProps {
   open: boolean;
@@ -54,14 +54,40 @@ export function TaskDeleteDialog({
 
       return response.json();
     },
+    onMutate: async (deletingTaskId: string) => {
+      // Cancel any outgoing refetches to prevent overwriting optimistic update
+      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+
+      // Snapshot current tasks for rollback
+      const previousTasks = queryClient.getQueryData<Task[]>([
+        'tasks',
+        boardId,
+      ]);
+
+      // Optimistically remove the task from cache immediately
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (oldTasks: Task[] | undefined) => {
+          if (!oldTasks) return oldTasks;
+          return oldTasks.filter((task) => task.id !== deletingTaskId);
+        }
+      );
+
+      return { previousTasks };
+    },
     onSuccess: async () => {
-      await invalidateTaskCaches(queryClient, boardId);
+      // Don't invalidate - optimistic update already removed the task
+      // Realtime will handle sync if needed
       toast.success('Task moved to trash');
       onOpenChange(false);
       onSuccess();
       onClose();
     },
-    onError: (error: Error) => {
+    onError: (error: Error, _, context) => {
+      // Rollback optimistic update on error
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      }
       toast.error(error.message || 'Failed to delete task. Please try again.');
     },
   });
