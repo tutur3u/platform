@@ -115,7 +115,6 @@ export default function SimpleTimeTrackerContent({
     []
   );
 
-
   const formatDuration = useCallback((seconds: number): string => {
     const safeSeconds = Math.max(0, Math.floor(seconds));
     const hours = Math.floor(safeSeconds / 3600);
