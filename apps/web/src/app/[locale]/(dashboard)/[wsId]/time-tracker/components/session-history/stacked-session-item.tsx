@@ -34,7 +34,11 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { formatDuration } from '@/lib/time-format';
 import type { SessionWithRelations } from '../../types';
-import type { ActionStates, StackedSession, TaskWithDetails } from './session-types';
+import type {
+  ActionStates,
+  StackedSession,
+  TaskWithDetails,
+} from './session-types';
 import { getCategoryColor } from './session-utils';
 
 dayjs.extend(utc);
@@ -131,7 +135,8 @@ export function StackedSessionItem({
 
                   // If session was created after it ended, it's likely a manual entry
                   return (
-                    s.end_time && !sessionStart?.isSame(sessionCreated, 'minute')
+                    s.end_time &&
+                    !sessionStart?.isSame(sessionCreated, 'minute')
                   );
                 }) && (
                   <Badge

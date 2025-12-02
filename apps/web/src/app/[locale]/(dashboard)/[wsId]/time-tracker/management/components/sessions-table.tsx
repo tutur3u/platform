@@ -462,7 +462,9 @@ export default function SessionsTable({
                     <div className="col-span-2">
                       <div className="space-y-2">
                         <div className="font-mono font-semibold text-dynamic-foreground">
-                          {formatDuration(session.periodDuration ?? session.totalDuration)}
+                          {formatDuration(
+                            session.periodDuration ?? session.totalDuration
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="h-1.5 w-16 rounded-full bg-dynamic-muted/20">
@@ -475,7 +477,10 @@ export default function SessionsTable({
                           </div>
                           <span className="text-dynamic-muted text-xs">
                             {Math.round(
-                              ((session.periodDuration ?? session.totalDuration) / (8 * 3600)) * 100
+                              ((session.periodDuration ??
+                                session.totalDuration) /
+                                (8 * 3600)) *
+                                100
                             )}
                             %
                           </span>
@@ -483,7 +488,8 @@ export default function SessionsTable({
                         <p className="text-dynamic-muted text-xs">
                           {t('avg')}{' '}
                           {formatDuration(
-                            (session.periodDuration ?? session.totalDuration) / session.sessions.length
+                            (session.periodDuration ?? session.totalDuration) /
+                              session.sessions.length
                           )}
                         </p>
                       </div>

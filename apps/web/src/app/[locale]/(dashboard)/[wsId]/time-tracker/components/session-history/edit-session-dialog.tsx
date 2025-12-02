@@ -72,7 +72,11 @@ export function EditSessionDialog({
 
   const isStartTimeInvalid =
     formState.startTime &&
-    isDatetimeMoreThanThresholdAgo(formState.startTime, userTimezone, thresholdDays);
+    isDatetimeMoreThanThresholdAgo(
+      formState.startTime,
+      userTimezone,
+      thresholdDays
+    );
 
   return (
     <Dialog open={!!session} onOpenChange={() => onClose()}>

@@ -174,7 +174,7 @@ const getFallbackGroupedSessions = async (
         // For a session to overlap with [filterStart, filterEnd]:
         // start_time <= filterEnd (session starts before filter ends)
         // AND (end_time >= filterStart OR end_time IS NULL) (session ends after filter starts, or still running)
-        // 
+        //
         // Since Supabase .or() creates OR at the top level, we need to structure this carefully
         // We'll fetch: sessions that START within range OR END within range OR SPAN the range
         query = query.or(
@@ -492,7 +492,11 @@ export const groupSessions = (
   const getSessionPeriods = (
     session: TimeTrackingSession
   ): { periodKey: string; start: dayjs.Dayjs; end: dayjs.Dayjs }[] => {
-    const periods: { periodKey: string; start: dayjs.Dayjs; end: dayjs.Dayjs }[] = [];
+    const periods: {
+      periodKey: string;
+      start: dayjs.Dayjs;
+      end: dayjs.Dayjs;
+    }[] = [];
 
     if (period === 'day') {
       // For day view, use getSessionDays to find all days the session spans
