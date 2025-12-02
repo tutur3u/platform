@@ -1,3 +1,10 @@
+import {
+  addPollOption,
+  createPoll,
+  deletePoll,
+  deletePollOption,
+  submitVote,
+} from '@tuturuuu/apis/tumeet/actions';
 import { Trash2 } from '@tuturuuu/icons';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { GetPollsForPlanResult } from '@tuturuuu/types/primitives/Poll';
@@ -81,67 +88,55 @@ export function PlanDetailsPollContent({
   };
 
   const onVote = async (pollId: string, optionIds: string[]) => {
-    const res = await fetch(`/api/meet-together/plans/${plan.id}/poll/vote`, {
-      method: 'POST',
-      body: JSON.stringify({
-        pollId,
-        optionIds,
-        userType, // 'PLATFORM' or 'GUEST'
-        guestId: userType === 'GUEST' ? user?.id : undefined,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+    if (!plan.id) return;
+    const result = await submitVote(plan.id, {
+      pollId,
+      optionIds,
+      userType: userType as 'PLATFORM' | 'GUEST',
+      guestId: userType === 'GUEST' ? (user?.id ?? undefined) : undefined,
     });
-    if (!res.ok) {
+    if (result.error) {
       toast({
         title: 'Failed to vote',
-        description: 'Please try again',
+        description: result.error,
       });
       return;
     }
   };
 
   const onAddOption = async (pollId: string, value: string) => {
-    const res = await fetch(`/api/meet-together/plans/${plan.id}/poll/option`, {
-      method: 'POST',
-      body: JSON.stringify({
-        pollId,
-        value,
-        userType, // 'PLATFORM' or 'GUEST'
-        guestId: userType === 'GUEST' ? user?.id : undefined,
-      }),
-      headers: { 'Content-Type': 'application/json' },
+    if (!plan.id) return null;
+    const result = await addPollOption(plan.id, {
+      pollId,
+      value,
+      userType: userType as 'PLATFORM' | 'GUEST',
+      guestId: userType === 'GUEST' ? (user?.id ?? undefined) : undefined,
     });
-    if (!res.ok) {
+    if (result.error) {
       toast({
         title: 'Failed to add poll option',
-        description: 'Please try again',
+        description: result.error,
       });
       return null;
     }
-    const data = await res.json();
-    return data.option;
+    return result.data?.option ?? null;
   };
 
   const onDeleteOption = async (optionId: string) => {
-    const res = await fetch(
-      `/api/meet-together/plans/${plan.id}/poll/option/${optionId}`,
-      {
-        method: 'DELETE',
-        body: JSON.stringify({
-          userType, // 'PLATFORM' or 'GUEST'
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
-    if (!res.ok) {
+    if (!plan.id) return;
+    const result = await deletePollOption(plan.id, optionId, {
+      userType: userType as 'PLATFORM' | 'GUEST',
+    });
+    if (result.error) {
       toast({
         title: 'Failed to delete poll option',
-        description: 'Please try again',
+        description: result.error,
       });
     }
   };
 
   const onDeletePoll = async (pollId: string) => {
+    if (!plan.id) return;
     const wherePoll = polls?.polls?.[0];
     if (wherePoll && wherePoll.id === pollId) {
       toast({
@@ -151,17 +146,11 @@ export function PlanDetailsPollContent({
       return;
     }
 
-    const res = await fetch(`/api/meet-together/plans/${plan.id}/poll`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        pollId,
-      }),
-    });
-    if (!res.ok) {
+    const result = await deletePoll(plan.id, pollId);
+    if (result.error) {
       toast({
         title: 'Failed to delete poll',
-        description: 'Please try again',
+        description: result.error,
       });
       return;
     }
@@ -196,23 +185,19 @@ export function PlanDetailsPollContent({
   };
 
   const onAddPoll = async () => {
-    if (!newPollName.trim()) return;
+    if (!plan.id || !newPollName.trim()) return;
     setCreating(true);
-    const res = await fetch(`/api/meet-together/plans/${plan.id}/poll`, {
-      method: 'POST',
-      body: JSON.stringify({
-        name: newPollName.trim(),
-      }),
-      headers: { 'Content-Type': 'application/json' },
+    const result = await createPoll(plan.id, {
+      name: newPollName.trim(),
     });
     setCreating(false);
-    if (res.ok) {
+    if (result.data) {
       setNewPollName('');
       router.refresh();
     } else {
       toast({
         title: 'Failed to create poll',
-        description: 'Please try again',
+        description: result.error || 'Please try again',
       });
     }
   };
@@ -234,7 +219,6 @@ export function PlanDetailsPollContent({
         <div className="mt-8 space-y-4">
           <div className="flex items-center justify-between">
             <h4 className="font-semibold text-base text-foreground">
-              {/* {t('other_polls')} */}
               Other Polls
             </h4>
             <div className="flex gap-2">
@@ -269,12 +253,12 @@ export function PlanDetailsPollContent({
                 const guestVoters = new Set<string>();
 
                 poll.options.forEach((option) => {
-                  option.userVotes.forEach((vote) =>
-                    userVoters.add(vote.user_id)
-                  );
-                  option.guestVotes.forEach((vote) =>
-                    guestVoters.add(vote.guest_id)
-                  );
+                  option.userVotes.forEach((vote) => {
+                    userVoters.add(vote.user_id);
+                  });
+                  option.guestVotes.forEach((vote) => {
+                    guestVoters.add(vote.guest_id);
+                  });
                 });
 
                 return userVoters.size + guestVoters.size;
@@ -302,13 +286,13 @@ export function PlanDetailsPollContent({
                           {poll.options.length} options
                         </span>
                         {isCreator && !plan.is_confirmed && (
-                          <div
+                          <button
+                            type="button"
                             className="inline-flex h-9 w-9 items-center justify-center rounded-md text-dynamic-red hover:bg-dynamic-red/10"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeletePollClick(poll.id, poll.name);
                             }}
-                            role="button"
                             tabIndex={0}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' || e.key === ' ') {
@@ -319,7 +303,7 @@ export function PlanDetailsPollContent({
                             }}
                           >
                             <Trash2 className="h-4 w-4" />
-                          </div>
+                          </button>
                         )}
                       </div>
                     </div>

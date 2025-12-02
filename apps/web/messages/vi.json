@@ -296,6 +296,8 @@
     "realestate": "Bất động sản",
     "blog": "Blog",
     "blog-description": "Đọc các bài viết và cập nhật mới nhất của chúng tôi.",
+    "changelog": "Nhật ký thay đổi",
+    "changelog-description": "Cập nhật những thay đổi mới nhất về sản phẩm và cải tiến.",
     "documentation-description": "Tìm tài liệu và hướng dẫn chi tiết.",
     "education-description": "Giải pháp dành riêng cho các tổ chức giáo dục.",
     "retail-description": "Giải pháp dành riêng cho các doanh nghiệp bán lẻ.",
@@ -340,8 +342,6 @@
     "manufacturing": "Chế tạo",
     "hospitality": "Du lịch & Khách sạn",
     "construction": "Thi công",
-    "changelog": "Nhật ký thay đổi",
-    "changelog-description": "Cập nhật những thay đổi mới nhất về sản phẩm và cải tiến.",
     "about-description": "Tìm hiểu thêm về Tuturuuu và sứ mệnh của chúng tôi.",
     "careers-description": "Tham gia cùng chúng tôi và giúp chúng tôi xây dựng tương lai của Tuturuuu.",
     "contributors": "Người đóng góp",
@@ -1172,6 +1172,7 @@
     "time_tracker_management": "Quản lý",
     "all_boards": "Tất cả các bảng",
     "my_tasks": "Nhiệm vụ của tôi",
+    "habits": "Thói quen",
     "initiatives": "Sáng kiến",
     "teams": "Đội",
     "members": "Thành viên",
@@ -1186,7 +1187,8 @@
     "realtime_chat": "Trò chuyện thời gian thực",
     "track": "Theo dõi",
     "time_tracker_requests": "Yêu cầu",
-    "time-tracker": "Theo dõi thời gian"
+    "time-tracker": "Theo dõi thời gian",
+    "boards": "Bảng nhiệm vụ"
   },
   "usage": {
     "description": "Theo dõi hoạt động workspace, sử dụng tính năng và các số liệu hệ thống trong tổ chức của bạn",
@@ -1197,46 +1199,41 @@
     "trends": "Xu hướng Sử dụng"
   },
   "tasks": {
-    "ticket": {
-      "ticket_id": "Mã nhiệm vụ",
-      "ticket_prefix": "Tiền tố mã nhiệm vụ",
-      "ticket_prefix_description": "Tiền tố tùy chỉnh cho mã nhận dạng nhiệm vụ (ví dụ: DEV, BUG, SPRINT)",
-      "ticket_prefix_placeholder": "Nhập tiền tố (ví dụ: DEV)",
-      "ticket_number": "Số nhiệm vụ"
-    },
-    "statuses": {
-      "not_started": "Danh sách chờ",
-      "active": "Đang thực hiện",
-      "done": "Hoàn thành",
-      "closed": "Đã đóng",
-      "documents": "Tài liệu",
-      "not_started_description": "Ý tưởng và công việc đã lên kế hoạch",
-      "active_description": "Công việc đang được thực hiện",
-      "done_description": "Công việc đã hoàn thành",
-      "closed_description": "Đã lưu trữ hoặc hủy bỏ",
-      "documents_description": "Tài liệu tham khảo và hướng dẫn"
-    },
+    "priority_urgent": "Khẩn Cấp",
+    "priority_high": "Cao",
+    "priority_medium": "Trung Bình",
+    "priority_low": "Thấp",
+    "date_today": "Hôm Nay",
+    "date_tomorrow": "Ngày Mai",
+    "date_yesterday": "Hôm Qua",
+    "overdue": "QUÁ HẠN",
+    "personal": "Cá Nhân",
+    "board": "Bảng",
+    "starts": "Bắt đầu",
+    "show_less": "Thu Gọn",
+    "show_more_tasks": "Hiển thị thêm {count}",
     "history": {
-      "error": "Không thể tải lịch sử nhiệm vụ",
-      "empty": "Không có lịch sử cho nhiệm vụ này",
+      "error": "Không thể tải lịch sử công việc",
+      "empty": "Chưa có lịch sử cho công việc này",
       "unknown_user": "Người dùng không xác định",
-      "field_updated": {
-        "name": "Đã cập nhật tiêu đề",
-        "description": "Đã cập nhật mô tả",
-        "priority": "Đã thay đổi độ ưu tiên",
-        "end_date": "Đã thay đổi hạn hoàn thành",
-        "start_date": "Đã thay đổi ngày bắt đầu",
-        "estimation_points": "Đã cập nhật ước lượng",
-        "list_id": "Đã di chuyển nhiệm vụ",
-        "completed": "Đã thay đổi trạng thái hoàn thành"
-      },
-      "assignee_added": "Đã giao người dùng",
+      "unknown_change": "Đã thực hiện thay đổi",
+      "assignee_added": "Đã giao cho người dùng",
       "assignee_removed": "Đã xóa người được giao",
       "label_added": "Đã thêm nhãn",
       "label_removed": "Đã xóa nhãn",
       "project_linked": "Đã liên kết dự án",
       "project_unlinked": "Đã hủy liên kết dự án",
-      "unknown_change": "Đã thực hiện thay đổi"
+      "field_updated": {
+        "name": "Đã cập nhật tên",
+        "description": "Đã cập nhật mô tả",
+        "priority": "Đã thay đổi mức độ ưu tiên",
+        "end_date": "Đã thay đổi ngày đến hạn",
+        "start_date": "Đã thay đổi ngày bắt đầu",
+        "estimation_points": "Đã cập nhật ước tính",
+        "list_id": "Đã chuyển đến danh sách",
+        "completed": "Đã thay đổi trạng thái",
+        "unknown": "Đã cập nhật trường"
+      }
     }
   },
   "link-shortener": {
@@ -1536,7 +1533,8 @@
     "ai_whitelisted_emails": "Email nằm trong danh sách trắng của AI",
     "email_blacklist": "Danh sách đen email",
     "translations": "Bản dịch",
-    "realtime": "Thời gian thực"
+    "realtime": "Thời gian thực",
+    "changelog": "Nhật ký thay đổi"
   },
   "infrastructure-analytics": {
     "page-description": "Giám sát và quản lý cơ sở hạ tầng, người dùng và tài nguyên nền tảng với phân tích toàn diện.",
@@ -3206,6 +3204,8 @@
     "manage_workspace_security_description": "Cho phép các thành viên quản lý khoá API và khả năng xóa không gian làm việc.",
     "manage_workspace_audit_logs": "Quản lý nhật ký kiểm toán",
     "manage_workspace_audit_logs_description": "Cho phép các thành viên xem tất cả các hoạt động trong không gian làm việc.",
+    "manage_changelog": "Quản lý Nhật ký thay đổi",
+    "manage_changelog_description": "Tạo, chỉnh sửa, xuất bản và xóa các mục nhật ký thay đổi của nền tảng.",
     "manage_workspace_billing": "Quản lý thanh toán",
     "manage_workspace_billing_description": "Cho phép các thành viên xem và cập nhật thông tin thanh toán.",
     "ai": "Trí tuệ nhân tạo",
@@ -4023,6 +4023,18 @@
   "settings-workspaces": {
     "workspaces": "Không gian làm việc",
     "workspaces-description": "Không gian làm việc mà bạn có quyền truy cập sẽ được liệt kê ở đây."
+  },
+  "settings": {
+    "tasks": {
+      "title": "Nhiệm vụ",
+      "general": "Chung",
+      "general_description": "Tuỳ chọn tạo và quản lý nhiệm vụ",
+      "auto_assign_to_self": "Tự động gán cho bản thân",
+      "auto_assign_to_self_description": "Tự động gán bạn vào các nhiệm vụ bạn tạo khi không có người được gán nào khác được chọn",
+      "always_enabled_personal": "Tính năng này luôn được bật cho không gian làm việc cá nhân",
+      "settings_updated": "Đã cập nhật cài đặt nhiệm vụ",
+      "settings_update_failed": "Không thể cập nhật cài đặt nhiệm vụ"
+    }
   },
   "workspace-ai-layout": {
     "overview": "Tổng quan",
@@ -5777,6 +5789,17 @@
     "no_data_title": "Sẵn sàng để tăng năng suất của bạn?",
     "no_data_description": "Bắt đầu theo dõi thời gian của bạn để mở khóa những hiểu biết chi tiết về mô hình công việc, xu hướng năng suất và tiến độ mục tiêu của bạn.",
     "start_your_first_timer": "Bắt đầu tính giờ",
+    "day_singular": "ngày",
+    "days": "ngày",
+    "tomorrow": "Ngày mai",
+    "upcoming": "sắp tới",
+    "untitled_event": "Sự kiện chưa có tên",
+    "in_minutes": "trong {count} phút",
+    "in_hours": "trong {count} giờ",
+    "in_days": "trong {count} ngày",
+    "show_less": "Thu gọn",
+    "show_more_events": "Hiển thị thêm {count} sự kiện",
+    "recent": "gần đây",
     "tu_meet_plans": "Kế hoạch TuMeet",
     "untitled_plan": "Kế hoạch không có tên",
     "no_recent_plans_title": "Không có kế hoạch gần đây",
@@ -5865,7 +5888,46 @@
       "labels_suggestions_heading": "Gợi ý nhãn mới",
       "labels_suggestions_hint": "Những từ khóa này xuất hiện trong tác vụ nhưng chưa có nhãn tương ứng.",
       "open_board_selector": "Lựa chọn bảng"
-    }
+    },
+    "no_tasks_assigned": "Chưa có nhiệm vụ được giao",
+    "one_task_attention": "1 nhiệm vụ cần sự chú ý của bạn",
+    "multiple_tasks_attention": "{count} nhiệm vụ cần sự chú ý của bạn",
+    "stat_overdue": "Quá Hạn",
+    "stat_due_today": "Hạn Hôm Nay",
+    "stat_tomorrow": "Ngày Mai",
+    "stat_high_priority": "Ưu Tiên Cao",
+    "quick_tip": "Mẹo Nhanh",
+    "quick_tip_description": "Các nhiệm vụ được giao cho bạn sẽ xuất hiện ở đây. Bạn có thể xem tất cả nhiệm vụ, tạo mới hoặc duyệt các bảng có sẵn để bắt đầu.",
+    "recent_updates": "Cập Nhật Gần Đây",
+    "no_updates": "Chưa Có Cập Nhật",
+    "no_updates_description": "Quay lại sau để xem các cập nhật và tính năng mới nhất.",
+    "show_more_updates": "Xem thêm",
+    "view_changelog": "Xem Nhật Ký"
+  },
+  "changelog-data-table": {
+    "id": "ID",
+    "title": "Tiêu đề",
+    "slug": "Đường dẫn",
+    "category": "Danh mục",
+    "version": "Phiên bản",
+    "is_published": "Đã xuất bản",
+    "published_at": "Ngày xuất bản",
+    "created_at": "Ngày tạo",
+    "updated_at": "Ngày cập nhật",
+    "creator_id": "Người tạo"
+  },
+  "changelog-page": {
+    "badge": "Cập Nhật Nền Tảng",
+    "hero_title": "Có Gì Mới Tại",
+    "hero_description": "Cập nhật những tính năng, cải tiến và thay đổi mới nhất để nâng cao hiệu suất làm việc của bạn.",
+    "no_updates": "Chưa có cập nhật nào",
+    "no_updates_description": "Chúng tôi đang phát triển các tính năng mới thú vị. Hãy quay lại sau!",
+    "update": "cập nhật",
+    "updates": "cập nhật",
+    "read_more": "Xem thêm",
+    "cta_title": "Không bỏ lỡ cập nhật nào",
+    "cta_description": "Theo dõi kho GitHub của chúng tôi để cập nhật những phát triển mới nhất và đóng góp cho dự án.",
+    "cta_button": "Theo dõi trên GitHub"
   },
   "ws-groups": {
     "select_warehouse": "Chọn kho hàng",
@@ -6740,6 +6802,8 @@
         "button": "Cài Đặt",
         "title": "Cài Đặt Ngưỡng Nhập Thiếu",
         "description": "Cấu hình khoảng thời gian người dùng có thể thêm mục thời gian bị thiếu mà không cần phê duyệt.",
+        "noApprovalNeeded": "Không cần phê duyệt (cho phép tất cả các mục)",
+        "noApprovalHint": "Người dùng có thể thêm mục thời gian cho bất kỳ ngày nào mà không cần phê duyệt. Đây là cài đặt mặc định.",
         "label": "Ngưỡng (ngày)",
         "help": "Đặt số ngày người dùng có thể quay lại để thêm mục thời gian. Đặt về 0 để yêu cầu phê duyệt cho tất cả các mục bị thiếu.",
         "examples": {
@@ -6768,6 +6832,10 @@
       "simpleDescription": "Bạn đang sử dụng bộ hẹn giờ đơn giản tập trung vào việc theo dõi thời gian dễ dàng và nhanh chóng. Chuyển sang chế độ nâng cao để có bộ hẹn giờ Pomodoro, lời nhắc nghỉ ngơi, kéo thả và các tính năng chi tiết.",
       "advancedToastDescription": "Truy cập bộ hẹn giờ Pomodoro, cài đặt nâng cao và nhiều tính năng hơn",
       "simpleToastDescription": "Trải nghiệm theo dõi thời gian sạch sẽ, tập trung"
+    },
+    "overview": {
+      "quickTimerTitle": "Hẹn giờ nhanh",
+      "quickTimer": "Bắt đầu theo dõi thời gian nhanh chóng. Cần thêm tính năng? Chuyển sang chế độ nâng cao."
     },
     "stats": {
       "title": "Tiến độ của bạn",
@@ -7045,6 +7113,19 @@
       "success": {
         "requestSubmitted": "Yêu cầu theo dõi thời gian đã được gửi để phê duyệt",
         "entryAdded": "Đã thêm mục bị thiếu thành công"
+      },
+      "exceeded": {
+        "title": "Phiên vượt quá giới hạn thời gian",
+        "description": "Phiên này đã chạy lâu hơn ngưỡng cho phép. Bạn có thể hủy phiên hoặc tạo yêu cầu thêm mục bị thiếu để phê duyệt.",
+        "untitledSession": "Phiên không có tiêu đề",
+        "startedAt": "Bắt đầu lúc {time}",
+        "runningFor": "Đã chạy {duration}",
+        "allEntriesRequireApproval": "Tất cả các mục thời gian trong không gian làm việc này đều cần phê duyệt. Vui lòng cung cấp thời gian bắt đầu và kết thúc chính xác cùng với bằng chứng công việc.",
+        "exceedsThreshold": "Phiên này đã chạy hơn {days} ngày. Vui lòng cung cấp thời gian bắt đầu và kết thúc chính xác cùng với bằng chứng công việc.",
+        "discardSession": "Hủy phiên",
+        "discarding": "Đang hủy...",
+        "sessionDiscarded": "Đã hủy phiên thành công",
+        "discardFailed": "Không thể hủy phiên"
       }
     },
     "workspace_select_dialog": {
@@ -7448,6 +7529,166 @@
         "smart": "Thông Minh (Kết hợp cả hai)"
       },
       "show_onboarding_tips": "Hiển thị mẹo hướng dẫn"
+    },
+    "management": {
+      "title": "Quản Lý Theo Dõi Thời Gian",
+      "description": "Theo dõi và phân tích năng suất nhóm qua các khoảng thời gian",
+      "header": {
+        "title": "Quản Lý Theo Dõi Thời Gian",
+        "description": "Theo dõi và phân tích năng suất nhóm qua các khoảng thời gian"
+      },
+      "stats": {
+        "totalSessions": "Tổng Phiên {period}",
+        "daily": "Hàng ngày",
+        "weekly": "Hàng tuần",
+        "monthly": "Hàng tháng",
+        "acrossUsers": "Từ {count} người dùng",
+        "noSessionsYet": "Chưa có phiên nào",
+        "activeSessions": "Phiên Đang Hoạt Động",
+        "currentlyInProgress": "Hiện đang tiến hành",
+        "noActiveSessions": "Không có phiên hoạt động",
+        "liveTracking": "Theo dõi trực tiếp",
+        "todaysWork": "Công Việc Hôm Nay",
+        "sessionsToday": "{count} phiên hôm nay",
+        "progress": "Tiến độ",
+        "dailyAverage": "Trung Bình Ngày",
+        "thisWeek": "Tuần Này",
+        "thisMonth": "Tháng Này",
+        "perSessionAverage": "Trung bình mỗi phiên",
+        "currentPeriodTotal": "Tổng {period} hiện tại"
+      },
+      "filters": {
+        "title": "Bộ Lọc & Tìm Kiếm",
+        "description": "Tinh chỉnh chế độ xem với tìm kiếm và bộ lọc ngày",
+        "active": "Đang hoạt động",
+        "clearAll": "Xóa Tất Cả",
+        "searchPlaceholder": "Tìm theo người dùng hoặc tiêu đề phiên...",
+        "viewBy": "Xem theo:",
+        "dailyView": "Xem Theo Ngày",
+        "weeklyView": "Xem Theo Tuần",
+        "monthlyView": "Xem Theo Tháng",
+        "dateRange": "Khoảng Ngày",
+        "clear": "Xóa",
+        "from": "Từ:",
+        "to": "Đến:",
+        "quickPresets": "Cài Đặt Nhanh:",
+        "today": "Hôm Nay",
+        "thisWeek": "Tuần Này",
+        "thisMonth": "Tháng Này",
+        "last7Days": "7 Ngày Qua",
+        "dateRangeDisplay": {
+          "both": "{startDate} đến {endDate}",
+          "from": "Từ {startDate} trở đi",
+          "until": "Đến {endDate}"
+        }
+      },
+      "sessions": {
+        "title": "Các Phiên Theo Dõi Thời Gian",
+        "showing": "Hiển thị {start} đến {end} trong tổng {total} kết quả",
+        "days": "ngày",
+        "weeks": "tuần",
+        "months": "tháng",
+        "filtered": "Đã lọc",
+        "export": "Xuất",
+        "exportExcel": "Xuất ra Excel",
+        "exportCSV": "Xuất ra CSV",
+        "loadingSessions": "Đang tải phiên...",
+        "noMatchingTitle": "Không tìm thấy phiên phù hợp",
+        "noMatchingSessions": "Không tìm thấy phiên phù hợp",
+        "noMatchingMessage": "Chúng tôi không tìm thấy phiên nào phù hợp với bộ lọc hiện tại. Thử điều chỉnh từ khóa tìm kiếm hoặc khoảng ngày để xem thêm kết quả.",
+        "noMatchingSessionsDescription": "Chúng tôi không tìm thấy phiên nào phù hợp với bộ lọc hiện tại. Thử điều chỉnh từ khóa tìm kiếm hoặc khoảng ngày để xem thêm kết quả.",
+        "noSessionsTitle": "Không có phiên theo dõi thời gian",
+        "noSessions": "Không có phiên theo dõi thời gian",
+        "noSessionsMessage": "Chưa có phiên theo dõi thời gian nào được ghi lại trong không gian làm việc này. Các phiên sẽ xuất hiện ở đây khi các thành viên trong nhóm bắt đầu theo dõi thời gian.",
+        "noSessionsDescription": "Chưa có phiên theo dõi thời gian nào được ghi lại trong không gian làm việc này. Các phiên sẽ xuất hiện ở đây khi các thành viên trong nhóm bắt đầu theo dõi thời gian.",
+        "clearAllFilters": "Xóa tất cả bộ lọc",
+        "userAndPeriod": "Người dùng & {period}",
+        "userAnd": "Người dùng &",
+        "userAndDate": "Người dùng & Ngày",
+        "date": "Ngày",
+        "userAndWeek": "Người dùng & Tuần",
+        "week": "Tuần",
+        "userAndMonth": "Người dùng & Tháng",
+        "month": "Tháng",
+        "sessionsColumn": "Phiên",
+        "sessionsHeader": "Phiên",
+        "duration": "Thời lượng",
+        "timeRange": "Khoảng thời gian",
+        "status": "Trạng thái",
+        "statusHeader": "Trạng thái",
+        "actions": "Thao tác",
+        "session": "phiên",
+        "sessionSingular": "phiên",
+        "sessions_plural": "phiên",
+        "sessionPlural": "phiên",
+        "avg": "TB:",
+        "itemsPerPage": "Số mục mỗi trang:",
+        "page": "Trang {current} / {total}",
+        "pageOf": "Trang {page} / {pages}",
+        "previous": "Trước",
+        "next": "Tiếp"
+      },
+      "period": {
+        "today": "Hôm Nay",
+        "yesterday": "Hôm Qua",
+        "tomorrow": "Ngày Mai",
+        "daysAgo": "{count} ngày trước",
+        "inDays": "Trong {count} ngày",
+        "thisWeek": "Tuần Này ({start} - {end})",
+        "lastWeek": "Tuần Trước ({start} - {end})",
+        "nextWeek": "Tuần Sau ({start} - {end})",
+        "thisMonth": "Tháng Này ({month})",
+        "lastMonth": "Tháng Trước ({month})",
+        "nextMonth": "Tháng Sau ({month})",
+        "day": "Ngày",
+        "week": "Tuần",
+        "month": "Tháng"
+      },
+      "status": {
+        "active": "Đang hoạt động",
+        "paused": "Tạm dừng",
+        "completed": "Đã hoàn thành"
+      },
+      "modal": {
+        "sessions": "{count} phiên",
+        "sessionsCount": "{count} phiên",
+        "period": "Khoảng {period}",
+        "sessionsLabel": "Phiên",
+        "totalTime": "Tổng Thời Gian",
+        "avgSession": "TB Phiên",
+        "activeLabel": "Hoạt Động",
+        "active": "Hoạt Động",
+        "activeBadge": "Đang hoạt động",
+        "sessionDetails": "Chi Tiết Phiên",
+        "noSessionsFound": "Không tìm thấy phiên nào",
+        "untitledSession": "Phiên Không Có Tiêu Đề",
+        "ongoing": "Đang diễn ra...",
+        "day": "Ngày",
+        "week": "Tuần",
+        "month": "Tháng"
+      },
+      "errors": {
+        "title": "Lỗi Khi Tải Dữ Liệu",
+        "errorLoadingData": "Lỗi Khi Tải Dữ Liệu",
+        "loadingMessage": "Đang áp dụng bộ lọc và tải dữ liệu...",
+        "applyingFilters": "Đang áp dụng bộ lọc và tải dữ liệu...",
+        "pleaseWait": "Vui lòng đợi trong khi chúng tôi làm mới dữ liệu của bạn"
+      },
+      "export": {
+        "title": "Đang Xuất Tệp {type}",
+        "exportingFile": "Đang Xuất Tệp {type}",
+        "dontClose": "Vui lòng không đóng cửa sổ này trong khi xuất",
+        "dontCloseWindow": "Vui lòng không đóng cửa sổ này trong khi xuất",
+        "progress": "Tiến độ",
+        "remaining": "~{time} còn lại",
+        "timeRemaining": "~{time} còn lại",
+        "tips": {
+          "title": "Mẹo Xuất File",
+          "message": "Các bản xuất lớn có thể mất vài phút. Tệp sẽ tự động tải xuống khi hoàn tất."
+        },
+        "tipsTitle": "Mẹo Xuất File",
+        "tipsDescription": "Các bản xuất lớn có thể mất vài phút. Tệp sẽ tự động tải xuống khi hoàn tất."
+      }
     }
   },
   "command_palette": {
@@ -7499,5 +7740,23 @@
     "loading_workspaces": "Đang tải không gian làm việc...",
     "personal": "Cá Nhân",
     "current_theme": "Hiện tại"
+  },
+  "breaks": {
+    "take_a_break_after": "Nghỉ ngơi sau khi hoàn thành",
+    "schedule_break_description": "Lên lịch nghỉ ngơi sau khi hoàn thành",
+    "break_duration": "Thời gian nghỉ",
+    "break_interval_hint": "Thời gian nghỉ được tính theo bội số 15 phút",
+    "scheduled_break": "Giờ nghỉ đã lên lịch",
+    "break_after": "Nghỉ ngơi sau {name}",
+    "options": {
+      "15": "15 phút",
+      "30": "30 phút",
+      "45": "45 phút",
+      "60": "1 giờ",
+      "75": "1 giờ 15 phút",
+      "90": "1 giờ 30 phút",
+      "105": "1 giờ 45 phút",
+      "120": "2 giờ"
+    }
   }
 }

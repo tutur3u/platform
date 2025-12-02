@@ -202,9 +202,11 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       syncPendingRef.current = true;
 
       // Immediately update local event data for UI rendering
+      // Include locked: true since moving/resizing auto-locks the event
       setLocalEvent((prev) => ({
         ...prev,
         ...updateData,
+        locked: true,
       }));
 
       // Show syncing state immediately
@@ -446,8 +448,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
   // Event resizing - only enable for non-multi-day events or the start/end segments
   useEffect(() => {
-    // Disable resizing for middle segments of multi-day events or locked events
-    if ((_isMultiDay && _dayPosition === 'middle') || locked) return;
+    // Disable resizing for middle segments of multi-day events
+    // Note: locked events CAN still be resized - locked only prevents auto-scheduling
+    if (_isMultiDay && _dayPosition === 'middle') return;
 
     const handleEl = handleRef.current;
     const eventCardEl = document.getElementById(`event-${id}`);
@@ -460,9 +463,6 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     const handleMouseDown = (e: MouseEvent) => {
       e.stopPropagation();
       e.preventDefault();
-
-      // Don't allow interaction with locked events
-      if (locked) return;
 
       // Don't allow multiple operations
       if (isDraggingRef.current || isResizingRef.current) return;
@@ -581,6 +581,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         setLocalEvent((prev) => ({
           ...prev,
           end_at: newEndAt.toISOString(),
+          locked: true,
         }));
       };
 
@@ -629,7 +630,6 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     _dayPosition,
     event._originalId,
     startHours,
-    locked,
     endDate.clone,
     scheduleUpdate,
     showStatusFeedback, // Update visual state
@@ -638,8 +638,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
   // Event dragging - only enable for non-multi-day events
   useEffect(() => {
-    // Disable dragging for multi-day events or locked events
-    if (_isMultiDay || locked) return;
+    // Disable dragging for multi-day events only
+    // Note: locked events CAN still be dragged - locked only prevents auto-scheduling
+    if (_isMultiDay) return;
 
     const contentEl = contentRef.current;
     const eventCardEl = document.getElementById(`event-${id}`);
@@ -656,9 +657,6 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     const handleMouseDown = (e: MouseEvent) => {
       // Only handle primary mouse button (left click)
       if (e.button !== 0) return;
-
-      // Don't allow interaction with locked events
-      if (locked) return;
 
       e.stopPropagation();
 
@@ -807,6 +805,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             ...prev,
             start_at: roundedStartAt.toISOString(),
             end_at: newEndAt.toISOString(),
+            locked: true,
           }));
         }
       };
@@ -883,7 +882,6 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     openModal,
     _isMultiDay,
     event._originalId,
-    locked,
     scheduleUpdate,
     showStatusFeedback, // Update visual state for immediate feedback
     updateVisualState,
@@ -1153,14 +1151,14 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             >
               <div
                 className={cn(
-                  'flex flex-wrap items-start gap-1 font-semibold text-xs',
+                  'font-semibold text-xs',
                   duration <= 0.5 ? 'line-clamp-1' : 'line-clamp-2'
                 )}
               >
-                <span className="min-w-0 flex-1 overflow-hidden text-ellipsis">
-                  {localEvent.locked && '🔒 '}
-                  {localEvent.title || 'Untitled event'}
-                </span>
+                {localEvent.locked && (
+                  <Lock className="mr-1 inline-block h-3 w-3 align-middle opacity-70" />
+                )}
+                <span>{localEvent.title || 'Untitled event'}</span>
               </div>
 
               {/* Show time for regular events or start/end segments of multi-day events */}

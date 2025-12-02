@@ -4,7 +4,7 @@ import {
   ArrowUpDown,
   Calendar,
   Grid3X3,
-  ImageIcon,
+  LayoutPanelTop,
   LetterText,
   List,
   MoreHorizontal,
@@ -36,7 +36,6 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Toggle } from '@tuturuuu/ui/toggle';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -51,7 +50,6 @@ export interface Whiteboard {
   description?: string;
   dateCreated: Date;
   lastModified: Date;
-  thumbnail_url?: string;
   creatorName: string;
 }
 
@@ -205,7 +203,7 @@ export default function WhiteboardsList({
           </p>
         </div>
       ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {sortedWhiteboards.map((whiteboard) => (
             <Link
               key={whiteboard.id}
@@ -215,33 +213,18 @@ export default function WhiteboardsList({
               <Card className="group cursor-pointer transition-shadow hover:shadow-md">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
-                    <CardTitle className="line-clamp-1 text-md">
-                      {whiteboard.title}
-                    </CardTitle>
-
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                        <LayoutPanelTop className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <CardTitle className="line-clamp-1 text-base">
+                        {whiteboard.title}
+                      </CardTitle>
+                    </div>
                     <CardAction whiteboard={whiteboard} />
                   </div>
                 </CardHeader>
-                <CardContent>
-                  {/* Thumbnail */}
-                  <div className="mb-4 h-32 w-full overflow-hidden rounded-lg">
-                    {whiteboard.thumbnail_url ? (
-                      <Image
-                        src={whiteboard.thumbnail_url}
-                        alt={whiteboard.title}
-                        width={128}
-                        height={128}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center bg-muted">
-                        <div className="text-muted-foreground text-sm">
-                          No preview
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
+                <CardContent className="pt-0">
                   {whiteboard.description && (
                     <p className="mb-3 line-clamp-2 text-muted-foreground text-sm">
                       {whiteboard.description}
@@ -249,11 +232,11 @@ export default function WhiteboardsList({
                   )}
 
                   <div className="flex items-center justify-between text-muted-foreground text-xs">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       <UserIcon className="h-3 w-3" />
                       {whiteboard.creatorName}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       <Pen className="h-3 w-3" />
                       {formatDate(whiteboard.lastModified)}
                     </div>
@@ -269,28 +252,13 @@ export default function WhiteboardsList({
             <Link
               key={whiteboard.id}
               href={`/${wsId}/whiteboards/${whiteboard.id}`}
-              target="_blank"
               className="block"
             >
               <Card className="group cursor-pointer transition-shadow hover:shadow-sm">
                 <CardContent className="flex items-center gap-4 p-4">
-                  {/* Thumbnail */}
-                  <div className="h-12 w-12 overflow-hidden rounded">
-                    {whiteboard.thumbnail_url ? (
-                      <Image
-                        src={whiteboard.thumbnail_url}
-                        alt={whiteboard.title}
-                        width={128}
-                        height={128}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center bg-muted">
-                        <div className="text-muted-foreground text-sm">
-                          <ImageIcon className="h-4 w-4" />
-                        </div>
-                      </div>
-                    )}
+                  {/* Icon */}
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                    <LayoutPanelTop className="h-5 w-5 text-muted-foreground" />
                   </div>
 
                   {/* Content */}
@@ -364,6 +332,7 @@ function CardAction({ whiteboard }: { whiteboard: Whiteboard }) {
             variant="ghost"
             size="sm"
             className="opacity-0 transition-opacity group-hover:opacity-100"
+            onClick={(e) => e.preventDefault()}
           >
             <MoreHorizontal className="h-4 w-4" />
           </Button>
@@ -382,14 +351,7 @@ function CardAction({ whiteboard }: { whiteboard: Whiteboard }) {
             }
           />
           <DropdownMenuItem
-            className="gap-2"
-            onSelect={(e) => e.preventDefault()}
-          >
-            <UserIcon className="h-4 w-4" />
-            Share
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="gap-2 text-red-500 focus:text-red-500"
+            className="gap-2 text-destructive focus:text-destructive"
             onSelect={(e) => e.preventDefault()}
             onClick={() => setShowDeleteDialog(true)}
           >

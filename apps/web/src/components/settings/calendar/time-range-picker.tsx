@@ -40,17 +40,12 @@ export type WeekTimeRanges = {
 };
 
 const defaultTimeBlock: TimeBlock = {
-  startTime: '09:00',
-  endTime: '17:00',
+  startTime: '07:00',
+  endTime: '23:00',
 };
 
 const defaultTimeRange: DayTimeRange = {
   enabled: true,
-  timeBlocks: [{ ...defaultTimeBlock }],
-};
-
-const defaultWeekendTimeRange: DayTimeRange = {
-  enabled: false,
   timeBlocks: [{ ...defaultTimeBlock }],
 };
 
@@ -60,8 +55,8 @@ export const defaultWeekTimeRanges: WeekTimeRanges = {
   wednesday: { ...defaultTimeRange },
   thursday: { ...defaultTimeRange },
   friday: { ...defaultTimeRange },
-  saturday: { ...defaultWeekendTimeRange },
-  sunday: { ...defaultWeekendTimeRange },
+  saturday: { ...defaultTimeRange },
+  sunday: { ...defaultTimeRange },
 };
 
 type TimeRangePickerProps = {

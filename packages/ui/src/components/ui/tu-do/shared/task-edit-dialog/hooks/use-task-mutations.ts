@@ -1,9 +1,19 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import type { CalendarHoursType } from '@tuturuuu/types/primitives/Task';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
 import { useCallback, useState } from 'react';
+
+export interface SchedulingSettings {
+  totalDuration: number | null;
+  isSplittable: boolean;
+  minSplitDurationMinutes: number | null;
+  maxSplitDurationMinutes: number | null;
+  calendarHours: CalendarHoursType | null;
+  autoSchedule: boolean;
+}
 
 export interface UseTaskMutationsProps {
   taskId?: string;
@@ -28,7 +38,9 @@ export interface UseTaskMutationsReturn {
   updateEndDate: (newDate: Date | undefined) => Promise<void>;
   updateList: (newListId: string) => Promise<void>;
   saveNameToDatabase: (newName: string) => Promise<void>;
+  saveSchedulingSettings: (settings: SchedulingSettings) => Promise<boolean>;
   estimationSaving: boolean;
+  schedulingSaving: boolean;
 }
 
 const supabase = createClient();
@@ -55,6 +67,7 @@ export function useTaskMutations({
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [estimationSaving, setEstimationSaving] = useState(false);
+  const [schedulingSaving, setSchedulingSaving] = useState(false);
 
   const updateEstimation = useCallback(
     async (points: number | null) => {
@@ -64,15 +77,29 @@ export function useTaskMutations({
         return;
       }
       setEstimationSaving(true);
+
+      // Optimistic update - prevents flicker by updating cache immediately
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (oldTasks: any[] | undefined) => {
+          if (!oldTasks) return oldTasks;
+          return oldTasks.map((task) =>
+            task.id === taskId ? { ...task, estimation_points: points } : task
+          );
+        }
+      );
+
       try {
         const { error } = await supabase
           .from('tasks')
           .update({ estimation_points: points })
           .eq('id', taskId);
         if (error) throw error;
-        await invalidateTaskCaches(queryClient, boardId);
+        // Don't invalidate cache - realtime sync handles updates
       } catch (e: any) {
         console.error('Failed updating estimation', e);
+        // Revert optimistic update on error
+        await invalidateTaskCaches(queryClient, boardId);
         toast({
           title: 'Failed to update estimation',
           description: e.message || 'Please try again',
@@ -100,15 +127,29 @@ export function useTaskMutations({
       if (isCreateMode || !taskId || taskId === 'new') {
         return;
       }
+
+      // Optimistic update - prevents flicker
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (oldTasks: any[] | undefined) => {
+          if (!oldTasks) return oldTasks;
+          return oldTasks.map((task) =>
+            task.id === taskId ? { ...task, priority: newPriority } : task
+          );
+        }
+      );
+
       try {
         const { error } = await supabase
           .from('tasks')
           .update({ priority: newPriority })
           .eq('id', taskId);
         if (error) throw error;
-        await invalidateTaskCaches(queryClient, boardId);
+        // Don't invalidate cache - realtime sync handles updates
       } catch (e: any) {
         console.error('Failed updating priority', e);
+        // Revert optimistic update on error
+        await invalidateTaskCaches(queryClient, boardId);
         toast({
           title: 'Failed to update priority',
           description: e.message || 'Please try again',
@@ -125,15 +166,31 @@ export function useTaskMutations({
       if (isCreateMode || !taskId || taskId === 'new') {
         return;
       }
+
+      const dateString = newDate ? newDate.toISOString() : null;
+
+      // Optimistic update - prevents flicker
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (oldTasks: any[] | undefined) => {
+          if (!oldTasks) return oldTasks;
+          return oldTasks.map((task) =>
+            task.id === taskId ? { ...task, start_date: dateString } : task
+          );
+        }
+      );
+
       try {
         const { error } = await supabase
           .from('tasks')
-          .update({ start_date: newDate ? newDate.toISOString() : null })
+          .update({ start_date: dateString })
           .eq('id', taskId);
         if (error) throw error;
-        await invalidateTaskCaches(queryClient, boardId);
+        // Don't invalidate cache - realtime sync handles updates
       } catch (e: any) {
         console.error('Failed updating start date', e);
+        // Revert optimistic update on error
+        await invalidateTaskCaches(queryClient, boardId);
         toast({
           title: 'Failed to update start date',
           description: e.message || 'Please try again',
@@ -150,15 +207,31 @@ export function useTaskMutations({
       if (isCreateMode || !taskId || taskId === 'new') {
         return;
       }
+
+      const dateString = newDate ? newDate.toISOString() : null;
+
+      // Optimistic update - prevents flicker
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (oldTasks: any[] | undefined) => {
+          if (!oldTasks) return oldTasks;
+          return oldTasks.map((task) =>
+            task.id === taskId ? { ...task, end_date: dateString } : task
+          );
+        }
+      );
+
       try {
         const { error } = await supabase
           .from('tasks')
-          .update({ end_date: newDate ? newDate.toISOString() : null })
+          .update({ end_date: dateString })
           .eq('id', taskId);
         if (error) throw error;
-        await invalidateTaskCaches(queryClient, boardId);
+        // Don't invalidate cache - realtime sync handles updates
       } catch (e: any) {
         console.error('Failed updating end date', e);
+        // Revert optimistic update on error
+        await invalidateTaskCaches(queryClient, boardId);
         toast({
           title: 'Failed to update end date',
           description: e.message || 'Please try again',
@@ -176,13 +249,25 @@ export function useTaskMutations({
       if (isCreateMode || !taskId || taskId === 'new') {
         return;
       }
+
+      // Optimistic update - prevents flicker
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (oldTasks: any[] | undefined) => {
+          if (!oldTasks) return oldTasks;
+          return oldTasks.map((task) =>
+            task.id === taskId ? { ...task, list_id: newListId } : task
+          );
+        }
+      );
+
       try {
         const { error } = await supabase
           .from('tasks')
           .update({ list_id: newListId })
           .eq('id', taskId);
         if (error) throw error;
-        await invalidateTaskCaches(queryClient, boardId);
+        // Don't invalidate cache - realtime sync handles updates
         toast({
           title: 'List updated',
           description: 'Task moved to new list',
@@ -190,6 +275,8 @@ export function useTaskMutations({
         onUpdate();
       } catch (e: any) {
         console.error('Failed updating list', e);
+        // Revert optimistic update on error
+        await invalidateTaskCaches(queryClient, boardId);
         toast({
           title: 'Failed to update list',
           description: e.message || 'Please try again',
@@ -218,15 +305,30 @@ export function useTaskMutations({
         return;
       }
 
+      // Optimistically update the cache instead of invalidating
+      // This prevents conflicts with realtime sync
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (oldTasks: any[] | undefined) => {
+          if (!oldTasks) return oldTasks;
+          return oldTasks.map((task) =>
+            task.id === taskId ? { ...task, name: trimmedName } : task
+          );
+        }
+      );
+
       try {
         const { error } = await supabase
           .from('tasks')
           .update({ name: trimmedName })
           .eq('id', taskId);
         if (error) throw error;
-        await invalidateTaskCaches(queryClient, boardId);
+        // Don't invalidate cache - realtime sync will handle updates
+        // and we've already optimistically updated the cache above
       } catch (e: any) {
         console.error('Failed updating task name', e);
+        // Revert optimistic update on error by invalidating to refetch
+        await invalidateTaskCaches(queryClient, boardId);
         toast({
           title: 'Failed to update task name',
           description: e.message || 'Please try again',
@@ -237,6 +339,79 @@ export function useTaskMutations({
     [taskName, taskId, isCreateMode, queryClient, boardId, toast]
   );
 
+  const saveSchedulingSettings = useCallback(
+    async (settings: SchedulingSettings): Promise<boolean> => {
+      if (isCreateMode || !taskId || taskId === 'new') {
+        // In create mode, settings will be saved when the task is created
+        return true;
+      }
+
+      setSchedulingSaving(true);
+
+      // Optimistic update - prevents flicker
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (oldTasks: any[] | undefined) => {
+          if (!oldTasks) return oldTasks;
+          return oldTasks.map((task) =>
+            task.id === taskId
+              ? {
+                  ...task,
+                  total_duration: settings.totalDuration,
+                  is_splittable: settings.isSplittable,
+                  min_split_duration_minutes: settings.minSplitDurationMinutes,
+                  max_split_duration_minutes: settings.maxSplitDurationMinutes,
+                  calendar_hours: settings.calendarHours,
+                  auto_schedule: settings.autoSchedule,
+                }
+              : task
+          );
+        }
+      );
+
+      try {
+        const { error } = await supabase
+          .from('tasks')
+          .update({
+            total_duration: settings.totalDuration,
+            is_splittable: settings.isSplittable,
+            min_split_duration_minutes: settings.minSplitDurationMinutes,
+            max_split_duration_minutes: settings.maxSplitDurationMinutes,
+            calendar_hours: settings.calendarHours,
+            auto_schedule: settings.autoSchedule,
+          })
+          .eq('id', taskId);
+
+        if (error) throw error;
+
+        // Don't invalidate cache - realtime sync handles updates
+
+        // Note: Auto-scheduling is handled by the Smart Schedule button in Calendar
+        // Settings are saved here; the unified scheduler will use them when triggered
+        toast({
+          title: 'Scheduling settings saved',
+          description: 'Task scheduling configuration has been updated.',
+        });
+
+        onUpdate();
+        return true;
+      } catch (e: any) {
+        console.error('Failed updating scheduling settings', e);
+        // Revert optimistic update on error
+        await invalidateTaskCaches(queryClient, boardId);
+        toast({
+          title: 'Failed to save scheduling settings',
+          description: e.message || 'Please try again',
+          variant: 'destructive',
+        });
+        return false;
+      } finally {
+        setSchedulingSaving(false);
+      }
+    },
+    [isCreateMode, taskId, queryClient, boardId, toast, onUpdate]
+  );
+
   return {
     updateEstimation,
     updatePriority,
@@ -244,6 +419,8 @@ export function useTaskMutations({
     updateEndDate,
     updateList,
     saveNameToDatabase,
+    saveSchedulingSettings,
     estimationSaving,
+    schedulingSaving,
   };
 }

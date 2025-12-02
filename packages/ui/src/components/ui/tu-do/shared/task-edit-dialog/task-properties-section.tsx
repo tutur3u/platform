@@ -1,31 +1,45 @@
 'use client';
 
 import {
+  AlertCircle,
   AlertTriangle,
   Box,
+  Briefcase,
   Calendar,
+  CalendarClock,
   Check,
+  CheckCircle,
   ChevronDown,
+  Clock,
   Flag,
   ListTodo,
+  Loader2,
+  Minus,
   Pen,
   Plus,
+  Save,
+  Scissors,
   Tag,
   Timer,
+  User,
   Users,
   X,
+  Zap,
 } from '@tuturuuu/icons';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import type { CalendarHoursType } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { Progress } from '@tuturuuu/ui/progress';
+import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import dayjs from 'dayjs';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PRIORITY_BADGE_COLORS } from '../../utils/taskConstants';
 import {
   getPriorityIcon,
@@ -37,10 +51,24 @@ import {
   buildEstimationIndices,
   mapEstimationPoints,
 } from '../estimation-mapping';
+import type { SchedulingSettings } from '../task-edit-dialog/hooks/use-task-mutations';
 import type { WorkspaceTaskLabel } from '../task-edit-dialog/types';
 import { UserAvatar } from '../user-avatar';
 
+// Scheduled calendar event type
+export interface ScheduledCalendarEvent {
+  id: string;
+  title: string;
+  start_at: string;
+  end_at: string;
+  scheduled_minutes: number;
+  completed: boolean;
+}
+
 interface TaskPropertiesSectionProps {
+  // IDs
+  wsId: string;
+  taskId?: string;
   // State
   priority: TaskPriority | null;
   startDate: Date | undefined;
@@ -52,6 +80,18 @@ interface TaskPropertiesSectionProps {
   selectedAssignees: any[];
   isLoading: boolean;
   isPersonalWorkspace: boolean;
+  isCreateMode: boolean;
+  // Scheduling state
+  totalDuration: number | null;
+  isSplittable: boolean;
+  minSplitDurationMinutes: number | null;
+  maxSplitDurationMinutes: number | null;
+  calendarHours: CalendarHoursType | null;
+  autoSchedule: boolean;
+  // Saved scheduling state (for comparison)
+  savedSchedulingSettings?: SchedulingSettings;
+  // Scheduled events for this task
+  scheduledEvents?: ScheduledCalendarEvent[];
 
   // Data
   availableLists: TaskList[];
@@ -73,10 +113,156 @@ interface TaskPropertiesSectionProps {
   onShowNewLabelDialog: () => void;
   onShowNewProjectDialog: () => void;
   onShowEstimationConfigDialog: () => void;
+  // Scheduling handlers
+  onTotalDurationChange: (duration: number | null) => void;
+  onIsSplittableChange: (splittable: boolean) => void;
+  onMinSplitDurationChange: (minutes: number | null) => void;
+  onMaxSplitDurationChange: (minutes: number | null) => void;
+  onCalendarHoursChange: (hourType: CalendarHoursType | null) => void;
+  onAutoScheduleChange: (autoSchedule: boolean) => void;
+  onSaveSchedulingSettings: (settings: SchedulingSettings) => Promise<boolean>;
+  schedulingSaving: boolean;
+}
+
+// Calendar hours type options
+const CALENDAR_HOURS_OPTIONS: {
+  value: CalendarHoursType;
+  label: string;
+  icon: typeof Briefcase;
+  description: string;
+}[] = [
+  {
+    value: 'work_hours',
+    label: 'Work Hours',
+    icon: Briefcase,
+    description: 'Schedule during work hours',
+  },
+  {
+    value: 'meeting_hours',
+    label: 'Meeting Hours',
+    icon: Calendar,
+    description: 'Schedule during meeting hours',
+  },
+  {
+    value: 'personal_hours',
+    label: 'Personal Hours',
+    icon: User,
+    description: 'Schedule during personal hours',
+  },
+];
+
+// Format duration helper - rounds to avoid floating point issues
+function formatDuration(totalMinutes: number): string {
+  const roundedTotal = Math.round(totalMinutes);
+  const hours = Math.floor(roundedTotal / 60);
+  const minutes = roundedTotal % 60;
+  if (hours === 0) return `${minutes}m`;
+  if (minutes === 0) return `${hours}h`;
+  return `${hours}h ${minutes}m`;
+}
+
+// Custom duration input component with better UX
+interface DurationInputProps {
+  value: number;
+  onChange: (value: number, direction?: 'increment' | 'decrement') => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  disabled?: boolean;
+  label: string;
+  className?: string;
+  // For minute inputs that need to rollover to hours
+  allowRollover?: boolean;
+  canDecrement?: boolean;
+}
+
+function DurationInput({
+  value,
+  onChange,
+  min = 0,
+  max = 999,
+  step = 1,
+  disabled = false,
+  label,
+  className,
+  allowRollover = false,
+  canDecrement,
+}: DurationInputProps) {
+  const handleIncrement = () => {
+    if (allowRollover) {
+      // For rollover mode, pass the would-be value and direction
+      onChange(value + step, 'increment');
+    } else {
+      const newValue = Math.min(value + step, max);
+      onChange(newValue);
+    }
+  };
+
+  const handleDecrement = () => {
+    if (allowRollover) {
+      // For rollover mode, pass the would-be value and direction
+      onChange(value - step, 'decrement');
+    } else {
+      const newValue = Math.max(value - step, min);
+      onChange(newValue);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const parsed = parseInt(e.target.value, 10);
+    if (Number.isNaN(parsed)) {
+      onChange(min);
+    } else {
+      onChange(Math.max(min, Math.min(parsed, max)));
+    }
+  };
+
+  // Determine if decrement is allowed
+  const decrementDisabled = allowRollover
+    ? canDecrement === false
+    : value <= min;
+
+  return (
+    <div className={cn('flex items-center gap-1', className)}>
+      <div className="flex h-8 items-center overflow-hidden rounded-md border bg-background">
+        <button
+          type="button"
+          onClick={handleDecrement}
+          disabled={disabled || decrementDisabled}
+          className="flex h-full w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Minus className="h-3 w-3" />
+        </button>
+        <input
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={value}
+          onChange={handleInputChange}
+          disabled={disabled}
+          className="h-full w-10 border-x bg-transparent text-center text-sm outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        />
+        <button
+          type="button"
+          onClick={handleIncrement}
+          disabled={disabled}
+          className="flex h-full w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Plus className="h-3 w-3" />
+        </button>
+      </div>
+      <span className="text-muted-foreground text-xs">{label}</span>
+    </div>
+  );
 }
 
 export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
   const {
+    // wsId and taskId are passed for potential future use
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    wsId: _wsId,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    taskId: _taskId,
     priority,
     startDate,
     endDate,
@@ -87,6 +273,16 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
     selectedAssignees,
     isLoading,
     isPersonalWorkspace,
+    isCreateMode,
+    // Scheduling state
+    totalDuration,
+    isSplittable,
+    minSplitDurationMinutes,
+    maxSplitDurationMinutes,
+    calendarHours,
+    autoSchedule,
+    savedSchedulingSettings,
+    scheduledEvents,
     availableLists,
     availableLabels,
     taskProjects,
@@ -104,9 +300,18 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
     onShowNewLabelDialog,
     onShowNewProjectDialog,
     onShowEstimationConfigDialog,
+    // Scheduling handlers
+    onTotalDurationChange,
+    onIsSplittableChange,
+    onMinSplitDurationChange,
+    onMaxSplitDurationChange,
+    onCalendarHoursChange,
+    onAutoScheduleChange,
+    onSaveSchedulingSettings,
+    schedulingSaving,
   } = props;
 
-  const [isMetadataExpanded, setIsMetadataExpanded] = useState(true);
+  const [isMetadataExpanded, setIsMetadataExpanded] = useState(false);
   const [isPriorityPopoverOpen, setIsPriorityPopoverOpen] = useState(false);
   const [isDueDatePopoverOpen, setIsDueDatePopoverOpen] = useState(false);
   const [isEstimationPopoverOpen, setIsEstimationPopoverOpen] = useState(false);
@@ -114,6 +319,208 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
   const [isProjectsPopoverOpen, setIsProjectsPopoverOpen] = useState(false);
   const [isAssigneesPopoverOpen, setIsAssigneesPopoverOpen] = useState(false);
   const [isListPopoverOpen, setIsListPopoverOpen] = useState(false);
+  const [isSchedulingPopoverOpen, setIsSchedulingPopoverOpen] = useState(false);
+
+  // Track last saved settings locally (updates after successful save)
+  const [lastSavedSettings, setLastSavedSettings] = useState<
+    SchedulingSettings | undefined
+  >(savedSchedulingSettings);
+
+  // Update lastSavedSettings when prop changes (e.g., task is refetched)
+  // Use deep comparison since savedSchedulingSettings is a new object each render
+  const previousSavedRef = useRef(savedSchedulingSettings);
+  useEffect(() => {
+    const propValues = savedSchedulingSettings;
+    const prevValues = previousSavedRef.current;
+
+    // Deep compare to avoid overwriting on every render
+    const hasChanged =
+      propValues?.totalDuration !== prevValues?.totalDuration ||
+      propValues?.isSplittable !== prevValues?.isSplittable ||
+      propValues?.minSplitDurationMinutes !==
+        prevValues?.minSplitDurationMinutes ||
+      propValues?.maxSplitDurationMinutes !==
+        prevValues?.maxSplitDurationMinutes ||
+      propValues?.calendarHours !== prevValues?.calendarHours ||
+      propValues?.autoSchedule !== prevValues?.autoSchedule;
+
+    if (hasChanged) {
+      previousSavedRef.current = propValues;
+      setLastSavedSettings(propValues);
+    }
+  }, [savedSchedulingSettings]);
+
+  // Computed duration values
+  const totalMinutes = (totalDuration ?? 0) * 60;
+  const durationHours = Math.floor(totalMinutes / 60);
+  const durationMinutes = Math.round(totalMinutes % 60);
+
+  // Check if scheduling settings have unsaved changes
+  const hasUnsavedSchedulingChanges = useMemo(() => {
+    if (isCreateMode) return false; // In create mode, all changes are pending until save
+    if (!lastSavedSettings) return false; // No saved state to compare against
+
+    return (
+      totalDuration !== lastSavedSettings.totalDuration ||
+      isSplittable !== lastSavedSettings.isSplittable ||
+      minSplitDurationMinutes !== lastSavedSettings.minSplitDurationMinutes ||
+      maxSplitDurationMinutes !== lastSavedSettings.maxSplitDurationMinutes ||
+      calendarHours !== lastSavedSettings.calendarHours ||
+      autoSchedule !== lastSavedSettings.autoSchedule
+    );
+  }, [
+    isCreateMode,
+    lastSavedSettings,
+    totalDuration,
+    isSplittable,
+    minSplitDurationMinutes,
+    maxSplitDurationMinutes,
+    calendarHours,
+    autoSchedule,
+  ]);
+
+  // Check if save is allowed (must have non-zero duration, hour type selected, and unsaved changes)
+  const canSaveScheduling = useMemo(() => {
+    const hasDuration = durationHours > 0 || durationMinutes > 0;
+    const hasHourType = calendarHours !== null;
+    return (
+      hasUnsavedSchedulingChanges &&
+      hasDuration &&
+      hasHourType &&
+      !schedulingSaving
+    );
+  }, [
+    hasUnsavedSchedulingChanges,
+    durationHours,
+    durationMinutes,
+    calendarHours,
+    schedulingSaving,
+  ]);
+
+  // Handle save scheduling settings
+  const handleSaveSchedulingSettings = useCallback(async () => {
+    const settings: SchedulingSettings = {
+      totalDuration,
+      isSplittable,
+      minSplitDurationMinutes,
+      maxSplitDurationMinutes,
+      calendarHours,
+      autoSchedule,
+    };
+    const success = await onSaveSchedulingSettings(settings);
+    if (success) {
+      // Update local saved state to reflect the successful save
+      setLastSavedSettings(settings);
+      setIsSchedulingPopoverOpen(false);
+    }
+  }, [
+    totalDuration,
+    isSplittable,
+    minSplitDurationMinutes,
+    maxSplitDurationMinutes,
+    calendarHours,
+    autoSchedule,
+    onSaveSchedulingSettings,
+  ]);
+
+  // Handle clear and save scheduling settings
+  const handleClearSchedulingSettings = useCallback(async () => {
+    // Clear all local state first
+    onTotalDurationChange(null);
+    onIsSplittableChange(false);
+    onMinSplitDurationChange(null);
+    onMaxSplitDurationChange(null);
+    onCalendarHoursChange(null);
+    onAutoScheduleChange(false);
+
+    // Save cleared settings to database
+    const clearedSettings: SchedulingSettings = {
+      totalDuration: null,
+      isSplittable: false,
+      minSplitDurationMinutes: null,
+      maxSplitDurationMinutes: null,
+      calendarHours: null,
+      autoSchedule: false,
+    };
+    const success = await onSaveSchedulingSettings(clearedSettings);
+    if (success) {
+      setLastSavedSettings(clearedSettings);
+      setIsSchedulingPopoverOpen(false);
+    }
+  }, [
+    onTotalDurationChange,
+    onIsSplittableChange,
+    onMinSplitDurationChange,
+    onMaxSplitDurationChange,
+    onCalendarHoursChange,
+    onAutoScheduleChange,
+    onSaveSchedulingSettings,
+  ]);
+
+  // Note: Manual scheduling removed - handled by Smart Schedule button in Calendar
+
+  // Handlers for duration inputs
+  const handleDurationHoursChange = useCallback(
+    (hours: number) => {
+      const clampedHours = Math.max(0, hours);
+      const totalHours = (clampedHours * 60 + durationMinutes) / 60;
+      onTotalDurationChange(totalHours > 0 ? totalHours : null);
+    },
+    [durationMinutes, onTotalDurationChange]
+  );
+
+  const handleDurationMinutesChange = useCallback(
+    (minutes: number, direction?: 'increment' | 'decrement') => {
+      let newHours = durationHours;
+      let newMinutes = minutes;
+
+      // Handle rollover for increment/decrement
+      if (direction === 'increment' && minutes > 45) {
+        newMinutes = 0;
+        newHours = durationHours + 1;
+      } else if (direction === 'decrement' && minutes < 0) {
+        if (durationHours > 0) {
+          newMinutes = 45;
+          newHours = durationHours - 1;
+        } else {
+          newMinutes = 0;
+        }
+      } else {
+        // For direct input, snap to nearest 15-minute interval
+        newMinutes = Math.round(minutes / 15) * 15;
+        if (newMinutes >= 60) {
+          newMinutes = 0;
+          newHours = durationHours + 1;
+        }
+      }
+
+      const totalHours = (newHours * 60 + newMinutes) / 60;
+      onTotalDurationChange(totalHours > 0 ? totalHours : null);
+    },
+    [durationHours, onTotalDurationChange]
+  );
+
+  const handleSplittableChange = useCallback(
+    (checked: boolean) => {
+      onIsSplittableChange(checked);
+      // Set defaults when enabling
+      if (checked) {
+        if (minSplitDurationMinutes === null) {
+          onMinSplitDurationChange(30);
+        }
+        if (maxSplitDurationMinutes === null) {
+          onMaxSplitDurationChange(120);
+        }
+      }
+    },
+    [
+      minSplitDurationMinutes,
+      maxSplitDurationMinutes,
+      onIsSplittableChange,
+      onMinSplitDurationChange,
+      onMaxSplitDurationChange,
+    ]
+  );
 
   const estimationIndices: number[] = useMemo(() => {
     return boardConfig?.estimation_type
@@ -178,69 +585,97 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     PRIORITY_BADGE_COLORS[priority]
                   )}
                 >
-                  <Flag className="h-2.5 w-2.5" />
+                  {getPriorityIcon(priority, 'h-2.5 w-2.5')}
                   {getPriorityLabel(priority)}
-                </Badge>
-              )}
-              {(startDate || endDate) && (
-                <Badge
-                  variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-orange/30 bg-dynamic-orange/10 px-2 font-medium text-[10px] text-dynamic-orange"
-                >
-                  <Calendar className="h-2.5 w-2.5" />
-                  {startDate && endDate
-                    ? 'Scheduled'
-                    : endDate
-                      ? 'Due'
-                      : 'Start'}
-                </Badge>
-              )}
-              {estimationPoints != null && (
-                <Badge
-                  variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-purple/30 bg-dynamic-purple/10 px-2 font-medium text-[10px] text-dynamic-purple"
-                >
-                  <Timer className="h-2.5 w-2.5" />
-                  Est.
-                </Badge>
-              )}
-              {selectedLabels.length > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-indigo/30 bg-dynamic-indigo/10 px-2 font-medium text-[10px] text-dynamic-indigo"
-                >
-                  <Tag className="h-2.5 w-2.5" />
-                  {selectedLabels.length}
-                </Badge>
-              )}
-              {selectedProjects.length > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-sky/30 bg-dynamic-sky/10 px-2 font-medium text-[10px] text-dynamic-sky"
-                >
-                  <Box className="h-2.5 w-2.5" />
-                  {selectedProjects.length === 1
-                    ? selectedProjects[0]?.name
-                    : selectedProjects.length}
                 </Badge>
               )}
               {selectedListId && (
                 <Badge
                   variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-green/30 bg-dynamic-green/10 px-2 font-medium text-[10px] text-dynamic-green"
+                  className="h-5 shrink-0 gap-1 border border-dynamic-green/30 bg-dynamic-green/15 px-2 font-medium text-[10px] text-dynamic-green"
                 >
                   <ListTodo className="h-2.5 w-2.5" />
                   {availableLists?.find((l) => l.id === selectedListId)?.name ||
                     'List'}
                 </Badge>
               )}
+              {(startDate || endDate) && (
+                <Badge
+                  variant="secondary"
+                  className="h-5 shrink-0 gap-1 border border-dynamic-orange/30 bg-dynamic-orange/15 px-2 font-medium text-[10px] text-dynamic-orange"
+                >
+                  <Calendar className="h-2.5 w-2.5" />
+                  {startDate || endDate
+                    ? `${startDate ? new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No start'} → ${endDate ? new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No due'}`
+                    : 'Dates'}
+                </Badge>
+              )}
+              {estimationPoints != null && (
+                <Badge
+                  variant="secondary"
+                  className="h-5 shrink-0 gap-1 border border-dynamic-purple/30 bg-dynamic-purple/15 px-2 font-medium text-[10px] text-dynamic-purple"
+                >
+                  <Timer className="h-2.5 w-2.5" />
+                  {boardConfig?.estimation_type
+                    ? mapEstimationPoints(
+                        estimationPoints,
+                        boardConfig.estimation_type
+                      )
+                    : 'Est.'}
+                </Badge>
+              )}
+              {selectedLabels.length > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="h-5 shrink-0 gap-1 border border-dynamic-indigo/30 bg-dynamic-indigo/15 px-2 font-medium text-[10px] text-dynamic-indigo"
+                >
+                  <Tag className="h-2.5 w-2.5" />
+                  {selectedLabels.length === 1
+                    ? selectedLabels[0]?.name
+                    : `${selectedLabels.length} labels`}
+                </Badge>
+              )}
+              {selectedProjects.length > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="h-5 shrink-0 gap-1 border border-dynamic-sky/30 bg-dynamic-sky/15 px-2 font-medium text-[10px] text-dynamic-sky"
+                >
+                  <Box className="h-2.5 w-2.5" />
+                  {selectedProjects.length === 1
+                    ? selectedProjects[0]?.name
+                    : `${selectedProjects.length} projects`}
+                </Badge>
+              )}
               {selectedAssignees.length > 0 && !isPersonalWorkspace && (
                 <Badge
                   variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-cyan/30 bg-dynamic-cyan/10 px-2 font-medium text-[10px] text-dynamic-cyan"
+                  className="h-5 shrink-0 gap-1 border border-dynamic-cyan/30 bg-dynamic-cyan/15 px-2 font-medium text-[10px] text-dynamic-cyan"
                 >
                   <Users className="h-2.5 w-2.5" />
-                  {selectedAssignees.length}
+                  {selectedAssignees.length === 1
+                    ? selectedAssignees[0]?.display_name || 'Unknown'
+                    : `${selectedAssignees.length} assignees`}
+                </Badge>
+              )}
+              {totalMinutes > 0 && (
+                <Badge
+                  variant="secondary"
+                  className={cn(
+                    'h-5 shrink-0 gap-1 border px-2 font-medium text-[10px]',
+                    hasUnsavedSchedulingChanges
+                      ? 'border-dynamic-yellow/50 border-dashed bg-dynamic-yellow/15 text-dynamic-yellow'
+                      : 'border-dynamic-teal/30 bg-dynamic-teal/15 text-dynamic-teal'
+                  )}
+                >
+                  {hasUnsavedSchedulingChanges ? (
+                    <AlertCircle className="h-2.5 w-2.5" />
+                  ) : (
+                    <CalendarClock className="h-2.5 w-2.5" />
+                  )}
+                  {formatDuration(totalMinutes)}
+                  {hasUnsavedSchedulingChanges && (
+                    <span className="text-[8px] opacity-75">unsaved</span>
+                  )}
                 </Badge>
               )}
             </div>
@@ -854,9 +1289,13 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                       {selectedAssignees.length > 0 && (
                         <div className="border-b p-2">
                           <div className="flex flex-wrap gap-1.5">
-                            {selectedAssignees.map((assignee) => (
+                            {selectedAssignees.map((assignee, index) => (
                               <Badge
-                                key={assignee.id || assignee.user_id}
+                                key={
+                                  assignee.id ||
+                                  assignee.user_id ||
+                                  `assignee-${index}`
+                                }
                                 variant="secondary"
                                 className="h-6 cursor-pointer gap-1.5 px-2 text-xs transition-opacity hover:opacity-80"
                                 onClick={() => onAssigneeToggle(assignee)}
@@ -878,12 +1317,17 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             .filter(
                               (m) =>
                                 !selectedAssignees.some(
-                                  (a) => (a.id || a.user_id) === m.user_id
+                                  (a) =>
+                                    (a.id || a.user_id) === (m.user_id || m.id)
                                 )
                             )
-                            .map((member) => (
+                            .map((member, index) => (
                               <button
-                                key={member.user_id}
+                                key={
+                                  member.user_id ||
+                                  member.id ||
+                                  `member-${index}`
+                                }
                                 type="button"
                                 onClick={() => onAssigneeToggle(member)}
                                 className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
@@ -906,6 +1350,354 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                 </PopoverContent>
               </Popover>
             )}
+
+            {/* Scheduling Badge */}
+            <Popover
+              open={isSchedulingPopoverOpen}
+              onOpenChange={setIsSchedulingPopoverOpen}
+            >
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
+                    hasUnsavedSchedulingChanges
+                      ? 'border-dynamic-yellow/50 border-dashed bg-dynamic-yellow/10 text-dynamic-yellow hover:border-dynamic-yellow/70 hover:bg-dynamic-yellow/15'
+                      : totalDuration
+                        ? 'border-dynamic-teal/30 bg-dynamic-teal/15 text-dynamic-teal hover:border-dynamic-teal/50 hover:bg-dynamic-teal/20'
+                        : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground'
+                  )}
+                >
+                  {hasUnsavedSchedulingChanges ? (
+                    <AlertCircle className="h-3.5 w-3.5" />
+                  ) : (
+                    <CalendarClock className="h-3.5 w-3.5" />
+                  )}
+                  <span>
+                    {totalMinutes > 0
+                      ? formatDuration(totalMinutes)
+                      : 'Schedule'}
+                  </span>
+                  {hasUnsavedSchedulingChanges && (
+                    <span className="text-[10px] opacity-75">unsaved</span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-72 p-0">
+                <div className="rounded-lg p-3">
+                  <div className="space-y-3">
+                    {/* Duration */}
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1.5 font-normal text-muted-foreground text-xs">
+                        <Clock className="h-3.5 w-3.5" />
+                        Estimated Duration
+                        <span className="text-dynamic-red">*</span>
+                      </Label>
+                      <div className="flex items-center gap-3">
+                        <DurationInput
+                          value={durationHours}
+                          onChange={handleDurationHoursChange}
+                          min={0}
+                          max={999}
+                          disabled={isLoading}
+                          label="h"
+                        />
+                        <DurationInput
+                          value={durationMinutes}
+                          onChange={handleDurationMinutesChange}
+                          min={0}
+                          max={45}
+                          step={15}
+                          disabled={isLoading}
+                          label="m"
+                          allowRollover={true}
+                          canDecrement={
+                            durationHours > 0 || durationMinutes > 0
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    {/* Splittable */}
+                    <div className="flex items-center justify-between">
+                      <Label
+                        htmlFor="splittable"
+                        className="flex cursor-pointer items-center gap-1.5 font-normal text-muted-foreground text-xs"
+                      >
+                        <Scissors className="h-3.5 w-3.5" />
+                        Splittable
+                      </Label>
+                      <Switch
+                        id="splittable"
+                        checked={isSplittable}
+                        onCheckedChange={handleSplittableChange}
+                        disabled={isLoading}
+                      />
+                    </div>
+
+                    {/* Min/Max Split Duration */}
+                    {isSplittable && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="font-normal text-muted-foreground text-xs">
+                            Min split
+                          </Label>
+                          <DurationInput
+                            value={minSplitDurationMinutes ?? 30}
+                            onChange={(value) =>
+                              onMinSplitDurationChange(value)
+                            }
+                            min={15}
+                            max={maxSplitDurationMinutes ?? 480}
+                            step={15}
+                            disabled={isLoading}
+                            label="min"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="font-normal text-muted-foreground text-xs">
+                            Max split
+                          </Label>
+                          <DurationInput
+                            value={maxSplitDurationMinutes ?? 120}
+                            onChange={(value) =>
+                              onMaxSplitDurationChange(value)
+                            }
+                            min={minSplitDurationMinutes ?? 15}
+                            max={480}
+                            step={15}
+                            disabled={isLoading}
+                            label="min"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Calendar Hours Type */}
+                    <div className="space-y-1.5">
+                      <Label className="flex items-center gap-1.5 font-normal text-muted-foreground text-xs">
+                        <Briefcase className="h-3.5 w-3.5" />
+                        Hour Type
+                        <span className="text-dynamic-red">*</span>
+                      </Label>
+                      <div
+                        className={cn(
+                          'inline-flex rounded-md border p-0.5',
+                          !isCreateMode &&
+                            hasUnsavedSchedulingChanges &&
+                            !calendarHours
+                            ? 'border-dynamic-red/50 bg-dynamic-red/5'
+                            : 'border-border'
+                        )}
+                      >
+                        {CALENDAR_HOURS_OPTIONS.map((option) => {
+                          const Icon = option.icon;
+                          const isSelected = calendarHours === option.value;
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() =>
+                                onCalendarHoursChange(option.value)
+                              }
+                              className={cn(
+                                'flex items-center gap-1.5 rounded px-2.5 py-1 text-xs transition-colors',
+                                isSelected
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                              )}
+                              title={option.label}
+                            >
+                              <Icon className="h-3.5 w-3.5" />
+                              <span className="hidden sm:inline">
+                                {option.label.split(' ')[0]}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Auto-schedule */}
+                    <div className="flex items-center justify-between">
+                      <Label
+                        htmlFor="auto-schedule"
+                        className="flex cursor-pointer items-center gap-1.5 font-normal text-muted-foreground text-xs"
+                      >
+                        <Zap className="h-3.5 w-3.5" />
+                        Auto-schedule
+                      </Label>
+                      <Switch
+                        id="auto-schedule"
+                        checked={autoSchedule}
+                        onCheckedChange={onAutoScheduleChange}
+                        disabled={isLoading}
+                      />
+                    </div>
+
+                    {/* Scheduled Events Progress & List */}
+                    {!isCreateMode && totalMinutes > 0 && (
+                      <div className="space-y-2 border-t pt-2">
+                        {/* Progress */}
+                        {(() => {
+                          const scheduledMinutes =
+                            scheduledEvents?.reduce(
+                              (sum, e) => sum + (e.scheduled_minutes || 0),
+                              0
+                            ) ?? 0;
+                          const progress =
+                            totalMinutes > 0
+                              ? (scheduledMinutes / totalMinutes) * 100
+                              : 0;
+                          const isFullyScheduled = progress >= 100;
+
+                          // Check if any events are scheduled past the deadline
+                          const eventsAfterDeadline =
+                            endDate && scheduledEvents
+                              ? scheduledEvents.filter(
+                                  (e) => new Date(e.start_at) > endDate
+                                )
+                              : [];
+                          const hasEventsAfterDeadline =
+                            eventsAfterDeadline.length > 0;
+
+                          return (
+                            <>
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="text-muted-foreground">
+                                    {scheduledEvents &&
+                                    scheduledEvents.length > 0
+                                      ? `${scheduledEvents.length} event${scheduledEvents.length > 1 ? 's' : ''}`
+                                      : 'Not scheduled'}
+                                  </span>
+                                  <span
+                                    className={cn(
+                                      'font-medium',
+                                      isFullyScheduled
+                                        ? 'text-dynamic-green'
+                                        : 'text-foreground'
+                                    )}
+                                  >
+                                    {formatDuration(scheduledMinutes)} /{' '}
+                                    {formatDuration(totalMinutes)}
+                                  </span>
+                                </div>
+                                <Progress
+                                  value={Math.min(progress, 100)}
+                                  className={cn(
+                                    'h-1.5',
+                                    isFullyScheduled &&
+                                      '[&>div]:bg-dynamic-green'
+                                  )}
+                                />
+                              </div>
+
+                              {/* Warning: Events scheduled after deadline */}
+                              {hasEventsAfterDeadline && (
+                                <div className="flex items-center gap-2 rounded-md border border-dynamic-orange/30 bg-dynamic-orange/10 px-2.5 py-1.5 text-xs">
+                                  <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-dynamic-orange" />
+                                  <span className="text-dynamic-orange">
+                                    {eventsAfterDeadline.length === 1
+                                      ? '1 event scheduled after deadline'
+                                      : `${eventsAfterDeadline.length} events scheduled after deadline`}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Compact Events List */}
+                              {scheduledEvents &&
+                                scheduledEvents.length > 0 && (
+                                  <div className="flex flex-wrap gap-1">
+                                    {scheduledEvents.map((event) => {
+                                      const isAfterDeadline =
+                                        endDate &&
+                                        new Date(event.start_at) > endDate;
+                                      return (
+                                        <div
+                                          key={event.id}
+                                          className={cn(
+                                            'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px]',
+                                            event.completed
+                                              ? 'bg-dynamic-green/10 text-dynamic-green'
+                                              : isAfterDeadline
+                                                ? 'bg-dynamic-orange/10 text-dynamic-orange'
+                                                : 'bg-muted text-muted-foreground'
+                                          )}
+                                          title={`${dayjs(event.start_at).format('MMM D, h:mm A')} - ${formatDuration(event.scheduled_minutes)}${isAfterDeadline ? ' (after deadline)' : ''}`}
+                                        >
+                                          {event.completed ? (
+                                            <CheckCircle className="h-2.5 w-2.5" />
+                                          ) : isAfterDeadline ? (
+                                            <AlertTriangle className="h-2.5 w-2.5" />
+                                          ) : (
+                                            <Calendar className="h-2.5 w-2.5" />
+                                          )}
+                                          <span>
+                                            {dayjs(event.start_at).format(
+                                              'M/D h:mma'
+                                            )}
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                            </>
+                          );
+                        })()}
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    {!isCreateMode && (
+                      <div className="flex items-center gap-2 border-t pt-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleSaveSchedulingSettings}
+                          disabled={!canSaveScheduling}
+                          className="flex-1"
+                        >
+                          {schedulingSaving ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <>
+                              <Save className="mr-1.5 h-3.5 w-3.5" />
+                              Save
+                            </>
+                          )}
+                        </Button>
+                        {(durationHours > 0 || durationMinutes > 0) && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={handleClearSchedulingSettings}
+                            disabled={schedulingSaving}
+                            className="px-2 text-muted-foreground hover:text-dynamic-red"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Clear Duration (create mode only) */}
+                    {isCreateMode &&
+                      totalDuration !== null &&
+                      totalDuration > 0 && (
+                        <ClearMenuItem
+                          label="Clear duration"
+                          onClick={() => {
+                            onTotalDurationChange(null);
+                            setIsSchedulingPopoverOpen(false);
+                          }}
+                        />
+                      )}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       )}

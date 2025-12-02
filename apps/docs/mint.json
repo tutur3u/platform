@@ -52,7 +52,16 @@
           "pages": [
             "platform/features/command-center-dashboard",
             "platform/features/meet-together",
-            "platform/features/user-management"
+            "platform/features/user-management",
+            {
+              "group": "Smart Scheduling",
+              "pages": [
+                "platform/features/smart-scheduling/overview",
+                "platform/features/smart-scheduling/priority-system",
+                "platform/features/smart-scheduling/duration-optimization",
+                "platform/features/smart-scheduling/api-reference"
+              ]
+            }
           ]
         },
         {

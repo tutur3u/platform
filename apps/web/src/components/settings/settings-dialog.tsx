@@ -5,6 +5,7 @@ import {
   Bell,
   Building,
   CalendarDays,
+  CheckSquare,
   Clock,
   CreditCard,
   Laptop,
@@ -52,6 +53,7 @@ import SessionSettings from './account/session-settings';
 import AppearanceSettings from './appearance-settings';
 import { CalendarSettingsContent } from './calendar/calendar-settings-content';
 import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
+import { TaskSettings } from './tasks/task-settings';
 import MembersSettings from './workspace/members-settings';
 
 interface SettingsDialogProps {
@@ -226,6 +228,17 @@ export function SettingsDialog({
       ],
     },
     {
+      label: t('settings.tasks.title'),
+      items: [
+        {
+          name: 'tasks_general',
+          label: t('settings.tasks.general'),
+          icon: CheckSquare,
+          description: t('settings.tasks.general_description'),
+        },
+      ],
+    },
+    {
       label: 'My Workspaces',
       items: [
         {
@@ -343,7 +356,7 @@ export function SettingsDialog({
             ))}
           </SidebarContent>
         </Sidebar>
-        <main className="flex h-[calc(100%-5rem)] flex-1 flex-col overflow-hidden bg-background">
+        <main className="flex h-[calc(100%-5rem)] flex-1 flex-col overflow-hidden bg-background 2xl:h-[calc(100%-10rem)]">
           <header className="flex h-20 shrink-0 flex-col items-start justify-center gap-1 overflow-hidden border-b bg-background/80 px-4 py-2 backdrop-blur-md">
             <h2 className="font-semibold text-lg tracking-tight">
               {activeItem?.label}
@@ -421,6 +434,12 @@ export function SettingsDialog({
                 {activeTab === 'notifications' && (
                   <div className="h-full">
                     <NotificationSettings />
+                  </div>
+                )}
+
+                {activeTab === 'tasks_general' && (
+                  <div className="h-full">
+                    <TaskSettings workspace={workspace} />
                   </div>
                 )}
 

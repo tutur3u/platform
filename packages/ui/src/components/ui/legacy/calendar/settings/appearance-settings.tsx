@@ -13,7 +13,7 @@ import { useTheme } from 'next-themes';
 import type { CalendarView } from '../../../../../hooks/use-view-transition';
 
 export type CalendarTheme = 'light' | 'dark' | 'system';
-export type FirstDayOfWeek = 'sunday' | 'monday' | 'saturday';
+export type FirstDayOfWeek = 'auto' | 'sunday' | 'monday' | 'saturday';
 export type TimeFormat = '12h' | '24h';
 
 export type AppearanceData = {
@@ -29,7 +29,7 @@ export type AppearanceData = {
 
 export const defaultAppearanceData: AppearanceData = {
   theme: 'system',
-  firstDayOfWeek: 'monday',
+  firstDayOfWeek: 'auto',
   timeFormat: '12h',
   defaultView: 'week',
   showWeekNumbers: false,
@@ -117,19 +117,15 @@ export function AppearanceSettings({
           onValueChange={(val) =>
             handleSelectChange('firstDayOfWeek', val as FirstDayOfWeek)
           }
-          disabled
         >
           <SelectTrigger id="first-day" className="w-full">
             <SelectValue placeholder="Select first day" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="sunday" disabled>
-              Sunday
-            </SelectItem>
+            <SelectItem value="auto">Auto (detect from locale)</SelectItem>
+            <SelectItem value="sunday">Sunday</SelectItem>
             <SelectItem value="monday">Monday</SelectItem>
-            <SelectItem value="saturday" disabled>
-              Saturday
-            </SelectItem>
+            <SelectItem value="saturday">Saturday</SelectItem>
           </SelectContent>
         </Select>
       </div>

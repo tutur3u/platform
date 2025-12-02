@@ -1,8 +1,8 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Trash } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Task } from '@tuturuuu/types/primitives/Task';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -10,16 +10,14 @@ import {
   DialogDescription,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
-
-const supabase = createClient();
+import { toast } from '@tuturuuu/ui/sonner';
 
 interface TaskDeleteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   taskId?: string;
   boardId: string;
+  wsId: string;
   isLoading: boolean;
   onSuccess: () => void;
   onClose: () => void;
@@ -30,35 +28,73 @@ export function TaskDeleteDialog({
   onOpenChange,
   taskId,
   boardId,
+  wsId,
   isLoading,
   onSuccess,
   onClose,
 }: TaskDeleteDialogProps) {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const handleDelete = async () => {
-    try {
-      if (taskId) {
-        const { error } = await supabase
-          .from('tasks')
-          .delete()
-          .eq('id', taskId);
-        if (error) throw error;
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/tasks/${taskId}/trash`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete task');
       }
 
-      await invalidateTaskCaches(queryClient, boardId);
-      toast({ title: 'Task deleted' });
+      return response.json();
+    },
+    onMutate: async (deletingTaskId: string) => {
+      // Cancel any outgoing refetches to prevent overwriting optimistic update
+      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+
+      // Snapshot current tasks for rollback
+      const previousTasks = queryClient.getQueryData<Task[]>([
+        'tasks',
+        boardId,
+      ]);
+
+      // Optimistically remove the task from cache immediately
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (oldTasks: Task[] | undefined) => {
+          if (!oldTasks) return oldTasks;
+          return oldTasks.filter((task) => task.id !== deletingTaskId);
+        }
+      );
+
+      return { previousTasks };
+    },
+    onSuccess: async () => {
+      // Don't invalidate - optimistic update already removed the task
+      // Realtime will handle sync if needed
+      toast.success('Task moved to trash');
       onOpenChange(false);
       onSuccess();
       onClose();
-    } catch (e: any) {
-      toast({
-        title: 'Failed to delete task',
-        description: e.message || 'Please try again',
-        variant: 'destructive',
-      });
-    }
+    },
+    onError: (error: Error, _, context) => {
+      // Rollback optimistic update on error
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      }
+      toast.error(error.message || 'Failed to delete task. Please try again.');
+    },
+  });
+
+  const handleDelete = async () => {
+    if (!taskId) return;
+    deleteTaskMutation.mutate(taskId);
   };
 
   return (
@@ -82,16 +118,21 @@ export function TaskDeleteDialog({
           </div>
         </div>
         <div className="flex justify-end gap-2 pt-2">
-          <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onOpenChange(false)}
+            disabled={deleteTaskMutation.isPending}
+          >
             Cancel
           </Button>
           <Button
             variant="destructive"
             size="sm"
-            disabled={isLoading}
+            disabled={isLoading || deleteTaskMutation.isPending}
             onClick={handleDelete}
           >
-            Delete
+            {deleteTaskMutation.isPending ? 'Deleting...' : 'Move to Trash'}
           </Button>
         </div>
       </DialogContent>

@@ -366,13 +366,15 @@ export function Structure({
 
       if (link.children && link.children.length > 1) {
         const filteredChildren = getFilteredLinks(link.children);
-        if (filteredChildren.length === 0) {
+        // Count non-null items to determine if we have actual content
+        const hasContent = filteredChildren.some((child) => child !== null);
+        if (!hasContent) {
           return [];
         }
         return [
           {
             ...link,
-            children: filteredChildren.filter(Boolean) as NavLink[],
+            children: filteredChildren, // Preserve nulls for separators
           },
         ];
       }

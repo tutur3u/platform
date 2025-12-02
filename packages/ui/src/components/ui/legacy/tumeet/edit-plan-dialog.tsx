@@ -1,5 +1,6 @@
 'use client';
 
+import { deletePlan, updatePlan } from '@tuturuuu/apis/tumeet/actions';
 import { Pencil } from '@tuturuuu/icons';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import {
@@ -190,6 +191,14 @@ export default function EditPlanDialog({
     plan.end_time !== watchedEndTime;
 
   const handleSubmit = async () => {
+    if (!plan.id) {
+      toast({
+        title: t('meet-together-plan-details.something_went_wrong'),
+        description: 'Plan ID is missing',
+      });
+      return;
+    }
+
     setUpdating(true);
 
     const data = form.getValues();
@@ -225,12 +234,9 @@ export default function EditPlanDialog({
       return;
     }
 
-    const res = await fetch(`/api/meet-together/plans/${plan.id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    });
+    const result = await updatePlan(plan.id, data);
 
-    if (res.ok) {
+    if (result.data) {
       onSuccess?.();
       router.refresh();
       setUpdating(false);
@@ -239,26 +245,34 @@ export default function EditPlanDialog({
       setUpdating(false);
       toast({
         title: t('meet-together-plan-details.something_went_wrong'),
-        description: t('meet-together-plan-details.cant_update_plan_right_now'),
+        description:
+          result.error ||
+          t('meet-together-plan-details.cant_update_plan_right_now'),
       });
     }
   };
 
   const handleDelete = async () => {
+    if (!plan.id) {
+      toast({
+        title: t('meet-together-plan-details.something_went_wrong'),
+        description: 'Plan ID is missing',
+      });
+      return;
+    }
+
     setDeleting(true);
     try {
-      const res = await fetch(`/api/meet-together/plans/${plan.id}`, {
-        method: 'DELETE',
-      });
+      const result = await deletePlan(plan.id);
 
-      if (res.ok) {
+      if (result.data) {
         router.push('/meet-together');
       } else {
         toast({
           title: t('meet-together-plan-details.something_went_wrong'),
-          description: t(
-            'meet-together-plan-details.cant_delete_plan_right_now'
-          ),
+          description:
+            result.error ||
+            t('meet-together-plan-details.cant_delete_plan_right_now'),
         });
       }
     } finally {

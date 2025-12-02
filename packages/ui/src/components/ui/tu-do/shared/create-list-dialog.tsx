@@ -12,6 +12,7 @@ import {
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -161,9 +162,20 @@ export function CreateListDialog({
     onSuccess: async (data) => {
       toast.success('List created successfully');
 
-      // Invalidate queries first
+      // Use setQueryData for immediate UI update without flicker
+      // Realtime subscription handles cross-user sync
+      queryClient.setQueryData(
+        ['task_lists', boardId],
+        (old: TaskList[] | undefined) => {
+          if (!old) return [data as TaskList];
+          // Check if already exists (from realtime)
+          if (old.some((l) => l.id === data.id)) return old;
+          return [...old, data as TaskList];
+        }
+      );
+
+      // Invalidate sidebar board lists (acceptable - not causing main view flicker)
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] }),
         queryClient.invalidateQueries({ queryKey: ['boards-with-lists'] }),
         wsId
           ? queryClient.invalidateQueries({

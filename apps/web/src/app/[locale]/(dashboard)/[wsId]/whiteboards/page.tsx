@@ -1,10 +1,10 @@
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { PlusIcon } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { notFound } from 'next/navigation';
 import WhiteboardsList, { type Whiteboard } from './client';
 import CreateWhiteboardDialog from './createWhiteboardDialog';
 
@@ -15,6 +15,48 @@ export const metadata: Metadata = {
 
 interface WhiteboardsPageProps {
   params: Promise<{ wsId: string }>;
+}
+
+export default async function WhiteboardsPage({
+  params,
+}: WhiteboardsPageProps) {
+  const t = await getTranslations('common');
+
+  return (
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+        const whiteboards = await getWhiteboards(wsId);
+
+        return (
+          <div className="container mx-auto space-y-6 p-6">
+            {/* Header */}
+            <div className="flex justify-between">
+              <div className="space-y-2">
+                <h1 className="font-bold text-3xl tracking-tight">
+                  {t('whiteboards')}
+                </h1>
+                <p className="text-muted-foreground">
+                  {t('whiteboards_description')}
+                </p>
+              </div>
+              <CreateWhiteboardDialog
+                wsId={wsId}
+                trigger={
+                  <Button className="gap-2">
+                    <PlusIcon className="h-4 w-4" />
+                    {t('new_whiteboard')}
+                  </Button>
+                }
+              />
+            </div>
+
+            <Separator />
+            <WhiteboardsList wsId={wsId} whiteboards={whiteboards} />
+          </div>
+        );
+      }}
+    </WorkspaceWrapper>
+  );
 }
 
 async function getWhiteboards(wsId: string): Promise<Whiteboard[]> {
@@ -41,49 +83,6 @@ async function getWhiteboards(wsId: string): Promise<Whiteboard[]> {
     description: whiteboard.description || undefined,
     dateCreated: new Date(whiteboard.created_at),
     lastModified: new Date(whiteboard.updated_at),
-    thumbnail_url: whiteboard.thumbnail_url || undefined,
-    creatorName: whiteboard.creator.display_name || 'Unknown User',
+    creatorName: whiteboard.creator?.display_name || 'Unknown User',
   }));
-}
-
-export default async function WhiteboardsPage({
-  params,
-}: WhiteboardsPageProps) {
-  const { wsId } = await params;
-  const t = await getTranslations('common');
-
-  try {
-    const whiteboards = await getWhiteboards(wsId);
-
-    return (
-      <div className="container mx-auto space-y-6 p-6">
-        {/* Header */}
-        <div className="flex justify-between">
-          <div className="space-y-2">
-            <h1 className="font-bold text-3xl tracking-tight">
-              {t('whiteboards')}
-            </h1>
-            <p className="text-muted-foreground">
-              {t('whiteboards_description')}
-            </p>
-          </div>
-          <CreateWhiteboardDialog
-            wsId={wsId}
-            trigger={
-              <Button className="gap-2">
-                <PlusIcon className="h-4 w-4" />
-                {t('new_whiteboard')}
-              </Button>
-            }
-          />
-        </div>
-
-        <Separator />
-        <WhiteboardsList wsId={wsId} whiteboards={whiteboards} />
-      </div>
-    );
-  } catch (error) {
-    console.error('Failed to load whiteboards:', error);
-    return notFound();
-  }
 }

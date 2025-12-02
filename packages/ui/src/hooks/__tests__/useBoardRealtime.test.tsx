@@ -32,7 +32,14 @@ describe('useBoardRealtime', () => {
     name: 'Test Task',
     list_id: 'list-1',
     created_at: '2025-01-01',
+  } as Task;
+
+  // Expected task after INSERT with empty relation arrays added
+  const mockTaskWithEmptyRelations: Task = {
+    ...mockTask,
+    assignees: [],
     labels: [],
+    projects: [],
   } as Task;
 
   const mockList: TaskList = {
@@ -78,6 +85,17 @@ describe('useBoardRealtime', () => {
       from: vi.fn(() => ({
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
+            single: vi.fn(() =>
+              Promise.resolve({
+                data: {
+                  id: 'task-1',
+                  assignees: [],
+                  labels: [],
+                  projects: [],
+                },
+                error: null,
+              })
+            ),
             data: [],
             error: null,
           })),
@@ -162,7 +180,7 @@ describe('useBoardRealtime', () => {
       );
     });
 
-    it('should invalidate queries when task list changes', async () => {
+    it('should not invalidate queries when task list changes (realtime sync engine handles updates)', async () => {
       const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
       renderHook(
@@ -183,12 +201,8 @@ describe('useBoardRealtime', () => {
         });
       });
 
-      expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: ['task_lists', 'board-1'],
-      });
-      expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: ['tasks', 'board-1'],
-      });
+      // Realtime sync engine handles updates directly, no query invalidation needed
+      expect(invalidateSpy).not.toHaveBeenCalled();
     });
 
     it('should call onListChange callback when provided', async () => {
@@ -250,9 +264,10 @@ describe('useBoardRealtime', () => {
 
       const taskListenerCalls = vi
         .mocked(mockChannel.on)
-        .mock.calls.filter(
-          (call) => call[1] && (call[1] as any).table === 'tasks'
-        );
+        .mock.calls.filter((call: unknown[]) => {
+          const config = call[1] as any;
+          return config && config.table === 'tasks';
+        });
       expect(taskListenerCalls).toHaveLength(0);
     });
 
@@ -282,7 +297,8 @@ describe('useBoardRealtime', () => {
         'board-1',
       ]);
       expect(cachedTasks).toHaveLength(1);
-      expect(cachedTasks?.[0]).toEqual(mockTask);
+      // INSERT should add task with empty relation arrays
+      expect(cachedTasks?.[0]).toEqual(mockTaskWithEmptyRelations);
     });
 
     it('should handle UPDATE event by updating task in cache', async () => {
@@ -390,8 +406,14 @@ describe('useBoardRealtime', () => {
       );
     });
 
-    it('should mark query as stale without refetch when assignee changes', async () => {
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    it('should update task relations in cache when assignee changes', async () => {
+      const setQueryDataSpy = vi.spyOn(queryClient, 'setQueryData');
+
+      // Set up initial task in cache
+      queryClient.setQueryData(
+        ['tasks', 'board-1'],
+        [mockTaskWithEmptyRelations]
+      );
 
       renderHook(
         () =>
@@ -413,10 +435,8 @@ describe('useBoardRealtime', () => {
         });
       });
 
-      expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: ['tasks', 'board-1'],
-        refetchType: 'none',
-      });
+      // Should use setQueryData to update cache directly (via fetchAndUpdateTaskRelations)
+      expect(setQueryDataSpy).toHaveBeenCalled();
     });
 
     it('should only process changes for tasks in the current board', async () => {
@@ -468,8 +488,14 @@ describe('useBoardRealtime', () => {
       );
     });
 
-    it('should mark query as stale without refetch when label changes', async () => {
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    it('should update task relations in cache when label changes', async () => {
+      const setQueryDataSpy = vi.spyOn(queryClient, 'setQueryData');
+
+      // Set up initial task in cache
+      queryClient.setQueryData(
+        ['tasks', 'board-1'],
+        [mockTaskWithEmptyRelations]
+      );
 
       renderHook(
         () =>
@@ -491,10 +517,8 @@ describe('useBoardRealtime', () => {
         });
       });
 
-      expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: ['tasks', 'board-1'],
-        refetchType: 'none',
-      });
+      // Should use setQueryData to update cache directly (via fetchAndUpdateTaskRelations)
+      expect(setQueryDataSpy).toHaveBeenCalled();
     });
 
     it('should only process changes for tasks in the current board', async () => {
@@ -546,8 +570,14 @@ describe('useBoardRealtime', () => {
       );
     });
 
-    it('should mark query as stale without refetch when project assignment changes', async () => {
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    it('should update task relations in cache when project assignment changes', async () => {
+      const setQueryDataSpy = vi.spyOn(queryClient, 'setQueryData');
+
+      // Set up initial task in cache
+      queryClient.setQueryData(
+        ['tasks', 'board-1'],
+        [mockTaskWithEmptyRelations]
+      );
 
       renderHook(
         () =>
@@ -569,10 +599,8 @@ describe('useBoardRealtime', () => {
         });
       });
 
-      expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: ['tasks', 'board-1'],
-        refetchType: 'none',
-      });
+      // Should use setQueryData to update cache directly (via fetchAndUpdateTaskRelations)
+      expect(setQueryDataSpy).toHaveBeenCalled();
     });
 
     it('should only process changes for tasks in the current board', async () => {
@@ -603,9 +631,15 @@ describe('useBoardRealtime', () => {
     });
   });
 
-  describe('refetchType: none semantics', () => {
-    it('should verify that invalidateQueries is called with refetchType: none for task relations', async () => {
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+  describe('direct cache update semantics', () => {
+    it('should use setQueryData to update task relations directly instead of invalidating', async () => {
+      const setQueryDataSpy = vi.spyOn(queryClient, 'setQueryData');
+
+      // Set up initial task in cache
+      queryClient.setQueryData(
+        ['tasks', 'board-1'],
+        [mockTaskWithEmptyRelations]
+      );
 
       renderHook(
         () =>
@@ -625,14 +659,14 @@ describe('useBoardRealtime', () => {
           new: { task_id: 'task-1', user_id: 'user-1' },
           old: null,
         });
+        // Wait for async fetchAndUpdateTaskRelations to complete
+        await new Promise((resolve) => setTimeout(resolve, 10));
       });
 
-      expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: ['tasks', 'board-1'],
-        refetchType: 'none',
-      });
+      // Should use setQueryData, not invalidateQueries
+      expect(setQueryDataSpy).toHaveBeenCalled();
 
-      invalidateSpy.mockClear();
+      setQueryDataSpy.mockClear();
 
       // Test labels
       const labelListener = channelListeners.get(
@@ -644,14 +678,14 @@ describe('useBoardRealtime', () => {
           new: { task_id: 'task-1', label_id: 'label-1' },
           old: null,
         });
+        // Wait for async fetchAndUpdateTaskRelations to complete
+        await new Promise((resolve) => setTimeout(resolve, 10));
       });
 
-      expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: ['tasks', 'board-1'],
-        refetchType: 'none',
-      });
+      // Should use setQueryData, not invalidateQueries
+      expect(setQueryDataSpy).toHaveBeenCalled();
 
-      invalidateSpy.mockClear();
+      setQueryDataSpy.mockClear();
 
       // Test project tasks
       const projectListener = channelListeners.get(
@@ -663,17 +697,20 @@ describe('useBoardRealtime', () => {
           new: { task_id: 'task-1', project_id: 'project-1' },
           old: null,
         });
+        // Wait for async fetchAndUpdateTaskRelations to complete
+        await new Promise((resolve) => setTimeout(resolve, 10));
       });
 
-      expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: ['tasks', 'board-1'],
-        refetchType: 'none',
-      });
+      // Should use setQueryData, not invalidateQueries
+      expect(setQueryDataSpy).toHaveBeenCalled();
     });
 
-    it('should not trigger immediate refetch when marking as stale', async () => {
-      queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
-      const fetchFn = vi.fn().mockResolvedValue([mockTask]);
+    it('should not trigger immediate refetch when updating cache directly', async () => {
+      queryClient.setQueryData(
+        ['tasks', 'board-1'],
+        [mockTaskWithEmptyRelations]
+      );
+      const fetchFn = vi.fn().mockResolvedValue([mockTaskWithEmptyRelations]);
 
       // Register a query with a fetch function
       await queryClient.prefetchQuery({
@@ -706,7 +743,7 @@ describe('useBoardRealtime', () => {
       // Wait a bit to ensure no refetch happens
       await new Promise((resolve) => setTimeout(resolve, 50));
 
-      // Verify fetch was NOT called (refetchType: 'none' prevents immediate refetch)
+      // Verify fetch was NOT called (direct cache update prevents unnecessary refetch)
       expect(fetchFn).not.toHaveBeenCalled();
     });
   });
@@ -754,6 +791,263 @@ describe('useBoardRealtime', () => {
       expect(mockChannel.on.mock.calls.length).toBeGreaterThan(
         initialCallCount
       );
+    });
+  });
+
+  describe('workspace_task_labels listener', () => {
+    it('should set up listener for workspace_task_labels table', () => {
+      renderHook(
+        () =>
+          useBoardRealtime('board-1', ['task-1'], ['list-1'], {
+            enabled: true,
+          }),
+        { wrapper }
+      );
+
+      expect(mockChannel.on).toHaveBeenCalledWith(
+        'postgres_changes',
+        expect.objectContaining({
+          event: '*',
+          schema: 'public',
+          table: 'workspace_task_labels',
+        }),
+        expect.any(Function)
+      );
+    });
+
+    it('should invalidate queries when workspace label affects board tasks', async () => {
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+      // Mock task_labels query to return linked tasks
+      mockCreateClient.mockReturnValue({
+        channel: vi.fn(() => mockChannel),
+        removeChannel: mockRemoveChannel,
+        from: vi.fn((table: string) => {
+          if (table === 'task_labels') {
+            return {
+              select: vi.fn(() => ({
+                eq: vi.fn(() => ({
+                  single: vi.fn(),
+                  data: [{ task_id: 'task-1' }],
+                  error: null,
+                })),
+              })),
+            };
+          }
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                single: vi.fn(() =>
+                  Promise.resolve({
+                    data: {
+                      id: 'task-1',
+                      assignees: [],
+                      labels: [],
+                      projects: [],
+                    },
+                    error: null,
+                  })
+                ),
+                data: [],
+                error: null,
+              })),
+            })),
+          };
+        }),
+      });
+
+      renderHook(
+        () =>
+          useBoardRealtime('board-1', ['task-1'], ['list-1'], {
+            enabled: true,
+          }),
+        { wrapper }
+      );
+
+      const labelListener = channelListeners.get(
+        'postgres_changes:workspace_task_labels'
+      );
+
+      await act(async () => {
+        await labelListener({
+          eventType: 'UPDATE',
+          new: { id: 'label-1', name: 'Updated Label' },
+          old: { id: 'label-1', name: 'Old Label' },
+        });
+      });
+
+      // Should invalidate tasks query when workspace label affects board tasks
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['tasks', 'board-1'],
+      });
+    });
+
+    it('should not invalidate queries when workspace label does not affect board tasks', async () => {
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+      // Mock task_labels query to return no linked tasks
+      mockCreateClient.mockReturnValue({
+        channel: vi.fn(() => mockChannel),
+        removeChannel: mockRemoveChannel,
+        from: vi.fn((table: string) => {
+          if (table === 'task_labels') {
+            return {
+              select: vi.fn(() => ({
+                eq: vi.fn(() => ({
+                  single: vi.fn(),
+                  data: [],
+                  error: null,
+                })),
+              })),
+            };
+          }
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                single: vi.fn(() =>
+                  Promise.resolve({
+                    data: {
+                      id: 'task-1',
+                      assignees: [],
+                      labels: [],
+                      projects: [],
+                    },
+                    error: null,
+                  })
+                ),
+                data: [],
+                error: null,
+              })),
+            })),
+          };
+        }),
+      });
+
+      renderHook(
+        () =>
+          useBoardRealtime('board-1', ['task-1'], ['list-1'], {
+            enabled: true,
+          }),
+        { wrapper }
+      );
+
+      const labelListener = channelListeners.get(
+        'postgres_changes:workspace_task_labels'
+      );
+
+      invalidateSpy.mockClear();
+
+      await act(async () => {
+        await labelListener({
+          eventType: 'UPDATE',
+          new: { id: 'label-2', name: 'Unrelated Label' },
+          old: { id: 'label-2', name: 'Old Unrelated' },
+        });
+      });
+
+      // Should not invalidate when no tasks in board use this label
+      expect(invalidateSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('UPDATE event with soft delete', () => {
+    it('should remove task from cache when deleted_at is set', async () => {
+      queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
+
+      renderHook(
+        () =>
+          useBoardRealtime('board-1', ['task-1'], ['list-1'], {
+            enabled: true,
+          }),
+        { wrapper }
+      );
+
+      const taskListener = channelListeners.get('postgres_changes:tasks');
+
+      const softDeletedTask = {
+        ...mockTask,
+        deleted_at: new Date().toISOString(),
+      };
+
+      await act(async () => {
+        await taskListener({
+          eventType: 'UPDATE',
+          new: softDeletedTask,
+          old: mockTask,
+        });
+      });
+
+      const cachedTasks = queryClient.getQueryData<Task[]>([
+        'tasks',
+        'board-1',
+      ]);
+      expect(cachedTasks).toHaveLength(0);
+    });
+  });
+
+  describe('INSERT event with existing task', () => {
+    it('should not duplicate task if already exists in cache', async () => {
+      queryClient.setQueryData(
+        ['tasks', 'board-1'],
+        [mockTaskWithEmptyRelations]
+      );
+
+      renderHook(
+        () =>
+          useBoardRealtime('board-1', ['task-1'], ['list-1'], {
+            enabled: true,
+          }),
+        { wrapper }
+      );
+
+      const taskListener = channelListeners.get('postgres_changes:tasks');
+
+      await act(async () => {
+        await taskListener({
+          eventType: 'INSERT',
+          new: mockTask,
+          old: null,
+        });
+      });
+
+      const cachedTasks = queryClient.getQueryData<Task[]>([
+        'tasks',
+        'board-1',
+      ]);
+      expect(cachedTasks).toHaveLength(1);
+    });
+  });
+
+  describe('INSERT event with delayed relation fetch', () => {
+    it('should add task to cache immediately on INSERT', async () => {
+      queryClient.setQueryData(['tasks', 'board-1'], []);
+
+      renderHook(
+        () =>
+          useBoardRealtime('board-1', ['task-1'], ['list-1'], {
+            enabled: true,
+          }),
+        { wrapper }
+      );
+
+      const taskListener = channelListeners.get('postgres_changes:tasks');
+
+      await act(async () => {
+        await taskListener({
+          eventType: 'INSERT',
+          new: mockTask,
+          old: null,
+        });
+      });
+
+      // Task should be added to cache with empty relations
+      const cachedTasks = queryClient.getQueryData<Task[]>([
+        'tasks',
+        'board-1',
+      ]);
+      expect(cachedTasks).toHaveLength(1);
+      expect(cachedTasks?.[0]).toHaveProperty('assignees');
+      expect(cachedTasks?.[0]?.assignees).toEqual([]);
     });
   });
 });

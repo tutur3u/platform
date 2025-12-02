@@ -19,6 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { useTranslations } from 'next-intl';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -93,6 +94,10 @@ export default function SessionsTable({
   onExportCSV,
   onExportExcel,
 }: SessionsTableProps) {
+  const t = useTranslations('time-tracker.management.sessions');
+  const tPeriod = useTranslations('time-tracker.management.period');
+  const tStatus = useTranslations('time-tracker.management.status');
+
   // Helper functions
   const formatDuration = (seconds: number) => {
     const dur = dayjs.duration(seconds, 'seconds');
@@ -116,12 +121,13 @@ export default function SessionsTable({
       const periodDate = dayjs(periodStr);
       const daysDiff = now.diff(periodDate, 'days');
 
-      if (daysDiff === 0) return 'Today';
-      if (daysDiff === 1) return 'Yesterday';
-      if (daysDiff === -1) return 'Tomorrow';
-      if (daysDiff > 0 && daysDiff <= 7) return `${daysDiff} days ago`;
+      if (daysDiff === 0) return tPeriod('today');
+      if (daysDiff === 1) return tPeriod('yesterday');
+      if (daysDiff === -1) return tPeriod('tomorrow');
+      if (daysDiff > 0 && daysDiff <= 7)
+        return tPeriod('daysAgo', { count: daysDiff });
       if (daysDiff < 0 && daysDiff >= -7)
-        return `In ${Math.abs(daysDiff)} days`;
+        return tPeriod('inDays', { count: Math.abs(daysDiff) });
 
       return periodDate.format('DD MMM YYYY');
     } else if (periodType === 'week') {
@@ -132,7 +138,10 @@ export default function SessionsTable({
         now.isAfter(weekStart.subtract(1, 'day')) &&
         now.isBefore(weekEnd.add(1, 'day'))
       ) {
-        return `This Week (${weekStart.format('DD MMM')} - ${weekEnd.format('DD MMM')})`;
+        return tPeriod('thisWeek', {
+          start: weekStart.format('DD MMM'),
+          end: weekEnd.format('DD MMM'),
+        });
       }
 
       const weeksDiff = now
@@ -140,23 +149,29 @@ export default function SessionsTable({
         .add(1, 'day')
         .diff(weekStart, 'weeks');
       if (weeksDiff === 1)
-        return `Last Week (${weekStart.format('DD MMM')} - ${weekEnd.format('DD MMM')})`;
+        return tPeriod('lastWeek', {
+          start: weekStart.format('DD MMM'),
+          end: weekEnd.format('DD MMM'),
+        });
       if (weeksDiff === -1)
-        return `Next Week (${weekStart.format('DD MMM')} - ${weekEnd.format('DD MMM')})`;
+        return tPeriod('nextWeek', {
+          start: weekStart.format('DD MMM'),
+          end: weekEnd.format('DD MMM'),
+        });
 
       return `${weekStart.format('DD MMM')} - ${weekEnd.format('DD MMM YYYY')}`;
     } else {
       const monthDate = dayjs(periodStr + '-01');
 
       if (now.isSame(monthDate, 'month') && now.isSame(monthDate, 'year')) {
-        return `This Month (${monthDate.format('MMMM YYYY')})`;
+        return tPeriod('thisMonth', { month: monthDate.format('MMMM YYYY') });
       }
 
       const monthsDiff = now.startOf('month').diff(monthDate, 'months');
       if (monthsDiff === 1)
-        return `Last Month (${monthDate.format('MMMM YYYY')})`;
+        return tPeriod('lastMonth', { month: monthDate.format('MMMM YYYY') });
       if (monthsDiff === -1)
-        return `Next Month (${monthDate.format('MMMM YYYY')})`;
+        return tPeriod('nextMonth', { month: monthDate.format('MMMM YYYY') });
 
       return monthDate.format('MMMM YYYY');
     }
@@ -202,27 +217,29 @@ export default function SessionsTable({
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-3">
-                Time Tracking Sessions
+                {t('title')}
                 <Badge
                   variant="secondary"
                   className="bg-dynamic-blue/10 text-dynamic-blue"
                 >
                   {sortedSessions.length}{' '}
                   {period === 'day'
-                    ? 'days'
+                    ? t('days')
                     : period === 'week'
-                      ? 'weeks'
-                      : 'months'}
+                      ? t('weeks')
+                      : t('months')}
                 </Badge>
               </div>
               {pagination && (
                 <p className="font-normal text-dynamic-muted text-sm">
-                  Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
-                  {Math.min(
-                    pagination.page * pagination.limit,
-                    pagination.total
-                  )}{' '}
-                  of {pagination.total} results
+                  {t('showing', {
+                    start: (pagination.page - 1) * pagination.limit + 1,
+                    end: Math.min(
+                      pagination.page * pagination.limit,
+                      pagination.total
+                    ),
+                    total: pagination.total,
+                  })}
                 </p>
               )}
             </div>
@@ -235,7 +252,7 @@ export default function SessionsTable({
                 className="border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue transition-all hover:bg-dynamic-blue/20"
               >
                 <Filter className="mr-1 size-3" />
-                Filtered
+                {t('filtered')}
               </Badge>
             )}
 
@@ -250,7 +267,7 @@ export default function SessionsTable({
                     className="border-dynamic-green/20 text-dynamic-green transition-all duration-200 hover:border-dynamic-green/30 hover:bg-dynamic-green/10"
                   >
                     <Download className="mr-2 size-4" />
-                    Export
+                    {t('export')}
                     <ChevronDown className="ml-2 size-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -261,7 +278,7 @@ export default function SessionsTable({
                       className="cursor-pointer transition-colors hover:bg-dynamic-green/10"
                     >
                       <FileSpreadsheet className="mr-2 size-4 text-dynamic-green" />
-                      Export to Excel
+                      {t('exportExcel')}
                     </DropdownMenuItem>
                   )}
                   {onExportCSV && (
@@ -270,7 +287,7 @@ export default function SessionsTable({
                       className="cursor-pointer transition-colors hover:bg-dynamic-blue/10"
                     >
                       <FileSpreadsheet className="mr-2 size-4 text-dynamic-blue" />
-                      Export to CSV
+                      {t('exportCSV')}
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
@@ -284,7 +301,7 @@ export default function SessionsTable({
         {isLoading && sortedSessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
             <Loader2 className="mb-4 size-8 animate-spin text-dynamic-muted" />
-            <p className="text-dynamic-muted">Loading sessions...</p>
+            <p className="text-dynamic-muted">{t('loadingSessions')}</p>
           </div>
         ) : sortedSessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -298,14 +315,12 @@ export default function SessionsTable({
 
             <div className="space-y-3">
               <h3 className="font-semibold text-base text-dynamic-foreground">
-                {hasActiveFilters
-                  ? 'No matching sessions found'
-                  : 'No time tracking sessions'}
+                {hasActiveFilters ? t('noMatchingSessions') : t('noSessions')}
               </h3>
               <p className="mx-auto max-w-md text-dynamic-muted text-sm">
                 {hasActiveFilters
-                  ? "We couldn't find any sessions matching your current filters. Try adjusting your search terms or date range to see more results."
-                  : 'No time tracking sessions have been recorded yet in this workspace. Sessions will appear here once team members start tracking their time.'}
+                  ? t('noMatchingSessionsDescription')
+                  : t('noSessionsDescription')}
               </p>
             </div>
 
@@ -318,7 +333,7 @@ export default function SessionsTable({
                   className="border-dynamic-blue/20 text-dynamic-blue transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-dynamic-blue/10"
                 >
                   <Filter className="mr-2 size-4" />
-                  Clear all filters
+                  {t('clearAllFilters')}
                 </Button>
               </div>
             )}
@@ -328,18 +343,18 @@ export default function SessionsTable({
             {/* Header Row */}
             <div className="grid grid-cols-12 gap-4 rounded-lg bg-dynamic-muted/5 px-4 py-3 font-medium text-dynamic-muted text-sm">
               <div className="col-span-3">
-                User &{' '}
+                {t('userAnd')}{' '}
                 {period === 'day'
-                  ? 'Date'
+                  ? t('date')
                   : period === 'week'
-                    ? 'Week'
-                    : 'Month'}
+                    ? t('week')
+                    : t('month')}
               </div>
-              <div className="col-span-2">Sessions</div>
-              <div className="col-span-2">Duration</div>
-              <div className="col-span-2">Time Range</div>
-              <div className="col-span-2">Status</div>
-              <div className="col-span-1">Actions</div>
+              <div className="col-span-2">{t('sessionsHeader')}</div>
+              <div className="col-span-2">{t('duration')}</div>
+              <div className="col-span-2">{t('timeRange')}</div>
+              <div className="col-span-2">{t('statusHeader')}</div>
+              <div className="col-span-1">{t('actions')}</div>
             </div>
 
             {/* Session Rows */}
@@ -392,7 +407,9 @@ export default function SessionsTable({
                             {session.sessions.length}
                           </span>
                           <span className="text-dynamic-muted text-xs">
-                            session{session.sessions.length !== 1 ? 's' : ''}
+                            {session.sessions.length !== 1
+                              ? t('sessionPlural')
+                              : t('sessionSingular')}
                           </span>
                         </div>
                         <div className="flex flex-wrap gap-1">
@@ -461,7 +478,7 @@ export default function SessionsTable({
                           </span>
                         </div>
                         <p className="text-dynamic-muted text-xs">
-                          Avg:{' '}
+                          {t('avg')}{' '}
                           {formatDuration(
                             session.totalDuration / session.sessions.length
                           )}
@@ -500,7 +517,9 @@ export default function SessionsTable({
                         className={`${getStatusColor(session.status)} text-xs`}
                       >
                         {getStatusIcon(session.status)}
-                        <span className="capitalize">{session.status}</span>
+                        <span className="capitalize">
+                          {tStatus(session.status)}
+                        </span>
                       </Badge>
                     </div>
 
@@ -528,7 +547,7 @@ export default function SessionsTable({
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
                 <span className="text-dynamic-muted text-sm">
-                  Items per page:
+                  {t('itemsPerPage')}
                 </span>
                 <Select
                   value={pagination.limit.toString()}
@@ -556,12 +575,15 @@ export default function SessionsTable({
                   className="border-dynamic-border/20 transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-dynamic-blue/10 disabled:opacity-50"
                 >
                   <ChevronLeft className="size-4" />
-                  Previous
+                  {t('previous')}
                 </Button>
 
                 <div className="flex items-center gap-2 rounded-lg bg-dynamic-background px-3 py-1.5">
                   <span className="text-dynamic-muted text-sm">
-                    Page {pagination.page} of {pagination.pages}
+                    {t('pageOf', {
+                      page: pagination.page,
+                      pages: pagination.pages,
+                    })}
                   </span>
                 </div>
 
@@ -572,7 +594,7 @@ export default function SessionsTable({
                   disabled={pagination.page >= pagination.pages || isLoading}
                   className="border-dynamic-border/20 transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-dynamic-blue/10 disabled:opacity-50"
                 >
-                  Next
+                  {t('next')}
                   <ChevronRight className="size-4" />
                 </Button>
               </div>

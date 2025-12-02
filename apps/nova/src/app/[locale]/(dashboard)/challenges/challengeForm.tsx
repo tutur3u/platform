@@ -595,8 +595,8 @@ export default function ChallengeForm({
                                   >
                                     {isLoadingAdmins
                                       ? 'Loading admins...'
-                                      : field.value?.length > 0
-                                        ? `${field.value.length} admin${field.value.length > 1 ? 's' : ''} selected`
+                                      : (field.value?.length ?? 0) > 0
+                                        ? `${field.value!.length} admin${field.value!.length > 1 ? 's' : ''} selected`
                                         : 'Select administrators'}
                                     <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                   </Button>
@@ -638,7 +638,7 @@ export default function ChallengeForm({
                                               value={adminEmail}
                                               onSelect={() => {
                                                 const currentAdmins = [
-                                                  ...field.value,
+                                                  ...(field.value ?? []),
                                                 ];
                                                 const adminIndex =
                                                   currentAdmins.indexOf(
@@ -684,9 +684,9 @@ export default function ChallengeForm({
                               </PopoverContent>
                             </Popover>
 
-                            {field.value?.length > 0 && (
+                            {(field.value?.length ?? 0) > 0 && (
                               <div className="mt-2 flex flex-wrap gap-2">
-                                {field.value.map((adminEmail, index) => (
+                                {field.value!.map((adminEmail, index) => (
                                   <Badge
                                     key={index}
                                     variant="secondary"
@@ -774,7 +774,7 @@ export default function ChallengeForm({
                               </FormDescription>
                               <div className="space-y-2">
                                 <div className="flex flex-wrap gap-2">
-                                  {field.value.map((email, index) => (
+                                  {(field.value ?? []).map((email, index) => (
                                     <Badge
                                       key={index}
                                       variant="secondary"
@@ -938,7 +938,7 @@ export default function ChallengeForm({
                           </FormLabel>
                           <FormControl>
                             <DateTimePicker
-                              value={field.value}
+                              value={field.value ?? null}
                               onChange={field.onChange}
                             />
                           </FormControl>
@@ -958,7 +958,7 @@ export default function ChallengeForm({
                           <FormLabel>{t('schedule.open-at')}</FormLabel>
                           <FormControl>
                             <DateTimePicker
-                              value={field.value}
+                              value={field.value ?? null}
                               onChange={field.onChange}
                             />
                           </FormControl>
@@ -978,7 +978,7 @@ export default function ChallengeForm({
                           <FormLabel>{t('schedule.end-at')}</FormLabel>
                           <FormControl>
                             <DateTimePicker
-                              value={field.value}
+                              value={field.value ?? null}
                               onChange={field.onChange}
                             />
                           </FormControl>

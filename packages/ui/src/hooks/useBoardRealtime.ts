@@ -49,11 +49,94 @@ export function useBoardRealtime(
     const channel = supabase.channel(`board-realtime-${boardId}`);
 
     /**
-     * Helper function to set up a realtime listener for task-related tables.
-     * Marks queries as stale without immediate refetch to avoid conflicts with optimistic updates.
-     * Changes will only appear on the next manual/background refetch (focus, remount, manual).
+     * Helper function to fetch updated relations for a specific task
+     * and update just that task in the cache (avoiding full refetch flicker)
      */
-    const setupTaskRelationListener = (tableName: string, comment: string) => {
+    const fetchAndUpdateTaskRelations = async (taskId: string) => {
+      try {
+        // Fetch updated relations for this specific task
+        const { data: taskData, error } = await supabase
+          .from('tasks')
+          .select(
+            `
+            id,
+            assignees:task_assignees(
+              user:users(
+                id,
+                display_name,
+                avatar_url
+              )
+            ),
+            labels:task_labels(
+              label:workspace_task_labels(
+                id,
+                name,
+                color,
+                created_at
+              )
+            ),
+            projects:task_project_tasks(
+              project:task_projects(
+                id,
+                name,
+                status
+              )
+            )
+          `
+          )
+          .eq('id', taskId)
+          .single();
+
+        if (error || !taskData) {
+          if (DEV_MODE) {
+            console.error('Failed to fetch task relations:', error);
+          }
+          return;
+        }
+
+        // Transform the nested structure to flat arrays
+        const transformedRelations = {
+          assignees:
+            taskData.assignees
+              ?.map((a: { user: unknown }) => a.user)
+              .filter(Boolean) || [],
+          labels:
+            taskData.labels
+              ?.map((l: { label: unknown }) => l.label)
+              .filter(Boolean) || [],
+          projects:
+            taskData.projects
+              ?.map((p: { project: unknown }) => p.project)
+              .filter(Boolean) || [],
+        };
+
+        // Update just this task in the cache
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((task) => {
+              if (task.id !== taskId) return task;
+              return {
+                ...task,
+                ...transformedRelations,
+              };
+            });
+          }
+        );
+      } catch (err) {
+        if (DEV_MODE) {
+          console.error('Error updating task relations:', err);
+        }
+      }
+    };
+
+    /**
+     * Helper function to set up a realtime listener for task-related tables.
+     * When relations change (assignees, labels, projects), we fetch updated
+     * relations for just that task and merge into cache (no full refetch).
+     */
+    const setupTaskRelationListener = (tableName: string, _comment: string) => {
       channel.on(
         'postgres_changes',
         {
@@ -67,12 +150,8 @@ export function useBoardRealtime(
           const oldRecord = payload.old as { task_id?: string } | undefined;
           const taskId = newRecord?.task_id || oldRecord?.task_id;
           if (taskId && stableTaskIds.includes(taskId)) {
-            // Mark as stale without immediate refetch (refetchType: 'none' semantics).
-            // Changes will only appear on the next manual/background refetch (focus, remount, manual).
-            queryClient.invalidateQueries({
-              queryKey: ['tasks', boardId],
-              refetchType: 'none',
-            });
+            // Fetch and update just this task's relations
+            await fetchAndUpdateTaskRelations(taskId);
           }
         }
       );
@@ -93,10 +172,57 @@ export function useBoardRealtime(
           handleListChange((oldRecord || newRecord) as TaskList, eventType);
         }
 
-        queryClient.invalidateQueries({
-          queryKey: ['task_lists', boardId],
-        });
-        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+        // Handle realtime list changes with setQueryData (avoids flicker)
+        // Task changes come through the tasks listener, not here
+        switch (eventType) {
+          case 'INSERT':
+            queryClient.setQueryData(
+              ['task_lists', boardId],
+              (old: TaskList[] | undefined) => {
+                const insertedList = newRecord as TaskList;
+                if (!old) return [insertedList];
+                // Check if already exists (from optimistic update)
+                if (old.some((l) => l.id === insertedList.id)) return old;
+                return [...old, insertedList];
+              }
+            );
+            break;
+
+          case 'UPDATE':
+            queryClient.setQueryData(
+              ['task_lists', boardId],
+              (old: TaskList[] | undefined) => {
+                if (!old) return old;
+                const updatedList = newRecord as TaskList;
+                return old.map((list) =>
+                  list.id === updatedList.id
+                    ? { ...list, ...updatedList }
+                    : list
+                );
+              }
+            );
+            break;
+
+          case 'DELETE':
+            queryClient.setQueryData(
+              ['task_lists', boardId],
+              (old: TaskList[] | undefined) => {
+                if (!old) return old;
+                const deletedList = oldRecord as TaskList;
+                return old.filter((list) => list.id !== deletedList.id);
+              }
+            );
+            // Also remove tasks from deleted list
+            queryClient.setQueryData(
+              ['tasks', boardId],
+              (old: Task[] | undefined) => {
+                if (!old) return old;
+                const deletedList = oldRecord as TaskList;
+                return old.filter((task) => task.list_id !== deletedList.id);
+              }
+            );
+            break;
+        }
       }
     );
 
@@ -120,14 +246,50 @@ export function useBoardRealtime(
           // Handle realtime events with care to preserve joined data
           switch (eventType) {
             case 'INSERT':
+              // When a new task is inserted, we need to fetch its relations
+              // The raw INSERT payload only contains task columns, not joined data
               queryClient.setQueryData(
                 ['tasks', boardId],
                 (old: Task[] | undefined) => {
-                  if (!old) return [newRecord as Task];
-                  const exists = old.some((t) => t.id === newRecord.id);
-                  return exists ? old : [...old, newRecord as Task];
+                  const insertedTask = newRecord as Task;
+                  if (!old) {
+                    // Initialize with empty relations - will be populated by relation listeners
+                    return [
+                      {
+                        ...insertedTask,
+                        assignees: [],
+                        labels: [],
+                        projects: [],
+                      },
+                    ];
+                  }
+                  const exists = old.some((t) => t.id === insertedTask.id);
+                  if (exists) {
+                    // Task already exists (likely added by optimistic update with relations)
+                    // Keep the existing one which may have complete relation data
+                    return old;
+                  }
+                  // New task from realtime - add with empty relations
+                  // Relations will be updated by subsequent relation listener events
+                  return [
+                    ...old,
+                    {
+                      ...insertedTask,
+                      assignees: [],
+                      labels: [],
+                      projects: [],
+                    },
+                  ];
                 }
               );
+
+              // Fetch and update the task's relations after a small delay
+              // to allow any relation inserts to complete first
+              setTimeout(() => {
+                if (newRecord?.id) {
+                  fetchAndUpdateTaskRelations(newRecord.id as string);
+                }
+              }, 100);
               break;
 
             case 'UPDATE':
@@ -136,9 +298,16 @@ export function useBoardRealtime(
                 ['tasks', boardId],
                 (old: Task[] | undefined) => {
                   if (!old) return old;
+                  const updatedRecord = newRecord as Task;
+
+                  // Handle soft delete - if deleted_at is set, remove from cache
+                  if (updatedRecord.deleted_at) {
+                    return old.filter((task) => task.id !== updatedRecord.id);
+                  }
+
                   return old.map((task) => {
-                    if (task.id !== newRecord.id) return task;
-                    return { ...task, ...newRecord } as Task;
+                    if (task.id !== updatedRecord.id) return task;
+                    return { ...task, ...updatedRecord };
                   });
                 }
               );
@@ -158,9 +327,8 @@ export function useBoardRealtime(
       );
     }
     // Set up listeners for task-related tables using helper function
-    // NOTE: These listeners mark queries as stale without immediate refetch to avoid
-    // conflicts with optimistic updates. Changes will only appear on the next manual/
-    // background refetch (focus, remount, manual).
+    // NOTE: These listeners fetch updated relations for the specific task and merge
+    // into cache, avoiding full refetch which would cause UI flicker.
     setupTaskRelationListener(
       'task_assignees',
       'task assignees (catches all tasks including newly created ones)'

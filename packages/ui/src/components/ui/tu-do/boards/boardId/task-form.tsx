@@ -23,12 +23,23 @@ import { useEffect, useState } from 'react';
 import { TaskEstimationPicker } from '../../shared/task-estimation-picker';
 import { TaskLabelSelector } from '../../shared/task-label-selector';
 
+interface UserTaskSettings {
+  task_auto_assign_to_self: boolean;
+}
+
 interface Props {
   listId: string;
   onTaskCreated: () => void;
+  userTaskSettings?: UserTaskSettings;
+  currentUserId?: string;
 }
 
-export function TaskForm({ listId, onTaskCreated }: Props) {
+export function TaskForm({
+  listId,
+  onTaskCreated,
+  userTaskSettings,
+  currentUserId,
+}: Props) {
   const [isAdding, setIsAdding] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -131,17 +142,29 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
 
       const newTask = await createTask(supabase, listId, taskData);
 
+      // Determine final assignees
+      let finalAssignees = [...selectedAssignees];
+
       // Add assignees if any selected
       if (isPersonal) {
         await supabase.from('task_assignees').insert({
           task_id: newTask.id,
           user_id: members[0].id,
         });
+      } else if (finalAssignees.length === 0) {
+        // Auto-assign to self if enabled and no assignees selected
+        if (
+          userTaskSettings?.task_auto_assign_to_self &&
+          currentUserId &&
+          !isPersonal
+        ) {
+          finalAssignees = [currentUserId];
+        }
       }
 
-      if (selectedAssignees.length > 0) {
+      if (finalAssignees.length > 0) {
         await Promise.all(
-          selectedAssignees.map(async (userId) => {
+          finalAssignees.map(async (userId) => {
             await supabase.from('task_assignees').insert({
               task_id: newTask.id,
               user_id: userId,

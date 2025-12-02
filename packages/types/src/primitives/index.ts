@@ -1,14 +1,15 @@
 // Export all primitive types
 
-export * from './calendar-event';
 export * from './Category';
 export * from './Checkup';
 export * from './CheckupVital';
 export * from './CheckupVitalGroup';
+export * from './calendar-event';
 export * from './Diagnosis';
 export * from './EducationAccessRequest';
 export * from './Entity';
 export * from './EventParticipant';
+export * from './Habit';
 export * from './Invoice';
 export * from './MeetTogetherPlan';
 export * from './PendingInvoice';
@@ -23,9 +24,9 @@ export * from './ProductPromotion';
 export * from './ProductSupplier';
 export * from './ProductUnit';
 export * from './ProductWarehouse';
-export * from './sent-email';
 export * from './StorageObject';
 export * from './SupportedColors';
+export * from './sent-email';
 export * from './TaskBoard';
 export * from './TaskRelationship';
 export * from './Team';

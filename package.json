@@ -1,12 +1,12 @@
 {
   "name": "tutur3u",
   "devDependencies": {
-    "@biomejs/biome": "^2.3.7",
+    "@biomejs/biome": "^2.3.8",
     "@tuturuuu/typescript-config": "workspace:*",
     "@vitest/coverage-v8": "^4.0.14",
     "turbo": "^2.6.1",
     "typescript": "^5.9.3",
-    "vite": "^7.2.4",
+    "vite": "^7.2.6",
     "vitest": "^4.0.14"
   },
   "engines": {
@@ -19,6 +19,8 @@
     "setup": "bun i && bun run build -F @tuturuuu/types -F @tuturuuu/supabase -F @tuturuuu/masonry",
     "build": "turbo run build",
     "build:web": "turbo run build -F @tuturuuu/web",
+    "build:tudo": "turbo run build -F @tuturuuu/tudo",
+    "build:tumeet": "turbo run build -F @tuturuuu/tumeet",
     "buildx": "turbo test build",
     "dev": "turbo run dev --parallel",
     "dev:docs": "cd apps/docs && mintlify dev",

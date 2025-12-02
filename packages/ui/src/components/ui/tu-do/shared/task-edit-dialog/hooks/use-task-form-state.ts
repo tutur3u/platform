@@ -1,6 +1,6 @@
 import type { JSONContent } from '@tiptap/react';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
-import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { CalendarHoursType, Task } from '@tuturuuu/types/primitives/Task';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DRAFT_SAVE_DEBOUNCE_MS } from '../constants';
 import type { TaskFormState, WorkspaceTaskLabel } from '../types';
@@ -58,6 +58,26 @@ export function useTaskFormState({
     task?.projects || []
   );
 
+  // Scheduling fields
+  const [totalDuration, setTotalDuration] = useState<number | null>(
+    task?.total_duration ?? null
+  );
+  const [isSplittable, setIsSplittable] = useState<boolean>(
+    task?.is_splittable ?? true
+  );
+  const [minSplitDurationMinutes, setMinSplitDurationMinutes] = useState<
+    number | null
+  >(task?.min_split_duration_minutes ?? null);
+  const [maxSplitDurationMinutes, setMaxSplitDurationMinutes] = useState<
+    number | null
+  >(task?.max_split_duration_minutes ?? null);
+  const [calendarHours, setCalendarHours] = useState<CalendarHoursType | null>(
+    task?.calendar_hours ?? null
+  );
+  const [autoSchedule, setAutoSchedule] = useState<boolean>(
+    task?.auto_schedule ?? true
+  );
+
   // Draft state
   const [hasDraft, setHasDraft] = useState(false);
   const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -76,6 +96,12 @@ export function useTaskFormState({
       selectedLabels,
       selectedAssignees,
       selectedProjects,
+      totalDuration,
+      isSplittable,
+      minSplitDurationMinutes,
+      maxSplitDurationMinutes,
+      calendarHours,
+      autoSchedule,
     }),
     [
       name,
@@ -88,6 +114,12 @@ export function useTaskFormState({
       selectedLabels,
       selectedAssignees,
       selectedProjects,
+      totalDuration,
+      isSplittable,
+      minSplitDurationMinutes,
+      maxSplitDurationMinutes,
+      calendarHours,
+      autoSchedule,
     ]
   );
 
@@ -105,6 +137,13 @@ export function useTaskFormState({
     setSelectedLabels(newTask?.labels || []);
     setSelectedAssignees(newTask?.assignees || []);
     setSelectedProjects(newTask?.projects || []);
+    // Reset scheduling fields
+    setTotalDuration(newTask?.total_duration ?? null);
+    setIsSplittable(newTask?.is_splittable ?? true);
+    setMinSplitDurationMinutes(newTask?.min_split_duration_minutes ?? null);
+    setMaxSplitDurationMinutes(newTask?.max_split_duration_minutes ?? null);
+    setCalendarHours(newTask?.calendar_hours ?? null);
+    setAutoSchedule(newTask?.auto_schedule ?? true);
   }, []);
 
   // Load draft when opening in create mode
@@ -228,6 +267,13 @@ export function useTaskFormState({
     selectedAssignees,
     selectedProjects,
     hasDraft,
+    // Scheduling state
+    totalDuration,
+    isSplittable,
+    minSplitDurationMinutes,
+    maxSplitDurationMinutes,
+    calendarHours,
+    autoSchedule,
 
     // Setters
     setName,
@@ -240,6 +286,13 @@ export function useTaskFormState({
     setSelectedLabels,
     setSelectedAssignees,
     setSelectedProjects,
+    // Scheduling setters
+    setTotalDuration,
+    setIsSplittable,
+    setMinSplitDurationMinutes,
+    setMaxSplitDurationMinutes,
+    setCalendarHours,
+    setAutoSchedule,
 
     // Helpers
     getFormState,

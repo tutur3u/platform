@@ -180,10 +180,11 @@ export function KanbanBoard({
   const boardRef = useRef<HTMLDivElement>(null);
 
   const handleUpdate = useCallback(() => {
-    // Invalidate the tasks query to trigger a refetch
-    queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-    queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
-  }, [queryClient, boardId]);
+    // Note: We intentionally do NOT invalidate queries here.
+    // Optimistic updates handle immediate UI feedback, and realtime
+    // subscription handles cross-user sync. Invalidating would cause
+    // all tasks to flicker (disappear then reappear).
+  }, []);
 
   // Clean up selectedTasks when tasks are deleted
   useEffect(() => {

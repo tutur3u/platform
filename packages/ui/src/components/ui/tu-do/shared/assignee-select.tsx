@@ -14,6 +14,7 @@ import { forwardRef, useImperativeHandle, useState } from 'react';
 
 interface Member {
   id: string;
+  user_id?: string; // For consistency with task creation flow
   display_name?: string;
   email?: string;
   avatar_url?: string;
@@ -58,7 +59,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
             map.set(assignee.id, assignee);
           }
           return map;
-        }, new Map())
+        }, new Map<string, Member>())
         .values()
     );
 
@@ -67,32 +68,36 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
       data: members = [],
       isLoading: isFetchingMembers,
       error: membersError,
-    } = useQuery({
+    } = useQuery<Member[]>({
       queryKey: ['workspace-members', wsId],
-      queryFn: async () => {
+      queryFn: async (): Promise<Member[]> => {
         const response = await fetch(`/api/workspaces/${wsId}/members`);
         if (!response.ok) {
           throw new Error('Failed to fetch members');
         }
 
-        const { members: fetchedMembers } = await response.json();
+        const { members: fetchedMembers } = (await response.json()) as {
+          members: Member[];
+        };
 
         // Deduplicate members by ID using O(n) Map approach
-        const uniqueMembers = Array.from(
+        // Also ensure user_id is set for consistency with task creation flow
+        const uniqueMembers: Member[] = Array.from(
           fetchedMembers
-            .reduce((map: Map<string, Member>, member: Member) => {
+            .reduce((map, member) => {
               if (member.id) {
-                map.set(member.id, member);
+                map.set(member.id, {
+                  ...member,
+                  user_id: member.user_id || member.id, // Ensure user_id is set
+                });
               }
               return map;
             }, new Map<string, Member>())
             .values()
         );
 
-        return uniqueMembers as Member[];
+        return uniqueMembers;
       },
-      enabled: !!wsId,
-      staleTime: 5 * 60 * 1000, // 5 minutes
     });
 
     // Handle fetch errors
@@ -201,9 +206,9 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
           description: `Failed to update assignees: ${errorMessage}`,
         });
       },
-      onSettled: () => {
-        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-      },
+      // Note: Removed onSettled invalidation to prevent flicker
+      // Optimistic updates handle immediate UI feedback
+      // Realtime subscription handles cross-user sync
     });
 
     const handleSelect = (memberId: string) => {
@@ -220,7 +225,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
     const handleRemoveAll = async () => {
       // Remove all assignees sequentially to avoid race conditions
       for (const assignee of uniqueAssignees) {
-        await assigneeMutation.mutate({
+        await assigneeMutation.mutateAsync({
           memberId: assignee.id,
           action: 'remove',
         });

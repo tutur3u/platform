@@ -3,7 +3,7 @@ import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
 import { cn } from '@tuturuuu/utils/format';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AgendaView } from './agenda-view';
 import { CalendarHeader } from './calendar-header';
 import { CalendarViewWithTrail } from './calendar-view-with-trail';
@@ -12,6 +12,53 @@ import { EventModal } from './event-modal';
 import { MonthCalendar } from './month-calendar';
 import { useCalendarSettings } from './settings/settings-context';
 import { WeekdayBar } from './weekday-bar';
+
+// Get the first day of week number from settings
+// 0 = Sunday, 1 = Monday, 6 = Saturday
+function getFirstDayOfWeekNumber(
+  setting: string | undefined,
+  locale: string
+): number {
+  if (setting === 'sunday') return 0;
+  if (setting === 'saturday') return 6;
+  if (setting === 'monday') return 1;
+
+  // 'auto' or undefined - detect from locale
+  // Most locales use Monday, but US/Canada/Japan and others use Sunday
+  const sundayFirstLocales = [
+    'en-US',
+    'en-CA',
+    'ja',
+    'ja-JP',
+    'ko',
+    'ko-KR',
+    'zh-TW',
+    'he',
+    'he-IL',
+    'ar',
+    'ar-SA',
+  ];
+
+  // Check if locale starts with any of the Sunday-first locale prefixes
+  const normalizedLocale = locale.toLowerCase();
+  if (
+    sundayFirstLocales.some(
+      (l) =>
+        normalizedLocale === l.toLowerCase() ||
+        normalizedLocale.startsWith(l.toLowerCase().split('-')[0] + '-')
+    )
+  ) {
+    // Special case: only en-US and en-CA use Sunday, other en-* use Monday
+    if (normalizedLocale.startsWith('en')) {
+      return normalizedLocale === 'en-us' || normalizedLocale === 'en-ca'
+        ? 0
+        : 1;
+    }
+    return 0;
+  }
+
+  return 1; // Default to Monday for most locales
+}
 
 function getMonthGridDates(date: Date, firstDayOfWeek: number): Date[] {
   const newDate = new Date(date);
@@ -48,7 +95,6 @@ export const CalendarContent = ({
   disabled,
   workspace,
   enableHeader = true,
-  experimentalGoogleToken,
   externalState,
   extras,
 }: {
@@ -70,6 +116,12 @@ export const CalendarContent = ({
   const { transition } = useViewTransition();
   const { settings } = useCalendarSettings();
   const { dates, setDates } = useCalendarSync();
+
+  // Use ref to always have the latest settings without causing dependency cascades
+  const settingsRef = useRef(settings);
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
 
   const [initialized, setInitialized] = useState(false);
   const [date, setDate] = useState(externalState?.date || new Date());
@@ -130,30 +182,15 @@ export const CalendarContent = ({
   }, [date, transition, handleSetView, setDates]);
 
   const enableWeekView = useCallback(() => {
-    // Get the first day of week from settings
-    const firstDayOfWeek = settings?.appearance?.firstDayOfWeek || 'monday';
-    const showWeekends = settings?.appearance?.showWeekends !== false;
-
-    console.log('Week view settings:', { firstDayOfWeek, showWeekends });
-
-    // Convert firstDayOfWeek string to number (0 = Sunday, 1 = Monday, 6 = Saturday)
-    const firstDayNumber =
-      firstDayOfWeek === 'sunday'
-        ? 0
-        : firstDayOfWeek === 'monday'
-          ? 1
-          : firstDayOfWeek === 'saturday'
-            ? 6
-            : 1; // Default to Monday if invalid
-
-    console.log(
-      'First day of week:',
-      firstDayOfWeek,
-      'Number:',
-      firstDayNumber
+    // Use settingsRef to avoid dependency cascade issues during initialization
+    const currentSettings = settingsRef.current;
+    const showWeekends = currentSettings?.appearance?.showWeekends !== false;
+    const firstDayNumber = getFirstDayOfWeekNumber(
+      currentSettings?.appearance?.firstDayOfWeek,
+      locale
     );
 
-    const getFirstDayOfWeek = () => {
+    const getFirstDayOfWeekDate = () => {
       const currentDate = new Date(date);
       const day = currentDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
 
@@ -170,7 +207,7 @@ export const CalendarContent = ({
     };
 
     const getWeekdays = () => {
-      const firstDay = getFirstDayOfWeek();
+      const firstDay = getFirstDayOfWeekDate();
       const dates: Date[] = [];
 
       for (let i = 0; i < 7; i++) {
@@ -193,19 +230,21 @@ export const CalendarContent = ({
       handleSetView('week');
       setDates(getWeekdays());
     });
-  }, [date, transition, settings, handleSetView, setDates]);
+  }, [date, locale, transition, handleSetView, setDates]);
 
   const enableMonthView = useCallback(() => {
-    let firstDayNumber = 1; // Monday
-    if (settings?.appearance?.firstDayOfWeek === 'sunday') firstDayNumber = 0;
-    if (settings?.appearance?.firstDayOfWeek === 'saturday') firstDayNumber = 6;
+    const currentSettings = settingsRef.current;
+    const firstDayNumber = getFirstDayOfWeekNumber(
+      currentSettings?.appearance?.firstDayOfWeek,
+      locale
+    );
     const newDate = new Date(date);
     newDate.setDate(1);
     setView('month');
     setDate(newDate);
     const gridDates = getMonthGridDates(newDate, firstDayNumber);
     setDates(gridDates);
-  }, [date, settings, setDates]);
+  }, [date, locale, setDates]);
 
   const enableAgendaView = useCallback(() => {
     const newDate = new Date(date);
@@ -334,27 +373,51 @@ export const CalendarContent = ({
       }
       setDates(dates);
     } else if (view === 'week') {
-      const getMonday = () => {
-        const day = date.getDay() || 7;
-        const newDate = new Date(date);
-        if (day !== 1) newDate.setHours(-24 * (day - 1));
+      // Get the first day of week from settings (supports 'auto', 'sunday', 'monday', 'saturday')
+      const showWeekends = settings?.appearance?.showWeekends !== false;
+      const firstDayNumber = getFirstDayOfWeekNumber(
+        settings?.appearance?.firstDayOfWeek,
+        locale
+      );
+
+      const getFirstDayOfWeekDate = () => {
+        const currentDate = new Date(date);
+        const day = currentDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+        // Calculate the difference between current day and desired first day
+        let diff = day - firstDayNumber;
+
+        // If the difference is negative, we need to go back to the previous week
+        if (diff < 0) diff += 7;
+
+        // Create a new date by subtracting the difference
+        const newDate = new Date(currentDate);
+        newDate.setDate(currentDate.getDate() - diff);
         return newDate;
       };
 
-      const monday = getMonday();
+      const firstDay = getFirstDayOfWeekDate();
       const weekDates: Date[] = [];
+
       for (let i = 0; i < 7; i++) {
-        const newDate = new Date(monday);
+        const newDate = new Date(firstDay);
         newDate.setHours(0, 0, 0, 0);
         newDate.setDate(newDate.getDate() + i);
+
+        // Skip weekends if showWeekends is false
+        if (!showWeekends) {
+          const day = newDate.getDay();
+          if (day === 0 || day === 6) continue; // Skip Saturday and Sunday
+        }
+
         weekDates.push(newDate);
       }
       setDates(weekDates);
     } else if (view === 'month') {
-      let firstDayNumber = 1; // Monday
-      if (settings?.appearance?.firstDayOfWeek === 'sunday') firstDayNumber = 0;
-      if (settings?.appearance?.firstDayOfWeek === 'saturday')
-        firstDayNumber = 6;
+      const firstDayNumber = getFirstDayOfWeekNumber(
+        settings?.appearance?.firstDayOfWeek,
+        locale
+      );
       const gridDates = getMonthGridDates(date, firstDayNumber);
       setDates(gridDates);
     } else if (view === 'agenda') {
@@ -362,7 +425,14 @@ export const CalendarContent = ({
       newDate.setHours(0, 0, 0, 0);
       setDates([newDate]);
     }
-  }, [date, view, settings, setDates]);
+  }, [
+    date,
+    locale,
+    view,
+    settings?.appearance?.showWeekends,
+    settings?.appearance?.firstDayOfWeek,
+    setDates,
+  ]);
 
   // Set initial view based on screen size
   useEffect(() => {

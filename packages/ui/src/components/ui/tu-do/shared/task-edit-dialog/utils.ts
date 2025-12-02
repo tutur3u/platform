@@ -1,6 +1,5 @@
 import type { JSONContent } from '@tiptap/react';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
 
 const supabase = createClient();
 
@@ -39,21 +38,19 @@ export function getDescriptionContent(desc: any): JSONContent | null {
  * Saves Yjs-derived description to the database for embeddings and analytics
  * @param taskId - The task ID to update
  * @param getContent - Function that returns the current editor content (can be null if empty)
- * @param boardId - Board ID for cache invalidation
- * @param queryClient - React Query client for cache management
  * @param context - Optional context string for logging (e.g., 'close', 'force-close', 'auto-close')
  */
 export async function saveYjsDescriptionToDatabase({
   taskId,
   getContent,
-  boardId,
-  queryClient,
   context = 'save',
 }: {
   taskId: string;
   getContent: () => JSONContent | null;
-  boardId: string;
-  queryClient: any;
+  /** @deprecated No longer used - kept for backward compatibility */
+  boardId?: string;
+  /** @deprecated No longer used - kept for backward compatibility */
+  queryClient?: any;
   context?: string;
 }): Promise<boolean> {
   try {
@@ -77,8 +74,10 @@ export async function saveYjsDescriptionToDatabase({
 
     console.log(`✅ Yjs description saved for embeddings (${context})`);
 
-    // Invalidate task caches so UI updates immediately
-    await invalidateTaskCaches(queryClient, boardId);
+    // Note: We intentionally do NOT invalidate task caches here.
+    // The realtime subscription will handle updating other users,
+    // and the task card already has the latest content from Yjs.
+    // Invalidating would cause all tasks to flicker (disappear then reappear).
     return true;
   } catch (error) {
     console.error(`Failed to save Yjs description (${context}):`, error);

@@ -305,6 +305,8 @@
     "realestate": "Real Estate",
     "blog": "Blog",
     "blog-description": "Read our latest articles and updates.",
+    "changelog": "Changelog",
+    "changelog-description": "Stay up to date with our latest product updates and improvements.",
     "documentation-description": "Find detailed documentation and guides.",
     "education-description": "Solutions tailored for educational institutions.",
     "retail-description": "Solutions tailored for retail businesses.",
@@ -346,8 +348,6 @@
     "manufacturing": "Manufacturing",
     "hospitality": "Hospitality",
     "construction": "Construction",
-    "changelog": "Changelog",
-    "changelog-description": "Stay up to date with our latest product updates and improvements.",
     "about-description": "Learn more about Tuturuuu and our mission.",
     "careers-description": "Join our team and help us build the future of Tuturuuu.",
     "partners-description": "Explore partnership opportunities with Tuturuuu.",
@@ -1082,6 +1082,7 @@
     "time_tracker_management": "Management",
     "all_boards": "All Boards",
     "my_tasks": "My tasks",
+    "habits": "Habits",
     "initiatives": "Initiatives",
     "teams": "Teams",
     "members": "Members",
@@ -1096,7 +1097,8 @@
     "realtime_chat": "Realtime Chat",
     "track": "Track",
     "time_tracker_requests": "Requests",
-    "time-tracker": "Time Tracker"
+    "time-tracker": "Time Tracker",
+    "boards": "Boards"
   },
   "usage": {
     "description": "Monitor workspace activity, feature usage, and system metrics across your organization",
@@ -1107,46 +1109,41 @@
     "trends": "Usage Trends"
   },
   "tasks": {
-    "ticket": {
-      "ticket_id": "Ticket ID",
-      "ticket_prefix": "Ticket Prefix",
-      "ticket_prefix_description": "Custom prefix for task identifiers (e.g., DEV, BUG, SPRINT)",
-      "ticket_prefix_placeholder": "Enter prefix (e.g., DEV)",
-      "ticket_number": "Ticket Number"
-    },
-    "statuses": {
-      "not_started": "Backlog",
-      "active": "Active",
-      "done": "Done",
-      "closed": "Closed",
-      "documents": "Documents",
-      "not_started_description": "Ideas and planned work",
-      "active_description": "Work in progress",
-      "done_description": "Completed work",
-      "closed_description": "Archived or cancelled",
-      "documents_description": "Reference materials and documentation"
-    },
+    "priority_urgent": "Urgent",
+    "priority_high": "High",
+    "priority_medium": "Medium",
+    "priority_low": "Low",
+    "date_today": "Today",
+    "date_tomorrow": "Tomorrow",
+    "date_yesterday": "Yesterday",
+    "overdue": "OVERDUE",
+    "personal": "Personal",
+    "board": "Board",
+    "starts": "Starts",
+    "show_less": "Show Less",
+    "show_more_tasks": "Show {count} more",
     "history": {
       "error": "Failed to load task history",
       "empty": "No history available for this task",
       "unknown_user": "Unknown user",
-      "field_updated": {
-        "name": "Updated title",
-        "description": "Updated description",
-        "priority": "Changed priority",
-        "end_date": "Changed due date",
-        "start_date": "Changed start date",
-        "estimation_points": "Updated estimation",
-        "list_id": "Moved task",
-        "completed": "Changed completion status"
-      },
+      "unknown_change": "Made a change",
       "assignee_added": "Assigned user",
       "assignee_removed": "Removed assignee",
       "label_added": "Added label",
       "label_removed": "Removed label",
       "project_linked": "Linked project",
       "project_unlinked": "Unlinked project",
-      "unknown_change": "Made a change"
+      "field_updated": {
+        "name": "Updated name",
+        "description": "Updated description",
+        "priority": "Changed priority",
+        "end_date": "Changed due date",
+        "start_date": "Changed start date",
+        "estimation_points": "Updated estimation",
+        "list_id": "Moved to list",
+        "completed": "Changed status",
+        "unknown": "Updated field"
+      }
     }
   },
   "link-shortener": {
@@ -1446,7 +1443,8 @@
     "ai_whitelisted_emails": "AI Whitelisted Emails",
     "translations": "Translations",
     "email_blacklist": "Email Blacklist",
-    "realtime": "Realtime"
+    "realtime": "Realtime",
+    "changelog": "Changelog"
   },
   "infrastructure-analytics": {
     "page-description": "Monitor and manage your platform infrastructure, users, and resources with comprehensive analytics.",
@@ -3094,6 +3092,8 @@
     "manage_workspace_security_description": "Allows members to manage API keys and delete the workspace.",
     "manage_workspace_audit_logs": "Manage workspace audit logs",
     "manage_workspace_audit_logs_description": "Allows members to view all activities in the workspace.",
+    "manage_changelog": "Manage Changelog",
+    "manage_changelog_description": "Create, edit, publish, and delete platform changelog entries.",
     "manage_workspace_billing": "Manage workspace billing",
     "manage_workspace_billing_description": "Allows members to view and update billing information.",
     "ai": "Artificial Intelligence",
@@ -3870,6 +3870,18 @@
   "settings-workspaces": {
     "workspaces": "Workspaces",
     "workspaces-description": "Workspaces that you have access to will be listed here."
+  },
+  "settings": {
+    "tasks": {
+      "title": "Tasks",
+      "general": "General",
+      "general_description": "Task creation and management preferences",
+      "auto_assign_to_self": "Auto-assign to self",
+      "auto_assign_to_self_description": "Automatically assign yourself to tasks you create when no other assignees are selected",
+      "always_enabled_personal": "This is always enabled for personal workspaces",
+      "settings_updated": "Task settings updated",
+      "settings_update_failed": "Failed to update task settings"
+    }
   },
   "workspace-ai-layout": {
     "overview": "Overview",
@@ -5780,6 +5792,17 @@
     "no_data_title": "Ready to boost your productivity?",
     "no_data_description": "Start tracking your time to unlock detailed insights about your work patterns, productivity trends, and goal progress.",
     "start_your_first_timer": "Start your first timer",
+    "day_singular": "day",
+    "days": "days",
+    "tomorrow": "Tomorrow",
+    "upcoming": "upcoming",
+    "untitled_event": "Untitled Event",
+    "in_minutes": "in {count}m",
+    "in_hours": "in {count}h",
+    "in_days": "in {count}d",
+    "show_less": "Show less",
+    "show_more_events": "Show {count} more events",
+    "recent": "recent",
     "tu_meet_plans": "TuMeet Plans",
     "untitled_plan": "Untitled Plan",
     "no_recent_plans_title": "No recent plans",
@@ -5969,7 +5992,46 @@
       },
       "restricted_title": "Bucket Dump Restricted",
       "restricted_description": "You don't have permission to use the Bucket Dump feature."
-    }
+    },
+    "no_tasks_assigned": "No tasks assigned yet",
+    "one_task_attention": "1 task needs your attention",
+    "multiple_tasks_attention": "{count} tasks need your attention",
+    "stat_overdue": "Overdue",
+    "stat_due_today": "Due Today",
+    "stat_tomorrow": "Tomorrow",
+    "stat_high_priority": "High Priority",
+    "quick_tip": "Quick Tip",
+    "quick_tip_description": "Tasks assigned to you will appear here. You can view all your tasks, create new ones, or browse available boards to get started.",
+    "recent_updates": "Recent Updates",
+    "no_updates": "No Updates Yet",
+    "no_updates_description": "Check back later for the latest updates and features.",
+    "show_more_updates": "Show more",
+    "view_changelog": "View Changelog"
+  },
+  "changelog-data-table": {
+    "id": "ID",
+    "title": "Title",
+    "slug": "Slug",
+    "category": "Category",
+    "version": "Version",
+    "is_published": "Published",
+    "published_at": "Published At",
+    "created_at": "Created At",
+    "updated_at": "Updated At",
+    "creator_id": "Creator"
+  },
+  "changelog-page": {
+    "badge": "Platform Updates",
+    "hero_title": "What's New in",
+    "hero_description": "Stay up to date with the latest features, improvements, and updates to make your workflow even better.",
+    "no_updates": "No updates yet",
+    "no_updates_description": "We're working on exciting new features. Check back soon!",
+    "update": "update",
+    "updates": "updates",
+    "read_more": "Read more",
+    "cta_title": "Never miss an update",
+    "cta_description": "Follow our GitHub repository to stay informed about the latest developments and contribute to the project.",
+    "cta_button": "Follow on GitHub"
   },
   "ws-groups": {
     "select_warehouse": "Select Warehouse",
@@ -6944,6 +7006,8 @@
         "button": "Settings",
         "title": "Missed Entry Threshold Settings",
         "description": "Configure how far back users can add missed time entries without requiring approval.",
+        "noApprovalNeeded": "No approval needed (allow all entries)",
+        "noApprovalHint": "Users can add time entries for any date without requiring approval. This is the default setting.",
         "label": "Threshold (days)",
         "help": "Set the number of days users can go back to add time entries. Set to 0 to require approval for all missed entries.",
         "examples": {
@@ -6979,6 +7043,10 @@
       "simpleDescription": "You're using the simplified timer focused on easy, quick time tracking. Switch to advanced mode for Pomodoro timers, break reminders, drag-and-drop, and detailed features.",
       "advancedToastDescription": "Access to Pomodoro timer, advanced settings, and more features",
       "simpleToastDescription": "Clean, focused time tracking experience"
+    },
+    "overview": {
+      "quickTimerTitle": "Quick Timer",
+      "quickTimer": "Start tracking time quickly. Need more features? Switch to advanced mode."
     },
     "stats": {
       "title": "Your Progress",
@@ -7256,6 +7324,19 @@
       "success": {
         "requestSubmitted": "Time tracking request submitted for approval",
         "entryAdded": "Missed entry added successfully"
+      },
+      "exceeded": {
+        "title": "Session Exceeds Time Limit",
+        "description": "This session has been running for longer than the allowed threshold. You can either discard it or create a missed entry request for approval.",
+        "untitledSession": "Untitled Session",
+        "startedAt": "Started at {time}",
+        "runningFor": "Running for {duration}",
+        "allEntriesRequireApproval": "All time entries in this workspace require approval. Please provide accurate start and end times along with proof of work.",
+        "exceedsThreshold": "This session has been running for more than {days, plural, one {# day} other {# days}}. Please provide accurate start and end times along with proof of work.",
+        "discardSession": "Discard Session",
+        "discarding": "Discarding...",
+        "sessionDiscarded": "Session discarded successfully",
+        "discardFailed": "Failed to discard session"
       }
     },
     "workspace_select_dialog": {
@@ -7659,6 +7740,166 @@
         "smart": "Smart (Both combined)"
       },
       "show_onboarding_tips": "Show onboarding tips"
+    },
+    "management": {
+      "title": "Time Tracker Management",
+      "description": "Monitor and analyze team productivity across time periods",
+      "header": {
+        "title": "Time Tracker Management",
+        "description": "Monitor and analyze team productivity across time periods"
+      },
+      "stats": {
+        "totalSessions": "Total {period} Sessions",
+        "daily": "Daily",
+        "weekly": "Weekly",
+        "monthly": "Monthly",
+        "acrossUsers": "Across {count} user{count, plural, =1 {} other {s}}",
+        "noSessionsYet": "No sessions yet",
+        "activeSessions": "Active Sessions",
+        "currentlyInProgress": "Currently in progress",
+        "noActiveSessions": "No active sessions",
+        "liveTracking": "Live tracking",
+        "todaysWork": "Today's Work",
+        "sessionsToday": "{count} session{count, plural, =1 {} other {s}} today",
+        "progress": "Progress",
+        "dailyAverage": "Daily Average",
+        "thisWeek": "This Week",
+        "thisMonth": "This Month",
+        "perSessionAverage": "Per session average",
+        "currentPeriodTotal": "Current {period} total"
+      },
+      "filters": {
+        "title": "Filters & Search",
+        "description": "Refine your view with search and date filters",
+        "active": "Active",
+        "clearAll": "Clear All",
+        "searchPlaceholder": "Search by user or session title...",
+        "viewBy": "View by:",
+        "dailyView": "Daily View",
+        "weeklyView": "Weekly View",
+        "monthlyView": "Monthly View",
+        "dateRange": "Date Range",
+        "clear": "Clear",
+        "from": "From:",
+        "to": "To:",
+        "quickPresets": "Quick Presets:",
+        "today": "Today",
+        "thisWeek": "This Week",
+        "thisMonth": "This Month",
+        "last7Days": "Last 7 Days",
+        "dateRangeDisplay": {
+          "both": "{startDate} to {endDate}",
+          "from": "From {startDate} onwards",
+          "until": "Until {endDate}"
+        }
+      },
+      "status": {
+        "active": "Active",
+        "paused": "Paused",
+        "completed": "Completed"
+      },
+      "export": {
+        "title": "Exporting {type} File",
+        "exportingFile": "Exporting {type} File",
+        "dontClose": "Please don't close this window while exporting",
+        "dontCloseWindow": "Please don't close this window while exporting",
+        "progress": "Progress",
+        "remaining": "~{time} remaining",
+        "timeRemaining": "~{time} remaining",
+        "tips": {
+          "title": "Export Tips",
+          "message": "Large exports may take a few minutes. The file will download automatically when complete."
+        },
+        "tipsTitle": "Export Tips",
+        "tipsDescription": "Large exports may take a few minutes. The file will download automatically when complete."
+      },
+      "modal": {
+        "sessions": "{count} sessions",
+        "sessionsCount": "{count} sessions",
+        "period": "{period} period",
+        "sessionsLabel": "Sessions",
+        "totalTime": "Total Time",
+        "avgSession": "Avg Session",
+        "activeLabel": "Active",
+        "active": "Active",
+        "activeBadge": "Active",
+        "sessionDetails": "Session Details",
+        "noSessionsFound": "No sessions found",
+        "untitledSession": "Untitled Session",
+        "ongoing": "Ongoing...",
+        "day": "Day",
+        "week": "Week",
+        "month": "Month"
+      },
+      "period": {
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "tomorrow": "Tomorrow",
+        "daysAgo": "{count} days ago",
+        "inDays": "In {count} days",
+        "thisWeek": "This Week ({start} - {end})",
+        "lastWeek": "Last Week ({start} - {end})",
+        "nextWeek": "Next Week ({start} - {end})",
+        "thisMonth": "This Month ({month})",
+        "lastMonth": "Last Month ({month})",
+        "nextMonth": "Next Month ({month})",
+        "day": "Day",
+        "week": "Week",
+        "month": "Month"
+      },
+      "sessions": {
+        "title": "Time Tracking Sessions",
+        "showing": "Showing {start} to {end} of {total} results",
+        "days": "days",
+        "weeks": "weeks",
+        "months": "months",
+        "filtered": "Filtered",
+        "export": "Export",
+        "exportExcel": "Export to Excel",
+        "exportCSV": "Export to CSV",
+        "loadingSessions": "Loading sessions...",
+        "noMatchingTitle": "No matching sessions found",
+        "noMatchingSessions": "No matching sessions found",
+        "noMatchingMessage": "We couldn't find any sessions matching your current filters. Try adjusting your search terms or date range to see more results.",
+        "noMatchingSessionsDescription": "We couldn't find any sessions matching your current filters. Try adjusting your search terms or date range to see more results.",
+        "noSessionsTitle": "No time tracking sessions",
+        "noSessions": "No time tracking sessions",
+        "noSessionsMessage": "No time tracking sessions have been recorded yet in this workspace. Sessions will appear here once team members start tracking their time.",
+        "noSessionsDescription": "No time tracking sessions have been recorded yet in this workspace. Sessions will appear here once team members start tracking their time.",
+        "clearAllFilters": "Clear all filters",
+        "userAndPeriod": "User & {period}",
+        "userAnd": "User &",
+        "userAndDate": "User & Date",
+        "date": "Date",
+        "userAndWeek": "User & Week",
+        "week": "Week",
+        "userAndMonth": "User & Month",
+        "month": "Month",
+        "sessionsColumn": "Sessions",
+        "sessionsHeader": "Sessions",
+        "duration": "Duration",
+        "timeRange": "Time Range",
+        "status": "Status",
+        "statusHeader": "Status",
+        "actions": "Actions",
+        "session": "session",
+        "sessionSingular": "session",
+        "sessions_plural": "sessions",
+        "sessionPlural": "sessions",
+        "avg": "Avg:",
+        "itemsPerPage": "Items per page:",
+        "page": "Page {current} of {total}",
+        "pageOf": "Page {page} of {pages}",
+        "previous": "Previous",
+        "next": "Next"
+      },
+      "errors": {
+        "title": "Error Loading Data",
+        "errorLoadingData": "Error Loading Data",
+        "loadingMessage": "Applying filters and loading data...",
+        "applyingFilters": "Applying filters and loading data...",
+        "pleaseWait": "Please wait while we refresh your data"
+      }
     }
   },
   "command_palette": {
@@ -7710,5 +7951,23 @@
     "loading_workspaces": "Loading workspaces...",
     "personal": "Personal",
     "current_theme": "Current"
+  },
+  "breaks": {
+    "take_a_break_after": "Take a break after",
+    "schedule_break_description": "Schedule a break after completing this",
+    "break_duration": "Break Duration",
+    "break_interval_hint": "Breaks are scheduled in 15-minute intervals",
+    "scheduled_break": "Scheduled break",
+    "break_after": "Break after {name}",
+    "options": {
+      "15": "15 minutes",
+      "30": "30 minutes",
+      "45": "45 minutes",
+      "60": "1 hour",
+      "75": "1 hour 15 minutes",
+      "90": "1 hour 30 minutes",
+      "105": "1 hour 45 minutes",
+      "120": "2 hours"
+    }
   }
 }

@@ -1,10 +1,13 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Bot,
+  CalendarClock,
   LayoutDashboard,
   PanelLeftClose,
   PanelRightClose,
+  Repeat,
 } from '@tuturuuu/icons';
 import type { AIChat } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
@@ -13,7 +16,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useState } from 'react';
 import Chat from '../../ai-chat/chat';
 import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
+import { HabitsPanel } from './habits-panel';
 import PriorityView from './priority-view';
+import { TaskSchedulerPanel } from './task-scheduler-panel';
 import TimeTracker from './time-tracker';
 
 interface TasksSidebarContentProps {
@@ -39,6 +44,12 @@ export default function TasksSidebarContent({
 }: TasksSidebarContentProps) {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [activeTab, setActiveTab] = useState('tasks');
+  const queryClient = useQueryClient();
+
+  const handleEventCreated = () => {
+    // Invalidate calendar events query to refresh the calendar
+    queryClient.invalidateQueries({ queryKey: ['calendarEvents', wsId] });
+  };
 
   if (isCollapsed) {
     return (
@@ -86,7 +97,7 @@ export default function TasksSidebarContent({
           className="flex min-h-0 flex-1 flex-col gap-0"
         >
           <div className="border-border/50 border-b bg-muted/10 p-2">
-            <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0">
+            <TabsList className="grid h-auto w-full grid-cols-4 gap-2 bg-transparent p-0">
               <TabsTrigger
                 value="tasks"
                 className="group @container relative overflow-hidden rounded-lg border border-transparent transition-all duration-300 hover:border-border/50 hover:bg-accent/60 data-[state=active]:border-border/50 data-[state=active]:bg-background data-[state=active]:shadow-md"
@@ -98,6 +109,32 @@ export default function TasksSidebarContent({
                 </span>
                 <span className="@[80px]:hidden transition-all duration-200">
                   T
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="habits"
+                className="group @container relative overflow-hidden rounded-lg border border-transparent transition-all duration-300 hover:border-border/50 hover:bg-accent/60 data-[state=active]:border-border/50 data-[state=active]:bg-background data-[state=active]:shadow-md"
+              >
+                <div className="-z-10 absolute inset-0 bg-linear-to-r from-orange-500/10 to-yellow-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <Repeat className="h-4 w-4 transition-transform duration-200 group-hover:rotate-180" />
+                <span className="@[80px]:inline hidden transition-all duration-200">
+                  Habits
+                </span>
+                <span className="@[80px]:hidden transition-all duration-200">
+                  H
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="schedule"
+                className="group @container relative overflow-hidden rounded-lg border border-transparent transition-all duration-300 hover:border-border/50 hover:bg-accent/60 data-[state=active]:border-border/50 data-[state=active]:bg-background data-[state=active]:shadow-md"
+              >
+                <div className="-z-10 absolute inset-0 bg-linear-to-r from-green-500/10 to-emerald-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <CalendarClock className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+                <span className="@[80px]:inline hidden transition-all duration-200">
+                  Schedule
+                </span>
+                <span className="@[80px]:hidden transition-all duration-200">
+                  S
                 </span>
               </TabsTrigger>
               <TabsTrigger
@@ -128,6 +165,26 @@ export default function TasksSidebarContent({
                 assigneeId={assigneeId}
               />
             </div>
+          </TabsContent>
+
+          {/* Habits Tab Content */}
+          <TabsContent
+            value="habits"
+            className="fade-in-50 m-0 min-h-0 flex-1 animate-in overflow-hidden duration-300"
+          >
+            <HabitsPanel wsId={wsId} onEventCreated={handleEventCreated} />
+          </TabsContent>
+
+          {/* Schedule Tab Content */}
+          <TabsContent
+            value="schedule"
+            className="fade-in-50 m-0 min-h-0 flex-1 animate-in overflow-hidden duration-300"
+          >
+            <TaskSchedulerPanel
+              wsId={wsId}
+              userId={assigneeId}
+              onEventCreated={handleEventCreated}
+            />
           </TabsContent>
 
           {/* AI Chat Tab Content */}

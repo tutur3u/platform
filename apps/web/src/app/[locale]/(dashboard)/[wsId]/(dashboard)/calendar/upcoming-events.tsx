@@ -1,14 +1,11 @@
-import { Calendar, MapPin } from '@tuturuuu/icons';
+import { ArrowRight, Calendar, CalendarClock, Sparkles } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
-import EventDescription from './event-description';
-import UpcomingEventDetails from './upcoming-event-details';
+import ExpandableEventList from './expandable-event-list';
 
 interface UpcomingCalendarEventsProps {
   wsId: string;
@@ -22,8 +19,6 @@ export default async function UpcomingCalendarEvents({
   const supabase = await createClient();
   const t = await getTranslations('dashboard');
 
-  dayjs.extend(relativeTime);
-
   // Get upcoming events (next 7 days)
   const now = new Date();
   const sevenDaysFromNow = new Date();
@@ -36,102 +31,74 @@ export default async function UpcomingCalendarEvents({
     .gte('start_at', now.toISOString())
     .lte('start_at', sevenDaysFromNow.toISOString())
     .order('start_at', { ascending: true })
-    .limit(25); // Get more events to account for filtering
+    .limit(25);
 
   if (error) {
     console.error('Error fetching upcoming events:', error);
     return null;
   }
 
-  // Filter out all-day events and limit to 5
+  // Filter out all-day events and limit to 10
   const upcomingEvents =
-    allEvents?.filter((event) => !isAllDayEvent(event)).slice(0, 5) || [];
+    allEvents?.filter((event) => !isAllDayEvent(event)).slice(0, 10) || [];
 
   return (
-    <Card className="overflow-hidden border-dynamic-cyan/20 transition-all duration-300">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-cyan/20 border-b bg-linear-to-r from-dynamic-cyan/5 to-dynamic-blue/5 p-4">
-        <CardTitle className="flex items-center gap-2 font-semibold text-base">
-          <div className="rounded-lg bg-dynamic-cyan/10 p-1.5 text-dynamic-cyan">
-            <Calendar className="h-4 w-4" />
-          </div>
-          <div className="line-clamp-1">{t('next_up_on_calendar')}</div>
-        </CardTitle>
-        {showNavigation && (
-          <Link href={`/${wsId}/calendar`}>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2 transition-colors hover:bg-dynamic-cyan/10 hover:text-dynamic-cyan"
-            >
-              <Calendar className="mr-1 h-3 w-3" />
-              {t('view_calendar')}
-            </Button>
-          </Link>
-        )}
-      </CardHeader>
-      <CardContent className="h-full space-y-6 p-6">
-        {upcomingEvents && upcomingEvents.length > 0 ? (
-          <div className="space-y-3">
-            {upcomingEvents.map((event) => (
-              <div
-                key={event.id}
-                className="group rounded-xl border border-dynamic-cyan/10 bg-linear-to-br from-dynamic-cyan/5 to-dynamic-blue/5 p-4 transition-all duration-300"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex-1 space-y-2">
-                    <div className="line-clamp-1 font-semibold text-sm">
-                      {event.title || 'Untitled Event'}
-                    </div>
-
-                    {event.description && (
-                      <EventDescription
-                        description={event.description}
-                        className="line-clamp-2 text-dynamic-cyan/70 text-xs"
-                      />
-                    )}
-
-                    <UpcomingEventDetails event={event} />
-
-                    {event.location && (
-                      <div className="flex items-center gap-2 text-dynamic-cyan/60 text-xs">
-                        <div className="flex items-start gap-1">
-                          <MapPin className="h-3 w-3 flex-none text-dynamic-cyan/80" />
-                          <span className="line-clamp-2 font-medium">
-                            {event.location}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
+    <Card className="group overflow-hidden border-dynamic-cyan/20 bg-linear-to-br from-card via-card to-dynamic-cyan/5 shadow-lg ring-1 ring-dynamic-cyan/10 transition-all duration-300 hover:border-dynamic-cyan/30 hover:shadow-xl hover:ring-dynamic-cyan/20">
+      <CardHeader className="space-y-0 border-dynamic-cyan/20 border-b bg-linear-to-r from-dynamic-cyan/10 via-dynamic-cyan/5 to-transparent p-4 backdrop-blur-sm">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-3 font-semibold text-base">
+            <div className="relative">
+              <div className="absolute inset-0 animate-pulse rounded-xl bg-dynamic-cyan/20 blur-lg" />
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-dynamic-cyan via-dynamic-cyan/90 to-dynamic-blue shadow-lg ring-2 ring-dynamic-cyan/30">
+                <CalendarClock className="h-5 w-5 text-white" />
               </div>
-            ))}
-          </div>
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold">{t('next_up_on_calendar')}</span>
+              <span className="font-medium text-dynamic-cyan text-xs">
+                {upcomingEvents.length} {t('upcoming')}
+              </span>
+            </div>
+          </CardTitle>
+          {showNavigation && (
+            <Link href={`/${wsId}/calendar`}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 border-dynamic-cyan/30 bg-background/50 backdrop-blur-sm transition-all hover:border-dynamic-cyan hover:bg-dynamic-cyan/10 hover:text-dynamic-cyan"
+              >
+                {t('view_calendar')}
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+              </Button>
+            </Link>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="p-4">
+        {upcomingEvents && upcomingEvents.length > 0 ? (
+          <ExpandableEventList events={upcomingEvents} />
         ) : (
           <div className="py-8 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-dynamic-gray/20 bg-linear-to-br from-dynamic-gray/10 to-dynamic-slate/10">
-              <Calendar className="h-8 w-8 text-dynamic-gray/60" />
+            <div className="relative mx-auto mb-4 w-fit">
+              <div className="absolute inset-0 animate-pulse rounded-full bg-dynamic-cyan/20 blur-xl" />
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-full border-4 border-dynamic-cyan/20 bg-linear-to-br from-dynamic-cyan/10 via-dynamic-cyan/5 to-transparent shadow-lg ring-4 ring-dynamic-cyan/10">
+                <Sparkles className="h-8 w-8 text-dynamic-cyan/50" />
+              </div>
             </div>
-            <div className="space-y-2">
-              <h3 className="font-semibold text-base text-dynamic-gray">
-                {t('no_upcoming_events')}
-              </h3>
-              <p className="mx-auto max-w-xs text-dynamic-gray/60 text-sm">
-                {t('no_upcoming_events_description')}
-              </p>
-            </div>
-            <div className="mt-6">
-              <Link href={`/${wsId}/calendar`}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-dynamic-cyan/20 text-dynamic-cyan transition-all duration-200 hover:border-dynamic-cyan/30 hover:bg-dynamic-cyan/10"
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {t('view_calendar')}
-                </Button>
-              </Link>
-            </div>
+            <h3 className="font-semibold text-sm">{t('no_upcoming_events')}</h3>
+            <p className="mt-1 text-muted-foreground text-xs">
+              {t('no_upcoming_events_description')}
+            </p>
+            <Link href={`/${wsId}/calendar`} className="mt-4 inline-block">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 border-dynamic-cyan/30 transition-all hover:border-dynamic-cyan hover:bg-dynamic-cyan/10 hover:text-dynamic-cyan"
+              >
+                <Calendar className="h-4 w-4" />
+                {t('view_calendar')}
+              </Button>
+            </Link>
           </div>
         )}
       </CardContent>

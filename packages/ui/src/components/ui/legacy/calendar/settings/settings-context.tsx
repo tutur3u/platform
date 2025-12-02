@@ -5,6 +5,7 @@ import {
   type ReactNode,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -100,6 +101,31 @@ function isValidPartialCalendarSettings(
   return true;
 }
 
+// Deep merge settings to properly handle nested objects like appearance, timezone, etc.
+function deepMergeSettings(
+  defaults: CalendarSettings,
+  ...overrides: (Partial<CalendarSettings> | null | undefined)[]
+): CalendarSettings {
+  // Use Record type to allow dynamic key assignment
+  const result: Record<string, unknown> = { ...defaults };
+
+  for (const override of overrides) {
+    if (!override) continue;
+
+    for (const key of Object.keys(override)) {
+      const value = (override as Record<string, unknown>)[key];
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        // Deep merge nested objects (appearance, timezone, notifications, etc.)
+        result[key] = { ...(result[key] as object), ...value };
+      } else if (value !== undefined) {
+        result[key] = value;
+      }
+    }
+  }
+
+  return result as CalendarSettings;
+}
+
 type CalendarSettingsContextType = {
   settings: CalendarSettings;
   updateSettings: <K extends keyof CalendarSettings>(
@@ -126,26 +152,51 @@ export function CalendarSettingsProvider({
 }) {
   const storedSettings = loadSettingsFromStorage();
 
-  const [settings, setSettings] = useState<CalendarSettings>({
-    ...defaultCalendarSettings,
-    ...(storedSettings || {}),
-    ...initialSettings,
-  });
+  // Use deep merge to properly combine nested objects like appearance, timezone, etc.
+  const [settings, setSettings] = useState<CalendarSettings>(() =>
+    deepMergeSettings(defaultCalendarSettings, storedSettings, initialSettings)
+  );
 
-  const [originalSettings, setOriginalSettings] = useState<CalendarSettings>({
-    ...defaultCalendarSettings,
-    ...(storedSettings || {}),
-    ...initialSettings,
-  });
+  const [originalSettings, setOriginalSettings] = useState<CalendarSettings>(
+    () =>
+      deepMergeSettings(
+        defaultCalendarSettings,
+        storedSettings,
+        initialSettings
+      )
+  );
 
   const [hasChanges, setHasChanges] = useState(false);
 
+  // Sync settings when initialSettings prop changes (e.g., when workspace data loads)
+  // Sync settings when initialSettings prop changes (e.g., when workspace data loads)
+  const prevInitialSettingsRef = useRef<string>('');
+
+  useEffect(() => {
+    if (initialSettings) {
+      const initialSettingsStr = JSON.stringify(initialSettings);
+      if (initialSettingsStr !== prevInitialSettingsRef.current) {
+        prevInitialSettingsRef.current = initialSettingsStr;
+
+        setSettings((prev) =>
+          deepMergeSettings(defaultCalendarSettings, prev, initialSettings)
+        );
+        setOriginalSettings((prev) =>
+          deepMergeSettings(defaultCalendarSettings, prev, initialSettings)
+        );
+      }
+    }
+  }, [initialSettings]);
+
+  // Update hasChanges when settings change
   // Update hasChanges when settings change
   useEffect(() => {
     const settingsChanged =
       JSON.stringify(settings) !== JSON.stringify(originalSettings);
-    setHasChanges(settingsChanged);
-  }, [settings, originalSettings]);
+    if (hasChanges !== settingsChanged) {
+      setHasChanges(settingsChanged);
+    }
+  }, [settings, originalSettings, hasChanges]);
 
   const updateSettings = <K extends keyof CalendarSettings>(
     section: K,

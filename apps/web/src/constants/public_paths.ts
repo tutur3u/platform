@@ -20,6 +20,7 @@ export const APP_PUBLIC_PATHS = [
   '/terms',
   '/privacy',
   '/branding',
+  '/changelog',
   '/ai/chats',
   '/qr-generator',
   '/documents',

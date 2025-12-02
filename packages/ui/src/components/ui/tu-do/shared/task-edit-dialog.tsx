@@ -1,6 +1,6 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
 import { Loader2 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -69,9 +69,10 @@ export type { PendingRelationship, PendingRelationshipType };
 
 // Re-export dialog header utilities for external use
 export {
-  type DialogHeaderInfo,
   getTaskDialogHeaderInfo,
+  type DialogHeaderInfo,
 } from './task-edit-dialog/components/task-dialog-header';
+
 import { useTaskMutations } from './task-edit-dialog/hooks/use-task-mutations';
 import { useTaskRealtimeSync } from './task-edit-dialog/hooks/use-task-realtime-sync';
 import { useTaskRelationships } from './task-edit-dialog/hooks/use-task-relationships';
@@ -179,6 +180,19 @@ export function TaskEditDialog({
     setSelectedProjects,
     hasDraft,
     clearDraftState,
+    // Scheduling fields
+    totalDuration,
+    setTotalDuration,
+    isSplittable,
+    setIsSplittable,
+    minSplitDurationMinutes,
+    setMinSplitDurationMinutes,
+    maxSplitDurationMinutes,
+    setMaxSplitDurationMinutes,
+    calendarHours,
+    setCalendarHours,
+    autoSchedule,
+    setAutoSchedule,
   } = useTaskFormState({
     task,
     boardId,
@@ -253,6 +267,18 @@ export function TaskEditDialog({
     const index = Math.abs(hashCode(userId)) % colors.length;
     return colors[index] || colors[0];
   }, [user?.id]);
+
+  // Fetch user task settings for auto-assign feature
+  const { data: userTaskSettings } = useQuery({
+    queryKey: ['user-task-settings'],
+    queryFn: async () => {
+      const res = await fetch('/api/v1/users/task-settings');
+      if (!res.ok) return { task_auto_assign_to_self: false };
+      return res.json() as Promise<{ task_auto_assign_to_self: boolean }>;
+    },
+    enabled: isCreateMode && !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const { doc, provider, synced, connected } = useYjsCollaboration({
     channel: `task-editor-${task?.id || 'new'}`,
@@ -453,6 +479,61 @@ export function TaskEditDialog({
   const [createMultiple, setCreateMultiple] = useState(false);
   const [showSyncWarning, setShowSyncWarning] = useState(false);
 
+  // Local state for calendar events (updated after scheduling)
+  const [localCalendarEvents, setLocalCalendarEvents] = useState<
+    Task['calendar_events'] | undefined
+  >(task?.calendar_events);
+
+  // Sync localCalendarEvents when task prop changes
+  // Include task?.id to ensure state resets when switching between tasks
+  useEffect(() => {
+    setLocalCalendarEvents(task?.calendar_events);
+  }, [task?.calendar_events]);
+
+  // Fetch calendar events when dialog opens for existing tasks
+  useEffect(() => {
+    if (!isOpen || isCreateMode || !task?.id || !wsId) return;
+
+    // Only fetch if task has scheduling settings (total_duration set)
+    if (!task.total_duration || task.total_duration <= 0) return;
+
+    const fetchCalendarEvents = async () => {
+      try {
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/tasks/${task.id}/schedule`
+        );
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (data.events && Array.isArray(data.events)) {
+          setLocalCalendarEvents(
+            data.events.map(
+              (e: {
+                id: string;
+                title: string;
+                start_at: string;
+                end_at: string;
+                scheduled_minutes: number;
+                completed: boolean;
+              }) => ({
+                id: e.id,
+                title: e.title,
+                start_at: e.start_at,
+                end_at: e.end_at,
+                scheduled_minutes: e.scheduled_minutes,
+                completed: e.completed,
+              })
+            )
+          );
+        }
+      } catch (error) {
+        console.error('Error fetching calendar events:', error);
+      }
+    };
+
+    fetchCalendarEvents();
+  }, [isOpen, isCreateMode, task?.id, task?.total_duration, wsId]);
+
   // ============================================================================
   // NAME UPDATE & DEBOUNCING
   // ============================================================================
@@ -559,6 +640,8 @@ export function TaskEditDialog({
     updateEndDate,
     updateList,
     saveNameToDatabase,
+    saveSchedulingSettings,
+    schedulingSaving,
   } = useTaskMutations({
     taskId: task?.id,
     isCreateMode,
@@ -682,15 +765,8 @@ export function TaskEditDialog({
           { taskId: task?.id, updates: taskUpdates },
           {
             onSuccess: async () => {
-              await invalidateTaskCaches(queryClient, boardId);
-
-              if (boardId) {
-                await queryClient.refetchQueries({
-                  queryKey: ['tasks', boardId],
-                  type: 'active',
-                });
-              }
-
+              // Note: useUpdateTask already has optimistic updates
+              // Realtime handles cross-user sync
               toast({
                 title: 'Due date updated',
                 description: newDate
@@ -711,16 +787,7 @@ export function TaskEditDialog({
           }
         );
     },
-    [
-      isCreateMode,
-      onUpdate,
-      queryClient,
-      task,
-      updateTaskMutation,
-      boardId,
-      toast,
-      setEndDate,
-    ]
+    [isCreateMode, onUpdate, task, updateTaskMutation, toast, setEndDate]
   );
 
   const updateName = useCallback(
@@ -879,7 +946,13 @@ export function TaskEditDialog({
       return;
     }
 
-    await invalidateTaskCaches(queryClient, boardId);
+    // Only invalidate time tracking data since task availability affects it
+    // Note: We intentionally do NOT invalidate the tasks cache here to avoid
+    // conflicts with realtime sync and unnecessary full-board refetches.
+    // The realtime subscription will handle adding the new task to the cache.
+    await queryClient.invalidateQueries({
+      queryKey: ['time-tracking-data'],
+    });
 
     toast({
       title: 'Task created',
@@ -930,6 +1003,13 @@ export function TaskEditDialog({
           start_date: startDate ? startDate.toISOString() : undefined,
           end_date: endDate ? endDate.toISOString() : undefined,
           estimation_points: estimationPoints ?? null,
+          // Scheduling fields
+          total_duration: totalDuration,
+          is_splittable: isSplittable,
+          min_split_duration_minutes: minSplitDurationMinutes,
+          max_split_duration_minutes: maxSplitDurationMinutes,
+          calendar_hours: calendarHours,
+          auto_schedule: autoSchedule,
         };
         const newTask = await createTask(supabase, selectedListId, taskData);
 
@@ -1019,33 +1099,94 @@ export function TaskEditDialog({
         }
 
         if (selectedLabels.length > 0) {
-          await supabase.from('task_labels').insert(
-            selectedLabels.map((l) => ({
-              task_id: newTask.id,
-              label_id: l.id,
-            }))
-          );
+          const { error: labelsError } = await supabase
+            .from('task_labels')
+            .insert(
+              selectedLabels.map((l) => ({
+                task_id: newTask.id,
+                label_id: l.id,
+              }))
+            );
+          if (labelsError) {
+            console.error('Error adding labels:', labelsError);
+          }
         }
 
-        if (selectedAssignees.length > 0) {
-          await supabase.from('task_assignees').insert(
-            selectedAssignees.map((a) => ({
+        // Determine final assignees - auto-assign to self if enabled and no assignees selected
+        let finalAssignees = [...selectedAssignees];
+        if (
+          finalAssignees.length === 0 &&
+          userTaskSettings?.task_auto_assign_to_self &&
+          user?.id &&
+          !isPersonalWorkspace
+        ) {
+          finalAssignees = [
+            {
+              id: user.id,
+              user_id: user.id,
+              display_name: user.display_name,
+              avatar_url: user.avatar_url,
+            },
+          ];
+        }
+
+        if (finalAssignees.length > 0) {
+          // Use user_id if available, fallback to id for compatibility
+          const assigneesToInsert = finalAssignees
+            .map((a) => ({
               task_id: newTask.id,
-              user_id: a.user_id,
+              user_id: a.user_id || a.id,
             }))
-          );
+            .filter((a) => a.user_id); // Filter out any with null/undefined user_id
+
+          if (assigneesToInsert.length > 0) {
+            const { error: assigneesError } = await supabase
+              .from('task_assignees')
+              .insert(assigneesToInsert);
+            if (assigneesError) {
+              console.error('Error adding assignees:', assigneesError);
+              toast({
+                title: 'Warning',
+                description:
+                  'Task created but some assignees could not be added',
+                variant: 'destructive',
+              });
+            }
+          }
         }
 
         if (selectedProjects.length > 0) {
-          await supabase.from('task_project_tasks').insert(
-            selectedProjects.map((p) => ({
-              task_id: newTask.id,
-              project_id: p.id,
-            }))
-          );
+          const { error: projectsError } = await supabase
+            .from('task_project_tasks')
+            .insert(
+              selectedProjects.map((p) => ({
+                task_id: newTask.id,
+                project_id: p.id,
+              }))
+            );
+          if (projectsError) {
+            console.error('Error adding projects:', projectsError);
+          }
         }
 
-        await invalidateTaskCaches(queryClient, boardId);
+        // Note: Auto-scheduling is handled by the Smart Schedule button in Calendar
+        // The autoSchedule flag is saved to the task for the unified scheduler to use
+
+        // Add the new task to the cache directly instead of invalidating
+        // This avoids full-board refetch flickering and conflicts with realtime sync
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return [newTask];
+            // Check if task already exists (from realtime), if so don't duplicate
+            if (old.some((t) => t.id === newTask.id)) return old;
+            return [...old, newTask];
+          }
+        );
+        // Only invalidate time tracking data since task availability affects it
+        await queryClient.invalidateQueries({
+          queryKey: ['time-tracking-data'],
+        });
         toast({
           title: parentTaskId ? 'Sub-task created' : 'Task created',
           description: parentTaskId ? 'New sub-task added.' : 'New task added.',
@@ -1068,6 +1209,8 @@ export function TaskEditDialog({
           setEndDate(undefined);
           setEstimationPoints(null);
           setSelectedLabels([]);
+          setSelectedAssignees([]);
+          setSelectedProjects([]);
           onClose();
         }
       } catch (error: any) {
@@ -1092,6 +1235,13 @@ export function TaskEditDialog({
       end_date: endDate ? endDate.toISOString() : null,
       list_id: selectedListId,
       estimation_points: estimationPoints ?? null,
+      // Scheduling fields
+      total_duration: totalDuration,
+      is_splittable: isSplittable,
+      min_split_duration_minutes: minSplitDurationMinutes,
+      max_split_duration_minutes: maxSplitDurationMinutes,
+      calendar_hours: calendarHours,
+      auto_schedule: autoSchedule,
     };
 
     // Always update description field for embeddings and calculations
@@ -1117,15 +1267,9 @@ export function TaskEditDialog({
         },
         {
           onSuccess: async () => {
-            console.log('Task update successful, refreshing data...');
-
-            // Update caches and refetch in background
-            invalidateTaskCaches(queryClient, boardId);
-            queryClient.refetchQueries({
-              queryKey: ['tasks', boardId],
-              type: 'active',
-            });
-
+            // Note: useUpdateTask already has optimistic updates in onMutate
+            // and proper cache updates in onSuccess, so no need to invalidate
+            // or refetch here. Realtime handles cross-user sync.
             toast({
               title: 'Task updated',
               description: 'The task has been successfully updated.',
@@ -1178,7 +1322,20 @@ export function TaskEditDialog({
     setEndDate,
     setEstimationPoints,
     setSelectedLabels,
+    setSelectedAssignees,
+    setSelectedProjects,
+    // Scheduling fields
+    totalDuration,
+    isSplittable,
+    minSplitDurationMinutes,
+    maxSplitDurationMinutes,
+    calendarHours,
+    autoSchedule,
+    parentTaskId,
+    pendingRelationship,
   ]);
+
+  // Note: Manual scheduling removed - handled by Smart Schedule button in Calendar
 
   const handleClose = useCallback(async () => {
     // Check if we're in collaboration mode and not synced - show warning
@@ -2353,6 +2510,8 @@ export function TaskEditDialog({
 
                 {/* Task Properties Section */}
                 <TaskPropertiesSection
+                  wsId={wsId}
+                  taskId={task?.id}
                   priority={priority}
                   startDate={startDate}
                   endDate={endDate}
@@ -2363,6 +2522,13 @@ export function TaskEditDialog({
                   selectedAssignees={selectedAssignees}
                   isLoading={isLoading}
                   isPersonalWorkspace={isPersonalWorkspace}
+                  // Scheduling state
+                  totalDuration={totalDuration}
+                  isSplittable={isSplittable}
+                  minSplitDurationMinutes={minSplitDurationMinutes}
+                  maxSplitDurationMinutes={maxSplitDurationMinutes}
+                  calendarHours={calendarHours}
+                  autoSchedule={autoSchedule}
                   availableLists={availableLists}
                   availableLabels={availableLabels}
                   taskProjects={taskProjects}
@@ -2382,6 +2548,31 @@ export function TaskEditDialog({
                   onShowEstimationConfigDialog={() =>
                     setShowEstimationConfigDialog(true)
                   }
+                  // Scheduling handlers
+                  onTotalDurationChange={setTotalDuration}
+                  onIsSplittableChange={setIsSplittable}
+                  onMinSplitDurationChange={setMinSplitDurationMinutes}
+                  onMaxSplitDurationChange={setMaxSplitDurationMinutes}
+                  onCalendarHoursChange={setCalendarHours}
+                  onAutoScheduleChange={setAutoSchedule}
+                  isCreateMode={isCreateMode}
+                  savedSchedulingSettings={
+                    task
+                      ? {
+                          totalDuration: task.total_duration ?? null,
+                          isSplittable: task.is_splittable ?? false,
+                          minSplitDurationMinutes:
+                            task.min_split_duration_minutes ?? null,
+                          maxSplitDurationMinutes:
+                            task.max_split_duration_minutes ?? null,
+                          calendarHours: task.calendar_hours ?? null,
+                          autoSchedule: task.auto_schedule ?? false,
+                        }
+                      : undefined
+                  }
+                  onSaveSchedulingSettings={saveSchedulingSettings}
+                  schedulingSaving={schedulingSaving}
+                  scheduledEvents={localCalendarEvents}
                 />
 
                 {/* Task Relationships Properties - Parent, Sub-tasks, Dependencies, Related */}
@@ -2530,6 +2721,7 @@ export function TaskEditDialog({
         onOpenChange={setShowDeleteConfirm}
         taskId={task?.id}
         boardId={boardId}
+        wsId={wsId}
         isLoading={isLoading}
         onSuccess={onUpdate}
         onClose={onClose}

@@ -1,16 +1,23 @@
-import { Calendar, SquaresIntersect, Users } from '@tuturuuu/icons';
+import {
+  ArrowRight,
+  Calendar,
+  Plus,
+  SquaresIntersect,
+  Users,
+} from '@tuturuuu/icons';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
-import { format } from 'date-fns';
-import Link from 'next/link';
+import { formatDistanceToNow } from 'date-fns';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 
 export default async function RecentTumeetPlans({
   className,
@@ -76,9 +83,9 @@ export default async function RecentTumeetPlans({
         new Date(b.created_at || 0).getTime() -
         new Date(a.created_at || 0).getTime()
     )
-    .slice(0, 8);
+    .slice(0, 6);
 
-  // Build participants map for displayed plans (users/guests who filled availability)
+  // Build participants map
   const planIds = plans.map((p) => p.id).filter(Boolean) as string[];
   let planIdToParticipants = new Map<
     string,
@@ -123,126 +130,150 @@ export default async function RecentTumeetPlans({
   return (
     <Card
       className={cn(
-        'overflow-hidden border-dynamic-pink/20 transition-all duration-300',
+        'group overflow-hidden border-dynamic-pink/20 bg-linear-to-br from-card via-card to-dynamic-pink/5 shadow-lg ring-1 ring-dynamic-pink/10 transition-all duration-300 hover:border-dynamic-pink/30 hover:shadow-xl hover:ring-dynamic-pink/20',
         className
       )}
     >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-pink/20 border-b bg-linear-to-r from-dynamic-pink/5 to-dynamic-purple/5 p-4">
-        <CardTitle className="flex items-center gap-2 font-semibold text-base">
-          <div className="rounded-lg bg-dynamic-pink/10 p-1.5 text-dynamic-pink">
-            <SquaresIntersect className="h-4 w-4" />
-          </div>
-          <div className="line-clamp-1">{t('tu_meet_plans')}</div>
-        </CardTitle>
-        <Link href="/meet-together">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2 transition-colors hover:bg-dynamic-pink/10 hover:text-dynamic-pink"
-          >
-            <Calendar className="mr-1 h-3 w-3" />
-            {t('view_all')}
-          </Button>
-        </Link>
-      </CardHeader>
-      <CardContent className="grid gap-3 p-6 lg:grid-cols-2">
-        {plans && plans.length > 0 ? (
-          plans.map((plan: MeetTogetherPlan) => (
-            <Link
-              href={`/meet-together/plans/${plan.id?.replace(/-/g, '')}`}
-              key={plan.id}
+      <CardHeader className="space-y-0 border-dynamic-pink/20 border-b bg-linear-to-r from-dynamic-pink/10 via-dynamic-pink/5 to-transparent p-4 backdrop-blur-sm">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-3 font-semibold text-base">
+            <div className="relative">
+              <div className="absolute inset-0 animate-pulse rounded-xl bg-dynamic-pink/20 blur-lg" />
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-dynamic-pink via-dynamic-pink/90 to-dynamic-purple shadow-lg ring-2 ring-dynamic-pink/30">
+                <SquaresIntersect className="h-5 w-5 text-white" />
+              </div>
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold">{t('tu_meet_plans')}</span>
+              <span className="font-medium text-dynamic-pink text-xs">
+                {plans.length} {t('recent')}
+              </span>
+            </div>
+          </CardTitle>
+          <Link href="/meet-together">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 border-dynamic-pink/30 bg-background/50 backdrop-blur-sm transition-all hover:border-dynamic-pink hover:bg-dynamic-pink/10 hover:text-dynamic-pink"
             >
-              <div className="group h-full rounded-xl border border-dynamic-pink/10 bg-linear-to-br from-dynamic-pink/5 to-dynamic-purple/5 p-4 transition-all duration-300">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-start gap-2">
-                      <div className="flex flex-1 flex-col items-start justify-start">
-                        <h4 className="line-clamp-2 font-semibold text-sm">
-                          {plan.name || t('untitled_plan')}
-                        </h4>
-                        <div className="mt-2 flex items-center gap-2 text-dynamic-pink text-xs">
-                          <span className="font-medium">
-                            {plan.created_at &&
-                              format(
-                                new Date(plan.created_at),
-                                'MMM d, h:mm a'
+              {t('view_all')}
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+            </Button>
+          </Link>
+        </div>
+      </CardHeader>
+      <CardContent className="p-4">
+        {plans && plans.length > 0 ? (
+          <div className="grid gap-3 2xl:grid-cols-2">
+            {plans.map((plan: MeetTogetherPlan, index) => {
+              const participants =
+                planIdToParticipants.get(plan.id || '') || [];
+              const displayed = participants.slice(0, 3);
+              const remaining = Math.max(0, participants.length - 3);
+              const isFirst = index === 0;
+
+              return (
+                <Link
+                  href={`/meet-together/plans/${plan.id?.replace(/-/g, '')}`}
+                  key={plan.id}
+                  className="group/plan"
+                >
+                  <div
+                    className={cn(
+                      'relative h-full overflow-hidden rounded-xl border p-4 transition-all duration-200 hover:shadow-md',
+                      isFirst
+                        ? 'border-dynamic-pink/40 bg-linear-to-br from-dynamic-pink/10 via-dynamic-pink/5 to-transparent'
+                        : 'border-border/50 hover:border-dynamic-pink/30 hover:bg-dynamic-pink/5'
+                    )}
+                  >
+                    {/* Left accent for first plan */}
+                    {isFirst && (
+                      <div className="absolute top-0 bottom-0 left-0 w-1.5 bg-dynamic-pink" />
+                    )}
+
+                    <div className={cn(isFirst && 'pl-2', 'text-center')}>
+                      {/* Title */}
+                      <h4 className="line-clamp-1 font-semibold text-sm transition-colors group-hover/plan:text-dynamic-pink">
+                        {plan.name || t('untitled_plan')}
+                      </h4>
+
+                      {/* Meta row */}
+                      <div className="mt-1 flex flex-col items-center justify-between gap-1">
+                        <span className="text-muted-foreground text-xs">
+                          {plan.created_at &&
+                            formatDistanceToNow(new Date(plan.created_at), {
+                              addSuffix: true,
+                            })}
+                        </span>
+
+                        {/* Participants */}
+                        <div className="flex items-center gap-2">
+                          {displayed.length > 0 && (
+                            <div className="-space-x-1.5 flex">
+                              {displayed.map((p) => (
+                                <Avatar
+                                  key={`${plan.id}-${p.user_id}`}
+                                  className="h-6 w-6 border-2 border-background ring-1 ring-border/50"
+                                >
+                                  <AvatarImage
+                                    src={undefined}
+                                    alt={p.display_name || 'User'}
+                                  />
+                                  <AvatarFallback className="bg-muted font-medium text-[9px]">
+                                    {(p.display_name?.[0] || 'U').toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                              ))}
+                              {remaining > 0 && (
+                                <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-muted font-medium text-[9px] ring-1 ring-border/50">
+                                  +{remaining}
+                                </div>
                               )}
-                          </span>
+                            </div>
+                          )}
+                          <Badge
+                            className={cn(
+                              'gap-1 px-2 py-0.5 font-medium text-[10px]',
+                              isFirst
+                                ? 'bg-dynamic-pink/15 text-dynamic-pink ring-1 ring-dynamic-pink/30'
+                                : 'bg-muted text-muted-foreground'
+                            )}
+                          >
+                            <Users className="h-3 w-3" />
+                            {participants.length}
+                          </Badge>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="ml-3 flex flex-col items-end gap-1">
-                    {(() => {
-                      const participants =
-                        planIdToParticipants.get(plan.id || '') || [];
-                      const displayed = participants.slice(0, 3);
-                      const remaining = Math.max(
-                        0,
-                        participants.length - displayed.length
-                      );
-                      return (
-                        <div className="flex items-center gap-2 text-dynamic-pink text-xs">
-                          <div className="-space-x-1 flex">
-                            {displayed.map((p) => (
-                              <Avatar
-                                key={`${plan.id}-${p.user_id}`}
-                                className="h-5 w-5 ring-2 ring-background transition-transform group-hover:scale-110"
-                              >
-                                <AvatarImage
-                                  src={undefined}
-                                  alt={p.display_name || 'User'}
-                                />
-                                <AvatarFallback className="text-[10px]">
-                                  {(p.display_name?.[0] || 'U').toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                            ))}
-                            {remaining > 0 && (
-                              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-muted font-medium text-[10px] ring-2 ring-background transition-transform group-hover:scale-110">
-                                +{remaining}
-                              </div>
-                            )}
-                          </div>
-                          <div className="inline-flex items-center gap-1">
-                            <Users className="h-3 w-3 text-dynamic-pink/80" />
-                            <span className="font-medium">
-                              {participants.length}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                </div>
-              </div>
-            </Link>
-          ))
+                </Link>
+              );
+            })}
+          </div>
         ) : (
-          <div className="col-span-full py-8 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-dynamic-gray/20 bg-linear-to-br from-dynamic-gray/10 to-dynamic-slate/10">
-              <Calendar className="h-8 w-8 text-dynamic-gray/60" />
+          <div className="py-8 text-center">
+            <div className="relative mx-auto mb-4 w-fit">
+              <div className="absolute inset-0 animate-pulse rounded-full bg-dynamic-pink/20 blur-xl" />
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-full border-4 border-dynamic-pink/20 bg-linear-to-br from-dynamic-pink/10 via-dynamic-pink/5 to-transparent shadow-lg ring-4 ring-dynamic-pink/10">
+                <Calendar className="h-8 w-8 text-dynamic-pink/50" />
+              </div>
             </div>
-            <div className="space-y-2">
-              <h3 className="font-semibold text-base text-dynamic-gray">
-                {t('no_recent_plans_title')}
-              </h3>
-              <p className="mx-auto max-w-xs text-dynamic-gray/60 text-sm">
-                {t('no_recent_plans_desc')}
-              </p>
-            </div>
-            <div className="mt-6">
-              <Link href="/meet-together">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-dynamic-pink/20 text-dynamic-pink transition-all duration-200 hover:border-dynamic-pink/30 hover:bg-dynamic-pink/10"
-                >
-                  <SquaresIntersect className="mr-2 h-4 w-4" />
-                  {t('create_plan')}
-                </Button>
-              </Link>
-            </div>
+            <h3 className="font-semibold text-sm">
+              {t('no_recent_plans_title')}
+            </h3>
+            <p className="mt-1 text-muted-foreground text-xs">
+              {t('no_recent_plans_desc')}
+            </p>
+            <Link href="/meet-together" className="mt-4 inline-block">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 border-dynamic-pink/30 transition-all hover:border-dynamic-pink hover:bg-dynamic-pink/10 hover:text-dynamic-pink"
+              >
+                <Plus className="h-4 w-4" />
+                {t('create_plan')}
+              </Button>
+            </Link>
           </div>
         )}
       </CardContent>

@@ -13,7 +13,6 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 
 interface TaskMoveMenuProps {
   currentListId: string;
@@ -74,7 +73,7 @@ export function TaskMoveMenu({
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent className="max-h-[400px] w-56 overflow-hidden p-0">
         {otherLists.length > 0 ? (
-          <ScrollArea style={{ height: 'min(300px, calc(100vh - 200px))' }}>
+          <div className="max-h-[200px] overflow-auto">
             <div className="p-1">
               {otherLists.map((list) => {
                 const StatusIcon = getStatusIcon(list.status);
@@ -101,7 +100,7 @@ export function TaskMoveMenu({
                 );
               })}
             </div>
-          </ScrollArea>
+          </div>
         ) : (
           <DropdownMenuItem disabled className="text-muted-foreground">
             <List className="h-4 w-4" />

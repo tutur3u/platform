@@ -60,9 +60,11 @@ export async function GET(_: NextRequest, { params }: Params) {
   }
 
   // Transform the data to flatten the user information and add is_creator field
+  // Include both id and user_id for compatibility with task assignment flows
   const members =
     data?.map((member) => ({
       id: member.users.id,
+      user_id: member.user_id, // Include user_id for task creation consistency
       display_name: member.users.display_name,
       email: member.users.email,
       avatar_url: member.users.avatar_url,
