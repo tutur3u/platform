@@ -78,7 +78,7 @@ export function SubscriptionConfirmationDialog({
               <DialogTitle className="font-bold text-xl">
                 {isCancelAction
                   ? 'Cancel Subscription'
-                  : 'Continue Subscription'}
+                  : 'Reactivate Subscription'}
               </DialogTitle>
               <DialogDescription className="mt-1">
                 {isCancelAction
@@ -226,12 +226,12 @@ export function SubscriptionConfirmationDialog({
             ) : isCancelAction ? (
               <>
                 <X className="mr-2 h-4 w-4" />
-                'Cancel Subscription'
+                Cancel Subscription
               </>
             ) : (
               <>
                 <CheckCircle className="mr-2 h-4 w-4" />
-                'Continue Subscription'
+                Reactivate Subscription
               </>
             )}
           </Button>
