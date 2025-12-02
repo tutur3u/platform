@@ -49,12 +49,12 @@ export function ThresholdSettingsDialog({
 
   // Always parse the input value to maintain clear typing
   const parsed = thresholdSchema.safeParse(inputValue);
-  
+
   // Check if values have changed from initial state
   const hasChanged =
     noApprovalNeeded !== (currentThreshold === null) ||
     (parsed.success && parsed.data !== currentThreshold);
-  
+
   const isSubmitDisabled =
     isLoading || (!noApprovalNeeded && !parsed.success) || !hasChanged;
 
