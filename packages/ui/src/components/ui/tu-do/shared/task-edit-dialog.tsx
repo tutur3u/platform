@@ -874,7 +874,8 @@ export function TaskEditDialog({
           console.error('Signed URL error:', signedUrlError);
           toast({
             title: 'URL generation failed',
-            description: signedUrlError.message || 'Failed to generate signed URL',
+            description:
+              signedUrlError.message || 'Failed to generate signed URL',
             variant: 'destructive',
           });
           throw new Error('Failed to generate signed URL');

@@ -104,7 +104,12 @@ describe('media-utils', () => {
         .mockResolvedValueOnce({ data: [], error: null });
 
       await expect(
-        checkStorageQuota(mockSupabaseClient, 'workspace-1', 5 * 1024 * 1024, 100 * 1024 * 1024)
+        checkStorageQuota(
+          mockSupabaseClient,
+          'workspace-1',
+          5 * 1024 * 1024,
+          100 * 1024 * 1024
+        )
       ).resolves.toBeUndefined();
     });
 
@@ -126,12 +131,19 @@ describe('media-utils', () => {
         .mockResolvedValueOnce({ data: [], error: null });
 
       await expect(
-        checkStorageQuota(mockSupabaseClient, 'workspace-1', 10 * 1024 * 1024, 100 * 1024 * 1024)
+        checkStorageQuota(
+          mockSupabaseClient,
+          'workspace-1',
+          10 * 1024 * 1024,
+          100 * 1024 * 1024
+        )
       ).rejects.toThrow(StorageQuotaError);
     });
 
     it('should not block upload if list fails', async () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleWarnSpy = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => {});
 
       mockSupabaseClient.storage.list.mockResolvedValueOnce({
         data: null,
@@ -177,7 +189,12 @@ describe('media-utils', () => {
         });
 
       await expect(
-        checkStorageQuota(mockSupabaseClient, 'workspace-1', 5 * 1024 * 1024, 100 * 1024 * 1024)
+        checkStorageQuota(
+          mockSupabaseClient,
+          'workspace-1',
+          5 * 1024 * 1024,
+          100 * 1024 * 1024
+        )
       ).resolves.toBeUndefined();
     });
 
@@ -203,7 +220,9 @@ describe('media-utils', () => {
     });
 
     it('should handle errors during calculation gracefully', async () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleWarnSpy = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => {});
 
       mockSupabaseClient.storage.list
         .mockResolvedValueOnce({
@@ -273,7 +292,9 @@ describe('media-utils', () => {
       global.URL.createObjectURL = vi.fn(() => 'blob:test');
       global.URL.revokeObjectURL = vi.fn();
 
-      await expect(getImageDimensions(mockFile)).rejects.toThrow('Failed to load image');
+      await expect(getImageDimensions(mockFile)).rejects.toThrow(
+        'Failed to load image'
+      );
       expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:test');
     });
   });

@@ -352,7 +352,9 @@ export function ToolBar({
         if (error instanceof StorageQuotaError) {
           toast.error(error.message);
         } else if (error instanceof Error) {
-          toast.error(error.message || 'Failed to upload image. Please try again.');
+          toast.error(
+            error.message || 'Failed to upload image. Please try again.'
+          );
         } else {
           toast.error('Failed to upload image. Please try again.');
         }
@@ -415,7 +417,9 @@ export function ToolBar({
         if (error instanceof StorageQuotaError) {
           toast.error(error.message);
         } else if (error instanceof Error) {
-          toast.error(error.message || 'Failed to upload video. Please try again.');
+          toast.error(
+            error.message || 'Failed to upload video. Please try again.'
+          );
         } else {
           toast.error('Failed to upload video. Please try again.');
         }
