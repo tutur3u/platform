@@ -193,11 +193,6 @@ export async function POST(req: NextRequest) {
       .eq('status', 'pending')
       .eq('delivery_mode', 'immediate');
 
-    // If restricted to root workspace only, filter by ws_id
-    if (RESTRICT_TO_ROOT_WORKSPACE_ONLY) {
-      query = query.eq('ws_id', ROOT_WORKSPACE_ID);
-    }
-
     // If specific batch IDs provided, filter by them
     if (batchIds.length > 0) {
       query = query.in('id', batchIds);
@@ -220,12 +215,85 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // If restricted to root workspace, we need to filter batches after fetching
+    // because ws_id can be null for user-scoped notifications (like workspace invites)
+    // In that case, the workspace ID is stored in the notification's entity_id or data
+    let filteredBatches = batches;
+
+    if (RESTRICT_TO_ROOT_WORKSPACE_ONLY) {
+      // First, get the notification data for batches with null ws_id to check entity_id
+      const batchesWithNullWsId = batches.filter((b) => b.ws_id === null);
+      const batchesWithWsId = batches.filter((b) => b.ws_id !== null);
+
+      // Keep batches that have ws_id = ROOT_WORKSPACE_ID
+      const validBatchesWithWsId = batchesWithWsId.filter(
+        (b) => b.ws_id === ROOT_WORKSPACE_ID
+      );
+
+      // For batches with null ws_id, check the notification's entity_id or data->workspace_id
+      const validBatchIdsFromNullWsId: string[] = [];
+
+      if (batchesWithNullWsId.length > 0) {
+        const batchIdsToCheck = batchesWithNullWsId.map((b) => b.id);
+
+        // Get notifications for these batches to check their entity_id/data
+        const { data: deliveryLogsForCheck } = await sbAdmin
+          .from('notification_delivery_log')
+          .select(
+            `
+            batch_id,
+            notifications (
+              entity_id,
+              data
+            )
+          `
+          )
+          .in('batch_id', batchIdsToCheck)
+          .eq('channel', 'email');
+
+        if (deliveryLogsForCheck) {
+          for (const log of deliveryLogsForCheck) {
+            const notification = log.notifications as {
+              entity_id: string | null;
+              data: Record<string, unknown> | null;
+            } | null;
+            if (notification && log.batch_id) {
+              // Check entity_id first, then data->workspace_id
+              const workspaceId =
+                notification.entity_id ||
+                (notification.data?.workspace_id as string | undefined);
+
+              if (workspaceId === ROOT_WORKSPACE_ID) {
+                validBatchIdsFromNullWsId.push(log.batch_id as string);
+              }
+            }
+          }
+        }
+      }
+
+      // Combine valid batches
+      const validBatchIds = new Set([
+        ...validBatchesWithWsId.map((b) => b.id),
+        ...validBatchIdsFromNullWsId,
+      ]);
+
+      filteredBatches = batches.filter((b) => validBatchIds.has(b.id));
+
+      if (filteredBatches.length === 0) {
+        return NextResponse.json({
+          message:
+            'No immediate batches to process (filtered by root workspace)',
+          processed: 0,
+        });
+      }
+    }
+
     // ========================================================================
     // BATCH PRE-FETCH: Reduce N+1 queries by fetching all related data upfront
     // With 20 batches limit, this reduces from 60+ queries to ~5 queries
     // ========================================================================
 
-    const batchIdList = batches.map((b) => b.id);
+    const batchIdList = filteredBatches.map((b) => b.id);
 
     // 1. Pre-fetch all delivery logs with notifications for all batches (1 query)
     const { data: allDeliveryLogs } = await sbAdmin
@@ -263,7 +331,7 @@ export async function POST(req: NextRequest) {
 
     // 2. Pre-fetch all unique users with their email details (1 query)
     const uniqueUserIds = [
-      ...new Set(batches.map((b) => b.user_id).filter(Boolean)),
+      ...new Set(filteredBatches.map((b) => b.user_id).filter(Boolean)),
     ] as string[];
 
     const usersMap = new Map<string, UserData>();
@@ -285,7 +353,7 @@ export async function POST(req: NextRequest) {
 
     // 3. Pre-fetch all unique workspaces (1 query)
     const uniqueWsIds = [
-      ...new Set(batches.map((b) => b.ws_id).filter(Boolean)),
+      ...new Set(filteredBatches.map((b) => b.ws_id).filter(Boolean)),
     ] as string[];
 
     const workspacesMap = new Map<string, WorkspaceData>();
@@ -339,7 +407,7 @@ export async function POST(req: NextRequest) {
       error?: string;
     }> = [];
 
-    for (const batch of batches) {
+    for (const batch of filteredBatches) {
       try {
         // Mark batch as processing
         await sbAdmin
