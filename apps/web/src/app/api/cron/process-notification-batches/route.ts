@@ -345,6 +345,7 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     status: 'ok',
-    message: 'Notification batch processor endpoint (batched notifications only)',
+    message:
+      'Notification batch processor endpoint (batched notifications only)',
   });
 }

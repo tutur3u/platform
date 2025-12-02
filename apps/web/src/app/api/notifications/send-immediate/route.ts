@@ -241,8 +241,12 @@ export async function POST(req: NextRequest) {
       .eq('channel', 'email');
 
     // Group delivery logs by batch_id for O(1) lookup
-    const deliveryLogsByBatch = new Map<string, DeliveryLogWithNotification[]>();
-    for (const log of (allDeliveryLogs || []) as DeliveryLogWithNotification[]) {
+    const deliveryLogsByBatch = new Map<
+      string,
+      DeliveryLogWithNotification[]
+    >();
+    for (const log of (allDeliveryLogs ||
+      []) as DeliveryLogWithNotification[]) {
       const existing = deliveryLogsByBatch.get(log.batch_id) || [];
       existing.push(log);
       deliveryLogsByBatch.set(log.batch_id, existing);
@@ -331,7 +335,10 @@ export async function POST(req: NextRequest) {
         // Mark batch as processing
         await sbAdmin
           .from('notification_batches')
-          .update({ status: 'processing', updated_at: new Date().toISOString() })
+          .update({
+            status: 'processing',
+            updated_at: new Date().toISOString(),
+          })
           .eq('id', batch.id)
           .eq('status', 'pending');
 
