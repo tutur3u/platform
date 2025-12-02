@@ -10,6 +10,10 @@ import { NextResponse } from 'next/server';
 // It processes BATCHED notification batches and sends email digests
 // Immediate notifications are handled by /api/notifications/send-immediate
 
+// Feature flag: When true, only send emails for notifications belonging to the root workspace
+// Set to false to allow emails for all workspaces
+const RESTRICT_TO_ROOT_WORKSPACE_ONLY = true;
+
 interface NotificationItem {
   id: string;
   type: string;
@@ -61,12 +65,19 @@ export async function POST(req: NextRequest) {
 
     // Get all pending BATCHED notifications where window_end has passed
     // Immediate notifications are handled separately by /api/notifications/send-immediate
-    const { data: batches, error: batchesError } = await sbAdmin
+    let batchesQuery = sbAdmin
       .from('notification_batches')
       .select('*')
       .eq('status', 'pending')
       .eq('delivery_mode', 'batched')
-      .lte('window_end', new Date().toISOString())
+      .lte('window_end', new Date().toISOString());
+
+    // If restricted to root workspace only, filter by ws_id
+    if (RESTRICT_TO_ROOT_WORKSPACE_ONLY) {
+      batchesQuery = batchesQuery.eq('ws_id', ROOT_WORKSPACE_ID);
+    }
+
+    const { data: batches, error: batchesError } = await batchesQuery
       .order('window_end', { ascending: true })
       .limit(50); // Process max 50 batches per run
 

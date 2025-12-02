@@ -8,6 +8,10 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
+// Feature flag: When true, only send emails for notifications belonging to the root workspace
+// Set to false to allow emails for all workspaces
+const RESTRICT_TO_ROOT_WORKSPACE_ONLY = true;
+
 // Zod schema for request body validation
 const RequestBodySchema = z.object({
   batch_id: z.string().optional(),
@@ -188,6 +192,11 @@ export async function POST(req: NextRequest) {
       .select('*')
       .eq('status', 'pending')
       .eq('delivery_mode', 'immediate');
+
+    // If restricted to root workspace only, filter by ws_id
+    if (RESTRICT_TO_ROOT_WORKSPACE_ONLY) {
+      query = query.eq('ws_id', ROOT_WORKSPACE_ID);
+    }
 
     // If specific batch IDs provided, filter by them
     if (batchIds.length > 0) {
