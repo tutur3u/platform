@@ -364,8 +364,8 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     imagePreviewsRef.current = newPreviews;
   };
 
-  // Shared Image Upload Section component to reduce code duplication
-  const ImageUploadSection = ({ disabled }: { disabled: boolean }) => (
+  // Shared Image Upload Section - render function (not a component) to avoid ref issues
+  const renderImageUploadSection = (disabled: boolean) => (
     <div className="space-y-3">
       <Label className="font-medium text-sm">
         {t('approval.proofOfWork', {
@@ -376,7 +376,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
 
       {images.length < MAX_IMAGES && (
         <button
-          type="button"
+        type='button'
           className={cn(
             'relative w-full rounded-lg border-2 border-dashed transition-all duration-200',
             isDragOver
@@ -388,7 +388,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           aria-label="Click to upload or drag and drop images"
-          disabled={isCompressing || disabled}
+          disabled={disabled || isCompressing}
         >
           <Input
             ref={fileInputRef}
@@ -877,12 +877,12 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
               </div>
 
               {/* Image upload section */}
-              <ImageUploadSection disabled={isCreatingMissedEntry} />
+              {renderImageUploadSection(isCreatingMissedEntry)}
             </div>
           )}
 
           {/* Image upload section for exceeded mode (always required) */}
-          {isExceededMode && <ImageUploadSection disabled={isLoading} />}
+          {isExceededMode && renderImageUploadSection(isLoading)}
 
           {/* Quick time presets - hidden in exceeded mode */}
           {!isExceededMode && (
