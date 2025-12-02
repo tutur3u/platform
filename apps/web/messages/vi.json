@@ -6839,7 +6839,7 @@
     },
     "stats": {
       "title": "Tiến độ của bạn",
-      "description": "Theo dõi các chỉ số năng suất ⚡",
+      "description": "Theo dõi các chỉ số năng suất ",
       "today": {
         "title": "Hôm nay",
         "messageActive": "Tiến bộ tốt!",

@@ -7050,7 +7050,7 @@
     },
     "stats": {
       "title": "Your Progress",
-      "description": "Track your productivity metrics ⚡",
+      "description": "Track your productivity metrics ",
       "today": {
         "title": "Today",
         "messageActive": "Great progress!",
