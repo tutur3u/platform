@@ -1,4 +1,4 @@
-import type { EditorView } from '@tiptap/pm/view';
+import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
 import { Node, nodeInputRule } from '@tiptap/react';
 import { Plugin, PluginKey } from 'prosemirror-state';
 
@@ -18,6 +18,124 @@ declare module '@tiptap/core' {
 }
 
 const VIDEO_INPUT_REGEX = /!\[(.+|:?)]\((\S+)(?:(?:\s+)["'](\S+)["'])?\)/;
+
+// Plugin key for video upload placeholder decorations
+const videoUploadPlaceholderPluginKey = new PluginKey('videoUploadPlaceholder');
+
+// Generate unique ID for each upload
+let videoUploadIdCounter = 0;
+function generateVideoUploadId(): string {
+  return `video-upload-${Date.now()}-${++videoUploadIdCounter}`;
+}
+
+/**
+ * Create a loading placeholder element for uploading videos
+ */
+function createVideoLoadingPlaceholder(
+  width: number,
+  height: number
+): HTMLElement {
+  const wrapper = document.createElement('div');
+  wrapper.className =
+    'upload-placeholder relative inline-block my-4 rounded-md overflow-hidden';
+  wrapper.style.width = `${Math.min(width, 600)}px`;
+  wrapper.style.height = `${Math.min(height, 400)}px`;
+  wrapper.style.maxWidth = '100%';
+  wrapper.style.minWidth = '200px';
+  wrapper.style.minHeight = '120px';
+
+  const placeholder = document.createElement('div');
+  placeholder.className =
+    'w-full h-full bg-muted/60 rounded-md flex items-center justify-center';
+  placeholder.style.backdropFilter = 'blur(4px)';
+
+  // Spinner container
+  const spinnerContainer = document.createElement('div');
+  spinnerContainer.className = 'flex flex-col items-center gap-3';
+
+  // Spinning loader - using CSS animation
+  const spinner = document.createElement('div');
+  spinner.style.cssText = `
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(156, 163, 175, 0.3);
+    border-top-color: rgb(156, 163, 175);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  `;
+
+  // Add keyframes for spin animation if not already present
+  if (!document.querySelector('#upload-spinner-styles')) {
+    const style = document.createElement('style');
+    style.id = 'upload-spinner-styles';
+    style.textContent = `
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Upload text
+  const text = document.createElement('span');
+  text.className = 'text-xs text-muted-foreground font-medium';
+  text.textContent = 'Uploading video...';
+
+  spinnerContainer.appendChild(spinner);
+  spinnerContainer.appendChild(text);
+  placeholder.appendChild(spinnerContainer);
+  wrapper.appendChild(placeholder);
+
+  return wrapper;
+}
+
+/**
+ * Find placeholder decoration by upload ID
+ */
+function findVideoPlaceholder(
+  state: any,
+  id: string
+): { pos: number; spec: any } | null {
+  const decorations = videoUploadPlaceholderPluginKey.getState(state);
+  if (!decorations) return null;
+
+  let found: { pos: number; spec: any } | null = null;
+
+  // Iterate through all decorations to find the one with matching ID
+  const allDecos = decorations.find();
+  for (const deco of allDecos) {
+    if ((deco as any).spec?.id === id) {
+      found = { pos: deco.from, spec: (deco as any).spec };
+      break;
+    }
+  }
+
+  return found;
+}
+
+/**
+ * Load a video file and get its natural dimensions
+ */
+function getVideoDimensions(
+  file: File
+): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    const url = URL.createObjectURL(file);
+
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(url);
+      resolve({ width: video.videoWidth, height: video.videoHeight });
+    };
+
+    video.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load video'));
+    };
+
+    video.src = url;
+  });
+}
 
 interface VideoOptions {
   onVideoUpload?: (file: File) => Promise<string>;
@@ -93,7 +211,48 @@ export const Video = (options: VideoOptions = {}) =>
       const { onVideoUpload } = options;
 
       return [
-        // Video paste plugin with upload
+        // Video upload placeholder plugin - manages loading state decorations
+        new Plugin({
+          key: videoUploadPlaceholderPluginKey,
+          state: {
+            init() {
+              return DecorationSet.empty;
+            },
+            apply(tr, set) {
+              // Map decorations through document changes
+              set = set.map(tr.mapping, tr.doc);
+
+              // Handle add/remove placeholder actions
+              const action = tr.getMeta(videoUploadPlaceholderPluginKey);
+              if (action?.add) {
+                const { id, pos, width, height } = action.add;
+                const placeholder = createVideoLoadingPlaceholder(
+                  width,
+                  height
+                );
+                const deco = Decoration.widget(pos, placeholder, { id });
+                set = set.add(tr.doc, [deco]);
+              }
+              if (action?.remove) {
+                set = set.remove(
+                  set.find(
+                    undefined,
+                    undefined,
+                    (spec: { id?: string }) => spec.id === action.remove.id
+                  )
+                );
+              }
+              return set;
+            },
+          },
+          props: {
+            decorations(state) {
+              return this.getState(state);
+            },
+          },
+        }),
+
+        // Video paste plugin with upload and loading state
         new Plugin({
           key: new PluginKey('videoPastePlugin'),
 
@@ -131,13 +290,9 @@ export const Video = (options: VideoOptions = {}) =>
 
                   // Process all videos sequentially
                   for (const video of videos) {
-                    try {
-                      console.log('Processing pasted video:', {
-                        name: video.name,
-                        type: video.type,
-                        size: video.size,
-                      });
+                    const uploadId = generateVideoUploadId();
 
+                    try {
                       // Validate file size (max 50MB for videos)
                       const maxSize = 50 * 1024 * 1024;
                       if (video.size > maxSize) {
@@ -147,6 +302,26 @@ export const Video = (options: VideoOptions = {}) =>
                         );
                         continue;
                       }
+
+                      // Get video dimensions
+                      let dimensions = { width: 640, height: 360 };
+                      try {
+                        dimensions = await getVideoDimensions(video);
+                      } catch {
+                        // Use default dimensions if we can't load the video
+                      }
+
+                      // Add loading placeholder
+                      const placeholderTr = view.state.tr;
+                      placeholderTr.setMeta(videoUploadPlaceholderPluginKey, {
+                        add: {
+                          id: uploadId,
+                          pos: currentPos,
+                          width: dimensions.width,
+                          height: dimensions.height,
+                        },
+                      });
+                      view.dispatch(placeholderTr);
 
                       // Upload the video
                       const url = await onVideoUpload(video);
@@ -160,23 +335,47 @@ export const Video = (options: VideoOptions = {}) =>
                           'Video node not found. Available nodes:',
                           Object.keys(currentState.schema.nodes)
                         );
+                        // Remove placeholder on error
+                        const removeTr = view.state.tr;
+                        removeTr.setMeta(videoUploadPlaceholderPluginKey, {
+                          remove: { id: uploadId },
+                        });
+                        view.dispatch(removeTr);
                         continue;
                       }
 
+                      // Find the placeholder position (may have shifted)
+                      const placeholder = findVideoPlaceholder(
+                        view.state,
+                        uploadId
+                      );
+                      const insertPos = placeholder?.pos ?? currentPos;
+
+                      // Remove placeholder and insert actual video
+                      const finalTr = view.state.tr;
+                      finalTr.setMeta(videoUploadPlaceholderPluginKey, {
+                        remove: { id: uploadId },
+                      });
+
                       // Create and insert the video node
                       const node = videoNode.create({ src: url });
+                      finalTr.insert(insertPos, node);
+                      view.dispatch(finalTr);
 
-                      const tr = view.state.tr.insert(currentPos, node);
-                      view.dispatch(tr);
-
-                      // Update position for next insertion, mapping through the transaction
-                      currentPos = tr.mapping.map(currentPos) + node.nodeSize;
+                      // Update position for next insertion
+                      currentPos = insertPos + node.nodeSize;
                     } catch (error) {
                       console.error(
                         'Failed to upload pasted video:',
                         video.name,
                         error
                       );
+                      // Remove placeholder on error
+                      const removeTr = view.state.tr;
+                      removeTr.setMeta(videoUploadPlaceholderPluginKey, {
+                        remove: { id: uploadId },
+                      });
+                      view.dispatch(removeTr);
                     }
                   }
                 })();
@@ -187,7 +386,7 @@ export const Video = (options: VideoOptions = {}) =>
           },
         }),
 
-        // Video drop plugin with upload
+        // Video drop plugin with upload and loading state
         new Plugin({
           key: new PluginKey('videoDropPlugin'),
 
@@ -224,41 +423,41 @@ export const Video = (options: VideoOptions = {}) =>
                 (async () => {
                   let currentPos = initialPos;
                   for (const video of videos) {
-                    try {
-                      console.log('Processing dropped video:', {
-                        name: video.name,
-                        type: video.type,
-                        size: video.size,
-                      });
+                    const uploadId = generateVideoUploadId();
 
-                      // If upload callback is provided, use it; otherwise use data URL
-                      let url: string;
-                      if (onVideoUpload) {
-                        // Validate file size (max 50MB)
-                        const maxSize = 50 * 1024 * 1024;
-                        if (video.size > maxSize) {
-                          console.error(
-                            'Video size must be less than 50MB:',
-                            video.name
-                          );
-                          continue;
-                        }
-                        url = await onVideoUpload(video);
-                      } else {
-                        // Fallback to data URL
-                        url = await new Promise<string>((resolve, reject) => {
-                          const reader = new FileReader();
-                          reader.onload = (e) => {
-                            if (typeof e.target?.result === 'string') {
-                              resolve(e.target.result);
-                            } else {
-                              reject(new Error('Failed to read file'));
-                            }
-                          };
-                          reader.onerror = reject;
-                          reader.readAsDataURL(video);
-                        });
+                    try {
+                      // Validate file size (max 50MB)
+                      const maxSize = 50 * 1024 * 1024;
+                      if (video.size > maxSize) {
+                        console.error(
+                          'Video size must be less than 50MB:',
+                          video.name
+                        );
+                        continue;
                       }
+
+                      // Get video dimensions
+                      let dimensions = { width: 640, height: 360 };
+                      try {
+                        dimensions = await getVideoDimensions(video);
+                      } catch {
+                        // Use default dimensions if we can't load the video
+                      }
+
+                      // Add loading placeholder
+                      const placeholderTr = view.state.tr;
+                      placeholderTr.setMeta(videoUploadPlaceholderPluginKey, {
+                        add: {
+                          id: uploadId,
+                          pos: currentPos,
+                          width: dimensions.width,
+                          height: dimensions.height,
+                        },
+                      });
+                      view.dispatch(placeholderTr);
+
+                      // Upload the video
+                      const url = await onVideoUpload(video);
 
                       const node = schema.nodes.video?.create({ src: url });
                       if (!node) {
@@ -266,21 +465,45 @@ export const Video = (options: VideoOptions = {}) =>
                           'Video node not found. Available nodes:',
                           Object.keys(schema.nodes)
                         );
+                        // Remove placeholder on error
+                        const removeTr = view.state.tr;
+                        removeTr.setMeta(videoUploadPlaceholderPluginKey, {
+                          remove: { id: uploadId },
+                        });
+                        view.dispatch(removeTr);
                         continue;
                       }
 
-                      // Create fresh transaction from current view state
-                      const tr = view.state.tr.insert(currentPos, node);
-                      view.dispatch(tr);
+                      // Find the placeholder position (may have shifted)
+                      const placeholder = findVideoPlaceholder(
+                        view.state,
+                        uploadId
+                      );
+                      const insertPos = placeholder?.pos ?? currentPos;
 
-                      // Update position for next insertion, mapping through the transaction
-                      currentPos = tr.mapping.map(currentPos) + node.nodeSize;
+                      // Remove placeholder and insert actual video
+                      const finalTr = view.state.tr;
+                      finalTr.setMeta(videoUploadPlaceholderPluginKey, {
+                        remove: { id: uploadId },
+                      });
+
+                      finalTr.insert(insertPos, node);
+                      view.dispatch(finalTr);
+
+                      // Update position for next insertion
+                      currentPos = insertPos + node.nodeSize;
                     } catch (error) {
                       console.error(
                         'Failed to process dropped video:',
                         video.name,
                         error
                       );
+                      // Remove placeholder on error
+                      const removeTr = view.state.tr;
+                      removeTr.setMeta(videoUploadPlaceholderPluginKey, {
+                        remove: { id: uploadId },
+                      });
+                      view.dispatch(removeTr);
                     }
                   }
                 })();
