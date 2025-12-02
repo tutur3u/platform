@@ -2,7 +2,7 @@ import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { render } from '@react-email/render';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import NotificationDigestEmail from '@tuturuuu/transactional/emails/notification-digest';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { ROOT_WORKSPACE_ID, DEV_MODE} from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -73,6 +73,7 @@ export async function POST(req: NextRequest) {
       .lte('window_end', new Date().toISOString())
       .order('window_end', { ascending: true })
       .limit(50); // Process max 50 batches per run
+
 
     if (batchesError) {
       console.error('Error fetching batches:', batchesError);
@@ -300,30 +301,40 @@ export async function POST(req: NextRequest) {
 
         const emailSubject = `${notifications.length} new notification${notifications.length !== 1 ? 's' : ''} from ${workspaceName}`;
 
-        // Send email via SES
-        const sourceEmail =
-          credentials.source_email || 'notifications@tuturuuu.com';
-        const command = new SendEmailCommand({
-          Source: sourceEmail,
-          Destination: {
-            ToAddresses: [userEmail],
-          },
-          Message: {
-            Subject: {
-              Data: emailSubject,
+        // DEBUG: Skip SES sending for testing, just log the rendered HTML
+        const DEBUG_SKIP_SES = DEV_MODE;
+        if (DEBUG_SKIP_SES) {
+          console.log('=== DEBUG: Rendered Email HTML ===');
+          console.log('Subject:', emailSubject);
+          console.log('To:', userEmail);
+          console.log('HTML:', emailHtml);
+          console.log('=== END DEBUG ===');
+        } else {
+          // Send email via SES
+          const sourceEmail =
+            credentials.source_email || 'notifications@tuturuuu.com';
+          const command = new SendEmailCommand({
+            Source: sourceEmail,
+            Destination: {
+              ToAddresses: [userEmail],
             },
-            Body: {
-              Html: { Data: emailHtml },
+            Message: {
+              Subject: {
+                Data: emailSubject,
+              },
+              Body: {
+                Html: { Data: emailHtml },
+              },
             },
-          },
-        });
+          });
 
-        const sesResponse = await sesClient.send(command);
+          const sesResponse = await sesClient.send(command);
 
-        if (sesResponse.$metadata.httpStatusCode !== 200) {
-          throw new Error(
-            `SES returned status ${sesResponse.$metadata.httpStatusCode}`
-          );
+          if (sesResponse.$metadata.httpStatusCode !== 200) {
+            throw new Error(
+              `SES returned status ${sesResponse.$metadata.httpStatusCode}`
+            );
+          }
         }
 
         // Mark all delivery logs as sent
