@@ -1,6 +1,13 @@
 import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
 import { Node, nodeInputRule } from '@tiptap/react';
 import { Plugin, PluginKey } from 'prosemirror-state';
+import { getVideoDimensions, MAX_VIDEO_SIZE } from './media-utils';
+import {
+  createLoadingPlaceholder,
+  findUploadPlaceholder,
+  generateUploadId,
+  videoUploadPlaceholderPluginKey,
+} from './upload-placeholder';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -18,124 +25,6 @@ declare module '@tiptap/core' {
 }
 
 const VIDEO_INPUT_REGEX = /!\[(.+|:?)]\((\S+)(?:(?:\s+)["'](\S+)["'])?\)/;
-
-// Plugin key for video upload placeholder decorations
-const videoUploadPlaceholderPluginKey = new PluginKey('videoUploadPlaceholder');
-
-// Generate unique ID for each upload
-let videoUploadIdCounter = 0;
-function generateVideoUploadId(): string {
-  return `video-upload-${Date.now()}-${++videoUploadIdCounter}`;
-}
-
-/**
- * Create a loading placeholder element for uploading videos
- */
-function createVideoLoadingPlaceholder(
-  width: number,
-  height: number
-): HTMLElement {
-  const wrapper = document.createElement('div');
-  wrapper.className =
-    'upload-placeholder relative inline-block my-4 rounded-md overflow-hidden';
-  wrapper.style.width = `${Math.min(width, 600)}px`;
-  wrapper.style.height = `${Math.min(height, 400)}px`;
-  wrapper.style.maxWidth = '100%';
-  wrapper.style.minWidth = '200px';
-  wrapper.style.minHeight = '120px';
-
-  const placeholder = document.createElement('div');
-  placeholder.className =
-    'w-full h-full bg-muted/60 rounded-md flex items-center justify-center';
-  placeholder.style.backdropFilter = 'blur(4px)';
-
-  // Spinner container
-  const spinnerContainer = document.createElement('div');
-  spinnerContainer.className = 'flex flex-col items-center gap-3';
-
-  // Spinning loader - using CSS animation
-  const spinner = document.createElement('div');
-  spinner.style.cssText = `
-    width: 32px;
-    height: 32px;
-    border: 3px solid rgba(156, 163, 175, 0.3);
-    border-top-color: rgb(156, 163, 175);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  `;
-
-  // Add keyframes for spin animation if not already present
-  if (!document.querySelector('#upload-spinner-styles')) {
-    const style = document.createElement('style');
-    style.id = 'upload-spinner-styles';
-    style.textContent = `
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  // Upload text
-  const text = document.createElement('span');
-  text.className = 'text-xs text-muted-foreground font-medium';
-  text.textContent = 'Uploading video...';
-
-  spinnerContainer.appendChild(spinner);
-  spinnerContainer.appendChild(text);
-  placeholder.appendChild(spinnerContainer);
-  wrapper.appendChild(placeholder);
-
-  return wrapper;
-}
-
-/**
- * Find placeholder decoration by upload ID
- */
-function findVideoPlaceholder(
-  state: any,
-  id: string
-): { pos: number; spec: any } | null {
-  const decorations = videoUploadPlaceholderPluginKey.getState(state);
-  if (!decorations) return null;
-
-  let found: { pos: number; spec: any } | null = null;
-
-  // Iterate through all decorations to find the one with matching ID
-  const allDecos = decorations.find();
-  for (const deco of allDecos) {
-    if ((deco as any).spec?.id === id) {
-      found = { pos: deco.from, spec: (deco as any).spec };
-      break;
-    }
-  }
-
-  return found;
-}
-
-/**
- * Load a video file and get its natural dimensions
- */
-function getVideoDimensions(
-  file: File
-): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const video = document.createElement('video');
-    const url = URL.createObjectURL(file);
-
-    video.onloadedmetadata = () => {
-      URL.revokeObjectURL(url);
-      resolve({ width: video.videoWidth, height: video.videoHeight });
-    };
-
-    video.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('Failed to load video'));
-    };
-
-    video.src = url;
-  });
-}
 
 interface VideoOptions {
   onVideoUpload?: (file: File) => Promise<string>;
@@ -226,9 +115,10 @@ export const Video = (options: VideoOptions = {}) =>
               const action = tr.getMeta(videoUploadPlaceholderPluginKey);
               if (action?.add) {
                 const { id, pos, width, height } = action.add;
-                const placeholder = createVideoLoadingPlaceholder(
+                const placeholder = createLoadingPlaceholder(
                   width,
-                  height
+                  height,
+                  'video'
                 );
                 const deco = Decoration.widget(pos, placeholder, { id });
                 set = set.add(tr.doc, [deco]);
@@ -290,12 +180,11 @@ export const Video = (options: VideoOptions = {}) =>
 
                   // Process all videos sequentially
                   for (const video of videos) {
-                    const uploadId = generateVideoUploadId();
+                    const uploadId = generateUploadId();
 
                     try {
                       // Validate file size (max 50MB for videos)
-                      const maxSize = 50 * 1024 * 1024;
-                      if (video.size > maxSize) {
+                      if (video.size > MAX_VIDEO_SIZE) {
                         console.error(
                           'Video size must be less than 50MB:',
                           video.name
@@ -345,9 +234,10 @@ export const Video = (options: VideoOptions = {}) =>
                       }
 
                       // Find the placeholder position (may have shifted)
-                      const placeholder = findVideoPlaceholder(
+                      const placeholder = findUploadPlaceholder(
                         view.state,
-                        uploadId
+                        uploadId,
+                        videoUploadPlaceholderPluginKey
                       );
                       const insertPos = placeholder?.pos ?? currentPos;
 
@@ -423,12 +313,11 @@ export const Video = (options: VideoOptions = {}) =>
                 (async () => {
                   let currentPos = initialPos;
                   for (const video of videos) {
-                    const uploadId = generateVideoUploadId();
+                    const uploadId = generateUploadId();
 
                     try {
                       // Validate file size (max 50MB)
-                      const maxSize = 50 * 1024 * 1024;
-                      if (video.size > maxSize) {
+                      if (video.size > MAX_VIDEO_SIZE) {
                         console.error(
                           'Video size must be less than 50MB:',
                           video.name
@@ -475,9 +364,10 @@ export const Video = (options: VideoOptions = {}) =>
                       }
 
                       // Find the placeholder position (may have shifted)
-                      const placeholder = findVideoPlaceholder(
+                      const placeholder = findUploadPlaceholder(
                         view.state,
-                        uploadId
+                        uploadId,
+                        videoUploadPlaceholderPluginKey
                       );
                       const insertPos = placeholder?.pos ?? currentPos;
 

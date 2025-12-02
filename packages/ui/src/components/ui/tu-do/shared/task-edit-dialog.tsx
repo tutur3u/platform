@@ -11,6 +11,10 @@ import { Dialog, DialogContent } from '@tuturuuu/ui/dialog';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
+import {
+  checkStorageQuota,
+  StorageQuotaError,
+} from '../../text-editor/media-utils';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import { cn } from '@tuturuuu/utils/format';
 import {
@@ -827,38 +831,69 @@ export function TaskEditDialog({
   const handleImageUpload = useCallback(
     async (file: File): Promise<string> => {
       if (!wsId) {
-        throw new Error('Workspace ID is required for image upload');
-      }
-
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `${wsId}/task-images/${fileName}`;
-
-      const { data, error } = await supabase.storage
-        .from('workspaces')
-        .upload(filePath, file, {
-          contentType: file.type,
-          upsert: false,
+        const errorMsg = 'Workspace ID is required for image upload';
+        toast({
+          title: 'Upload failed',
+          description: errorMsg,
+          variant: 'destructive',
         });
-
-      if (error) {
-        console.error('Upload error:', error);
-        throw new Error('Failed to upload image');
+        throw new Error(errorMsg);
       }
 
-      const { data: signedUrlData, error: signedUrlError } =
-        await supabase.storage
+      try {
+        // Check storage quota before uploading
+        await checkStorageQuota(supabase, wsId, file.size);
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `${wsId}/task-images/${fileName}`;
+
+        const { data, error } = await supabase.storage
           .from('workspaces')
-          .createSignedUrl(data.path, 31536000);
+          .upload(filePath, file, {
+            contentType: file.type,
+            upsert: false,
+          });
 
-      if (signedUrlError) {
-        console.error('Signed URL error:', signedUrlError);
-        throw new Error('Failed to generate signed URL');
+        if (error) {
+          console.error('Upload error:', error);
+          toast({
+            title: 'Upload failed',
+            description: error.message || 'Failed to upload image',
+            variant: 'destructive',
+          });
+          throw new Error('Failed to upload image');
+        }
+
+        const { data: signedUrlData, error: signedUrlError } =
+          await supabase.storage
+            .from('workspaces')
+            .createSignedUrl(data.path, 31536000);
+
+        if (signedUrlError) {
+          console.error('Signed URL error:', signedUrlError);
+          toast({
+            title: 'URL generation failed',
+            description: signedUrlError.message || 'Failed to generate signed URL',
+            variant: 'destructive',
+          });
+          throw new Error('Failed to generate signed URL');
+        }
+
+        return signedUrlData.signedUrl;
+      } catch (error) {
+        if (error instanceof StorageQuotaError) {
+          toast({
+            title: 'Storage Quota Exceeded',
+            description: error.message,
+            variant: 'destructive',
+          });
+          throw error;
+        }
+        throw error;
       }
-
-      return signedUrlData.signedUrl;
     },
-    [wsId]
+    [wsId, toast]
   );
 
   const handleEstimationConfigSuccess = useCallback(async () => {
