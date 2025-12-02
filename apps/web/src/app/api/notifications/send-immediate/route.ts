@@ -2,36 +2,114 @@ import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { render } from '@react-email/render';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import NotificationDigestEmail from '@tuturuuu/transactional/emails/notification-digest';
+import WorkspaceInviteEmail from '@tuturuuu/transactional/emails/workspace-invite';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-// This API route should be called by a cron job (pg_cron, Trigger.dev, or external cron service)
-// It processes BATCHED notification batches and sends email digests
-// Immediate notifications are handled by /api/notifications/send-immediate
+// Email template registry for immediate notifications
+type EmailTemplateType = 'workspace-invite' | 'notification-digest';
 
-interface NotificationItem {
+interface NotificationData {
   id: string;
   type: string;
+  code?: string;
   title: string;
   description: string;
   data: Record<string, any>;
-  createdAt: string;
+  created_at: string;
 }
 
+interface RenderTemplateParams {
+  templateType: EmailTemplateType;
+  notification: NotificationData;
+  userName: string;
+  workspaceName?: string;
+}
+
+// Render the appropriate email template based on type
+async function renderEmailTemplate(params: RenderTemplateParams): Promise<{
+  html: string;
+  subject: string;
+}> {
+  const { templateType, notification, userName, workspaceName } = params;
+
+  switch (templateType) {
+    case 'workspace-invite': {
+      const inviterName =
+        notification.data?.inviter_name ||
+        notification.data?.inviterName ||
+        'Someone';
+      const wsName =
+        notification.data?.workspace_name ||
+        notification.data?.workspaceName ||
+        workspaceName ||
+        'a workspace';
+      const workspaceId =
+        notification.data?.workspace_id || notification.data?.workspaceId;
+
+      const html = await render(
+        WorkspaceInviteEmail({
+          inviteeName: userName,
+          inviterName,
+          workspaceName: wsName,
+          workspaceId,
+        })
+      );
+
+      return {
+        html,
+        subject: `You've been invited to join ${wsName}`,
+      };
+    }
+
+    default:
+      throw new Error(`Unknown template type: ${templateType}`);
+  }
+}
+
+/**
+ * This endpoint processes immediate notification batches right away.
+ * It should be called via a database trigger (pg_net) or webhook when
+ * an immediate notification batch is created.
+ *
+ * The endpoint can be triggered:
+ * 1. Via pg_net HTTP extension from a database trigger
+ * 2. Via Supabase Edge Function webhook
+ * 3. Via direct API call from application code
+ */
 export async function POST(req: NextRequest) {
   try {
-    // Verify the request is authorized (check for cron secret)
+    // Verify the request is authorized
     const authHeader = req.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    // Accept either CRON_SECRET or service role key for authorization
+    const isAuthorized =
+      (cronSecret && authHeader === `Bearer ${cronSecret}`) ||
+      (supabaseServiceKey && authHeader === `Bearer ${supabaseServiceKey}`);
+
+    if (!isAuthorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Parse request body to get batch_id (optional - if not provided, process all pending immediate batches)
+    let batchIds: string[] = [];
+    try {
+      const body = await req.json();
+      if (body.batch_id) {
+        batchIds = [body.batch_id];
+      } else if (body.batch_ids && Array.isArray(body.batch_ids)) {
+        batchIds = body.batch_ids;
+      }
+    } catch {
+      // No body provided, will process all pending immediate batches
     }
 
     const sbAdmin = await createAdminClient();
 
-    // Get AWS SES credentials from workspace_email_credentials
+    // Get AWS SES credentials
     const { data: credentials, error: credentialsError } = await sbAdmin
       .from('workspace_email_credentials')
       .select('*')
@@ -41,11 +119,7 @@ export async function POST(req: NextRequest) {
     if (credentialsError || !credentials) {
       console.error('Error fetching SES credentials:', credentialsError);
       return NextResponse.json(
-        {
-          error: 'Email credentials not configured',
-          processed: 0,
-          failed: 0,
-        },
+        { error: 'Email credentials not configured' },
         { status: 500 }
       );
     }
@@ -59,30 +133,32 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Get all pending BATCHED notifications where window_end has passed
-    // Immediate notifications are handled separately by /api/notifications/send-immediate
-    const { data: batches, error: batchesError } = await sbAdmin
+    // Build query for immediate batches
+    let query = sbAdmin
       .from('notification_batches')
       .select('*')
       .eq('status', 'pending')
-      .eq('delivery_mode', 'batched')
-      .lte('window_end', new Date().toISOString())
-      .order('window_end', { ascending: true })
-      .limit(50); // Process max 50 batches per run
+      .eq('delivery_mode', 'immediate');
+
+    // If specific batch IDs provided, filter by them
+    if (batchIds.length > 0) {
+      query = query.in('id', batchIds);
+    }
+
+    const { data: batches, error: batchesError } = await query.limit(20);
 
     if (batchesError) {
-      console.error('Error fetching batches:', batchesError);
+      console.error('Error fetching immediate batches:', batchesError);
       return NextResponse.json(
-        { error: 'Error fetching batches', processed: 0, failed: 0 },
+        { error: 'Error fetching batches' },
         { status: 500 }
       );
     }
 
     if (!batches || batches.length === 0) {
       return NextResponse.json({
-        message: 'No pending batched notifications to process',
+        message: 'No immediate batches to process',
         processed: 0,
-        failed: 0,
       });
     }
 
@@ -92,25 +168,19 @@ export async function POST(req: NextRequest) {
       batch_id: string;
       status: string;
       email?: string;
-      notification_count?: number;
-      reason?: string;
       error?: string;
     }> = [];
 
-    // Process each batch
     for (const batch of batches) {
       try {
         // Mark batch as processing
         await sbAdmin
           .from('notification_batches')
-          .update({
-            status: 'processing',
-            updated_at: new Date().toISOString(),
-          })
+          .update({ status: 'processing', updated_at: new Date().toISOString() })
           .eq('id', batch.id)
-          .eq('status', 'pending'); // Double-check status hasn't changed
+          .eq('status', 'pending');
 
-        // Get all pending notifications for this batch
+        // Get notification for this batch
         const { data: deliveryLogs, error: logsError } = await sbAdmin
           .from('notification_delivery_log')
           .select(
@@ -119,6 +189,7 @@ export async function POST(req: NextRequest) {
             notifications (
               id,
               type,
+              code,
               title,
               description,
               data,
@@ -128,11 +199,9 @@ export async function POST(req: NextRequest) {
           )
           .eq('batch_id', batch.id)
           .eq('status', 'pending')
-          .eq('channel', 'email')
-          .order('notifications(created_at)', { ascending: false });
+          .eq('channel', 'email');
 
         if (logsError || !deliveryLogs || deliveryLogs.length === 0) {
-          // No notifications to send, mark batch as sent
           await sbAdmin
             .from('notification_batches')
             .update({
@@ -145,13 +214,12 @@ export async function POST(req: NextRequest) {
           results.push({
             batch_id: batch.id,
             status: 'skipped',
-            reason: 'no_notifications',
           });
           processedCount++;
           continue;
         }
 
-        // Get user details (either by user_id or email)
+        // Get user details
         let userEmail: string;
         let userName: string;
 
@@ -166,7 +234,6 @@ export async function POST(req: NextRequest) {
           userEmail = emailData?.[0]?.email || batch.email || '';
           userName = user?.display_name || userEmail;
         } else {
-          // Email-only (pending user)
           userEmail = batch.email || '';
           userName = userEmail;
         }
@@ -175,11 +242,8 @@ export async function POST(req: NextRequest) {
           throw new Error('No email address found for batch');
         }
 
-        // Get workspace details (if workspace-scoped)
+        // Get workspace details
         let workspaceName = 'Tuturuuu';
-        let workspaceUrl =
-          process.env.NEXT_PUBLIC_APP_URL || 'https://tuturuuu.com';
-
         if (batch.ws_id) {
           const { data: workspace } = await sbAdmin
             .from('workspaces')
@@ -189,54 +253,70 @@ export async function POST(req: NextRequest) {
 
           if (workspace) {
             workspaceName = workspace.name || 'Unknown Workspace';
-            workspaceUrl = `${workspaceUrl}/${batch.ws_id}`;
           }
         }
 
-        if (!workspaceUrl) {
-          workspaceUrl = 'https://tuturuuu.com';
+        // Get the notification
+        const notification = (deliveryLogs[0])?.notifications as NotificationData;
+        if (!notification) {
+          throw new Error('No notification found in delivery log');
         }
 
-        // Format notifications for email template
-        const notifications: NotificationItem[] = deliveryLogs
-          .map((log: any) => log.notifications)
-          .filter(Boolean)
-          .map((n: any) => ({
-            id: n.id,
-            type: n.type,
-            title: n.title,
-            description: n.description,
-            data: n.data,
-            createdAt: n.created_at,
-          }));
+        // Get email config for this notification type
+        // Note: notification_email_config table is created via migration
+        const { data: emailConfig } = await sbAdmin
+          .from('notification_email_config')
+          .select('email_template, email_subject_template')
+          .eq('notification_type', notification.type || notification.code || '')
+          .eq('delivery_mode', 'immediate')
+          .eq('enabled', true)
+          .maybeSingle();
 
-        // Render digest email template
-        const emailHtml = await render(
-          NotificationDigestEmail({
+        let emailHtml: string;
+        let emailSubject: string;
+
+        const config = emailConfig as { email_template?: string; email_subject_template?: string } | null;
+        if (config?.email_template) {
+          const templateResult = await renderEmailTemplate({
+            templateType: config.email_template as EmailTemplateType,
+            notification,
             userName,
             workspaceName,
-            notifications,
-            workspaceUrl,
-          })
-        );
+          });
+          emailHtml = templateResult.html;
+          emailSubject = templateResult.subject;
+        } else {
+          // Fallback to digest template
+          emailHtml = await render(
+            NotificationDigestEmail({
+              userName,
+              workspaceName,
+              notifications: [
+                {
+                  id: notification.id,
+                  type: notification.type,
+                  title: notification.title,
+                  description: notification.description,
+                  data: notification.data,
+                  createdAt: notification.created_at,
+                },
+              ],
+              workspaceUrl:
+                process.env.NEXT_PUBLIC_APP_URL || 'https://tuturuuu.com',
+            })
+          );
+          emailSubject = `New notification from ${workspaceName}`;
+        }
 
-        const emailSubject = `${notifications.length} new notification${notifications.length !== 1 ? 's' : ''} from ${workspaceName}`;
-
-        // Send email via SES
+        // Send email
         const sourceEmail =
           credentials.source_email || 'notifications@tuturuuu.com';
         const command = new SendEmailCommand({
           Source: sourceEmail,
-          Destination: {
-            ToAddresses: [userEmail],
-          },
+          Destination: { ToAddresses: [userEmail] },
           Message: {
-            Subject: {
-              Data: emailSubject,
-            },
-            Body: {
-              Html: { Data: emailHtml },
-            },
+            Subject: { Data: emailSubject },
+            Body: { Html: { Data: emailHtml } },
           },
         });
 
@@ -248,7 +328,7 @@ export async function POST(req: NextRequest) {
           );
         }
 
-        // Mark all delivery logs as sent
+        // Mark as sent
         await sbAdmin
           .from('notification_delivery_log')
           .update({
@@ -259,13 +339,12 @@ export async function POST(req: NextRequest) {
           .eq('batch_id', batch.id)
           .eq('status', 'pending');
 
-        // Mark batch as sent
         await sbAdmin
           .from('notification_batches')
           .update({
             status: 'sent',
             sent_at: new Date().toISOString(),
-            notification_count: notifications.length,
+            notification_count: deliveryLogs.length,
             updated_at: new Date().toISOString(),
           })
           .eq('id', batch.id);
@@ -274,13 +353,11 @@ export async function POST(req: NextRequest) {
           batch_id: batch.id,
           status: 'sent',
           email: userEmail,
-          notification_count: notifications.length,
         });
         processedCount++;
       } catch (error) {
-        console.error(`Error processing batch ${batch.id}:`, error);
+        console.error(`Error processing immediate batch ${batch.id}:`, error);
 
-        // Mark batch as failed
         await sbAdmin
           .from('notification_batches')
           .update({
@@ -290,29 +367,6 @@ export async function POST(req: NextRequest) {
             updated_at: new Date().toISOString(),
           })
           .eq('id', batch.id);
-
-        // Mark delivery logs as failed and increment retry_count
-        // Note: Supabase doesn't support .raw() - we'll increment in a separate query
-        const { data: failedLogs } = await sbAdmin
-          .from('notification_delivery_log')
-          .select('id, retry_count')
-          .eq('batch_id', batch.id)
-          .eq('status', 'pending');
-
-        if (failedLogs) {
-          for (const log of failedLogs) {
-            await sbAdmin
-              .from('notification_delivery_log')
-              .update({
-                status: 'failed',
-                error_message:
-                  error instanceof Error ? error.message : 'Unknown error',
-                retry_count: (log.retry_count || 0) + 1,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', log.id);
-          }
-        }
 
         results.push({
           batch_id: batch.id,
@@ -324,13 +378,13 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({
-      message: 'Batch processing completed',
+      message: 'Immediate notification processing completed',
       processed: processedCount,
       failed: failedCount,
       results,
     });
   } catch (error) {
-    console.error('Error in notification batch processor:', error);
+    console.error('Error in immediate notification processor:', error);
     return NextResponse.json(
       {
         error: 'Internal server error',
@@ -339,12 +393,4 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-// Allow GET for health checks
-export async function GET() {
-  return NextResponse.json({
-    status: 'ok',
-    message: 'Notification batch processor endpoint (batched notifications only)',
-  });
 }
