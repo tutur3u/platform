@@ -1,15 +1,5 @@
 'use client';
 
-import { AudioStreamer } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/audio-streamer';
-import { MultimodalLiveClient } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/multimodal-live-client';
-import { audioContext } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/utils';
-import VolMeterWorket from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/worklets/vol-meter';
-import type {
-  LiveConfig,
-  ToolCall,
-  ToolResponse,
-} from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/multimodal-live';
-import { taskTools } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/tools/task-tools';
 import {
   createContext,
   type FC,
@@ -21,6 +11,15 @@ import {
   useRef,
   useState,
 } from 'react';
+import { AudioStreamer } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/audio-streamer';
+import { MultimodalLiveClient } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/multimodal-live-client';
+import { audioContext } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/utils';
+import VolMeterWorket from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/worklets/vol-meter';
+import type {
+  LiveConfig,
+  ToolCall,
+  ToolResponse,
+} from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/multimodal-live';
 
 export type UseLiveAPIResults = {
   client: MultimodalLiveClient;
@@ -69,38 +68,10 @@ export function useLiveAPI({ apiKey }: { apiKey: string }): UseLiveAPIResults {
 
   const [connected, setConnected] = useState(false);
   const [config, setConfig] = useState<LiveConfig>({
-    model: 'gemini-2.5-flash-native-audio-preview-09-2025',
-    systemInstruction: {
-      parts: [
-        {
-          text: `You are the user's personal assistant. The user has explicitly granted you permission to manage their tasks. You are connected to the user's task database via secure tools.
-
-You are fully authenticated and have permission to access the user's tasks.
-When the user asks "What are my tasks?" or similar, you MUST call the 'get_my_tasks' function.
-Do not assume you don't have access. You DO have access.
-
-- When users ask about their tasks, you MUST use the task management tools (get_my_tasks, search_tasks, etc.).
-- When users ask general questions or for information you don't know, use the Google Search tool.
-- You can combine tools to solve complex requests.
-
-Task Tools:
-- Use get_my_tasks to retrieve the user's tasks
-- Use search_tasks to find specific tasks by keywords
-- Use create_task to create new tasks
-- Use update_task to modify existing tasks
-- Use delete_task to remove tasks
-- Use get_task_details to get detailed information about a specific task
-
-Never say you don't have access to task data - always call the appropriate tool first.`,
-        },
-      ],
-    },
-    tools: taskTools,
-    toolConfig: {
-      functionCallingConfig: {
-        mode: 'AUTO',
-      },
-    },
+    model: 'gemini-2.0-flash-exp',
+    // NOTE: When using ephemeral tokens, systemInstruction, tools, and toolConfig
+    // are embedded in the token itself. Passing them here can cause conflicts.
+    // Leave config minimal to avoid overriding token settings.
   });
   const [volume, setVolume] = useState(0);
 
@@ -149,6 +120,14 @@ Never say you don't have access to task data - always call the appropriate tool 
     if (!config) {
       throw new Error('config has not been set');
     }
+    console.log('[Live API] Connecting with config:', {
+      model: config.model,
+      hasSystemInstruction: !!config.systemInstruction,
+      hasTools: !!config.tools,
+      toolCount: config.tools?.length,
+      hasToolConfig: !!config.toolConfig,
+    });
+
     // Ensure any existing session is fully closed before reconnecting
     if (client.ws) {
       client.disconnect();
@@ -156,6 +135,7 @@ Never say you don't have access to task data - always call the appropriate tool 
       await new Promise((resolve) => setTimeout(resolve, 200));
     }
     await client.connect(config);
+    console.log('[Live API] Connected successfully');
     setConnected(true);
   }, [client, config]);
 

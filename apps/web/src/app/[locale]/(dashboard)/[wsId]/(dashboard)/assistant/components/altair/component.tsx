@@ -1,8 +1,8 @@
 'use client';
 
-import { useLiveAPIContext } from '@/hooks/use-live-api';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useEffect, useRef, useState } from 'react';
+import { useLiveAPIContext } from '@/hooks/use-live-api';
 import type { LiveFunctionDeclaration, ToolCall } from '../../multimodal-live';
 
 const declaration: LiveFunctionDeclaration = {
@@ -205,7 +205,10 @@ INTERACTION RULES:
             functionResponses: [
               {
                 id: predictionFc.id,
-                response: { ok: false, error: 'Ticker is required' },
+                name: predictionFc.name,
+                response: {
+                  result: { ok: false, error: 'Ticker is required' },
+                },
               },
             ],
           });
@@ -238,7 +241,10 @@ INTERACTION RULES:
             functionResponses: [
               {
                 id: companiesFc.id,
-                response: { ok: true, status: resp.status, body: json },
+                name: companiesFc.name,
+                response: {
+                  result: { ok: true, status: resp.status, body: json },
+                },
               },
             ],
           });
@@ -248,7 +254,10 @@ INTERACTION RULES:
             functionResponses: [
               {
                 id: companiesFc.id,
-                response: { ok: false, error: 'Failed to fetch companies' },
+                name: companiesFc.name,
+                response: {
+                  result: { ok: false, error: 'Failed to fetch companies' },
+                },
               },
             ],
           });
@@ -273,10 +282,13 @@ INTERACTION RULES:
               functionResponses: [
                 {
                   id: portfolioFc.id,
+                  name: portfolioFc.name,
                   response: {
-                    ok: false,
-                    needsPortfolioSelection: true,
-                    portfolios: listJson?.data ?? [],
+                    result: {
+                      ok: false,
+                      needsPortfolioSelection: true,
+                      portfolios: listJson?.data ?? [],
+                    },
                   },
                 },
               ],
@@ -287,10 +299,13 @@ INTERACTION RULES:
               functionResponses: [
                 {
                   id: portfolioFc.id,
+                  name: portfolioFc.name,
                   response: {
-                    ok: false,
-                    error:
-                      'Missing portfolioId and failed to fetch user portfolios',
+                    result: {
+                      ok: false,
+                      error:
+                        'Missing portfolioId and failed to fetch user portfolios',
+                    },
                   },
                 },
               ],
@@ -310,7 +325,10 @@ INTERACTION RULES:
             functionResponses: [
               {
                 id: portfolioFc.id,
-                response: { ok: true, status: resp.status, body: json },
+                name: portfolioFc.name,
+                response: {
+                  result: { ok: true, status: resp.status, body: json },
+                },
               },
             ],
           });
@@ -320,7 +338,10 @@ INTERACTION RULES:
             functionResponses: [
               {
                 id: portfolioFc.id,
-                response: { ok: false, error: 'Failed to fetch portfolio' },
+                name: portfolioFc.name,
+                response: {
+                  result: { ok: false, error: 'Failed to fetch portfolio' },
+                },
               },
             ],
           });
@@ -346,10 +367,13 @@ INTERACTION RULES:
               functionResponses: [
                 {
                   id: portfolioStocksFc.id,
+                  name: portfolioStocksFc.name,
                   response: {
-                    ok: false,
-                    needsPortfolioSelection: true,
-                    portfolios: listJson?.data ?? [],
+                    result: {
+                      ok: false,
+                      needsPortfolioSelection: true,
+                      portfolios: listJson?.data ?? [],
+                    },
                   },
                 },
               ],
@@ -360,10 +384,13 @@ INTERACTION RULES:
               functionResponses: [
                 {
                   id: portfolioStocksFc.id,
+                  name: portfolioStocksFc.name,
                   response: {
-                    ok: false,
-                    error:
-                      'Missing portfolioId and failed to fetch user portfolios',
+                    result: {
+                      ok: false,
+                      error:
+                        'Missing portfolioId and failed to fetch user portfolios',
+                    },
                   },
                 },
               ],
@@ -383,7 +410,10 @@ INTERACTION RULES:
             functionResponses: [
               {
                 id: portfolioStocksFc.id,
-                response: { ok: true, status: resp.status, body: json },
+                name: portfolioStocksFc.name,
+                response: {
+                  result: { ok: true, status: resp.status, body: json },
+                },
               },
             ],
           });
@@ -393,9 +423,12 @@ INTERACTION RULES:
             functionResponses: [
               {
                 id: portfolioStocksFc.id,
+                name: portfolioStocksFc.name,
                 response: {
-                  ok: false,
-                  error: 'Failed to fetch portfolio stocks',
+                  result: {
+                    ok: false,
+                    error: 'Failed to fetch portfolio stocks',
+                  },
                 },
               },
             ],
@@ -416,7 +449,10 @@ INTERACTION RULES:
             functionResponses: [
               {
                 id: userPortfoliosFc.id,
-                response: { ok: true, status: resp.status, body: json },
+                name: userPortfoliosFc.name,
+                response: {
+                  result: { ok: true, status: resp.status, body: json },
+                },
               },
             ],
           });
@@ -426,9 +462,12 @@ INTERACTION RULES:
             functionResponses: [
               {
                 id: userPortfoliosFc.id,
+                name: userPortfoliosFc.name,
                 response: {
-                  ok: false,
-                  error: 'Failed to fetch user portfolios',
+                  result: {
+                    ok: false,
+                    error: 'Failed to fetch user portfolios',
+                  },
                 },
               },
             ],
@@ -450,7 +489,8 @@ INTERACTION RULES:
         await sendToolResponse({
           functionResponses: remaining.map((call) => ({
             id: call.id,
-            response: { success: true },
+            name: call.name,
+            response: { result: 'ok' },
           })),
         });
       }

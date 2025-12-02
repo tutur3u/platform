@@ -108,17 +108,26 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
         sdkConfig.toolConfig = config.toolConfig;
       }
 
+      // Detect ephemeral token usage: no tools/systemInstruction in client config
+      // When using ephemeral tokens, these are embedded in the token itself.
+      // Passing config here would OVERRIDE the token's embedded configuration.
+      const isUsingEphemeralToken =
+        !config.tools && !config.systemInstruction && !config.toolConfig;
+
       console.log('[Live API] Connecting with config:', {
         model: config.model,
+        isUsingEphemeralToken,
         hasSystemInstruction: !!sdkConfig.systemInstruction,
         hasTools: !!sdkConfig.tools,
         hasToolConfig: !!sdkConfig.toolConfig,
         toolsCount: Array.isArray(config.tools) ? config.tools.length : 0,
       });
 
+      // When using ephemeral token, pass model only - let token provide the rest
+      // Otherwise, pass full config for regular API key mode
       this.session = await this.ai.live.connect({
         model: config.model,
-        config: sdkConfig,
+        ...(isUsingEphemeralToken ? {} : { config: sdkConfig }),
         callbacks: {
           onopen: () => {
             this.log('client.open', 'connected to Gemini Live');
@@ -339,17 +348,38 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
 
   /**
    * Send a tool response
+   * Format matches Google GenAI SDK: { id, name, response }
+   * See: https://ai.google.dev/gemini-api/docs/live-tools
    */
   sendToolResponse(toolResponse: ToolResponseMessage['toolResponse']) {
     if (!this.session) {
       throw new Error('Session is not connected');
     }
 
-    this.session.sendToolResponse({
-      functionResponses: toolResponse.functionResponses.map((fr) => ({
+    // Format function responses according to Google SDK requirements
+    // The response object needs to be a simple object (will be serialized by SDK)
+    const formattedResponses = toolResponse.functionResponses.map((fr) => {
+      // Ensure response is a clean, serializable object
+      // Wrap complex responses in a simple result structure
+      const responseObj =
+        typeof fr.response === 'object' && fr.response !== null
+          ? (fr.response as Record<string, unknown>)
+          : { result: fr.response };
+
+      return {
         id: fr.id,
-        response: fr.response as Record<string, unknown>,
-      })),
+        name: fr.name,
+        response: responseObj,
+      };
+    });
+
+    console.log(
+      '[Live Client] Sending tool response:',
+      JSON.stringify(formattedResponses, null, 2)
+    );
+
+    this.session.sendToolResponse({
+      functionResponses: formattedResponses,
     });
     this.log('client.toolResponse', JSON.stringify(toolResponse));
   }

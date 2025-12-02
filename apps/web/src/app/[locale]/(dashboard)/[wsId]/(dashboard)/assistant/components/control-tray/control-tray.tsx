@@ -1,9 +1,5 @@
 'use client';
 
-import { useLiveAPIContext } from '@/hooks/use-live-api';
-import type { UseMediaStreamResult } from '@/hooks/use-media-stream-mux';
-import { useScreenCapture } from '@/hooks/use-screen-capture';
-import { useWebcam } from '@/hooks/use-webcam';
 import {
   ImageIcon,
   ImageOff,
@@ -33,6 +29,10 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useLiveAPIContext } from '@/hooks/use-live-api';
+import type { UseMediaStreamResult } from '@/hooks/use-media-stream-mux';
+import { useScreenCapture } from '@/hooks/use-screen-capture';
+import { useWebcam } from '@/hooks/use-webcam';
 import { AudioRecorder } from '../../audio/audio-recorder';
 
 export type ControlTrayProps = {

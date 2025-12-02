@@ -1,11 +1,11 @@
 'use client';
 
-import { useLiveAPIContext } from '@/hooks/use-live-api';
 import { BarChart3, Search, Sparkles, Wand2 } from '@tuturuuu/icons';
 import { Tooltip, TooltipProvider, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
+import { useLiveAPIContext } from '@/hooks/use-live-api';
 
 type UsedTool = {
   name: string;

@@ -1,6 +1,10 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { google } from '@ai-sdk/google';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  PERSONAL_WORKSPACE_SLUG,
+  resolveWorkspaceId,
+} from '@tuturuuu/utils/constants';
+import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { embed } from 'ai';
 
 export const maxDuration = 30;
@@ -11,7 +15,66 @@ type ToolCallRequest = {
   args: Record<string, unknown>;
 };
 
+/**
+ * Normalizes workspace ID from slug to UUID for API routes
+ * - "personal" → User's personal workspace UUID (DB query)
+ * - "internal" → ROOT_WORKSPACE_ID constant
+ * - Valid UUID → Passes through unchanged
+ *
+ * Note: We can't use getWorkspace() here because it uses redirect()/notFound()
+ * which don't work in API routes. Instead, we query the database directly.
+ */
+async function normalizeWorkspaceId(wsId: string): Promise<string> {
+  if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
+    // Query personal workspace directly for API route context
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    // Get user's personal workspace (joined via workspace_members)
+    const { data: workspace, error } = await supabase
+      .from('workspaces')
+      .select('id, workspace_members!inner(user_id)')
+      .eq('personal', true)
+      .eq('workspace_members.user_id', user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[normalizeWorkspaceId] Database error resolving personal workspace:', {
+        userId: user.id,
+        errorCode: error.code,
+        errorMessage: error.message,
+        errorDetails: error.details,
+      });
+      throw new Error(`Personal workspace query failed: ${error.message}`);
+    }
+
+    if (!workspace) {
+      console.error('[normalizeWorkspaceId] Personal workspace not found for user:', {
+        userId: user.id,
+      });
+      throw new Error('Personal workspace not found. Please ensure your account has a personal workspace.');
+    }
+
+    console.log('[normalizeWorkspaceId] Personal workspace resolved:', {
+      userId: user.id,
+      workspaceId: workspace.id,
+    });
+
+    return workspace.id;
+  }
+  return resolveWorkspaceId(wsId);
+}
+
 export async function POST(req: Request) {
+  let functionName: string | undefined;
+
   try {
     // 1. Authenticate user
     const supabase = await createClient();
@@ -31,7 +94,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const { wsId, functionName, args } = (await req.json()) as ToolCallRequest;
+    const body = (await req.json()) as ToolCallRequest;
+    const { wsId, args } = body;
+    functionName = body.functionName;
 
     if (!wsId || !functionName) {
       return Response.json(
@@ -40,27 +105,48 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3. Execute the tool based on function name
+    // 3. Normalize workspace ID (personal → UUID, internal → ROOT_WORKSPACE_ID)
+    let normalizedWsId: string;
+    try {
+      normalizedWsId = await normalizeWorkspaceId(wsId);
+      console.log('[Tools Execute] Workspace ID normalized:', {
+        original: wsId,
+        normalized: normalizedWsId,
+        functionName,
+      });
+    } catch (error) {
+      console.error('[Tools Execute] Workspace resolution failed:', {
+        wsId,
+        functionName,
+        error: error instanceof Error ? error.message : error,
+      });
+      return Response.json(
+        { error: 'Workspace not found or access denied' },
+        { status: 404 }
+      );
+    }
+
+    // 4. Execute the tool based on function name
     let result: unknown;
 
     switch (functionName) {
       case 'get_my_tasks':
-        result = await getMyTasks(wsId, user.id, args);
+        result = await getMyTasks(normalizedWsId, user.id, args);
         break;
       case 'search_tasks':
-        result = await searchTasks(wsId, args);
+        result = await searchTasks(normalizedWsId, args);
         break;
       case 'create_task':
-        result = await createTask(wsId, args);
+        result = await createTask(normalizedWsId, args);
         break;
       case 'update_task':
-        result = await updateTask(wsId, args);
+        result = await updateTask(normalizedWsId, args);
         break;
       case 'delete_task':
-        result = await deleteTask(wsId, args);
+        result = await deleteTask(normalizedWsId, args);
         break;
       case 'get_task_details':
-        result = await getTaskDetails(wsId, args);
+        result = await getTaskDetails(normalizedWsId, args);
         break;
       default:
         return Response.json(
@@ -69,11 +155,24 @@ export async function POST(req: Request) {
         );
     }
 
+    console.log('[Tools Execute] Tool executed successfully:', {
+      functionName,
+      resultType: typeof result,
+      resultKeys: result && typeof result === 'object' ? Object.keys(result) : null,
+    });
+
     return Response.json({ result });
   } catch (error) {
-    console.error('Error executing tool:', error);
+    console.error('[Tools Execute] Error executing tool:', {
+      functionName,
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return Response.json(
-      { error: 'Failed to execute tool', details: String(error) },
+      {
+        error: 'Failed to execute tool',
+        details: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     );
   }
@@ -82,7 +181,7 @@ export async function POST(req: Request) {
 // Tool implementations
 
 async function getMyTasks(
-  wsId: string,
+  normalizedWsId: string,
   userId: string,
   args: Record<string, unknown>
 ) {
@@ -94,11 +193,19 @@ async function getMyTasks(
     'get_user_accessible_tasks',
     {
       p_user_id: userId,
-      p_ws_id: wsId,
+      p_ws_id: normalizedWsId,
       p_include_deleted: false,
       p_list_statuses: ['not_started', 'active', 'done'],
     }
   );
+
+  console.log('getMyTasks RPC result:', {
+    userId,
+    wsId: normalizedWsId,
+    category,
+    tasksCount: rpcTasks?.length ?? 0,
+    error: tasksError,
+  });
 
   if (tasksError) {
     throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
@@ -133,11 +240,13 @@ async function getMyTasks(
     createdAt: task.task_created_at,
   }));
 
-  // Categorize tasks
+  // Categorize tasks with proper date handling (avoid mutation)
   const now = new Date().toISOString();
   const today = new Date();
-  const todayStart = new Date(today.setHours(0, 0, 0, 0)).toISOString();
-  const todayEnd = new Date(today.setHours(23, 59, 59, 999)).toISOString();
+  today.setHours(0, 0, 0, 0);
+  const todayStart = today.toISOString();
+  today.setHours(23, 59, 59, 999);
+  const todayEnd = today.toISOString();
 
   type MappedTask = {
     id: string;
@@ -182,6 +291,30 @@ async function getMyTasks(
     upcoming?: { count: number; tasks: MappedTask[] };
   };
 
+  // Helper to sort tasks: by end date (nulls last), then by priority, then by creation date
+  const priorityOrder: Record<string, number> = {
+    critical: 0,
+    high: 1,
+    normal: 2,
+    low: 3,
+  };
+  const sortTasks = (tasks: MappedTask[]) =>
+    [...tasks].sort((a, b) => {
+      // Sort by end date (ascending, nulls last)
+      if (a.endDate && !b.endDate) return -1;
+      if (!a.endDate && b.endDate) return 1;
+      if (a.endDate && b.endDate) {
+        const dateCompare = a.endDate.localeCompare(b.endDate);
+        if (dateCompare !== 0) return dateCompare;
+      }
+      // Then by priority (higher priority first)
+      const aPriority = priorityOrder[a.priority ?? 'normal'] ?? 2;
+      const bPriority = priorityOrder[b.priority ?? 'normal'] ?? 2;
+      if (aPriority !== bPriority) return aPriority - bPriority;
+      // Then by creation date (oldest first)
+      return a.createdAt.localeCompare(b.createdAt);
+    });
+
   const result: TaskResult = {
     totalActive: overdueTasks.length + todayTasks.length + upcomingTasks.length,
   };
@@ -189,26 +322,26 @@ async function getMyTasks(
   if (category === 'all' || category === 'overdue') {
     result.overdue = {
       count: overdueTasks.length,
-      tasks: overdueTasks.slice(0, 10), // Limit to 10 per category for voice
+      tasks: sortTasks(overdueTasks).slice(0, 10), // Sort then limit to 10 per category
     };
   }
   if (category === 'all' || category === 'today') {
     result.today = {
       count: todayTasks.length,
-      tasks: todayTasks.slice(0, 10),
+      tasks: sortTasks(todayTasks).slice(0, 10),
     };
   }
   if (category === 'all' || category === 'upcoming') {
     result.upcoming = {
       count: upcomingTasks.length,
-      tasks: upcomingTasks.slice(0, 10),
+      tasks: sortTasks(upcomingTasks).slice(0, 10),
     };
   }
 
   return result;
 }
 
-async function searchTasks(wsId: string, args: Record<string, unknown>) {
+async function searchTasks(normalizedWsId: string, args: Record<string, unknown>) {
   const supabase = await createClient();
   const query = args.query as string;
   const matchCount = Math.min((args.matchCount as number) || 10, 50);
@@ -235,7 +368,7 @@ async function searchTasks(wsId: string, args: Record<string, unknown>) {
     query_text: query,
     match_threshold: matchThreshold,
     match_count: matchCount,
-    filter_ws_id: wsId,
+    filter_ws_id: normalizedWsId,
     filter_deleted: false,
   });
 
@@ -262,7 +395,7 @@ async function searchTasks(wsId: string, args: Record<string, unknown>) {
   };
 }
 
-async function createTask(wsId: string, args: Record<string, unknown>) {
+async function createTask(normalizedWsId: string, args: Record<string, unknown>) {
   const supabase = await createClient();
   const name = args.name as string;
   const description = args.description as string | undefined;
@@ -280,7 +413,7 @@ async function createTask(wsId: string, args: Record<string, unknown>) {
   const { data: board, error: boardError } = await supabase
     .from('workspace_boards')
     .select('id')
-    .eq('ws_id', wsId)
+    .eq('ws_id', normalizedWsId)
     .limit(1)
     .single();
 
@@ -336,7 +469,7 @@ async function createTask(wsId: string, args: Record<string, unknown>) {
   };
 }
 
-async function updateTask(wsId: string, args: Record<string, unknown>) {
+async function updateTask(normalizedWsId: string, args: Record<string, unknown>) {
   const supabase = await createClient();
   const taskId = args.taskId as string;
   const updates: Record<string, unknown> = {};
@@ -391,7 +524,7 @@ async function updateTask(wsId: string, args: Record<string, unknown>) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const taskWsId = (task as any).task_lists?.workspace_boards?.ws_id;
-  if (taskWsId !== wsId) {
+  if (taskWsId !== normalizedWsId) {
     throw new Error('Task does not belong to this workspace');
   }
 
@@ -412,7 +545,7 @@ async function updateTask(wsId: string, args: Record<string, unknown>) {
   };
 }
 
-async function deleteTask(wsId: string, args: Record<string, unknown>) {
+async function deleteTask(normalizedWsId: string, args: Record<string, unknown>) {
   const supabase = await createClient();
   const taskId = args.taskId as string;
 
@@ -432,7 +565,7 @@ async function deleteTask(wsId: string, args: Record<string, unknown>) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const taskWsId = (task as any).task_lists?.workspace_boards?.ws_id;
-  if (taskWsId !== wsId) {
+  if (taskWsId !== normalizedWsId) {
     throw new Error('Task does not belong to this workspace');
   }
 
@@ -452,7 +585,10 @@ async function deleteTask(wsId: string, args: Record<string, unknown>) {
   };
 }
 
-async function getTaskDetails(wsId: string, args: Record<string, unknown>) {
+async function getTaskDetails(
+  normalizedWsId: string,
+  args: Record<string, unknown>
+) {
   const supabase = await createClient();
   const taskId = args.taskId as string;
 
@@ -488,7 +624,7 @@ async function getTaskDetails(wsId: string, args: Record<string, unknown>) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const taskWsId = (task as any).task_lists?.workspace_boards?.ws_id;
-  if (taskWsId !== wsId) {
+  if (taskWsId !== normalizedWsId) {
     throw new Error('Task does not belong to this workspace');
   }
 

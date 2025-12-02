@@ -1,7 +1,5 @@
 'use client';
 
-import { useEphemeralToken } from '@/hooks/use-ephemeral-token';
-import { LiveAPIProvider, useLiveAPIContext } from '@/hooks/use-live-api';
 import {
   AnimatePresence,
   motion,
@@ -11,6 +9,8 @@ import {
 } from 'framer-motion';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEphemeralToken } from '@/hooks/use-ephemeral-token';
+import { LiveAPIProvider, useLiveAPIContext } from '@/hooks/use-live-api';
 import { AudioRecorder } from './audio/audio-recorder';
 import { ChatBox } from './components/chat-box/chat-box';
 import ControlTray from './components/control-tray/control-tray';
@@ -172,9 +172,16 @@ function GameApp({ wsId }: { wsId: string }) {
             fc.args as Record<string, unknown>
           );
           console.log(`[Assistant] Tool result:`, result);
+
+          // Format response according to Google GenAI SDK requirements
+          // Must include id, name, and response object
+          // See: https://ai.google.dev/gemini-api/docs/live-tools
           return {
             id: fc.id,
-            response: result,
+            name: fc.name,
+            response: {
+              result: result,
+            },
           };
         })
       );
@@ -188,9 +195,35 @@ function GameApp({ wsId }: { wsId: string }) {
 
   // Register tool call handler
   useEffect(() => {
+    console.log('[Assistant] Registering tool call handler');
     const unsubscribe = onToolCall(handleToolCall);
-    return unsubscribe;
+    return () => {
+      console.log('[Assistant] Unregistering tool call handler');
+      unsubscribe();
+    };
   }, [onToolCall, handleToolCall]);
+
+  // Debug: Log all events from client
+  useEffect(() => {
+    if (!client) return;
+
+    const debugHandler = (event: unknown) => {
+      console.log('[Assistant] Client event:', event);
+    };
+
+    // Listen to multiple event types to debug
+    client.on('toolcall', (tc: ToolCall) => {
+      console.log('[Assistant] TOOLCALL EVENT:', tc);
+    });
+
+    client.on('content', (content: unknown) => {
+      console.log('[Assistant] CONTENT EVENT:', content);
+    });
+
+    return () => {
+      // Cleanup if needed
+    };
+  }, [client]);
 
   // Keep transcript ref in sync
   useEffect(() => {

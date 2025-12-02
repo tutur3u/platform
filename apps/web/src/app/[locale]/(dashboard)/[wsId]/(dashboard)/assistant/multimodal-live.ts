@@ -101,8 +101,9 @@ export type ToolResponseMessage = {
 export type ToolResponse = ToolResponseMessage['toolResponse'];
 
 export type LiveFunctionResponse = {
-  response: object;
   id: string;
+  name: string;
+  response: object;
 };
 
 /** Incoming types */

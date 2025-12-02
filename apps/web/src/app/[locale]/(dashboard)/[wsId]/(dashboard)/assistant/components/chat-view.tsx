@@ -1,10 +1,10 @@
 'use client';
 
-import { useLiveAPIContext } from '@/hooks/use-live-api';
 import { Send } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useRef, useState } from 'react';
+import { useLiveAPIContext } from '@/hooks/use-live-api';
 import ControlTray from './control-tray/control-tray';
 import Logger from './logger/logger';
 import { VisualizerPanel } from './visualizer-panel';
