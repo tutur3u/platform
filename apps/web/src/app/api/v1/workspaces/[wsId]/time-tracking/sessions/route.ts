@@ -362,14 +362,6 @@ export async function POST(
     // Use service role client for secure operations
     const sbAdmin = await createAdminClient(); // This should use service role
 
-    // Check if workspace is personal - skip all threshold restrictions for personal workspaces
-    const { data: workspace } = await sbAdmin
-      .from('workspaces')
-      .select('personal')
-      .eq('id', wsId)
-      .maybeSingle();
-
-    const isPersonalWorkspace = workspace?.personal === true;
 
     // If this is a manual entry (missed entry), handle differently
     if (startTime && endTime) {
@@ -385,7 +377,6 @@ export async function POST(
       }
 
       // Only apply threshold restrictions for non-personal workspaces
-      if (!isPersonalWorkspace) {
         // Fetch workspace threshold setting
         const { data: workspaceSettings } = await sbAdmin
           .from('workspace_settings')
@@ -421,7 +412,6 @@ export async function POST(
               { status: 400 }
             );
           }
-        }
       }
 
       // Calculate duration in seconds

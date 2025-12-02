@@ -174,17 +174,6 @@ export async function PATCH(
         const isEditingTime = startTime !== undefined || endTime !== undefined;
 
         if (isEditingTime) {
-          // Check if workspace is personal - skip all threshold restrictions for personal workspaces
-          const { data: workspace } = await sbAdmin
-            .from('workspaces')
-            .select('personal')
-            .eq('id', wsId)
-            .maybeSingle();
-
-          const isPersonalWorkspace = workspace?.personal === true;
-
-          // Only apply threshold restrictions for non-personal workspaces
-          if (!isPersonalWorkspace) {
             // Fetch workspace threshold setting
             const { data: workspaceSettings } = await sbAdmin
               .from('workspace_settings')
@@ -236,7 +225,6 @@ export async function PATCH(
                   );
                 }
               }
-            }
           }
         }
 
