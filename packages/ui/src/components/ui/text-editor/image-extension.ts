@@ -332,7 +332,11 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       }
 
                       // Find the placeholder position (may have shifted)
-                      const placeholder = findUploadPlaceholder(view.state, uploadId, imageUploadPlaceholderPluginKey);
+                      const placeholder = findUploadPlaceholder(
+                        view.state,
+                        uploadId,
+                        imageUploadPlaceholderPluginKey
+                      );
                       const insertPos = placeholder?.pos ?? currentPos;
 
                       // Remove placeholder and insert actual image
@@ -471,7 +475,11 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       }
 
                       // Find the placeholder position (may have shifted)
-                      const placeholder = findUploadPlaceholder(view.state, uploadId, imageUploadPlaceholderPluginKey);
+                      const placeholder = findUploadPlaceholder(
+                        view.state,
+                        uploadId,
+                        imageUploadPlaceholderPluginKey
+                      );
                       const insertPos = placeholder?.pos ?? currentPos;
 
                       // Remove placeholder and insert actual image
@@ -560,7 +568,11 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       }
 
                       // Find the placeholder position (may have shifted)
-                      const placeholder = findUploadPlaceholder(view.state, uploadId, imageUploadPlaceholderPluginKey);
+                      const placeholder = findUploadPlaceholder(
+                        view.state,
+                        uploadId,
+                        imageUploadPlaceholderPluginKey
+                      );
                       const insertPos = placeholder?.pos ?? currentPos;
 
                       // Remove placeholder and insert actual video

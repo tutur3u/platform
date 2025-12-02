@@ -12,7 +12,9 @@ describe('VideoExtension', () => {
     });
 
     it('should accept options with onVideoUpload callback', () => {
-      const mockUpload = vi.fn().mockResolvedValue('https://example.com/video.mp4');
+      const mockUpload = vi
+        .fn()
+        .mockResolvedValue('https://example.com/video.mp4');
       const extension = Video({ onVideoUpload: mockUpload });
 
       expect(extension).toBeDefined();
@@ -116,9 +118,12 @@ describe('VideoExtension', () => {
   describe('upload placeholder', () => {
     it('should show loading placeholder during upload', () => {
       const extension = Video({
-        onVideoUpload: vi.fn().mockImplementation(
-          () => new Promise((resolve) => setTimeout(() => resolve('url'), 100))
-        ),
+        onVideoUpload: vi
+          .fn()
+          .mockImplementation(
+            () =>
+              new Promise((resolve) => setTimeout(() => resolve('url'), 100))
+          ),
       });
 
       // Uses videoUploadPlaceholderPluginKey for placeholders
@@ -164,7 +169,9 @@ describe('VideoExtension', () => {
 
   describe('paste handler', () => {
     it('should handle video paste events', () => {
-      const mockUpload = vi.fn().mockResolvedValue('https://example.com/video.mp4');
+      const mockUpload = vi
+        .fn()
+        .mockResolvedValue('https://example.com/video.mp4');
       const extension = Video({ onVideoUpload: mockUpload });
 
       expect(extension).toBeDefined();
@@ -207,7 +214,9 @@ describe('VideoExtension', () => {
 
   describe('drop handler', () => {
     it('should handle video drop events', () => {
-      const mockUpload = vi.fn().mockResolvedValue('https://example.com/video.mp4');
+      const mockUpload = vi
+        .fn()
+        .mockResolvedValue('https://example.com/video.mp4');
       const extension = Video({ onVideoUpload: mockUpload });
 
       expect(extension).toBeDefined();
