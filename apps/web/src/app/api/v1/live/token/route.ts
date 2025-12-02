@@ -386,7 +386,8 @@ export async function POST() {
       toolCount: TASK_TOOL_DECLARATIONS.length,
       toolNames: TASK_TOOL_DECLARATIONS.map((t) => t.name),
       mode: FunctionCallingConfigMode.AUTO,
-      hasSystemInstruction: !!tokenConfig.config.liveConnectConstraints.config.systemInstruction,
+      hasSystemInstruction:
+        !!tokenConfig.config.liveConnectConstraints.config.systemInstruction,
     });
 
     const token = await client.authTokens.create(tokenConfig);

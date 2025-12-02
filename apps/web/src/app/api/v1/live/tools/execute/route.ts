@@ -46,20 +46,28 @@ async function normalizeWorkspaceId(wsId: string): Promise<string> {
       .maybeSingle();
 
     if (error) {
-      console.error('[normalizeWorkspaceId] Database error resolving personal workspace:', {
-        userId: user.id,
-        errorCode: error.code,
-        errorMessage: error.message,
-        errorDetails: error.details,
-      });
+      console.error(
+        '[normalizeWorkspaceId] Database error resolving personal workspace:',
+        {
+          userId: user.id,
+          errorCode: error.code,
+          errorMessage: error.message,
+          errorDetails: error.details,
+        }
+      );
       throw new Error(`Personal workspace query failed: ${error.message}`);
     }
 
     if (!workspace) {
-      console.error('[normalizeWorkspaceId] Personal workspace not found for user:', {
-        userId: user.id,
-      });
-      throw new Error('Personal workspace not found. Please ensure your account has a personal workspace.');
+      console.error(
+        '[normalizeWorkspaceId] Personal workspace not found for user:',
+        {
+          userId: user.id,
+        }
+      );
+      throw new Error(
+        'Personal workspace not found. Please ensure your account has a personal workspace.'
+      );
     }
 
     console.log('[normalizeWorkspaceId] Personal workspace resolved:', {
@@ -158,7 +166,8 @@ export async function POST(req: Request) {
     console.log('[Tools Execute] Tool executed successfully:', {
       functionName,
       resultType: typeof result,
-      resultKeys: result && typeof result === 'object' ? Object.keys(result) : null,
+      resultKeys:
+        result && typeof result === 'object' ? Object.keys(result) : null,
     });
 
     return Response.json({ result });
@@ -171,7 +180,7 @@ export async function POST(req: Request) {
     return Response.json(
       {
         error: 'Failed to execute tool',
-        details: error instanceof Error ? error.message : String(error)
+        details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );
@@ -341,7 +350,10 @@ async function getMyTasks(
   return result;
 }
 
-async function searchTasks(normalizedWsId: string, args: Record<string, unknown>) {
+async function searchTasks(
+  normalizedWsId: string,
+  args: Record<string, unknown>
+) {
   const supabase = await createClient();
   const query = args.query as string;
   const matchCount = Math.min((args.matchCount as number) || 10, 50);
@@ -395,7 +407,10 @@ async function searchTasks(normalizedWsId: string, args: Record<string, unknown>
   };
 }
 
-async function createTask(normalizedWsId: string, args: Record<string, unknown>) {
+async function createTask(
+  normalizedWsId: string,
+  args: Record<string, unknown>
+) {
   const supabase = await createClient();
   const name = args.name as string;
   const description = args.description as string | undefined;
@@ -469,7 +484,10 @@ async function createTask(normalizedWsId: string, args: Record<string, unknown>)
   };
 }
 
-async function updateTask(normalizedWsId: string, args: Record<string, unknown>) {
+async function updateTask(
+  normalizedWsId: string,
+  args: Record<string, unknown>
+) {
   const supabase = await createClient();
   const taskId = args.taskId as string;
   const updates: Record<string, unknown> = {};
@@ -545,7 +563,10 @@ async function updateTask(normalizedWsId: string, args: Record<string, unknown>)
   };
 }
 
-async function deleteTask(normalizedWsId: string, args: Record<string, unknown>) {
+async function deleteTask(
+  normalizedWsId: string,
+  args: Record<string, unknown>
+) {
   const supabase = await createClient();
   const taskId = args.taskId as string;
 
