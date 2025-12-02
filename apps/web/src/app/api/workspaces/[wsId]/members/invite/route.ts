@@ -7,6 +7,33 @@ interface Params {
   }>;
 }
 
+// Helper to trigger immediate notification processing
+async function triggerImmediateNotification() {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://tuturuuu.com';
+  const cronSecret = process.env.CRON_SECRET;
+
+  if (!cronSecret) {
+    console.warn('CRON_SECRET not configured, skipping immediate notification trigger');
+    return;
+  }
+
+  try {
+    // Fire and forget - don't wait for response
+    fetch(`${baseUrl}/api/notifications/send-immediate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${cronSecret}`,
+      },
+      body: JSON.stringify({}),
+    }).catch((err) => {
+      console.error('Failed to trigger immediate notification:', err);
+    });
+  } catch (error) {
+    console.error('Error triggering immediate notification:', error);
+  }
+}
+
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId } = await params;
@@ -41,6 +68,11 @@ export async function POST(req: Request, { params }: Params) {
       { status: 500 }
     );
   }
+
+  // Trigger immediate notification processing
+  // The database trigger will create the notification batch with delivery_mode='immediate'
+  // This call ensures it gets processed right away
+  triggerImmediateNotification();
 
   return NextResponse.json({ message: 'success' });
 }
