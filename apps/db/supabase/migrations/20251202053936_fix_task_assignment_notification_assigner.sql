@@ -91,41 +91,11 @@ BEGIN
         RETURN OLD;
     END IF;
 
-    -- Skip notification entirely if user is unassigning themselves (no need to notify yourself)
-    IF v_updater_id = OLD.user_id THEN
-        -- Still record history for audit purposes
-        SELECT * INTO v_task_details FROM public.get_task_details(OLD.task_id);
-        SELECT id, display_name INTO v_removed_user FROM public.users WHERE id = OLD.user_id;
-        
-        PERFORM public.insert_task_history(
-            OLD.task_id,
-            'assignee_removed',
-            NULL,
-            jsonb_build_object('user_id', v_removed_user.id, 'user_name', COALESCE(v_removed_user.display_name, 'Unknown user')),
-            NULL,
-            jsonb_build_object('ws_id', v_task_details.ws_id, 'board_id', v_task_details.board_id)
-        );
-        
-        RETURN OLD;
-    END IF;
-
-    -- Get comprehensive task details
+    -- Fetch task details and removed user details once (used by both branches)
     SELECT * INTO v_task_details FROM public.get_task_details(OLD.task_id);
+    SELECT id, display_name INTO v_removed_user FROM public.users WHERE id = OLD.user_id;
 
-    -- Get task name
-    SELECT name INTO v_task FROM public.tasks WHERE id = OLD.task_id;
-
-    -- Get updater name
-    SELECT COALESCE(display_name, 'Unknown user') INTO v_updater_name
-    FROM public.users
-    WHERE id = v_updater_id;
-
-    -- Get removed user details
-    SELECT id, display_name INTO v_removed_user
-    FROM public.users
-    WHERE id = OLD.user_id;
-
-    -- Insert history record
+    -- Insert history record (always, for audit purposes)
     PERFORM public.insert_task_history(
         OLD.task_id,
         'assignee_removed',
@@ -135,16 +105,26 @@ BEGIN
         jsonb_build_object('ws_id', v_task_details.ws_id, 'board_id', v_task_details.board_id)
     );
 
+    -- Skip notifications if user is unassigning themselves (no need to notify yourself)
+    IF v_updater_id = OLD.user_id THEN
+        RETURN OLD;
+    END IF;
+
+    -- Get updater name (only needed for notifications)
+    SELECT COALESCE(display_name, 'Unknown user') INTO v_updater_name
+    FROM public.users
+    WHERE id = v_updater_id;
+
     -- Notify the removed user (only if someone else removed them)
     PERFORM public.create_notification(
         p_ws_id := v_task_details.ws_id,
         p_user_id := OLD.user_id,
         p_type := 'task_assignee_removed',
         p_title := 'Removed from task',
-        p_description := v_updater_name || ' removed you from "' || v_task.name || '"',
+        p_description := v_updater_name || ' removed you from "' || v_task_details.task_name || '"',
         p_data := jsonb_build_object(
             'task_id', OLD.task_id,
-            'task_name', v_task.name,
+            'task_name', v_task_details.task_name,
             'board_id', v_task_details.board_id,
             'removed_by', v_updater_id,
             'removed_by_name', v_updater_name
@@ -166,10 +146,10 @@ BEGIN
             p_user_id := v_remaining_assignee_id,
             p_type := 'task_assignee_removed',
             p_title := 'Assignee removed from task',
-            p_description := v_updater_name || ' removed ' || COALESCE(v_removed_user.display_name, 'Unknown user') || ' from "' || v_task.name || '"',
+            p_description := v_updater_name || ' removed ' || COALESCE(v_removed_user.display_name, 'Unknown user') || ' from "' || v_task_details.task_name || '"',
             p_data := jsonb_build_object(
                 'task_id', OLD.task_id,
-                'task_name', v_task.name,
+                'task_name', v_task_details.task_name,
                 'removed_user_id', OLD.user_id,
                 'removed_user_name', COALESCE(v_removed_user.display_name, 'Unknown user'),
                 'board_id', v_task_details.board_id,

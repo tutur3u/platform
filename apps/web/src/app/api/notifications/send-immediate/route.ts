@@ -6,6 +6,13 @@ import WorkspaceInviteEmail from '@tuturuuu/transactional/emails/workspace-invit
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+// Zod schema for request body validation
+const RequestBodySchema = z.object({
+  batch_id: z.string().optional(),
+  batch_ids: z.array(z.string()).optional(),
+});
 
 // Email template registry for immediate notifications
 type EmailTemplateType = 'workspace-invite' | 'notification-digest';
@@ -25,6 +32,30 @@ interface RenderTemplateParams {
   notification: NotificationData;
   userName: string;
   workspaceName?: string;
+}
+
+// Pre-fetched data types for batch processing
+interface UserData {
+  id: string;
+  display_name: string | null;
+  email: string | null;
+}
+
+interface WorkspaceData {
+  id: string;
+  name: string | null;
+}
+
+interface EmailConfigData {
+  notification_type: string;
+  email_template: string | null;
+  email_subject_template: string | null;
+}
+
+interface DeliveryLogWithNotification {
+  batch_id: string;
+  notification_id: string;
+  notifications: NotificationData | null;
 }
 
 // Render the appropriate email template based on type
@@ -96,16 +127,34 @@ export async function POST(req: NextRequest) {
 
     // Parse request body to get batch_id (optional - if not provided, process all pending immediate batches)
     let batchIds: string[] = [];
-    try {
-      const body = await req.json();
-      if (body.batch_id) {
-        batchIds = [body.batch_id];
-      } else if (body.batch_ids && Array.isArray(body.batch_ids)) {
-        batchIds = body.batch_ids;
+
+    const bodyText = await req.text();
+    if (bodyText) {
+      let parsedBody: unknown;
+      try {
+        parsedBody = JSON.parse(bodyText);
+      } catch {
+        return NextResponse.json(
+          { error: 'Invalid JSON body' },
+          { status: 400 }
+        );
       }
-    } catch {
-      // No body provided, will process all pending immediate batches
+
+      const result = RequestBodySchema.safeParse(parsedBody);
+      if (!result.success) {
+        return NextResponse.json(
+          { error: 'Validation failed', details: result.error.issues },
+          { status: 400 }
+        );
+      }
+
+      if (result.data.batch_id) {
+        batchIds = [result.data.batch_id];
+      } else if (result.data.batch_ids) {
+        batchIds = result.data.batch_ids;
+      }
     }
+    // If no body provided, batchIds remains empty and we process all pending immediate batches
 
     const sbAdmin = await createAdminClient();
 
@@ -162,6 +211,112 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // ========================================================================
+    // BATCH PRE-FETCH: Reduce N+1 queries by fetching all related data upfront
+    // With 20 batches limit, this reduces from 60+ queries to ~5 queries
+    // ========================================================================
+
+    const batchIdList = batches.map((b) => b.id);
+
+    // 1. Pre-fetch all delivery logs with notifications for all batches (1 query)
+    const { data: allDeliveryLogs } = await sbAdmin
+      .from('notification_delivery_log')
+      .select(
+        `
+        batch_id,
+        notification_id,
+        notifications (
+          id,
+          type,
+          code,
+          title,
+          description,
+          data,
+          created_at
+        )
+      `
+      )
+      .in('batch_id', batchIdList)
+      .eq('status', 'pending')
+      .eq('channel', 'email');
+
+    // Group delivery logs by batch_id for O(1) lookup
+    const deliveryLogsByBatch = new Map<string, DeliveryLogWithNotification[]>();
+    for (const log of (allDeliveryLogs || []) as DeliveryLogWithNotification[]) {
+      const existing = deliveryLogsByBatch.get(log.batch_id) || [];
+      existing.push(log);
+      deliveryLogsByBatch.set(log.batch_id, existing);
+    }
+
+    // 2. Pre-fetch all unique users with their email details (1 query)
+    const uniqueUserIds = [
+      ...new Set(batches.map((b) => b.user_id).filter(Boolean)),
+    ] as string[];
+
+    const usersMap = new Map<string, UserData>();
+    if (uniqueUserIds.length > 0) {
+      const { data: users } = await sbAdmin
+        .from('users')
+        .select('id, display_name, email:user_private_details(email)')
+        .in('id', uniqueUserIds);
+
+      for (const user of users || []) {
+        const emailData = user.email as unknown as Array<{ email: string }>;
+        usersMap.set(user.id, {
+          id: user.id,
+          display_name: user.display_name,
+          email: emailData?.[0]?.email || null,
+        });
+      }
+    }
+
+    // 3. Pre-fetch all unique workspaces (1 query)
+    const uniqueWsIds = [
+      ...new Set(batches.map((b) => b.ws_id).filter(Boolean)),
+    ] as string[];
+
+    const workspacesMap = new Map<string, WorkspaceData>();
+    if (uniqueWsIds.length > 0) {
+      const { data: workspaces } = await sbAdmin
+        .from('workspaces')
+        .select('id, name')
+        .in('id', uniqueWsIds);
+
+      for (const ws of workspaces || []) {
+        workspacesMap.set(ws.id, { id: ws.id, name: ws.name });
+      }
+    }
+
+    // 4. Pre-fetch all notification types from delivery logs to get email configs (1 query)
+    const notificationTypes = new Set<string>();
+    for (const logs of deliveryLogsByBatch.values()) {
+      for (const log of logs) {
+        const notification = log.notifications;
+        if (notification) {
+          const notifType = notification.type || notification.code || '';
+          if (notifType) notificationTypes.add(notifType);
+        }
+      }
+    }
+
+    const emailConfigsMap = new Map<string, EmailConfigData>();
+    if (notificationTypes.size > 0) {
+      const { data: emailConfigs } = await sbAdmin
+        .from('notification_email_config')
+        .select('notification_type, email_template, email_subject_template')
+        .in('notification_type', [...notificationTypes])
+        .eq('delivery_mode', 'immediate')
+        .eq('enabled', true);
+
+      for (const config of emailConfigs || []) {
+        emailConfigsMap.set(config.notification_type, config);
+      }
+    }
+
+    // ========================================================================
+    // PROCESS BATCHES: Now using pre-fetched data (O(1) lookups)
+    // ========================================================================
+
     let processedCount = 0;
     let failedCount = 0;
     const results: Array<{
@@ -180,28 +335,10 @@ export async function POST(req: NextRequest) {
           .eq('id', batch.id)
           .eq('status', 'pending');
 
-        // Get notification for this batch
-        const { data: deliveryLogs, error: logsError } = await sbAdmin
-          .from('notification_delivery_log')
-          .select(
-            `
-            notification_id,
-            notifications (
-              id,
-              type,
-              code,
-              title,
-              description,
-              data,
-              created_at
-            )
-          `
-          )
-          .eq('batch_id', batch.id)
-          .eq('status', 'pending')
-          .eq('channel', 'email');
+        // Get delivery logs from pre-fetched data (O(1) lookup)
+        const deliveryLogs = deliveryLogsByBatch.get(batch.id);
 
-        if (logsError || !deliveryLogs || deliveryLogs.length === 0) {
+        if (!deliveryLogs || deliveryLogs.length === 0) {
           await sbAdmin
             .from('notification_batches')
             .update({
@@ -219,19 +356,13 @@ export async function POST(req: NextRequest) {
           continue;
         }
 
-        // Get user details
+        // Get user details from pre-fetched data (O(1) lookup)
         let userEmail: string;
         let userName: string;
 
         if (batch.user_id) {
-          const { data: user } = await sbAdmin
-            .from('users')
-            .select('email:user_private_details(email), display_name')
-            .eq('id', batch.user_id)
-            .single();
-
-          const emailData = user?.email as unknown as Array<{ email: string }>;
-          userEmail = emailData?.[0]?.email || batch.email || '';
+          const user = usersMap.get(batch.user_id);
+          userEmail = user?.email || batch.email || '';
           userName = user?.display_name || userEmail;
         } else {
           userEmail = batch.email || '';
@@ -242,40 +373,28 @@ export async function POST(req: NextRequest) {
           throw new Error('No email address found for batch');
         }
 
-        // Get workspace details
+        // Get workspace details from pre-fetched data (O(1) lookup)
         let workspaceName = 'Tuturuuu';
         if (batch.ws_id) {
-          const { data: workspace } = await sbAdmin
-            .from('workspaces')
-            .select('name')
-            .eq('id', batch.ws_id)
-            .single();
-
+          const workspace = workspacesMap.get(batch.ws_id);
           if (workspace) {
             workspaceName = workspace.name || 'Unknown Workspace';
           }
         }
 
-        // Get the notification
-        const notification = (deliveryLogs[0])?.notifications as NotificationData;
+        // Get the notification from pre-fetched delivery logs
+        const notification = deliveryLogs[0]?.notifications as NotificationData;
         if (!notification) {
           throw new Error('No notification found in delivery log');
         }
 
-        // Get email config for this notification type
-        // Note: notification_email_config table is created via migration
-        const { data: emailConfig } = await sbAdmin
-          .from('notification_email_config')
-          .select('email_template, email_subject_template')
-          .eq('notification_type', notification.type || notification.code || '')
-          .eq('delivery_mode', 'immediate')
-          .eq('enabled', true)
-          .maybeSingle();
+        // Get email config from pre-fetched data (O(1) lookup)
+        const notifType = notification.type || notification.code || '';
+        const config = emailConfigsMap.get(notifType);
 
         let emailHtml: string;
         let emailSubject: string;
 
-        const config = emailConfig as { email_template?: string; email_subject_template?: string } | null;
         if (config?.email_template) {
           const templateResult = await renderEmailTemplate({
             templateType: config.email_template as EmailTemplateType,

@@ -98,7 +98,7 @@ BEGIN
             true::BOOLEAN;
     END IF;
 END;
-$$ LANGUAGE plpgsql STABLE;
+$$ LANGUAGE plpgsql VOLATILE;
 
 -- Step 8: Create function to get or create batch with delivery mode support
 CREATE OR REPLACE FUNCTION public.get_or_create_notification_batch(
@@ -244,8 +244,8 @@ BEGIN
         -- Get email from user_id if not provided
         IF p_email IS NULL THEN
             SELECT email INTO v_target_email
-            FROM auth.users
-            WHERE id = p_user_id;
+            FROM public.user_private_details
+            WHERE user_id = p_user_id;
         ELSE
             v_target_email := p_email;
         END IF;
@@ -358,15 +358,14 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Step 10: Enable RLS on notification_email_config
 ALTER TABLE public.notification_email_config ENABLE ROW LEVEL SECURITY;
 
--- Only service role can manage email config
+-- Only service role can manage email config (no access for authenticated users)
 CREATE POLICY "Service role can manage email config"
     ON public.notification_email_config
     FOR ALL
-    USING (false)
-    WITH CHECK (false);
+    USING (auth.role() = 'service_role')
+    WITH CHECK (auth.role() = 'service_role');
 
--- Step 11: Grant permissions
-GRANT SELECT ON public.notification_email_config TO authenticated;
+-- Step 11: Grant permissions (service_role only - email config is sensitive)
 GRANT ALL ON public.notification_email_config TO service_role;
 
 -- Step 12: Add trigger for updated_at
