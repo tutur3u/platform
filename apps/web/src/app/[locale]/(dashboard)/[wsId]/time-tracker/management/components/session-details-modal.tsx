@@ -77,8 +77,8 @@ export default function SessionDetailsModal({
               <StatCard
                 icon={<Zap className="h-5 w-5" />}
                 value={dayjs
-                  .duration(session.totalDuration, 'seconds')
-                  .format('H:mm')}
+                  .duration(session.periodDuration ?? session.totalDuration, 'seconds')
+                  .format('H:mm:ss')}
                 label={t('totalTime')}
                 colorClass="dynamic-green"
               />
@@ -86,10 +86,10 @@ export default function SessionDetailsModal({
                 icon={<BarChart3 className="h-5 w-5" />}
                 value={dayjs
                   .duration(
-                    session.totalDuration / session.sessions.length,
+                    (session.periodDuration ?? session.totalDuration) / session.sessions.length,
                     'seconds'
                   )
-                  .format('H:mm')}
+                  .format('H:mm:ss')}
                 label={t('avgSession')}
                 colorClass="dynamic-yellow"
               />
