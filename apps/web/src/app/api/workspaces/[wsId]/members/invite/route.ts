@@ -13,7 +13,9 @@ async function triggerImmediateNotification() {
   const cronSecret = process.env.CRON_SECRET;
 
   if (!cronSecret) {
-    console.warn('CRON_SECRET not configured, skipping immediate notification trigger');
+    console.warn(
+      'CRON_SECRET not configured, skipping immediate notification trigger'
+    );
     return;
   }
 
