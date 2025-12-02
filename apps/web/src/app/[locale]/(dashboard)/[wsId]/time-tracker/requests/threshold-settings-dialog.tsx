@@ -53,7 +53,7 @@ export function ThresholdSettingsDialog({
   // Check if values have changed from initial state
   const hasChanged =
     noApprovalNeeded !== (currentThreshold === null) ||
-    (parsed.success && parsed.data !== currentThreshold);
+    (!noApprovalNeeded && parsed.success && parsed.data !== currentThreshold);
   
   const isSubmitDisabled =
     isLoading || (!noApprovalNeeded && !parsed.success) || !hasChanged;
