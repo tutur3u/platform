@@ -2,7 +2,7 @@ import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { render } from '@react-email/render';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import NotificationDigestEmail from '@tuturuuu/transactional/emails/notification-digest';
-import { ROOT_WORKSPACE_ID, DEV_MODE} from '@tuturuuu/utils/constants';
+import { ROOT_WORKSPACE_ID, DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -73,7 +73,6 @@ export async function POST(req: NextRequest) {
       .lte('window_end', new Date().toISOString())
       .order('window_end', { ascending: true })
       .limit(50); // Process max 50 batches per run
-
 
     if (batchesError) {
       console.error('Error fetching batches:', batchesError);
