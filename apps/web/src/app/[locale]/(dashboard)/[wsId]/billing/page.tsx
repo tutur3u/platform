@@ -1,9 +1,9 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { createPolarClient } from '@/lib/polar';
+import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { checkTuturuuuAdmin } from '@tuturuuu/utils/workspace-helper';
+import { Separator } from '@tuturuuu/ui/separator';
+import { format } from 'date-fns';
 import type { Metadata } from 'next';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { BillingClient } from './billing-client';
 import BillingHistory from './billing-history';
 
@@ -12,26 +12,11 @@ export const metadata: Metadata = {
   description: 'Manage Billing in your Tuturuuu workspace.',
 };
 
-const fetchProducts = async ({
-  wsId,
-  sandbox,
-}: {
-  wsId: string;
-  sandbox: boolean;
-}) => {
+const fetchProducts = async () => {
   try {
-    const polarClient = createPolarClient({
-      sandbox:
-        // Always use sandbox for development
-        process.env.NODE_ENV === 'development'
-          ? true
-          : // If the workspace is the root workspace and the sandbox is true, use sandbox
-            !!(wsId === ROOT_WORKSPACE_ID && sandbox),
-    });
+    const polar = createPolarClient();
 
-    const res = await polarClient.products.list({ isArchived: false });
-
-    console.log('Fetched products:', res.result.items);
+    const res = await polar.products.list({ isArchived: false });
     return res.result.items ?? [];
   } catch (err) {
     console.error('Failed to fetch products:', err);
@@ -42,30 +27,31 @@ const fetchProducts = async ({
 const checkCreator = async (wsId: string) => {
   const supabase = await createClient();
 
-  if (wsId !== ROOT_WORKSPACE_ID) {
-    console.error('Billing page is only available for root workspace');
-    throw new Error('Billing page is only available for root workspace');
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    console.error('Error checking user:', userError);
+    return false;
   }
 
-  const { data, error } = await supabase.rpc('check_ws_creator', {
-    ws_id: wsId,
-  });
+  const { data, error } = await supabase
+    .from('workspaces')
+    .select('creator_id')
+    .eq('id', wsId)
+    .single();
 
   if (error) {
     console.error('Error checking workspace creator:', error);
     return false;
   }
 
-  return data;
+  return data.creator_id === user?.id;
 };
 
-const fetchSubscription = async ({
-  wsId,
-  sandbox,
-}: {
-  wsId: string;
-  sandbox: boolean;
-}) => {
+const fetchSubscription = async ({ wsId }: { wsId: string }) => {
   const sbAdmin = await createClient();
 
   const { data: dbSub, error } = await sbAdmin
@@ -80,32 +66,22 @@ const fetchSubscription = async ({
     return null;
   }
 
-  const polarClient = createPolarClient({
-    sandbox:
-      // Always use sandbox for development
-      process.env.NODE_ENV === 'development'
-        ? true
-        : // If the workspace is the root workspace and the sandbox is true, use sandbox
-          !!(wsId === ROOT_WORKSPACE_ID && sandbox), // Otherwise, use production
-  });
+  const polar = createPolarClient();
 
-  const polarProduct = await polarClient.products.get({
+  const polarProduct = await polar.products.get({
     id: dbSub.product_id || '',
   });
 
   if (!polarProduct) return null;
 
   return {
+    id: dbSub.id,
     status: dbSub.status,
     currentPeriodStart: dbSub.current_period_start,
     currentPeriodEnd: dbSub.current_period_end,
-    polar_subscription_id: dbSub.polar_subscription_id,
-    product: {
-      id: polarProduct.id,
-      name: polarProduct.name,
-      description: polarProduct.description,
-      price: polarProduct.prices[0] || null,
-    },
+    cancelAtPeriodEnd: dbSub.cancel_at_period_end,
+    polarSubscriptionId: dbSub.polar_subscription_id,
+    product: polarProduct,
   };
 };
 
@@ -143,63 +119,61 @@ const fetchWorkspaceSubscriptions = async (wsId: string) => {
 
 export default async function BillingPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ wsId: string }>;
-  searchParams: Promise<{ sandbox: string }>;
 }) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-        const { sandbox } = await searchParams;
-
-        const enableSandbox = sandbox === 'true';
-        const isTuturuuuAdmin = await checkTuturuuuAdmin();
-        const [products, subscription, isCreator, subscriptionHistory] =
+        const [products, subscription, subscriptionHistory, isCreator] =
           await Promise.all([
-            fetchProducts({ wsId, sandbox: enableSandbox }),
-            fetchSubscription({ wsId, sandbox: enableSandbox }),
-            checkCreator(wsId),
+            fetchProducts(),
+            fetchSubscription({ wsId }),
             fetchWorkspaceSubscriptions(wsId),
+            checkCreator(wsId),
           ]);
 
         const currentPlan = subscription?.product
           ? {
+              id: subscription.id,
+              polarSubscriptionId: subscription.polarSubscriptionId,
+              productId: subscription.product.id,
               name: subscription.product.name || 'No Plan',
               price:
-                subscription.product.price &&
-                'priceAmount' in subscription.product.price
-                  ? `$${(subscription.product.price.priceAmount / 100).toFixed(2)}`
-                  : 'Free',
-              billingCycle:
-                subscription.product.price?.type === 'recurring'
-                  ? subscription.product.price?.recurringInterval || 'month'
-                  : 'one-time',
+                subscription.product.prices.length > 0
+                  ? subscription.product.prices[0] &&
+                    'priceAmount' in subscription.product.prices[0]
+                    ? subscription.product.prices[0].priceAmount
+                    : 0
+                  : 0,
+              billingCycle: subscription.product.recurringInterval,
               startDate: subscription.currentPeriodStart
-                ? new Date(subscription.currentPeriodStart).toLocaleDateString()
+                ? format(
+                    new Date(subscription.currentPeriodStart),
+                    'MMM d, yyyy'
+                  )
                 : '-',
               nextBillingDate: subscription.currentPeriodEnd
-                ? new Date(subscription.currentPeriodEnd).toLocaleDateString()
+                ? format(new Date(subscription.currentPeriodEnd), 'MMM d, yyyy')
                 : '-',
-              status: subscription.status || 'inactive',
-              features: [
-                subscription.product.description || 'Standard features',
-                'Customer support',
-                'Access to platform features',
-              ],
+              cancelAtPeriodEnd: subscription.cancelAtPeriodEnd ?? false,
+              status: subscription.status || 'unknown',
+              features: subscription.product.benefits.map(
+                (benefit) => benefit.description
+              ),
             }
           : {
+              id: '',
+              polarSubscriptionId: '',
+              productId: '',
               name: 'Free Plan',
-              price: '$0',
+              price: 0,
               billingCycle: 'month',
               startDate: '-',
               nextBillingDate: '-',
+              cancelAtPeriodEnd: false,
               status: 'active',
-              features: [
-                'Basic features',
-                'Limited usage',
-                'Community support',
-              ],
+              features: ['Basic features', 'Limited usage'],
             };
 
         const billingHistory = subscriptionHistory.map((sub, index) => ({
@@ -216,7 +190,7 @@ export default async function BillingPage({
                 price: sub.workspace_subscription_products.price || 0,
                 recurring_interval:
                   sub.workspace_subscription_products.recurring_interval ||
-                  'month',
+                  'one-time',
               }
             : null,
         }));
@@ -225,13 +199,14 @@ export default async function BillingPage({
           <div className="container mx-auto max-w-6xl px-4 py-8">
             <BillingClient
               currentPlan={currentPlan}
-              isAdmin={isTuturuuuAdmin}
               products={products}
               product_id={subscription?.product.id || ''}
               wsId={wsId}
-              activeSubscriptionId={subscription?.polar_subscription_id || ''}
+              activeSubscriptionId={subscription?.polarSubscriptionId || ''}
               isCreator={isCreator}
             />
+
+            <Separator className="my-8" />
 
             <BillingHistory billingHistory={billingHistory} />
           </div>

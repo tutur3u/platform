@@ -1,4 +1,7 @@
+import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import ClientComponent from './client-component';
 
 export const metadata: Metadata = {
@@ -8,11 +11,30 @@ export const metadata: Metadata = {
 
 export default async function SuccessPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ wsId: string }>;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  searchParams: Promise<{ [key: string]: string | undefined }>;
 }) {
-  const { wsId } = await params;
+  const { checkoutId } = await searchParams;
 
-  return <ClientComponent wsId={wsId} />;
+  if (!checkoutId) {
+    return notFound();
+  }
+
+  const polar = createPolarClient();
+
+  const checkout = await polar.checkouts.get({ id: checkoutId });
+
+  if (!checkout) {
+    return notFound();
+  }
+
+  return (
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+        return <ClientComponent wsId={wsId} checkout={checkout} />;
+      }}
+    </WorkspaceWrapper>
+  );
 }

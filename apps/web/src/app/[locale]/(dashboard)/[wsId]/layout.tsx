@@ -1,11 +1,9 @@
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
+import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import {
-  getWorkspace,
-  toWorkspaceSlug,
-} from '@tuturuuu/utils/workspace-helper';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
