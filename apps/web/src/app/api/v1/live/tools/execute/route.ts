@@ -46,20 +46,28 @@ async function normalizeWorkspaceId(wsId: string): Promise<string> {
       .maybeSingle();
 
     if (error) {
-      console.error('[normalizeWorkspaceId] Database error resolving personal workspace:', {
-        userId: user.id,
-        errorCode: error.code,
-        errorMessage: error.message,
-        errorDetails: error.details,
-      });
+      console.error(
+        '[normalizeWorkspaceId] Database error resolving personal workspace:',
+        {
+          userId: user.id,
+          errorCode: error.code,
+          errorMessage: error.message,
+          errorDetails: error.details,
+        }
+      );
       throw new Error(`Personal workspace query failed: ${error.message}`);
     }
 
     if (!workspace) {
-      console.error('[normalizeWorkspaceId] Personal workspace not found for user:', {
-        userId: user.id,
-      });
-      throw new Error('Personal workspace not found. Please ensure your account has a personal workspace.');
+      console.error(
+        '[normalizeWorkspaceId] Personal workspace not found for user:',
+        {
+          userId: user.id,
+        }
+      );
+      throw new Error(
+        'Personal workspace not found. Please ensure your account has a personal workspace.'
+      );
     }
 
     console.log('[normalizeWorkspaceId] Personal workspace resolved:', {
@@ -148,6 +156,27 @@ export async function POST(req: Request) {
       case 'get_task_details':
         result = await getTaskDetails(normalizedWsId, args);
         break;
+
+      // Visualization tools
+      case 'visualize_task_list':
+        result = await visualizeTaskList(normalizedWsId, user.id, args);
+        break;
+      case 'visualize_timeline':
+        result = await visualizeTimeline(normalizedWsId, user.id, args);
+        break;
+      case 'visualize_status_breakdown':
+        result = await visualizeStatusBreakdown(normalizedWsId, user.id, args);
+        break;
+      case 'visualize_task_detail':
+        result = await visualizeTaskDetail(normalizedWsId, args);
+        break;
+      case 'dismiss_visualization':
+        result = {
+          action: 'dismiss_visualization',
+          visualizationId: (args.visualizationId as string) || 'all',
+        };
+        break;
+
       default:
         return Response.json(
           { error: `Unknown function: ${functionName}` },
@@ -158,7 +187,8 @@ export async function POST(req: Request) {
     console.log('[Tools Execute] Tool executed successfully:', {
       functionName,
       resultType: typeof result,
-      resultKeys: result && typeof result === 'object' ? Object.keys(result) : null,
+      resultKeys:
+        result && typeof result === 'object' ? Object.keys(result) : null,
     });
 
     return Response.json({ result });
@@ -171,7 +201,7 @@ export async function POST(req: Request) {
     return Response.json(
       {
         error: 'Failed to execute tool',
-        details: error instanceof Error ? error.message : String(error)
+        details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );
@@ -341,7 +371,10 @@ async function getMyTasks(
   return result;
 }
 
-async function searchTasks(normalizedWsId: string, args: Record<string, unknown>) {
+async function searchTasks(
+  normalizedWsId: string,
+  args: Record<string, unknown>
+) {
   const supabase = await createClient();
   const query = args.query as string;
   const matchCount = Math.min((args.matchCount as number) || 10, 50);
@@ -395,7 +428,10 @@ async function searchTasks(normalizedWsId: string, args: Record<string, unknown>
   };
 }
 
-async function createTask(normalizedWsId: string, args: Record<string, unknown>) {
+async function createTask(
+  normalizedWsId: string,
+  args: Record<string, unknown>
+) {
   const supabase = await createClient();
   const name = args.name as string;
   const description = args.description as string | undefined;
@@ -469,7 +505,10 @@ async function createTask(normalizedWsId: string, args: Record<string, unknown>)
   };
 }
 
-async function updateTask(normalizedWsId: string, args: Record<string, unknown>) {
+async function updateTask(
+  normalizedWsId: string,
+  args: Record<string, unknown>
+) {
   const supabase = await createClient();
   const taskId = args.taskId as string;
   const updates: Record<string, unknown> = {};
@@ -545,7 +584,10 @@ async function updateTask(normalizedWsId: string, args: Record<string, unknown>)
   };
 }
 
-async function deleteTask(normalizedWsId: string, args: Record<string, unknown>) {
+async function deleteTask(
+  normalizedWsId: string,
+  args: Record<string, unknown>
+) {
   const supabase = await createClient();
   const taskId = args.taskId as string;
 
@@ -723,4 +765,488 @@ function getPriorityLabel(priority: string | null): string {
     default:
       return 'None';
   }
+}
+
+// Visualization tool handlers
+
+async function visualizeTaskList(
+  normalizedWsId: string,
+  userId: string,
+  args: Record<string, unknown>
+) {
+  const supabase = await createClient();
+  let taskIds = (args.taskIds as string[]) || [];
+  const title = (args.title as string) || 'Tasks';
+  const category = args.category as string | undefined;
+
+  // If no task IDs provided, fetch tasks based on category
+  if (taskIds.length === 0) {
+    const { data: rpcTasks, error: rpcError } = await supabase.rpc(
+      'get_user_accessible_tasks',
+      {
+        p_user_id: userId,
+        p_ws_id: normalizedWsId,
+        p_include_deleted: false,
+        p_list_statuses: ['not_started', 'active', 'done'],
+      }
+    );
+
+    if (rpcError) {
+      return {
+        action: 'visualize_task_list',
+        error: rpcError.message,
+      };
+    }
+
+    // Filter tasks based on category
+    const now = new Date().toISOString();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStart = today.toISOString();
+    today.setHours(23, 59, 59, 999);
+    const todayEnd = today.toISOString();
+
+    type RpcTaskBasic = {
+      task_id: string;
+      task_end_date: string | null;
+      task_completed_at: string | null;
+      task_closed_at: string | null;
+    };
+
+    const activeTasks = (rpcTasks || []).filter(
+      (t: RpcTaskBasic) => !t.task_completed_at && !t.task_closed_at
+    );
+
+    let filteredTasks: RpcTaskBasic[];
+    if (category === 'overdue') {
+      filteredTasks = activeTasks.filter(
+        (t: RpcTaskBasic) => t.task_end_date && t.task_end_date < now
+      );
+    } else if (category === 'today') {
+      filteredTasks = activeTasks.filter(
+        (t: RpcTaskBasic) =>
+          t.task_end_date &&
+          t.task_end_date >= todayStart &&
+          t.task_end_date <= todayEnd
+      );
+    } else if (category === 'upcoming') {
+      filteredTasks = activeTasks.filter(
+        (t: RpcTaskBasic) => !t.task_end_date || t.task_end_date > todayEnd
+      );
+    } else {
+      // Default to all active tasks
+      filteredTasks = activeTasks;
+    }
+
+    taskIds = filteredTasks.slice(0, 10).map((t: RpcTaskBasic) => t.task_id);
+
+    if (taskIds.length === 0) {
+      return {
+        action: 'visualize_task_list',
+        taskCount: 0,
+        tasks: [],
+        message: `No ${category || 'active'} tasks found.`,
+        visualization: {
+          type: 'task_list' as const,
+          data: {
+            title,
+            category: category as
+              | 'overdue'
+              | 'today'
+              | 'upcoming'
+              | 'search_results'
+              | undefined,
+            tasks: [],
+          },
+        },
+      };
+    }
+  }
+
+  // Fetch task details for the given IDs
+  const { data: tasks, error } = await supabase
+    .from('tasks')
+    .select(
+      `
+      id, name, priority, end_date, completed_at,
+      task_assignees(users(display_name, avatar_url))
+    `
+    )
+    .in('id', taskIds)
+    .is('deleted_at', null);
+
+  if (error) {
+    return {
+      action: 'visualize_task_list',
+      error: error.message,
+    };
+  }
+
+  const mappedTasks = (tasks || []).map((task) => ({
+    id: task.id,
+    name: task.name,
+    priority: task.priority,
+    priorityLabel: getPriorityLabel(task.priority),
+    endDate: task.end_date,
+    completed: !!task.completed_at,
+    assignees: ((task.task_assignees as unknown[]) || []).map((ta: unknown) => {
+      const assignee = ta as {
+        users?: { display_name?: string; avatar_url?: string };
+      };
+      return {
+        name: assignee.users?.display_name || 'Unknown',
+        avatarUrl: assignee.users?.avatar_url,
+      };
+    }),
+  }));
+
+  return {
+    action: 'visualize_task_list',
+    // Include task data at top level for AI to read
+    taskCount: mappedTasks.length,
+    tasks: mappedTasks,
+    visualization: {
+      type: 'task_list' as const,
+      data: {
+        title,
+        category: category as
+          | 'overdue'
+          | 'today'
+          | 'upcoming'
+          | 'search_results'
+          | undefined,
+        tasks: mappedTasks,
+      },
+    },
+  };
+}
+
+async function visualizeTimeline(
+  normalizedWsId: string,
+  userId: string,
+  args: Record<string, unknown>
+) {
+  const supabase = await createClient();
+  let taskIds = (args.taskIds as string[]) || [];
+  const title = (args.title as string) || 'Timeline';
+  const timeRange = (args.timeRange as string) || 'month';
+
+  // If no task IDs provided, fetch tasks with dates
+  if (taskIds.length === 0) {
+    const { data: rpcTasks, error: rpcError } = await supabase.rpc(
+      'get_user_accessible_tasks',
+      {
+        p_user_id: userId,
+        p_ws_id: normalizedWsId,
+        p_include_deleted: false,
+        p_list_statuses: ['not_started', 'active', 'done'],
+      }
+    );
+
+    if (rpcError) {
+      return {
+        action: 'visualize_timeline',
+        error: rpcError.message,
+      };
+    }
+
+    type RpcTaskWithDates = {
+      task_id: string;
+      task_start_date: string | null;
+      task_end_date: string | null;
+      task_completed_at: string | null;
+      task_closed_at: string | null;
+    };
+
+    // Only include tasks that have at least one date set
+    const tasksWithDates = (rpcTasks || []).filter(
+      (t: RpcTaskWithDates) =>
+        (t.task_start_date || t.task_end_date) &&
+        !t.task_completed_at &&
+        !t.task_closed_at
+    );
+
+    taskIds = tasksWithDates
+      .slice(0, 10)
+      .map((t: RpcTaskWithDates) => t.task_id);
+
+    if (taskIds.length === 0) {
+      // Return empty timeline with default range
+      const now = new Date();
+      return {
+        action: 'visualize_timeline',
+        taskCount: 0,
+        tasks: [],
+        message: 'No tasks with dates found.',
+        visualization: {
+          type: 'gantt_timeline' as const,
+          data: {
+            title,
+            timeRange: {
+              start: new Date(
+                now.getFullYear(),
+                now.getMonth(),
+                1
+              ).toISOString(),
+              end: new Date(
+                now.getFullYear(),
+                now.getMonth() + 1,
+                0
+              ).toISOString(),
+            },
+            tasks: [],
+          },
+        },
+      };
+    }
+  }
+
+  // Fetch tasks with date info
+  const { data: tasks, error } = await supabase
+    .from('tasks')
+    .select(
+      `
+      id, name, start_date, end_date, priority, completed_at,
+      task_lists!inner(status)
+    `
+    )
+    .in('id', taskIds)
+    .is('deleted_at', null);
+
+  if (error) {
+    return {
+      action: 'visualize_timeline',
+      error: error.message,
+    };
+  }
+
+  // Calculate time range
+  const now = new Date();
+  let rangeStart: Date;
+  let rangeEnd: Date;
+
+  if (timeRange === 'week') {
+    rangeStart = new Date(now);
+    rangeStart.setDate(rangeStart.getDate() - rangeStart.getDay()); // Start of week
+    rangeEnd = new Date(rangeStart);
+    rangeEnd.setDate(rangeEnd.getDate() + 6); // End of week
+  } else if (timeRange === 'month') {
+    rangeStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    rangeEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  } else {
+    // "all" - find min/max dates from tasks
+    const dates = (tasks || [])
+      .flatMap((t) => [t.start_date, t.end_date])
+      .filter((d): d is string => !!d)
+      .map((d) => new Date(d).getTime());
+
+    if (dates.length > 0) {
+      rangeStart = new Date(Math.min(...dates));
+      rangeEnd = new Date(Math.max(...dates));
+    } else {
+      rangeStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      rangeEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    }
+  }
+
+  const mappedTasks = (tasks || []).map((task) => ({
+    id: task.id,
+    name: task.name,
+    startDate: task.start_date,
+    endDate: task.end_date,
+    status:
+      (task.task_lists as unknown as { status?: string })?.status ||
+      'not_started',
+    priority: task.priority,
+  }));
+
+  return {
+    action: 'visualize_timeline',
+    // Include task data at top level for AI to read
+    taskCount: mappedTasks.length,
+    tasks: mappedTasks,
+    visualization: {
+      type: 'gantt_timeline' as const,
+      data: {
+        title,
+        timeRange: {
+          start: rangeStart.toISOString(),
+          end: rangeEnd.toISOString(),
+        },
+        tasks: mappedTasks,
+      },
+    },
+  };
+}
+
+async function visualizeStatusBreakdown(
+  normalizedWsId: string,
+  userId: string,
+  args: Record<string, unknown>
+) {
+  const supabase = await createClient();
+  const title = (args.title as string) || 'Task Status';
+
+  // Get all tasks for the workspace and count by status
+  const { data: tasks, error } = await supabase.rpc(
+    'get_user_accessible_tasks',
+    {
+      p_user_id: userId,
+      p_ws_id: normalizedWsId,
+      p_include_deleted: false,
+      p_list_statuses: ['not_started', 'active', 'done', 'closed'],
+    }
+  );
+
+  if (error) {
+    return {
+      action: 'visualize_status_breakdown',
+      error: error.message,
+    };
+  }
+
+  // Count tasks by completion status
+  // Note: The RPC filters by p_list_statuses, and we categorize based on completion state
+  const counts = {
+    not_started: 0,
+    active: 0,
+    done: 0,
+    closed: 0,
+  };
+
+  interface StatusTask {
+    task_completed_at: string | null;
+    task_closed_at: string | null;
+  }
+
+  (tasks || []).forEach((task: StatusTask) => {
+    if (task.task_completed_at) {
+      counts.done++;
+    } else if (task.task_closed_at) {
+      counts.closed++;
+    } else {
+      // Tasks without completion/close dates are considered active
+      counts.active++;
+    }
+  });
+
+  const total = Object.values(counts).reduce((sum, c) => sum + c, 0);
+
+  return {
+    action: 'visualize_status_breakdown',
+    // Include data at top level for AI to read
+    total,
+    counts,
+    summary: `${counts.done} done, ${counts.active} active, ${counts.not_started} not started, ${counts.closed} closed`,
+    visualization: {
+      type: 'status_distribution' as const,
+      data: {
+        title,
+        total,
+        counts,
+      },
+    },
+  };
+}
+
+async function visualizeTaskDetail(
+  normalizedWsId: string,
+  args: Record<string, unknown>
+) {
+  const supabase = await createClient();
+  const taskId = args.taskId as string;
+
+  if (!taskId) {
+    return {
+      action: 'visualize_task_detail',
+      error: 'No task ID provided',
+    };
+  }
+
+  const { data: task, error } = await supabase
+    .from('tasks')
+    .select(
+      `
+      id,
+      name,
+      description,
+      priority,
+      completed,
+      completed_at,
+      created_at,
+      start_date,
+      end_date,
+      task_labels(workspace_task_labels(name, color)),
+      task_assignees(users(display_name, avatar_url)),
+      task_lists!inner(
+        name,
+        workspace_boards!inner(name, ws_id)
+      )
+    `
+    )
+    .eq('id', taskId)
+    .is('deleted_at', null)
+    .single();
+
+  if (error || !task) {
+    return {
+      action: 'visualize_task_detail',
+      error: 'Task not found',
+    };
+  }
+
+  // Verify workspace
+  const taskAny = task as unknown as {
+    task_lists?: {
+      name?: string;
+      workspace_boards?: { name?: string; ws_id?: string };
+    };
+    task_labels?: Array<{
+      workspace_task_labels?: { name?: string; color?: string };
+    }>;
+    task_assignees?: Array<{
+      users?: { display_name?: string; avatar_url?: string };
+    }>;
+  };
+
+  if (taskAny.task_lists?.workspace_boards?.ws_id !== normalizedWsId) {
+    return {
+      action: 'visualize_task_detail',
+      error: 'Task does not belong to this workspace',
+    };
+  }
+
+  const taskData = {
+    id: task.id,
+    name: task.name,
+    description: task.description
+      ? extractTextFromDescription(task.description)
+      : null,
+    priority: task.priority,
+    priorityLabel: getPriorityLabel(task.priority),
+    completed: !!task.completed_at,
+    startDate: task.start_date,
+    endDate: task.end_date,
+    createdAt: task.created_at,
+    board: taskAny.task_lists?.workspace_boards?.name,
+    list: taskAny.task_lists?.name,
+    labels: (taskAny.task_labels || []).map((tl) => ({
+      name: tl.workspace_task_labels?.name || 'Unknown',
+      color: tl.workspace_task_labels?.color || '#888888',
+    })),
+    assignees: (taskAny.task_assignees || []).map((ta) => ({
+      name: ta.users?.display_name || 'Unknown',
+      avatarUrl: ta.users?.avatar_url,
+    })),
+  };
+
+  return {
+    action: 'visualize_task_detail',
+    // Include task data at top level for AI to read
+    task: taskData,
+    visualization: {
+      type: 'task_detail' as const,
+      data: taskData,
+    },
+  };
 }

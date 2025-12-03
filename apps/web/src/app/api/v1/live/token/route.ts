@@ -73,15 +73,23 @@ Rules:
 - Answer ONLY what was asked.
 - If user asks about a subset, only mention the relevant subset.
 
-1. NEVER READ RAW JSON
+1. READ FROM TOOL RESPONSE RESULT
 
-When you receive task data, synthesize it into natural speech. Users should never hear field names, IDs, or JSON structure.
+When you call a tool, the response data is in the "result" field. ALWAYS read from the actual tool response - NEVER make up or guess task names, counts, or details.
 
-BAD (robotic dump):
-"You have 6 tasks. Task 1: id dffa4a1f, name Define LLM..."
+Tool Response Structure (data is in result field):
+- visualize_task_list: result.taskCount, result.tasks[] (each has name, priority, endDate, completed)
+- visualize_timeline: result.taskCount, result.tasks[]
+- visualize_status_breakdown: result.total, result.counts, result.summary
+- visualize_task_detail: result.task (name, description, priority, dates, labels, assignees)
+- get_my_tasks: result.overdue.tasks[], result.today.tasks[], result.upcoming.tasks[]
+- search_tasks: result.tasks[] (name, priority, completed, similarity)
 
-GOOD (natural summary):
-"You have 6 active tasks, and none are overdue—nice! Your highest priority is 'Define LLM fine-tuning scope'..."
+CRITICAL: Read the EXACT data from result. If result.taskCount is 0, say "no tasks found". Never invent tasks.
+
+When speaking, synthesize naturally from the result:
+BAD: "Task 1: id dffa4a1f, name Define LLM..."
+GOOD: "You have 6 active tasks. Your highest priority is 'Define LLM fine-tuning scope'..."
 
 2. AUTOMATIC TOOL CHAINING (NEVER Ask for IDs)
 
@@ -127,8 +135,9 @@ For get_my_tasks results:
 Example: "You're in good shape—6 tasks, nothing overdue. You have one high-priority item..."
 
 For search results:
-- If 1-3 results: mention each briefly by name.
-- If 4+ results: summarize the count and themes, ask user to narrow down.
+- If 1 result: AUTOMATICALLY show task detail card (visualize_task_detail) - user likely wants full info
+- If 2-3 results: show task list card (visualize_task_list) and mention each briefly
+- If 4+ results: show task list card, summarize the count and themes, offer to show details for any
 
 5. VOICE-OPTIMIZED LANGUAGE
 
@@ -157,12 +166,21 @@ TOOL CHAINING WORKFLOWS
 
 "What are my tasks?" Flow
 1. get_my_tasks(category: "all")
-2. Summarize conversationally (Overdue -> Today -> Upcoming -> High Priority).
-3. Offer to elaborate.
+2. Extract task IDs from response
+3. visualize_task_list(title: "Your Tasks", taskIds: [...]) - ALWAYS show visually!
+4. Summarize conversationally while user sees the tasks on screen.
 
-"Tell me about [task]" Flow
+"Tell me about [task]" / "What's [task]?" / "Show me [task]" Flow
 1. search_tasks(query)
-2. IF single match: get_task_details(id) -> Summarize details.
+2. IF single match: get_task_details(id)
+3. ALWAYS call visualize_task_detail(taskId: id) - MANDATORY! Never skip this step!
+4. Summarize details while user sees the detailed card on screen.
+
+CRITICAL - TASK DETAIL VISUALIZATION RULE:
+- When user asks about ANY specific task (details, status, info, "tell me about", "what is", etc.), you MUST call visualize_task_detail
+- This is NOT optional - the visual card is the primary way users see task information
+- Always pair get_task_details() with visualize_task_detail() - never call one without the other
+- The detailed task card shows everything: dates, labels, assignees, description, board/list location
 
 "Create a task [details]" Flow
 1. Extract name, description, priority.
@@ -193,6 +211,52 @@ Empty task list:
 
 All tasks are overdue:
 "Heads up—you have [count] overdue tasks. The most critical is '[name]'. Want to tackle that first?"
+
+---
+
+VISUALIZATION TOOLS
+
+When users ask to "show", "display", or "visualize" their tasks on screen, use these tools IN ADDITION TO data tools:
+
+- visualize_task_list: Displays a visual card with task list (names, priorities, due dates, assignees)
+- visualize_timeline: Displays a Gantt-style timeline of task schedules
+- visualize_status_breakdown: Displays a chart showing task distribution by status
+- visualize_task_detail: Displays a detailed card for a single task
+- dismiss_visualization: Hides/closes displayed visualizations
+
+IMPORTANT VISUALIZATION RULES:
+1. You can call visualize_* tools directly - they will fetch tasks automatically based on category if no taskIds are provided
+2. When user asks ANYTHING about their tasks, ALWAYS show a visualization - not just when they say "show"
+3. When user says "hide that", "close it", or "dismiss", call dismiss_visualization
+4. Visualizations appear on the user's screen - acknowledge them naturally ("I'm showing your tasks on screen now")
+5. Pass category parameter ("overdue", "today", "upcoming") to get filtered results automatically
+
+DEFAULT TO SHOWING VISUALIZATIONS:
+- ANY task-related question should trigger a visualization: "what are my tasks?", "do I have tasks?", "any overdue?", etc.
+- Don't just talk about tasks - ALWAYS display them visually so the user can see while you explain
+- Multiple visualizations can be shown at once (they appear on both sides of the screen)
+- The visual display helps users follow along as you speak about their tasks
+
+NEVER ASK - JUST SHOW:
+- When user says "show me more" - IMMEDIATELY show additional relevant visualizations (today's tasks, timeline, status breakdown, etc.)
+- DO NOT ask "what would you like to see?" or offer options - just pick the most relevant visualization and show it
+- If you already showed overdue tasks, "show more" means show today's tasks, upcoming tasks, or a different view like timeline
+- When in doubt, show MORE not less - users can always dismiss what they don't need
+- Be decisive: pick a visualization and display it, don't ask for confirmation
+
+Example flow for "Show me my overdue tasks":
+1. Call visualize_task_list(title: "Overdue Tasks", category: "overdue") - tasks are fetched automatically!
+2. Say: "I'm showing your overdue tasks on screen now..."
+
+Example flow for "Show me more":
+1. DON'T ASK what to show - just pick the next logical visualization
+2. If already showing task list, show: timeline view OR status breakdown OR today's/upcoming tasks
+3. Call the visualize_* tool IMMEDIATELY without asking
+4. Say: "Here's your timeline view as well..." or "Adding your status breakdown..."
+
+Example flow for "What about today's tasks?":
+1. Call visualize_task_list(title: "Today's Tasks", category: "today") - tasks are fetched automatically!
+2. Say: "Here are your tasks for today..." (visualization appears alongside any existing ones)
 `;
 
 // Task management tool declarations
@@ -316,6 +380,120 @@ const TASK_TOOL_DECLARATIONS = [
   },
 ];
 
+// Visualization tool declarations
+const VISUALIZATION_TOOL_DECLARATIONS = [
+  {
+    name: 'visualize_task_list',
+    description:
+      'Display a visual list of tasks on screen with their details. Use when user wants to SEE their tasks. Shows task names, priorities, due dates, and assignees in a card format. If no taskIds provided, automatically fetches tasks based on category.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        title: {
+          type: Type.STRING,
+          description:
+            'Title for the visualization card (e.g., "Overdue Tasks", "Today\'s Tasks", "Search Results")',
+        },
+        taskIds: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING },
+          description:
+            'Optional: Array of task IDs to display. If not provided, tasks are fetched automatically based on category.',
+        },
+        category: {
+          type: Type.STRING,
+          description:
+            'Category to filter by: "overdue", "today", "upcoming", or "search_results". Used to auto-fetch tasks if no taskIds provided.',
+        },
+      } as Record<
+        string,
+        { type: Type; description: string; items?: { type: Type } }
+      >,
+      required: ['title'],
+    },
+  },
+  {
+    name: 'visualize_timeline',
+    description:
+      'Display a Gantt-style timeline view of tasks on screen. Use when user asks to see their schedule or timeline. If no taskIds provided, automatically fetches tasks with dates.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        title: {
+          type: Type.STRING,
+          description: 'Title for the timeline view',
+        },
+        taskIds: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING },
+          description:
+            'Optional: Array of task IDs. If not provided, tasks with dates are fetched automatically.',
+        },
+        timeRange: {
+          type: Type.STRING,
+          description: 'Time range: "week", "month", or "all"',
+        },
+      } as Record<
+        string,
+        { type: Type; description: string; items?: { type: Type } }
+      >,
+      required: ['title'],
+    },
+  },
+  {
+    name: 'visualize_status_breakdown',
+    description:
+      'Display a status distribution chart showing task counts by status on screen. Use when user asks about task distribution, status breakdown, or progress overview.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        title: {
+          type: Type.STRING,
+          description: 'Title for the chart',
+        },
+      } as Record<string, { type: Type; description: string }>,
+      required: ['title'],
+    },
+  },
+  {
+    name: 'visualize_task_detail',
+    description:
+      'Display a detailed card for a single task with all its information on screen. Use when user wants to see full details of a specific task.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        taskId: {
+          type: Type.STRING,
+          description: 'The ID of the task to display',
+        },
+      } as Record<string, { type: Type; description: string }>,
+      required: ['taskId'],
+    },
+  },
+  {
+    name: 'dismiss_visualization',
+    description:
+      'Hide/dismiss currently displayed visualizations. Use when user says to close, hide, or dismiss a visualization.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        visualizationId: {
+          type: Type.STRING,
+          description:
+            'ID of the visualization to dismiss. Use "all" to dismiss all visualizations.',
+        },
+      } as Record<string, { type: Type; description: string }>,
+      required: ['visualizationId'],
+    },
+  },
+];
+
+// Combined tool declarations
+const ALL_TOOL_DECLARATIONS = [
+  ...TASK_TOOL_DECLARATIONS,
+  ...VISUALIZATION_TOOL_DECLARATIONS,
+];
+
 export async function POST() {
   try {
     // 1. Authenticate user
@@ -347,14 +525,14 @@ export async function POST() {
     const tokenConfig = {
       config: {
         // Allow multiple session attempts (useful for reconnects and development)
-        uses: 10,
+        uses: 100,
         expireTime,
         // Allow session to start anytime within the token's validity window
         newSessionExpireTime: expireTime,
         liveConnectConstraints: {
           // NOTE: Using 2.0-flash-exp because native audio model may not support function calling
           // Change back to 'gemini-2.5-flash-native-audio-preview-09-2025' once confirmed supported
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-2.5-flash-native-audio-preview-09-2025',
           config: {
             responseModalities: [Modality.AUDIO],
             speechConfig: {
@@ -370,7 +548,7 @@ export async function POST() {
             },
             // Tools configuration - this is CRITICAL for function calling
             // MUST be inside config object to be embedded in the token
-            tools: [{ functionDeclarations: TASK_TOOL_DECLARATIONS }],
+            tools: [{ functionDeclarations: ALL_TOOL_DECLARATIONS }],
             toolConfig: {
               functionCallingConfig: {
                 mode: FunctionCallingConfigMode.AUTO,
@@ -383,10 +561,11 @@ export async function POST() {
 
     console.log('[Token] Creating token with configuration:', {
       model: tokenConfig.config.liveConnectConstraints.model,
-      toolCount: TASK_TOOL_DECLARATIONS.length,
-      toolNames: TASK_TOOL_DECLARATIONS.map((t) => t.name),
+      toolCount: ALL_TOOL_DECLARATIONS.length,
+      toolNames: ALL_TOOL_DECLARATIONS.map((t) => t.name),
       mode: FunctionCallingConfigMode.AUTO,
-      hasSystemInstruction: !!tokenConfig.config.liveConnectConstraints.config.systemInstruction,
+      hasSystemInstruction:
+        !!tokenConfig.config.liveConnectConstraints.config.systemInstruction,
     });
 
     const token = await client.authTokens.create(tokenConfig);

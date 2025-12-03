@@ -357,25 +357,33 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
     }
 
     // Format function responses according to Google SDK requirements
-    // The response object needs to be a simple object (will be serialized by SDK)
+    // See: https://ai.google.dev/gemini-api/docs/live-tools
+    // Format: { id, name, response: { result: ... } }
     const formattedResponses = toolResponse.functionResponses.map((fr) => {
-      // Ensure response is a clean, serializable object
-      // Wrap complex responses in a simple result structure
-      const responseObj =
-        typeof fr.response === 'object' && fr.response !== null
-          ? (fr.response as Record<string, unknown>)
-          : { result: fr.response };
+      // Clean the response - remove visualization (frontend-only) data to keep response smaller
+      // The AI only needs the data to speak about, not the UI rendering instructions
+      let cleanResponse = fr.response;
+      if (typeof cleanResponse === 'object' && cleanResponse !== null) {
+        const resp = cleanResponse as Record<string, unknown>;
+        // Remove visualization object - that's for frontend only
+        if ('visualization' in resp) {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { visualization, ...dataForAI } = resp;
+          cleanResponse = dataForAI;
+        }
+      }
 
+      // Match Google's example format: response: { result: ... }
       return {
         id: fr.id,
         name: fr.name,
-        response: responseObj,
+        response: { result: cleanResponse },
       };
     });
 
     console.log(
       '[Live Client] Sending tool response:',
-      JSON.stringify(formattedResponses, null, 2)
+      JSON.stringify(formattedResponses, null, 2).slice(0, 2000)
     );
 
     this.session.sendToolResponse({

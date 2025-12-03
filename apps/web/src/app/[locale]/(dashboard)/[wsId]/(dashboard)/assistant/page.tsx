@@ -1,5 +1,7 @@
 'use client';
 
+import { useEphemeralToken } from '@/hooks/use-ephemeral-token';
+import { LiveAPIProvider, useLiveAPIContext } from '@/hooks/use-live-api';
 import {
   AnimatePresence,
   motion,
@@ -9,13 +11,14 @@ import {
 } from 'framer-motion';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useEphemeralToken } from '@/hooks/use-ephemeral-token';
-import { LiveAPIProvider, useLiveAPIContext } from '@/hooks/use-live-api';
 import { AudioRecorder } from './audio/audio-recorder';
 import { ChatBox } from './components/chat-box/chat-box';
 import ControlTray from './components/control-tray/control-tray';
+import { VisualizationContainer } from './components/visualizations/visualization-container';
 import type { ServerContent, ToolCall } from './multimodal-live';
 import { isModelTurn } from './multimodal-live';
+import { useVisualizationStore } from './stores/visualization-store';
+import type { VisualizationToolResponse } from './types/visualizations';
 
 function useAudioRecorder() {
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
@@ -131,6 +134,10 @@ function GameApp({ wsId }: { wsId: string }) {
     useLiveAPIContext();
   const { isUserSpeaking } = useAudioRecorder();
 
+  // Visualization store
+  const { addVisualization, dismissVisualization, dismissAllVisualizations } =
+    useVisualizationStore();
+
   // Execute a tool call via the API
   const executeToolCall = useCallback(
     async (functionName: string, args: Record<string, unknown>) => {
@@ -173,15 +180,30 @@ function GameApp({ wsId }: { wsId: string }) {
           );
           console.log(`[Assistant] Tool result:`, result);
 
+          // Handle visualization actions from backend
+          const visResult = result as VisualizationToolResponse | undefined;
+          if (visResult?.action) {
+            if (visResult.action === 'dismiss_visualization') {
+              if (visResult.visualizationId === 'all') {
+                dismissAllVisualizations();
+              } else if (visResult.visualizationId) {
+                dismissVisualization(visResult.visualizationId);
+              }
+            } else if (visResult.visualization) {
+              // Add visualization to the store
+              const visId = addVisualization(visResult.visualization);
+              console.log(`[Assistant] Added visualization: ${visId}`);
+            }
+          }
+
           // Format response according to Google GenAI SDK requirements
           // Must include id, name, and response object
           // See: https://ai.google.dev/gemini-api/docs/live-tools
+          // The response should contain the data directly, not nested
           return {
             id: fc.id,
             name: fc.name,
-            response: {
-              result: result,
-            },
+            response: result,
           };
         })
       );
@@ -190,7 +212,13 @@ function GameApp({ wsId }: { wsId: string }) {
       console.log('[Assistant] Sending tool responses:', functionResponses);
       sendToolResponse({ functionResponses });
     },
-    [executeToolCall, sendToolResponse]
+    [
+      executeToolCall,
+      sendToolResponse,
+      addVisualization,
+      dismissVisualization,
+      dismissAllVisualizations,
+    ]
   );
 
   // Register tool call handler
@@ -206,10 +234,6 @@ function GameApp({ wsId }: { wsId: string }) {
   // Debug: Log all events from client
   useEffect(() => {
     if (!client) return;
-
-    const debugHandler = (event: unknown) => {
-      console.log('[Assistant] Client event:', event);
-    };
 
     // Listen to multiple event types to debug
     client.on('toolcall', (tc: ToolCall) => {
@@ -270,36 +294,21 @@ function GameApp({ wsId }: { wsId: string }) {
   }, [client]);
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden">
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-center overflow-y-auto px-4 pt-20 pb-32">
+    <div className="relative -m-4 flex min-h-screen h-screen flex-col overflow-hidden">
+      {/* Dynamic UI visualizations */}
+      <VisualizationContainer />
+
+      <main className="relative z-10 flex flex-1 h-[calc(100vh-12rem)] flex-col items-center justify-center">
         <AudioBlob
           connected={connected}
           volume={volume}
           isUserSpeaking={isUserSpeaking}
         />
-
-        {/* Assistant transcript display */}
-        <AnimatePresence>
-          {currentTranscript && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="-translate-x-1/2 absolute bottom-40 left-1/2 z-20 w-full max-w-2xl px-4"
-            >
-              <div className="rounded-xl border border-border/40 bg-card/70 px-6 py-4 shadow-lg backdrop-blur-md">
-                <p className="text-center text-foreground/90">
-                  {currentTranscript}
-                </p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </main>
 
       {/* Controls */}
-      <div className="fixed inset-x-0 bottom-0 z-20 bg-linear-to-t from-background to-transparent p-4 md:p-6">
-        <div className="mx-auto flex max-w-3xl flex-col gap-3">
+      <div className="absolute inset-x-0 bottom-0 z-20 h-44">
+        <div className="mx-auto flex max-w-3xl flex-col gap-3 p-4 md:p-6">
           <ControlTray
             videoRef={videoRef}
             supportsVideo={false}
@@ -308,20 +317,13 @@ function GameApp({ wsId }: { wsId: string }) {
           />
           <AnimatePresence>
             {textChatOpen && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="rounded-xl border border-border/60 bg-card/80 p-2 shadow-lg backdrop-blur-md"
-              >
-                <ChatBox
-                  connected={connected}
-                  disabled={!connected}
-                  onSubmit={async (text: string) => {
-                    client.send({ text }, true);
-                  }}
-                />
-              </motion.div>
+              <ChatBox
+                connected={connected}
+                disabled={!connected}
+                onSubmit={async (text: string) => {
+                  client.send({ text }, true);
+                }}
+              />
             )}
           </AnimatePresence>
         </div>
