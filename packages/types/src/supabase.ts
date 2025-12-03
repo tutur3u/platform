@@ -14084,7 +14084,9 @@ export type Database = {
         Args: { p_user_id: string; p_ws_id: string };
         Returns: Json;
       };
-      check_ws_creator: { Args: { ws_id: string }; Returns: boolean };
+      check_ws_creator:
+        | { Args: { user_id: string; ws_id: string }; Returns: boolean }
+        | { Args: { ws_id: string }; Returns: boolean };
       cleanup_expired_cross_app_tokens: { Args: never; Returns: undefined };
       cleanup_expired_notifications: { Args: never; Returns: number };
       cleanup_old_api_key_usage_logs: { Args: never; Returns: undefined };
@@ -15674,7 +15676,8 @@ export type Database = {
         | 'delete_confidential_transactions'
         | 'manage_time_tracking_requests'
         | 'bypass_time_tracking_request_approval'
-        | 'manage_changelog';
+        | 'manage_changelog'
+        | 'manage_subscription';
     };
     CompositeTypes: {
       email_block_status: {
@@ -15956,6 +15959,7 @@ export const Constants = {
         'manage_time_tracking_requests',
         'bypass_time_tracking_request_approval',
         'manage_changelog',
+        'manage_subscription',
       ],
     },
   },

@@ -21,33 +21,43 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createClient();
+  const user = await getCurrentSupabaseUser();
 
-  const { data: isCreator, error: creatorError } = await supabase.rpc(
-    'check_ws_creator',
-    { ws_id: wsId }
-  );
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
-  if (creatorError) {
-    console.error('Error checking workspace creator:', creatorError);
+  const {
+    data: hasManageSubscriptionPermission,
+    error: hasManageSubscriptionPermissionError,
+  } = await supabase.rpc('has_workspace_permission', {
+    p_user_id: user.id,
+    p_ws_id: wsId,
+    p_permission: 'manage_subscription',
+  });
+
+  if (hasManageSubscriptionPermissionError) {
+    console.error(
+      'Error checking manage subscription permission:',
+      hasManageSubscriptionPermissionError
+    );
     return NextResponse.json(
-      { error: `Error checking creator status: ${creatorError.message}` },
+      {
+        error: `Error checking manage subscription permission: ${hasManageSubscriptionPermissionError.message}`,
+      },
       { status: 500 }
     );
   }
 
-  if (!isCreator) {
+  if (!hasManageSubscriptionPermission) {
     console.error(
       `You are not authorized to create subscription for wsId: ${wsId}`
     );
     return NextResponse.json(
-      {
-        error: 'Unauthorized: You are not the workspace creator',
-      },
-      { status: 403 } // Forbidden
+      { error: 'Unauthorized: You are not authorized to create subscription' },
+      { status: 403 }
     );
   }
-
-  const user = await getCurrentSupabaseUser();
 
   const { data: userData, error } = await supabase
     .from('users')

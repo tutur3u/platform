@@ -8,12 +8,6 @@ export async function PATCH(
   _req: NextRequest,
   { params }: { params: Promise<{ subscriptionId: string }> }
 ) {
-  const user = await getCurrentSupabaseUser();
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const { subscriptionId } = await params;
 
   if (!subscriptionId) {
@@ -23,22 +17,62 @@ export async function PATCH(
     );
   }
 
+  const supabase = await createClient();
+  const user = await getCurrentSupabaseUser();
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { data: subscription } = await supabase
+    .from('workspace_subscription')
+    .select('*')
+    .eq('id', subscriptionId)
+    .single();
+
+  if (!subscription) {
+    return NextResponse.json(
+      { error: 'Subscription not found' },
+      { status: 404 }
+    );
+  }
+
+  const {
+    data: hasManageSubscriptionPermission,
+    error: hasManageSubscriptionPermissionError,
+  } = await supabase.rpc('has_workspace_permission', {
+    p_user_id: user.id,
+    p_ws_id: subscription.ws_id,
+    p_permission: 'manage_subscription',
+  });
+
+  if (hasManageSubscriptionPermissionError) {
+    console.error(
+      'Error checking manage subscription permission:',
+      hasManageSubscriptionPermissionError
+    );
+    return NextResponse.json(
+      {
+        error: `Error checking manage subscription permission: ${hasManageSubscriptionPermissionError.message}`,
+      },
+      { status: 500 }
+    );
+  }
+
+  if (!hasManageSubscriptionPermission) {
+    console.error(
+      `You are not authorized to reactivate subscription for subscriptionId: ${subscriptionId}`
+    );
+    return NextResponse.json(
+      {
+        error:
+          'Unauthorized: You are not authorized to reactivate subscription',
+      },
+      { status: 403 }
+    );
+  }
+
   try {
-    const supabase = await createClient();
-
-    const { data: subscription } = await supabase
-      .from('workspace_subscription')
-      .select('*')
-      .eq('id', subscriptionId)
-      .single();
-
-    if (!subscription) {
-      return NextResponse.json(
-        { error: 'Subscription not found' },
-        { status: 404 }
-      );
-    }
-
     const polar = createPolarClient();
 
     const session = await polar.customerSessions.create({
@@ -77,12 +111,6 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ subscriptionId: string }> }
 ) {
-  const user = await getCurrentSupabaseUser();
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const { subscriptionId } = await params;
 
   if (!subscriptionId) {
@@ -92,22 +120,62 @@ export async function DELETE(
     );
   }
 
+  const supabase = await createClient();
+  const user = await getCurrentSupabaseUser();
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { data: subscription } = await supabase
+    .from('workspace_subscription')
+    .select('*')
+    .eq('id', subscriptionId)
+    .single();
+
+  if (!subscription) {
+    return NextResponse.json(
+      { error: 'Subscription not found' },
+      { status: 404 }
+    );
+  }
+
+  const {
+    data: hasManageSubscriptionPermission,
+    error: hasManageSubscriptionPermissionError,
+  } = await supabase.rpc('has_workspace_permission', {
+    p_user_id: user.id,
+    p_ws_id: subscription.ws_id,
+    p_permission: 'manage_subscription',
+  });
+
+  if (hasManageSubscriptionPermissionError) {
+    console.error(
+      'Error checking manage subscription permission:',
+      hasManageSubscriptionPermissionError
+    );
+    return NextResponse.json(
+      {
+        error: `Error checking manage subscription permission: ${hasManageSubscriptionPermissionError.message}`,
+      },
+      { status: 500 }
+    );
+  }
+
+  if (!hasManageSubscriptionPermission) {
+    console.error(
+      `You are not authorized to reactivate subscription for subscriptionId: ${subscriptionId}`
+    );
+    return NextResponse.json(
+      {
+        error:
+          'Unauthorized: You are not authorized to reactivate subscription',
+      },
+      { status: 403 }
+    );
+  }
+
   try {
-    const supabase = await createClient();
-
-    const { data: subscription } = await supabase
-      .from('workspace_subscription')
-      .select('*')
-      .eq('id', subscriptionId)
-      .single();
-
-    if (!subscription) {
-      return NextResponse.json(
-        { error: 'Subscription not found' },
-        { status: 404 }
-      );
-    }
-
     const polar = createPolarClient();
 
     const session = await polar.customerSessions.create({
