@@ -30,9 +30,7 @@ AS PERMISSIVE
 FOR SELECT
 TO authenticated
 USING (
-  public.check_ws_creator(ws_id, auth.uid())
-  OR public.is_org_member(auth.uid(), ws_id)
-  OR public.has_workspace_permission(
+  public.has_workspace_permission(
     ws_id,
     auth.uid(),
     'manage_subscription'

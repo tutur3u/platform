@@ -29,11 +29,6 @@ export default async function BillingLayout({
           p_permission: 'manage_subscription',
         });
 
-        console.log(
-          'hasManageSubscriptionPermission',
-          hasManageSubscriptionPermission
-        );
-
         if (hasManageSubscriptionPermissionError) {
           console.error(
             'Error checking manage subscription permission:',
