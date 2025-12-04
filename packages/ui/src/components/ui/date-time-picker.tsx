@@ -524,7 +524,12 @@ export function DateTimePicker({
                     <Button
                       variant="default"
                       size="sm"
-                      onClick={() => setIsCalendarOpen(false)}
+                      onClick={() => {
+                        if (isManualTimeEntry) {
+                          handleManualTimeSubmit();
+                        }
+                        setIsCalendarOpen(false);
+                      }}
                       aria-label="Done"
                     >
                       Done
