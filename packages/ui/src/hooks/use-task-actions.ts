@@ -348,6 +348,8 @@ export function useTaskActions({
       });
 
       setDeleteDialogOpen?.(false);
+
+      queryClient.invalidateQueries({ queryKey: ['deleted-tasks', boardId] });
     } catch (error) {
       // Rollback on error
       if (previousTasks) {
