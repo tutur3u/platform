@@ -7,6 +7,7 @@ import type { GanttTimelineVisualization } from '../../types/visualizations';
 
 interface TimelineViewProps {
   data: GanttTimelineVisualization['data'];
+  isFullscreen?: boolean;
 }
 
 const statusConfig: Record<
@@ -47,7 +48,10 @@ function formatDateShort(dateString: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export function TimelineView({ data }: TimelineViewProps) {
+export function TimelineView({
+  data,
+  isFullscreen = false,
+}: TimelineViewProps) {
   const { title, timeRange, tasks } = data;
 
   // Calculate position and width for each task
@@ -80,7 +84,12 @@ export function TimelineView({ data }: TimelineViewProps) {
   return (
     <Card className="overflow-hidden border-border/50 bg-linear-to-b from-card to-card/95 shadow-xl backdrop-blur-md">
       {/* Header */}
-      <div className="border-border/30 border-b bg-muted/20 px-4 py-3 pr-12">
+      <div
+        className={cn(
+          'border-border/30 border-b bg-muted/20 px-4 py-3',
+          !isFullscreen && 'pr-12'
+        )}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -94,7 +103,7 @@ export function TimelineView({ data }: TimelineViewProps) {
       </div>
 
       {/* Timeline Content */}
-      <div className="max-h-80 overflow-y-auto p-4">
+      <div className={cn('overflow-y-auto p-4', !isFullscreen && 'max-h-80')}>
         {tasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-8 text-muted-foreground">
             <Calendar className="h-8 w-8 opacity-50" />

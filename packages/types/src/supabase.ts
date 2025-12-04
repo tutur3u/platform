@@ -9394,6 +9394,58 @@ export type Database = {
           },
         ];
       };
+      workspace_calendar_categories: {
+        Row: {
+          color: string;
+          created_at: string | null;
+          id: string;
+          name: string;
+          position: number;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          color?: string;
+          created_at?: string | null;
+          id?: string;
+          name: string;
+          position?: number;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          color?: string;
+          created_at?: string | null;
+          id?: string;
+          name?: string;
+          position?: number;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_calendar_categories_color_fkey';
+            columns: ['color'];
+            isOneToOne: false;
+            referencedRelation: 'calendar_event_colors';
+            referencedColumns: ['value'];
+          },
+          {
+            foreignKeyName: 'workspace_calendar_categories_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_calendar_categories_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_calendar_events: {
         Row: {
           color: string | null;

@@ -1,21 +1,14 @@
 'use client';
 
-import {
-  AlertCircle,
-  Calendar,
-  CheckCircle2,
-  Circle,
-  Clock,
-  Search,
-  User,
-} from '@tuturuuu/icons';
+import { Calendar, CheckCircle2, Circle, User } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
-import type { TaskListVisualization } from '../../types/visualizations';
+import Image from 'next/image';
+import type { AssigneeTasksVisualization } from '../../types/visualizations';
 
-interface TaskListCardProps {
-  data: TaskListVisualization['data'];
+interface AssigneeTasksCardProps {
+  data: AssigneeTasksVisualization['data'];
   isFullscreen?: boolean;
 }
 
@@ -45,37 +38,7 @@ const priorityConfig: Record<
   },
 };
 
-const categoryConfig: Record<
-  string,
-  { icon: typeof AlertCircle; color: string; bgColor: string; label: string }
-> = {
-  overdue: {
-    icon: AlertCircle,
-    color: 'text-dynamic-red',
-    bgColor: 'bg-dynamic-red/10',
-    label: 'Overdue',
-  },
-  today: {
-    icon: Clock,
-    color: 'text-dynamic-orange',
-    bgColor: 'bg-dynamic-orange/10',
-    label: 'Today',
-  },
-  upcoming: {
-    icon: Calendar,
-    color: 'text-dynamic-blue',
-    bgColor: 'bg-dynamic-blue/10',
-    label: 'Upcoming',
-  },
-  search_results: {
-    icon: Search,
-    color: 'text-muted-foreground',
-    bgColor: 'bg-muted/30',
-    label: 'Results',
-  },
-};
-
-function formatDate(dateString: string | null): string {
+function formatDate(dateString: string | null | undefined): string {
   if (!dateString) return '';
   const date = new Date(dateString);
   const now = new Date();
@@ -89,48 +52,48 @@ function formatDate(dateString: string | null): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export function TaskListCard({
+export function AssigneeTasksCard({
   data,
   isFullscreen = false,
-}: TaskListCardProps) {
-  const { title, category, tasks } = data;
-  const categoryStyle = category ? categoryConfig[category] : null;
-  const CategoryIcon = categoryStyle?.icon || Circle;
+}: AssigneeTasksCardProps) {
+  const { title, assignee, tasks, totalCount } = data;
 
   return (
     <Card className="overflow-hidden border-border/50 bg-linear-to-b from-card to-card/95 shadow-xl backdrop-blur-md">
       {/* Header */}
       <div
         className={cn(
-          'border-border/30 border-b px-4 py-3',
-          !isFullscreen && 'pr-12',
-          categoryStyle?.bgColor
+          'border-border/30 border-b bg-dynamic-cyan/10 px-4 py-3',
+          !isFullscreen && 'pr-12'
         )}
       >
         <div className="flex items-center gap-2.5">
-          <div
-            className={cn(
-              'flex h-7 w-7 items-center justify-center rounded-full',
-              categoryStyle?.bgColor || 'bg-muted/50'
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-dynamic-cyan/20">
+            {assignee.avatarUrl ? (
+              <Image
+                src={assignee.avatarUrl}
+                alt={assignee.name || 'Assignee Avatar'}
+                className="h-full w-full rounded-full object-cover"
+                width={28}
+                height={28}
+              />
+            ) : (
+              <User className="h-4 w-4 text-dynamic-cyan" />
             )}
-          >
-            <CategoryIcon
-              className={cn(
-                'h-4 w-4',
-                categoryStyle?.color || 'text-muted-foreground'
-              )}
-            />
           </div>
           <div className="flex-1">
             <h3 className="font-semibold text-sm">{title}</h3>
+            {assignee.name && (
+              <p className="text-muted-foreground text-xs">{assignee.name}</p>
+            )}
           </div>
           <Badge variant="secondary" className="font-semibold">
-            {tasks.length}
+            {totalCount} tasks
           </Badge>
         </div>
       </div>
 
-      {/* Task List */}
+      {/* Tasks List */}
       <div
         className={cn(
           'divide-y divide-border/20 overflow-y-auto',
@@ -140,7 +103,7 @@ export function TaskListCard({
         {tasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-muted-foreground">
             <CheckCircle2 className="h-8 w-8 text-dynamic-green/50" />
-            <span className="text-sm">No tasks found</span>
+            <span className="text-sm">No tasks assigned</span>
           </div>
         ) : (
           tasks.map((task) => {
@@ -148,8 +111,11 @@ export function TaskListCard({
               ? priorityConfig[task.priority]
               : null;
             const isOverdue =
-              category === 'overdue' ||
-              (task.endDate && new Date(task.endDate) < new Date());
+              task.endDate && new Date(task.endDate) < new Date();
+            const isDoneOrClosed =
+              task.isCompleted ||
+              task.listStatus === 'done' ||
+              task.listStatus === 'closed';
 
             return (
               <div
@@ -157,12 +123,12 @@ export function TaskListCard({
                 className={cn(
                   'group flex items-start gap-3 px-4 py-3 transition-all duration-200',
                   'hover:bg-muted/40',
-                  task.completed && 'opacity-60'
+                  isDoneOrClosed && 'opacity-50'
                 )}
               >
-                {/* Completion Status */}
+                {/* Completion icon */}
                 <div className="mt-0.5 transition-transform duration-200 group-hover:scale-110">
-                  {task.completed ? (
+                  {isDoneOrClosed ? (
                     <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
                   ) : (
                     <Circle
@@ -181,7 +147,7 @@ export function TaskListCard({
                   <p
                     className={cn(
                       'text-sm leading-snug transition-colors',
-                      task.completed && 'text-muted-foreground line-through'
+                      isDoneOrClosed && 'text-muted-foreground'
                     )}
                   >
                     {task.name}
@@ -197,7 +163,7 @@ export function TaskListCard({
                           priority.color
                         )}
                       >
-                        {priority.label}
+                        {task.priorityLabel || priority.label}
                       </span>
                     )}
 
@@ -215,12 +181,9 @@ export function TaskListCard({
                       </span>
                     )}
 
-                    {task.assignees && task.assignees.length > 0 && (
-                      <span className="flex items-center gap-1 rounded bg-muted/50 px-1.5 py-0.5 text-muted-foreground text-xs">
-                        <User className="h-3 w-3" />
-                        {task.assignees.length === 1
-                          ? task.assignees[0]?.name
-                          : `${task.assignees.length}`}
+                    {task.listStatus && (
+                      <span className="rounded bg-muted/50 px-1.5 py-0.5 text-muted-foreground text-xs">
+                        {task.listStatus.replace('_', ' ')}
                       </span>
                     )}
                   </div>
@@ -231,7 +194,7 @@ export function TaskListCard({
         )}
       </div>
 
-      {/* Footer with count */}
+      {/* Footer */}
       {tasks.length > 5 && (
         <div className="border-border/30 border-t bg-muted/20 px-4 py-2 text-center">
           <span className="text-muted-foreground text-xs">

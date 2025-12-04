@@ -9,10 +9,8 @@ import {
   type AppearanceData,
   defaultAppearanceData,
 } from './appearance-settings';
-import {
-  type CategoryColorsData,
-  defaultCategoryColors,
-} from './category-color-settings';
+// categoryColors is now managed independently via TanStack Query
+// in use-calendar-categories.ts hook
 import {
   defaultNotificationData,
   type NotificationData,
@@ -34,7 +32,6 @@ export type CalendarSettings = {
   showWeekNumbers: boolean;
   use24HourFormat: boolean;
   defaultView: 'day' | 'week' | '4day';
-  categoryColors: CategoryColorsData;
   personalHours: WeekTimeRanges;
   workHours: WeekTimeRanges;
   meetingHours: WeekTimeRanges;
@@ -57,7 +54,6 @@ export const defaultCalendarSettings: CalendarSettings = {
   timezone: defaultTimezoneData,
   appearance: defaultAppearanceData,
   notifications: defaultNotificationData,
-  categoryColors: defaultCategoryColors,
   smartScheduling: defaultSmartSchedulingData,
   taskSettings: defaultTaskSettings,
 };
