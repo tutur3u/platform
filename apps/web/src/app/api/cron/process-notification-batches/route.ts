@@ -2,12 +2,26 @@ import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { render } from '@react-email/render';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import NotificationDigestEmail from '@tuturuuu/transactional/emails/notification-digest';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { ROOT_WORKSPACE_ID, DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 // This API route should be called by a cron job (pg_cron, Trigger.dev, or external cron service)
-// It processes pending notification batches and sends email digests
+// It processes BATCHED notification batches and sends email digests
+// Immediate notifications are handled by /api/notifications/send-immediate
+
+// Feature flag: When true, only send emails for notifications belonging to the root workspace
+// Set to false to allow emails for all workspaces
+const RESTRICT_TO_ROOT_WORKSPACE_ONLY = true;
+
+interface NotificationItem {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  data: Record<string, any>;
+  createdAt: string;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,11 +63,13 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Get all pending batches where window_end has passed
+    // Get all pending BATCHED notifications where window_end has passed
+    // Immediate notifications are handled separately by /api/notifications/send-immediate
     const { data: batches, error: batchesError } = await sbAdmin
       .from('notification_batches')
       .select('*')
       .eq('status', 'pending')
+      .eq('delivery_mode', 'batched')
       .lte('window_end', new Date().toISOString())
       .order('window_end', { ascending: true })
       .limit(50); // Process max 50 batches per run
@@ -68,18 +84,99 @@ export async function POST(req: NextRequest) {
 
     if (!batches || batches.length === 0) {
       return NextResponse.json({
-        message: 'No pending batches to process',
+        message: 'No pending batched notifications to process',
         processed: 0,
         failed: 0,
       });
     }
 
+    // If restricted to root workspace, we need to filter batches after fetching
+    // because ws_id can be null for user-scoped notifications (like workspace invites)
+    // In that case, the workspace ID is stored in the notification's entity_id or data
+    let filteredBatches = batches;
+
+    if (RESTRICT_TO_ROOT_WORKSPACE_ONLY) {
+      // First, get the notification data for batches with null ws_id to check entity_id
+      const batchesWithNullWsId = batches.filter((b) => b.ws_id === null);
+      const batchesWithWsId = batches.filter((b) => b.ws_id !== null);
+
+      // Keep batches that have ws_id = ROOT_WORKSPACE_ID
+      const validBatchesWithWsId = batchesWithWsId.filter(
+        (b) => b.ws_id === ROOT_WORKSPACE_ID
+      );
+
+      // For batches with null ws_id, check the notification's entity_id or data->workspace_id
+      const validBatchIdsFromNullWsId: string[] = [];
+
+      if (batchesWithNullWsId.length > 0) {
+        const batchIdsToCheck = batchesWithNullWsId.map((b) => b.id);
+
+        // Get notifications for these batches to check their entity_id/data
+        const { data: deliveryLogsForCheck } = await sbAdmin
+          .from('notification_delivery_log')
+          .select(
+            `
+            batch_id,
+            notifications (
+              entity_id,
+              data
+            )
+          `
+          )
+          .in('batch_id', batchIdsToCheck)
+          .eq('channel', 'email');
+
+        if (deliveryLogsForCheck) {
+          for (const log of deliveryLogsForCheck) {
+            const notification = log.notifications as {
+              entity_id: string | null;
+              data: Record<string, unknown> | null;
+            } | null;
+            if (notification && log.batch_id) {
+              // Check entity_id first, then data->workspace_id
+              const workspaceId =
+                notification.entity_id ||
+                (notification.data?.workspace_id as string | undefined);
+
+              if (workspaceId === ROOT_WORKSPACE_ID) {
+                validBatchIdsFromNullWsId.push(log.batch_id);
+              }
+            }
+          }
+        }
+      }
+
+      // Combine valid batches
+      const validBatchIds = new Set([
+        ...validBatchesWithWsId.map((b) => b.id),
+        ...validBatchIdsFromNullWsId,
+      ]);
+
+      filteredBatches = batches.filter((b) => validBatchIds.has(b.id));
+
+      if (filteredBatches.length === 0) {
+        return NextResponse.json({
+          message:
+            'No pending batched notifications to process (filtered by root workspace)',
+          processed: 0,
+          failed: 0,
+        });
+      }
+    }
+
     let processedCount = 0;
     let failedCount = 0;
-    const results = [];
+    const results: Array<{
+      batch_id: string;
+      status: string;
+      email?: string;
+      notification_count?: number;
+      reason?: string;
+      error?: string;
+    }> = [];
 
     // Process each batch
-    for (const batch of batches) {
+    for (const batch of filteredBatches) {
       try {
         // Mark batch as processing
         await sbAdmin
@@ -179,7 +276,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Format notifications for email template
-        const notifications = deliveryLogs
+        const notifications: NotificationItem[] = deliveryLogs
           .map((log: any) => log.notifications)
           .filter(Boolean)
           .map((n: any) => ({
@@ -191,7 +288,7 @@ export async function POST(req: NextRequest) {
             createdAt: n.created_at,
           }));
 
-        // Render email using React Email template
+        // Render digest email template
         const emailHtml = await render(
           NotificationDigestEmail({
             userName,
@@ -201,30 +298,42 @@ export async function POST(req: NextRequest) {
           })
         );
 
-        // Send email via SES
-        const sourceEmail =
-          credentials.source_email || 'notifications@tuturuuu.com';
-        const command = new SendEmailCommand({
-          Source: sourceEmail,
-          Destination: {
-            ToAddresses: [userEmail],
-          },
-          Message: {
-            Subject: {
-              Data: `${notifications.length} new notification${notifications.length !== 1 ? 's' : ''} from ${workspaceName}`,
-            },
-            Body: {
-              Html: { Data: emailHtml },
-            },
-          },
-        });
+        const emailSubject = `${notifications.length} new notification${notifications.length !== 1 ? 's' : ''} from ${workspaceName}`;
 
-        const sesResponse = await sesClient.send(command);
+        // DEBUG: Skip SES sending for testing, just log the rendered HTML
+        const DEBUG_SKIP_SES = DEV_MODE;
+        if (DEBUG_SKIP_SES) {
+          console.log('=== DEBUG: Rendered Email HTML ===');
+          console.log('Subject:', emailSubject);
+          console.log('To:', userEmail);
+          console.log('HTML:', emailHtml);
+          console.log('=== END DEBUG ===');
+        } else {
+          // Send email via SES
+          const sourceEmail =
+            credentials.source_email || 'notifications@tuturuuu.com';
+          const command = new SendEmailCommand({
+            Source: sourceEmail,
+            Destination: {
+              ToAddresses: [userEmail],
+            },
+            Message: {
+              Subject: {
+                Data: emailSubject,
+              },
+              Body: {
+                Html: { Data: emailHtml },
+              },
+            },
+          });
 
-        if (sesResponse.$metadata.httpStatusCode !== 200) {
-          throw new Error(
-            `SES returned status ${sesResponse.$metadata.httpStatusCode}`
-          );
+          const sesResponse = await sesClient.send(command);
+
+          if (sesResponse.$metadata.httpStatusCode !== 200) {
+            throw new Error(
+              `SES returned status ${sesResponse.$metadata.httpStatusCode}`
+            );
+          }
         }
 
         // Mark all delivery logs as sent
@@ -324,6 +433,7 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     status: 'ok',
-    message: 'Notification batch processor endpoint',
+    message:
+      'Notification batch processor endpoint (batched notifications only)',
   });
 }

@@ -3915,6 +3915,7 @@ export type Database = {
         Row: {
           channel: string;
           created_at: string;
+          delivery_mode: Database['public']['Enums']['notification_delivery_mode'];
           email: string | null;
           error_message: string | null;
           id: string;
@@ -3930,6 +3931,7 @@ export type Database = {
         Insert: {
           channel: string;
           created_at?: string;
+          delivery_mode?: Database['public']['Enums']['notification_delivery_mode'];
           email?: string | null;
           error_message?: string | null;
           id?: string;
@@ -3945,6 +3947,7 @@ export type Database = {
         Update: {
           channel?: string;
           created_at?: string;
+          delivery_mode?: Database['public']['Enums']['notification_delivery_mode'];
           email?: string | null;
           error_message?: string | null;
           id?: string;
@@ -4027,6 +4030,51 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      notification_email_config: {
+        Row: {
+          batch_window_minutes: number | null;
+          created_at: string;
+          delivery_mode: Database['public']['Enums']['notification_delivery_mode'];
+          email_subject_template: string | null;
+          email_template: string | null;
+          enabled: boolean;
+          id: string;
+          notification_type: string;
+          priority_override:
+            | Database['public']['Enums']['notification_priority']
+            | null;
+          updated_at: string;
+        };
+        Insert: {
+          batch_window_minutes?: number | null;
+          created_at?: string;
+          delivery_mode?: Database['public']['Enums']['notification_delivery_mode'];
+          email_subject_template?: string | null;
+          email_template?: string | null;
+          enabled?: boolean;
+          id?: string;
+          notification_type: string;
+          priority_override?:
+            | Database['public']['Enums']['notification_priority']
+            | null;
+          updated_at?: string;
+        };
+        Update: {
+          batch_window_minutes?: number | null;
+          created_at?: string;
+          delivery_mode?: Database['public']['Enums']['notification_delivery_mode'];
+          email_subject_template?: string | null;
+          email_template?: string | null;
+          enabled?: boolean;
+          id?: string;
+          notification_type?: string;
+          priority_override?:
+            | Database['public']['Enums']['notification_priority']
+            | null;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       notification_preferences: {
         Row: {
@@ -14586,6 +14634,17 @@ export type Database = {
         Args: { p_board_id: string };
         Returns: number;
       };
+      get_notification_email_config: {
+        Args: { p_notification_type: string };
+        Returns: {
+          batch_window_minutes: number;
+          delivery_mode: Database['public']['Enums']['notification_delivery_mode'];
+          email_subject_template: string;
+          email_template: string;
+          enabled: boolean;
+          priority_override: Database['public']['Enums']['notification_priority'];
+        }[];
+      };
       get_operating_systems: {
         Args: { p_limit?: number; p_link_id: string };
         Returns: {
@@ -14607,6 +14666,17 @@ export type Database = {
         | {
             Args: {
               p_channel: string;
+              p_user_id: string;
+              p_window_minutes?: number;
+              p_ws_id: string;
+            };
+            Returns: string;
+          }
+        | {
+            Args: {
+              p_channel: string;
+              p_delivery_mode?: Database['public']['Enums']['notification_delivery_mode'];
+              p_email?: string;
               p_user_id: string;
               p_window_minutes?: number;
               p_ws_id: string;
@@ -15559,6 +15629,7 @@ export type Database = {
         | 'ENABLE_QUIZZES';
       habit_frequency: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom';
       monthly_recurrence_type: 'day_of_month' | 'day_of_week';
+      notification_delivery_mode: 'immediate' | 'batched';
       notification_priority: 'low' | 'medium' | 'high' | 'urgent';
       notification_scope: 'user' | 'workspace' | 'system';
       platform_service: 'TUTURUUU' | 'REWISE' | 'NOVA' | 'UPSKII';
@@ -15836,6 +15907,7 @@ export const Constants = {
       ],
       habit_frequency: ['daily', 'weekly', 'monthly', 'yearly', 'custom'],
       monthly_recurrence_type: ['day_of_month', 'day_of_week'],
+      notification_delivery_mode: ['immediate', 'batched'],
       notification_priority: ['low', 'medium', 'high', 'urgent'],
       notification_scope: ['user', 'workspace', 'system'],
       platform_service: ['TUTURUUU', 'REWISE', 'NOVA', 'UPSKII'],
