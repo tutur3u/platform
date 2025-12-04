@@ -1,5 +1,7 @@
 import { Receipt } from '@tuturuuu/icons';
+import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
+import { centToDollar } from '@/utils/price-helper';
 
 interface BillingHistoryItem {
   id: string;
@@ -39,7 +41,7 @@ export default function BillingHistory({
   };
 
   const getDisplayDate = (item: BillingHistoryItem) => {
-    const createdDate = new Date(item.created_at).toLocaleDateString();
+    const createdDate = format(new Date(item.created_at), 'MMM d, yyyy');
 
     switch (item.status) {
       case 'active':
@@ -109,7 +111,7 @@ export default function BillingHistory({
                       {subscription.product ? (
                         <div>
                           <div className="font-medium">
-                            ${subscription.product.price}
+                            {`$${centToDollar(subscription.product.price)}`}
                           </div>
                           <div className="text-muted-foreground text-sm">
                             per {subscription.product.recurring_interval}
@@ -125,7 +127,9 @@ export default function BillingHistory({
                       >
                         {subscription.status.charAt(0).toUpperCase() +
                           subscription.status.slice(1)}
-                        {subscription.cancel_at_period_end && ' (Ending)'}
+                        {subscription.status === 'active' &&
+                          subscription.cancel_at_period_end &&
+                          ' (Ending)'}
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">

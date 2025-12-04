@@ -2,7 +2,7 @@ import WorkspaceWrapper from '@/components/workspace-wrapper';
 import type { Metadata } from 'next';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { RequestsClient } from './requests-client';
-import { XIcon } from '@tuturuuu/icons';
+import { AlertTriangle, XIcon } from '@tuturuuu/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 
 export const metadata: Metadata = {
@@ -66,7 +66,36 @@ interface PageProps {
 export default async function TimeTrackerRequestsPage({ params }: PageProps) {
   return (
     <WorkspaceWrapper params={params}>
-      {async ({ wsId }) => {
+      {async ({ wsId, isPersonal }) => {
+        // Personal workspaces don't have time tracking request flows
+        if (isPersonal) {
+          return (
+            <div className="container mx-auto px-4 py-6 md:px-8">
+              <div className="rounded-md bg-blue-50 p-4 dark:bg-blue-900/20">
+                <div className="flex">
+                  <div className="shrink-0">
+                    <AlertTriangle
+                      className="h-5 w-5 text-blue-400"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                      Time tracking requests are not available for personal
+                      workspaces.
+                    </h3>
+                    <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
+                      Personal workspaces have no time tracking restrictions.
+                      You can add and edit time entries freely without needing
+                      approval.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
         const { containsPermission } = await getPermissions({ wsId });
 
         const bypassRulesPermission = containsPermission(

@@ -11675,28 +11675,34 @@ export type Database = {
       };
       workspace_subscription_products: {
         Row: {
+          archived: boolean;
           created_at: string;
           description: string | null;
           id: string;
           name: string | null;
           price: number | null;
           recurring_interval: string | null;
+          tier: Database['public']['Enums']['workspace_product_tier'] | null;
         };
         Insert: {
+          archived?: boolean;
           created_at?: string;
           description?: string | null;
           id: string;
           name?: string | null;
           price?: number | null;
           recurring_interval?: string | null;
+          tier?: Database['public']['Enums']['workspace_product_tier'] | null;
         };
         Update: {
+          archived?: boolean;
           created_at?: string;
           description?: string | null;
           id?: string;
           name?: string | null;
           price?: number | null;
           recurring_interval?: string | null;
+          tier?: Database['public']['Enums']['workspace_product_tier'] | null;
         };
         Relationships: [];
       };
@@ -14078,7 +14084,9 @@ export type Database = {
         Args: { p_user_id: string; p_ws_id: string };
         Returns: Json;
       };
-      check_ws_creator: { Args: { ws_id: string }; Returns: boolean };
+      check_ws_creator:
+        | { Args: { user_id: string; ws_id: string }; Returns: boolean }
+        | { Args: { ws_id: string }; Returns: boolean };
       cleanup_expired_cross_app_tokens: { Args: never; Returns: undefined };
       cleanup_expired_notifications: { Args: never; Returns: number };
       cleanup_old_api_key_usage_logs: { Args: never; Returns: undefined };
@@ -15576,7 +15584,14 @@ export type Database = {
         | 'completed'
         | 'failed';
       recurring_frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
-      subscription_status: 'trialing' | 'active' | 'canceled' | 'past_due';
+      subscription_status:
+        | 'incomplete'
+        | 'incomplete_expired'
+        | 'trialing'
+        | 'active'
+        | 'past_due'
+        | 'canceled'
+        | 'unpaid';
       support_type: 'bug' | 'feature-request' | 'support' | 'job-application';
       task_board_status:
         | 'not_started'
@@ -15595,6 +15610,7 @@ export type Database = {
         | 'gemini-2.5-pro'
         | 'gemini-2.0-flash-lite'
         | 'gemini-2.5-flash-lite';
+      workspace_product_tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
       workspace_role_permission:
         | 'view_infrastructure'
         | 'manage_workspace_secrets'
@@ -15660,7 +15676,8 @@ export type Database = {
         | 'delete_confidential_transactions'
         | 'manage_time_tracking_requests'
         | 'bypass_time_tracking_request_approval'
-        | 'manage_changelog';
+        | 'manage_changelog'
+        | 'manage_subscription';
     };
     CompositeTypes: {
       email_block_status: {
@@ -15846,7 +15863,15 @@ export const Constants = {
         'failed',
       ],
       recurring_frequency: ['daily', 'weekly', 'monthly', 'yearly'],
-      subscription_status: ['trialing', 'active', 'canceled', 'past_due'],
+      subscription_status: [
+        'incomplete',
+        'incomplete_expired',
+        'trialing',
+        'active',
+        'past_due',
+        'canceled',
+        'unpaid',
+      ],
       support_type: ['bug', 'feature-request', 'support', 'job-application'],
       task_board_status: [
         'not_started',
@@ -15867,6 +15892,7 @@ export const Constants = {
         'gemini-2.0-flash-lite',
         'gemini-2.5-flash-lite',
       ],
+      workspace_product_tier: ['FREE', 'PLUS', 'PRO', 'ENTERPRISE'],
       workspace_role_permission: [
         'view_infrastructure',
         'manage_workspace_secrets',
@@ -15933,6 +15959,7 @@ export const Constants = {
         'manage_time_tracking_requests',
         'bypass_time_tracking_request_approval',
         'manage_changelog',
+        'manage_subscription',
       ],
     },
   },

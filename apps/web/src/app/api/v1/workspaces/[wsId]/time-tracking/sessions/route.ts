@@ -375,6 +375,7 @@ export async function POST(
         );
       }
 
+      // Only apply threshold restrictions for non-personal workspaces
       // Fetch workspace threshold setting
       const { data: workspaceSettings } = await sbAdmin
         .from('workspace_settings')

@@ -6,7 +6,7 @@
     "./polar": "./src/polar/index.ts",
     "./polar/checkout/embed": "./src/polar/checkout/embed.ts",
     "./polar/next": "./src/polar/next/index.ts",
-    "./dodo/*": "./src/dodo/*.ts"
+    "./polar/*": "./src/polar/*.ts"
   },
   "dependencies": {
     "@polar-sh/checkout": "^0.1.14",

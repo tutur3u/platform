@@ -1,5 +1,3 @@
-import type { NavLink } from '@/components/navigation';
-import { DEV_MODE } from '@/constants/common';
 import {
   Archive,
   Banknote,
@@ -79,8 +77,8 @@ import {
   Truck,
   UserCheck,
   UserLock,
-  Users,
   UserStar,
+  Users,
   VectorSquare,
   Vote,
   Wallet,
@@ -88,8 +86,8 @@ import {
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
-  resolveWorkspaceId,
   ROOT_WORKSPACE_ID,
+  resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
@@ -97,6 +95,8 @@ import {
   getSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
+import type { NavLink } from '@/components/navigation';
+import { DEV_MODE } from '@/constants/common';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -305,12 +305,16 @@ export async function WorkspaceNavigationLinks({
           requireRootWorkspace: true,
           requireRootMember: true,
         },
-        {
-          title: t('sidebar_tabs.time_tracker_requests'),
-          href: `/${personalOrWsId}/time-tracker/requests`,
-          icon: <MessageCircleIcon className="h-5 w-5" />,
-          disabled: withoutPermission('manage_time_tracking_requests'),
-        },
+        ...(!isPersonal
+          ? [
+              {
+                title: t('sidebar_tabs.time_tracker_requests'),
+                href: `/${personalOrWsId}/time-tracker/requests`,
+                icon: <MessageCircleIcon className="h-5 w-5" />,
+                disabled: withoutPermission('manage_time_tracking_requests'),
+              },
+            ]
+          : []),
         null,
         {
           title: t('sidebar_tabs.settings'),
@@ -925,6 +929,7 @@ export async function WorkspaceNavigationLinks({
           title: t('sidebar_tabs.billing'),
           href: `/${personalOrWsId}/billing`,
           icon: <CircleDollarSign className="h-5 w-5" />,
+          disabled: withoutPermission('manage_subscription'),
           requireRootWorkspace: true,
           requireRootMember: true,
         },
