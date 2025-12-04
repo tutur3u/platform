@@ -1233,12 +1233,9 @@ export function useRestoreTasks(boardId: string) {
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return restoredTasks;
-          return old.map((task) => {
-            if (restoredTasks.some((t) => t.id === task.id)) {
-              return { ...task, deleted_at: null };
-            }
-            return task;
-          });
+          const restoredIds = new Set(restoredTasks.map((t) => t.id));
+          const otherTasks = old.filter((t) => !restoredIds.has(t.id));
+          return [...otherTasks, ...restoredTasks];
         }
       );
     },
