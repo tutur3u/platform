@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
+import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -56,6 +57,7 @@ export function TaskForm({
 
   const params = useParams();
   const wsId = params.wsId as string;
+  const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
 
   // Fetch workspace members for quick assign
   const { data: members = [] } = useQuery({
@@ -415,6 +417,7 @@ export function TaskForm({
                     date={startDate}
                     setDate={setStartDate}
                     showTimeSelect={true}
+                    preferences={{ weekStartsOn, timezone, timeFormat }}
                   />
                 </div>
 
@@ -425,6 +428,7 @@ export function TaskForm({
                     date={endDate}
                     setDate={handleEndDateChange}
                     showTimeSelect={true}
+                    preferences={{ weekStartsOn, timezone, timeFormat }}
                   />
                 </div>
               </div>

@@ -14,6 +14,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
+import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
 import { format, parse } from 'date-fns';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Separator } from './separator';
@@ -38,6 +39,7 @@ interface DateTimePickerProps {
   preferences?: {
     weekStartsOn?: 0 | 1 | 6;
     timezone?: string;
+    timeFormat?: '12h' | '24h';
   };
 }
 
@@ -237,6 +239,10 @@ export function DateTimePicker({
     }
   };
 
+  // Get time format preference (default to 12h)
+  const timeFormat = preferences?.timeFormat ?? '12h';
+  const timePattern = getTimeFormatPattern(timeFormat);
+
   // Generate time options in 15-minute increments
   const timeOptions = useMemo(
     () =>
@@ -246,10 +252,10 @@ export function DateTimePicker({
         const formattedHour = hour.toString().padStart(2, '0');
         const formattedMinute = minute.toString().padStart(2, '0');
         const value = `${formattedHour}:${formattedMinute}`;
-        const display = format(parse(value, 'HH:mm', new Date()), 'h:mm a');
+        const display = format(parse(value, 'HH:mm', new Date()), timePattern);
         return { value, display };
       }),
-    []
+    [timePattern]
   );
 
   // Filter time options for end time picker
@@ -290,13 +296,13 @@ export function DateTimePicker({
       if (!options.some((t) => t.value === customValue)) {
         options = [
           ...options,
-          { value: customValue, display: format(date, 'h:mm a') },
+          { value: customValue, display: format(date, timePattern) },
         ];
         options.sort((a, b) => a.value.localeCompare(b.value));
       }
     }
     return options;
-  }, [date, minDate, maxDate, minTime, timeOptions]);
+  }, [date, minDate, maxDate, minTime, timeOptions, timePattern]);
 
   // If the filtered list is empty, show an error message
   const noValidTimes = filteredTimeOptions.length === 0;
@@ -545,7 +551,7 @@ export function DateTimePicker({
             disabled={disabled}
             aria-label={
               date
-                ? `Selected ${format(date, 'PPP p')}`
+                ? `Selected ${format(date, `PPP ${timePattern}`)}`
                 : 'Open date and time picker'
             }
           >
@@ -557,7 +563,7 @@ export function DateTimePicker({
                   <>
                     <span className="text-muted-foreground">•</span>
                     <span className="text-muted-foreground">
-                      {format(date, 'h:mm a')}
+                      {format(date, timePattern)}
                     </span>
                   </>
                 )}

@@ -43,6 +43,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@tuturuuu/ui/hover-card';
+import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import {
@@ -52,6 +53,7 @@ import {
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
 import { getDescriptionMetadata } from '@tuturuuu/utils/text-helper';
+import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
 import { format, formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -132,6 +134,8 @@ function TaskCardInner({
 }: TaskCardProps) {
   const { wsId } = useParams();
   const queryClient = useQueryClient();
+  const { timeFormat } = useCalendarPreferences();
+  const timePattern = getTimeFormatPattern(timeFormat);
 
   const [isLoading, setIsLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1379,7 +1383,7 @@ function TaskCardInner({
                     </Badge>
                   ) : (
                     <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
-                      {format(endDate, "MMM dd 'at' h:mm a")}
+                      {format(endDate, `MMM dd 'at' ${timePattern}`)}
                     </span>
                   )}
                 </div>
@@ -1407,7 +1411,10 @@ function TaskCardInner({
                   })}
                 </span>
                 <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
-                  {format(new Date(task.completed_at), "MMM dd 'at' h:mm a")}
+                  {format(
+                    new Date(task.completed_at),
+                    `MMM dd 'at' ${timePattern}`
+                  )}
                 </span>
               </div>
             )}
@@ -1426,7 +1433,10 @@ function TaskCardInner({
                   })}
                 </span>
                 <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
-                  {format(new Date(task.closed_at), "MMM dd 'at' h:mm a")}
+                  {format(
+                    new Date(task.closed_at),
+                    `MMM dd 'at' ${timePattern}`
+                  )}
                 </span>
               </div>
             )}

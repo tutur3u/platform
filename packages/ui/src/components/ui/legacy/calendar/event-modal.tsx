@@ -925,26 +925,11 @@ export function EventModal() {
               <div className="flex flex-1 flex-col overflow-hidden">
                 <ScrollArea className="h-[calc(90vh-250px)] flex-1">
                   <div className="space-y-6 p-6">
-                    {/* Locked Event Indicator */}
-                    {event.locked && (
-                      <div className="mb-4 flex items-center gap-2 rounded-md border border-dynamic-light-yellow/30 bg-dynamic-light-yellow/10 p-3 text-dynamic-light-yellow">
-                        <div>
-                          <h3 className="font-semibold">Event is Locked</h3>
-                          <p className="text-sm">
-                            This event is locked and can't be modified. Unlock
-                            it from the Advanced Settings section to make
-                            changes.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
                     {/* Title */}
                     <EventTitleInput
                       value={event.title || ''}
                       onEnter={handleManualSave}
                       onChange={(value) => setEvent({ ...event, title: value })}
-                      disabled={event.locked}
                     />
 
                     {/* Date and Time Selection */}
@@ -957,7 +942,6 @@ export function EventModal() {
                             label="All Day"
                             checked={isAllDay}
                             onChange={handleAllDayChange}
-                            disabled={event.locked}
                           />
                         </div>
                       </div>
@@ -967,7 +951,6 @@ export function EventModal() {
                           label="Start"
                           value={new Date(event.start_at || new Date())}
                           onChange={handleStartDateChange}
-                          disabled={event.locked}
                           showTimeSelect={!isAllDay}
                           scrollIntoViewOnOpen={true}
                           pickerButtonRef={startPickerRef}
@@ -984,7 +967,6 @@ export function EventModal() {
                             return new Date(event.end_at || new Date());
                           })()}
                           onChange={handleEndDateChange}
-                          disabled={event.locked}
                           showTimeSelect={!isAllDay}
                           minDate={(() => {
                             // Allow selecting the same day as the start date
@@ -1027,14 +1009,12 @@ export function EventModal() {
                         onChange={(value) =>
                           setEvent({ ...event, location: value })
                         }
-                        disabled={event.locked}
                       />
                       <EventDescriptionInput
                         value={event.description || ''}
                         onChange={(value) =>
                           setEvent({ ...event, description: value })
                         }
-                        disabled={event.locked}
                       />
                     </div>
 
@@ -1063,19 +1043,18 @@ export function EventModal() {
                                 onChange={(value) =>
                                   setEvent({ ...event, color: value })
                                 }
-                                disabled={event.locked}
                               />
                               <div className="flex flex-col space-y-3">
                                 <label
                                   htmlFor="locked"
                                   className="font-medium text-sm"
                                 >
-                                  Event Protection
+                                  Auto-Schedule Protection
                                 </label>
                                 <EventToggleSwitch
                                   id="locked"
                                   label="Lock Event"
-                                  description="Locked events cannot be modified accidentally"
+                                  description="Locked events won't be moved by auto-scheduling"
                                   checked={event.locked || false}
                                   onChange={(checked) => {
                                     if (isEditing) {
@@ -1105,8 +1084,8 @@ export function EventModal() {
                             <div className="mt-2 text-muted-foreground text-xs">
                               <p className="flex items-center gap-1">
                                 <Info className="h-3 w-3" />
-                                Color and protection settings help organize and
-                                secure your events
+                                Locked events can still be edited manually but
+                                won't be moved by auto-scheduling
                               </p>
                             </div>
                           </div>
@@ -1169,9 +1148,7 @@ export function EventModal() {
                       </Button>
                       <Button
                         onClick={handleManualSave}
-                        disabled={
-                          isSaving || isDeleting || (isEditing && event.locked)
-                        }
+                        disabled={isSaving || isDeleting}
                         className="flex items-center gap-2"
                       >
                         {isSaving ? (
@@ -1182,13 +1159,7 @@ export function EventModal() {
                         ) : (
                           <>
                             <Check className="h-4 w-4" />
-                            <span>
-                              {isEditing
-                                ? event.locked
-                                  ? 'Locked'
-                                  : 'Update'
-                                : 'Create'}
-                            </span>
+                            <span>{isEditing ? 'Update' : 'Create'}</span>
                           </>
                         )}
                       </Button>
@@ -1414,12 +1385,16 @@ export function EventModal() {
                                   <span>
                                     {format(
                                       new Date(generatedEvent.start_at || ''),
-                                      'h:mm a'
+                                      settings?.appearance?.timeFormat === '24h'
+                                        ? 'HH:mm'
+                                        : 'h:mm a'
                                     )}{' '}
                                     -{' '}
                                     {format(
                                       new Date(generatedEvent.end_at || ''),
-                                      'h:mm a'
+                                      settings?.appearance?.timeFormat === '24h'
+                                        ? 'HH:mm'
+                                        : 'h:mm a'
                                     )}
                                   </span>
                                 </div>

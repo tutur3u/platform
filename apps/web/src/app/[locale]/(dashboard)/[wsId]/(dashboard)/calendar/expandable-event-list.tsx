@@ -9,7 +9,9 @@ import {
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { cn } from '@tuturuuu/utils/format';
+import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
 import { format, isToday, isTomorrow } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -35,16 +37,18 @@ export default function ExpandableEventList({
 }: ExpandableEventListProps) {
   const t = useTranslations('dashboard');
   const [showAll, setShowAll] = useState(false);
+  const { timeFormat } = useCalendarPreferences();
+  const timePattern = getTimeFormatPattern(timeFormat);
 
   const displayedEvents = showAll ? events : events.slice(0, initialLimit);
   const hasMoreEvents = events.length > initialLimit;
 
   const formatEventTime = (startAt: string, endAt: string | null) => {
     const start = new Date(startAt);
-    const startTime = format(start, 'h:mm a');
+    const startTime = format(start, timePattern);
     if (!endAt) return startTime;
     const end = new Date(endAt);
-    const endTime = format(end, 'h:mm a');
+    const endTime = format(end, timePattern);
     return `${startTime} - ${endTime}`;
   };
 

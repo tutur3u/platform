@@ -8721,6 +8721,7 @@ export type Database = {
           id: string;
           services: Database['public']['Enums']['platform_service'][];
           task_auto_assign_to_self: boolean | null;
+          time_format: string | null;
           timezone: string | null;
         };
         Insert: {
@@ -8734,6 +8735,7 @@ export type Database = {
           id?: string;
           services?: Database['public']['Enums']['platform_service'][];
           task_auto_assign_to_self?: boolean | null;
+          time_format?: string | null;
           timezone?: string | null;
         };
         Update: {
@@ -8747,6 +8749,7 @@ export type Database = {
           id?: string;
           services?: Database['public']['Enums']['platform_service'][];
           task_auto_assign_to_self?: boolean | null;
+          time_format?: string | null;
           timezone?: string | null;
         };
         Relationships: [

@@ -3648,6 +3648,8 @@
     "timezone-description": "Set your preferred timezone for calendar and scheduling features. This overrides workspace timezone.",
     "first-day-of-week": "First day of week",
     "first-day-of-week-description": "Choose the first day of your week for calendar display. This overrides workspace settings.",
+    "time-format": "Time format",
+    "time-format-description": "Choose how time is displayed across the application.",
     "revert_changes": "Revert changes",
     "preview": "Preview",
     "display-name": "Display name",
@@ -3858,7 +3860,9 @@
     "monday": "Monday",
     "saturday": "Saturday",
     "timezone-auto-description": "Automatically detect timezone from your system",
-    "first-day-auto-description": "Automatically detect first day of week based on your locale"
+    "first-day-auto-description": "Automatically detect first day of week based on your locale",
+    "12-hour": "12-hour",
+    "24-hour": "24-hour"
   },
   "settings-security": {
     "security": "Security",

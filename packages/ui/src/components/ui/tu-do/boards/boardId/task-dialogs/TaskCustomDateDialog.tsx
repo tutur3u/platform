@@ -1,3 +1,5 @@
+'use client';
+
 import { X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
@@ -9,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 
 interface TaskCustomDateDialogProps {
   open: boolean;
@@ -27,6 +30,8 @@ export function TaskCustomDateDialog({
   onDateChange,
   onClear,
 }: TaskCustomDateDialogProps) {
+  const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[425px]">
@@ -44,6 +49,7 @@ export function TaskCustomDateDialog({
             showTimeSelect={true}
             minDate={new Date()}
             inline
+            preferences={{ weekStartsOn, timezone, timeFormat }}
           />
         </div>
         <DialogFooter>

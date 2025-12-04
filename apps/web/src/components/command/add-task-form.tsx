@@ -22,6 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
+import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -61,6 +62,7 @@ export function AddTaskForm({
   defaultTaskName?: string;
 }) {
   const router = useRouter();
+  const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
 
   // Multi-step state
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
@@ -758,6 +760,7 @@ export function AddTaskForm({
                   side="bottom"
                   align="start"
                   collisionPadding={24}
+                  preferences={{ weekStartsOn, timezone, timeFormat }}
                 />
               </div>
 
@@ -779,6 +782,7 @@ export function AddTaskForm({
                   side="bottom"
                   align="start"
                   collisionPadding={24}
+                  preferences={{ weekStartsOn, timezone, timeFormat }}
                 />
               </div>
             </div>
