@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Node } from '@tiptap/react';
 import {
   Box,
@@ -7,7 +8,20 @@ import {
   User,
 } from '@tuturuuu/icons';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+import { createRoot, type Root } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
+import { TaskMentionChip } from './task-mention-chip';
+
+// Create a QueryClient instance for mention components
+// This is needed because mention chips are rendered in isolated React roots
+const mentionQueryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30000,
+      retry: 1,
+    },
+  },
+});
 
 interface MentionVisualMeta {
   prefix: string;
@@ -178,11 +192,17 @@ export const Mention = Node.create({
         tag: 'span[data-mention="true"]',
         getAttrs: (el) => {
           const element = el as HTMLElement;
+          const entityType = element.dataset.entityType ?? 'user';
+          // For task mentions, prefer data-display-number over data-display-name
+          const displayName =
+            entityType === 'task'
+              ? element.dataset.displayNumber ?? element.dataset.displayName ?? null
+              : element.dataset.displayName ?? null;
           return {
             userId: element.dataset.userId ?? null,
             entityId: element.dataset.entityId ?? null,
-            entityType: element.dataset.entityType ?? 'user',
-            displayName: element.dataset.displayName ?? null,
+            entityType,
+            displayName,
             avatarUrl: element.dataset.avatarUrl ?? null,
             subtitle: element.dataset.subtitle ?? null,
           };
@@ -283,6 +303,85 @@ export const Mention = Node.create({
       let visuals = getMentionVisualMeta(currentEntityType);
 
       const dom = document.createElement('span');
+      dom.style.display = 'inline-flex';
+      dom.style.verticalAlign = 'middle';
+      dom.contentEditable = 'false';
+
+      // For task mentions, render React component with dropdown
+      if (currentEntityType === 'task') {
+        let reactRoot: Root | null = null;
+
+        const renderTaskChip = () => {
+          if (!reactRoot) {
+            reactRoot = createRoot(dom);
+          }
+          reactRoot.render(
+            <QueryClientProvider client={mentionQueryClient}>
+              <TaskMentionChip
+                entityId={currentEntityId ?? ''}
+                displayNumber={currentDisplayName}
+                avatarUrl={currentAvatarUrl}
+                subtitle={currentSubtitle}
+              />
+            </QueryClientProvider>
+          );
+        };
+
+        renderTaskChip();
+
+        return {
+          dom,
+          update(updatedNode) {
+            if (updatedNode.type.name !== 'mention') return false;
+            const nextEntityType =
+              (updatedNode.attrs.entityType as string | null) ?? 'user';
+
+            // If entity type changed from task to something else, bail out
+            if (nextEntityType !== 'task') return false;
+
+            const nextDisplayName =
+              (updatedNode.attrs.displayName as string | null)?.trim() ||
+              'Member';
+            const nextAvatarUrl = updatedNode.attrs.avatarUrl as string | null;
+            const nextEntityId =
+              (updatedNode.attrs.entityId as string | null) ??
+              (updatedNode.attrs.userId as string | null) ??
+              null;
+            const nextSubtitle =
+              (updatedNode.attrs.subtitle as string | null) ?? null;
+
+            // Update state and re-render if changed
+            if (
+              nextDisplayName !== currentDisplayName ||
+              nextAvatarUrl !== currentAvatarUrl ||
+              nextEntityId !== currentEntityId ||
+              nextSubtitle !== currentSubtitle
+            ) {
+              currentDisplayName = nextDisplayName;
+              currentAvatarUrl = nextAvatarUrl;
+              currentEntityId = nextEntityId ?? '';
+              currentSubtitle = nextSubtitle;
+              renderTaskChip();
+            }
+
+            return true;
+          },
+          destroy() {
+            if (reactRoot) {
+              // Use setTimeout to avoid React warnings about synchronous unmounting
+              setTimeout(() => {
+                reactRoot?.unmount();
+                reactRoot = null;
+              }, 0);
+            }
+          },
+          ignoreMutation() {
+            return true;
+          },
+        };
+      }
+
+      // For non-task mentions, use the original DOM-based rendering
       dom.setAttribute('data-mention', 'true');
       dom.setAttribute('data-user-id', userId);
       dom.setAttribute('data-display-name', currentDisplayName);
@@ -292,7 +391,6 @@ export const Mention = Node.create({
         dom.setAttribute('data-avatar-url', currentAvatarUrl);
       if (currentSubtitle) dom.setAttribute('data-subtitle', currentSubtitle);
       dom.className = `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] font-medium leading-none transition-colors ${visuals.pillClass}`;
-      dom.contentEditable = 'false';
       dom.title = currentSubtitle
         ? `${visuals.prefix}${currentDisplayName} • ${currentSubtitle}`
         : `${visuals.prefix}${currentDisplayName}`;
@@ -314,23 +412,6 @@ export const Mention = Node.create({
 
       dom.appendChild(avatarWrapper);
       dom.appendChild(label);
-
-      // Make task mentions clickable - open in new tab
-      if (currentEntityType === 'task') {
-        dom.style.cursor = 'pointer';
-        dom.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-
-          // Extract workspace ID from current URL path
-          const pathSegments = window.location.pathname.split('/');
-          const wsId = pathSegments[1];
-
-          // Open task in new tab
-          const taskUrl = `/${wsId}/tasks/${currentEntityId}`;
-          window.open(taskUrl, '_blank', 'noopener,noreferrer');
-        });
-      }
 
       return {
         dom,

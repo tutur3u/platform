@@ -31,13 +31,13 @@ import {
   YoutubeIcon,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Toggle } from '@tuturuuu/ui/toggle';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
-import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 type LinkEditorContext = 'bubble' | 'popover' | null;
@@ -51,6 +51,7 @@ interface ToolBarProps {
   boardId?: string;
   availableLists?: TaskList[];
   queryClient?: QueryClient;
+  onFlushChanges?: () => void;
 }
 
 export function ToolBar({
@@ -60,6 +61,7 @@ export function ToolBar({
   boardId,
   availableLists,
   queryClient,
+  onFlushChanges,
 }: ToolBarProps) {
   const [linkEditorContext, setLinkEditorContext] =
     useState<LinkEditorContext>(null);
@@ -438,6 +440,9 @@ export function ToolBar({
       return;
     }
 
+    // Store the created task to add to cache later
+    let createdTask: Task | null = null;
+
     // Use shared conversion helper
     const result = await convertListItemToTask({
       editor,
@@ -452,17 +457,31 @@ export function ToolBar({
         listId: string;
       }) => {
         const supabase = createClient();
+        // Select all fields needed for the Task type to add to cache
         const { data: newTask, error } = await supabase
           .from('tasks')
           .insert({
             name,
             list_id: listId,
           })
-          .select('id, name')
+          .select('*')
           .single();
 
         if (error || !newTask) throw error;
-        return newTask;
+
+        // Store full task for cache update
+        createdTask = {
+          ...newTask,
+          assignees: [],
+          labels: [],
+          projects: [],
+        } as Task;
+
+        return {
+          id: newTask.id,
+          name: newTask.name,
+          display_number: newTask.display_number ?? undefined,
+        };
       },
     });
 
@@ -473,13 +492,35 @@ export function ToolBar({
       return;
     }
 
-    // Invalidate task caches
-    await invalidateTaskCaches(queryClient, boardId);
+    // CRITICAL: Flush the debounced editor change immediately after inserting the mention.
+    // Without this, the editor's onChange is debounced (500ms delay), and any re-render
+    // during that window causes the editor to sync back to stale content, erasing the mention.
+    onFlushChanges?.();
+
+    // Add the new task to the cache directly instead of invalidating
+    // This ensures the task appears immediately in personal workspaces (no realtime)
+    // and avoids full-board refetch flickering
+    if (createdTask) {
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return [createdTask];
+          // Check if task already exists (from realtime), if so don't duplicate
+          if (old.some((t) => t.id === createdTask!.id)) return old;
+          return [...old, createdTask];
+        }
+      );
+    }
+
+    // Only invalidate time tracking data since task availability affects it
+    await queryClient.invalidateQueries({
+      queryKey: ['time-tracking-data'],
+    });
 
     toast.success('Task created', {
       description: `Created task "${result.taskName}" and added mention`,
     });
-  }, [editor, boardId, availableLists, queryClient]);
+  }, [editor, boardId, availableLists, queryClient, onFlushChanges]);
 
   const renderFormattingOptions = useCallback(
     (source: 'bubble' | 'popover') => (

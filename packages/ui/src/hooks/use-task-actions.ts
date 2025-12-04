@@ -9,7 +9,7 @@ import { addDays } from 'date-fns';
 import { useCallback } from 'react';
 
 interface UseTaskActionsProps {
-  task: Task;
+  task?: Task; // Made optional to handle loading states
   boardId: string;
   targetCompletionList?: TaskList | null;
   targetClosedList?: TaskList | null;
@@ -44,7 +44,7 @@ export function useTaskActions({
   const updateTaskMutation = useUpdateTask(boardId);
 
   const handleArchiveToggle = useCallback(async () => {
-    if (!onUpdate) return;
+    if (!task || !onUpdate) return;
     setIsLoading(true);
 
     const newClosedState = !task.closed_at;
@@ -145,7 +145,7 @@ export function useTaskActions({
   ]);
 
   const handleMoveToCompletion = useCallback(async () => {
-    if (!targetCompletionList || !onUpdate) return;
+    if (!task || !targetCompletionList || !onUpdate) return;
 
     setIsLoading(true);
 
@@ -220,7 +220,7 @@ export function useTaskActions({
   }, [
     targetCompletionList,
     onUpdate,
-    task.id,
+    task?.id,
     setIsLoading,
     setMenuOpen,
     isMultiSelectMode,
@@ -230,7 +230,7 @@ export function useTaskActions({
   ]);
 
   const handleMoveToClose = useCallback(async () => {
-    if (!targetClosedList || !onUpdate) return;
+    if (!task || !targetClosedList || !onUpdate) return;
 
     setIsLoading(true);
 
@@ -298,7 +298,7 @@ export function useTaskActions({
   }, [
     targetClosedList,
     onUpdate,
-    task.id,
+    task?.id,
     setIsLoading,
     setMenuOpen,
     isMultiSelectMode,
@@ -308,6 +308,7 @@ export function useTaskActions({
   ]);
 
   const handleDelete = useCallback(async () => {
+    if (!task) return;
     setIsLoading(true);
 
     // Check if we're in multi-select mode and have multiple tasks selected
@@ -361,7 +362,7 @@ export function useTaskActions({
       setIsLoading(false);
     }
   }, [
-    task.id,
+    task?.id,
     setIsLoading,
     setDeleteDialogOpen,
     isMultiSelectMode,
@@ -371,7 +372,7 @@ export function useTaskActions({
   ]);
 
   const handleRemoveAllAssignees = useCallback(async () => {
-    if (!task.assignees || task.assignees.length === 0) return;
+    if (!task || !task.assignees || task.assignees.length === 0) return;
 
     setIsLoading(true);
     const supabase = createClient();
@@ -417,6 +418,7 @@ export function useTaskActions({
 
   const handleRemoveAssignee = useCallback(
     async (assigneeId: string) => {
+      if (!task) return;
       setIsLoading(true);
       const supabase = createClient();
 
@@ -472,6 +474,7 @@ export function useTaskActions({
 
   const handleMoveToList = useCallback(
     async (targetListId: string) => {
+      if (!task) return;
       if (targetListId === task.list_id) {
         setMenuOpen(false);
         return;
@@ -573,8 +576,8 @@ export function useTaskActions({
       }
     },
     [
-      task.id,
-      task.list_id,
+      task?.id,
+      task?.list_id,
       availableLists,
       setIsLoading,
       setMenuOpen,
@@ -587,6 +590,7 @@ export function useTaskActions({
 
   const handleDueDateChange = useCallback(
     async (days: number | null) => {
+      if (!task) return;
       let newDate: string | null = null;
       if (days !== null) {
         const target = addDays(new Date(), days);
@@ -669,7 +673,7 @@ export function useTaskActions({
       }
     },
     [
-      task.id,
+      task?.id,
       updateTaskMutation,
       setIsLoading,
       isMultiSelectMode,
@@ -681,6 +685,7 @@ export function useTaskActions({
 
   const handlePriorityChange = useCallback(
     async (newPriority: TaskPriority | null) => {
+      if (!task) return;
       if (newPriority === task.priority && !isMultiSelectMode) return;
 
       // Check if we're in multi-select mode and have multiple tasks selected
@@ -785,8 +790,8 @@ export function useTaskActions({
       }
     },
     [
-      task.id,
-      task.priority,
+      task?.id,
+      task?.priority,
       updateTaskMutation,
       setIsLoading,
       isMultiSelectMode,
@@ -798,6 +803,7 @@ export function useTaskActions({
 
   const updateEstimationPoints = useCallback(
     async (points: number | null) => {
+      if (!task) return;
       if (points === task.estimation_points && !isMultiSelectMode) return;
 
       // Check if we're in multi-select mode and have multiple tasks selected
@@ -889,8 +895,8 @@ export function useTaskActions({
       }
     },
     [
-      task.id,
-      task.estimation_points,
+      task?.id,
+      task?.estimation_points,
       updateTaskMutation,
       setEstimationSaving,
       isMultiSelectMode,
@@ -902,6 +908,7 @@ export function useTaskActions({
 
   const handleCustomDateChange = useCallback(
     async (date: Date | undefined) => {
+      if (!task) return;
       let newDate: string | null = null;
 
       if (date) {
@@ -938,11 +945,12 @@ export function useTaskActions({
         }
       );
     },
-    [task.id, updateTaskMutation, setIsLoading, setCustomDateDialogOpen]
+    [task?.id, updateTaskMutation, setIsLoading, setCustomDateDialogOpen]
   );
 
   const handleToggleAssignee = useCallback(
     async (assigneeId: string) => {
+      if (!task) return;
       // Check if we're in multi-select mode with multiple tasks selected
       const shouldBulkUpdate =
         isMultiSelectMode &&

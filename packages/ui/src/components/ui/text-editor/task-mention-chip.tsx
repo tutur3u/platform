@@ -1,0 +1,995 @@
+'use client';
+
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  AlertCircle,
+  CheckCircle2,
+  CircleSlash,
+  Copy,
+  ExternalLink,
+  Trash2,
+} from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { cn } from '@tuturuuu/utils/format';
+import {
+  useBoardConfig,
+  useWorkspaceLabels,
+} from '@tuturuuu/utils/task-helper';
+import { useCallback, useMemo, useState } from 'react';
+import { useTaskActions } from '../../../hooks/use-task-actions';
+import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../dropdown-menu';
+import { toast } from '../sonner';
+import {
+  TaskAssigneesMenu,
+  TaskBlockingMenu,
+  TaskDueDateMenu,
+  TaskEstimationMenu,
+  TaskLabelsMenu,
+  TaskMoveMenu,
+  TaskParentMenu,
+  TaskPriorityMenu,
+  TaskProjectsMenu,
+  TaskRelatedMenu,
+} from '../tu-do/boards/boardId/menus';
+import { TaskCustomDateDialog } from '../tu-do/boards/boardId/task-dialogs/TaskCustomDateDialog';
+import { TaskDeleteDialog } from '../tu-do/boards/boardId/task-dialogs/TaskDeleteDialog';
+import { TaskNewLabelDialog } from '../tu-do/boards/boardId/task-dialogs/TaskNewLabelDialog';
+import { TaskNewProjectDialog } from '../tu-do/boards/boardId/task-dialogs/TaskNewProjectDialog';
+import { useTaskCardRelationships } from '../tu-do/hooks/useTaskCardRelationships';
+import { useTaskLabelManagement } from '../tu-do/hooks/useTaskLabelManagement';
+import { useTaskProjectManagement } from '../tu-do/hooks/useTaskProjectManagement';
+
+// Extended Task type that includes board_id (denormalized field in database)
+interface TaskWithBoardId extends Task {
+  board_id: string;
+}
+
+interface TaskMentionChipProps {
+  entityId: string;
+  displayNumber: string;
+  avatarUrl?: string | null;
+  subtitle?: string | null;
+  className?: string;
+}
+
+export function TaskMentionChip({
+  entityId,
+  displayNumber,
+  avatarUrl,
+  subtitle,
+  className,
+}: TaskMentionChipProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [menuGuardUntil, setMenuGuardUntil] = useState(0);
+  const queryClient = useQueryClient();
+  const supabase = createClient();
+
+  // Dialog states
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showCustomDateDialog, setShowCustomDateDialog] = useState(false);
+  const [showNewLabelDialog, setShowNewLabelDialog] = useState(false);
+  const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
+
+  // Fetch full task data
+  const {
+    data: task,
+    isLoading: taskLoading,
+    error: taskError,
+  } = useQuery({
+    queryKey: ['task', entityId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select(
+          `
+          *,
+          assignees:task_assignees(
+            user_id,
+            user:users!inner(
+              id,
+              display_name,
+              avatar_url
+            )
+          ),
+          labels:task_labels(
+            label_id,
+            label:workspace_task_labels!inner(
+              id,
+              name,
+              color,
+              created_at
+            )
+          ),
+          projects:task_project_tasks(
+            project_id,
+            project:task_projects!inner(
+              id,
+              name,
+              status
+            )
+          )
+        `
+        )
+        .eq('id', entityId)
+        .single();
+
+      if (error) throw error;
+
+      // Transform the data to match TaskWithBoardId type
+      return {
+        ...data,
+        assignees: data.assignees?.map((a: any) => ({
+          id: a.user.id,
+          user_id: a.user_id,
+          display_name: a.user.display_name,
+          avatar_url: a.user.avatar_url,
+        })),
+        labels: data.labels?.map((l: any) => ({
+          id: l.label.id,
+          name: l.label.name,
+          color: l.label.color,
+          created_at: l.label.created_at,
+        })),
+        projects: data.projects?.map((p: any) => ({
+          id: p.project.id,
+          name: p.project.name,
+          status: p.project.status,
+        })),
+      } as TaskWithBoardId;
+    },
+    enabled: menuOpen,
+    staleTime: 30000,
+    retry: false,
+  });
+
+  // Get board config - only fetch when menu opens and we have task data
+  const { data: boardConfig } = useBoardConfig(task?.board_id);
+
+  // Fetch workspace labels
+  const { data: workspaceLabels = [], isLoading: labelsLoading } =
+    useWorkspaceLabels(boardConfig?.ws_id);
+
+  // Fetch workspace projects
+  const { data: workspaceProjects = [], isLoading: projectsLoading } = useQuery(
+    {
+      queryKey: ['task_projects', boardConfig?.ws_id],
+      queryFn: async () => {
+        if (!boardConfig?.ws_id) return [];
+        const { data, error } = await supabase
+          .from('task_projects')
+          .select('id, name, status')
+          .eq('ws_id', boardConfig.ws_id)
+          .eq('deleted', false)
+          .order('name');
+
+        if (error) throw error;
+        return data || [];
+      },
+      enabled: !!boardConfig?.ws_id && menuOpen,
+    }
+  );
+
+  // Fetch workspace members
+  const { data: workspaceMembers = [], isLoading: membersLoading } = useQuery({
+    queryKey: ['workspace-members', boardConfig?.ws_id],
+    queryFn: async () => {
+      if (!boardConfig?.ws_id) return [];
+      const response = await fetch(
+        `/api/workspaces/${boardConfig.ws_id}/members`
+      );
+      if (!response.ok) throw new Error('Failed to fetch members');
+
+      const { members: fetchedMembers } = await response.json();
+      return fetchedMembers || [];
+    },
+    enabled: !!boardConfig?.ws_id && menuOpen,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Fetch available task lists
+  const { data: availableLists = [] } = useQuery({
+    queryKey: ['task_lists', task?.board_id],
+    queryFn: async () => {
+      if (!task?.board_id) return [];
+      const { data, error } = await supabase
+        .from('task_lists')
+        .select('*')
+        .eq('board_id', task.board_id)
+        .eq('deleted', false)
+        .order('position')
+        .order('created_at');
+
+      if (error) throw error;
+      return data as TaskList[];
+    },
+    enabled: !!task?.board_id && menuOpen,
+  });
+
+  // Placeholder task for hooks when task is not loaded yet
+  const placeholderTask: Task = useMemo(
+    () => ({
+      id: entityId,
+      name: displayNumber,
+      list_id: '',
+      display_number: 0,
+      created_at: new Date().toISOString(),
+    }),
+    [entityId, displayNumber]
+  );
+
+  // Use label management hook - only when we have task
+  const {
+    toggleTaskLabel: baseToggleTaskLabel,
+    createNewLabel: baseCreateNewLabel,
+    labelsSaving,
+    newLabelName,
+    setNewLabelName,
+    newLabelColor,
+    setNewLabelColor,
+    creatingLabel,
+  } = useTaskLabelManagement({
+    task: task ?? placeholderTask,
+    boardId: task?.board_id || '',
+    workspaceLabels,
+    workspaceId: boardConfig?.ws_id,
+    selectedTasks: undefined,
+    isMultiSelectMode: false,
+    onClearSelection: undefined,
+  });
+
+  // Use project management hook - only when we have task
+  const {
+    toggleTaskProject: baseToggleTaskProject,
+    projectsSaving,
+    newProjectName,
+    setNewProjectName,
+    creatingProject,
+    createNewProject: baseCreateNewProject,
+  } = useTaskProjectManagement({
+    task: task ?? placeholderTask,
+    boardId: task?.board_id || '',
+    workspaceProjects,
+    workspaceId: boardConfig?.ws_id,
+    selectedTasks: undefined,
+    isMultiSelectMode: false,
+    onClearSelection: undefined,
+  });
+
+  // Use task relationships hook - only when we have task
+  const {
+    parentTask,
+    childTasks,
+    blocking: blockingTasks,
+    blockedBy: blockedByTasks,
+    relatedTasks,
+    setParentTask,
+    removeParentTask,
+    addBlockingTask,
+    removeBlockingTask,
+    addBlockedByTask,
+    removeBlockedByTask,
+    addRelatedTask,
+    removeRelatedTask,
+    isSaving: relationshipSaving,
+    savingTaskId: relationshipSavingTaskId,
+  } = useTaskCardRelationships({
+    taskId: task?.id || '',
+    boardId: task?.board_id || '',
+  });
+
+  const targetCompletionList = useMemo(() => {
+    if (!task) return null;
+    const doneList = availableLists.find((list) => list.status === 'done');
+    const closedList = availableLists.find((list) => list.status === 'closed');
+    return doneList || closedList || null;
+  }, [availableLists, task]);
+
+  const targetClosedList = useMemo(() => {
+    if (!task) return null;
+    return availableLists.find((list) => list.status === 'closed') || null;
+  }, [availableLists, task]);
+
+  const handleUpdate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['task', entityId] });
+    if (task?.board_id) {
+      queryClient.invalidateQueries({ queryKey: ['tasks', task.board_id] });
+    }
+  }, [queryClient, entityId, task?.board_id]);
+
+  // Helper to sync individual task cache with updates
+  // Supports both direct updates and functional updates for operations that depend on current state
+  const syncTaskCache = useCallback(
+    (
+      updatesOrFn:
+        | Partial<TaskWithBoardId>
+        | ((current: TaskWithBoardId) => Partial<TaskWithBoardId>)
+    ) => {
+      queryClient.setQueryData(
+        ['task', entityId],
+        (old: TaskWithBoardId | undefined) => {
+          if (!old) return old;
+          const updates =
+            typeof updatesOrFn === 'function' ? updatesOrFn(old) : updatesOrFn;
+          return { ...old, ...updates };
+        }
+      );
+    },
+    [queryClient, entityId]
+  );
+
+  // Use task actions hook - only when we have task
+  const {
+    handleMoveToCompletion: baseHandleMoveToCompletion,
+    handleMoveToClose: baseHandleMoveToClose,
+    handleDelete: baseHandleDelete,
+    handleMoveToList: baseHandleMoveToList,
+    handleDueDateChange: baseHandleDueDateChange,
+    handlePriorityChange: baseHandlePriorityChange,
+    updateEstimationPoints: baseUpdateEstimationPoints,
+    handleCustomDateChange: baseHandleCustomDateChange,
+    handleToggleAssignee: baseHandleToggleAssignee,
+  } = useTaskActions({
+    task: task || undefined,
+    boardId: task?.board_id || '',
+    targetCompletionList,
+    targetClosedList,
+    availableLists,
+    onUpdate: handleUpdate,
+    setIsLoading,
+    setMenuOpen,
+    setCustomDateDialogOpen: setShowCustomDateDialog,
+    setDeleteDialogOpen: setShowDeleteDialog,
+    setEstimationSaving: () => {},
+    selectedTasks: undefined,
+    isMultiSelectMode: false,
+    onClearSelection: undefined,
+  });
+
+  // Wrap handlers to also sync individual task cache
+  const handleMoveToCompletion = useCallback(async () => {
+    if (targetCompletionList) {
+      syncTaskCache({
+        list_id: targetCompletionList.id,
+        closed_at: new Date().toISOString(),
+        completed_at:
+          targetCompletionList.status === 'done'
+            ? new Date().toISOString()
+            : task?.completed_at,
+      });
+    }
+    return baseHandleMoveToCompletion();
+  }, [
+    baseHandleMoveToCompletion,
+    syncTaskCache,
+    targetCompletionList,
+    task?.completed_at,
+  ]);
+
+  const handleMoveToClose = useCallback(async () => {
+    if (targetClosedList) {
+      syncTaskCache({
+        list_id: targetClosedList.id,
+        closed_at: new Date().toISOString(),
+      });
+    }
+    return baseHandleMoveToClose();
+  }, [baseHandleMoveToClose, syncTaskCache, targetClosedList]);
+
+  const handleDelete = useCallback(async () => {
+    return baseHandleDelete();
+  }, [baseHandleDelete]);
+
+  const handleMoveToList = useCallback(
+    async (targetListId: string) => {
+      const targetList = availableLists.find((l) => l.id === targetListId);
+      const isCompletionList =
+        targetList?.status === 'done' || targetList?.status === 'closed';
+      const now = new Date().toISOString();
+      syncTaskCache({
+        list_id: targetListId,
+        ...(isCompletionList ? { closed_at: now } : { closed_at: undefined }),
+        ...(targetList?.status === 'done'
+          ? { completed_at: now }
+          : { completed_at: undefined }),
+      } as Partial<TaskWithBoardId>);
+      return baseHandleMoveToList(targetListId);
+    },
+    [baseHandleMoveToList, syncTaskCache, availableLists]
+  );
+
+  const handleDueDateChange = useCallback(
+    async (days: number | null) => {
+      let newDate: string | null = null;
+      if (days !== null) {
+        const target = new Date();
+        target.setDate(target.getDate() + days);
+        target.setHours(23, 59, 59, 999);
+        newDate = target.toISOString();
+      }
+      syncTaskCache({ end_date: newDate });
+      return baseHandleDueDateChange(days);
+    },
+    [baseHandleDueDateChange, syncTaskCache]
+  );
+
+  const handlePriorityChange = useCallback(
+    async (newPriority: Parameters<typeof baseHandlePriorityChange>[0]) => {
+      syncTaskCache({ priority: newPriority });
+      return baseHandlePriorityChange(newPriority);
+    },
+    [baseHandlePriorityChange, syncTaskCache]
+  );
+
+  const updateEstimationPoints = useCallback(
+    async (points: number | null) => {
+      syncTaskCache({ estimation_points: points });
+      return baseUpdateEstimationPoints(points);
+    },
+    [baseUpdateEstimationPoints, syncTaskCache]
+  );
+
+  const handleCustomDateChange = useCallback(
+    async (date: Date | undefined) => {
+      let newDate: string | null = null;
+      if (date) {
+        const selectedDate = new Date(date);
+        if (
+          selectedDate.getHours() === 0 &&
+          selectedDate.getMinutes() === 0 &&
+          selectedDate.getSeconds() === 0 &&
+          selectedDate.getMilliseconds() === 0
+        ) {
+          selectedDate.setHours(23, 59, 59, 999);
+        }
+        newDate = selectedDate.toISOString();
+      }
+      syncTaskCache({ end_date: newDate });
+      return baseHandleCustomDateChange(date);
+    },
+    [baseHandleCustomDateChange, syncTaskCache]
+  );
+
+  const [assigneeSaving, setAssigneeSaving] = useState<string | null>(null);
+
+  const handleToggleAssignee = useCallback(
+    async (assigneeId: string) => {
+      if (!task) return;
+
+      // Use functional update to read current cache state
+      syncTaskCache((current) => {
+        const isCurrentlyAssigned = current.assignees?.some(
+          (a) => a.id === assigneeId
+        );
+
+        if (isCurrentlyAssigned) {
+          return {
+            assignees:
+              current.assignees?.filter((a) => a.id !== assigneeId) || [],
+          };
+        } else {
+          const member = workspaceMembers.find((m: any) => m.id === assigneeId);
+          return {
+            assignees: [
+              ...(current.assignees || []),
+              member || {
+                id: assigneeId,
+                display_name: 'User',
+                avatar_url: null,
+              },
+            ],
+          };
+        }
+      });
+
+      return baseHandleToggleAssignee(assigneeId);
+    },
+    [baseHandleToggleAssignee, syncTaskCache, task, workspaceMembers]
+  );
+
+  const onToggleAssignee = useCallback(
+    async (assigneeId: string) => {
+      if (!handleToggleAssignee) return;
+      try {
+        setAssigneeSaving(assigneeId);
+        await handleToggleAssignee(assigneeId);
+      } finally {
+        setAssigneeSaving(null);
+      }
+    },
+    [handleToggleAssignee]
+  );
+
+  // Wrap label toggle to sync individual task cache
+  const toggleTaskLabel = useCallback(
+    async (labelId: string) => {
+      if (!task) return;
+
+      // Use functional update to read current cache state
+      syncTaskCache((current) => {
+        const isCurrentlyLabeled = current.labels?.some(
+          (l) => l.id === labelId
+        );
+
+        if (isCurrentlyLabeled) {
+          return {
+            labels: current.labels?.filter((l) => l.id !== labelId) || [],
+          };
+        } else {
+          const label = workspaceLabels.find((l) => l.id === labelId);
+          return {
+            labels: [
+              ...(current.labels || []),
+              label || {
+                id: labelId,
+                name: 'Unknown',
+                color: '#3b82f6',
+                created_at: new Date().toISOString(),
+              },
+            ],
+          };
+        }
+      });
+
+      return baseToggleTaskLabel(labelId);
+    },
+    [baseToggleTaskLabel, syncTaskCache, task, workspaceLabels]
+  );
+
+  // Wrap project toggle to sync individual task cache
+  const toggleTaskProject = useCallback(
+    async (projectId: string) => {
+      if (!task) return;
+
+      // Use functional update to read current cache state
+      syncTaskCache((current) => {
+        const isCurrentlyInProject = current.projects?.some(
+          (p) => p.id === projectId
+        );
+
+        if (isCurrentlyInProject) {
+          return {
+            projects: current.projects?.filter((p) => p.id !== projectId) || [],
+          };
+        } else {
+          const project = workspaceProjects.find((p) => p.id === projectId);
+          const newProject = project
+            ? {
+                id: project.id,
+                name: project.name,
+                status: project.status || 'unknown',
+              }
+            : { id: projectId, name: 'Unknown', status: 'unknown' };
+          return {
+            projects: [
+              ...(current.projects || []),
+              newProject,
+            ] as TaskWithBoardId['projects'],
+          };
+        }
+      });
+
+      return baseToggleTaskProject(projectId);
+    },
+    [baseToggleTaskProject, syncTaskCache, task, workspaceProjects]
+  );
+
+  // Wrap create new label to sync individual task cache
+  const createNewLabel = useCallback(async () => {
+    const result = await baseCreateNewLabel();
+    if (result) {
+      // The base function already links the label to the task
+      // Update individual task cache with the new label using functional update
+      syncTaskCache((current) => ({
+        labels: [...(current.labels || []), result],
+      }));
+    }
+    return result;
+  }, [baseCreateNewLabel, syncTaskCache]);
+
+  // Wrap create new project to sync individual task cache
+  const createNewProject = useCallback(async () => {
+    const result = await baseCreateNewProject();
+    if (result) {
+      // The base function already links the project to the task
+      // Update individual task cache with the new project using functional update
+      syncTaskCache((current) => ({
+        projects: [...(current.projects || []), result],
+      }));
+    }
+    return result;
+  }, [baseCreateNewProject, syncTaskCache]);
+
+  // Guarded select handler for menu items
+  const handleMenuItemSelect = useCallback(
+    (e: Event, action: () => void) => {
+      if (Date.now() < menuGuardUntil) {
+        if (e && typeof (e as any).preventDefault === 'function') {
+          (e as any).preventDefault();
+        }
+        return;
+      }
+      action();
+    },
+    [menuGuardUntil]
+  );
+
+  const getTaskUrl = () => {
+    const pathSegments = window.location.pathname.split('/');
+    const wsId = pathSegments[1];
+    return `${window.location.origin}/${wsId}/tasks/${entityId}`;
+  };
+
+  const handleGoToTask = () => {
+    window.open(getTaskUrl(), '_blank', 'noopener,noreferrer');
+    setMenuOpen(false);
+  };
+
+  const handleCopyTaskLink = async () => {
+    try {
+      await navigator.clipboard.writeText(getTaskUrl());
+      toast.success('Task link copied to clipboard');
+    } catch {
+      toast.error('Failed to copy link');
+    }
+    setMenuOpen(false);
+  };
+
+  const title = subtitle
+    ? `#${displayNumber} • ${subtitle}`
+    : `#${displayNumber}`;
+
+  const chipContent = (
+    <span
+      data-mention="true"
+      data-entity-id={entityId}
+      data-entity-type="task"
+      data-display-number={displayNumber}
+      data-avatar-url={avatarUrl ?? ''}
+      data-subtitle={subtitle ?? ''}
+      title={title}
+      contentEditable={false}
+      className={cn(
+        'inline-flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 font-medium text-[12px] leading-none transition-colors',
+        'border-dynamic-blue/40 bg-dynamic-blue/10 text-dynamic-blue',
+        'hover:border-dynamic-blue/60 hover:bg-dynamic-blue/20',
+        className
+      )}
+    >
+      {/* Avatar/Icon */}
+      <Avatar className="-ml-0.5 h-4 w-4 shrink-0 border border-dynamic-blue/30 bg-dynamic-blue/20 text-dynamic-blue">
+        {avatarUrl ? (
+          <AvatarImage
+            src={avatarUrl}
+            alt={displayNumber}
+            referrerPolicy="no-referrer"
+          />
+        ) : null}
+        <AvatarFallback className="flex h-full w-full items-center justify-center bg-transparent font-semibold text-[10px]">
+          <CheckCircle2 className="h-3 w-3" />
+        </AvatarFallback>
+      </Avatar>
+
+      {/* Label */}
+      <span className="flex items-center gap-1 text-current">
+        <span className="font-semibold">#{displayNumber}</span>
+        {(subtitle || task?.name) && (
+          <>
+            <span className="opacity-50">•</span>
+            <span className="max-w-[200px] truncate font-medium">
+              {subtitle || task?.name}
+            </span>
+          </>
+        )}
+      </span>
+    </span>
+  );
+
+  const canMoveToCompletion =
+    targetCompletionList && targetCompletionList.id !== task?.list_id;
+  const canMoveToClose =
+    targetClosedList && targetClosedList.id !== task?.list_id;
+
+  const menuItems = task ? (
+    <>
+      <DropdownMenuItem onClick={handleGoToTask} className="cursor-pointer">
+        <ExternalLink className="mr-2 h-4 w-4" />
+        Go to task
+      </DropdownMenuItem>
+
+      <DropdownMenuItem onClick={handleCopyTaskLink} className="cursor-pointer">
+        <Copy className="mr-2 h-4 w-4" />
+        Copy task link
+      </DropdownMenuItem>
+
+      <DropdownMenuSeparator />
+
+      {/* Quick Completion Actions */}
+      {canMoveToCompletion && (
+        <DropdownMenuItem
+          onSelect={(e) =>
+            handleMenuItemSelect(e as unknown as Event, handleMoveToCompletion)
+          }
+          className="cursor-pointer"
+          disabled={isLoading}
+        >
+          <CheckCircle2 className="mr-2 h-4 w-4 text-dynamic-green" />
+          Mark as {targetCompletionList?.status === 'done' ? 'Done' : 'Closed'}
+        </DropdownMenuItem>
+      )}
+
+      {canMoveToClose && targetClosedList?.id !== targetCompletionList?.id && (
+        <DropdownMenuItem
+          onSelect={(e) =>
+            handleMenuItemSelect(e as unknown as Event, handleMoveToClose)
+          }
+          className="cursor-pointer"
+          disabled={isLoading}
+        >
+          <CircleSlash className="mr-2 h-4 w-4 text-dynamic-purple" />
+          Mark as Closed
+        </DropdownMenuItem>
+      )}
+
+      {(canMoveToCompletion || canMoveToClose) && <DropdownMenuSeparator />}
+
+      {/* Priority Menu */}
+      <TaskPriorityMenu
+        currentPriority={task.priority ?? null}
+        isLoading={isLoading}
+        onPriorityChange={handlePriorityChange}
+        onMenuItemSelect={handleMenuItemSelect}
+        onClose={() => setMenuOpen(false)}
+      />
+
+      {/* Due Date Menu */}
+      <TaskDueDateMenu
+        endDate={task.end_date}
+        isLoading={isLoading}
+        onDueDateChange={handleDueDateChange}
+        onCustomDateClick={() => {
+          setMenuOpen(false);
+          setTimeout(() => setShowCustomDateDialog(true), 100);
+        }}
+        onMenuItemSelect={handleMenuItemSelect}
+        onClose={() => setMenuOpen(false)}
+      />
+
+      {/* Estimation Menu */}
+      {boardConfig?.estimation_type && (
+        <TaskEstimationMenu
+          currentPoints={task.estimation_points}
+          estimationType={boardConfig.estimation_type}
+          extendedEstimation={boardConfig.extended_estimation}
+          allowZeroEstimates={boardConfig.allow_zero_estimates}
+          isLoading={isLoading}
+          onEstimationChange={updateEstimationPoints}
+          onMenuItemSelect={handleMenuItemSelect}
+        />
+      )}
+
+      {/* Labels Menu */}
+      <TaskLabelsMenu
+        taskLabels={task.labels || []}
+        availableLabels={workspaceLabels}
+        isLoading={labelsLoading}
+        labelsSaving={labelsSaving}
+        onToggleLabel={toggleTaskLabel}
+        onCreateNewLabel={() => {
+          setShowNewLabelDialog(true);
+          setMenuOpen(false);
+        }}
+        onMenuItemSelect={handleMenuItemSelect}
+      />
+
+      {/* Projects Menu */}
+      <TaskProjectsMenu
+        taskProjects={task.projects || []}
+        availableProjects={workspaceProjects}
+        isLoading={projectsLoading}
+        projectsSaving={projectsSaving}
+        onToggleProject={toggleTaskProject}
+        onCreateNewProject={() => {
+          setShowNewProjectDialog(true);
+          setMenuOpen(false);
+        }}
+        onMenuItemSelect={handleMenuItemSelect}
+      />
+
+      <DropdownMenuSeparator />
+
+      {/* Task Relationships Section */}
+      {boardConfig?.ws_id && (
+        <>
+          <TaskParentMenu
+            wsId={boardConfig.ws_id}
+            taskId={task.id}
+            parentTask={parentTask}
+            childTaskIds={childTasks.map((t) => t.id)}
+            isSaving={relationshipSaving}
+            onSetParent={setParentTask}
+            onRemoveParent={removeParentTask}
+          />
+
+          <TaskBlockingMenu
+            wsId={boardConfig.ws_id}
+            taskId={task.id}
+            blockingTasks={blockingTasks}
+            blockedByTasks={blockedByTasks}
+            isSaving={relationshipSaving}
+            savingTaskId={relationshipSavingTaskId}
+            onAddBlocking={addBlockingTask}
+            onRemoveBlocking={removeBlockingTask}
+            onAddBlockedBy={addBlockedByTask}
+            onRemoveBlockedBy={removeBlockedByTask}
+          />
+
+          <TaskRelatedMenu
+            wsId={boardConfig.ws_id}
+            taskId={task.id}
+            relatedTasks={relatedTasks}
+            isSaving={relationshipSaving}
+            savingTaskId={relationshipSavingTaskId}
+            onAddRelated={addRelatedTask}
+            onRemoveRelated={removeRelatedTask}
+          />
+
+          <DropdownMenuSeparator />
+        </>
+      )}
+
+      {/* Move Menu */}
+      {availableLists.length > 1 && (
+        <TaskMoveMenu
+          currentListId={task.list_id}
+          availableLists={availableLists}
+          isLoading={isLoading}
+          onMoveToList={handleMoveToList}
+          onMenuItemSelect={handleMenuItemSelect}
+        />
+      )}
+
+      {/* Assignee Menu */}
+      {boardConfig?.ws_id && (
+        <TaskAssigneesMenu
+          taskAssignees={task.assignees || []}
+          availableMembers={workspaceMembers}
+          isLoading={membersLoading}
+          assigneeSaving={assigneeSaving}
+          onToggleAssignee={onToggleAssignee}
+          onMenuItemSelect={handleMenuItemSelect}
+        />
+      )}
+
+      <DropdownMenuSeparator />
+
+      <DropdownMenuItem
+        onSelect={(e) =>
+          handleMenuItemSelect(e as unknown as Event, () => {
+            setShowDeleteDialog(true);
+            setMenuOpen(false);
+          })
+        }
+        className="cursor-pointer text-dynamic-red focus:text-dynamic-red"
+      >
+        <Trash2 className="mr-2 h-4 w-4" />
+        Delete task
+      </DropdownMenuItem>
+    </>
+  ) : (
+    <>
+      <button
+        type="button"
+        onClick={handleGoToTask}
+        className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden hover:bg-accent hover:text-accent-foreground"
+      >
+        <ExternalLink className="h-4 w-4" />
+        Go to task
+      </button>
+
+      <button
+        type="button"
+        onClick={handleCopyTaskLink}
+        className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden hover:bg-accent hover:text-accent-foreground"
+      >
+        <Copy className="h-4 w-4" />
+        Copy task link
+      </button>
+    </>
+  );
+
+  // Use DropdownMenu (click to toggle) - required for sub-menu components to work
+  return (
+    <>
+      <DropdownMenu
+        open={menuOpen}
+        onOpenChange={(open) => {
+          setMenuOpen(open);
+          if (open) {
+            setMenuGuardUntil(Date.now() + 300);
+          }
+        }}
+      >
+        <DropdownMenuTrigger asChild>{chipContent}</DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="start"
+          sideOffset={4}
+          className="w-56"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {taskLoading ? (
+            <div className="flex items-center justify-center p-4">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            </div>
+          ) : taskError ? (
+            <div className="flex flex-col items-center gap-2 p-4 text-center text-muted-foreground text-sm">
+              <AlertCircle className="h-5 w-5 text-dynamic-red" />
+              <span>Failed to load task</span>
+              <span className="text-xs opacity-70">
+                {taskError instanceof Error
+                  ? taskError.message
+                  : 'Unknown error'}
+              </span>
+            </div>
+          ) : (
+            menuItems
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Dialogs */}
+      {task && (
+        <>
+          <TaskDeleteDialog
+            task={task}
+            open={showDeleteDialog}
+            isLoading={isLoading}
+            onOpenChange={setShowDeleteDialog}
+            onConfirm={handleDelete}
+          />
+
+          <TaskCustomDateDialog
+            open={showCustomDateDialog}
+            endDate={task.end_date ?? null}
+            isLoading={isLoading}
+            onOpenChange={setShowCustomDateDialog}
+            onDateChange={handleCustomDateChange}
+            onClear={() => {
+              handleDueDateChange(null);
+              setShowCustomDateDialog(false);
+            }}
+          />
+
+          <TaskNewLabelDialog
+            open={showNewLabelDialog}
+            newLabelName={newLabelName}
+            newLabelColor={newLabelColor}
+            creatingLabel={creatingLabel}
+            onNameChange={setNewLabelName}
+            onColorChange={setNewLabelColor}
+            onOpenChange={setShowNewLabelDialog}
+            onConfirm={createNewLabel}
+          />
+
+          <TaskNewProjectDialog
+            open={showNewProjectDialog}
+            newProjectName={newProjectName}
+            creatingProject={creatingProject}
+            onNameChange={setNewProjectName}
+            onOpenChange={setShowNewProjectDialog}
+            onConfirm={createNewProject}
+          />
+        </>
+      )}
+    </>
+  );
+}

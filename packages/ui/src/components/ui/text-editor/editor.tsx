@@ -13,7 +13,8 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type SupabaseProvider from '@tuturuuu/ui/hooks/supabase-provider';
 import { debounce } from 'lodash';
 import { TextSelection } from 'prosemirror-state';
-import { useEffect, useMemo, useRef } from 'react';
+import { flushSync } from 'react-dom';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type * as Y from 'yjs';
 import { getEditorExtensions } from './extensions';
 import { ToolBar } from './tool-bar';
@@ -99,6 +100,8 @@ export function RichTextEditor({
   const onArrowUpRef = useRef(onArrowUp);
   const onArrowLeftRef = useRef(onArrowLeft);
   const debouncedOnChangeRef = useRef<ReturnType<typeof debounce> | null>(null);
+  // Track when we're in a programmatic update to skip content sync
+  const isProgrammaticUpdateRef = useRef(false);
 
   useEffect(() => {
     onImageUploadRef.current = onImageUpload;
@@ -439,6 +442,13 @@ export function RichTextEditor({
   useEffect(() => {
     if (!editor || allowCollaboration) return;
 
+    // Skip sync if we're in a programmatic update (e.g., after converting text to task)
+    // This prevents the effect from reverting editor content before state update propagates
+    if (isProgrammaticUpdateRef.current) {
+      isProgrammaticUpdateRef.current = false;
+      return;
+    }
+
     const currentContent = editor.getJSON();
     const contentChanged =
       JSON.stringify(currentContent) !== JSON.stringify(content);
@@ -498,21 +508,40 @@ export function RichTextEditor({
         return hasContent(currentContent) ? currentContent : null;
       }
 
-      // Flush pending debounced changes immediately
-      if (debouncedOnChangeRef.current) {
-        debouncedOnChangeRef.current.flush();
-      }
+      // Mark that we're doing a programmatic update to skip content sync
+      isProgrammaticUpdateRef.current = true;
+
       // Get current editor content
       const currentContent = editor.getJSON();
       const finalContent = hasContent(currentContent) ? currentContent : null;
 
-      // Also call onChange to update parent state
-      onChangeRef.current?.(finalContent);
+      // Use flushSync to ensure state update happens synchronously
+      // This prevents React from batching and potentially re-rendering
+      // with stale content prop before the update propagates
+      flushSync(() => {
+        onChangeRef.current?.(finalContent);
+      });
+
+      // Cancel any pending debounced changes since we've already synced
+      if (debouncedOnChangeRef.current) {
+        debouncedOnChangeRef.current.cancel();
+      }
 
       // Return the content so caller can use it immediately
       return finalContent;
     };
   }, [editor, flushPendingRef, allowCollaboration]);
+
+  // Create a flush callback for immediate synchronization after programmatic changes
+  const flushEditorChanges = useCallback(() => {
+    // Mark that we're doing a programmatic update to skip content sync
+    isProgrammaticUpdateRef.current = true;
+
+    if (debouncedOnChangeRef.current) {
+      // Flush the debounce to execute onChange immediately
+      debouncedOnChangeRef.current.flush();
+    }
+  }, []);
 
   return (
     <div className="group relative h-full">
@@ -526,6 +555,7 @@ export function RichTextEditor({
           boardId={boardId}
           availableLists={availableLists}
           queryClient={queryClient}
+          onFlushChanges={flushEditorChanges}
         />
       )}
       {!readOnly && editor && (
