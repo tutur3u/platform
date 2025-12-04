@@ -60,7 +60,7 @@ export const getDescriptionText = (description?: string | Json): string => {
         const level = node.attrs?.level || 1;
         // Add visual hierarchy with # symbols
         const prefix = '#'.repeat(level);
-        return `${prefix}${text}\n`;
+        return `${prefix} ${text}\n`;
       }
 
       // Blockquotes - indented quoted text
