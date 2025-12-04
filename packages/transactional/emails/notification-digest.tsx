@@ -340,7 +340,11 @@ export const NotificationDigestEmail = ({
               {/* CTA */}
               <Section style={{ textAlign: 'center', marginTop: '8px' }}>
                 <Button
-                  href={workspaceUrl}
+                  href={
+                    notificationCount === 0
+                      ? workspaceUrl
+                      : `${workspaceUrl}/notifications`
+                  }
                   style={{
                     display: 'inline-block',
                     backgroundColor: '#4f46e5',
