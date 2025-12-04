@@ -325,7 +325,7 @@ export async function GET(req: NextRequest) {
             credentials.source_email || 'notifications@tuturuuu.com';
           const sourceName = credentials.source_name || 'Tuturuuu';
           const formattedSource = `${sourceName} <${sourceEmail}>`;
-          
+
           const command = new SendEmailCommand({
             Source: formattedSource,
             Destination: {
