@@ -70,7 +70,6 @@ export default async function TimeTrackerHistoryPage({
           .order('created_at', { ascending: false })
           .limit(100);
 
-
         return (
           <SessionHistory
             wsId={wsId}

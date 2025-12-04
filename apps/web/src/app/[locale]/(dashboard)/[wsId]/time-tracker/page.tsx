@@ -408,25 +408,23 @@ export default async function TimeTrackerPage({
         return (
           <div className="grid gap-4 pb-4">
             {/* Stats */}
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            <Suspense fallback={<StatsCardSkeleton />}>
-              <StatsCardWrapper statsPromise={statsPromise} locale={locale} />
-            </Suspense>
-                        {/* Quick Timer */}
-            <Suspense fallback={<TimerCardSkeleton />}>
-              <TimerCardWrapper
-                timerDataPromise={timerDataPromise}
-                wsId={wsId}
-              />
-            </Suspense>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Suspense fallback={<StatsCardSkeleton />}>
+                <StatsCardWrapper statsPromise={statsPromise} locale={locale} />
+              </Suspense>
+              {/* Quick Timer */}
+              <Suspense fallback={<TimerCardSkeleton />}>
+                <TimerCardWrapper
+                  timerDataPromise={timerDataPromise}
+                  wsId={wsId}
+                />
+              </Suspense>
             </div>
 
             {/* Heatmap */}
             <Suspense fallback={<HeatmapCardSkeleton />}>
               <HeatmapCardWrapper statsPromise={statsPromise} />
             </Suspense>
-
-
           </div>
         );
       }}

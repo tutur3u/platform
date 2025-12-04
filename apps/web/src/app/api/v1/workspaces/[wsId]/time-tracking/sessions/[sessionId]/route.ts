@@ -155,7 +155,10 @@ export async function PATCH(
         const start = new Date(startTime);
         if (start > now) {
           return NextResponse.json(
-            { error: 'Cannot update a time tracking session to have a start time in the future.' },
+            {
+              error:
+                'Cannot update a time tracking session to have a start time in the future.',
+            },
             { status: 400 }
           );
         }
@@ -165,7 +168,10 @@ export async function PATCH(
         const end = new Date(endTime);
         if (end > now) {
           return NextResponse.json(
-            { error: 'Cannot update a time tracking session to have an end time in the future.' },
+            {
+              error:
+                'Cannot update a time tracking session to have an end time in the future.',
+            },
             { status: 400 }
           );
         }

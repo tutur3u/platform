@@ -254,22 +254,21 @@ function SessionListItem({ session, index }: SessionListItemProps) {
             <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-dynamic-muted">
               <div className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
-                {dayjs(session.start_time).format('MMM D, YYYY')} - {' '}
+                {dayjs(session.start_time).format('MMM D, YYYY')} -{' '}
                 {dayjs(session.start_time).format('HH:mm')}
               </div>
               {session.end_time ? (
                 <div className="flex items-center gap-1">
                   <span className="text-dynamic-muted/50">→</span>
-                                    {!dayjs(session.start_time).isSame(
+                  {!dayjs(session.start_time).isSame(
                     session.end_time,
                     'day'
                   ) && (
                     <span className="text-dynamic-muted/70">
-                      {dayjs(session.end_time).format('MMM D, YYYY')} - {' '}
+                      {dayjs(session.end_time).format('MMM D, YYYY')} -{' '}
                     </span>
                   )}
                   {dayjs(session.end_time).format('HH:mm')}
-
                 </div>
               ) : (
                 <span className="animate-pulse font-medium text-dynamic-green">
