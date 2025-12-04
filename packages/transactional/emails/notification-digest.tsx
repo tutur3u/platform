@@ -134,7 +134,7 @@ export const NotificationDigestEmail = ({
             {/* CTA Button */}
             <Section className="mt-[32px] mb-[32px] text-center">
               <Button
-                className="rounded-lg bg-blue-600 px-6 py-3 text-center font-semibold text-[14px] text-white no-underline hover:bg-blue-700"
+                className="rounded-lg bg-blue-600 px-6 py-3 text-center font-semibold text-[14px] text-white no-underline"
                 href={workspaceUrl}
               >
                 View All Notifications
