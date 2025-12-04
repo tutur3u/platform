@@ -100,39 +100,74 @@ export const getGroupedSessionsPaginated = async (
 ): Promise<PaginatedResult<GroupedSession>> => {
   const { page = 1, limit = 50, search, startDate, endDate } = params;
   const supabase = await createClient();
+  const userTimezone = dayjs.tz.guess();
 
-  // Try RPC first, but fall back if date filtering is needed or RPC fails
-  if (!startDate && !endDate) {
-    try {
-      const { data, error } = await supabase.rpc(
-        'get_time_tracking_sessions_paginated',
-        {
-          p_ws_id: wsId,
-          p_period: period,
-          p_page: page,
-          p_limit: limit,
-          p_search: search || undefined,
-        }
-      );
+  try {
+    const { data, error } = await supabase.rpc('get_grouped_sessions_paginated', {
+      p_ws_id: wsId,
+      p_period: period,
+      p_page: page,
+      p_limit: limit,
+      p_search: search || undefined,
+      p_start_date: startDate || undefined,
+      p_end_date: endDate || undefined,
+      p_timezone: userTimezone,
+    });
 
-      if (error) {
-        console.error('Error fetching paginated sessions:', error);
-        throw new Error('RPC function failed');
-      }
-
-      return (
-        (data as unknown as PaginatedResult<GroupedSession>) || {
-          data: [],
-          pagination: { page, limit, total: 0, pages: 0 },
-        }
-      );
-    } catch (error) {
-      console.error('RPC not available, falling back to legacy method:', error);
+    if (error) {
+      console.error('RPC error:', error);
+      // Fall back to the JS implementation if RPC fails
+      return await getFallbackGroupedSessions(wsId, period, params);
     }
-  }
 
-  // Use fallback method for date filtering or when RPC fails
-  return await getFallbackGroupedSessions(wsId, period, params);
+    // Transform the RPC result to match the expected GroupedSession interface
+    const result = data as unknown as {
+      data: Array<{
+        title: string;
+        category: { name: string; color: string } | null;
+        sessions: Array<SessionWithRelations>;
+        totalDuration: number;
+        periodDuration: number;
+        firstStartTime: string;
+        lastEndTime: string | null;
+        status: 'active' | 'paused' | 'completed';
+        user: { displayName: string | null; avatarUrl: string | null };
+        period: string;
+        sessionCount: number;
+        sessionTitles: string[];
+      }>;
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        pages: number;
+      };
+    };
+
+    return {
+      data: result.data.map((item) => ({
+        title: item.title,
+        category: item.category,
+        sessions: item.sessions,
+        totalDuration: item.totalDuration,
+        periodDuration: item.periodDuration,
+        firstStartTime: item.firstStartTime,
+        lastEndTime: item.lastEndTime,
+        status: item.status,
+        user: {
+          displayName: item.user.displayName,
+          avatarUrl: item.user.avatarUrl,
+        },
+        period: item.period,
+        sessionCount: item.sessionCount,
+        sessionTitles: item.sessionTitles,
+      })),
+      pagination: result.pagination,
+    };
+  } catch (error) {
+    console.error('Error calling RPC, falling back to JS implementation:', error);
+    return await getFallbackGroupedSessions(wsId, period, params);
+  }
 };
 
 // Fallback method for when RPC is not available or date filtering is needed
@@ -143,7 +178,6 @@ const getFallbackGroupedSessions = async (
 ): Promise<PaginatedResult<GroupedSession>> => {
   const { page = 1, limit = 50, search, startDate, endDate } = params;
   const supabase = await createClient();
-  console.log('Using fallback method for grouped sessions');
 
   try {
     let query = supabase
@@ -202,16 +236,6 @@ const getFallbackGroupedSessions = async (
     const multiplier = Math.max(3, limit / 10); // Ensure we get enough data for grouping
     const { data: sessions, error } = await query.limit(limit * multiplier);
 
-    console.log('Fetched sessions count:', sessions?.length);
-    console.log(
-      'Date filters - startDate:',
-      startDate,
-      'endDate:',
-      endDate,
-      'period:',
-      period
-    );
-
     if (error) {
       console.error('Fallback query error:', error);
       throw new Error(
@@ -229,14 +253,7 @@ const getFallbackGroupedSessions = async (
     // Group sessions and handle pagination
     let groupedSessions = groupSessions(sessions, period);
 
-    console.log(
-      'Grouped sessions count before date filter:',
-      groupedSessions.length
-    );
-    console.log(
-      'Grouped session periods:',
-      groupedSessions.map((g) => g.period)
-    );
+
 
     // Filter grouped sessions by date range if specified
     // This ensures we only show groups whose period falls within the filter range
@@ -272,10 +289,7 @@ const getFallbackGroupedSessions = async (
         return true;
       });
 
-      console.log(
-        'Grouped sessions count after date filter:',
-        groupedSessions.length
-      );
+
     }
 
     const total = groupedSessions.length;

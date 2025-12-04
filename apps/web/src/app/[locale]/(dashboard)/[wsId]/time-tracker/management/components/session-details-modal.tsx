@@ -77,7 +77,10 @@ export default function SessionDetailsModal({
               <StatCard
                 icon={<Zap className="h-5 w-5" />}
                 value={dayjs
-                  .duration(session.periodDuration ?? session.totalDuration, 'seconds')
+                  .duration(
+                    session.periodDuration ?? session.totalDuration,
+                    'seconds'
+                  )
                   .format('H:mm:ss')}
                 label={t('totalTime')}
                 colorClass="dynamic-green"
@@ -86,7 +89,8 @@ export default function SessionDetailsModal({
                 icon={<BarChart3 className="h-5 w-5" />}
                 value={dayjs
                   .duration(
-                    (session.periodDuration ?? session.totalDuration) / session.sessions.length,
+                    (session.periodDuration ?? session.totalDuration) /
+                      session.sessions.length,
                     'seconds'
                   )
                   .format('H:mm:ss')}
@@ -250,13 +254,22 @@ function SessionListItem({ session, index }: SessionListItemProps) {
             <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-dynamic-muted">
               <div className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
-                {dayjs(session.start_time).format('MMM D, YYYY')} at{' '}
+                {dayjs(session.start_time).format('MMM D, YYYY')} - {' '}
                 {dayjs(session.start_time).format('HH:mm')}
               </div>
               {session.end_time ? (
                 <div className="flex items-center gap-1">
                   <span className="text-dynamic-muted/50">→</span>
+                                    {!dayjs(session.start_time).isSame(
+                    session.end_time,
+                    'day'
+                  ) && (
+                    <span className="text-dynamic-muted/70">
+                      {dayjs(session.end_time).format('MMM D, YYYY')} - {' '}
+                    </span>
+                  )}
                   {dayjs(session.end_time).format('HH:mm')}
+
                 </div>
               ) : (
                 <span className="animate-pulse font-medium text-dynamic-green">

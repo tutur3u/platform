@@ -14459,6 +14459,19 @@ export type Database = {
         }[];
       };
       get_finance_invoices_count: { Args: { ws_id: string }; Returns: number };
+      get_grouped_sessions_paginated: {
+        Args: {
+          p_end_date?: string;
+          p_limit?: number;
+          p_page?: number;
+          p_period?: string;
+          p_search?: string;
+          p_start_date?: string;
+          p_timezone?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       get_guest_user_leads: {
         Args: {
           p_page?: number;
@@ -14803,13 +14816,18 @@ export type Database = {
       };
       get_time_tracking_sessions_paginated: {
         Args: {
+          p_end_date?: string;
           p_limit?: number;
           p_page?: number;
           p_period?: string;
           p_search?: string;
+          p_start_date?: string;
           p_ws_id: string;
         };
-        Returns: Json;
+        Returns: {
+          data: Json;
+          pagination: Json;
+        }[];
       };
       get_time_tracking_stats: {
         Args: { p_user_id?: string; p_ws_id: string };
