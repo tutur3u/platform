@@ -1,4 +1,4 @@
-import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
+import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { Node, nodeInputRule } from '@tiptap/react';
 import { Plugin, PluginKey } from 'prosemirror-state';
 import { toast } from '../sonner';
