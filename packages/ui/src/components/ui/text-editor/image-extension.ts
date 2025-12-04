@@ -1,4 +1,3 @@
-import type { EditorView } from '@tiptap/pm/view';
 import { Plugin, PluginKey } from 'prosemirror-state';
 import ImageResize from 'tiptap-extension-resize-image';
 
@@ -199,7 +198,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
 
           props: {
             handleDOMEvents: {
-              paste: (view: EditorView, event: ClipboardEvent) => {
+              paste: (view, event: ClipboardEvent) => {
                 if (!onImageUpload) return false;
 
                 const items = event.clipboardData?.items;
@@ -313,7 +312,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
 
           props: {
             handleDOMEvents: {
-              drop: (view: EditorView, event: DragEvent) => {
+              drop: (view, event: DragEvent) => {
                 if (!onImageUpload) return false;
 
                 const { schema } = view.state;
