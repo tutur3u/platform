@@ -10,6 +10,18 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 import type { SessionWithRelations } from '../../types';
 import type { ActionStates, EditFormState } from './session-types';
+import {
+  validateNotFuture,
+  validateTimeRange,
+  type TimeValidationResult,
+} from '@/lib/time-validation';
+
+/**
+ * Converts a TimeValidationErrorCode to a localized error message
+ * This can be used by components that don't have access to the hook
+ */
+
+
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -57,6 +69,7 @@ interface UseSessionActionsReturn {
     key: K,
     value: EditFormState[K]
   ) => void;
+  getValidationErrorMessage: (result: TimeValidationResult) => string;
 }
 
 export function useSessionActions({
@@ -97,6 +110,28 @@ export function useSessionActions({
   const [originalValues, setOriginalValues] = useState<EditFormState | null>(
     null
   );
+
+  const getValidationErrorMessage = (result: TimeValidationResult): string => {
+    if (!result.errorCode) return '';
+  
+    const params = result.errorParams || {};
+    const dateTime = params.dateTime ?? '';
+  
+    switch (result.errorCode) {
+      case 'FUTURE_START_TIME':
+        return t('validation_future_start_time', { dateTime });
+      case 'FUTURE_END_TIME':
+        return t('validation_future_end_time', { dateTime });
+      case 'FUTURE_DATE_TIME':
+        return t('validation_future_date_time', { dateTime });
+      case 'END_BEFORE_START':
+        return t('validation_end_before_start');
+      case 'DURATION_TOO_SHORT':
+        return t('validation_duration_too_short');
+      default:
+        return t('validation_invalid_time');
+    }
+  };
 
   const setEditFormState = useCallback(
     <K extends keyof EditFormState>(key: K, value: EditFormState[K]) => {
@@ -188,6 +223,45 @@ export function useSessionActions({
     try {
       const userTz = dayjs.tz.guess();
 
+      // Validate future dates for time edits
+      if (editFormState.startTime !== originalValues.startTime && editFormState.startTime) {
+        const startValidation = validateNotFuture(editFormState.startTime);
+        if (!startValidation.isValid) {
+          toast.error(getValidationErrorMessage(startValidation));
+          setIsEditing(false);
+          return;
+        }
+      }
+
+      if (editFormState.endTime !== originalValues.endTime && editFormState.endTime) {
+        const endValidation = validateNotFuture(editFormState.endTime);
+        if (!endValidation.isValid) {
+          toast.error(getValidationErrorMessage(endValidation));
+          setIsEditing(false);
+          return;
+        }
+      }
+
+      // Validate time range if both times are changing
+      const newStartTime = editFormState.startTime !== originalValues.startTime
+        ? editFormState.startTime
+        : dayjs.utc(sessionToEdit.start_time).tz(userTz).format('YYYY-MM-DDTHH:mm');
+
+      const newEndTime = editFormState.endTime !== originalValues.endTime
+        ? editFormState.endTime
+        : sessionToEdit.end_time
+          ? dayjs.utc(sessionToEdit.end_time).tz(userTz).format('YYYY-MM-DDTHH:mm')
+          : null;
+
+      if (newStartTime && newEndTime) {
+        const rangeValidation = validateTimeRange(newStartTime, newEndTime);
+        if (!rangeValidation.isValid) {
+          toast.error(getValidationErrorMessage(rangeValidation));
+          setIsEditing(false);
+          return;
+        }
+      }
+
       // Build only the fields that have changed
       const changes: {
         action: string;
@@ -240,15 +314,6 @@ export function useSessionActions({
         changes.endTime = editFormState.endTime
           ? dayjs.tz(editFormState.endTime, userTz).utc().toISOString()
           : undefined;
-      }
-
-      // Basic temporal guard: end >= start when both provided
-      if (changes.startTime && changes.endTime) {
-        if (dayjs(changes.endTime).isBefore(dayjs(changes.startTime))) {
-          toast.error(t('end_time_before_start'));
-          setIsEditing(false);
-          return;
-        }
       }
 
       // Only make the request if there are actual changes
@@ -422,6 +487,7 @@ export function useSessionActions({
     closeMoveDialog,
     openMissedEntryDialog,
     setShowMissedEntryDialog,
+    getValidationErrorMessage,
 
     // Form state setters
     setEditFormState,

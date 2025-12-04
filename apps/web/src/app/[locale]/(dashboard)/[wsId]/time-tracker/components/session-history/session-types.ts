@@ -24,7 +24,9 @@ export interface SessionHistoryProps {
   tasks: TaskWithDetails[] | null;
 }
 
-export type TaskWithDetails = Partial<WorkspaceTask> & {
+export type TaskWithDetails = {
+  id: string; // Required field for task selection
+} & Partial<WorkspaceTask> & {
   board_name?: string;
   list_name?: string;
 };

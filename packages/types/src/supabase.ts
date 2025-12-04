@@ -14816,18 +14816,13 @@ export type Database = {
       };
       get_time_tracking_sessions_paginated: {
         Args: {
-          p_end_date?: string;
           p_limit?: number;
           p_page?: number;
           p_period?: string;
           p_search?: string;
-          p_start_date?: string;
           p_ws_id: string;
         };
-        Returns: {
-          data: Json;
-          pagination: Json;
-        }[];
+        Returns: Json;
       };
       get_time_tracking_stats: {
         Args: { p_user_id?: string; p_ws_id: string };

@@ -24,6 +24,7 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
 import type { SessionWithRelations } from '../../types';
 import type { EditFormState, TaskWithDetails } from './session-types';
 import {
@@ -31,6 +32,12 @@ import {
   isDatetimeMoreThanThresholdAgo,
   isSessionOlderThanThreshold,
 } from './session-utils';
+import {
+  validateStartTime,
+  validateEndTime,
+  validateTimeRange,
+} from '@/lib/time-validation';
+import { useSessionActions } from './use-session-actions';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -66,6 +73,10 @@ export function EditSessionDialog({
   const t = useTranslations('time-tracker.session_history');
   const userTimezone = dayjs.tz.guess();
 
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  const {getValidationErrorMessage} = useSessionActions({ wsId: session?.ws_id || '' });
+
   const isOlderThanThreshold = session
     ? isSessionOlderThanThreshold(session, thresholdDays)
     : false;
@@ -73,6 +84,41 @@ export function EditSessionDialog({
   const isStartTimeInvalid =
     formState.startTime &&
     isDatetimeMoreThanThresholdAgo(formState.startTime, userTimezone, thresholdDays);
+
+  
+  // Validate datetime fields
+  useEffect(() => {
+    const errors: Record<string, string> = {};
+
+    // Only validate if editing is allowed (not older than threshold)
+    if (session && !session.is_running && !isOlderThanThreshold) {
+      // Validate start time
+      if (formState.startTime) {
+        const startValidation = validateStartTime(formState.startTime);
+        if (!startValidation.isValid) {
+          errors.startTime = getValidationErrorMessage(startValidation);
+        }
+      }
+
+      // Validate end time
+      if (formState.endTime) {
+        const endValidation = validateEndTime(formState.endTime);
+        if (!endValidation.isValid) {
+          errors.endTime = getValidationErrorMessage(endValidation);
+        }
+      }
+
+      // Validate time range
+      if (formState.startTime && formState.endTime) {
+        const rangeValidation = validateTimeRange(formState.startTime, formState.endTime);
+        if (!rangeValidation.isValid) {
+          errors.timeRange = getValidationErrorMessage(rangeValidation);
+        }
+      }
+    }
+
+    setValidationErrors(errors);
+  }, [formState.startTime, formState.endTime, session, isOlderThanThreshold, t]);
 
   return (
     <Dialog open={!!session} onOpenChange={() => onClose()}>
@@ -194,6 +240,7 @@ export function EditSessionDialog({
                       onChange={(e) =>
                         onFormChange('startTime', e.target.value)
                       }
+                      className={Object.keys(validationErrors).length > 0 ? 'border-dynamic-red' : ''}
                     />
                   </div>
                   <div>
@@ -203,9 +250,15 @@ export function EditSessionDialog({
                       type="datetime-local"
                       value={formState.endTime}
                       onChange={(e) => onFormChange('endTime', e.target.value)}
+                      className={Object.keys(validationErrors).length > 0 ? 'border-dynamic-red' : ''}
                     />
                   </div>
                 </div>
+                {Object.keys(validationErrors).length > 0 && (
+                  <div className="rounded-lg bg-dynamic-red/10 p-3">
+                    <p className="text-dynamic-red text-sm">{Object.values(validationErrors)[0]}</p>
+                  </div>
+                )}
                 {/* Warning about the threshold limit */}
                 {isStartTimeInvalid && (
                   <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/50">
@@ -251,7 +304,8 @@ export function EditSessionDialog({
                     !isOlderThanThreshold &&
                     formState.startTime &&
                     isStartTimeInvalid
-                )
+                ) ||
+                Object.keys(validationErrors).length > 0
               }
               className="flex-1"
             >

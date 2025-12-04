@@ -149,6 +149,28 @@ export async function PATCH(
       const { title, description, categoryId, taskId, startTime, endTime } =
         body;
 
+      // CRITICAL: Prevent future sessions - this check cannot be bypassed
+      const now = new Date();
+      if (startTime !== undefined) {
+        const start = new Date(startTime);
+        if (start > now) {
+          return NextResponse.json(
+            { error: 'Cannot update a time tracking session to have a start time in the future.' },
+            { status: 400 }
+          );
+        }
+      }
+
+      if (endTime !== undefined) {
+        const end = new Date(endTime);
+        if (end > now) {
+          return NextResponse.json(
+            { error: 'Cannot update a time tracking session to have an end time in the future.' },
+            { status: 400 }
+          );
+        }
+      }
+
       const updateData: {
         updated_at: string;
         title?: string;

@@ -217,39 +217,6 @@ export function StackedSessionItem({
               </div>
             </div>
 
-            {/* Time display - responsive */}
-            <div className="flex flex-wrap items-center gap-1.5 text-muted-foreground text-xs">
-              <Clock className="h-3 w-3 shrink-0" />
-              <span className="break-all">
-                {stackedSession?.sessions.length > 1 ? (
-                  <>
-                    {firstStartTime.format('MMM D')}
-                    {lastEndTime &&
-                      !firstStartTime.isSame(lastEndTime, 'day') && (
-                        <span> - {lastEndTime.format('MMM D')}</span>
-                      )}
-                  </>
-                ) : (
-                  <>
-                    {firstStartTime.format('MMM D')} •{' '}
-                    {firstStartTime.format('h:mm A')}
-                    {lastEndTime && (
-                      <span> - {lastEndTime.format('h:mm A')}</span>
-                    )}
-                  </>
-                )}
-                {stackedSession?.sessions.some((s) => s.is_running) && (
-                  <Badge
-                    variant="secondary"
-                    className="ml-1 inline-flex text-xs"
-                  >
-                    <div className="mr-1 h-2 w-2 animate-pulse rounded-full bg-green-500" />
-                    {t('active')}
-                  </Badge>
-                )}
-              </span>
-            </div>
-
             {/* Task location */}
             {stackedSession?.task &&
               (() => {

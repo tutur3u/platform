@@ -9,7 +9,8 @@ import {
   Upload,
   X,
 } from '@tuturuuu/icons';
-import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types';
+import type { TimeTrackingCategory } from '@tuturuuu/types';
+import type { TaskWithDetails } from './session-history/session-types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -40,8 +41,14 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import { formatDuration } from '@/lib/time-format';
+import {
+  validateTimeRange,
+  validateStartTime,
+  validateEndTime,
+} from '@/lib/time-validation';
 import { getCategoryColor } from './session-history';
 import type { SessionWithRelations } from '../types';
+import { useSessionActions } from './session-history/use-session-actions';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -51,12 +58,7 @@ interface BaseMissedEntryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   categories: TimeTrackingCategory[] | null;
-  tasks:
-    | (Partial<WorkspaceTask> & {
-        board_name?: string;
-        list_name?: string;
-      })[]
-    | null;
+  tasks: TaskWithDetails[] | null;
   wsId: string;
 }
 
@@ -105,6 +107,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     mode = 'normal',
   } = props;
 
+
   // Mode-specific props
   const isExceededMode = mode === 'exceeded-session';
   const session = isExceededMode ? props.session : undefined;
@@ -137,6 +140,8 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
 
   const t = useTranslations('time-tracker.missed_entry_dialog');
 
+  const {getValidationErrorMessage} = useSessionActions({ wsId });
+
   // State for missed entry form
   const [missedEntryTitle, setMissedEntryTitle] = useState('');
   const [missedEntryDescription, setMissedEntryDescription] = useState('');
@@ -156,6 +161,10 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imagePreviewsRef = useRef<string[]>([]);
 
+  // Validation state
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  
   // Calculate session info for exceeded mode
   const sessionStartTime = useMemo(
     () => (session?.start_time ? dayjs(session.start_time) : null),
@@ -184,6 +193,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     imagePreviewsRef.current = [];
     setImageError('');
     setIsDragOver(false);
+    setValidationErrors({});
   };
 
   // Initialize form values when dialog opens
@@ -364,6 +374,31 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     imagePreviewsRef.current = newPreviews;
   };
 
+  // Validate form fields in real-time
+  useEffect(() => {
+    const errors: Record<string, string> = {};
+
+    // Validate start time
+    const startValidation = validateStartTime(missedEntryStartTime);
+    if (!startValidation.isValid) {
+      errors.startTime = getValidationErrorMessage(startValidation);
+    }
+
+    // Validate end time
+    const endValidation = validateEndTime(missedEntryEndTime);
+    if (!endValidation.isValid) {
+      errors.endTime = getValidationErrorMessage(endValidation);
+    }
+
+    // Validate time range
+    const rangeValidation = validateTimeRange(missedEntryStartTime, missedEntryEndTime);
+    if (!rangeValidation.isValid) {
+      errors.timeRange = getValidationErrorMessage(rangeValidation);
+    }
+
+    setValidationErrors(errors);
+  }, [missedEntryStartTime, missedEntryEndTime, t]);
+
   // Shared Image Upload Section - render function (not a component) to avoid ref issues
   const renderImageUploadSection = (disabled: boolean) => (
     <div className="space-y-3">
@@ -477,16 +512,16 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
       return;
     }
 
-    const startTime = dayjs(missedEntryStartTime);
-    const endTime = dayjs(missedEntryEndTime);
-
-    if (endTime.isBefore(startTime)) {
-      toast.error(t('errors.endBeforeStart'));
+    // Check if there are validation errors
+    if (Object.keys(validationErrors).length > 0) {
+      toast.error(Object.values(validationErrors)[0]);
       return;
     }
 
-    if (endTime.diff(startTime, 'minutes') < 1) {
-      toast.error(t('errors.minDuration'));
+    // Validate time range
+    const rangeValidation = validateTimeRange(missedEntryStartTime, missedEntryEndTime);
+    if (!rangeValidation.isValid) {
+      toast.error(getValidationErrorMessage(rangeValidation));
       return;
     }
 
@@ -833,6 +868,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
                 value={missedEntryStartTime}
                 onChange={(e) => setMissedEntryStartTime(e.target.value)}
                 disabled={isLoading}
+                className={Object.keys(validationErrors).length > 0 ? 'border-dynamic-red' : ''}
               />
             </div>
             <div>
@@ -843,9 +879,16 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
                 value={missedEntryEndTime}
                 onChange={(e) => setMissedEntryEndTime(e.target.value)}
                 disabled={isLoading}
+                className={Object.keys(validationErrors).length > 0 ? 'border-dynamic-red' : ''}
               />
             </div>
           </div>
+          {Object.keys(validationErrors).length > 0 && (
+            <div className="flex items-center gap-1 text-dynamic-red text-sm">
+              <AlertCircle className="h-3 w-3" />
+              {Object.values(validationErrors)[0]}
+            </div>
+          )}
 
           {/* Warning and image upload for entries older than threshold */}
           {isStartTimeOlderThanThreshold && !isExceededMode && (
@@ -1064,7 +1107,8 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
                 !missedEntryTitle.trim() ||
                 !missedEntryStartTime ||
                 !missedEntryEndTime ||
-                (isStartTimeOlderThanThreshold && images.length === 0)
+                (isStartTimeOlderThanThreshold && images.length === 0) ||
+                Object.keys(validationErrors).length > 0
               }
               className="w-full sm:w-auto"
             >

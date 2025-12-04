@@ -359,6 +359,18 @@ export async function POST(
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
 
+    // CRITICAL: Prevent future start times - this check cannot be bypassed
+    const now = new Date();
+    if (startTime) {
+      const start = new Date(startTime);
+      if (start > now) {
+        return NextResponse.json(
+          { error: 'Cannot create a time tracking session with a start time in the future.' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Use service role client for secure operations
     const sbAdmin = await createAdminClient(); // This should use service role
 
