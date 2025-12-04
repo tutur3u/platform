@@ -36,103 +36,107 @@ export class StorageQuotaError extends Error {
 }
 
 /**
- * Check if adding a file would exceed workspace storage quota
+ * Get the current storage usage for a workspace using the efficient database RPC function.
+ * This is O(1) as it uses an indexed query on storage.objects instead of recursive folder traversal.
+ *
  * @param supabaseClient - Supabase client instance
- * @param workspaceId - Workspace ID
- * @param fileSize - Size of file to be uploaded
- * @param quota - Storage quota in bytes (defaults to DEFAULT_WORKSPACE_STORAGE_QUOTA)
+ * @param workspaceId - Workspace ID (UUID)
+ * @returns Current storage usage in bytes, or null if the query fails
+ */
+export async function getWorkspaceStorageUsage(
+  supabaseClient: SupabaseClient<any>,
+  workspaceId: string
+): Promise<number | null> {
+  try {
+    const { data, error } = await supabaseClient.rpc(
+      'get_workspace_drive_size',
+      {
+        ws_id: workspaceId,
+      }
+    );
+
+    if (error) {
+      console.warn('Failed to get workspace storage usage:', error);
+      return null;
+    }
+
+    return typeof data === 'number' ? data : null;
+  } catch (error) {
+    console.warn('Error getting workspace storage usage:', error);
+    return null;
+  }
+}
+
+/**
+ * Get the storage limit for a workspace from workspace_secrets.
+ * Falls back to DEFAULT_WORKSPACE_STORAGE_QUOTA if not configured.
+ *
+ * @param supabaseClient - Supabase client instance
+ * @param workspaceId - Workspace ID (UUID)
+ * @returns Storage limit in bytes
+ */
+export async function getWorkspaceStorageLimit(
+  supabaseClient: SupabaseClient<any>,
+  workspaceId: string
+): Promise<number> {
+  try {
+    const { data, error } = await supabaseClient.rpc(
+      'get_workspace_storage_limit',
+      {
+        ws_id: workspaceId,
+      }
+    );
+
+    if (error) {
+      console.warn('Failed to get workspace storage limit:', error);
+      return DEFAULT_WORKSPACE_STORAGE_QUOTA;
+    }
+
+    return typeof data === 'number' ? data : DEFAULT_WORKSPACE_STORAGE_QUOTA;
+  } catch (error) {
+    console.warn('Error getting workspace storage limit:', error);
+    return DEFAULT_WORKSPACE_STORAGE_QUOTA;
+  }
+}
+
+/**
+ * Check if adding a file would exceed workspace storage quota.
+ *
+ * This function uses efficient database RPC calls instead of recursive folder traversal.
+ * The database has a trigger `enforce_workspace_storage_limit` that also validates this
+ * on insert/update, but this pre-check provides a better user experience by failing
+ * fast before attempting the upload.
+ *
+ * @param supabaseClient - Supabase client instance
+ * @param workspaceId - Workspace ID (UUID)
+ * @param fileSize - Size of file to be uploaded in bytes
+ * @param quota - Optional storage quota override (if not provided, fetched from database)
  * @throws {StorageQuotaError} If quota would be exceeded
  */
 export async function checkStorageQuota(
   supabaseClient: SupabaseClient<any>,
   workspaceId: string,
   fileSize: number,
-  quota: number = DEFAULT_WORKSPACE_STORAGE_QUOTA
+  quota?: number
 ): Promise<void> {
-  const PAGE_SIZE = 100;
-  const CONCURRENCY_LIMIT = 5;
-
   try {
-    // Check if workspace folder exists
-    const { error: listError } = await supabaseClient.storage
-      .from('workspaces')
-      .list(workspaceId, {
-        limit: 1,
-      });
+    // Fetch current usage and limit in parallel for efficiency
+    const [currentUsage, storageLimit] = await Promise.all([
+      getWorkspaceStorageUsage(supabaseClient, workspaceId),
+      quota !== undefined
+        ? Promise.resolve(quota)
+        : getWorkspaceStorageLimit(supabaseClient, workspaceId),
+    ]);
 
-    if (listError) {
-      console.warn('Failed to check storage quota:', listError);
-      // Don't block upload if we can't check quota
+    // If we couldn't get the current usage, don't block the upload
+    // The database trigger will still enforce the limit
+    if (currentUsage === null) {
       return;
     }
 
-    // Calculate current usage using iterative folder traversal with pagination
-    let currentUsage = 0;
-    const folderQueue: string[] = [workspaceId];
-
-    // Helper to list all items in a folder with pagination
-    const listAllItemsInFolder = async (prefix: string) => {
-      const allItems: Array<{ name: string; metadata?: { size?: number } }> =
-        [];
-      let offset = 0;
-      let hasMore = true;
-
-      while (hasMore) {
-        const { data: items } = await supabaseClient.storage
-          .from('workspaces')
-          .list(prefix, {
-            limit: PAGE_SIZE,
-            offset,
-          });
-
-        if (!items || items.length === 0) {
-          hasMore = false;
-        } else {
-          allItems.push(...items);
-          offset += items.length;
-          // If we got fewer items than the limit, we've reached the end
-          hasMore = items.length === PAGE_SIZE;
-        }
-      }
-
-      return allItems;
-    };
-
-    // Process folders iteratively using a queue
-    while (folderQueue.length > 0) {
-      // Process folders in batches with concurrency limit
-      const foldersToProcess = folderQueue.splice(0, CONCURRENCY_LIMIT);
-
-      const results = await Promise.all(
-        foldersToProcess.map(async (folderPath) => {
-          const items = await listAllItemsInFolder(folderPath);
-          let folderSize = 0;
-          const subfolders: string[] = [];
-
-          for (const item of items) {
-            if (item.metadata) {
-              // It's a file - accumulate size
-              folderSize += item.metadata.size || 0;
-            } else {
-              // It's a folder - add to queue for processing
-              subfolders.push(`${folderPath}/${item.name}`);
-            }
-          }
-
-          return { folderSize, subfolders };
-        })
-      );
-
-      // Accumulate results
-      for (const { folderSize, subfolders } of results) {
-        currentUsage += folderSize;
-        folderQueue.push(...subfolders);
-      }
-    }
-
     // Check if adding this file would exceed quota
-    if (currentUsage + fileSize > quota) {
-      throw new StorageQuotaError(currentUsage, fileSize, quota);
+    if (currentUsage + fileSize > storageLimit) {
+      throw new StorageQuotaError(currentUsage, fileSize, storageLimit);
     }
   } catch (error) {
     // Re-throw StorageQuotaError
@@ -140,6 +144,7 @@ export async function checkStorageQuota(
       throw error;
     }
     // Log other errors but don't block upload
+    // The database trigger will still enforce the limit
     console.warn('Error checking storage quota:', error);
   }
 }

@@ -5,6 +5,8 @@ import {
   formatBytes,
   getImageDimensions,
   getVideoDimensions,
+  getWorkspaceStorageLimit,
+  getWorkspaceStorageUsage,
   MAX_IMAGE_SIZE,
   MAX_VIDEO_SIZE,
   StorageQuotaError,
@@ -78,76 +80,45 @@ describe('media-utils', () => {
 
     beforeEach(() => {
       mockSupabaseClient = {
-        storage: {
-          from: vi.fn().mockReturnThis(),
-          list: vi.fn(),
-        },
+        rpc: vi.fn(),
       };
     });
 
     it('should pass when quota is not exceeded', async () => {
-      mockSupabaseClient.storage.list
-        // First call: check if workspace folder exists
-        .mockResolvedValueOnce({
-          data: [],
-          error: null,
-        })
-        // Second call: get all files in workspace
-        .mockResolvedValueOnce({
-          data: [
-            { name: 'file1.jpg', metadata: { size: 1024 * 1024 } }, // 1MB
-            { name: 'file2.jpg', metadata: { size: 2 * 1024 * 1024 } }, // 2MB
-          ],
-          error: null,
-        })
-        // Third call: check for subfolders (none in this case)
-        .mockResolvedValueOnce({ data: [], error: null });
+      // Mock get_workspace_drive_size returns 3MB usage
+      mockSupabaseClient.rpc
+        .mockResolvedValueOnce({ data: 3 * 1024 * 1024, error: null }) // current usage
+        .mockResolvedValueOnce({ data: 100 * 1024 * 1024, error: null }); // storage limit
 
       await expect(
-        checkStorageQuota(
-          mockSupabaseClient,
-          'workspace-1',
-          5 * 1024 * 1024,
-          100 * 1024 * 1024
-        )
+        checkStorageQuota(mockSupabaseClient, 'workspace-1', 5 * 1024 * 1024)
       ).resolves.toBeUndefined();
+
+      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith(
+        'get_workspace_drive_size',
+        { ws_id: 'workspace-1' }
+      );
     });
 
     it('should throw StorageQuotaError when quota exceeded', async () => {
-      mockSupabaseClient.storage.list
-        // First call: check if workspace folder exists
-        .mockResolvedValueOnce({
-          data: [],
-          error: null,
-        })
-        // Second call: get all files in workspace
-        .mockResolvedValueOnce({
-          data: [
-            { name: 'file1.jpg', metadata: { size: 95 * 1024 * 1024 } }, // 95MB
-          ],
-          error: null,
-        })
-        // Third call: check for subfolders (none in this case)
-        .mockResolvedValueOnce({ data: [], error: null });
+      // Mock 95MB usage with 100MB limit
+      mockSupabaseClient.rpc
+        .mockResolvedValueOnce({ data: 95 * 1024 * 1024, error: null }) // current usage
+        .mockResolvedValueOnce({ data: 100 * 1024 * 1024, error: null }); // storage limit
 
       await expect(
-        checkStorageQuota(
-          mockSupabaseClient,
-          'workspace-1',
-          10 * 1024 * 1024,
-          100 * 1024 * 1024
-        )
+        checkStorageQuota(mockSupabaseClient, 'workspace-1', 10 * 1024 * 1024)
       ).rejects.toThrow(StorageQuotaError);
     });
 
-    it('should not block upload if list fails', async () => {
+    it('should not block upload if RPC fails', async () => {
       const consoleWarnSpy = vi
         .spyOn(console, 'warn')
         .mockImplementation(() => {});
 
-      mockSupabaseClient.storage.list.mockResolvedValueOnce({
+      mockSupabaseClient.rpc.mockResolvedValueOnce({
         data: null,
-        error: new Error('Network error'),
+        error: new Error('RPC error'),
       });
 
       await expect(
@@ -155,68 +126,36 @@ describe('media-utils', () => {
       ).resolves.toBeUndefined();
 
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        'Failed to check storage quota:',
+        'Failed to get workspace storage usage:',
         expect.any(Error)
       );
 
       consoleWarnSpy.mockRestore();
     });
 
-    it('should calculate folder sizes recursively', async () => {
-      mockSupabaseClient.storage.list
-        // First call: check if workspace folder exists
-        .mockResolvedValueOnce({
-          data: [],
-          error: null,
-        })
-        // Second call: get root folder contents
-        .mockResolvedValueOnce({
-          data: [
-            { name: 'file1.jpg', metadata: { size: 1024 * 1024 } }, // 1MB
-            { name: 'subfolder' }, // No metadata = folder
-          ],
-          error: null,
-        })
-        // Third call: get subfolder contents
-        .mockResolvedValueOnce({
-          data: [{ name: 'file2.jpg', metadata: { size: 2 * 1024 * 1024 } }], // 2MB
-          error: null,
-        })
-        // Fourth call: check subfolder's children
-        .mockResolvedValueOnce({
-          data: [],
-          error: null,
-        });
+    it('should use provided quota override instead of fetching from database', async () => {
+      // Only usage is fetched, limit is provided as parameter
+      mockSupabaseClient.rpc.mockResolvedValueOnce({
+        data: 50 * 1024 * 1024,
+        error: null,
+      }); // current usage
 
+      // With 50MB usage and 60MB quota, 15MB file should exceed
       await expect(
         checkStorageQuota(
           mockSupabaseClient,
           'workspace-1',
-          5 * 1024 * 1024,
-          100 * 1024 * 1024
+          15 * 1024 * 1024,
+          60 * 1024 * 1024 // explicit quota
         )
-      ).resolves.toBeUndefined();
-    });
-
-    it('should use default quota if not specified', async () => {
-      mockSupabaseClient.storage.list
-        // First call: check if workspace folder exists
-        .mockResolvedValueOnce({
-          data: [],
-          error: null,
-        })
-        // Second call: get all files in workspace
-        .mockResolvedValueOnce({
-          data: [{ name: 'file1.jpg', metadata: { size: 95 * 1024 * 1024 } }],
-          error: null,
-        })
-        // Third call: check for subfolders (none in this case)
-        .mockResolvedValueOnce({ data: [], error: null });
-
-      // Should use DEFAULT_WORKSPACE_STORAGE_QUOTA (100MB)
-      await expect(
-        checkStorageQuota(mockSupabaseClient, 'workspace-1', 10 * 1024 * 1024)
       ).rejects.toThrow(StorageQuotaError);
+
+      // Should only call get_workspace_drive_size, not get_workspace_storage_limit
+      expect(mockSupabaseClient.rpc).toHaveBeenCalledTimes(1);
+      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith(
+        'get_workspace_drive_size',
+        { ws_id: 'workspace-1' }
+      );
     });
 
     it('should handle errors during calculation gracefully', async () => {
@@ -224,18 +163,109 @@ describe('media-utils', () => {
         .spyOn(console, 'warn')
         .mockImplementation(() => {});
 
-      mockSupabaseClient.storage.list
-        .mockResolvedValueOnce({
-          data: [{ name: 'file1.jpg', metadata: { size: 1024 } }],
-          error: null,
-        })
-        .mockRejectedValueOnce(new Error('Calculation error'));
+      mockSupabaseClient.rpc.mockRejectedValueOnce(
+        new Error('Calculation error')
+      );
 
       await expect(
         checkStorageQuota(mockSupabaseClient, 'workspace-1', 5 * 1024 * 1024)
       ).resolves.toBeUndefined();
 
       expect(consoleWarnSpy).toHaveBeenCalled();
+      consoleWarnSpy.mockRestore();
+    });
+  });
+
+  describe('getWorkspaceStorageUsage', () => {
+    let mockSupabaseClient: any;
+
+    beforeEach(() => {
+      mockSupabaseClient = {
+        rpc: vi.fn(),
+      };
+    });
+
+    it('should return storage usage from RPC', async () => {
+      mockSupabaseClient.rpc.mockResolvedValueOnce({
+        data: 50 * 1024 * 1024,
+        error: null,
+      });
+
+      const result = await getWorkspaceStorageUsage(
+        mockSupabaseClient,
+        'workspace-1'
+      );
+
+      expect(result).toBe(50 * 1024 * 1024);
+      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith(
+        'get_workspace_drive_size',
+        { ws_id: 'workspace-1' }
+      );
+    });
+
+    it('should return null on error', async () => {
+      const consoleWarnSpy = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => {});
+
+      mockSupabaseClient.rpc.mockResolvedValueOnce({
+        data: null,
+        error: new Error('RPC error'),
+      });
+
+      const result = await getWorkspaceStorageUsage(
+        mockSupabaseClient,
+        'workspace-1'
+      );
+
+      expect(result).toBeNull();
+      consoleWarnSpy.mockRestore();
+    });
+  });
+
+  describe('getWorkspaceStorageLimit', () => {
+    let mockSupabaseClient: any;
+
+    beforeEach(() => {
+      mockSupabaseClient = {
+        rpc: vi.fn(),
+      };
+    });
+
+    it('should return storage limit from RPC', async () => {
+      mockSupabaseClient.rpc.mockResolvedValueOnce({
+        data: 200 * 1024 * 1024,
+        error: null,
+      });
+
+      const result = await getWorkspaceStorageLimit(
+        mockSupabaseClient,
+        'workspace-1'
+      );
+
+      expect(result).toBe(200 * 1024 * 1024);
+      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith(
+        'get_workspace_storage_limit',
+        { ws_id: 'workspace-1' }
+      );
+    });
+
+    it('should return default quota on error', async () => {
+      const consoleWarnSpy = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => {});
+
+      mockSupabaseClient.rpc.mockResolvedValueOnce({
+        data: null,
+        error: new Error('RPC error'),
+      });
+
+      const result = await getWorkspaceStorageLimit(
+        mockSupabaseClient,
+        'workspace-1'
+      );
+
+      expect(result).toBe(DEFAULT_WORKSPACE_STORAGE_QUOTA);
       consoleWarnSpy.mockRestore();
     });
   });

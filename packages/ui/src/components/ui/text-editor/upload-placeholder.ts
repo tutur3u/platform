@@ -1,3 +1,4 @@
+import type { Decoration } from '@tiptap/pm/view';
 import type { EditorState } from 'prosemirror-state';
 import { PluginKey } from 'prosemirror-state';
 
@@ -8,6 +9,28 @@ export const imageUploadPlaceholderPluginKey = new PluginKey(
 export const videoUploadPlaceholderPluginKey = new PluginKey(
   'videoUploadPlaceholder'
 );
+
+/**
+ * Spec type for upload placeholder decorations
+ */
+export interface UploadPlaceholderSpec {
+  id: string;
+}
+
+/**
+ * Type guard to check if a decoration has an upload placeholder spec
+ */
+function hasUploadPlaceholderSpec(
+  deco: Decoration
+): deco is Decoration & { spec: UploadPlaceholderSpec } {
+  const spec = (deco as Decoration & { spec?: unknown }).spec;
+  return (
+    typeof spec === 'object' &&
+    spec !== null &&
+    'id' in spec &&
+    typeof (spec as UploadPlaceholderSpec).id === 'string'
+  );
+}
 
 // Generate unique ID for each upload
 let uploadIdCounter = 0;
@@ -82,18 +105,17 @@ export function findUploadPlaceholder(
   state: EditorState,
   id: string,
   pluginKey: PluginKey
-): { pos: number; spec: { id: string } } | null {
+): { pos: number; spec: UploadPlaceholderSpec } | null {
   const decorations = pluginKey.getState(state);
   if (!decorations) return null;
 
-  let found: { pos: number; spec: { id: string } } | null = null;
+  let found: { pos: number; spec: UploadPlaceholderSpec } | null = null;
 
   // Iterate through all decorations to find the one with matching ID
   const allDecos = decorations.find();
   for (const deco of allDecos) {
-    const spec = (deco as any).spec;
-    if (spec?.id === id) {
-      found = { pos: deco.from, spec };
+    if (hasUploadPlaceholderSpec(deco) && deco.spec.id === id) {
+      found = { pos: deco.from, spec: deco.spec };
       break;
     }
   }
