@@ -535,6 +535,10 @@ export async function POST() {
           model: 'gemini-2.5-flash-native-audio-preview-09-2025',
           config: {
             responseModalities: [Modality.AUDIO],
+            proactivity: { proactiveAudio: true },
+            thinkingConfig: {
+              thinkingBudget: 0,
+            },
             speechConfig: {
               voiceConfig: {
                 prebuiltVoiceConfig: {
