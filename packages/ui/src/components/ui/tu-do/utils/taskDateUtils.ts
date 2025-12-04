@@ -1,3 +1,4 @@
+import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
 import {
   format,
   formatDistanceToNow,
@@ -18,9 +19,15 @@ export function formatSmartDate(date: Date): string {
 
 /**
  * Format date with time
+ * @param date - The date to format
+ * @param timeFormat - The time format preference ('12h' or '24h')
  */
-export function formatDateWithTime(date: Date): string {
-  return format(date, "MMM dd 'at' h:mm a");
+export function formatDateWithTime(
+  date: Date,
+  timeFormat: '12h' | '24h' = '12h'
+): string {
+  const timePattern = getTimeFormatPattern(timeFormat);
+  return format(date, `MMM dd 'at' ${timePattern}`);
 }
 
 /**

@@ -2,7 +2,9 @@ import { Calendar, Clock } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
+import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { cn } from '@tuturuuu/utils/format';
+import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
 import { format } from 'date-fns';
 import { memo } from 'react';
 import {
@@ -20,6 +22,8 @@ export const TaskCardDates = memo(function TaskCardDates({
   task,
   taskList,
 }: TaskCardDatesProps) {
+  const { timeFormat } = useCalendarPreferences();
+  const timePattern = getTimeFormatPattern(timeFormat);
   const startDate = task.start_date ? new Date(task.start_date) : null;
   const endDate = task.end_date ? new Date(task.end_date) : null;
   const taskIsOverdue = isOverdue(endDate);
@@ -60,7 +64,7 @@ export const TaskCardDates = memo(function TaskCardDates({
             </Badge>
           ) : (
             <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
-              {format(endDate, "MMM dd 'at' h:mm a")}
+              {format(endDate, `MMM dd 'at' ${timePattern}`)}
             </span>
           )}
         </div>

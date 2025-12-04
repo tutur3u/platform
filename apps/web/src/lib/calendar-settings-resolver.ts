@@ -10,11 +10,13 @@ type FirstDayOfWeek = 'auto' | 'sunday' | 'monday' | 'saturday';
 interface CalendarSettings {
   timezone: string;
   firstDayOfWeek: FirstDayOfWeek;
+  timeFormat: '12h' | '24h';
 }
 
 interface User {
   timezone?: string | null;
   first_day_of_week?: string | null;
+  time_format?: string | null;
 }
 
 interface Workspace {
@@ -61,6 +63,44 @@ export function detectLocaleFirstDay(locale?: string): FirstDayOfWeek {
 
   // Most European and other countries use Monday
   return 'monday';
+}
+
+/**
+ * Detects the preferred time format based on locale
+ * Uses Intl.DateTimeFormat to determine if the locale uses 12h or 24h format
+ */
+export function detectLocaleTimeFormat(locale?: string): '12h' | '24h' {
+  const userLocale =
+    locale || (typeof navigator !== 'undefined' ? navigator.language : 'en-US');
+
+  try {
+    // Use Intl.DateTimeFormat to detect the locale's preferred format
+    const formatter = new Intl.DateTimeFormat(userLocale, { hour: 'numeric' });
+    const parts = formatter.formatToParts(new Date(2000, 0, 1, 13, 0));
+    const hourPart = parts.find((p) => p.type === 'hour');
+
+    // If hour is "1" instead of "13", it's 12-hour format
+    return hourPart?.value === '1' ? '12h' : '24h';
+  } catch {
+    // Fallback to 12h for English locales, 24h for others
+    return userLocale.startsWith('en') ? '12h' : '24h';
+  }
+}
+
+/**
+ * Resolves the effective time format based on user setting
+ */
+export function resolveTimeFormat(
+  user?: User | null,
+  locale?: string
+): '12h' | '24h' {
+  // User setting takes priority
+  if (user?.time_format && user.time_format !== 'auto') {
+    return user.time_format as '12h' | '24h';
+  }
+
+  // Auto-detection based on locale
+  return detectLocaleTimeFormat(locale);
 }
 
 /**
@@ -117,6 +157,7 @@ export function resolveCalendarSettings(
   return {
     timezone: resolveTimezone(user, workspace),
     firstDayOfWeek: resolveFirstDayOfWeek(user, workspace, locale),
+    timeFormat: resolveTimeFormat(user, locale),
   };
 }
 

@@ -10,6 +10,7 @@ interface StructureProps {
   isCollapsed: boolean;
   setIsCollapsed: (isCollapsed: boolean) => void;
   hideSizeToggle?: boolean;
+  overlayOnExpand?: boolean;
   header?: ReactNode;
   mobileHeader?: ReactNode;
   sidebarHeader?: ReactNode;
@@ -26,6 +27,7 @@ export function Structure({
   isCollapsed,
   setIsCollapsed,
   hideSizeToggle = false,
+  overlayOnExpand = false,
   header,
   mobileHeader,
   sidebarHeader,
@@ -93,7 +95,8 @@ export function Structure({
               isCollapsed
                 ? 'w-16 bg-background/50 max-md:w-0'
                 : 'w-64 bg-background max-sm:w-full',
-              isCollapsed && 'max-md:translate-x-full'
+              isCollapsed && 'max-md:translate-x-full',
+              overlayOnExpand && !isCollapsed && 'md:z-40'
             )}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
@@ -171,7 +174,7 @@ export function Structure({
           <main
             className={cn(
               'relative flex h-full min-h-screen flex-col overflow-x-hidden transition-all duration-300 ease-in-out',
-              isCollapsed ? 'md:pl-16' : 'md:pl-64'
+              isCollapsed || overlayOnExpand ? 'md:pl-16' : 'md:pl-64'
             )}
           >
             {header && <div className="mb-4 hidden md:block">{header}</div>}

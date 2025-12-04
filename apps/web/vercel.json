@@ -19,6 +19,10 @@
     {
       "path": "/api/cron/calendar/smart-schedule",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/process-notification-batches",
+      "schedule": "*/10 * * * *"
     }
   ],
   "functions": {

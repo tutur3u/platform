@@ -35,6 +35,7 @@ type SearchUserResult = {
   bio: string;
   timezone?: string;
   first_day_of_week?: string;
+  time_format?: string;
   task_auto_assign_to_self?: boolean;
   user_id: string;
   enabled: boolean;
@@ -317,6 +318,7 @@ async function getPlatformUserData({
               user.allow_discord_integrations ?? false, // Provide default value
             timezone: user.timezone ?? null, // Provide default value
             first_day_of_week: user.first_day_of_week ?? null, // Provide default value
+            time_format: user.time_format ?? null, // Provide default value
             task_auto_assign_to_self: user.task_auto_assign_to_self ?? null, // Provide default value
           })),
           userCount: (data || []).length,
@@ -331,6 +333,7 @@ async function getPlatformUserData({
           allow_discord_integrations: user.allow_discord_integrations ?? false, // Provide default value
           timezone: user.timezone ?? null, // Provide default value
           first_day_of_week: user.first_day_of_week ?? null, // Provide default value
+          time_format: user.time_format ?? null, // Provide default value
           task_auto_assign_to_self: user.task_auto_assign_to_self ?? null, // Provide default value
         })),
         userCount: countData || 0,

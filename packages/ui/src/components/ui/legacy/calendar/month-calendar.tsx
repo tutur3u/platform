@@ -5,6 +5,7 @@ import type { Workspace } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Button } from '@tuturuuu/ui/button';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { usePopoverManager } from '@tuturuuu/ui/hooks/use-popover-manager';
 import {
   HoverCard,
@@ -14,6 +15,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import { cn } from '@tuturuuu/utils/format';
+import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
 import {
   eachDayOfInterval,
   endOfMonth,
@@ -99,6 +101,8 @@ export const MonthCalendar = ({
 }: MonthCalendarProps) => {
   const { getCurrentEvents, addEmptyEvent, openModal } = useCalendar();
   const { settings } = useCalendarSettings();
+  const { timeFormat } = useCalendarPreferences();
+  const timePattern = getTimeFormatPattern(timeFormat);
   const [currDate, setCurrDate] = useState(date);
   const [hoveredDay, setHoveredDay] = useState<Date | null>(null);
   const tz = settings?.timezone?.timezone;
@@ -371,7 +375,7 @@ export const MonthCalendar = ({
     try {
       const start = new Date(event.start_at);
       const end = new Date(event.end_at);
-      return `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
+      return `${format(start, timePattern)} - ${format(end, timePattern)}`;
     } catch (_) {
       return '';
     }

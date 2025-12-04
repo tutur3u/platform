@@ -13,6 +13,7 @@ import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
+import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import {
   Dialog,
   DialogContent,
@@ -245,6 +246,11 @@ export function TaskPreviewDialog({
   createTasksMutation,
 }: TaskPreviewDialogProps) {
   const t = useTranslations();
+  const {
+    weekStartsOn,
+    timezone: tzPreference,
+    timeFormat,
+  } = useCalendarPreferences();
 
   // Label-related state
   const [taskLabelSelections, setTaskLabelSelections] = useState<
@@ -1379,6 +1385,11 @@ export function TaskPreviewDialog({
                           }
                           showTimeSelect
                           disabled={isCreating}
+                          preferences={{
+                            weekStartsOn,
+                            timezone: tzPreference,
+                            timeFormat,
+                          }}
                         />
                         {!dueDateValue ? (
                           <p className="text-muted-foreground text-xs">

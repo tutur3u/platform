@@ -17,6 +17,7 @@ interface DragPreviewProps {
   height: number;
   isReversed: boolean;
   color: string;
+  timeFormat?: '12h' | '24h';
 }
 
 const DragPreview = ({
@@ -25,7 +26,9 @@ const DragPreview = ({
   top,
   height,
   color,
+  timeFormat = '12h',
 }: DragPreviewProps) => {
+  const timePattern = timeFormat === '24h' ? 'HH:mm' : 'h:mm a';
   // Calculate duration in minutes
   const durationMs = endDate.getTime() - startDate.getTime();
   const durationMinutes = Math.round(durationMs / (1000 * 60));
@@ -60,10 +63,10 @@ const DragPreview = ({
         )}
       >
         <div className="absolute left-2 text-left font-semibold text-xs">
-          {format(startDate, 'h:mm a')}
+          {format(startDate, timePattern)}
         </div>
         <div className="absolute bottom-1 left-2 text-left font-semibold text-xs">
-          {format(endDate, 'h:mm a')}
+          {format(endDate, timePattern)}
         </div>
       </div>
       <div
@@ -740,6 +743,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
           height={dragPreview.height}
           isReversed={dragPreview.isReversed}
           color={settings?.categoryColors?.categories?.[0]?.color || 'BLUE'}
+          timeFormat={settings?.appearance?.timeFormat}
         />
       )}
 

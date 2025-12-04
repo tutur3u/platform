@@ -582,6 +582,7 @@ export function Structure({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       hideSizeToggle={behavior === 'hover'}
+      overlayOnExpand={behavior === 'hover'}
     >
       {children}
     </BaseStructure>

@@ -17,6 +17,7 @@ import TasksAssignedToMe from './tasks/tasks-assigned-to-me';
 import TimeTrackingMetrics from './time-tracker/time-tracking-metrics';
 import RecentTumeetPlans from './tumeet/recent-plans';
 import UserGroupQuickActions from './user-groups/quick-actions';
+import VoiceAssistantCard from './voice-assistant-card';
 
 export const metadata: Metadata = {
   title: 'Workspace Details',
@@ -84,6 +85,8 @@ export default async function WorkspaceHomePage({ params }: Props) {
             {/* Sidebar - smaller widgets */}
             {currentUser && (
               <div className="w-full shrink-0 space-y-4 xl:max-w-sm 2xl:max-w-md">
+                {isInternalUser && <VoiceAssistantCard wsId={wsId} />}
+
                 <Suspense fallback={<DashboardCardSkeleton />}>
                   <RecentChangelog />
                 </Suspense>
