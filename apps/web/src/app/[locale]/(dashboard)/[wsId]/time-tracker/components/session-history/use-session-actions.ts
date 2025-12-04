@@ -111,7 +111,7 @@ export function useSessionActions({
     null
   );
 
-  const getValidationErrorMessage = (result: TimeValidationResult): string => {
+  const getValidationErrorMessage = useCallback((result: TimeValidationResult): string => {
     if (!result.errorCode) return '';
   
     const params = result.errorParams || {};
@@ -131,7 +131,7 @@ export function useSessionActions({
       default:
         return t('validation_invalid_time');
     }
-  };
+  }, []);
 
   const setEditFormState = useCallback(
     <K extends keyof EditFormState>(key: K, value: EditFormState[K]) => {

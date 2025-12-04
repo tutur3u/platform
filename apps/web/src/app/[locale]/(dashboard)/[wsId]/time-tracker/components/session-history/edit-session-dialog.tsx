@@ -34,10 +34,10 @@ import {
 } from './session-utils';
 import {
   validateStartTime,
-  validateEndTime,
-  validateTimeRange,
+  validateEndTime
 } from '@/lib/time-validation';
 import { useSessionActions } from './use-session-actions';
+import type { TimeValidationResult } from '@/lib/time-validation';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -92,9 +92,12 @@ export function EditSessionDialog({
 
     // Only validate if editing is allowed (not older than threshold)
     if (session && !session.is_running && !isOlderThanThreshold) {
+      let startValidation: TimeValidationResult = { isValid: true };
+      let endValidation: TimeValidationResult = { isValid: true };
+
       // Validate start time
       if (formState.startTime) {
-        const startValidation = validateStartTime(formState.startTime);
+        startValidation = validateStartTime(formState.startTime);
         if (!startValidation.isValid) {
           errors.startTime = getValidationErrorMessage(startValidation);
         }
@@ -102,23 +105,27 @@ export function EditSessionDialog({
 
       // Validate end time
       if (formState.endTime) {
-        const endValidation = validateEndTime(formState.endTime);
+        endValidation = validateEndTime(formState.endTime);
         if (!endValidation.isValid) {
           errors.endTime = getValidationErrorMessage(endValidation);
         }
       }
 
-      // Validate time range
-      if (formState.startTime && formState.endTime) {
-        const rangeValidation = validateTimeRange(formState.startTime, formState.endTime);
-        if (!rangeValidation.isValid) {
-          errors.timeRange = getValidationErrorMessage(rangeValidation);
+      // Only validate time range specific errors (skip individual time validations)
+      if (formState.startTime && formState.endTime && startValidation.isValid && endValidation.isValid) {
+        const startTime = dayjs(formState.startTime);
+        const endTime = dayjs(formState.endTime);
+
+        if (endTime.isBefore(startTime)) {
+          errors.timeRange = getValidationErrorMessage({ isValid: false, errorCode: 'END_BEFORE_START' });
+        } else if (endTime.diff(startTime, 'minutes') < 1) {
+          errors.timeRange = getValidationErrorMessage({ isValid: false, errorCode: 'DURATION_TOO_SHORT' });
         }
       }
     }
 
     setValidationErrors(errors);
-  }, [formState.startTime, formState.endTime, session, isOlderThanThreshold, getValidationErrorMessage]);
+  }, [formState.startTime, formState.endTime, session, isOlderThanThreshold]);
 
   return (
     <Dialog open={!!session} onOpenChange={() => onClose()}>
@@ -259,8 +266,13 @@ export function EditSessionDialog({
                   </div>
                 </div>
                 {Object.keys(validationErrors).length > 0 && (
-                  <div className="rounded-lg bg-dynamic-red/10 p-3">
-                    <p className="text-dynamic-red text-sm">{Object.values(validationErrors)[0]}</p>
+                  <div className="rounded-lg bg-dynamic-red/10 p-3" aria-live="polite">
+                    {Object.values(validationErrors).map((error, index) => (
+                      <div key={index} className="flex items-start gap-2 text-dynamic-red text-sm">
+                        <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />
+                        <span>{error}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
                 {/* Warning about the threshold limit */}

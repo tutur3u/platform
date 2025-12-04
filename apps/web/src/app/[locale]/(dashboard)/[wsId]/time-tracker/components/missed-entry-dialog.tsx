@@ -42,7 +42,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import { formatDuration } from '@/lib/time-format';
 import {
-  validateTimeRange,
   validateStartTime,
   validateEndTime,
 } from '@/lib/time-validation';
@@ -390,10 +389,16 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
       errors.endTime = getValidationErrorMessage(endValidation);
     }
 
-    // Validate time range
-    const rangeValidation = validateTimeRange(missedEntryStartTime, missedEntryEndTime);
-    if (!rangeValidation.isValid) {
-      errors.timeRange = getValidationErrorMessage(rangeValidation);
+    // Only validate time range specific errors (skip individual time validations)
+    if (missedEntryStartTime && missedEntryEndTime && startValidation.isValid && endValidation.isValid) {
+      const startTime = dayjs(missedEntryStartTime);
+      const endTime = dayjs(missedEntryEndTime);
+
+      if (endTime.isBefore(startTime)) {
+        errors.timeRange = getValidationErrorMessage({ isValid: false, errorCode: 'END_BEFORE_START' });
+      } else if (endTime.diff(startTime, 'minutes') < 1) {
+        errors.timeRange = getValidationErrorMessage({ isValid: false, errorCode: 'DURATION_TOO_SHORT' });
+      }
     }
 
     setValidationErrors(errors);
@@ -512,17 +517,10 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
       return;
     }
 
-    // Check if there are validation errors
+    // Check if there are validation errors (includes time range validation)
     if (Object.keys(validationErrors).length > 0) {
       const allErrors = Object.values(validationErrors).join('. ');
       toast.error(allErrors);
-      return;
-    }
-
-    // Validate time range
-    const rangeValidation = validateTimeRange(missedEntryStartTime, missedEntryEndTime);
-    if (!rangeValidation.isValid) {
-      toast.error(getValidationErrorMessage(rangeValidation));
       return;
     }
 
@@ -871,12 +869,6 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
                 disabled={isLoading}
                 className={validationErrors.startTime ? 'border-dynamic-red' : ''}
               />
-              {validationErrors.startTime && (
-                <div className="flex items-center gap-1 text-dynamic-red text-sm mt-1" aria-live="polite">
-                  <AlertCircle className="h-3 w-3" />
-                  {validationErrors.startTime}
-                </div>
-              )}
             </div>
             <div>
               <Label htmlFor="missed-entry-end-time">
@@ -890,18 +882,16 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
                 disabled={isLoading}
                 className={validationErrors.endTime ? 'border-dynamic-red' : ''}
               />
-              {validationErrors.endTime && (
-                <div className="flex items-center gap-1 text-dynamic-red text-sm mt-1" aria-live="polite">
-                  <AlertCircle className="h-3 w-3" />
-                  {validationErrors.endTime}
-                </div>
-              )}
             </div>
           </div>
-          {validationErrors.timeRange && (
-            <div className="flex items-center gap-1 text-dynamic-red text-sm" aria-live="polite">
-              <AlertCircle className="h-3 w-3" />
-              {validationErrors.timeRange}
+          {Object.keys(validationErrors).length > 0 && (
+            <div className="rounded-lg bg-dynamic-red/10 p-3" aria-live="polite">
+              {Object.values(validationErrors).map((error, index) => (
+                <div key={index} className="flex items-start gap-2 text-dynamic-red text-sm">
+                  <AlertCircle className="h-3 w-3 mt-0.5 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              ))}
             </div>
           )}
 
