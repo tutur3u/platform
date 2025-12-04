@@ -293,7 +293,7 @@ export function RecycleBinPanel({
             </AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. These tasks will be permanently
-              removed from the database.
+              removed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

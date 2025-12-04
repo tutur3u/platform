@@ -112,8 +112,7 @@ export function TaskDeleteDialog({
           <div className="flex-1">
             <DialogTitle className="text-base">Delete task?</DialogTitle>
             <DialogDescription className="mt-1 text-muted-foreground text-sm">
-              This action cannot be undone. The task will be permanently
-              removed.
+              Are you sure you want to move this task to the recycle bin?
             </DialogDescription>
           </div>
         </div>
