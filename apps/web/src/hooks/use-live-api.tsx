@@ -1,5 +1,14 @@
 'use client';
 
+import { AudioStreamer } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/audio-streamer';
+import { MultimodalLiveClient } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/multimodal-live-client';
+import { audioContext } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/utils';
+import VolMeterWorket from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/worklets/vol-meter';
+import type {
+  LiveConfig,
+  ToolCall,
+  ToolResponse,
+} from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/multimodal-live';
 import {
   createContext,
   type FC,
@@ -11,15 +20,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import { AudioStreamer } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/audio-streamer';
-import { MultimodalLiveClient } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/multimodal-live-client';
-import { audioContext } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/utils';
-import VolMeterWorket from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/worklets/vol-meter';
-import type {
-  LiveConfig,
-  ToolCall,
-  ToolResponse,
-} from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/multimodal-live';
 
 export type UseLiveAPIResults = {
   client: MultimodalLiveClient;
@@ -103,16 +103,22 @@ export function useLiveAPI({ apiKey }: { apiKey: string }): UseLiveAPIResults {
     const onAudio = (data: ArrayBuffer) =>
       audioStreamerRef.current?.addPCM16(new Uint8Array(data));
 
+    // When the turn completes, flush any remaining audio in the processing buffer
+    // This ensures the last chunk of audio (which may be smaller than bufferSize) is played
+    const onTurnComplete = () => audioStreamerRef.current?.complete();
+
     client
       .on('close', onClose)
       .on('interrupted', stopAudioStreamer)
-      .on('audio', onAudio);
+      .on('audio', onAudio)
+      .on('turncomplete', onTurnComplete);
 
     return () => {
       client
         .off('close', onClose)
         .off('interrupted', stopAudioStreamer)
-        .off('audio', onAudio);
+        .off('audio', onAudio)
+        .off('turncomplete', onTurnComplete);
     };
   }, [client]);
 

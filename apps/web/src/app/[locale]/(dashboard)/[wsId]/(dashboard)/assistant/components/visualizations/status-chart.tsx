@@ -45,15 +45,15 @@ export function StatusChart({ data }: StatusChartProps) {
     total > 0 ? Math.round((completedCount / total) * 100) : 0;
 
   return (
-    <Card className="overflow-hidden border-border/50 bg-gradient-to-b from-card to-card/95 shadow-xl backdrop-blur-md">
+    <Card className="overflow-hidden border-border/50 bg-linear-to-b from-card to-card/95 shadow-xl backdrop-blur-md">
       {/* Header */}
-      <div className="border-b border-border/30 bg-muted/20 px-4 py-3">
+      <div className="border-border/30 border-b bg-muted/20 px-4 py-3 pr-12">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
             <h3 className="font-semibold text-sm">{title}</h3>
           </div>
-          <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground text-xs font-medium">
+          <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs">
             {total} tasks
           </span>
         </div>
@@ -61,9 +61,10 @@ export function StatusChart({ data }: StatusChartProps) {
 
       {/* Progress Ring Summary */}
       {total > 0 && (
-        <div className="flex items-center justify-center gap-4 border-b border-border/20 bg-muted/10 px-4 py-4">
+        <div className="flex items-center justify-center gap-4 border-border/20 border-b bg-muted/10 px-4 py-4">
           <div className="relative h-16 w-16">
-            <svg className="h-16 w-16 -rotate-90 transform">
+            <svg className="-rotate-90 h-16 w-16 transform">
+              <title>Overall Completion Percentage</title>
               <circle
                 className="text-muted/30"
                 strokeWidth="6"
@@ -85,7 +86,7 @@ export function StatusChart({ data }: StatusChartProps) {
                 cy="32"
               />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-sm font-bold">
+            <span className="absolute inset-0 flex items-center justify-center font-bold text-sm">
               {completedPercentage}%
             </span>
           </div>
@@ -125,13 +126,13 @@ export function StatusChart({ data }: StatusChartProps) {
                         status.color
                       )}
                     />
-                    <span className="text-sm font-medium">{status.label}</span>
+                    <span className="font-medium text-sm">{status.label}</span>
                   </div>
                   <div className="flex items-center gap-2 text-right">
                     <span className={cn('font-bold text-sm', status.textColor)}>
                       {count}
                     </span>
-                    <span className="text-muted-foreground text-xs w-10">
+                    <span className="w-10 text-muted-foreground text-xs">
                       ({percentage.toFixed(0)}%)
                     </span>
                   </div>

@@ -4,14 +4,16 @@ export type VisualizationType =
   | 'task_list'
   | 'gantt_timeline'
   | 'status_distribution'
-  | 'task_detail';
+  | 'task_detail'
+  | 'google_search'
+  | 'core_mention';
 
 export interface BaseVisualization {
   id: string;
   type: VisualizationType;
   createdAt: number;
   dismissed: boolean;
-  side: 'left' | 'right';
+  side: 'left' | 'right' | 'center';
 }
 
 // Task list visualization - shows a list of tasks with basic info
@@ -84,12 +86,37 @@ export interface TaskDetailVisualization extends BaseVisualization {
   };
 }
 
+// Google Search visualization - displays search query and sources
+export interface GoogleSearchVisualization extends BaseVisualization {
+  type: 'google_search';
+  data: {
+    query: string;
+    results: Array<{
+      title: string;
+      url: string;
+    }>;
+    totalResults?: number;
+  };
+}
+
+// Core mention visualization - prominent center card for key information
+export interface CoreMentionVisualization extends BaseVisualization {
+  type: 'core_mention';
+  data: {
+    title: string;
+    content: string;
+    emphasis?: 'info' | 'warning' | 'success' | 'highlight';
+  };
+}
+
 // Union type for all visualizations
 export type Visualization =
   | TaskListVisualization
   | GanttTimelineVisualization
   | StatusDistributionVisualization
-  | TaskDetailVisualization;
+  | TaskDetailVisualization
+  | GoogleSearchVisualization
+  | CoreMentionVisualization;
 
 // Visualization action types returned from backend
 export type VisualizationAction =
@@ -97,6 +124,9 @@ export type VisualizationAction =
   | 'visualize_timeline'
   | 'visualize_status_breakdown'
   | 'visualize_task_detail'
+  | 'visualize_google_search'
+  | 'highlight_core_topic'
+  | 'dismiss_core_mention'
   | 'dismiss_visualization';
 
 // Tool response shape from backend

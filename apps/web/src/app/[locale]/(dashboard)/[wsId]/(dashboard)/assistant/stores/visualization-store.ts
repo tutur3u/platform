@@ -5,20 +5,32 @@ interface VisualizationStoreState {
   visualizations: Visualization[];
   maxVisualizations: number;
   nextSide: 'left' | 'right';
+  centerVisualization: Visualization | null;
 
   // Add a new visualization (returns the generated ID)
   addVisualization: (
     vis: Omit<Visualization, 'id' | 'createdAt' | 'dismissed' | 'side'>
   ) => string;
 
+  // Set the center visualization (replaces previous, only one at a time)
+  setCenterVisualization: (
+    vis: Omit<Visualization, 'id' | 'createdAt' | 'dismissed' | 'side'> | null
+  ) => string | null;
+
   // Mark a visualization as dismissed (triggers exit animation)
   dismissVisualization: (id: string) => void;
 
-  // Dismiss all active visualizations
+  // Dismiss the center visualization
+  dismissCenterVisualization: () => void;
+
+  // Dismiss all active visualizations (including center)
   dismissAllVisualizations: () => void;
 
   // Remove a visualization from the array (call after exit animation)
   removeVisualization: (id: string) => void;
+
+  // Remove the center visualization after animation
+  removeCenterVisualization: () => void;
 
   // Clear all visualizations immediately
   clearAllVisualizations: () => void;
@@ -29,6 +41,7 @@ export const useVisualizationStore = create<VisualizationStoreState>(
     visualizations: [],
     maxVisualizations: 5,
     nextSide: 'left' as const,
+    centerVisualization: null,
 
     addVisualization: (vis) => {
       const id = crypto.randomUUID();
@@ -55,11 +68,38 @@ export const useVisualizationStore = create<VisualizationStoreState>(
       return id;
     },
 
+    setCenterVisualization: (vis) => {
+      if (vis === null) {
+        set({ centerVisualization: null });
+        return null;
+      }
+
+      const id = crypto.randomUUID();
+      const newVis: Visualization = {
+        ...vis,
+        id,
+        createdAt: Date.now(),
+        dismissed: false,
+        side: 'center',
+      } as Visualization;
+
+      set({ centerVisualization: newVis });
+      return id;
+    },
+
     dismissVisualization: (id) => {
       set((state) => ({
         visualizations: state.visualizations.map((v) =>
           v.id === id ? { ...v, dismissed: true } : v
         ),
+      }));
+    },
+
+    dismissCenterVisualization: () => {
+      set((state) => ({
+        centerVisualization: state.centerVisualization
+          ? { ...state.centerVisualization, dismissed: true }
+          : null,
       }));
     },
 
@@ -69,6 +109,9 @@ export const useVisualizationStore = create<VisualizationStoreState>(
           ...v,
           dismissed: true,
         })),
+        centerVisualization: state.centerVisualization
+          ? { ...state.centerVisualization, dismissed: true }
+          : null,
       }));
     },
 
@@ -78,8 +121,12 @@ export const useVisualizationStore = create<VisualizationStoreState>(
       }));
     },
 
+    removeCenterVisualization: () => {
+      set({ centerVisualization: null });
+    },
+
     clearAllVisualizations: () => {
-      set({ visualizations: [] });
+      set({ visualizations: [], centerVisualization: null });
     },
   })
 );

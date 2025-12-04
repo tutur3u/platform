@@ -352,19 +352,19 @@ async function getMyTasks(
   if (category === 'all' || category === 'overdue') {
     result.overdue = {
       count: overdueTasks.length,
-      tasks: sortTasks(overdueTasks).slice(0, 10), // Sort then limit to 10 per category
+      tasks: sortTasks(overdueTasks).slice(0, 50), // Sort then limit to 50 per category
     };
   }
   if (category === 'all' || category === 'today') {
     result.today = {
       count: todayTasks.length,
-      tasks: sortTasks(todayTasks).slice(0, 10),
+      tasks: sortTasks(todayTasks).slice(0, 50),
     };
   }
   if (category === 'all' || category === 'upcoming') {
     result.upcoming = {
       count: upcomingTasks.length,
-      tasks: sortTasks(upcomingTasks).slice(0, 10),
+      tasks: sortTasks(upcomingTasks).slice(0, 50),
     };
   }
 
@@ -377,7 +377,7 @@ async function searchTasks(
 ) {
   const supabase = await createClient();
   const query = args.query as string;
-  const matchCount = Math.min((args.matchCount as number) || 10, 50);
+  const matchCount = Math.min((args.matchCount as number) || 50, 50);
   const matchThreshold = 0.3;
 
   // Expand query for better semantic matching
@@ -838,7 +838,7 @@ async function visualizeTaskList(
       filteredTasks = activeTasks;
     }
 
-    taskIds = filteredTasks.slice(0, 10).map((t: RpcTaskBasic) => t.task_id);
+    taskIds = filteredTasks.slice(0, 50).map((t: RpcTaskBasic) => t.task_id);
 
     if (taskIds.length === 0) {
       return {
@@ -967,7 +967,7 @@ async function visualizeTimeline(
     );
 
     taskIds = tasksWithDates
-      .slice(0, 10)
+      .slice(0, 50)
       .map((t: RpcTaskWithDates) => t.task_id);
 
     if (taskIds.length === 0) {

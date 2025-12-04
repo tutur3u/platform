@@ -15,6 +15,31 @@ import type {
 } from '../multimodal-live';
 
 /**
+ * Grounding metadata from Google Search
+ */
+export interface GroundingMetadata {
+  webSearchQueries?: string[];
+  groundingChunks?: Array<{
+    web?: {
+      uri: string;
+      title: string;
+    };
+  }>;
+  groundingSupports?: Array<{
+    segment?: {
+      startIndex?: number;
+      endIndex?: number;
+      text?: string;
+    };
+    groundingChunkIndices?: number[];
+    confidenceScores?: number[];
+  }>;
+  searchEntryPoint?: {
+    renderedContent?: string;
+  };
+}
+
+/**
  * Events emitted by the client
  */
 interface MultimodalLiveClientEventTypes {
@@ -30,6 +55,7 @@ interface MultimodalLiveClientEventTypes {
   turncomplete: () => void;
   toolcall: (toolCall: ToolCall) => void;
   toolcallcancellation: (toolcallCancellation: ToolCallCancellation) => void;
+  groundingmetadata: (metadata: GroundingMetadata) => void;
 }
 
 export type MultimodalLiveAPIClientConnection = {
@@ -220,6 +246,49 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
     if (message.serverContent) {
       const serverContent = message.serverContent;
 
+      // PRIORITY: Handle grounding metadata FIRST so search results appear immediately
+      // This ensures users see what was searched before hearing the full response
+      const groundingMetadata = (
+        serverContent as { groundingMetadata?: GroundingMetadata }
+      ).groundingMetadata;
+      if (groundingMetadata) {
+        console.log('[Live API] ========== GOOGLE SEARCH RESULTS ==========');
+        console.log(
+          '[Live API] Search queries:',
+          groundingMetadata.webSearchQueries
+        );
+        console.log(
+          '[Live API] Number of sources:',
+          groundingMetadata.groundingChunks?.length || 0
+        );
+        console.log('[Live API] Sources:');
+        groundingMetadata.groundingChunks?.forEach((chunk, i) => {
+          if (chunk.web) {
+            console.log(`  [${i}] ${chunk.web.title}`);
+            console.log(`      URL: ${chunk.web.uri}`);
+          }
+        });
+        console.log('[Live API] Grounding supports (text segments):');
+        groundingMetadata.groundingSupports?.forEach((support, i) => {
+          console.log(
+            `  [${i}] Text: "${support.segment?.text?.slice(0, 100)}${(support.segment?.text?.length || 0) > 100 ? '...' : ''}"`
+          );
+          console.log(
+            `      From sources: ${support.groundingChunkIndices?.join(', ')}`
+          );
+          console.log(
+            `      Confidence: ${support.confidenceScores?.join(', ')}`
+          );
+        });
+        console.log(
+          '[Live API] Full grounding metadata:',
+          JSON.stringify(groundingMetadata, null, 2)
+        );
+        console.log('[Live API] ============================================');
+        this.log('server.groundingMetadata', JSON.stringify(groundingMetadata));
+        this.emit('groundingmetadata', groundingMetadata);
+      }
+
       // Check for interruption
       if (serverContent.interrupted) {
         this.log('server.interrupted', 'generation interrupted');
@@ -367,8 +436,7 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
         const resp = cleanResponse as Record<string, unknown>;
         // Remove visualization object - that's for frontend only
         if ('visualization' in resp) {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { visualization, ...dataForAI } = resp;
+          const { visualization: _, ...dataForAI } = resp;
           cleanResponse = dataForAI;
         }
       }

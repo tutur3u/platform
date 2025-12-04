@@ -23,6 +23,12 @@ CORE PERSONALITY
 
 ---
 AVAILABLE TOOLS
+
+- Google Search (built-in)
+Purpose: Search the web for real-time information
+When to use: When user asks about current events, recent news, weather, sports scores, or any information that requires up-to-date data beyond your knowledge cutoff. Also useful for fact-checking and finding recent information.
+Note: This is automatically handled - just respond naturally and the search will be performed when needed.
+
 - get_my_tasks
 Purpose: Fetch user's tasks (overdue, today, upcoming)
 When to use: First call for any "show my tasks" request
@@ -257,6 +263,53 @@ Example flow for "Show me more":
 Example flow for "What about today's tasks?":
 1. Call visualize_task_list(title: "Today's Tasks", category: "today") - tasks are fetched automatically!
 2. Say: "Here are your tasks for today..." (visualization appears alongside any existing ones)
+
+---
+
+GOOGLE SEARCH INTEGRATION
+
+When you use Google Search to find information:
+- Search results will automatically be displayed on the user's screen as a visual card
+- You don't need to call any visualization tool - it happens automatically
+- Simply acknowledge that you searched and summarize the findings naturally
+- The user can see the source links while you explain the information
+
+Example: "I found some information about that. [Results appear on screen] According to recent sources..."
+
+---
+
+CORE TOPIC HIGHLIGHTING (highlight_core_topic)
+
+Use this tool to emphasize the MOST IMPORTANT information being discussed. The highlight appears prominently in the CENTER of the screen and captures the user's attention.
+
+When to use:
+- Key decisions or conclusions reached during conversation
+- Critical facts the user needs to remember
+- The core answer to the user's main question
+- Important warnings or time-sensitive information
+- Summary of complex information into key takeaways
+
+When NOT to use:
+- For every response (use sparingly for impact)
+- For task lists or multiple items (use other visualizations)
+- For routine information
+
+Guidelines:
+- Keep title short and impactful (2-6 words)
+- Content should be the essential point (1-3 sentences)
+- Choose emphasis based on context:
+  - "info" - factual information, explanations
+  - "warning" - urgent matters, deadlines, cautions
+  - "success" - completed actions, achievements
+  - "highlight" - key insights, important points (default)
+- Only one can be shown at a time - use strategically
+- Dismiss when conversation moves to new topic (call dismiss_core_mention)
+
+Examples:
+- User asks about project deadline: highlight_core_topic(title: "Project Deadline", content: "The proposal is due Friday, March 15th at 5 PM EST.", emphasis: "warning")
+- User completes important task: highlight_core_topic(title: "Task Complete", content: "All quarterly reports have been submitted successfully.", emphasis: "success")
+- Key insight from discussion: highlight_core_topic(title: "Key Insight", content: "Your highest priority is the API integration - it blocks 3 other tasks.", emphasis: "highlight")
+- User asks a factual question after search: highlight_core_topic(title: "Answer Found", content: "The Brazil vs Argentina match was on November 21, 2023.", emphasis: "info")
 `;
 
 // Task management tool declarations
@@ -486,6 +539,42 @@ const VISUALIZATION_TOOL_DECLARATIONS = [
       required: ['visualizationId'],
     },
   },
+  {
+    name: 'highlight_core_topic',
+    description:
+      'Display a prominent card in the CENTER of the screen highlighting the core matter or key information being discussed. Use this to emphasize critical points, important decisions, key facts, or the main topic. Only one can be shown at a time - calling this replaces any previous core highlight.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        title: {
+          type: Type.STRING,
+          description:
+            'Short, impactful headline for the core topic (2-6 words)',
+        },
+        content: {
+          type: Type.STRING,
+          description:
+            'The key information or core matter to highlight (1-3 sentences)',
+        },
+        emphasis: {
+          type: Type.STRING,
+          description:
+            'Visual style: "info" (blue), "warning" (orange), "success" (green), or "highlight" (purple, default)',
+        },
+      } as Record<string, { type: Type; description: string }>,
+      required: ['title', 'content'],
+    },
+  },
+  {
+    name: 'dismiss_core_mention',
+    description:
+      'Dismiss/hide the currently displayed core topic highlight from the center of the screen. Use when the user is done with the highlighted information or wants to clear it.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {} as Record<string, never>,
+      required: [],
+    },
+  },
 ];
 
 // Combined tool declarations
@@ -552,7 +641,11 @@ export async function POST() {
             },
             // Tools configuration - this is CRITICAL for function calling
             // MUST be inside config object to be embedded in the token
-            tools: [{ functionDeclarations: ALL_TOOL_DECLARATIONS }],
+            // Google Search is added as a built-in tool for real-time information
+            tools: [
+              { functionDeclarations: ALL_TOOL_DECLARATIONS },
+              { googleSearch: {} },
+            ],
             toolConfig: {
               functionCallingConfig: {
                 mode: FunctionCallingConfigMode.AUTO,
@@ -565,8 +658,9 @@ export async function POST() {
 
     console.log('[Token] Creating token with configuration:', {
       model: tokenConfig.config.liveConnectConstraints.model,
-      toolCount: ALL_TOOL_DECLARATIONS.length,
-      toolNames: ALL_TOOL_DECLARATIONS.map((t) => t.name),
+      functionDeclarationCount: ALL_TOOL_DECLARATIONS.length,
+      functionNames: ALL_TOOL_DECLARATIONS.map((t) => t.name),
+      builtInTools: ['googleSearch'],
       mode: FunctionCallingConfigMode.AUTO,
       hasSystemInstruction:
         !!tokenConfig.config.liveConnectConstraints.config.systemInstruction,

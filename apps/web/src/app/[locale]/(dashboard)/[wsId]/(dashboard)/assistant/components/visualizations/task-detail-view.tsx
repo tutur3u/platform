@@ -101,7 +101,7 @@ export function TaskDetailView({ data }: TaskDetailViewProps) {
   const dueDateInfo = getRelativeDate(endDate);
 
   return (
-    <Card className="overflow-hidden border-border/50 bg-gradient-to-b from-card to-card/95 shadow-xl backdrop-blur-md">
+    <Card className="overflow-hidden border-border/50 bg-linear-to-b from-card to-card/95 shadow-xl backdrop-blur-md">
       {/* Status Banner */}
       {completed && (
         <div className="flex items-center justify-center gap-2 bg-dynamic-green/10 px-4 py-2 text-dynamic-green">
@@ -111,7 +111,7 @@ export function TaskDetailView({ data }: TaskDetailViewProps) {
       )}
 
       {/* Header with Task Name */}
-      <div className="border-b border-border/30 px-4 py-4">
+      <div className="border-border/30 border-b px-4 py-4 pr-12">
         <div className="flex items-start gap-3">
           {!completed && (
             <div className="mt-0.5">
@@ -179,7 +179,7 @@ export function TaskDetailView({ data }: TaskDetailViewProps) {
           <div className="rounded-lg bg-muted/20 p-3">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-4 w-4" />
-              <span className="text-xs font-medium uppercase tracking-wide">
+              <span className="font-medium text-xs uppercase tracking-wide">
                 Start
               </span>
             </div>
@@ -200,7 +200,7 @@ export function TaskDetailView({ data }: TaskDetailViewProps) {
               )}
             >
               <Calendar className="h-4 w-4" />
-              <span className="text-xs font-medium uppercase tracking-wide">
+              <span className="font-medium text-xs uppercase tracking-wide">
                 Due
               </span>
             </div>
@@ -230,7 +230,7 @@ export function TaskDetailView({ data }: TaskDetailViewProps) {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Tag className="h-4 w-4" />
-              <span className="text-xs font-medium uppercase tracking-wide">
+              <span className="font-medium text-xs uppercase tracking-wide">
                 Labels
               </span>
             </div>
@@ -238,7 +238,7 @@ export function TaskDetailView({ data }: TaskDetailViewProps) {
               {labels.map((label, idx) => (
                 <span
                   key={idx}
-                  className="rounded-full px-2.5 py-1 text-xs font-medium shadow-sm"
+                  className="rounded-full px-2.5 py-1 font-medium text-xs shadow-sm"
                   style={{
                     backgroundColor: `${label.color}25`,
                     color: label.color,
@@ -257,7 +257,7 @@ export function TaskDetailView({ data }: TaskDetailViewProps) {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-muted-foreground">
               <User className="h-4 w-4" />
-              <span className="text-xs font-medium uppercase tracking-wide">
+              <span className="font-medium text-xs uppercase tracking-wide">
                 Assignees
               </span>
             </div>
@@ -265,9 +265,9 @@ export function TaskDetailView({ data }: TaskDetailViewProps) {
               {assignees.map((assignee, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center gap-2 rounded-full bg-muted/50 py-1 pl-1 pr-3"
+                  className="flex items-center gap-2 rounded-full bg-muted/50 py-1 pr-3 pl-1"
                 >
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-dynamic-blue to-dynamic-purple text-xs font-medium text-white">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-linear-to-br from-dynamic-blue to-dynamic-purple font-medium text-white text-xs">
                     {assignee.name.charAt(0).toUpperCase()}
                   </div>
                   <span className="text-sm">{assignee.name}</span>
@@ -279,7 +279,7 @@ export function TaskDetailView({ data }: TaskDetailViewProps) {
       </div>
 
       {/* Footer */}
-      <div className="border-t border-border/30 bg-muted/20 px-4 py-2">
+      <div className="border-border/30 border-t bg-muted/20 px-4 py-2">
         <div className="flex items-center gap-2 text-muted-foreground text-xs">
           <Clock className="h-3 w-3" />
           <span>Created {formatDate(createdAt)}</span>

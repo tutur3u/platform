@@ -78,15 +78,15 @@ export function TimelineView({ data }: TimelineViewProps) {
   };
 
   return (
-    <Card className="overflow-hidden border-border/50 bg-gradient-to-b from-card to-card/95 shadow-xl backdrop-blur-md">
+    <Card className="overflow-hidden border-border/50 bg-linear-to-b from-card to-card/95 shadow-xl backdrop-blur-md">
       {/* Header */}
-      <div className="border-b border-border/30 bg-muted/20 px-4 py-3">
+      <div className="border-border/30 border-b bg-muted/20 px-4 py-3 pr-12">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <h3 className="font-semibold text-sm">{title}</h3>
           </div>
-          <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground text-xs font-medium">
+          <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs">
             {formatDateShort(timeRange.start)} -{' '}
             {formatDateShort(timeRange.end)}
           </span>
@@ -117,7 +117,7 @@ export function TimelineView({ data }: TimelineViewProps) {
                 <div key={task.id} className="group space-y-1.5">
                   {/* Task Name */}
                   <div className="flex items-center justify-between">
-                    <p className="truncate text-xs font-medium text-foreground/80 group-hover:text-foreground transition-colors">
+                    <p className="truncate font-medium text-foreground/80 text-xs transition-colors group-hover:text-foreground">
                       {task.name}
                     </p>
                     <span
@@ -135,7 +135,7 @@ export function TimelineView({ data }: TimelineViewProps) {
                       {[...Array(4)].map((_, i) => (
                         <div
                           key={i}
-                          className="flex-1 border-r border-border/20 last:border-r-0"
+                          className="flex-1 border-border/20 border-r last:border-r-0"
                         />
                       ))}
                     </div>
@@ -163,7 +163,7 @@ export function TimelineView({ data }: TimelineViewProps) {
       </div>
 
       {/* Legend */}
-      <div className="border-t border-border/30 bg-muted/20 px-4 py-2.5">
+      <div className="border-border/30 border-t bg-muted/20 px-4 py-2.5">
         <div className="flex flex-wrap items-center justify-center gap-4 text-xs">
           {Object.entries(statusConfig).map(([key, config]) => (
             <div key={key} className="flex items-center gap-1.5">

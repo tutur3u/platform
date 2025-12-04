@@ -5,6 +5,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useVisualizationStore } from '../../stores/visualization-store';
 import type { Visualization } from '../../types/visualizations';
+import { CoreMentionCard } from './core-mention-card';
+import { GoogleSearchCard } from './google-search-card';
 import { StatusChart } from './status-chart';
 import { TaskDetailView } from './task-detail-view';
 import { TaskListCard } from './task-list-card';
@@ -43,34 +45,43 @@ function VisualizationCard({
           onRemove(vis.id);
         }
       }}
-      className="relative group"
+      className="group relative"
     >
-      {/* Close Button */}
+      {/* Close Button - positioned inside with proper spacing */}
       <Button
         variant="ghost"
         size="icon"
-        className="absolute -top-2 -right-2 z-20 h-7 w-7 rounded-full border border-border/50 bg-background/90 opacity-0 shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100"
+        className="absolute top-2 right-2 z-20 h-7 w-7 rounded-full border border-border/30 bg-background/80 opacity-0 shadow-md backdrop-blur-sm transition-all duration-200 hover:border-destructive/50 hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100"
         onClick={() => onDismiss(vis.id)}
       >
         <X className="h-3.5 w-3.5" />
       </Button>
 
       {/* Visualization Content */}
-      <div className="transition-transform duration-200 group-hover:scale-[1.01]">
+      <div className="transition-transform duration-200 group-hover:scale-[1.005]">
         {vis.type === 'task_list' && <TaskListCard data={vis.data} />}
         {vis.type === 'gantt_timeline' && <TimelineView data={vis.data} />}
         {vis.type === 'status_distribution' && <StatusChart data={vis.data} />}
         {vis.type === 'task_detail' && <TaskDetailView data={vis.data} />}
+        {vis.type === 'google_search' && <GoogleSearchCard data={vis.data} />}
       </div>
     </motion.div>
   );
 }
 
 export function VisualizationContainer() {
-  const { visualizations, dismissVisualization, removeVisualization } =
-    useVisualizationStore();
+  const {
+    visualizations,
+    centerVisualization,
+    dismissVisualization,
+    dismissCenterVisualization,
+    removeVisualization,
+    removeCenterVisualization,
+  } = useVisualizationStore();
 
-  if (visualizations.length === 0) return null;
+  const hasVisualizations =
+    visualizations.length > 0 || centerVisualization !== null;
+  if (!hasVisualizations) return null;
 
   // Split visualizations based on their assigned side (permanent, no flickering)
   const leftVisualizations = visualizations.filter((v) => v.side === 'left');
@@ -109,6 +120,28 @@ export function VisualizationContainer() {
           </AnimatePresence>
         </div>
       )}
+
+      {/* Center: Core Mention Visualization */}
+      <AnimatePresence
+        onExitComplete={() => {
+          if (centerVisualization?.dismissed) {
+            removeCenterVisualization();
+          }
+        }}
+      >
+        {centerVisualization && !centerVisualization.dismissed && (
+          <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center p-4">
+            <div className="pointer-events-auto">
+              {centerVisualization.type === 'core_mention' && (
+                <CoreMentionCard
+                  data={centerVisualization.data}
+                  onDismiss={dismissCenterVisualization}
+                />
+              )}
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

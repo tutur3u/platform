@@ -94,11 +94,11 @@ export function TaskListCard({ data }: TaskListCardProps) {
   const CategoryIcon = categoryStyle?.icon || Circle;
 
   return (
-    <Card className="overflow-hidden border-border/50 bg-gradient-to-b from-card to-card/95 shadow-xl backdrop-blur-md">
+    <Card className="overflow-hidden border-border/50 bg-linear-to-b from-card to-card/95 shadow-xl backdrop-blur-md">
       {/* Header */}
       <div
         className={cn(
-          'border-b border-border/30 px-4 py-3',
+          'border-border/30 border-b px-4 py-3 pr-12',
           categoryStyle?.bgColor
         )}
       >
@@ -182,7 +182,7 @@ export function TaskListCard({ data }: TaskListCardProps) {
                     {priority && (
                       <span
                         className={cn(
-                          'rounded px-1.5 py-0.5 text-xs font-medium',
+                          'rounded px-1.5 py-0.5 font-medium text-xs',
                           priority.bgColor,
                           priority.color
                         )}
@@ -223,7 +223,7 @@ export function TaskListCard({ data }: TaskListCardProps) {
 
       {/* Footer with count */}
       {tasks.length > 5 && (
-        <div className="border-t border-border/30 bg-muted/20 px-4 py-2 text-center">
+        <div className="border-border/30 border-t bg-muted/20 px-4 py-2 text-center">
           <span className="text-muted-foreground text-xs">
             Showing all {tasks.length} tasks
           </span>
