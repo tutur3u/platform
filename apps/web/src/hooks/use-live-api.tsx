@@ -21,11 +21,18 @@ import {
   useState,
 } from 'react';
 
+export type ConnectionStatus =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'reconnecting';
+
 export type UseLiveAPIResults = {
   client: MultimodalLiveClient;
   setConfig: (config: LiveConfig) => void;
   config: LiveConfig;
   connected: boolean;
+  connectionStatus: ConnectionStatus;
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
   volume: number;
@@ -67,13 +74,31 @@ export function useLiveAPI({ apiKey }: { apiKey: string }): UseLiveAPIResults {
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
 
   const [connected, setConnected] = useState(false);
+  const [connectionStatus, setConnectionStatus] =
+    useState<ConnectionStatus>('disconnected');
   const [config, setConfig] = useState<LiveConfig>({
+    // Use gemini-2.0-flash-live for multimodal support (audio + video)
+    // Note: gemini-2.5-flash-native-audio-preview is audio-only
     model: 'gemini-2.5-flash-native-audio-preview-09-2025',
     // NOTE: When using ephemeral tokens, systemInstruction, tools, and toolConfig
     // are embedded in the token itself. Passing them here can cause conflicts.
     // Leave config minimal to avoid overriding token settings.
   });
   const [volume, setVolume] = useState(0);
+
+  // Get workspace ID from URL for session storage
+  // This is safe because the hook is only used in workspace-scoped pages
+  const wsIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Extract wsId from URL path: /[locale]/[wsId]/...
+      const pathParts = window.location.pathname.split('/');
+      // Path format: /en/[wsId]/... or /vi/[wsId]/...
+      if (pathParts.length >= 3) {
+        wsIdRef.current = pathParts[2] || null;
+      }
+    }
+  }, []);
 
   // register audio for streaming server -> speakers
   useEffect(() => {
@@ -98,6 +123,7 @@ export function useLiveAPI({ apiKey }: { apiKey: string }): UseLiveAPIResults {
       // Ensure any ongoing assistant audio is stopped when the socket closes
       stopAudioStreamer();
       setConnected(false);
+      setConnectionStatus('disconnected');
     };
 
     const onAudio = (data: ArrayBuffer) =>
@@ -107,18 +133,44 @@ export function useLiveAPI({ apiKey }: { apiKey: string }): UseLiveAPIResults {
     // This ensures the last chunk of audio (which may be smaller than bufferSize) is played
     const onTurnComplete = () => audioStreamerRef.current?.complete();
 
+    // Handle session resumption updates - store handle for reconnection
+    const onSessionResumptionUpdate = async (data: {
+      resumable: boolean;
+      newHandle?: string;
+    }) => {
+      if (data.resumable && data.newHandle && wsIdRef.current) {
+        console.log(
+          '[Live API] Session resumption update received, storing handle'
+        );
+        try {
+          await fetch('/api/v1/live/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sessionHandle: data.newHandle,
+              wsId: wsIdRef.current,
+            }),
+          });
+        } catch (error) {
+          console.warn('[Live API] Failed to store session handle:', error);
+        }
+      }
+    };
+
     client
       .on('close', onClose)
       .on('interrupted', stopAudioStreamer)
       .on('audio', onAudio)
-      .on('turncomplete', onTurnComplete);
+      .on('turncomplete', onTurnComplete)
+      .on('sessionresumptionupdate', onSessionResumptionUpdate);
 
     return () => {
       client
         .off('close', onClose)
         .off('interrupted', stopAudioStreamer)
         .off('audio', onAudio)
-        .off('turncomplete', onTurnComplete);
+        .off('turncomplete', onTurnComplete)
+        .off('sessionresumptionupdate', onSessionResumptionUpdate);
     };
   }, [client]);
 
@@ -126,12 +178,34 @@ export function useLiveAPI({ apiKey }: { apiKey: string }): UseLiveAPIResults {
     if (!config) {
       throw new Error('config has not been set');
     }
+
+    setConnectionStatus('connecting');
+
+    // Try to fetch stored session handle for resumption
+    let storedHandle: string | null = null;
+    if (wsIdRef.current) {
+      try {
+        const res = await fetch(`/api/v1/live/session?wsId=${wsIdRef.current}`);
+        const data = await res.json();
+        storedHandle = data.sessionHandle || null;
+        if (storedHandle) {
+          console.log(
+            '[Live API] Found stored session handle, will attempt resumption'
+          );
+          setConnectionStatus('reconnecting');
+        }
+      } catch (error) {
+        console.warn('[Live API] Failed to fetch session handle:', error);
+      }
+    }
+
     console.log('[Live API] Connecting with config:', {
       model: config.model,
       hasSystemInstruction: !!config.systemInstruction,
       hasTools: !!config.tools,
       toolCount: config.tools?.length,
       hasToolConfig: !!config.toolConfig,
+      hasStoredHandle: !!storedHandle,
     });
 
     // Ensure any existing session is fully closed before reconnecting
@@ -140,9 +214,17 @@ export function useLiveAPI({ apiKey }: { apiKey: string }): UseLiveAPIResults {
       // Wait a bit for the session to fully close
       await new Promise((resolve) => setTimeout(resolve, 200));
     }
-    await client.connect(config);
-    console.log('[Live API] Connected successfully');
-    setConnected(true);
+
+    try {
+      await client.connect(config);
+      console.log('[Live API] Connected successfully');
+      setConnected(true);
+      setConnectionStatus('connected');
+    } catch (error) {
+      console.error('[Live API] Connection failed:', error);
+      setConnectionStatus('disconnected');
+      throw error;
+    }
   }, [client, config]);
 
   const disconnect = useCallback(async () => {
@@ -150,6 +232,7 @@ export function useLiveAPI({ apiKey }: { apiKey: string }): UseLiveAPIResults {
     audioStreamerRef.current?.stop();
     client.disconnect();
     setConnected(false);
+    setConnectionStatus('disconnected');
   }, [client]);
 
   const sendToolResponse = useCallback(
@@ -174,6 +257,7 @@ export function useLiveAPI({ apiKey }: { apiKey: string }): UseLiveAPIResults {
     config,
     setConfig,
     connected,
+    connectionStatus,
     connect,
     disconnect,
     volume,

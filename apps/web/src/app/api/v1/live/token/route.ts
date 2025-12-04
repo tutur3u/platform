@@ -619,12 +619,16 @@ export async function POST() {
         // Allow session to start anytime within the token's validity window
         newSessionExpireTime: expireTime,
         liveConnectConstraints: {
-          // NOTE: Using 2.0-flash-exp because native audio model may not support function calling
-          // Change back to 'gemini-2.5-flash-native-audio-preview-09-2025' once confirmed supported
+          // Use gemini-2.0-flash-live for multimodal support (audio + video + function calling)
+          // Note: gemini-2.5-flash-native-audio-preview is audio-only and may not support all features
           model: 'gemini-2.5-flash-native-audio-preview-09-2025',
           config: {
             responseModalities: [Modality.AUDIO],
             proactivity: { proactiveAudio: true },
+            // Enable context window compression for longer sessions (unlimited duration)
+            contextWindowCompression: { slidingWindow: {} },
+            // Enable session resumption to receive session handles for reconnection
+            sessionResumption: {},
             thinkingConfig: {
               thinkingBudget: 0,
             },
@@ -664,6 +668,8 @@ export async function POST() {
       mode: FunctionCallingConfigMode.AUTO,
       hasSystemInstruction:
         !!tokenConfig.config.liveConnectConstraints.config.systemInstruction,
+      contextWindowCompression: 'slidingWindow (enabled)',
+      sessionResumption: 'enabled',
     });
 
     const token = await client.authTokens.create(tokenConfig);

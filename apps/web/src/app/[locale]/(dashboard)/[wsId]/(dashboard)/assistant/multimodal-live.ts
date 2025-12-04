@@ -112,7 +112,27 @@ export type LiveIncomingMessage =
   | ToolCallCancellationMessage
   | ToolCallMessage
   | ServerContentMessage
-  | SetupCompleteMessage;
+  | SetupCompleteMessage
+  | GoAwayMessage
+  | SessionResumptionUpdateMessage;
+
+/** GoAway message - server requesting graceful disconnection */
+export type GoAwayMessage = {
+  goAway: {
+    timeLeft?: string;
+  };
+};
+
+/** Session resumption update message - provides handle for reconnection */
+export type SessionResumptionUpdateMessage = {
+  sessionResumptionUpdate: {
+    resumable: boolean;
+    newHandle?: string;
+  };
+};
+
+export type SessionResumptionUpdate =
+  SessionResumptionUpdateMessage['sessionResumptionUpdate'];
 
 export type SetupCompleteMessage = { setupComplete: Record<string, never> };
 
@@ -120,7 +140,9 @@ export type ServerContentMessage = {
   serverContent: ServerContent;
 };
 
-export type ServerContent = ModelTurn | TurnComplete | Interrupted;
+export type ServerContent = ModelTurn | TurnComplete | Interrupted | GenerationComplete;
+
+export type GenerationComplete = { generationComplete: boolean };
 
 export type ModelTurn = {
   modelTurn: {
@@ -206,6 +228,16 @@ export const isTurnComplete = (a: any): a is TurnComplete =>
 
 export const isInterrupted = (a: any): a is Interrupted =>
   (a as Interrupted).interrupted;
+
+export const isGenerationComplete = (a: any): a is GenerationComplete =>
+  typeof (a as GenerationComplete).generationComplete === 'boolean';
+
+export const isGoAwayMessage = (a: unknown): a is GoAwayMessage =>
+  prop(a, 'goAway');
+
+export const isSessionResumptionUpdateMessage = (
+  a: unknown
+): a is SessionResumptionUpdateMessage => prop(a, 'sessionResumptionUpdate');
 
 export function isToolCall(value: unknown): value is ToolCall {
   if (!value || typeof value !== 'object') return false;

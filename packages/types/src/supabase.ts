@@ -3589,6 +3589,51 @@ export type Database = {
           },
         ];
       };
+      live_api_sessions: {
+        Row: {
+          created_at: string | null;
+          expires_at: string;
+          id: string;
+          session_handle: string;
+          updated_at: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          expires_at: string;
+          id?: string;
+          session_handle: string;
+          updated_at?: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          expires_at?: string;
+          id?: string;
+          session_handle?: string;
+          updated_at?: string | null;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'live_api_sessions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'live_api_sessions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       meet_together_guest_timeblocks: {
         Row: {
           created_at: string;
@@ -14136,6 +14181,7 @@ export type Database = {
         | { Args: { user_id: string; ws_id: string }; Returns: boolean }
         | { Args: { ws_id: string }; Returns: boolean };
       cleanup_expired_cross_app_tokens: { Args: never; Returns: undefined };
+      cleanup_expired_live_sessions: { Args: never; Returns: undefined };
       cleanup_expired_notifications: { Args: never; Returns: number };
       cleanup_old_api_key_usage_logs: { Args: never; Returns: undefined };
       cleanup_old_typing_indicators: { Args: never; Returns: undefined };

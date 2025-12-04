@@ -8,6 +8,7 @@ import { EventEmitter } from 'eventemitter3';
 import type {
   LiveConfig,
   ServerContent,
+  SessionResumptionUpdate,
   StreamingLog,
   ToolCall,
   ToolCallCancellation,
@@ -56,6 +57,10 @@ interface MultimodalLiveClientEventTypes {
   toolcall: (toolCall: ToolCall) => void;
   toolcallcancellation: (toolcallCancellation: ToolCallCancellation) => void;
   groundingmetadata: (metadata: GroundingMetadata) => void;
+  // Session management events
+  goaway: (data: { timeLeft?: string }) => void;
+  generationcomplete: () => void;
+  sessionresumptionupdate: (data: SessionResumptionUpdate) => void;
 }
 
 export type MultimodalLiveAPIClientConnection = {
@@ -211,6 +216,29 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
       JSON.stringify(message, null, 2).slice(0, 500)
     );
 
+    // Handle goAway message (server requesting graceful disconnection)
+    const goAwayMsg = message as unknown as { goAway?: { timeLeft?: string } };
+    if (goAwayMsg.goAway) {
+      const timeLeft = goAwayMsg.goAway.timeLeft;
+      this.log('server.goaway', `Time left: ${timeLeft || 'unknown'}`);
+      this.emit('goaway', { timeLeft });
+      return;
+    }
+
+    // Handle session resumption update (provides handle for reconnection)
+    const sessionMsg = message as unknown as {
+      sessionResumptionUpdate?: { resumable: boolean; newHandle?: string };
+    };
+    if (sessionMsg.sessionResumptionUpdate) {
+      const update = sessionMsg.sessionResumptionUpdate;
+      this.log(
+        'server.sessionresumption',
+        `Resumable: ${update.resumable}, Handle: ${update.newHandle ? 'provided' : 'none'}`
+      );
+      this.emit('sessionresumptionupdate', update);
+      return;
+    }
+
     // Handle tool calls
     if (message.toolCall) {
       console.log(
@@ -300,6 +328,15 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
       if (serverContent.turnComplete) {
         this.log('server.turncomplete', 'turn complete');
         this.emit('turncomplete');
+      }
+
+      // Check for generation complete (model finished generating all output)
+      const contentWithComplete = serverContent as unknown as {
+        generationComplete?: boolean;
+      };
+      if (contentWithComplete.generationComplete) {
+        this.log('server.generationcomplete', 'generation complete');
+        this.emit('generationcomplete');
       }
 
       // Handle model turn with parts
@@ -395,6 +432,12 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
       }
       if (chunk.mimeType.includes('image')) {
         hasVideo = true;
+        // Log video frame being sent (truncate data for logging)
+        console.log('[Live Client] Sending video frame:', {
+          mimeType: chunk.mimeType,
+          dataLength: chunk.data.length,
+          dataPreview: chunk.data.slice(0, 50) + '...',
+        });
         this.session.sendRealtimeInput({
           video: {
             data: chunk.data,
@@ -412,7 +455,9 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
           : hasVideo
             ? 'video'
             : 'unknown';
-    this.log('client.realtimeInput', message);
+    if (hasVideo) {
+      this.log('client.realtimeInput', message);
+    }
   }
 
   /**
