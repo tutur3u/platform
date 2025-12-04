@@ -47,6 +47,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -59,12 +60,12 @@ import type {
   SessionWithRelations,
   TaskFilters,
 } from '../types';
-import MissedEntryDialog from './missed-entry-dialog';
 import {
   generateAssigneeInitials,
   getFilteredAndSortedTasks,
   useTaskCounts,
 } from '../utils';
+import MissedEntryDialog from './missed-entry-dialog';
 
 interface SessionTemplate {
   title: string;
@@ -489,6 +490,19 @@ export function TimerControls({
     [PAUSED_SESSION_KEY, timerMode]
   );
 
+  const clearPausedSessionFromStorage = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(PAUSED_SESSION_KEY);
+      } catch (error) {
+        console.warn(
+          'Failed to clear paused session from localStorage:',
+          error
+        );
+      }
+    }
+  }, [PAUSED_SESSION_KEY]);
+
   const loadPausedSessionFromStorage = useCallback(async () => {
     if (typeof window !== 'undefined') {
       try {
@@ -525,20 +539,12 @@ export function TimerControls({
       }
     }
     return null;
-  }, [PAUSED_SESSION_KEY, fetchSessionById, timerMode]);
-
-  const clearPausedSessionFromStorage = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.removeItem(PAUSED_SESSION_KEY);
-      } catch (error) {
-        console.warn(
-          'Failed to clear paused session from localStorage:',
-          error
-        );
-      }
-    }
-  }, [PAUSED_SESSION_KEY]);
+  }, [
+    PAUSED_SESSION_KEY,
+    fetchSessionById,
+    timerMode,
+    clearPausedSessionFromStorage,
+  ]);
 
   // Session protection utilities
   const updateSessionProtection = useCallback(
@@ -682,6 +688,7 @@ export function TimerControls({
       timerModeSessions,
       setElapsedTime,
       formatDuration,
+      t,
     ]
   );
 
@@ -747,6 +754,7 @@ export function TimerControls({
     loadPausedSessionFromStorage,
     loadTimerModeSessionsFromStorage,
     formatDuration,
+    t,
   ]);
 
   // Handle taskSelect URL parameter
@@ -767,7 +775,7 @@ export function TimerControls({
         });
       }
     }
-  }, [searchParams, tasks]);
+  }, [searchParams, tasks, t]);
 
   // Update session protection when timer state changes
   useEffect(() => {
@@ -784,7 +792,7 @@ export function TimerControls({
   // Save timer mode sessions when they change
   useEffect(() => {
     saveTimerModeSessionsToStorage();
-  }, [timerModeSessions, saveTimerModeSessionsToStorage]);
+  }, [saveTimerModeSessionsToStorage]);
 
   // Cleanup paused session if user changes or component unmounts
   useEffect(() => {
@@ -1374,7 +1382,7 @@ export function TimerControls({
       console.error('Error fetching boards:', error);
       toast.error(t('failed_to_load_boards'));
     }
-  }, [wsId, apiCall]);
+  }, [wsId, apiCall, t]);
 
   // Fetch templates
   const fetchTemplates = useCallback(async () => {
@@ -1394,34 +1402,39 @@ export function TimerControls({
   }, [fetchTemplates, fetchBoards]);
 
   // Handle task selection change
-  const handleTaskSelectionChange = (taskId: string) => {
-    setSelectedTaskId(taskId);
-    if (taskId && taskId !== 'none') {
-      const selectedTask = tasks.find((t) => t.id === taskId);
-      if (selectedTask) {
-        // Set task mode and populate fields (same as drag & drop)
-        setSessionMode('task');
-        setNewSessionTitle(`Working on: ${selectedTask.name}`);
-        setNewSessionDescription(selectedTask.description || '');
+  const handleTaskSelectionChange = useCallback(
+    (taskId: string) => {
+      setSelectedTaskId(taskId);
+      if (taskId && taskId !== 'none') {
+        const selectedTask = tasks.find((t) => t.id === taskId);
+        if (selectedTask) {
+          // Set task mode and populate fields (same as drag & drop)
+          setSessionMode('task');
+          setNewSessionTitle(`Working on: ${selectedTask.name}`);
+          setNewSessionDescription(
+            getDescriptionText(selectedTask.description) || ''
+          );
 
-        // Show success feedback (same as drag & drop)
-        toast.success(t('task_ready_to_track', { name: selectedTask.name }), {
-          description: t('task_ready_description'),
-          duration: 3000,
-        });
+          // Show success feedback (same as drag & drop)
+          toast.success(t('task_ready_to_track', { name: selectedTask.name }), {
+            description: t('task_ready_description'),
+            duration: 3000,
+          });
 
-        // Close dropdown and exit search mode
-        setIsTaskDropdownOpen(false);
-        setIsSearchMode(false);
-        setTaskSearchQuery('');
+          // Close dropdown and exit search mode
+          setIsTaskDropdownOpen(false);
+          setIsSearchMode(false);
+          setTaskSearchQuery('');
+        }
+      } else {
+        // Reset when no task selected
+        setNewSessionTitle('');
+        setNewSessionDescription('');
+        setIsSearchMode(true);
       }
-    } else {
-      // Reset when no task selected
-      setNewSessionTitle('');
-      setNewSessionDescription('');
-      setIsSearchMode(true);
-    }
-  };
+    },
+    [tasks, t]
+  );
 
   // Handle session mode change with cleanup
   const handleSessionModeChange = (mode: 'task' | 'manual') => {
@@ -1542,49 +1555,65 @@ export function TimerControls({
   };
 
   // Start timer with task
-  const startTimerWithTask = async (taskId: string, taskName: string) => {
-    setIsLoading(true);
+  const startTimerWithTask = useCallback(
+    async (taskId: string, taskName: string) => {
+      setIsLoading(true);
 
-    try {
-      const response = await apiCall(
-        `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            title: `Working on: ${taskName}`,
-            description: newSessionDescription || null,
-            categoryId:
-              selectedCategoryId === 'none' ? null : selectedCategoryId || null,
-            taskId: taskId,
-          }),
-        }
-      );
+      try {
+        const response = await apiCall(
+          `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              title: `Working on: ${taskName}`,
+              description: newSessionDescription || null,
+              categoryId:
+                selectedCategoryId === 'none'
+                  ? null
+                  : selectedCategoryId || null,
+              taskId: taskId,
+            }),
+          }
+        );
 
-      setCurrentSession(response.session);
-      setIsRunning(true);
-      setElapsedTime(0);
-      setNewSessionTitle('');
-      setNewSessionDescription('');
-      setSelectedCategoryId('none');
-      setSelectedTaskId('none');
+        setCurrentSession(response.session);
+        setIsRunning(true);
+        setElapsedTime(0);
+        setNewSessionTitle('');
+        setNewSessionDescription('');
+        setSelectedCategoryId('none');
+        setSelectedTaskId('none');
 
-      // Invalidate the running session query to update sidebar
-      queryClient.invalidateQueries({
-        queryKey: ['running-time-session', wsId],
-      });
+        // Invalidate the running session query to update sidebar
+        queryClient.invalidateQueries({
+          queryKey: ['running-time-session', wsId],
+        });
 
-      onSessionUpdate();
-      toast.success(t('timer_started'));
-    } catch (error) {
-      console.error('Error starting timer:', error);
-      toast.error(t('failed_to_start_timer'));
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        onSessionUpdate();
+        toast.success(t('timer_started'));
+      } catch (error) {
+        console.error('Error starting timer:', error);
+        toast.error(t('failed_to_start_timer'));
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [
+      wsId,
+      apiCall,
+      newSessionDescription,
+      selectedCategoryId,
+      setCurrentSession,
+      setIsRunning,
+      setElapsedTime,
+      queryClient,
+      onSessionUpdate,
+      t,
+    ]
+  );
 
   // Start timer
-  const startTimer = async () => {
+  const startTimer = useCallback(async () => {
     if (sessionMode === 'task' && selectedTaskId && selectedTaskId !== 'none') {
       const selectedTask = tasks.find((t) => t.id === selectedTaskId);
       if (selectedTask) {
@@ -1683,10 +1712,31 @@ export function TimerControls({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    sessionMode,
+    selectedTaskId,
+    tasks,
+    startTimerWithTask,
+    newSessionTitle,
+    newSessionDescription,
+    selectedCategoryId,
+    wsId,
+    apiCall,
+    setCurrentSession,
+    setIsRunning,
+    setElapsedTime,
+    updateSessionProtection,
+    timerMode,
+    startPomodoroSession,
+    customTimerSettings,
+    updateCurrentBreakState,
+    queryClient,
+    onSessionUpdate,
+    t,
+  ]);
 
   // Stop timer - handle both active and paused sessions
-  const stopTimer = async () => {
+  const stopTimer = useCallback(async () => {
     const sessionToStop = currentSession || pausedSession;
     if (!sessionToStop) return;
 
@@ -1747,7 +1797,23 @@ export function TimerControls({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    currentSession,
+    pausedSession,
+    sessionExceedsThreshold,
+    wsId,
+    apiCall,
+    setCurrentSession,
+    setIsRunning,
+    setElapsedTime,
+    updateSessionProtection,
+    timerMode,
+    clearPausedSessionFromStorage,
+    queryClient,
+    onSessionUpdate,
+    formatDuration,
+    t,
+  ]);
 
   // Handle session discarded from exceeded threshold dialog
   const handleSessionDiscarded = () => {
@@ -1776,7 +1842,7 @@ export function TimerControls({
   };
 
   // Pause timer - properly maintain session state
-  const pauseTimer = async () => {
+  const pauseTimer = useCallback(async () => {
     if (!currentSession) return;
 
     setIsLoading(true);
@@ -1816,10 +1882,21 @@ export function TimerControls({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    currentSession,
+    wsId,
+    apiCall,
+    localElapsedTime,
+    savePausedSessionToStorage,
+    setCurrentSession,
+    setIsRunning,
+    setElapsedTime,
+    onSessionUpdate,
+    t,
+  ]);
 
   // Resume paused timer
-  const resumeTimer = async () => {
+  const resumeTimer = useCallback(async () => {
     if (!pausedSession) return;
 
     setIsLoading(true);
@@ -1872,7 +1949,23 @@ export function TimerControls({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    pausedSession,
+    wsId,
+    apiCall,
+    pausedElapsedTime,
+    pauseStartTime,
+    setCurrentSession,
+    setElapsedTime,
+    setIsRunning,
+    updateSessionProtection,
+    timerMode,
+    clearPausedSessionFromStorage,
+    queryClient,
+    onSessionUpdate,
+    formatDuration,
+    t,
+  ]);
 
   // Start from template
   const startFromTemplate = async (template: SessionTemplate) => {
@@ -2176,7 +2269,7 @@ export function TimerControls({
         const currentIndex = filteredTasks.findIndex(
           (task) => task.id === selectedTaskId
         );
-        let nextIndex;
+        let nextIndex: number;
 
         if (event.key === 'ArrowDown') {
           nextIndex =
@@ -2225,6 +2318,8 @@ export function TimerControls({
     isDraggingTask,
     selectedTaskId,
     sessionMode,
+    filteredTasks,
+    handleTaskSelectionChange,
   ]);
 
   return (
@@ -3744,6 +3839,7 @@ export function TimerControls({
                                       title={t('remove_selected_task')}
                                     >
                                       <svg
+                                        aria-hidden="true"
                                         className="h-4 w-4"
                                         fill="none"
                                         stroke="currentColor"
@@ -3772,6 +3868,7 @@ export function TimerControls({
                                       className="rounded p-1 hover:bg-muted"
                                     >
                                       <svg
+                                        aria-hidden="true"
                                         className={cn(
                                           'h-4 w-4 transition-transform',
                                           isTaskDropdownOpen &&
@@ -3842,6 +3939,7 @@ export function TimerControls({
                                 className="-translate-y-1/2 absolute top-1/2 right-2 rounded p-1 hover:bg-muted"
                               >
                                 <svg
+                                  aria-hidden="true"
                                   className={cn(
                                     'h-4 w-4 transition-transform',
                                     isTaskDropdownOpen &&
@@ -3935,6 +4033,7 @@ export function TimerControls({
                                     )}
                                   >
                                     <svg
+                                      aria-hidden="true"
                                       className="h-3 w-3"
                                       fill="none"
                                       stroke="currentColor"
@@ -4194,7 +4293,7 @@ export function TimerControls({
                                                         }
                                                       >
                                                         {assignee.avatar_url ? (
-                                                          <img
+                                                          <Image
                                                             src={
                                                               assignee.avatar_url
                                                             }
@@ -4203,7 +4302,9 @@ export function TimerControls({
                                                               assignee.email ||
                                                               ''
                                                             }
-                                                            className="h-full w-full rounded-full object-cover"
+                                                            width={16}
+                                                            height={16}
+                                                            className="rounded-full object-cover"
                                                           />
                                                         ) : (
                                                           <div className="flex h-full w-full items-center justify-center font-medium text-[8px] text-gray-600 dark:text-gray-300">
