@@ -6,8 +6,8 @@ import { useEffect, useState } from 'react';
 
 const CountdownDD = () => {
   const calculateTimeLeft = () => {
-    // December 4, 2025 at 11:59 PM Vietnam time (GMT+7)
-    const milestoneDate = new Date('2025-12-04T16:59:00Z'); // 11:59 PM GMT+7 = 4:59 PM UTC
+    // December 12, 2025 at 2:00 PM Vietnam time (GMT+7)
+    const milestoneDate = new Date('2025-12-12T07:00:00Z'); // 2:00 PM GMT+7 = 7:00 AM UTC
     const difference = milestoneDate.getTime() - Date.now();
 
     if (difference > 0) {
@@ -23,8 +23,8 @@ const CountdownDD = () => {
   };
 
   const calculateProgress = () => {
-    // December 4, 2025 at 11:59 PM Vietnam time (GMT+7)
-    const milestoneDate = new Date('2025-12-04T16:59:00Z');
+    // December 12, 2025 at 2:00 PM Vietnam time (GMT+7)
+    const milestoneDate = new Date('2025-12-12T07:00:00Z');
     const startDate = new Date('2025-11-07T00:00:00Z'); // Starting from today
     const now = Date.now();
     const totalDuration = milestoneDate.getTime() - startDate.getTime();
@@ -182,7 +182,7 @@ const CountdownDD = () => {
                 </h3>
               </div>
               <span className="font-bold text-dynamic-cyan/70 text-xs sm:ml-auto sm:text-sm">
-                Dec 4, 2025
+                Dec 12, 2025
               </span>
             </div>
             <div className="space-y-2 text-sm sm:space-y-3">
@@ -244,7 +244,7 @@ const CountdownDD = () => {
                 <span className="shrink-0">⛵</span>
                 <span>
                   {progress < 100
-                    ? `${Math.ceil(((100 - progress) / 100) * ((new Date('2025-12-04T16:59:00Z').getTime() - new Date('2025-11-07T00:00:00Z').getTime()) / (1000 * 60 * 60 * 24)))} days until we sail to the big sea`
+                    ? `${Math.ceil(((100 - progress) / 100) * ((new Date('2025-12-12T07:00:00Z').getTime() - new Date('2025-11-07T00:00:00Z').getTime()) / (1000 * 60 * 60 * 24)))} days until we sail to the big sea`
                     : 'Time to set sail! 🌊'}
                 </span>
               </p>
