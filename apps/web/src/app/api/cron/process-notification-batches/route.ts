@@ -19,7 +19,7 @@ interface NotificationItem {
   type: string;
   title: string;
   description: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   createdAt: string;
 }
 
@@ -277,14 +277,14 @@ export async function GET(req: NextRequest) {
 
         // Format notifications for email template
         const notifications: NotificationItem[] = deliveryLogs
-          .map((log: any) => log.notifications)
+          .map((log) => log.notifications)
           .filter(Boolean)
-          .map((n: any) => ({
+          .map((n) => ({
             id: n.id,
             type: n.type,
             title: n.title,
-            description: n.description,
-            data: n.data,
+            description: n.description || '',
+            data: n.data as Record<string, unknown>,
             createdAt: n.created_at,
           }));
 
@@ -312,8 +312,11 @@ export async function GET(req: NextRequest) {
           // Send email via SES
           const sourceEmail =
             credentials.source_email || 'notifications@tuturuuu.com';
+          const sourceName = credentials.source_name || 'Tuturuuu';
+          const formattedSource = `${sourceName} <${sourceEmail}>`;
+          
           const command = new SendEmailCommand({
-            Source: sourceEmail,
+            Source: formattedSource,
             Destination: {
               ToAddresses: [userEmail],
             },
